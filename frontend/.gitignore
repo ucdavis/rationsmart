@@ -5,6 +5,10 @@ node_modules/
 .next/
 out/
 
+# PWA generated files (regenerated at build time)
+public/sw.js
+public/workbox-*.js
+
 # Environment files
 .env
 .env.local

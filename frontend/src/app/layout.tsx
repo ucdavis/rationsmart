@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import Snackbar from "@/components/ui/Snackbar";
 import SplashGuard from "@/components/SplashGuard";
+import InstallPrompt from "@/components/InstallPrompt";
 
 export const metadata: Metadata = {
   title: "RationSmart",
@@ -73,6 +74,7 @@ export default function RootLayout({
           <SplashGuard />
           {children}
           <Snackbar />
+          <InstallPrompt />
         </div>
       </body>
     </html>
