@@ -9,16 +9,12 @@ interface BeforeInstallPromptEvent extends Event {
 
 export default function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [show, setShow] = useState(false);
-  const [showInstructions, setShowInstructions] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const [showSteps, setShowSteps] = useState(false);
 
   useEffect(() => {
-    // Already installed as standalone PWA — hide everything
+    // Don't show if already running as installed PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
-
-    // Check if user permanently dismissed
-    if (sessionStorage.getItem("install_dismissed") === "1") return;
 
     const handler = (e: Event) => {
       e.preventDefault();
@@ -26,12 +22,11 @@ export default function InstallPrompt() {
     };
     window.addEventListener("beforeinstallprompt", handler);
 
-    // Show banner after 3 seconds regardless of whether event fired
-    const timer = setTimeout(() => setShow(true), 3000);
-
+    // Always show the banner after 1.5s
+    const t = setTimeout(() => setVisible(true), 1500);
     return () => {
       window.removeEventListener("beforeinstallprompt", handler);
-      clearTimeout(timer);
+      clearTimeout(t);
     };
   }, []);
 
@@ -39,75 +34,53 @@ export default function InstallPrompt() {
     if (installEvent) {
       await installEvent.prompt();
       const { outcome } = await installEvent.userChoice;
-      if (outcome === "accepted") {
-        setShow(false);
-        return;
-      }
+      if (outcome === "accepted") setVisible(false);
     } else {
-      // No event available — show manual instructions
-      setShowInstructions(true);
-      return;
+      setShowSteps(true);
     }
   };
 
-  const handleDismiss = () => {
-    sessionStorage.setItem("install_dismissed", "1");
-    setDismissed(true);
-    setShow(false);
-    setShowInstructions(false);
-  };
+  if (!visible) return null;
 
-  if (dismissed || !show) return null;
-
-  // Manual instructions sheet
-  if (showInstructions) {
+  if (showSteps) {
     return (
       <div
-        className="fixed inset-0 z-50 flex items-end justify-center"
-        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        onClick={() => setShowInstructions(false)}
+        style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          backgroundColor: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "flex-end", justifyContent: "center",
+        }}
+        onClick={() => setShowSteps(false)}
       >
         <div
-          className="bg-white rounded-t-2xl p-6 w-full pb-10"
-          style={{ maxWidth: 430, boxShadow: "0 -4px 24px rgba(0,0,0,0.15)" }}
+          style={{
+            backgroundColor: "#fff", borderRadius: "16px 16px 0 0",
+            padding: "24px 24px 40px", width: "100%", maxWidth: 430,
+            boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
+          }}
           onClick={(e) => e.stopPropagation()}
         >
-          <p className="text-lg font-bold mb-4 text-center" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+          <p style={{ fontSize: 18, fontWeight: 700, color: "#064E3B", fontFamily: "Nunito, sans-serif", textAlign: "center", marginBottom: 20 }}>
             Install RationSmart
           </p>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#064E3B" }}>
-                <span className="text-white text-sm font-bold" style={{ fontFamily: "Nunito, sans-serif" }}>1</span>
+          {[
+            { n: 1, title: 'Tap the ⋮ menu', desc: 'Tap the three-dot menu button at the top-right of Chrome' },
+            { n: 2, title: '"Add to Home screen"', desc: 'Scroll and tap "Add to Home screen" in the menu' },
+            { n: 3, title: 'Tap "Add"', desc: 'Confirm by tapping "Add" — the app icon appears on your home screen' },
+          ].map(({ n, title, desc }) => (
+            <div key={n} style={{ display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-start" }}>
+              <div style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#064E3B", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <span style={{ color: "#fff", fontSize: 13, fontWeight: 700, fontFamily: "Nunito, sans-serif" }}>{n}</span>
               </div>
               <div>
-                <p className="text-sm font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Tap the menu icon</p>
-                <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Tap the <strong>⋮</strong> (three dots) button in the top-right corner of Chrome</p>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "#231F20", fontFamily: "Nunito, sans-serif", margin: 0 }}>{title}</p>
+                <p style={{ fontSize: 12, color: "#6D6D6D", fontFamily: "Nunito, sans-serif", margin: "2px 0 0" }}>{desc}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#064E3B" }}>
-                <span className="text-white text-sm font-bold" style={{ fontFamily: "Nunito, sans-serif" }}>2</span>
-              </div>
-              <div>
-                <p className="text-sm font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Tap "Add to Home screen"</p>
-                <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Scroll down in the menu and tap "Add to Home screen"</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0" style={{ backgroundColor: "#064E3B" }}>
-                <span className="text-white text-sm font-bold" style={{ fontFamily: "Nunito, sans-serif" }}>3</span>
-              </div>
-              <div>
-                <p className="text-sm font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Tap "Add"</p>
-                <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Confirm by tapping "Add" — the app icon will appear on your home screen</p>
-              </div>
-            </div>
-          </div>
+          ))}
           <button
-            onClick={handleDismiss}
-            className="w-full mt-6 py-3.5 rounded-full font-bold text-sm"
-            style={{ backgroundColor: "#064E3B", color: "#FFFFFF", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
+            onClick={() => setVisible(false)}
+            style={{ width: "100%", marginTop: 8, padding: "14px", borderRadius: 999, backgroundColor: "#064E3B", color: "#fff", border: "none", fontWeight: 700, fontSize: 14, fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
           >
             Got it
           </button>
@@ -116,41 +89,48 @@ export default function InstallPrompt() {
     );
   }
 
-  // Install banner
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50" style={{ maxWidth: 430, margin: "0 auto", left: "50%", transform: "translateX(-50%)" }}>
+    <div
+      style={{
+        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999,
+        display: "flex", justifyContent: "center", pointerEvents: "none",
+      }}
+    >
       <div
-        className="mx-3 mb-4 rounded-2xl px-4 py-3 flex items-center gap-3"
-        style={{ backgroundColor: "#064E3B", boxShadow: "0 4px 20px rgba(0,0,0,0.25)" }}
+        style={{
+          width: "100%", maxWidth: 430, padding: "0 12px 16px",
+          pointerEvents: "auto",
+        }}
       >
-        <img src="/icon-192.png" alt="RationSmart" style={{ width: 40, height: 40, borderRadius: 10, flexShrink: 0 }} />
-
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold" style={{ color: "#FFFFFF", fontFamily: "Nunito, sans-serif" }}>
-            Install RationSmart
-          </p>
-          <p className="text-xs" style={{ color: "rgba(255,255,255,0.75)", fontFamily: "Nunito, sans-serif" }}>
-            Add to home screen for app experience
-          </p>
+        <div
+          style={{
+            backgroundColor: "#064E3B", borderRadius: 16,
+            padding: "12px 12px 12px 12px",
+            display: "flex", alignItems: "center", gap: 10,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          }}
+        >
+          <img src="/icon-192.png" alt="" style={{ width: 44, height: 44, borderRadius: 10, flexShrink: 0 }} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <p style={{ color: "#fff", fontWeight: 700, fontSize: 14, fontFamily: "Nunito, sans-serif", margin: 0 }}>Install RationSmart</p>
+            <p style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontFamily: "Nunito, sans-serif", margin: "2px 0 0" }}>Add to home screen for app experience</p>
+          </div>
+          <button
+            onClick={() => setVisible(false)}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 6, flexShrink: 0 }}
+            aria-label="Dismiss"
+          >
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+              <path d="M2 2l10 10M12 2L2 12" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </button>
+          <button
+            onClick={handleInstall}
+            style={{ backgroundColor: "#1CA069", color: "#fff", border: "none", borderRadius: 999, padding: "8px 16px", fontWeight: 700, fontSize: 13, fontFamily: "Nunito, sans-serif", cursor: "pointer", flexShrink: 0 }}
+          >
+            Install
+          </button>
         </div>
-
-        <button
-          onClick={handleDismiss}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: 4, flexShrink: 0 }}
-          aria-label="Dismiss"
-        >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 3l10 10M13 3L3 13" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
-
-        <button
-          onClick={handleInstall}
-          className="rounded-full px-4 py-1.5 text-sm font-bold flex-shrink-0"
-          style={{ backgroundColor: "#1CA069", color: "#FFFFFF", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
-        >
-          Install
-        </button>
       </div>
     </div>
   );
