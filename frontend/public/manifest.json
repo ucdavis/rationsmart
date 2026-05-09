@@ -1,9 +1,12 @@
 {
+  "id": "/",
   "name": "RationSmart",
   "short_name": "RationSmart",
   "description": "Smart cattle feed ration formulation",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#F8FAF9",
   "theme_color": "#1CA069",
   "orientation": "portrait",
@@ -15,7 +18,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-192.png",
+      "src": "/icon-192-maskable.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
@@ -27,7 +30,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-512-maskable.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
