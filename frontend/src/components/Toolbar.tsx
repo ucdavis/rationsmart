@@ -1,0 +1,81 @@
+"use client";
+
+import { IcHamburger, IcBack, IcForward } from "@/components/Icons";
+
+interface ToolbarProps {
+  type: "home" | "back";
+  title: string;
+  onMenuOpen?: () => void;
+  onBack?: () => void;
+  showForward?: boolean;
+  onForward?: () => void;
+  rightContent?: React.ReactNode;
+}
+
+export default function Toolbar({
+  type,
+  title,
+  onMenuOpen,
+  onBack,
+  showForward,
+  onForward,
+  rightContent,
+}: ToolbarProps) {
+  return (
+    <div
+      className="flex items-center px-3 py-3 gap-3"
+      style={{
+        backgroundColor: "#F8FAF9",
+        boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+        position: "sticky",
+        top: 0,
+        zIndex: 40,
+      }}
+    >
+      {/* Left button */}
+      {type === "home" ? (
+        <button
+          onClick={onMenuOpen}
+          className="flex items-center justify-center rounded-xl bg-white p-2.5"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
+          aria-label="Open menu"
+        >
+          <IcHamburger size={20} color="#064E3B" />
+        </button>
+      ) : (
+        <button
+          onClick={onBack}
+          className="flex items-center justify-center rounded-xl bg-white p-2.5"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
+          aria-label="Go back"
+        >
+          <IcBack size={20} color="#064E3B" />
+        </button>
+      )}
+
+      {/* Title */}
+      <h1
+        className="flex-1 text-center text-base font-bold"
+        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+      >
+        {title}
+      </h1>
+
+      {/* Right button */}
+      {rightContent ? (
+        rightContent
+      ) : showForward ? (
+        <button
+          onClick={onForward}
+          className="flex items-center justify-center rounded-xl bg-white p-2.5"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
+          aria-label="Forward"
+        >
+          <IcForward size={20} color="#064E3B" />
+        </button>
+      ) : (
+        <div style={{ width: 40 }} />
+      )}
+    </div>
+  );
+}
