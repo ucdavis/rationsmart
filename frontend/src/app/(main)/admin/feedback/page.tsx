@@ -27,21 +27,66 @@ interface FeedbackStats {
   by_category?: Record<string, number>;
 }
 
-const categoryBadge = (cat: string) => {
-  const map: Record<string, { bg: string; color: string }> = {
-    General: { bg: "rgba(5,188,109,0.15)", color: "#064E3B" },
-    "Feature Request": { bg: "rgba(30,64,175,0.15)", color: "#1E40AF" },
-    Defect: { bg: "rgba(228,74,74,0.2)", color: "#E44A4A" },
-  };
-  return map[cat] ?? { bg: "#F1F5F9", color: "#6D6D6D" };
+// Category styling — mirrors Android AdminFeedbackListAdapter exactly:
+// icon container: solid category color with white icon inside;
+// pill: light tinted bg with dark category color text.
+type CategoryStyle = {
+  iconBg: string;
+  badgeBg: string;
+  badgeText: string;
+  icon: React.ReactNode;
+};
+
+const categoryStyle = (cat: string): CategoryStyle => {
+  // White icon stroked
+  const w = "#FFFFFF";
+  switch (cat) {
+    case "Defect":
+      return {
+        iconBg: "#E44A4A",            // carmine_pink
+        badgeBg: "rgba(228,74,74,0.2)",
+        badgeText: "#FC2E20",          // red_ryb
+        // ic_bug
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M8 8V6a4 4 0 0 1 8 0v2M5 12h14M6 19h12a2 2 0 0 0 2-2v-5a8 8 0 0 0-16 0v5a2 2 0 0 0 2 2zM12 12v9M4 8l3 2M20 8l-3 2M4 21l3-2M20 21l-3-2" stroke={w} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ),
+      };
+    case "Feature Request":
+      return {
+        iconBg: "#1E40AF",             // ultramarine
+        badgeBg: "rgba(30,64,175,0.15)",
+        badgeText: "#1E40AF",
+        // ic_idea (lightbulb)
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7c.9.7 1.6 1.5 2 2.3h4c.4-.8 1.1-1.6 2-2.3A7 7 0 0 0 12 2z" stroke={w} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ),
+      };
+    default:
+      // "General"
+      return {
+        iconBg: "#064E3B",             // dark_aquamarine_green
+        badgeBg: "rgba(5,188,109,0.15)",
+        badgeText: "#064E3B",
+        // ic_feedback_nav (chat bubble)
+        icon: (
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={w} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        ),
+      };
+  }
 };
 
 function StarRow({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
       {[1,2,3,4,5].map((s) => (
-        // Android mustard_yellow #E3B505 for filled; silver_sand #C2C2C2 outline for empty
-        <IcStar key={s} size={16} filled={s <= rating} color={s <= rating ? "#E3B505" : "#C2C2C2"} />
+        // Android `mustard` (#FFDB58) filled; `silver_sand` (#C2C2C2) empty
+        <IcStar key={s} size={16} filled={s <= rating} color={s <= rating ? "#FFDB58" : "#C2C2C2"} />
       ))}
     </div>
   );
@@ -110,7 +155,7 @@ export default function AdminFeedbackPage() {
         ) : (
           feedbacks.map((fb) => {
             const category = fb.feedback_type ?? "General";
-            const colors = categoryBadge(category);
+            const cs = categoryStyle(category);
             return (
               <div
                 key={fb.id}
@@ -122,11 +167,9 @@ export default function AdminFeedbackPage() {
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     <div
                       className="flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: colors.bg, borderRadius: 16, padding: 10 }}
+                      style={{ backgroundColor: cs.iconBg, borderRadius: 16, padding: 10 }}
                     >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={colors.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      {cs.icon}
                     </div>
                     <div className="min-w-0">
                       <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
@@ -142,7 +185,7 @@ export default function AdminFeedbackPage() {
                   <div className="flex flex-col items-end flex-shrink-0 ml-2">
                     <span
                       className="text-xs font-bold uppercase"
-                      style={{ backgroundColor: colors.bg, color: colors.color, fontFamily: "Nunito, sans-serif", padding: "2px 10px", borderRadius: 50 }}
+                      style={{ backgroundColor: cs.badgeBg, color: cs.badgeText, fontFamily: "Nunito, sans-serif", padding: "2px 10px", borderRadius: 50 }}
                     >
                       {category}
                     </span>

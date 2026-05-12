@@ -24,6 +24,9 @@ interface AdminFeedType {
   id: string;
   type_name?: string;
   name?: string;
+  description?: string;
+  is_active?: boolean;
+  status?: string;
 }
 
 interface AdminFeedCategory {
@@ -32,6 +35,9 @@ interface AdminFeedCategory {
   name?: string;
   feed_type?: { id: string; type_name?: string } | string;
   feed_type_id?: string;
+  description?: string;
+  is_active?: boolean;
+  status?: string;
 }
 
 interface AdminFeed {
@@ -643,21 +649,48 @@ export default function AdminFeedsPage() {
                 <div className="flex items-center justify-center py-16">
                   <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No feed types found</p>
                 </div>
-              ) : feedTypes.map((ft) => (
-                <div key={ft.id} className="mx-3 my-2 rounded-2xl bg-white p-4 flex items-center justify-between" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-                  <p className="text-sm font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{getName(ft)}</p>
-                  <button
-                    onClick={() => setConfirmDeleteType(ft)}
-                    disabled={deletingTypeId === ft.id}
-                    className="flex items-center justify-center rounded-xl"
-                    style={{ width: 34, height: 34, backgroundColor: "#FEC5BB", border: "none", cursor: "pointer" }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M2 4h12M6 4V3h4v1M5 4v9h6V4H5Z" stroke="#E44A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              ))
+              ) : feedTypes.map((ft) => {
+                // Android layout: name + ACTIVE/INACTIVE badge | description | delete (top-right)
+                const isActive = ft.is_active !== false; // default true
+                return (
+                  <div key={ft.id} className="mx-3 my-2 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                        <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getName(ft)}</p>
+                        <span
+                          className="font-bold uppercase flex-shrink-0"
+                          style={{
+                            backgroundColor: isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.15)",
+                            color: isActive ? "#064E3B" : "#E44A4A",
+                            fontFamily: "Nunito, sans-serif",
+                            fontSize: 10,
+                            padding: "2px 10px",
+                            borderRadius: 60,
+                          }}
+                        >
+                          {isActive ? "ACTIVE" : "INACTIVE"}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => setConfirmDeleteType(ft)}
+                        disabled={deletingTypeId === ft.id}
+                        className="flex items-center justify-center flex-shrink-0"
+                        style={{ width: 38, height: 38, backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, cursor: "pointer" }}
+                        aria-label="Delete type"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" stroke="#FC2E20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    </div>
+                    {ft.description && (
+                      <p className="mt-2" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                        {ft.description}
+                      </p>
+                    )}
+                  </div>
+                );
+              })
             )}
           </div>
         </>
@@ -672,28 +705,55 @@ export default function AdminFeedsPage() {
                 <div className="flex items-center justify-center py-16">
                   <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No categories found</p>
                 </div>
-              ) : feedCategories.map((fc) => (
-                <div key={fc.id} className="mx-3 my-2 rounded-2xl bg-white p-4 flex items-center justify-between" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{getCatName(fc)}</p>
-                    {getFeedTypeName(fc) && (
-                      <span className="text-xs px-2 py-0.5 rounded-full mt-1 inline-block" style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-                        {getFeedTypeName(fc)}
+              ) : feedCategories.map((fc) => {
+                // Android layout_item_feed_category.xml: name + status | TYPE (uppercase green) | description | delete (bottom-right)
+                const isActive = fc.is_active !== false;
+                return (
+                  <div key={fc.id} className="mx-3 my-2 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-bold flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getCatName(fc)}</p>
+                      <span
+                        className="font-bold uppercase flex-shrink-0"
+                        style={{
+                          backgroundColor: isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.15)",
+                          color: isActive ? "#064E3B" : "#E44A4A",
+                          fontFamily: "Nunito, sans-serif",
+                          fontSize: 10,
+                          padding: "2px 10px",
+                          borderRadius: 60,
+                          marginTop: 4,
+                        }}
+                      >
+                        {isActive ? "ACTIVE" : "INACTIVE"}
                       </span>
+                    </div>
+                    {getFeedTypeName(fc) && (
+                      <p
+                        className="uppercase tracking-wide mt-2"
+                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+                      >
+                        {getFeedTypeName(fc)}
+                      </p>
                     )}
+                    <div className="flex items-end justify-between gap-3 mt-2">
+                      <p className="flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                        {fc.description ?? ""}
+                      </p>
+                      <button
+                        onClick={() => setConfirmDeleteCat(fc)}
+                        disabled={deletingCatId === fc.id}
+                        className="flex items-center justify-center flex-shrink-0"
+                        style={{ width: 38, height: 38, backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, cursor: "pointer" }}
+                        aria-label="Delete category"
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" stroke="#FC2E20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setConfirmDeleteCat(fc)}
-                    disabled={deletingCatId === fc.id}
-                    className="flex items-center justify-center rounded-xl"
-                    style={{ width: 34, height: 34, backgroundColor: "#FEC5BB", border: "none", cursor: "pointer" }}
-                  >
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                      <path d="M2 4h12M6 4V3h4v1M5 4v9h6V4H5Z" stroke="#E44A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </button>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
         </>
