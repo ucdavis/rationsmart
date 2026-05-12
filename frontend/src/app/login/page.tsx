@@ -116,7 +116,6 @@ export default function LoginPage() {
             type="email"
             inputMode="email"
             autoComplete="email"
-            placeholder="your@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
@@ -271,7 +270,7 @@ export default function LoginPage() {
                   color: "#231F20",
                   fontFamily: "Nunito, sans-serif",
                 }}
-                autoFocus
+                aria-label="Email address"
               />
             </div>
 

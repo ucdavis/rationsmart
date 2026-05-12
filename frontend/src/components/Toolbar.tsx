@@ -55,8 +55,15 @@ export default function Toolbar({
 
       {/* Title */}
       <h1
-        className="flex-1 text-center text-base font-bold"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+        className="flex-1 text-center"
+        style={{
+          color: "#042F23",
+          fontFamily: "Nunito, sans-serif",
+          fontSize: 16,
+          fontWeight: 700,
+          margin: 0,
+          letterSpacing: 0,
+        }}
       >
         {title}
       </h1>

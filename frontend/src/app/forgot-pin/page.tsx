@@ -59,8 +59,15 @@ export default function ForgotPinPage() {
           <IcBack size={20} color="#064E3B" />
         </button>
         <h1
-          className="flex-1 text-center text-base font-bold"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          className="flex-1 text-center"
+          style={{
+            color: "#042F23",
+            fontFamily: "Nunito, sans-serif",
+            fontSize: 16,
+            fontWeight: 700,
+            margin: 0,
+            letterSpacing: 0,
+          }}
         >
           Reset PIN
         </h1>
@@ -133,7 +140,6 @@ export default function ForgotPinPage() {
             <input
               type="email"
               inputMode="email"
-              placeholder="your@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
