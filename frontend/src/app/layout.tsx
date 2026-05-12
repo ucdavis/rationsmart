@@ -62,6 +62,13 @@ export default function RootLayout({
           padding: 0,
         }}
       >
+        {/* Runs synchronously before first paint — hides page on non-splash URLs
+            so the user never sees a flash of the wrong page on cold launch. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `if(location.pathname!=='/')document.body.style.visibility='hidden';`,
+          }}
+        />
         <div
           style={{
             maxWidth: 430,

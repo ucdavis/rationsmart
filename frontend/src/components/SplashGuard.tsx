@@ -16,7 +16,7 @@ export default function SplashGuard() {
     const fromSameOrigin = document.referrer.startsWith(window.location.origin);
     if (nav?.type === "navigate" && fromSameOrigin) return;
     // Fresh start (reload or cold launch from outside) — show splash, not the last page
-    document.body.style.visibility = "hidden";
+    // body is already hidden by the inline script in layout.tsx (runs before first paint)
     router.replace("/");
   }, []);
 
