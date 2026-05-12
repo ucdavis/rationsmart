@@ -83,13 +83,13 @@ export default function AdminUsersPage() {
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
       <Toolbar type="back" title="User Management" onBack={() => router.back()} />
 
-      {/* Stats card */}
+      {/* Stats card — TOTAL USERS uppercase, matches Android cv_aggregated_view */}
       <div
         className="mx-3 mt-5 bg-white flex items-center justify-between px-3 py-5"
         style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
       >
         <div>
-          <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Total Users</p>
+          <p className="uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Total Users</p>
           <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
             {formatTotalUsers(total)}
           </p>
@@ -98,49 +98,23 @@ export default function AdminUsersPage() {
           className="flex items-center justify-center"
           style={{ width: 48, height: 48, backgroundColor: "#E8F5E9", borderRadius: 16 }}
         >
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <circle cx="9" cy="7" r="4" stroke="#064E3B" strokeWidth="2" />
-            <path d="M2 21c0-4 3.134-7 7-7s7 3 7 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
-            <path d="M16 11c2.21 0 4 1.79 4 4M22 21c0-2.21-1.79-4-4-4" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+          {/* Filled people icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+            <circle cx="9" cy="7" r="4" />
+            <path d="M2 21c0-4 3.134-7 7-7s7 3 7 7H2z" />
+            <circle cx="17" cy="8.5" r="3" />
+            <path d="M14 14c4 0 8 2.5 8 6h-5c0-2.2-1.6-4-3-6z" />
           </svg>
         </div>
       </div>
 
-      {/* Search + filter row */}
-      <div className="flex gap-2 px-3 pt-3 pb-1">
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              load(e.target.value, statusFilter);
-            }}
-            placeholder="Search by name or email..."
-            className="w-full rounded-2xl px-4 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-            style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-          />
-        </div>
-        <div className="relative">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              const v = e.target.value as "" | "active" | "inactive";
-              setStatusFilter(v);
-              load(search, v);
-            }}
-            className="rounded-2xl px-3 py-2.5 text-sm border-none focus:outline-none appearance-none pr-8"
-            style={{ backgroundColor: "#064E3B", color: "white", fontFamily: "Nunito, sans-serif", fontWeight: 700, cursor: "pointer" }}
-          >
-            <option value="">All</option>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="white" strokeWidth="1.5" strokeLinecap="round" /></svg>
-          </div>
-        </div>
-      </div>
+      {/* "Users" section heading (matches Android tv_title_users) */}
+      <p
+        className="font-bold ml-3 mt-4"
+        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+      >
+        Users
+      </p>
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {isLoading ? (
@@ -159,26 +133,27 @@ export default function AdminUsersPage() {
           users.map((u) => (
             <div
               key={u.id}
-              className="mx-3 my-2 bg-white overflow-hidden"
-              style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", cursor: "pointer", paddingBottom: 12 }}
+              className="mx-3 my-2 bg-white"
+              style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", cursor: "pointer", paddingBottom: 14 }}
               onClick={() => setSelectedUser(u)}
             >
-              {/* Top row: icon pill + role label + status badge */}
-              <div className="flex items-center justify-between" style={{ padding: "12px 12px 0" }}>
-                <div className="flex items-center gap-2.5">
+              {/* Top row: rounded-square avatar + ROLE label | status badge top-right */}
+              <div className="flex items-start justify-between gap-3" style={{ padding: "12px 12px 0" }}>
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  {/* Rounded-square avatar pill — matches Android cv_role */}
                   <div
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: "#E8F5E9", borderRadius: 16, padding: 10 }}
                   >
                     {u.is_admin ? (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <path d="M12 2L3 7l9 5 9-5-9-5z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
-                        <path d="M3 17l9 5 9-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                        <path d="M3 12l9 5 9-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
+                        <path d="M12 2L3 7l9 5 9-5-9-5z" />
+                        <path d="M3 17l9 5 9-5-1.5-0.83L12 20.17 4.5 16.17 3 17z" />
+                        <path d="M3 12l9 5 9-5-1.5-0.83L12 15.17 4.5 11.17 3 12z" />
                       </svg>
                     ) : (
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="8" r="4" stroke="#064E3B" strokeWidth="1.8" />
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
+                        <circle cx="12" cy="8" r="4" />
                         <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
                     )}
@@ -207,22 +182,31 @@ export default function AdminUsersPage() {
                   {togglingId === u.id ? "..." : u.is_active ? "ACTIVE" : "INACTIVE"}
                 </button>
               </div>
-              {/* Name */}
-              <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "8px 12px 0" }}>
+              {/* Name — aligned with avatar (12 + 36 avatar + 12 gap = 60 left, OR start under avatar at 12) */}
+              <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "4px 12px 0 64px" }}>
                 {u.name}
               </p>
-              {/* Email — plain text (matches Android screenshot) */}
-              <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif", margin: "2px 12px 0" }}>
-                {u.email_id}
-              </p>
-              {/* Country — green pill badge (matches Android screenshot) */}
-              {getCountryName(u.country) && (
-                <span
-                  className="inline-block font-bold"
-                  style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12, padding: "2px 10px", borderRadius: 50, margin: "6px 12px 0" }}
-                >
-                  {getCountryName(u.country)}
+              {/* Email row — envelope icon prefix */}
+              <div className="flex items-center gap-1.5" style={{ margin: "8px 12px 0 64px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#6D6D6D" strokeWidth="1.8" />
+                  <path d="M3 7l9 6 9-6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <span className="truncate" style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                  {u.email_id}
                 </span>
+              </div>
+              {/* Country row — location pin icon prefix */}
+              {getCountryName(u.country) && (
+                <div className="flex items-center gap-1.5" style={{ margin: "4px 12px 0 64px" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <path d="M12 22s7-7.58 7-12a7 7 0 0 0-14 0c0 4.42 7 12 7 12z" stroke="#6D6D6D" strokeWidth="1.8" strokeLinejoin="round" />
+                    <circle cx="12" cy="10" r="2.5" stroke="#6D6D6D" strokeWidth="1.8" />
+                  </svg>
+                  <span style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                    {getCountryName(u.country)}
+                  </span>
+                </div>
               )}
             </div>
           ))
