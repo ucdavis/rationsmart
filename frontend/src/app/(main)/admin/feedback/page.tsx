@@ -77,17 +77,22 @@ export default function AdminFeedbackPage() {
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {/* Stats cards */}
         {stats && (
-          <div className="flex gap-3 mx-2.5 mt-4 mb-2">
-            <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-              <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Total Feedbacks</p>
-              <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{stats.total_feedbacks ?? feedbacks.length}</p>
+          <>
+            <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "14px 10px 0" }}>Aggregated Insights</p>
+            <div className="flex gap-3 mx-2.5 mt-4 mb-2">
+              <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+                <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Total Feedbacks</p>
+                <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{stats.total_feedbacks ?? feedbacks.length}</p>
+              </div>
+              <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+                <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Overall Rating</p>
+                <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(1) ?? "—"}</p>
+              </div>
             </div>
-            <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-              <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Overall Rating</p>
-              <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(1) ?? "—"}</p>
-            </div>
-          </div>
+          </>
         )}
+
+        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "10px 12px 4px" }}>Feedbacks</p>
 
         {isLoading ? (
           [0,1,2].map((i) => (
@@ -103,32 +108,59 @@ export default function AdminFeedbackPage() {
           </div>
         ) : (
           feedbacks.map((fb) => {
-            const category = fb.feedback_type ?? "";
+            const category = fb.feedback_type ?? "General";
             const colors = categoryBadge(category);
             return (
               <div
                 key={fb.id}
-                className="mx-3 my-2 rounded-2xl bg-white p-4"
-                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+                className="mx-3 my-2 bg-white"
+                style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", paddingBottom: 12 }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span
-                    className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ backgroundColor: colors.bg, color: colors.color, fontFamily: "Nunito, sans-serif" }}
-                  >
-                    {category || "General"}
-                  </span>
-                  <StarRow rating={fb.overall_rating ?? 0} />
+                {/* Top row: icon pill + name/email LEFT | category badge + stars RIGHT */}
+                <div className="flex items-start justify-between" style={{ padding: "12px 12px 0" }}>
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div
+                      className="flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: colors.bg, borderRadius: 16, padding: 10 }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke={colors.color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                        {fb.user_name ?? fb.user_email ?? "Unknown"}
+                      </p>
+                      {fb.user_email && fb.user_name && (
+                        <p className="truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                          {fb.user_email}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end flex-shrink-0 ml-2">
+                    <span
+                      className="text-xs font-bold uppercase"
+                      style={{ backgroundColor: colors.bg, color: colors.color, fontFamily: "Nunito, sans-serif", padding: "2px 10px", borderRadius: 50 }}
+                    >
+                      {category}
+                    </span>
+                    <div className="mt-1">
+                      <StarRow rating={fb.overall_rating ?? 0} />
+                    </div>
+                  </div>
                 </div>
-                {(fb.user_name || fb.user_email) && (
-                  <p className="text-xs mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-                    {fb.user_name ?? fb.user_email}
+                {/* Feedback text */}
+                {fb.text_feedback && (
+                  <p
+                    className="text-sm"
+                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", margin: "14px 12px 0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}
+                  >
+                    {fb.text_feedback}
                   </p>
                 )}
-                <p className="text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                  {fb.text_feedback ?? ""}
-                </p>
-                <p className="text-xs mt-2" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
+                {/* Date */}
+                <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, margin: "10px 12px 0" }}>
                   {toFeedReportDisplayDate(fb.created_at)}
                 </p>
               </div>

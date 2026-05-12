@@ -660,16 +660,17 @@ export default function CattleInfoPage() {
 
             {/* Active Grazing toggle */}
             <div
-              className="flex items-center justify-between rounded-2xl px-4 py-3 mt-4"
+              className="flex items-center justify-between px-4 py-3 mt-4"
               style={{
                 backgroundColor: "#F0FDF4",
-                border: "1.5px solid rgba(5,188,109,0.15)",
+                border: "1px solid rgba(5,188,109,0.15)",
+                borderRadius: 20,
               }}
             >
               <div className="flex items-center gap-2.5">
                 <IcActiveGrazing size={22} color="#064E3B" />
                 <span
-                  className="text-sm font-bold"
+                  className="text-base font-bold"
                   style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
                 >
                   Active Grazing
@@ -711,7 +712,7 @@ export default function CattleInfoPage() {
                           width: 20,
                           height: 20,
                           borderRadius: "50%",
-                          border: `2px solid ${form.topography === opt ? "#1CA069" : "#E2E8F0"}`,
+                          border: `2px solid ${form.topography === opt ? "#064E3B" : "#E2E8F0"}`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
@@ -724,7 +725,7 @@ export default function CattleInfoPage() {
                               width: 10,
                               height: 10,
                               borderRadius: "50%",
-                              backgroundColor: "#1CA069",
+                              backgroundColor: "#064E3B",
                             }}
                           />
                         )}

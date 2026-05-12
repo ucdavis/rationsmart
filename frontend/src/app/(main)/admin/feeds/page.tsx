@@ -528,57 +528,46 @@ export default function AdminFeedsPage() {
               filteredFeeds.map((f, idx) => (
                 <div
                   key={f.feed_id ?? idx}
-                  className="mx-3 my-2 rounded-2xl bg-white p-4"
-                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+                  className="mx-3 my-2 bg-white"
+                  style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", padding: 16 }}
                 >
                   <div className="flex items-start justify-between">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+                    <div className="flex-1 min-w-0" style={{ marginRight: 10 }}>
+                      <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>
                         {f.fd_name || "—"}
                       </p>
-                      <div className="flex gap-2 mt-1.5 flex-wrap">
-                        {f.fd_type && (
-                          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-                            {f.fd_type}
-                          </span>
-                        )}
-                        {f.fd_category && (
-                          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-                            {f.fd_category}
-                          </span>
-                        )}
-                        {f.fd_country_name && (
-                          <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#FFF8E1", color: "#F57F17", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-                            {f.fd_country_name}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex gap-4 mt-2 flex-wrap">
-                        {f.fd_dm != null && <span className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>DM: {f.fd_dm}%</span>}
-                        {f.fd_cp != null && <span className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>CP: {f.fd_cp}%</span>}
-                        {f.fd_ee != null && <span className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>EE: {f.fd_ee}%</span>}
-                      </div>
+                      {f.fd_category && (
+                        <p className="font-bold uppercase" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>
+                          {f.fd_category}
+                        </p>
+                      )}
+                      {f.fd_type && (
+                        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 10 }}>
+                          {f.fd_type}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex gap-2 ml-2">
+                    <div className="flex gap-2 flex-shrink-0">
                       <button
                         onClick={() => openEditFeed(f)}
-                        className="flex items-center justify-center rounded-xl"
-                        style={{ width: 34, height: 34, backgroundColor: "#F0FDF4", border: "none", cursor: "pointer" }}
+                        className="flex items-center justify-center"
+                        style={{ borderRadius: 60, backgroundColor: "rgba(5,188,109,0.15)", padding: 10, border: "none", cursor: "pointer" }}
                         aria-label="Edit feed"
                       >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M11 2L14 5L5 14H2V11L11 2Z" stroke="#064E3B" strokeWidth="1.6" strokeLinejoin="round" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                       <button
                         onClick={() => setConfirmDeleteFeed(f)}
                         disabled={deletingFeedId === f.feed_id}
-                        className="flex items-center justify-center rounded-xl"
-                        style={{ width: 34, height: 34, backgroundColor: "#FEC5BB", border: "none", cursor: "pointer" }}
+                        className="flex items-center justify-center"
+                        style={{ borderRadius: 60, backgroundColor: "rgba(228,74,74,0.2)", padding: 10, border: "none", cursor: "pointer" }}
                         aria-label="Delete feed"
                       >
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M2 4h12M6 4V3h4v1M5 4v9h6V4H5Z" stroke="#E44A4A" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#E44A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                         </svg>
                       </button>
                     </div>
@@ -919,15 +908,27 @@ export default function AdminFeedsPage() {
       {/* ══ CONFIRM DELETE FEED ══ */}
       {confirmDeleteFeed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-xs" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <h3 className="text-base font-bold mb-2" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Delete Feed?</h3>
-            <p className="text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              &quot;{confirmDeleteFeed.fd_name}&quot; will be permanently deleted.
+          <div className="bg-white rounded-2xl w-full max-w-xs pb-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+            <div className="flex justify-center mt-7 mb-4">
+              <div className="flex items-center justify-center" style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#FC2E20" strokeWidth="2"/>
+                  <path d="M12 7v5M12 16v1" stroke="#FC2E20" strokeWidth="2.2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-center font-bold mb-4 px-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Are you sure you want to delete feed?</h3>
+            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              &quot;{confirmDeleteFeed.fd_name}&quot; will be permanently deleted. This action cannot be undone.
             </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteFeed(null)} className="flex-1 py-3 rounded-xl font-bold" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>Cancel</button>
-              <button onClick={() => handleDeleteFeed(confirmDeleteFeed)} className="flex-1 py-3 rounded-xl font-bold" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>
-                {deletingFeedId === confirmDeleteFeed.feed_id ? "Deleting..." : "Delete"}
+            <div className="flex gap-2 px-3">
+              <button onClick={() => setConfirmDeleteFeed(null)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#064E3B" strokeWidth="2" strokeLinecap="round"/></svg>
+                No
+              </button>
+              <button onClick={() => handleDeleteFeed(confirmDeleteFeed)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {deletingFeedId === confirmDeleteFeed.feed_id ? "Deleting..." : "Yes"}
               </button>
             </div>
           </div>
@@ -937,15 +938,27 @@ export default function AdminFeedsPage() {
       {/* ══ CONFIRM DELETE TYPE ══ */}
       {confirmDeleteType && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-xs" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <h3 className="text-base font-bold mb-2" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Delete Type?</h3>
-            <p className="text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              &quot;{getName(confirmDeleteType)}&quot; will be permanently deleted.
+          <div className="bg-white rounded-2xl w-full max-w-xs pb-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+            <div className="flex justify-center mt-7 mb-4">
+              <div className="flex items-center justify-center" style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#FC2E20" strokeWidth="2"/>
+                  <path d="M12 7v5M12 16v1" stroke="#FC2E20" strokeWidth="2.2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Are you sure you want to delete type?</h3>
+            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              &quot;{getName(confirmDeleteType)}&quot; will be permanently deleted. This action cannot be undone.
             </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteType(null)} className="flex-1 py-3 rounded-xl font-bold" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>Cancel</button>
-              <button onClick={() => handleDeleteType(confirmDeleteType)} className="flex-1 py-3 rounded-xl font-bold" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>
-                {deletingTypeId === confirmDeleteType.id ? "Deleting..." : "Delete"}
+            <div className="flex gap-2 px-3">
+              <button onClick={() => setConfirmDeleteType(null)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#064E3B" strokeWidth="2" strokeLinecap="round"/></svg>
+                No
+              </button>
+              <button onClick={() => handleDeleteType(confirmDeleteType)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {deletingTypeId === confirmDeleteType.id ? "Deleting..." : "Yes"}
               </button>
             </div>
           </div>
@@ -955,15 +968,27 @@ export default function AdminFeedsPage() {
       {/* ══ CONFIRM DELETE CATEGORY ══ */}
       {confirmDeleteCat && (
         <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-xs" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <h3 className="text-base font-bold mb-2" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Delete Category?</h3>
-            <p className="text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              &quot;{getCatName(confirmDeleteCat)}&quot; will be permanently deleted.
+          <div className="bg-white rounded-2xl w-full max-w-xs pb-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
+            <div className="flex justify-center mt-7 mb-4">
+              <div className="flex items-center justify-center" style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#FC2E20" strokeWidth="2"/>
+                  <path d="M12 7v5M12 16v1" stroke="#FC2E20" strokeWidth="2.2" strokeLinecap="round"/>
+                </svg>
+              </div>
+            </div>
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Are you sure you want to delete category?</h3>
+            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              &quot;{getCatName(confirmDeleteCat)}&quot; will be permanently deleted. This action cannot be undone.
             </p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteCat(null)} className="flex-1 py-3 rounded-xl font-bold" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>Cancel</button>
-              <button onClick={() => handleDeleteCategory(confirmDeleteCat)} className="flex-1 py-3 rounded-xl font-bold" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>
-                {deletingCatId === confirmDeleteCat.id ? "Deleting..." : "Delete"}
+            <div className="flex gap-2 px-3">
+              <button onClick={() => setConfirmDeleteCat(null)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#064E3B" strokeWidth="2" strokeLinecap="round"/></svg>
+                No
+              </button>
+              <button onClick={() => handleDeleteCategory(confirmDeleteCat)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                {deletingCatId === confirmDeleteCat.id ? "Deleting..." : "Yes"}
               </button>
             </div>
           </div>

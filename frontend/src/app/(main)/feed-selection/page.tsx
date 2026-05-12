@@ -415,7 +415,7 @@ export default function FeedSelectionPage() {
                 width: 20,
                 height: 20,
                 borderRadius: "50%",
-                border: `2px solid ${feedSelectionType === mode ? "#1CA069" : "#E2E8F0"}`,
+                border: `2px solid ${feedSelectionType === mode ? "#064E3B" : "#E2E8F0"}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -428,7 +428,7 @@ export default function FeedSelectionPage() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    backgroundColor: "#1CA069",
+                    backgroundColor: "#064E3B",
                   }}
                 />
               )}
@@ -474,7 +474,7 @@ export default function FeedSelectionPage() {
             color: "#064E3B",
             fontFamily: "Nunito, sans-serif",
             fontWeight: 700,
-            fontSize: 14,
+            fontSize: 16,
             cursor: "pointer",
           }}
         >
