@@ -14,24 +14,25 @@ export default function InstallPrompt() {
   const [visible, setVisible] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
+  // Always capture the install event — Chrome fires it early at load time,
+  // before any navigation happens, so this must run unconditionally on mount.
   useEffect(() => {
-    // Don't show on splash screen or if already running as installed PWA
-    if (pathname === "/") return;
     if (window.matchMedia("(display-mode: standalone)").matches) return;
-
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallEvent(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", handler);
-
-    // Always show the banner after 1.5s
-    const t = setTimeout(() => setVisible(true), 1500);
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handler);
-      clearTimeout(t);
-    };
+    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
+
+  // Show the banner only after leaving the splash screen
+  useEffect(() => {
+    if (pathname === "/") return;
+    if (window.matchMedia("(display-mode: standalone)").matches) return;
+    const t = setTimeout(() => setVisible(true), 1500);
+    return () => clearTimeout(t);
+  }, [pathname]);
 
   const handleInstall = async () => {
     if (installEvent) {
