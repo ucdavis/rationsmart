@@ -116,7 +116,7 @@ export default function RootLayout({
             </p>
           </div>
           <div style={{ textAlign: "center" }}>
-            <p style={{ color: "#6D6D6D", fontSize: 12, margin: 0, fontFamily: "Nunito, sans-serif", letterSpacing: "0.05em" }}>
+            <p style={{ color: "#6D6D6D", fontSize: 14, margin: 0, fontFamily: "Nunito, sans-serif" }}>
               POWERED BY
             </p>
             <p

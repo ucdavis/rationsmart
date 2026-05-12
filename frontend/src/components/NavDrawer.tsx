@@ -184,31 +184,31 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               </div>
             </div>
             <h3
-              className="text-center font-bold mb-2"
+              className="text-center font-bold mb-2 mx-4"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Confirm Logout
+              Are you sure you want to logout?
             </h3>
             <p
-              className="text-center text-sm mb-5"
+              className="text-center text-sm mb-5 mx-4"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              Are you sure you want to logout?
+              You can always log back in to access you feed simulations.
             </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 rounded-full font-bold"
-                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-              >
-                No
-              </button>
+            <div className="flex flex-col gap-2.5">
               <button
                 onClick={handleLogout}
-                className="flex-1 py-3 rounded-full font-bold"
+                className="w-full py-3 rounded-full font-bold"
                 style={{ backgroundColor: "#064E3B", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
                 Yes, Logout
+              </button>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="w-full py-3 rounded-full font-bold"
+                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+              >
+                No
               </button>
             </div>
           </div>
