@@ -123,24 +123,33 @@ export default function ReportsPage() {
                         style={{
                           borderRadius: 60,
                           backgroundColor: "#E4F7EF",
-                          padding: "8px 12px",
+                          padding: "6px 6px 6px 14px",
                           border: "none",
                           cursor: "pointer",
                           color: "#064E3B",
                           fontFamily: "Nunito, sans-serif",
-                          fontSize: 12,
+                          fontSize: 13,
                         }}
                       >
                         View Report
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="#064E3B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
+                        {/* Filled green circle with white arrow (matches Android) */}
+                        <span
+                          className="flex items-center justify-center"
+                          style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: "#064E3B" }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                            <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
                       </button>
                     )}
                   </div>
 
                   {/* Simulation ID label + value */}
-                  <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 20, marginLeft: 10 }}>
+                  <p
+                    className="uppercase tracking-wide"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 20, marginLeft: 10 }}
+                  >
                     Simulation ID
                   </p>
                   <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "4px 10px 0 10px" }}>

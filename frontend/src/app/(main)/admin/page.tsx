@@ -18,12 +18,13 @@ interface AdminCard {
   icon: React.ReactNode;
 }
 
+// Titles use \n to render on 2 lines (matches Android string resources)
 const adminCards: AdminCard[] = [
-  { title: "User Management", href: "/admin/users", icon: <IcUserManagement size={28} color="#064E3B" /> },
-  { title: "Feed Management", href: "/admin/feeds", icon: <IcFeedManagement size={28} color="#064E3B" /> },
-  { title: "Feedback Management", href: "/admin/feedback", icon: <IcFeedbackManagement size={28} color="#064E3B" /> },
-  { title: "Bulk Upload", href: "/admin/bulk-upload", icon: <IcBulkUpload size={28} color="#064E3B" /> },
-  { title: "Feed Reports", href: "/admin/reports", icon: <IcReportNav size={28} color="#064E3B" /> },
+  { title: "User\nManagement", href: "/admin/users", icon: <IcUserManagement size={28} color="#064E3B" /> },
+  { title: "Feed\nManagement", href: "/admin/feeds", icon: <IcFeedManagement size={28} color="#064E3B" /> },
+  { title: "Feedback\nManagement", href: "/admin/feedback", icon: <IcFeedbackManagement size={28} color="#064E3B" /> },
+  { title: "Bulk Upload &\nExport Feed", href: "/admin/bulk-upload", icon: <IcBulkUpload size={28} color="#064E3B" /> },
+  { title: "Feed\nReports", href: "/admin/reports", icon: <IcReportNav size={28} color="#064E3B" /> },
 ];
 
 export default function AdminPage() {
@@ -69,6 +70,22 @@ export default function AdminPage() {
     >
       <Toolbar type="back" title="Admin" onBack={() => router.back()} />
 
+      {/* WELCOME / name greeting */}
+      <div className="px-3 mt-5">
+        <p
+          className="text-xs"
+          style={{ color: "#1B5E20", fontFamily: "Nunito, sans-serif", letterSpacing: "0.05em" }}
+        >
+          WELCOME
+        </p>
+        <p
+          className="font-bold"
+          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, marginTop: 2 }}
+        >
+          {user.name}
+        </p>
+      </div>
+
       <div className="px-3 mt-5 pb-8">
         {/* Grid of admin cards — 2 per row */}
         <div className="grid grid-cols-2 gap-3">
@@ -96,7 +113,7 @@ export default function AdminPage() {
               </div>
               <p
                 className="text-base font-bold text-left"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line", lineHeight: 1.25 }}
               >
                 {card.title}
               </p>

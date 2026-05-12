@@ -32,7 +32,6 @@ export default function ProfilePage() {
   const [isResettingPin, setIsResettingPin] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPinSheet, setShowPinSheet] = useState(false);
-  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string }>>([]);
@@ -95,12 +94,6 @@ export default function ProfilePage() {
     } finally {
       setIsDeleting(false);
     }
-  };
-
-  const handleLogout = () => {
-    setShowLogoutDialog(false);
-    logout();
-    router.replace("/welcome");
   };
 
   const handleResetPin = async () => {
@@ -170,18 +163,8 @@ export default function ProfilePage() {
             style={inputStyle()}
           />
 
-          {/* Email (read-only) */}
-          <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Email Address</p>
-          <input
-            type="email"
-            value={user.email}
-            readOnly
-            className="w-full rounded-2xl px-4 py-3.5 text-base border-none"
-            style={inputStyle(true)}
-          />
-
           {/* Country (editable dropdown) */}
-          <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country</p>
+          <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
           <select
             value={selectedCountryId}
             onChange={(e) => setSelectedCountryId(e.target.value)}
@@ -287,83 +270,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Logout */}
-        <div className="mx-3 mt-3">
-          <button
-            onClick={() => setShowLogoutDialog(true)}
-            className="w-full py-3.5 rounded-2xl font-bold text-base"
-            style={{
-              border: "2px solid #064E3B",
-              color: "#064E3B",
-              backgroundColor: "transparent",
-              fontFamily: "Nunito, sans-serif",
-              cursor: "pointer",
-            }}
-          >
-            Logout
-          </button>
-        </div>
       </div>
-
-      {/* Logout dialog */}
-      {showLogoutDialog && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div
-            className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
-          >
-            {/* Icon */}
-            <div className="flex justify-center mb-4">
-              <div
-                className="flex items-center justify-center"
-                style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(5,188,109,0.15)" }}
-              >
-                <div
-                  className="flex items-center justify-center"
-                  style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#FFFFFF" }}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <polyline points="16 17 21 12 16 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <line x1="21" y1="12" x2="9" y2="12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-            <h3
-              className="text-center font-bold mb-2 mx-4"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
-              Are you sure you want to logout?
-            </h3>
-            <p
-              className="text-center text-sm mb-5 mx-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
-              You can always log back in to access you feed simulations.
-            </p>
-            <div className="flex flex-col gap-2.5">
-              <button
-                onClick={handleLogout}
-                className="w-full py-3 rounded-full font-bold"
-                style={{ backgroundColor: "#064E3B", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-              >
-                Yes, Logout
-              </button>
-              <button
-                onClick={() => setShowLogoutDialog(false)}
-                className="w-full py-3 rounded-full font-bold"
-                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-              >
-                No
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Delete Account confirmation dialog */}
       {showDeleteDialog && (
