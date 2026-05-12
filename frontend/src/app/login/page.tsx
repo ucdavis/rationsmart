@@ -31,12 +31,19 @@ export default function LoginPage() {
     if (!isResetReady || isSendingReset) return;
     setIsSendingReset(true);
     try {
-      await resetPin(resetEmail.trim());
-      showSnackbar("Reset instructions sent to your email", "success");
+      const res = await resetPin(resetEmail.trim());
+      // Android shows backend's message via uiData.data.message.toStringOrNA()
+      const successMsg = (res.data as { message?: string })?.message;
+      if (successMsg) showSnackbar(successMsg, "success");
       setShowResetSheet(false);
       setResetEmail("");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to send reset email";
+      // Android fallback for non-404, non-network errors
+      const message = err instanceof Error && err.message && err.message !== "Network Error"
+        ? err.message
+        : err instanceof Error && err.message === "Network Error"
+          ? "Please make sure you're device has internet connectivity."
+          : "Unexpected error: failed to generate PIN. Please, try again!";
       showSnackbar(message, "error");
     } finally {
       setIsSendingReset(false);
@@ -82,10 +89,17 @@ export default function LoginPage() {
         pin: pin,
         is_admin,
       });
-      showSnackbar("Welcome back!", "success");
+      // Android shows backend's message via `uiData.data.message.toStringOrNA()`
+      const successMsg = (res.data as { message?: string })?.message;
+      if (successMsg) showSnackbar(successMsg, "success");
       router.replace("/cattle-info");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Login failed";
+      // Android fallback when not a 401/detail error
+      const message = err instanceof Error && err.message && err.message !== "Network Error"
+        ? err.message
+        : err instanceof Error && err.message === "Network Error"
+          ? "Please make sure you're device has internet connectivity."
+          : "Unexpected error: failed to login. Please, try again!";
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);

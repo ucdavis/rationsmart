@@ -23,11 +23,17 @@ export default function ForgotPinPage() {
     if (!isReady || isLoading) return;
     setIsLoading(true);
     try {
-      await resetPin(email.trim());
+      const res = await resetPin(email.trim());
       setSent(true);
-      showSnackbar("Reset instructions sent to your email", "success");
+      const successMsg = (res.data as { message?: string })?.message;
+      if (successMsg) showSnackbar(successMsg, "success");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to send reset email";
+      // Android fallback for non-404, non-network errors
+      const message = err instanceof Error && err.message && err.message !== "Network Error"
+        ? err.message
+        : err instanceof Error && err.message === "Network Error"
+          ? "Please make sure you're device has internet connectivity."
+          : "Unexpected error: failed to generate PIN. Please, try again!";
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
