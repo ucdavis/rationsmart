@@ -11,6 +11,11 @@ export default function SplashScreen() {
   const user = useStore((s) => s.user);
 
   useEffect(() => {
+    // Restore visibility — SplashGuard may have hidden the body to prevent flash
+    document.body.style.visibility = "visible";
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       if (user) {
         router.replace("/cattle-info");

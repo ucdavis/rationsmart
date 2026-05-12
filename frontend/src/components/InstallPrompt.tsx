@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -8,12 +9,14 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export default function InstallPrompt() {
+  const pathname = usePathname();
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [visible, setVisible] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
 
   useEffect(() => {
-    // Don't show if already running as installed PWA
+    // Don't show on splash screen or if already running as installed PWA
+    if (pathname === "/") return;
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
     const handler = (e: Event) => {
