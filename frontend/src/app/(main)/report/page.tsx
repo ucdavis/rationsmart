@@ -573,7 +573,7 @@ export default function ReportPage() {
               setFeedSelectionType("recommendation");
               router.push("/feed-selection");
             }}
-            className="w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-1.5 mb-3"
+            className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5 mb-3"
             style={{
               backgroundColor: "#064E3B",
               color: "white",
@@ -609,7 +609,7 @@ export default function ReportPage() {
         <div className="flex gap-3">
           <button
             onClick={() => router.push("/cattle-info")}
-            className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-1.5"
+            className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
             style={{
               border: "2px solid #064E3B",
               color: "#064E3B",
@@ -624,7 +624,7 @@ export default function ReportPage() {
           <button
             onClick={handleSave}
             disabled={isSaving || !reportIdForSave}
-            className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-1.5"
+            className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
             style={{
               backgroundColor: isSaving || !reportIdForSave ? "#D3D3D3" : "#064E3B",
               color: isSaving || !reportIdForSave ? "#999999" : "white",

@@ -211,7 +211,7 @@ export default function ProfilePage() {
           <button
             onClick={handleResetPin}
             disabled={isResettingPin}
-            className="w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+            className="w-full py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
               color: isResettingPin ? "#999999" : "#296CD3",
@@ -235,7 +235,7 @@ export default function ProfilePage() {
         <div className="mx-3 mt-3">
           <button
             onClick={() => setShowDeleteDialog(true)}
-            className="w-full py-3.5 rounded-2xl font-bold text-sm"
+            className="w-full py-3.5 rounded-2xl font-bold text-base"
             style={{
               border: "2px solid #E44A4A",
               color: "#E44A4A",
@@ -252,7 +252,7 @@ export default function ProfilePage() {
         <div className="mx-3 mt-3">
           <button
             onClick={() => setShowLogoutDialog(true)}
-            className="w-full py-3.5 rounded-2xl font-bold text-sm"
+            className="w-full py-3.5 rounded-2xl font-bold text-base"
             style={{
               border: "2px solid #064E3B",
               color: "#064E3B",

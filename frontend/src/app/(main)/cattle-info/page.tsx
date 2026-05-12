@@ -143,7 +143,7 @@ function SelectInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark pr-9 appearance-none"
+        className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark pr-9 appearance-none"
         style={{ ...inputStyle, color: value ? "#231F20" : "#999999", opacity: disabled ? 0.55 : 1 }}
       >
         {placeholder && <option value="">{placeholder}</option>}
@@ -488,7 +488,7 @@ export default function CattleInfoPage() {
               value={form.simulation_name}
               onChange={(e) => set("simulation_name")(e.target.value)}
               placeholder="e.g. July Trial"
-              className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={inputStyle}
             />
 
@@ -525,7 +525,7 @@ export default function CattleInfoPage() {
                   value={form.body_weight}
                   onChange={(e) => handleBodyWeight(e.target.value)}
                   placeholder="350–720"
-                  className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={{ ...inputStyle, borderColor: errors.body_weight ? "#E44A4A" : undefined }}
                 />
                 <FieldError message={errors.body_weight} />
@@ -538,7 +538,7 @@ export default function CattleInfoPage() {
                   value={form.body_weight_gain}
                   onChange={(e) => handleBWGain(e.target.value)}
                   placeholder="0–1.8"
-                  className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
                 <FieldError message={errors.body_weight_gain} />
@@ -554,7 +554,7 @@ export default function CattleInfoPage() {
                   value={form.body_condition_score}
                   onChange={(e) => handleBCS(e.target.value)}
                   placeholder="1–5"
-                  className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
                 <FieldError message={errors.body_condition_score} />
@@ -567,7 +567,7 @@ export default function CattleInfoPage() {
                   value={form.days_in_milk}
                   onChange={(e) => handleDaysInMilk(e.target.value)}
                   placeholder="0–400"
-                  className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
                 <FieldError message={errors.days_in_milk} />
@@ -588,7 +588,7 @@ export default function CattleInfoPage() {
                   value={form.days_of_pregnancy}
                   onChange={(e) => handleDaysOfPregnancy(e.target.value)}
                   placeholder="0–280"
-                  className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
                 <FieldError message={errors.days_of_pregnancy} />
@@ -616,7 +616,7 @@ export default function CattleInfoPage() {
               value={form.milk_production}
               onChange={(e) => handleMilkProduction(e.target.value)}
               placeholder="1–59"
-              className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={inputStyle}
             />
             <FieldError message={errors.milk_production} />
@@ -654,7 +654,7 @@ export default function CattleInfoPage() {
               value={form.average_temperature}
               onChange={(e) => handleAvgTemp(e.target.value)}
               placeholder="e.g. 28"
-              className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={inputStyle}
             />
 
@@ -696,17 +696,6 @@ export default function CattleInfoPage() {
             {/* Distance Walked + Topography — shown only when grazing is ON */}
             {form.grazing && (
               <>
-                <FieldLabel>Distance Walked (km)</FieldLabel>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={form.distance_walked}
-                  onChange={(e) => handleDistanceWalked(e.target.value)}
-                  placeholder="e.g. 2.5"
-                  className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={inputStyle}
-                />
-
                 <FieldLabel>Topography</FieldLabel>
                 <div className="flex gap-6 mt-1 ml-1">
                   {(["Flat", "Hilly"] as const).map((opt) => (
@@ -753,6 +742,17 @@ export default function CattleInfoPage() {
                     </button>
                   ))}
                 </div>
+
+                <FieldLabel>Distance Walked (km)</FieldLabel>
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  value={form.distance_walked}
+                  onChange={(e) => handleDistanceWalked(e.target.value)}
+                  placeholder="e.g. 2.5"
+                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                  style={inputStyle}
+                />
               </>
             )}
           </div>
@@ -776,7 +776,7 @@ export default function CattleInfoPage() {
       >
         <button
           onClick={handleReset}
-          className="py-3.5 rounded-2xl font-bold text-sm"
+          className="py-3.5 rounded-2xl font-bold text-base"
           style={{
             border: "2px solid #064E3B",
             color: "#064E3B",
@@ -793,7 +793,7 @@ export default function CattleInfoPage() {
         <button
           onClick={handleContinue}
           disabled={!requiredFilled}
-          className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-1.5"
+          className="flex-1 py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-1.5"
           style={{
             backgroundColor: requiredFilled ? "#064E3B" : "#D3D3D3",
             color: requiredFilled ? "#FFFFFF" : "#999999",

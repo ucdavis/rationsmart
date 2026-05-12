@@ -9,7 +9,6 @@ import { IcDelete } from "@/components/Icons";
 
 interface FeedType { id: number; name: string; }
 interface FeedCategory { id: number; name: string; }
-// Matches actual API response from /feed-name/
 interface FeedSubCategoryItem { feed_name: string; feed_uuid: string; }
 
 interface FeedRowProps {
@@ -22,24 +21,52 @@ interface FeedRowProps {
   onDelete: (id: string) => void;
 }
 
-const sel = {
+const selStyle = {
   backgroundColor: "#F1F5F9",
   color: "#231F20",
   fontFamily: "Nunito, sans-serif",
+  borderRadius: 16,
+  border: "none",
+  width: "100%",
+  fontSize: 14,
+  padding: "10px 32px 10px 12px",
+  appearance: "none" as const,
+  WebkitAppearance: "none" as const,
+  outline: "none",
+  minHeight: 48,
 };
 
-function RowLabel({ children }: { children: React.ReactNode }) {
+const inputStyle = {
+  backgroundColor: "#F1F5F9",
+  color: "#231F20",
+  fontFamily: "Nunito, sans-serif",
+  borderRadius: 16,
+  border: "none",
+  width: "100%",
+  fontSize: 14,
+  padding: "10px 12px",
+  outline: "none",
+  minHeight: 48,
+  boxSizing: "border-box" as const,
+};
+
+function ColLabel({ children }: { children: React.ReactNode }) {
   return (
-    <p
-      className="text-xs font-bold uppercase tracking-wide mb-1.5"
-      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-    >
+    <p style={{
+      color: "#6D6D6D",
+      fontFamily: "Nunito, sans-serif",
+      fontSize: 11,
+      fontWeight: 700,
+      margin: "0 0 4px 2px",
+      textTransform: "uppercase",
+      letterSpacing: "0.03em",
+    }}>
       {children}
     </p>
   );
 }
 
-function RowSelect({
+function ColSelect({
   value,
   onChange,
   disabled,
@@ -53,19 +80,23 @@ function RowSelect({
   placeholder: string;
 }) {
   return (
-    <div className="relative">
+    <div style={{ position: "relative" }}>
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none pr-9"
-        style={{ ...sel, color: value ? "#231F20" : "#999999", opacity: disabled ? 0.5 : 1 }}
+        style={{
+          ...selStyle,
+          color: value ? "#231F20" : "#9CA3AF",
+          opacity: disabled ? 0.5 : 1,
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
       >
         <option value="">{placeholder}</option>
         {children}
       </select>
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
           <path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
@@ -97,12 +128,10 @@ export default function FeedRow({
     if (!user?.country_id || !user?.id) return;
     getFeedTypes(user.country_id, user.id)
       .then((res) => {
-        // API returns List<String> (feed type names)
         const data = res.data;
         const names: string[] = Array.isArray(data) ? data : [];
         const types = names.map((n, i) => ({ id: i + 1, name: n }));
         setFeedTypes(types);
-        // Auto-select Forage for the first feed card (matches Android FeedViewModel default)
         if (index === 0 && !item.feed_type_name) {
           const forage = types.find((t) => t.name === "Forage");
           if (forage) onUpdate(item.id, { feed_type_id: forage.id, feed_type_name: forage.name });
@@ -137,7 +166,6 @@ export default function FeedRow({
     getFeedSubCategories(item.feed_type_name, item.category_name, user.country_id, user.id)
       .then((res) => {
         const data = res.data;
-        // API returns List<{feed_name, feed_uuid, feed_category, feed_type, feed_cd}>
         const list: FeedSubCategoryItem[] = (Array.isArray(data) ? data : data?.sub_categories ?? [])
           .filter((s: { feed_name?: string; feed_uuid?: string }) => s.feed_name && s.feed_uuid)
           .map((s: { feed_name: string; feed_uuid: string }) => ({
@@ -151,25 +179,34 @@ export default function FeedRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.category_name, item.feed_type_name, user?.country_id, user?.id]);
 
+  const cost = showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
+    ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
+    : null;
+
+  const colGap = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } as const;
+
   return (
-    <div
-      className="bg-white rounded-2xl p-4 space-y-3"
-      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
-    >
-      {/* Row header */}
-      <div className="flex items-center justify-between">
-        <span
-          className="text-xs font-bold uppercase tracking-wide"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-        >
-          Feed #{index + 1}
+    <div style={{ backgroundColor: "#fff", borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+
+      {/* Card header: FEED # + delete button */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 10px 8px" }}>
+        <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700, fontSize: 16 }}>
+          FEED {index + 1}
         </span>
-        {/* Android: isDelete = !isFirstItem — first card has no delete button */}
         {index > 0 && (
           <button
             onClick={() => onDelete(item.id)}
-            className="w-8 h-8 flex items-center justify-center rounded-full"
-            style={{ backgroundColor: "#FEC5BB", border: "none", cursor: "pointer" }}
+            style={{
+              backgroundColor: "#FEC5BB",
+              borderRadius: 10,
+              padding: 8,
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
             aria-label="Remove feed"
           >
             <IcDelete size={16} color="#FC2E20" />
@@ -177,145 +214,130 @@ export default function FeedRow({
         )}
       </div>
 
-      {/* Feed Type */}
-      <div>
-        <RowLabel>Feed Type</RowLabel>
-        {loadingTypes ? (
-          <div className="h-11 rounded-2xl shimmer" />
-        ) : (
-          <RowSelect
-            value={item.feed_type_id ?? ""}
-            onChange={(v) => {
-              const selected = feedTypes.find((f) => f.id === Number(v));
-              onUpdate(item.id, { feed_type_id: selected?.id ?? null, feed_type_name: selected?.name ?? "" });
-            }}
-            disabled={feedTypeLocked}
-            placeholder="Select feed type..."
-          >
-            {feedTypes.map((ft) => (
-              <option key={ft.id} value={ft.id}>{ft.name}</option>
-            ))}
-          </RowSelect>
-        )}
-      </div>
-
-      {/* Feed Category */}
-      <div>
-        <RowLabel>Feed Category</RowLabel>
-        {loadingCats ? (
-          <div className="h-11 rounded-2xl shimmer" />
-        ) : (
-          <RowSelect
-            value={item.category_id ?? ""}
-            onChange={(v) => {
-              const selected = categories.find((c) => c.id === Number(v));
-              onUpdate(item.id, { category_id: selected?.id ?? null, category_name: selected?.name ?? "" });
-            }}
-            disabled={!item.feed_type_id}
-            placeholder={!item.feed_type_id ? "Select feed type first" : "Select category..."}
-          >
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </RowSelect>
-        )}
-      </div>
-
-      {/* Sub-Category */}
-      <div>
-        <RowLabel>Feed Sub-Category</RowLabel>
-        {loadingSubs ? (
-          <div className="h-11 rounded-2xl shimmer" />
-        ) : (
-          <RowSelect
-            value={item.feed_uuid ?? ""}
-            onChange={(v) => {
-              const selected = subCategories.find((s) => s.feed_uuid === v);
-              onUpdate(item.id, {
-                sub_category_id: selected ? 1 : null,
-                sub_category_name: selected?.feed_name ?? "",
-                feed_uuid: selected?.feed_uuid ?? null,
-              });
-            }}
-            disabled={!item.category_id}
-            placeholder={!item.category_id ? "Select category first" : "Select feed item..."}
-          >
-            {subCategories.map((s) => (
-              <option key={s.feed_uuid} value={s.feed_uuid}>{s.feed_name}</option>
-            ))}
-          </RowSelect>
-        )}
-      </div>
-
-      {/* Price + Quantity */}
-      {/* Android: price disabled until subcategory selected; quantity disabled until price filled */}
-      <div className={`grid gap-3 ${showQuantity ? "grid-cols-2" : "grid-cols-1"}`}>
+      {/* Row 1: Feed Type (left) + Feed Category (right) */}
+      <div style={{ ...colGap, padding: "0 10px 10px" }}>
         <div>
-          <RowLabel>Price/kg ({currencySymbol})</RowLabel>
+          <ColLabel>Feed Type</ColLabel>
+          {loadingTypes ? (
+            <div className="shimmer" style={{ height: 48, borderRadius: 16 }} />
+          ) : (
+            <ColSelect
+              value={item.feed_type_id ?? ""}
+              onChange={(v) => {
+                const selected = feedTypes.find((f) => f.id === Number(v));
+                onUpdate(item.id, { feed_type_id: selected?.id ?? null, feed_type_name: selected?.name ?? "" });
+              }}
+              disabled={feedTypeLocked}
+              placeholder="Select type"
+            >
+              {feedTypes.map((ft) => (
+                <option key={ft.id} value={ft.id}>{ft.name}</option>
+              ))}
+            </ColSelect>
+          )}
+        </div>
+        <div>
+          <ColLabel>Category</ColLabel>
+          {loadingCats ? (
+            <div className="shimmer" style={{ height: 48, borderRadius: 16 }} />
+          ) : (
+            <ColSelect
+              value={item.category_id ?? ""}
+              onChange={(v) => {
+                const selected = categories.find((c) => c.id === Number(v));
+                onUpdate(item.id, { category_id: selected?.id ?? null, category_name: selected?.name ?? "" });
+              }}
+              disabled={!item.feed_type_id}
+              placeholder={!item.feed_type_id ? "Select type first" : "Select"}
+            >
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </ColSelect>
+          )}
+        </div>
+      </div>
+
+      {/* Row 2: Feed Sub-category (left) + Price (right) */}
+      <div style={{ ...colGap, padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
+        <div>
+          <ColLabel>Feed</ColLabel>
+          {loadingSubs ? (
+            <div className="shimmer" style={{ height: 48, borderRadius: 16 }} />
+          ) : (
+            <ColSelect
+              value={item.feed_uuid ?? ""}
+              onChange={(v) => {
+                const selected = subCategories.find((s) => s.feed_uuid === v);
+                onUpdate(item.id, {
+                  sub_category_id: selected ? 1 : null,
+                  sub_category_name: selected?.feed_name ?? "",
+                  feed_uuid: selected?.feed_uuid ?? null,
+                });
+              }}
+              disabled={!item.category_id}
+              placeholder={!item.category_id ? "Select category" : "Select feed"}
+            >
+              {subCategories.map((s) => (
+                <option key={s.feed_uuid} value={s.feed_uuid}>{s.feed_name}</option>
+              ))}
+            </ColSelect>
+          )}
+        </div>
+        <div>
+          <ColLabel>Price/kg ({currencySymbol})</ColLabel>
           <input
             type="number"
             inputMode="decimal"
             min={0}
             step={0.01}
-            placeholder={!item.feed_uuid ? "Select feed first" : "0.00"}
+            placeholder={!item.feed_uuid ? "Select feed" : "0.00"}
             disabled={!item.feed_uuid}
             value={item.price_per_kg ?? ""}
             onChange={(e) =>
               onUpdate(item.id, { price_per_kg: e.target.value ? Number(e.target.value) : null })
             }
-            className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-            style={{ ...sel, opacity: !item.feed_uuid ? 0.5 : 1 }}
+            style={{ ...inputStyle, opacity: !item.feed_uuid ? 0.5 : 1, cursor: !item.feed_uuid ? "not-allowed" : "text" }}
           />
         </div>
+      </div>
 
-        {showQuantity && (
+      {/* Row 3: Quantity (left) + Cost display (right) — evaluation mode only */}
+      {showQuantity && (
+        <div style={{ ...colGap, padding: "0 10px 16px" }}>
           <div>
-            <RowLabel>Quantity (kg/day)</RowLabel>
+            <ColLabel>Quantity (kg)</ColLabel>
             <input
               type="number"
               inputMode="decimal"
               min={0}
               step={0.1}
-              placeholder={!item.price_per_kg ? "Enter price first" : "0.0"}
+              placeholder={!item.price_per_kg ? "Enter price" : "0.0"}
               disabled={!item.price_per_kg}
               value={item.quantity_kg ?? ""}
               onChange={(e) =>
                 onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
               }
-              className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={{ ...sel, opacity: !item.price_per_kg ? 0.5 : 1 }}
+              style={{ ...inputStyle, opacity: !item.price_per_kg ? 0.5 : 1, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
             />
           </div>
-        )}
-      </div>
-
-      {/* Cost display in evaluation mode */}
-      {showQuantity && item.price_per_kg !== null && item.quantity_kg !== null && (
-        (() => {
-          const cost = calculateCost(
-            String(item.price_per_kg ?? ""),
-            String(item.quantity_kg ?? "")
-          );
-          return cost ? (
-            <div
-              className="flex items-center justify-between rounded-xl px-4 py-2.5"
-              style={{ backgroundColor: "#F0FDF4" }}
-            >
-              <span
-                className="text-xs font-bold uppercase"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
-                Cost/day
-              </span>
-              <span
-                className="text-sm font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-              >
-                {currencySymbol}{cost}
-              </span>
-            </div>
-          ) : null;
-        })()
+          <div>
+            <ColLabel>Cost/day</ColLabel>
+            <input
+              type="text"
+              readOnly
+              value={cost ? `${currencySymbol}${cost}` : ""}
+              placeholder="—"
+              style={{
+                ...inputStyle,
+                backgroundColor: "#EBEAEA",
+                color: cost ? "#064E3B" : "#9CA3AF",
+                fontWeight: cost ? 700 : 400,
+                cursor: "default",
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );

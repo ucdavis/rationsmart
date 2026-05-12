@@ -150,14 +150,14 @@ export default function LoginPage() {
 
         {/* OR divider */}
         <div className="flex items-center gap-3 px-6 mt-7">
-          <div className="flex-1 h-px" style={{ backgroundColor: "#E2E8F0" }} />
+          <div className="flex-1 h-0.5" style={{ backgroundColor: "#E2E8F0" }} />
           <span
-            className="text-sm"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            className="text-xl font-bold"
+            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
           >
             OR
           </span>
-          <div className="flex-1 h-px" style={{ backgroundColor: "#E2E8F0" }} />
+          <div className="flex-1 h-0.5" style={{ backgroundColor: "#E2E8F0" }} />
         </div>
 
         {/* Register link */}

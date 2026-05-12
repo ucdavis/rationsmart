@@ -335,7 +335,7 @@ export default function FeedSelectionPage() {
   const btnBase = {
     fontFamily: "Nunito, sans-serif",
     fontWeight: 700,
-    fontSize: 14,
+    fontSize: 16,
     borderRadius: 12,
     padding: "10px 16px",
     cursor: "pointer",
