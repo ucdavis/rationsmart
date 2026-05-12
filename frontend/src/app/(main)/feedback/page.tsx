@@ -21,10 +21,12 @@ function StarRating({
   rating,
   onChange,
   readOnly = false,
+  size = 32,
 }: {
   rating: number;
   onChange?: (r: number) => void;
   readOnly?: boolean;
+  size?: number;
 }) {
   const [hovered, setHovered] = useState(0);
   return (
@@ -41,7 +43,7 @@ function StarRating({
           aria-label={`${star} star`}
         >
           <IcStar
-            size={28}
+            size={size}
             filled={star <= (hovered || rating)}
             color={star <= (hovered || rating) ? "#FFC107" : "#C2C2C2"}
           />
@@ -120,17 +122,6 @@ export default function FeedbackPage() {
     }
   };
 
-  const labelStyle = {
-    color: "#6D6D6D",
-    fontFamily: "Nunito, sans-serif",
-    fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
-    display: "block",
-    marginBottom: 8,
-  };
-
   const canSubmit = text.trim().length > 0 || rating > 0;
 
   return (
@@ -141,63 +132,65 @@ export default function FeedbackPage() {
       <Toolbar type="back" title="Feedback" onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
-        {/* Submit Feedback card */}
-        <div
-          className="mx-3 mt-3 rounded-2xl bg-white px-4 py-5"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+        {/* Rating title */}
+        <p
+          className="text-center font-bold mt-5"
+          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
         >
-          {/* Category */}
-          <label style={labelStyle}>Category</label>
-          <div className="flex gap-3 flex-wrap mt-1">
-            {CATEGORIES.map((c) => (
-              <button
-                key={c}
-                type="button"
-                onClick={() => setCategory(c)}
-                className="flex items-center gap-2 px-4 py-2 rounded-full font-bold text-sm"
-                style={{
-                  backgroundColor: category === c ? "#064E3B" : "#F1F5F9",
-                  color: category === c ? "#FFFFFF" : "#231F20",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "Nunito, sans-serif",
-                  transition: "all 0.15s",
-                }}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
+          Rate The App
+        </p>
 
-          {/* Rating */}
-          <p
-            className="text-center text-lg font-bold mt-5 mb-3"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
-            Rate The App
-          </p>
-          <div className="flex justify-center">
-            <StarRating rating={rating} onChange={setRating} />
-          </div>
-          {rating > 0 && (
-            <p
-              className="text-xs mt-1.5"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+        {/* Stars */}
+        <div className="flex justify-center mt-2.5">
+          <StarRating rating={rating} onChange={setRating} />
+        </div>
+
+        {/* Category label */}
+        <p
+          className="font-bold mt-5 ml-3"
+          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+        >
+          Feedback Category
+        </p>
+
+        {/* Category radio buttons */}
+        <div className="flex gap-6 ml-3 mt-1.5">
+          {CATEGORIES.map((c) => (
+            <label
+              key={c}
+              className="flex items-center gap-1.5"
+              style={{ cursor: "pointer" }}
             >
-              {["", "Poor", "Fair", "Good", "Very Good", "Excellent"][rating]}
-            </p>
-          )}
+              <input
+                type="radio"
+                name="feedback-category"
+                value={c}
+                checked={category === c}
+                onChange={() => setCategory(c)}
+                style={{ accentColor: "#064E3B", width: 18, height: 18, cursor: "pointer" }}
+              />
+              <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{c}</span>
+            </label>
+          ))}
+        </div>
 
-          {/* Text */}
-          <label style={{ ...labelStyle, marginTop: 16 }}>Feedback</label>
+        {/* Textarea */}
+        <div className="mx-3 mt-2.5">
           <textarea
-            rows={4}
+            rows={5}
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={1000}
-            placeholder="Tell us what you think, report a bug, or suggest a feature..."
-            className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark resize-none"
-            style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+            placeholder="Tell us how we can improve..."
+            className="w-full px-3 py-3 text-base focus:outline-none resize-none"
+            style={{
+              backgroundColor: "#F1F5F9",
+              color: "#231F20",
+              fontFamily: "Nunito, sans-serif",
+              borderRadius: 18,
+              border: "1px solid #E2E8F0",
+              minHeight: 140,
+            }}
           />
           <p
             className="text-xs text-right mt-1"
@@ -205,16 +198,19 @@ export default function FeedbackPage() {
           >
             {text.length} / 1000
           </p>
+        </div>
 
-          {/* Submit button */}
+        {/* Submit button */}
+        <div className="mx-3 mt-5">
           <button
             onClick={handleSubmit}
             disabled={!canSubmit || isSubmitting}
-            className="w-full mt-4 py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
+            className="w-full py-4 font-bold text-base flex items-center justify-center gap-2"
             style={{
               backgroundColor: canSubmit && !isSubmitting ? "#064E3B" : "#D3D3D3",
               color: canSubmit && !isSubmitting ? "#FFFFFF" : "#999999",
               border: "none",
+              borderRadius: 14,
               fontFamily: "Nunito, sans-serif",
               cursor: canSubmit && !isSubmitting ? "pointer" : "not-allowed",
               transition: "background-color 0.2s",
@@ -227,24 +223,40 @@ export default function FeedbackPage() {
                 </svg>
                 Submitting...
               </>
-            ) : "Submit Feedback"}
+            ) : (
+              <>
+                Submit Feedback
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </>
+            )}
           </button>
         </div>
 
         {/* My Feedback History */}
-        <div className="mx-3 mt-4">
+        <div className="mx-3 mt-5">
           <div className="flex items-center justify-between mb-3">
             <p
-              className="text-xs font-bold uppercase tracking-wide"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+              className="font-bold"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
             >
               Your Feedbacks
             </p>
             <span
-              className="text-xs font-bold px-2.5 py-1 rounded-full"
-              style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+              style={{
+                backgroundColor: "#F0FDF4",
+                color: "#064E3B",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 12,
+                paddingLeft: 10,
+                paddingRight: 10,
+                paddingTop: 2,
+                paddingBottom: 2,
+                borderRadius: 50,
+              }}
             >
-              {history.length} Total
+              {history.length} TOTAL
             </span>
           </div>
 
@@ -275,28 +287,40 @@ export default function FeedbackPage() {
             history.map((item) => (
               <div
                 key={item.id}
-                className="rounded-2xl bg-white p-4 mb-3"
+                className="rounded-2xl bg-white mb-2.5 px-3 pt-5 pb-5"
                 style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span style={categoryBadgeStyle(item.feedback_type)}>{item.feedback_type}</span>
-                  <StarRating rating={item.overall_rating} readOnly />
+                {/* Row 1: Stars (left) + Date (right) */}
+                <div className="flex items-center justify-between mb-3">
+                  <StarRating rating={item.overall_rating} readOnly size={24} />
+                  <span
+                    className="font-bold"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+                  >
+                    {new Date(item.created_at).toLocaleDateString("en-GB", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
                 </div>
+                {/* Row 2: Category badge */}
+                <div className="mb-2.5">
+                  <span style={categoryBadgeStyle(item.feedback_type)}>{item.feedback_type?.toUpperCase()}</span>
+                </div>
+                {/* Row 3: Feedback text */}
                 <p
-                  className="text-sm mt-1"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                  className="text-sm"
+                  style={{
+                    color: "#231F20",
+                    fontFamily: "Nunito, sans-serif",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  } as React.CSSProperties}
                 >
                   {item.text_feedback}
-                </p>
-                <p
-                  className="text-xs mt-2"
-                  style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
-                >
-                  {new Date(item.created_at).toLocaleDateString("en-GB", {
-                    day: "2-digit",
-                    month: "short",
-                    year: "numeric",
-                  })}
                 </p>
               </div>
             ))

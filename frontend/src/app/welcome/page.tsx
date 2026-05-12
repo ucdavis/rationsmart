@@ -15,7 +15,7 @@ export default function WelcomePage() {
       style={{ backgroundColor: "#F8FAF9" }}
     >
       {/* Top: App Branding */}
-      <div className="flex justify-center pt-14 pb-2">
+      <div className="flex justify-center pt-5 pb-2">
         <AppBranding />
       </div>
 

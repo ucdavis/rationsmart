@@ -75,7 +75,7 @@ export default function RootLayout({
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            backgroundColor: "#F8FAF9",
+            backgroundColor: "#FFFFFF",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -116,19 +116,18 @@ export default function RootLayout({
             </p>
           </div>
           <div style={{ textAlign: "center" }}>
-            <p style={{ color: "#6D6D6D", fontSize: 14, margin: 0, fontFamily: "Nunito, sans-serif" }}>
-              Powered by
+            <p style={{ color: "#6D6D6D", fontSize: 12, margin: 0, fontFamily: "Nunito, sans-serif", letterSpacing: "0.05em" }}>
+              POWERED BY
             </p>
             <p
               style={{
                 color: "#064E3B",
                 fontSize: 14,
-                fontWeight: 700,
                 margin: "2px 0 0",
                 fontFamily: "Nunito, sans-serif",
               }}
             >
-              Digital Green
+              DigitalGreen
             </p>
           </div>
         </div>
@@ -143,7 +142,7 @@ export default function RootLayout({
             margin: "0 auto",
             minHeight: "100vh",
             position: "relative",
-            backgroundColor: "#F8FAF9",
+            backgroundColor: "#FFFFFF",
           }}
         >
           <SplashGuard />

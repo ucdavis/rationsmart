@@ -81,7 +81,7 @@ export default function PinInput({
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           disabled={disabled}
-          className="flex-1 h-14 text-center text-xl font-bold rounded-2xl border-none focus:outline-none focus:ring-2 focus:ring-primary-dark transition-all"
+          className="flex-1 h-14 text-center text-lg font-bold rounded-2xl border-none focus:outline-none focus:ring-2 focus:ring-primary-dark transition-all"
           style={{
             backgroundColor: "#F1F5F9",
             color: "#231F20",

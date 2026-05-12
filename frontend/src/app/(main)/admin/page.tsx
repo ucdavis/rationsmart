@@ -19,11 +19,11 @@ interface AdminCard {
 }
 
 const adminCards: AdminCard[] = [
-  { title: "Feed Management", href: "/admin/feeds", icon: <IcFeedManagement size={32} color="#064E3B" /> },
-  { title: "User Management", href: "/admin/users", icon: <IcUserManagement size={32} color="#064E3B" /> },
-  { title: "Feedback Management", href: "/admin/feedback", icon: <IcFeedbackManagement size={32} color="#064E3B" /> },
-  { title: "Reports", href: "/admin/reports", icon: <IcReportNav size={32} color="#064E3B" /> },
-  { title: "Bulk Upload", href: "/admin/bulk-upload", icon: <IcBulkUpload size={32} color="#064E3B" /> },
+  { title: "User Management", href: "/admin/users", icon: <IcUserManagement size={28} color="#064E3B" /> },
+  { title: "Feed Management", href: "/admin/feeds", icon: <IcFeedManagement size={28} color="#064E3B" /> },
+  { title: "Feedback Management", href: "/admin/feedback", icon: <IcFeedbackManagement size={28} color="#064E3B" /> },
+  { title: "Bulk Upload", href: "/admin/bulk-upload", icon: <IcBulkUpload size={28} color="#064E3B" /> },
+  { title: "Feed Reports", href: "/admin/reports", icon: <IcReportNav size={28} color="#064E3B" /> },
 ];
 
 export default function AdminPage() {
@@ -40,7 +40,7 @@ export default function AdminPage() {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen px-6 text-center"
-        style={{ backgroundColor: "#F8FAF9" }}
+        style={{ backgroundColor: "#FFFFFF" }}
       >
         <Toolbar type="back" title="Admin" onBack={() => router.back()} />
         <div
@@ -65,19 +65,20 @@ export default function AdminPage() {
   return (
     <div
       className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
+      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
     >
       <Toolbar type="back" title="Admin" onBack={() => router.back()} />
 
-      <div className="px-3 mt-3 pb-8">
+      <div className="px-3 mt-5 pb-8">
         {/* Grid of admin cards — 2 per row */}
         <div className="grid grid-cols-2 gap-3">
           {adminCards.map((card) => (
             <button
               key={card.title}
               onClick={() => router.push(card.href)}
-              className="flex flex-col items-center justify-center rounded-2xl bg-white py-6 px-4 text-center"
+              className="flex flex-col items-start bg-white py-8 px-5"
               style={{
+                borderRadius: 30,
                 boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
                 border: "none",
                 cursor: "pointer",
@@ -88,51 +89,19 @@ export default function AdminPage() {
               onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
             >
               <div
-                className="flex items-center justify-center rounded-2xl mb-3"
-                style={{ width: 60, height: 60, backgroundColor: "#F0FDF4" }}
+                className="flex items-center justify-center mb-5"
+                style={{ width: 48, height: 48, backgroundColor: "#E8F5E9", borderRadius: 16 }}
               >
                 {card.icon}
               </div>
               <p
-                className="text-sm font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                className="text-base font-bold text-left"
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
               >
                 {card.title}
               </p>
             </button>
           ))}
-        </div>
-
-        {/* Admin identity card */}
-        <div
-          className="mt-4 rounded-2xl bg-white px-4 py-4 flex items-center gap-3"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
-        >
-          <div
-            className="flex items-center justify-center rounded-xl"
-            style={{ width: 48, height: 48, backgroundColor: "#F0FDF4" }}
-          >
-            <span
-              className="text-lg font-bold"
-              style={{ color: "#064E3B" }}
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p
-              className="text-sm font-bold"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
-              {user.name}
-            </p>
-            <p
-              className="text-xs"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
-              Platform Administrator
-            </p>
-          </div>
         </div>
       </div>
     </div>

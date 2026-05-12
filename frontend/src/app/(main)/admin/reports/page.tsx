@@ -67,7 +67,7 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
       <Toolbar type="back" title="Feed Reports" onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
@@ -86,60 +86,84 @@ export default function AdminReportsPage() {
             <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No reports found</p>
           </div>
         ) : (
-          reports.map((r) => {
-            const colors = statusColor[r.optimization_status] ?? { bg: "#E2E8F0", text: "#231F20" };
-            return (
-              <button
-                key={r.simulation_id}
-                onClick={() => viewReport(r.simulation_id)}
-                disabled={loadingId === r.simulation_id}
-                className="w-full text-left"
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
-              >
-                <div
-                  className="mx-3 my-2 rounded-2xl bg-white p-4"
-                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", opacity: loadingId === r.simulation_id ? 0.6 : 1 }}
-                >
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                      {toAdminReportDisplayDate(r.created_at)}
-                    </span>
-                    <span
-                      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-                      style={{ backgroundColor: colors.bg, color: colors.text, fontFamily: "Nunito, sans-serif" }}
-                    >
-                      {r.optimization_status}
-                    </span>
+          reports.map((r) => (
+            <div
+              key={r.simulation_id}
+              className="mx-3 bg-white overflow-hidden"
+              style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16, paddingBottom: 10, opacity: loadingId === r.simulation_id ? 0.6 : 1 }}
+            >
+              {/* Top row: icon pill + user name + View Report pill */}
+              <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
+                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                  <div
+                    className="flex items-center justify-center flex-shrink-0"
+                    style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 60, padding: 6 }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                      <rect x="4" y="3" width="16" height="18" rx="2" stroke="#064E3B" strokeWidth="1.8" />
+                      <path d="M8 8h8M8 12h8M8 16h5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
                   </div>
-                  <p className="text-sm font-bold mb-1.5" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                    {r.simulation_name || r.cattle_breed || "Simulation"}
+                  <p className="font-bold truncate text-base flex-1 min-w-0" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}>
+                    {r.user_name || r.user_email || "Unknown User"}
                   </p>
-                  {(r.user_name || r.user_email) && (
-                    <p className="text-xs" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-                      {r.user_name ?? r.user_email}
-                    </p>
-                  )}
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex gap-2 flex-wrap">
-                      {r.country && (
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>{r.country}</span>
-                      )}
-                      {r.cattle_breed && (
-                        <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>{r.cattle_breed}</span>
-                      )}
-                    </div>
-                    {loadingId === r.simulation_id ? (
-                      <div className="w-5 h-5 rounded-full animate-spin" style={{ border: "2.5px solid #F0FDF4", borderTopColor: "#064E3B" }} />
-                    ) : (
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M6 4l4 4-4 4" stroke="#E2E8F0" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    )}
-                  </div>
                 </div>
-              </button>
-            );
-          })
+                <button
+                  onClick={() => viewReport(r.simulation_id)}
+                  disabled={!!loadingId}
+                  className="flex items-center gap-1.5 font-bold flex-shrink-0"
+                  style={{
+                    backgroundColor: "#E4F7EF",
+                    borderRadius: 60,
+                    padding: "8px 12px",
+                    border: "none",
+                    cursor: loadingId ? "not-allowed" : "pointer",
+                    color: "#064E3B",
+                    fontFamily: "Nunito, sans-serif",
+                    fontSize: 12,
+                    marginLeft: 8,
+                  }}
+                >
+                  {loadingId === r.simulation_id ? (
+                    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="#064E3B" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                    </svg>
+                  ) : (
+                    <>
+                      View Report
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                        <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="#064E3B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Simulation ID (left) + Report Type (right) */}
+              <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
+                <div>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Simulation ID</p>
+                  <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                    {r.simulation_id || "—"}
+                  </p>
+                </div>
+                <div>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Report Type</p>
+                  <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                    {r.report_mode === "evaluation" ? "Diet Evaluation" : r.report_mode === "recommendation" ? "Diet Recommendation" : "—"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Date */}
+              <div style={{ padding: "10px 10px 0" }}>
+                <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Date</p>
+                <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                  {toAdminReportDisplayDate(r.created_at)}
+                </p>
+              </div>
+            </div>
+          ))
         )}
       </div>
     </div>

@@ -31,6 +31,7 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isResettingPin, setIsResettingPin] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showPinSheet, setShowPinSheet] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -83,6 +84,8 @@ export default function ProfilePage() {
     setIsDeleting(true);
     try {
       await deleteAccount(user.id, deletePin);
+      setShowPinSheet(false);
+      setDeletePin("");
       logout();
       router.replace("/welcome");
       showSnackbar("Account deleted. Sorry to see you go.", "info");
@@ -127,24 +130,38 @@ export default function ProfilePage() {
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Profile card */}
         <div
-          className="mx-3 mt-3 rounded-2xl bg-white px-4 py-5"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+          className="mx-3 mt-3 bg-white px-4 py-5"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", borderRadius: 18 }}
         >
-          {/* Avatar */}
-          <div className="flex justify-center mb-4">
+          {/* Avatar + Name + Email — horizontal row */}
+          <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: "1px solid #F1F5F9" }}>
             <div
-              className="flex items-center justify-center rounded-2xl"
-              style={{ width: 72, height: 72, backgroundColor: "#F0FDF4" }}
+              className="flex items-center justify-center flex-shrink-0"
+              style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 16, border: "1px solid rgba(5,188,109,0.15)" }}
             >
-              <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
                 <circle cx="20" cy="14" r="7" stroke="#064E3B" strokeWidth="2.2" />
                 <path d="M6 36c0-6.627 6.268-12 14-12s14 5.373 14 12" stroke="#064E3B" strokeWidth="2.2" strokeLinecap="round" />
               </svg>
             </div>
+            <div className="flex flex-col flex-1 min-w-0">
+              <span
+                className="font-bold truncate"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+              >
+                {user.name}
+              </span>
+              <span
+                className="text-sm truncate"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                {user.email}
+              </span>
+            </div>
           </div>
 
           {/* Name (editable) */}
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name</p>
+          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name *</p>
           <input
             type="text"
             value={name}
@@ -202,22 +219,33 @@ export default function ProfilePage() {
                 </svg>
                 Saving...
               </>
-            ) : "Update Profile"}
+            ) : (
+              <>
+                Update Profile
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 12a8 8 0 0 1 13.659-5.667" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M20 12a8 8 0 0 1-13.659 5.667" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <polyline points="16 7 17.659 6.333 21 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <polyline points="8 17 6.341 17.667 3 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </>
+            )}
           </button>
         </div>
 
-        {/* Reset PIN */}
-        <div className="mx-3 mt-3">
+        {/* Reset PIN + Delete Account — side by side */}
+        <div className="mx-3 mt-3 flex gap-3">
           <button
             onClick={handleResetPin}
             disabled={isResettingPin}
-            className="w-full py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-2"
+            className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
               color: isResettingPin ? "#999999" : "#296CD3",
               backgroundColor: isResettingPin ? "#F1F5F9" : "rgba(41,108,211,0.25)",
               fontFamily: "Nunito, sans-serif",
               cursor: isResettingPin ? "not-allowed" : "pointer",
+              borderRadius: 14,
             }}
           >
             {isResettingPin ? (
@@ -227,23 +255,34 @@ export default function ProfilePage() {
                 </svg>
                 Sending...
               </>
-            ) : "Reset PIN"}
+            ) : (
+              <>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <rect x="5" y="11" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="2"/>
+                  <path d="M8 11V7a4 4 0 0 1 7.745-1.4" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                  <path d="M12 15.5v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+                Reset PIN
+              </>
+            )}
           </button>
-        </div>
 
-        {/* Delete Account */}
-        <div className="mx-3 mt-3">
           <button
             onClick={() => setShowDeleteDialog(true)}
-            className="w-full py-3.5 rounded-2xl font-bold text-base"
+            className="flex-1 py-3.5 text-base"
             style={{
-              border: "2px solid #E44A4A",
+              border: "none",
               color: "#E44A4A",
-              backgroundColor: "transparent",
+              backgroundColor: "rgba(228,74,74,0.20)",
               fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
+              borderRadius: 14,
             }}
           >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ marginRight: 6, flexShrink: 0 }}>
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M10 11v6M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            </svg>
             Delete Account
           </button>
         </div>
@@ -273,92 +312,142 @@ export default function ProfilePage() {
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
           <div
-            className="bg-white rounded-2xl p-6 w-full max-w-xs"
+            className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
           >
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div
+                className="flex items-center justify-center"
+                style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(5,188,109,0.15)" }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#FFFFFF" }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="16 17 21 12 16 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="21" y1="12" x2="9" y2="12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
             <h3
-              className="text-lg font-bold mb-2"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+              className="text-center font-bold mb-2"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Logout
+              Confirm Logout
             </h3>
             <p
-              className="text-sm mb-5"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              className="text-center text-sm mb-5"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
               Are you sure you want to logout?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutDialog(false)}
-                className="flex-1 py-3 rounded-2xl font-bold"
+                className="flex-1 py-3 rounded-full font-bold"
                 style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
-                Cancel
+                No
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 py-3 rounded-2xl font-bold"
-                style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                className="flex-1 py-3 rounded-full font-bold"
+                style={{ backgroundColor: "#064E3B", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
-                Logout
+                Yes, Logout
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Delete Account dialog */}
+      {/* Delete Account confirmation dialog */}
       {showDeleteDialog && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
+          className="fixed inset-0 z-50 flex items-center justify-center px-6"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
           <div
-            className="bg-white rounded-t-2xl p-6 w-full max-w-[430px] pb-10"
-            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.15)" }}
+            className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
+            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
           >
             <div
-              className="flex items-center justify-center rounded-full mx-auto mb-4"
-              style={{ width: 56, height: 56, backgroundColor: "rgba(228,74,74,0.2)" }}
+              className="flex items-center justify-center mx-auto mb-4"
+              style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(228,74,74,0.2)" }}
             >
               <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-                <path d="M4 7h18M10 7V5h6v2M16 7v13H10V7h6zM7 7l1 13M19 7l-1 13" stroke="#E44A4A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M4 7h18M10 7V5h6v2M16 7v13H10V7h6zM7 7l1 13M19 7l-1 13" stroke="#FC2E20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </div>
             <h3
-              className="text-center text-lg font-bold mb-1"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              className="text-center font-bold mb-2"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Delete Account?
+              Delete Account
             </h3>
             <p
               className="text-center text-sm mb-5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              This is permanent and cannot be undone. Enter your PIN to confirm.
+              This is permanent and cannot be undone. Are you sure you want to delete your account?
             </p>
-
-            <PinInput value={deletePin} onChange={setDeletePin} />
-
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-3">
               <button
-                onClick={() => { setShowDeleteDialog(false); setDeletePin(""); }}
-                className="flex-1 py-3 rounded-2xl font-bold"
-                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                onClick={() => setShowDeleteDialog(false)}
+                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
+                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}
               >
-                Cancel
+                No
               </button>
+              <button
+                onClick={() => { setShowDeleteDialog(false); setShowPinSheet(true); }}
+                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
+                style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}
+              >
+                Yes
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PIN entry bottom sheet (second step of delete) */}
+      {showPinSheet && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div
+            className="bg-white rounded-t-2xl w-full max-w-[430px] pb-10 pt-5 px-4"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.15)" }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center mb-5">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#E2E8F0" }} />
+            </div>
+            <h3
+              className="text-center font-bold mb-5"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+            >
+              Submit PIN
+            </h3>
+            <PinInput value={deletePin} onChange={setDeletePin} />
+            <div className="mt-5">
               <button
                 onClick={handleDelete}
                 disabled={deletePin.length !== 4 || isDeleting}
-                className="flex-1 py-3 rounded-2xl font-bold flex items-center justify-center gap-1.5"
+                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: deletePin.length === 4 && !isDeleting ? "#E44A4A" : "#D3D3D3",
+                  backgroundColor: deletePin.length === 4 && !isDeleting ? "#064E3B" : "#D3D3D3",
                   color: deletePin.length === 4 && !isDeleting ? "white" : "#999999",
                   border: "none",
                   fontFamily: "Nunito, sans-serif",
                   cursor: deletePin.length === 4 && !isDeleting ? "pointer" : "not-allowed",
+                  transition: "background-color 0.2s",
                 }}
               >
                 {isDeleting ? (
@@ -368,7 +457,7 @@ export default function ProfilePage() {
                     </svg>
                     Deleting...
                   </>
-                ) : "Delete"}
+                ) : "Submit"}
               </button>
             </div>
           </div>

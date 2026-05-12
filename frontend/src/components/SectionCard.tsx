@@ -6,6 +6,7 @@ interface SectionCardProps {
   title: string;
   topRightContent?: React.ReactNode;
   children: React.ReactNode;
+  cornerRadius?: number;
 }
 
 export default function SectionCard({
@@ -14,11 +15,12 @@ export default function SectionCard({
   title,
   topRightContent,
   children,
+  cornerRadius = 20,
 }: SectionCardProps) {
   return (
     <div
-      className="mx-3 my-2.5 pb-5 rounded-2xl bg-white"
-      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+      className="mx-3 my-2.5 pb-5 bg-white"
+      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", borderRadius: cornerRadius }}
     >
       {/* Section Header */}
       <div className="flex items-center justify-between px-3 pt-4 pb-2">

@@ -80,20 +80,30 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
       <Toolbar type="back" title="User Management" onBack={() => router.back()} />
 
-      {/* Stats bar */}
+      {/* Stats card */}
       <div
-        className="flex items-center justify-between px-5 py-3 bg-white"
-        style={{ borderBottom: "1px solid #F1F5F9" }}
+        className="mx-3 mt-5 bg-white flex items-center justify-between px-3 py-5"
+        style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
       >
-        <p className="text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-          Total Users
-        </p>
-        <p className="text-lg font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-          {formatTotalUsers(total)}
-        </p>
+        <div>
+          <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Total Users</p>
+          <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+            {formatTotalUsers(total)}
+          </p>
+        </div>
+        <div
+          className="flex items-center justify-center"
+          style={{ width: 48, height: 48, backgroundColor: "#E8F5E9", borderRadius: 16 }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <circle cx="9" cy="7" r="4" stroke="#064E3B" strokeWidth="2" />
+            <path d="M2 21c0-4 3.134-7 7-7s7 3 7 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+            <path d="M16 11c2.21 0 4 1.79 4 4M22 21c0-2.21-1.79-4-4-4" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
       </div>
 
       {/* Search + filter row */}
@@ -149,51 +159,69 @@ export default function AdminUsersPage() {
           users.map((u) => (
             <div
               key={u.id}
-              className="mx-3 my-2 rounded-2xl bg-white p-4"
-              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", cursor: "pointer" }}
+              className="mx-3 my-2 bg-white overflow-hidden"
+              style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", cursor: "pointer", paddingBottom: 12 }}
               onClick={() => setSelectedUser(u)}
             >
-              <div className="flex items-start justify-between mb-1">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                    {u.name}
-                  </p>
-                  <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                    {u.email_id}
-                  </p>
-                  {getCountryName(u.country) && (
-                    <span
-                      className="inline-block text-xs px-2 py-0.5 rounded-full mt-1.5"
-                      style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}
-                    >
-                      {getCountryName(u.country)}
-                    </span>
-                  )}
+              {/* Top row: icon pill + role label + status badge */}
+              <div className="flex items-center justify-between" style={{ padding: "12px 12px 0" }}>
+                <div className="flex items-center gap-2.5">
+                  <div
+                    className="flex items-center justify-center"
+                    style={{ backgroundColor: "#E8F5E9", borderRadius: 16, padding: 10 }}
+                  >
+                    {u.is_admin ? (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L3 7l9 5 9-5-9-5z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
+                        <path d="M3 17l9 5 9-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M3 12l9 5 9-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    ) : (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="8" r="4" stroke="#064E3B" strokeWidth="1.8" />
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="font-bold uppercase" style={{ color: "#064E3B", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                    {u.is_admin ? "ADMIN" : "USER"}
+                  </span>
                 </div>
-                {/* Toggle */}
+                {/* Status toggle */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleToggle(u); }}
                   disabled={togglingId === u.id}
-                  className="flex-shrink-0 ml-3 px-3 py-1.5 rounded-full text-xs font-bold"
+                  className="font-bold"
                   style={{
-                    backgroundColor: u.is_active ? "#05BC6D" : "#E44A4A",
-                    color: "white",
+                    backgroundColor: u.is_active ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.15)",
+                    color: u.is_active ? "#05BC6D" : "#E44A4A",
                     border: "none",
+                    borderRadius: 60,
+                    padding: "2px 10px",
+                    fontSize: 10,
                     cursor: togglingId === u.id ? "not-allowed" : "pointer",
                     opacity: togglingId === u.id ? 0.7 : 1,
                     fontFamily: "Nunito, sans-serif",
-                    minWidth: 72,
                   }}
                 >
-                  {togglingId === u.id ? "..." : u.is_active ? "Active" : "Inactive"}
+                  {togglingId === u.id ? "..." : u.is_active ? "ACTIVE" : "INACTIVE"}
                 </button>
               </div>
-              {u.is_admin && (
+              {/* Name */}
+              <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "8px 12px 0" }}>
+                {u.name}
+              </p>
+              {/* Email */}
+              <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif", margin: "2px 12px 0" }}>
+                {u.email_id}
+              </p>
+              {/* Country tag */}
+              {getCountryName(u.country) && (
                 <span
-                  className="inline-block text-xs px-2 py-0.5 rounded-full"
-                  style={{ backgroundColor: "#F3E5F5", color: "#6A1B9A", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}
+                  className="inline-block font-bold"
+                  style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12, padding: "2px 10px", borderRadius: 50, margin: "6px 12px 0" }}
                 >
-                  Admin
+                  {getCountryName(u.country)}
                 </span>
               )}
             </div>

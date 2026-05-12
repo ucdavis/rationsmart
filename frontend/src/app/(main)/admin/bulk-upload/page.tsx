@@ -94,8 +94,14 @@ export default function BulkUploadPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
       <Toolbar type="back" title="Bulk Upload" onBack={() => router.back()} />
+
+      {/* Page header: Data Sync subtitle + Feed Export & Upload title */}
+      <div style={{ paddingInline: 12, paddingTop: 20, paddingBottom: 4 }}>
+        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Data Sync</p>
+        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Feed Export & Upload</p>
+      </div>
 
       <div className="flex-1 overflow-y-auto px-3 pt-4 pb-8">
         {/* Upload card */}

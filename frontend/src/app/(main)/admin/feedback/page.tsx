@@ -71,28 +71,20 @@ export default function AdminFeedbackPage() {
   }, [user?.id]);
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
       <Toolbar type="back" title="Feedback Management" onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
-        {/* Stats card */}
+        {/* Stats cards */}
         {stats && (
-          <div
-            className="mx-3 my-2 rounded-2xl bg-white p-4"
-            style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs uppercase font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Total Feedbacks</p>
-                <p className="text-xl font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{stats.total_feedbacks ?? feedbacks.length}</p>
-              </div>
-              <div className="text-right">
-                <p className="text-xs uppercase font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Avg Rating</p>
-                <div className="flex items-center gap-1 justify-end">
-                  <p className="text-xl font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(1) ?? "—"}</p>
-                  <IcStar size={16} filled color="#064E3B" />
-                </div>
-              </div>
+          <div className="flex gap-3 mx-2.5 mt-4 mb-2">
+            <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+              <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Total Feedbacks</p>
+              <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{stats.total_feedbacks ?? feedbacks.length}</p>
+            </div>
+            <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+              <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Overall Rating</p>
+              <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(1) ?? "—"}</p>
             </div>
           </div>
         )}

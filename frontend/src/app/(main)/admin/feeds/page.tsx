@@ -428,8 +428,14 @@ export default function AdminFeedsPage() {
   } as const);
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
       <Toolbar type="back" title="Feed Management" onBack={() => router.back()} />
+
+      {/* Page header */}
+      <div className="ml-3 mt-5">
+        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Administration</p>
+        <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20, fontWeight: 700 }}>Configure Resources</p>
+      </div>
 
       {/* Tabs */}
       <div className="flex px-3 pt-3 gap-2">

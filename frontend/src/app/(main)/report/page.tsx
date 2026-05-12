@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import Toolbar from "@/components/Toolbar";
 import { saveReport } from "@/lib/api";
 import type { EvaluationResponse, RecommendationResponse, FeedBreakdown, CostEffectiveDiet } from "@/lib/api";
-import { IcSave, IcNewCase } from "@/components/Icons";
+import { IcSave, IcNewCase, IcAnimalCharacteristics, IcEnvironment, IcSimulationDetails } from "@/components/Icons";
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; text: string }> = {
@@ -31,21 +31,39 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function SCard({ title, children }: { title: string; children: React.ReactNode }) {
+function SCard({
+  title,
+  icon,
+  footer,
+  children,
+}: {
+  title: string;
+  icon?: React.ReactNode;
+  footer?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
     <div
-      className="mx-3 my-2.5 rounded-2xl bg-white px-4 py-4"
-      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+      className="mx-3 my-2.5 bg-white overflow-hidden"
+      style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
     >
       {title && (
-        <p
-          className="text-base font-bold mb-3"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-        >
-          {title}
-        </p>
+        <div className="flex items-center" style={{ margin: "10px 0 14px 10px" }}>
+          {icon && (
+            <div
+              className="flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6, marginRight: 10 }}
+            >
+              {icon}
+            </div>
+          )}
+          <p className="text-base font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+            {title}
+          </p>
+        </div>
       )}
-      {children}
+      <div style={{ paddingInline: 10, paddingBottom: 10 }}>{children}</div>
+      {footer}
     </div>
   );
 }
@@ -93,6 +111,22 @@ function BulletList({ items, color }: { items: string[]; color: string }) {
   );
 }
 
+function TotalCostFooter({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="flex items-center justify-between"
+      style={{ backgroundColor: "#F0FDF4", paddingInline: 10, paddingBlock: 12 }}
+    >
+      <span className="text-xs font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+        {label}
+      </span>
+      <span className="font-bold" style={{ color: "#087F23", fontSize: 18, fontFamily: "Nunito, sans-serif" }}>
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default function ReportPage() {
   const router = useRouter();
   const { user, cattleInfo, reportData, feedSelectionType, showSnackbar, setFeedSelectionType } = useStore((s) => ({
@@ -108,7 +142,6 @@ export default function ReportPage() {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
   const currencySymbol = (() => {
-    // Prefer user's stored currency; fall back to what the report response gives us
     const reportCurrency =
       (reportData as EvaluationResponse)?.cost_analysis?.currency ??
       (reportData as EvaluationResponse)?.currency ??
@@ -165,12 +198,10 @@ export default function ReportPage() {
   const evalReport = isEval ? (report as EvaluationResponse) : null;
   const recReport = !isEval ? (report as RecommendationResponse) : null;
 
-  // Determine optimization status label
   const statusLabel = isEval
     ? (evalReport?.evaluation_summary?.overall_status ?? "Evaluated")
     : (recReport?.report_info?.diet_rating ?? "—");
 
-  // Determine report_id for saving
   const reportIdForSave = isEval
     ? (evalReport?.report_id ?? "")
     : (recReport?.report_info?.report_id ?? "");
@@ -198,12 +229,20 @@ export default function ReportPage() {
     }
   };
 
-  // Generated date
   const generatedOn = isEval
     ? new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
     : (recReport?.report_info?.generated_date
         ? new Date(recReport.report_info.generated_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
         : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }));
+
+  // Total cost sums for footers
+  const recTotalCost = recReport?.least_cost_diet
+    ? recReport.least_cost_diet.reduce((sum: number, r: CostEffectiveDiet) => sum + (Number(r.daily_cost) || 0), 0)
+    : 0;
+
+  const evalTotalCost = evalReport?.feed_breakdown
+    ? evalReport.feed_breakdown.reduce((sum: number, r: FeedBreakdown) => sum + (Number(r.total_cost) || 0), 0)
+    : 0;
 
   return (
     <div
@@ -217,37 +256,48 @@ export default function ReportPage() {
       />
 
       <div className="flex-1 overflow-y-auto pb-28">
-        {/* Section 1: Report Summary */}
-        <SCard title="">
-          <div className="flex items-start justify-between">
+        {/* Section 1: Report Details */}
+        <SCard
+          title="Report Details"
+          icon={<IcSimulationDetails size={24} color="#064E3B" />}
+        >
+          <div className="grid grid-cols-2 gap-x-3 gap-y-[10px]">
             <div>
-              <p
-                className="text-base font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
-                {isEval ? "Diet Evaluation" : "Diet Recommendation"}
+              <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>
+                {isEval ? "Diet Type" : "Report ID"}
               </p>
-              <p
-                className="text-xs mt-0.5"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
-                {generatedOn}
+              <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
+                {isEval ? "Diet Evaluation" : (reportIdForSave || "—")}
               </p>
-              {!isEval && recReport?.report_info?.user_name && (
-                <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            </div>
+            <div>
+              <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>Status</p>
+              <div className="mt-1">
+                <StatusBadge status={statusLabel} />
+              </div>
+            </div>
+            {!isEval && recReport?.report_info?.user_name && (
+              <div className="col-span-2">
+                <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>Owner Name</p>
+                <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
                   {recReport.report_info.user_name}
                 </p>
-              )}
+              </div>
+            )}
+            <div className="col-span-2">
+              <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>Generated On</p>
+              <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
+                {generatedOn}
+              </p>
             </div>
-            <StatusBadge status={statusLabel} />
           </div>
         </SCard>
 
         {/* Section 2: Animal Characteristics */}
         {cattleInfo && (
-          <SCard title="Animal Characteristics">
-            <div className="grid grid-cols-2 gap-2.5">
-              {[
+          <SCard title="Animal Characteristics" icon={<IcAnimalCharacteristics size={24} color="#064E3B" />}>
+            <div className="grid grid-cols-2 gap-x-3 gap-y-[10px]">
+              {([
                 ["Breed", cattleInfo.breed],
                 ["Body Weight", `${cattleInfo.body_weight} kg`],
                 ["Body Condition Score", `${cattleInfo.body_condition_score}`],
@@ -255,25 +305,20 @@ export default function ReportPage() {
                 ["Days in Milk", `${cattleInfo.days_in_milk}`],
                 ["Days of Pregnancy", `${cattleInfo.days_of_pregnancy}`],
                 ["Milk Production", `${cattleInfo.milk_production} L/day`],
-                ["Milk Fat %", `${cattleInfo.milk_fat_percent}%`],
                 ["Milk Protein %", `${cattleInfo.milk_protein_percent}%`],
+                ["Milk Fat %", `${cattleInfo.milk_fat_percent}%`],
                 ["Parity", `${cattleInfo.parity}`],
                 ["Avg. Temperature", `${cattleInfo.average_temperature} °C`],
                 ...(cattleInfo.grazing ? [
                   ["Topography", cattleInfo.topography],
                   ["Distance Walked", `${cattleInfo.distance} km`],
-                ] as [string, string | number | undefined][]: []),
-              ].map(([label, value]) => (
-                <div
-                  key={label}
-                  className="rounded-xl p-3"
-                  style={{ backgroundColor: "#F8FAF9" }}
-                >
-                  <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{label}</p>
-                  <p
-                    className="text-sm font-bold mt-0.5"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                  >
+                ] as [string, string | number | undefined][] : []),
+              ] as [string, string | number | undefined][]).map(([label, value]) => (
+                <div key={label as string}>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>
+                    {label}
+                  </p>
+                  <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
                     {value}
                   </p>
                 </div>
@@ -285,17 +330,22 @@ export default function ReportPage() {
         {/* ─── EVALUATION SECTIONS ─── */}
         {isEval && evalReport && (
           <>
-            {/* Section 3: Evaluation Summary */}
+            {/* Evaluation Summary */}
             {evalReport.evaluation_summary && (evalReport.evaluation_summary.overall_status || evalReport.evaluation_summary.limiting_factor) && (
-              <SCard title="Evaluation Summary">
+              <SCard title="Evaluation Summary" icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <rect x="4" y="3" width="16" height="18" rx="2" stroke="#064E3B" strokeWidth="1.8" />
+                  <path d="M8 9l2 2 4-4M8 14h5M8 17h3" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }>
                 {evalReport.evaluation_summary.overall_status && (
-                  <div className="flex items-center justify-between rounded-xl px-4 py-2.5 mb-2" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2" style={{ backgroundColor: "#F8FAF9" }}>
                     <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Overall Status</span>
                     <StatusBadge status={evalReport.evaluation_summary.overall_status} />
                   </div>
                 )}
                 {evalReport.evaluation_summary.limiting_factor && (
-                  <div className="flex items-center justify-between rounded-xl px-4 py-2.5" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5" style={{ backgroundColor: "#F8FAF9" }}>
                     <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Limiting Factor</span>
                     <span className="text-sm font-bold" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>{evalReport.evaluation_summary.limiting_factor}</span>
                   </div>
@@ -303,8 +353,13 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Section 4: Cost Analysis */}
-            <SCard title="Cost Analysis">
+            {/* Cost Analysis */}
+            <SCard title="Cost Analysis" icon={
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
+                <path d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            }>
               <div className="flex gap-3 mb-3">
                 <MetricTile
                   label="Total Diet Cost"
@@ -325,42 +380,63 @@ export default function ReportPage() {
               )}
             </SCard>
 
-            {/* Section 4: Feed Breakdown */}
+            {/* Feed Breakdown */}
             {evalReport.feed_breakdown && evalReport.feed_breakdown.length > 0 && (
-              <SCard title="Feed Breakdown">
+              <SCard
+                title="Feed Breakdown"
+                icon={
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <rect x="3" y="3" width="8" height="8" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
+                    <rect x="13" y="3" width="8" height="8" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
+                    <rect x="3" y="13" width="8" height="8" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
+                    <rect x="13" y="13" width="8" height="8" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
+                  </svg>
+                }
+                footer={
+                  <TotalCostFooter
+                    label="Total Diet Cost"
+                    value={`${currencySymbol}${fmt(evalTotalCost)}`}
+                  />
+                }
+              >
                 <div
-                  className="flex text-xs font-bold py-2 px-2 rounded-lg mb-1"
+                  className="flex text-xs font-bold py-2 px-1 rounded-lg mb-1"
                   style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
                 >
                   <span className="flex-1">Feed</span>
-                  <span className="w-16 text-right">As Fed</span>
                   <span className="w-16 text-right">Price/kg</span>
+                  <span className="w-16 text-right">As Fed</span>
                   <span className="w-16 text-right">Cost/day</span>
                 </div>
                 {evalReport.feed_breakdown.map((row: FeedBreakdown, i: number) => (
                   <div
                     key={i}
-                    className="flex items-center py-2 px-2 border-b last:border-0"
+                    className="flex items-center py-2 px-1 border-b last:border-0"
                     style={{ borderColor: "#F1F5F9" }}
                   >
                     <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.feed_name}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_as_fed_kg_per_day, 1)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.price_per_kg)}</span>
+                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_as_fed_kg_per_day, 1)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.total_cost)}</span>
                   </div>
                 ))}
               </SCard>
             )}
 
-            {/* Section 5: Intake Evaluation */}
+            {/* Dry Matter Intake */}
             {evalReport.intake_evaluation && (
-              <SCard title="Dry Matter Intake">
+              <SCard title="Dry Matter Intake" icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3C7 3 3 7.5 3 12s4 9 9 9 9-4 9-9-4-9-9-9z" stroke="#064E3B" strokeWidth="1.8" />
+                  <path d="M12 8v4l3 2" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+              }>
                 <div className="flex gap-3 mb-3">
                   <MetricTile label="Actual Intake" value={`${fmt(evalReport.intake_evaluation.actual_intake_kg_per_day, 1)} kg`} unit="per day" />
                   <MetricTile label="Target Intake" value={`${fmt(evalReport.intake_evaluation.target_intake_kg_per_day, 1)} kg`} unit="per day" />
                 </div>
                 {evalReport.intake_evaluation.intake_status && (
-                  <div className="flex items-center justify-between rounded-xl px-4 py-2.5 mb-2" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2" style={{ backgroundColor: "#F8FAF9" }}>
                     <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Status</span>
                     <StatusBadge status={evalReport.intake_evaluation.intake_status} />
                   </div>
@@ -370,9 +446,15 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Section 6: Milk Production Analysis */}
+            {/* Milk Production Analysis */}
             {evalReport.milk_production_analysis && (
-              <SCard title="Milk Production Analysis">
+              <SCard title="Milk Production Analysis" icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 3h8l1 4H7L8 3z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M6 7c0 0-2 3-2 7a8 8 0 0 0 16 0c0-4-2-7-2-7" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M10 14a3 3 0 0 0 4 0" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              }>
                 <div className="flex gap-3 mb-3 flex-wrap">
                   <MetricTile
                     label="Actual Milk"
@@ -396,7 +478,7 @@ export default function ReportPage() {
                   />
                 </div>
                 {evalReport.milk_production_analysis.limiting_nutrient && (
-                  <div className="flex items-center justify-between rounded-xl px-4 py-2.5 mb-2" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2" style={{ backgroundColor: "#F8FAF9" }}>
                     <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Limiting Nutrient</span>
                     <span className="text-sm font-bold" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>{evalReport.milk_production_analysis.limiting_nutrient}</span>
                   </div>
@@ -406,9 +488,13 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Section 7: Nutrient Balance */}
+            {/* Nutrient Balance */}
             {evalReport.nutrient_balance && (
-              <SCard title="Nutrient Balance">
+              <SCard title="Nutrient Balance" icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M3 17l5-5 4 4 5-7 4 3" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              }>
                 <BalanceRow label="Energy" value={evalReport.nutrient_balance.energy_balance_mcal} unit="Mcal" />
                 <BalanceRow label="Protein" value={evalReport.nutrient_balance.protein_balance_kg} unit="kg" />
                 <BalanceRow label="NDF" value={evalReport.nutrient_balance.ndf_balance_kg} unit="kg" />
@@ -421,9 +507,9 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Section 8: Methane Analysis */}
+            {/* Environment Impact */}
             {evalReport.methane_analysis && (
-              <SCard title="Environment Impact">
+              <SCard title="Environment Impact" icon={<IcEnvironment size={24} color="#064E3B" />}>
                 <div className="grid grid-cols-2 gap-3">
                   <MetricTile label="CH₄ Production" value={`${fmt(evalReport.methane_analysis.methane_production_g_per_day, 1)}`} unit="g/day" />
                   <MetricTile label="CH₄ Intensity" value={`${fmt(evalReport.methane_analysis.methane_intensity_g_per_kg_ecm, 2)}`} unit="g/kg ECM" />
@@ -431,7 +517,7 @@ export default function ReportPage() {
                   <MetricTile label="CH₄ Emission" value={`${fmt(evalReport.methane_analysis.methane_emission_mj_per_day, 1)}`} unit="MJ/day" />
                 </div>
                 {evalReport.methane_analysis.classification && (
-                  <div className="flex items-center justify-between rounded-xl px-4 py-2.5 mt-3" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mt-3" style={{ backgroundColor: "#F8FAF9" }}>
                     <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Classification</span>
                     <span className="text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{evalReport.methane_analysis.classification}</span>
                   </div>
@@ -448,65 +534,115 @@ export default function ReportPage() {
         {/* ─── RECOMMENDATION SECTIONS ─── */}
         {!isEval && recReport && (
           <>
-            {/* Section 3: Solution Summary */}
+            {/* Solution Summary */}
             {recReport.solution_summary && (
-              <SCard title="Solution Summary">
-                <div className="flex gap-3">
-                  {recReport.solution_summary.daily_cost != null && (
-                    <MetricTile
-                      label="Daily Cost"
-                      value={`${currencySymbol}${Number(recReport.solution_summary.daily_cost).toFixed(2)}`}
-                      unit=""
-                    />
-                  )}
-                  {recReport.solution_summary.dry_matter_intake && (
-                    <MetricTile
-                      label="DM Intake"
-                      value={recReport.solution_summary.dry_matter_intake.split(" ")[0]}
-                      unit={recReport.solution_summary.dry_matter_intake.split(" ").slice(1).join(" ") || "kg"}
-                    />
-                  )}
-                  {recReport.solution_summary.milk_production && (
-                    <MetricTile
-                      label="Milk Prod."
-                      value={recReport.solution_summary.milk_production.split(" ")[0]}
-                      unit={recReport.solution_summary.milk_production.split(" ").slice(1).join(" ") || "L/day"}
-                    />
-                  )}
+              <SCard title="Solution Summary" icon={<IcSimulationDetails size={24} color="#064E3B" />}>
+                {/* Daily Cost */}
+                {recReport.solution_summary.daily_cost != null && (
+                  <div style={{ marginBottom: 10 }}>
+                    <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="9" stroke="#05BC6D" strokeWidth="2" />
+                        <path d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4" stroke="#05BC6D" strokeWidth="1.6" strokeLinecap="round" />
+                      </svg>
+                      <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Daily Cost</p>
+                    </div>
+                    <div className="flex items-baseline gap-1.5">
+                      <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>
+                        {currencySymbol}{Number(recReport.solution_summary.daily_cost).toFixed(2)}
+                      </p>
+                      <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                        {user?.currency || ""}
+                      </p>
+                    </div>
+                  </div>
+                )}
+                {/* Milk Production + DM Intake (2-col) */}
+                <div className="grid grid-cols-2 gap-x-4">
+                  {recReport.solution_summary.milk_production && (() => {
+                    const parts = recReport.solution_summary.milk_production.split(" ");
+                    return (
+                      <div>
+                        <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M8 3h8l1 4H7L8 3z" stroke="#007BFF" strokeWidth="1.8" strokeLinejoin="round" />
+                            <path d="M6 7c0 0-2 3-2 7a8 8 0 0 0 16 0c0-4-2-7-2-7" stroke="#007BFF" strokeWidth="1.8" strokeLinecap="round" />
+                          </svg>
+                          <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Milk Production</p>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>{parts[0]}</p>
+                          <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>{parts.slice(1).join(" ")}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                  {recReport.solution_summary.dry_matter_intake && (() => {
+                    const parts = recReport.solution_summary.dry_matter_intake.split(" ");
+                    return (
+                      <div>
+                        <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 3C9 3 5 6 5 12s4 9 7 9 7-3 7-9-4-9-7-9z" stroke="#FF9800" strokeWidth="1.8" strokeLinecap="round" />
+                            <path d="M12 8v5l3 2" stroke="#FF9800" strokeWidth="1.6" strokeLinecap="round" />
+                          </svg>
+                          <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Dry Matter Intake</p>
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>{parts[0]}</p>
+                          <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>{parts.slice(1).join(" ")}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </SCard>
             )}
 
-            {/* Section 4: Least Cost Diet */}
+            {/* Cost Effective Diet */}
             {recReport.least_cost_diet && recReport.least_cost_diet.length > 0 && (
-              <SCard title="Cost Effective Diet">
+              <SCard
+                title="Cost Effective Diet"
+                icon={
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
+                    <path d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                }
+                footer={
+                  <TotalCostFooter
+                    label="Total Diet Cost"
+                    value={`${currencySymbol}${fmt(recTotalCost)}`}
+                  />
+                }
+              >
                 <div
-                  className="flex text-xs font-bold py-2 px-2 rounded-lg mb-1"
+                  className="flex text-xs font-bold py-2 px-1 rounded-lg mb-1"
                   style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
                 >
-                  <span className="flex-1">Feed</span>
-                  <span className="w-16 text-right">Qty</span>
+                  <span className="flex-1">Name</span>
                   <span className="w-16 text-right">Price/kg</span>
-                  <span className="w-16 text-right">Cost/day</span>
+                  <span className="w-16 text-right">Qty (kg)</span>
+                  <span className="w-16 text-right">Cost</span>
                 </div>
                 {recReport.least_cost_diet.map((row: CostEffectiveDiet, i: number) => (
                   <div
                     key={i}
-                    className="flex items-center py-2 px-2 border-b last:border-0"
+                    className="flex items-center py-2 px-1 border-b last:border-0"
                     style={{ borderColor: "#F1F5F9" }}
                   >
                     <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.feed_name}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_kg_per_day, 1)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.price_per_kg)}</span>
+                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_kg_per_day, 1)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.daily_cost)}</span>
                   </div>
                 ))}
               </SCard>
             )}
 
-            {/* Section 5: Environmental Impact */}
+            {/* Environmental Impact */}
             {recReport.environmental_impact && (
-              <SCard title="Environment Impact">
+              <SCard title="Environment Impact" icon={<IcEnvironment size={24} color="#064E3B" />}>
                 <div className="grid grid-cols-2 gap-3">
                   {recReport.environmental_impact.methane_production_grams_per_day && (
                     <MetricTile label="CH₄ Production" value={recReport.environmental_impact.methane_production_grams_per_day} unit="g/day" />
@@ -522,7 +658,7 @@ export default function ReportPage() {
                   )}
                 </div>
                 {recReport.environmental_impact.classification && (
-                  <div className="flex items-center justify-between rounded-xl px-4 py-2.5 mt-3" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mt-3" style={{ backgroundColor: "#F8FAF9" }}>
                     <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Classification</span>
                     <span className="text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{recReport.environmental_impact.classification}</span>
                   </div>
@@ -530,19 +666,33 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Section 6: Recommendations & Warnings */}
+            {/* Optimization Violations + Recommendations & Warnings */}
             {recReport.additional_information && (
               <>
                 {(recReport.additional_information.violated_parameters?.length ?? 0) > 0 && (
-                  <SCard title="Optimization Violations">
+                  <SCard title="Violated Parameters" icon={
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
+                      <path d="M12 9v4M12 17h.01" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                    </svg>
+                  }>
                     <BulletList items={recReport.additional_information.violated_parameters} color="#E44A4A" />
                   </SCard>
                 )}
                 {((recReport.additional_information.recommendations?.length ?? 0) > 0 ||
                   (recReport.additional_information.warnings?.length ?? 0) > 0) && (
-                  <SCard title="Recommendations & Warnings">
+                  <SCard title="Recommendations" icon={
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 11l3 3 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      <path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z" stroke="#064E3B" strokeWidth="1.8" />
+                    </svg>
+                  }>
                     <BulletList items={recReport.additional_information.recommendations ?? []} color="#064E3B" />
-                    <BulletList items={recReport.additional_information.warnings ?? []} color="#FF9800" />
+                    {(recReport.additional_information.warnings?.length ?? 0) > 0 && (
+                      <div className="mt-2">
+                        <BulletList items={recReport.additional_information.warnings ?? []} color="#FF9800" />
+                      </div>
+                    )}
                   </SCard>
                 )}
               </>
@@ -566,7 +716,6 @@ export default function ReportPage() {
           zIndex: 30,
         }}
       >
-        {/* Generate Recommendation from Evaluation — shown only in eval mode */}
         {isEval && (
           <button
             onClick={() => {
@@ -585,7 +734,6 @@ export default function ReportPage() {
             Generate Diet Recommendation
           </button>
         )}
-        {/* View PDF — appears after save if backend returns bucket_url */}
         {pdfUrl && (
           <button
             onClick={() => window.open(pdfUrl, "_blank", "noopener,noreferrer")}

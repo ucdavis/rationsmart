@@ -32,7 +32,7 @@ export default function SplashScreen() {
   return (
     <div
       className="flex flex-col items-center justify-between min-h-screen py-16"
-      style={{ backgroundColor: "#F8FAF9" }}
+      style={{ backgroundColor: "#FFFFFF" }}
     >
       <div />
       <AppBranding />

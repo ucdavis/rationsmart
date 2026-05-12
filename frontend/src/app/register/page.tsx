@@ -149,7 +149,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto pb-6">
+      <div className="flex-1 overflow-y-auto pb-3">
         {/* App branding */}
         <div className="flex justify-center pt-6 pb-2">
           <AppBranding />
@@ -235,7 +235,7 @@ export default function RegisterPage() {
 
         {/* Confirm PIN — disabled until PIN is complete */}
         <div ref={confirmPinRef}>
-          <p className="text-xs font-bold uppercase tracking-wide mt-5 ml-6 mb-3" style={labelStyle}>
+          <p className="text-xs uppercase tracking-wide mt-5 ml-6 mb-3" style={labelStyle}>
             Confirm PIN
           </p>
           <PinInput
@@ -253,37 +253,37 @@ export default function RegisterPage() {
             PINs do not match
           </p>
         )}
-
-        {/* Proceed button */}
-        <div className="px-4 mt-8 mb-4">
-          <button
-            onClick={handleProceed}
-            disabled={!isReady || isLoading}
-            className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
-              color: isReady && !isLoading ? "#FFFFFF" : "#999999",
-              fontFamily: "Nunito, sans-serif",
-              border: "none",
-              cursor: isReady && !isLoading ? "pointer" : "not-allowed",
-              transition: "background-color 0.2s, color 0.2s",
-            }}
-          >
-            {isLoading ? (
-              <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-                <span>Creating account...</span>
-              </>
-            ) : (
-              "Proceed"
-            )}
-          </button>
-        </div>
-
-        <PoweredBy />
       </div>
+
+      {/* Proceed button — fixed outside scroll area */}
+      <div className="px-4 mt-4">
+        <button
+          onClick={handleProceed}
+          disabled={!isReady || isLoading}
+          className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
+          style={{
+            backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
+            color: isReady && !isLoading ? "#FFFFFF" : "#999999",
+            fontFamily: "Nunito, sans-serif",
+            border: "none",
+            cursor: isReady && !isLoading ? "pointer" : "not-allowed",
+            transition: "background-color 0.2s, color 0.2s",
+          }}
+        >
+          {isLoading ? (
+            <>
+              <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+              </svg>
+              <span>Creating account...</span>
+            </>
+          ) : (
+            "Proceed"
+          )}
+        </button>
+      </div>
+
+      <PoweredBy />
     </div>
   );
 }

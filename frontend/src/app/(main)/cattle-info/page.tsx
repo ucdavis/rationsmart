@@ -518,7 +518,7 @@ export default function CattleInfoPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Body Weight (kg) *</FieldLabel>
+                <FieldLabel>Body Weight (BW; kg) *</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -531,7 +531,7 @@ export default function CattleInfoPage() {
                 <FieldError message={errors.body_weight} />
               </div>
               <div>
-                <FieldLabel>Wt Gain (kg/day)</FieldLabel>
+                <FieldLabel>BW Gain (kg/day) *</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -547,7 +547,7 @@ export default function CattleInfoPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Condition Score</FieldLabel>
+                <FieldLabel>Body Condition Score</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -609,7 +609,7 @@ export default function CattleInfoPage() {
         {/* Section 4: Milk Production */}
         <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title="Milk Production">
           <div className="px-3">
-            <FieldLabel>Milk Production (L/day) *</FieldLabel>
+            <FieldLabel>Milk Production (L) *</FieldLabel>
             <input
               type="number"
               inputMode="decimal"
@@ -647,7 +647,7 @@ export default function CattleInfoPage() {
         {/* Section 5: Environment */}
         <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title="Environment">
           <div className="px-3">
-            <FieldLabel>Avg. Temperature (°C)</FieldLabel>
+            <FieldLabel>Avg Temperature (°C)</FieldLabel>
             <input
               type="number"
               inputMode="decimal"
@@ -781,8 +781,8 @@ export default function CattleInfoPage() {
             border: "2px solid #064E3B",
             color: "#064E3B",
             background: "white",
-            paddingLeft: 28,
-            paddingRight: 28,
+            paddingLeft: 40,
+            paddingRight: 40,
             fontFamily: "Nunito, sans-serif",
             cursor: "pointer",
           }}
@@ -793,7 +793,7 @@ export default function CattleInfoPage() {
         <button
           onClick={handleContinue}
           disabled={!requiredFilled}
-          className="flex-1 py-3.5 rounded-2xl font-bold text-base flex items-center justify-center gap-1.5"
+          className="flex-1 py-3.5 rounded-2xl font-bold text-base"
           style={{
             backgroundColor: requiredFilled ? "#064E3B" : "#D3D3D3",
             color: requiredFilled ? "#FFFFFF" : "#999999",
@@ -803,10 +803,7 @@ export default function CattleInfoPage() {
             transition: "background-color 0.2s, color 0.2s",
           }}
         >
-          <span>Continue to Feed</span>
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M4 8H12M9 5L12 8L9 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          Continue to Feed
         </button>
       </div>
 
@@ -821,35 +818,31 @@ export default function CattleInfoPage() {
           />
           {/* Sheet */}
           <div
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full rounded-t-3xl bg-white px-4 pt-4 pb-8 overflow-y-auto"
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full rounded-t-3xl bg-white pb-8 overflow-y-auto"
             style={{ maxWidth: 430, maxHeight: "80vh", zIndex: 51 }}
           >
-            {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-              <span
-                className="text-base font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
-                Simulation History
-              </span>
-              <button
-                onClick={() => setShowHistoryModal(false)}
-                className="flex items-center justify-center rounded-full border-none p-0"
-                style={{ width: 32, height: 32, backgroundColor: "#F1F5F9", cursor: "pointer" }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M2 2L12 12M12 2L2 12" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" />
-                </svg>
-              </button>
+            {/* Drag handle */}
+            <div className="flex justify-center pt-4 mb-5">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#E2E8F0" }} />
             </div>
+            {/* Title */}
+            <p
+              className="text-center font-bold px-3 mb-3"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+            >
+              Simulation History
+            </p>
 
             {/* Content */}
+            <div>
             {isLoadingHistory ? (
-              <div className="flex flex-col gap-4 py-2">
+              <div className="space-y-3 px-3 pb-3">
                 {[0, 1, 2].map((i) => (
-                  <div key={i} className="flex flex-col gap-2">
-                    <div className="h-4 w-40 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
-                    <div className="h-3 w-28 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+                  <div key={i} className="bg-white p-4 space-y-3" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+                    <div className="h-5 w-48 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+                    <div className="h-3.5 w-36 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+                    <div className="h-3.5 w-28 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+                    <div className="h-3.5 w-40 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
                   </div>
                 ))}
               </div>
@@ -861,65 +854,90 @@ export default function CattleInfoPage() {
                 No saved simulations found
               </p>
             ) : (
-              <div>
+              <div className="pb-3">
                 {historyList.map((item, idx) => {
                   const rowId = item.report_id ?? item.simulation_id ?? String(idx);
                   const isRowLoading = loadingSimId === rowId;
                   const displayName = item.simulation_id ?? "Simulation";
-                  const meta = [item.country_name ?? item.country, item.created_at]
-                    .filter(Boolean)
-                    .join(" · ");
+                  const countryName = item.country_name ?? item.country ?? "";
+                  const createdAt = item.created_at
+                    ? new Date(item.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+                    : "";
                   return (
-                    <button
+                    <div
                       key={rowId}
-                      onClick={() => loadSimulation(item.report_id ?? item.simulation_id ?? "")}
-                      disabled={loadingSimId !== null}
-                      className="w-full flex items-center justify-between py-3 text-left bg-transparent"
+                      className="mx-3 mt-3 bg-white"
                       style={{
-                        borderTop: "none",
-                        borderLeft: "none",
-                        borderRight: "none",
-                        borderBottom: "1px solid #F1F5F9",
+                        borderRadius: 16,
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
                         cursor: loadingSimId !== null ? "not-allowed" : "pointer",
+                        opacity: loadingSimId !== null && !isRowLoading ? 0.6 : 1,
                       }}
+                      onClick={() => !loadingSimId && loadSimulation(item.report_id ?? item.simulation_id ?? "")}
                     >
-                      <div className="flex flex-col gap-0.5">
-                        <span
-                          className="text-sm font-bold"
-                          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                        >
-                          {displayName}
-                        </span>
-                        {meta && (
-                          <span
-                            className="text-xs"
-                            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                      <div className="flex items-center" style={{ paddingBottom: 10 }}>
+                        {/* Left: text fields */}
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="font-bold"
+                            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18, margin: "10px 10px 0 10px" }}
                           >
-                            {meta}
-                          </span>
-                        )}
-                      </div>
-                      {isRowLoading ? (
-                        <svg
-                          className="animate-spin"
-                          width="18"
-                          height="18"
-                          viewBox="0 0 18 18"
-                          fill="none"
+                            {displayName}
+                          </p>
+                          <div className="flex items-center" style={{ marginTop: 10, marginLeft: 10 }}>
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: 6 }}>
+                              <rect x="2" y="1.5" width="10" height="11" rx="1.5" stroke="#6D6D6D" strokeWidth="1.2" />
+                              <path d="M4 5h6M4 7h5M4 9h3.5" stroke="#6D6D6D" strokeWidth="1.2" strokeLinecap="round" />
+                            </svg>
+                            <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                              ID: {rowId}
+                            </span>
+                          </div>
+                          {countryName && (
+                            <div className="flex items-center" style={{ marginTop: 10, marginLeft: 10 }}>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: 6 }}>
+                                <path d="M7 1.5A3.5 3.5 0 0 0 3.5 5c0 2.625 3.5 7 3.5 7S10.5 7.625 10.5 5A3.5 3.5 0 0 0 7 1.5zm0 4.75A1.25 1.25 0 1 1 7 4a1.25 1.25 0 0 1 0 2.25z" fill="#6D6D6D" />
+                              </svg>
+                              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                                Country: {countryName}
+                              </span>
+                            </div>
+                          )}
+                          {createdAt && (
+                            <div className="flex items-center" style={{ marginTop: 10, marginLeft: 10 }}>
+                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: 6 }}>
+                                <rect x="1.5" y="2.5" width="11" height="10" rx="1.5" stroke="#6D6D6D" strokeWidth="1.2" />
+                                <path d="M4.5 1.5v2M9.5 1.5v2M1.5 5.5h11" stroke="#6D6D6D" strokeWidth="1.2" strokeLinecap="round" />
+                              </svg>
+                              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                                Created on: {createdAt}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        {/* Right: arrow pill card */}
+                        <div
+                          className="flex items-center justify-center flex-shrink-0"
+                          style={{ width: 34, height: 34, borderRadius: 60, backgroundColor: "#E4F7EF", marginRight: 10 }}
                         >
-                          <circle cx="9" cy="9" r="7" stroke="#E2E8F0" strokeWidth="2" />
-                          <path d="M9 2a7 7 0 0 1 7 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
-                        </svg>
-                      ) : (
-                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                          <path d="M6 4L10 8L6 12" stroke="#6D6D6D" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      )}
-                    </button>
+                          {isRowLoading ? (
+                            <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <circle cx="8" cy="8" r="6" stroke="#E2E8F0" strokeWidth="2" />
+                              <path d="M8 2a6 6 0 0 1 6 6" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                            </svg>
+                          ) : (
+                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                              <path d="M6 4L10 8L6 12" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             )}
+            </div>
           </div>
         </>
       )}

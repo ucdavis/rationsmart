@@ -107,7 +107,7 @@ export default function LoginPage() {
 
         {/* PIN label */}
         <p
-          className="text-xs font-bold uppercase tracking-wide mt-5 ml-6 mb-3"
+          className="text-xs font-bold uppercase tracking-wide mt-3 ml-6 mb-3"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
           Enter PIN
@@ -149,48 +149,38 @@ export default function LoginPage() {
         </div>
 
         {/* OR divider */}
-        <div className="flex items-center gap-3 px-6 mt-7">
-          <div className="flex-1 h-0.5" style={{ backgroundColor: "#E2E8F0" }} />
+        <div className="flex items-center mt-5 px-4 gap-3">
+          <div style={{ flex: 1, height: 2, backgroundColor: "#E2E8F0" }} />
           <span
-            className="text-xl font-bold"
-            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+            className="font-bold"
+            style={{ fontSize: 20, color: "#231F20", fontFamily: "Nunito, sans-serif" }}
           >
             OR
           </span>
-          <div className="flex-1 h-0.5" style={{ backgroundColor: "#E2E8F0" }} />
+          <div style={{ flex: 1, height: 2, backgroundColor: "#E2E8F0" }} />
         </div>
 
         {/* Register link */}
-        <div className="flex justify-center mt-5">
+        <div className="flex justify-center mt-3">
           <button
             onClick={() => router.push("/register")}
             className="text-base"
-            style={{
-              color: "#231F20",
-              fontFamily: "Nunito, sans-serif",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
+            style={{ background: "none", border: "none", cursor: "pointer" }}
           >
-            New User? Register Here
+            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>New User? </span>
+            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>Register here</span>
           </button>
         </div>
 
         {/* Forgot PIN */}
-        <div className="flex justify-center mt-3">
+        <div className="flex justify-center mt-3 mb-8">
           <button
             onClick={() => router.push("/forgot-pin")}
             className="text-base"
-            style={{
-              color: "#231F20",
-              fontFamily: "Nunito, sans-serif",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-            }}
+            style={{ background: "none", border: "none", cursor: "pointer" }}
           >
-            Forgot PIN?
+            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Forgot PIN? </span>
+            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>Tap here</span>
           </button>
         </div>
       </div>

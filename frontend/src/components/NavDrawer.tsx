@@ -82,15 +82,15 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           {/* Profile section */}
           <div className="flex items-center gap-3 flex-1 min-w-0 mt-1">
             <div
-              className="flex items-center justify-center rounded-xl flex-shrink-0"
-              style={{ width: 52, height: 52, backgroundColor: "#F0FDF4" }}
+              className="flex items-center justify-center flex-shrink-0"
+              style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 20 }}
             >
               <IcUser size={30} color="#064E3B" />
             </div>
             <div className="min-w-0">
               <p
-                className="text-base font-bold truncate"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                className="font-bold truncate"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
               >
                 {user?.name || "User"}
               </p>
@@ -135,7 +135,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                     {item.label}
                   </span>
                 </div>
-                <IcArrowRight size={16} color="#6D6D6D" />
+                <IcArrowRight size={16} color="#064E3B" />
               </button>
               {idx < arr.length - 1 && (
                 <div style={{ height: 1, backgroundColor: "#E2E8F0", marginLeft: 52 }} />
@@ -170,45 +170,45 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           className="fixed inset-0 z-[100] flex items-center justify-center px-6"
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
         >
-          <div className="bg-white rounded-2xl p-6 w-full max-w-xs" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(5,188,109,0.15)" }}>
+                <div className="flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#FFFFFF" }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <polyline points="16 17 21 12 16 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <line x1="21" y1="12" x2="9" y2="12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
             <h3
-              className="text-lg font-bold mb-2"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+              className="text-center font-bold mb-2"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Logout
+              Confirm Logout
             </h3>
             <p
-              className="text-base mb-6"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              className="text-center text-sm mb-5"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
               Are you sure you want to logout?
             </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-3 rounded-2xl font-bold"
-                style={{
-                  border: "2px solid #064E3B",
-                  color: "#064E3B",
-                  background: "white",
-                  fontFamily: "Nunito, sans-serif",
-                  cursor: "pointer",
-                }}
+                className="flex-1 py-3 rounded-full font-bold"
+                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
-                Cancel
+                No
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 py-3 rounded-2xl font-bold"
-                style={{
-                  backgroundColor: "#E44A4A",
-                  color: "white",
-                  border: "none",
-                  fontFamily: "Nunito, sans-serif",
-                  cursor: "pointer",
-                }}
+                className="flex-1 py-3 rounded-full font-bold"
+                style={{ backgroundColor: "#064E3B", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
-                Logout
+                Yes, Logout
               </button>
             </div>
           </div>

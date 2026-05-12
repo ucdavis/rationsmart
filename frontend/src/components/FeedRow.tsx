@@ -188,30 +188,51 @@ export default function FeedRow({
   return (
     <div style={{ backgroundColor: "#fff", borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
 
-      {/* Card header: FEED # + delete button */}
+      {/* Card header: FEED # + edit + delete buttons */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 10px 8px" }}>
         <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700, fontSize: 16 }}>
           FEED {index + 1}
         </span>
-        {index > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {/* Edit button — present on all cards, matching Android */}
           <button
-            onClick={() => onDelete(item.id)}
             style={{
-              backgroundColor: "#FEC5BB",
+              backgroundColor: "#D3D3D3",
               borderRadius: 10,
               padding: 8,
               border: "none",
-              cursor: "pointer",
+              cursor: "default",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
-            aria-label="Remove feed"
+            aria-label="Edit feed"
           >
-            <IcDelete size={16} color="#FC2E20" />
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
           </button>
-        )}
+          {index > 0 && (
+            <button
+              onClick={() => onDelete(item.id)}
+              style={{
+                backgroundColor: "#FEC5BB",
+                borderRadius: 10,
+                padding: 8,
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+              aria-label="Remove feed"
+            >
+              <IcDelete size={16} color="#FC2E20" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Row 1: Feed Type (left) + Feed Category (right) */}
