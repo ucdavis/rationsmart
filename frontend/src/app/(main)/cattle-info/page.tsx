@@ -490,7 +490,6 @@ export default function CattleInfoPage() {
               type="text"
               value={form.simulation_name}
               onChange={(e) => set("simulation_name")(e.target.value)}
-              placeholder="e.g. July Trial"
               className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={inputStyle}
             />
@@ -527,7 +526,6 @@ export default function CattleInfoPage() {
                   inputMode="decimal"
                   value={form.body_weight}
                   onChange={(e) => handleBodyWeight(e.target.value)}
-                  placeholder="350–720"
                   className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={{ ...inputStyle, borderColor: errors.body_weight ? "#E44A4A" : undefined }}
                 />
@@ -540,7 +538,6 @@ export default function CattleInfoPage() {
                   inputMode="decimal"
                   value={form.body_weight_gain}
                   onChange={(e) => handleBWGain(e.target.value)}
-                  placeholder="0–1.8"
                   className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
@@ -550,13 +547,12 @@ export default function CattleInfoPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Body Condition Score</FieldLabel>
+                <FieldLabel>Body Condition Score *</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
                   value={form.body_condition_score}
                   onChange={(e) => handleBCS(e.target.value)}
-                  placeholder="1–5"
                   className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
@@ -569,7 +565,6 @@ export default function CattleInfoPage() {
                   inputMode="numeric"
                   value={form.days_in_milk}
                   onChange={(e) => handleDaysInMilk(e.target.value)}
-                  placeholder="0–400"
                   className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
@@ -590,7 +585,6 @@ export default function CattleInfoPage() {
                   inputMode="numeric"
                   value={form.days_of_pregnancy}
                   onChange={(e) => handleDaysOfPregnancy(e.target.value)}
-                  placeholder="0–280"
                   className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
@@ -618,7 +612,6 @@ export default function CattleInfoPage() {
               inputMode="decimal"
               value={form.milk_production}
               onChange={(e) => handleMilkProduction(e.target.value)}
-              placeholder="1–59"
               className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={inputStyle}
             />
@@ -626,7 +619,7 @@ export default function CattleInfoPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Milk Protein %</FieldLabel>
+                <FieldLabel>Milk Protein % *</FieldLabel>
                 <SelectInput
                   value={form.milk_protein_percent}
                   onChange={set("milk_protein_percent")}
@@ -650,13 +643,12 @@ export default function CattleInfoPage() {
         {/* Section 5: Environment */}
         <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title="Environment">
           <div className="px-3">
-            <FieldLabel>Avg Temperature (°C)</FieldLabel>
+            <FieldLabel>Avg Temperature (°C) *</FieldLabel>
             <input
               type="number"
               inputMode="decimal"
               value={form.average_temperature}
               onChange={(e) => handleAvgTemp(e.target.value)}
-              placeholder="e.g. 28"
               className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={inputStyle}
             />
@@ -700,8 +692,8 @@ export default function CattleInfoPage() {
             {/* Distance Walked + Topography — shown only when grazing is ON */}
             {form.grazing && (
               <>
-                <FieldLabel>Topography</FieldLabel>
-                <div className="flex gap-6 mt-1 ml-1">
+                <FieldLabel>Topography *</FieldLabel>
+                <div className="flex flex-col gap-3 mt-2 ml-1">
                   {(["Flat", "Hilly"] as const).map((opt) => (
                     <button
                       key={opt}
@@ -747,13 +739,12 @@ export default function CattleInfoPage() {
                   ))}
                 </div>
 
-                <FieldLabel>Distance Walked (km)</FieldLabel>
+                <FieldLabel>Distance Walked (km) *</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
                   value={form.distance_walked}
                   onChange={(e) => handleDistanceWalked(e.target.value)}
-                  placeholder="e.g. 2.5"
                   className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                   style={inputStyle}
                 />
