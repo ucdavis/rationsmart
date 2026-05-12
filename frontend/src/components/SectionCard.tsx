@@ -28,7 +28,7 @@ export default function SectionCard({
           {/* Icon card */}
           <div
             className="rounded-xl p-1.5 flex items-center justify-center"
-            style={{ backgroundColor: "#F0FDF4", minWidth: 36, minHeight: 36 }}
+            style={{ backgroundColor: "#E4F7EF", minWidth: 36, minHeight: 36 }}
           >
             {iconSvg ? (
               iconSvg

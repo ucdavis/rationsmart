@@ -8,6 +8,7 @@ import { isEmailAddressValid } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
+import RequiredAsterisk from "@/components/RequiredAsterisk";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -83,12 +84,12 @@ export default function LoginPage() {
 
         {/* Email label + input */}
         <p
-          className="text-xs font-bold uppercase tracking-wide mt-6 ml-6 mb-1.5"
+          className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          Email Address *
+          Email Address<RequiredAsterisk />
         </p>
-        <div className="px-4">
+        <div className="px-3">
           <input
             type="email"
             inputMode="email"
@@ -107,7 +108,7 @@ export default function LoginPage() {
 
         {/* PIN label */}
         <p
-          className="text-xs font-bold uppercase tracking-wide mt-3 ml-6 mb-3"
+          className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
           Enter PIN
@@ -115,7 +116,7 @@ export default function LoginPage() {
         <PinInput value={pin} onChange={setPin} />
 
         {/* Proceed button */}
-        <div className="px-4 mt-7">
+        <div className="px-3 mt-5">
           <button
             onClick={handleProceed}
             disabled={!isReady || isLoading}
@@ -149,7 +150,7 @@ export default function LoginPage() {
         </div>
 
         {/* OR divider */}
-        <div className="flex items-center mt-5 px-4 gap-3">
+        <div className="flex items-center mt-5 px-3 gap-3">
           <div style={{ flex: 1, height: 2, backgroundColor: "#E2E8F0" }} />
           <span
             className="font-bold"

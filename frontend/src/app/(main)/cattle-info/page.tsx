@@ -102,14 +102,17 @@ const inputStyle = {
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <p
-      className="text-xs font-bold uppercase tracking-wide mt-3 mb-1.5 ml-1"
-      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-    >
-      {children}
-    </p>
-  );
+  const cls = "text-xs font-bold uppercase tracking-wide mt-3 mb-1.5 ml-1";
+  const style = { color: "#6D6D6D", fontFamily: "Nunito, sans-serif" };
+  if (typeof children === "string" && children.endsWith(" *")) {
+    return (
+      <p className={cls} style={style}>
+        {children.slice(0, -2)}
+        <span style={{ color: "#FC2E20" }}>{" *"}</span>
+      </p>
+    );
+  }
+  return <p className={cls} style={style}>{children}</p>;
 }
 
 function FieldError({ message }: { message?: string }) {

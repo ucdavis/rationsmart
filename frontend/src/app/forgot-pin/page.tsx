@@ -7,6 +7,7 @@ import { resetPin } from "@/lib/api";
 import { isEmailAddressValid } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
+import RequiredAsterisk from "@/components/RequiredAsterisk";
 
 export default function ForgotPinPage() {
   const router = useRouter();
@@ -111,12 +112,12 @@ export default function ForgotPinPage() {
           </div>
         ) : (
           /* Form state */
-          <div className="px-4">
+          <div className="px-3">
             <p
-              className="text-xs font-bold uppercase tracking-wide mt-6 ml-2 mb-1.5"
+              className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              Email Address *
+              Email Address<RequiredAsterisk />
             </p>
             <input
               type="email"

@@ -47,7 +47,7 @@ export default function WelcomePage() {
       </div>
 
       {/* Bottom: CTA button + powered by */}
-      <div className="px-5 pb-8">
+      <div className="px-3 pb-8">
         <button
           onClick={() => router.push("/login")}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-full font-bold text-base text-white"

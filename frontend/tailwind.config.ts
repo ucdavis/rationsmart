@@ -25,8 +25,11 @@ const config: Config = {
         "sparkling-silver": "#E2E8F0",      // sparkling_silver (Android)
         "silver-sand": "#C2C2C2",           // silver_sand (inactive stars)
         "peachy-pink": "#FEC5BB",           // peachy_pink (feed delete bg)
-        "red-ryb": "#FC2E20",               // red_ryb (feed delete icon)
+        "red-ryb": "#FC2E20",               // red_ryb (feed delete icon, required-asterisk)
         "celtic-blue": "#296CD3",           // celtic_blue (reset PIN)
+        "mint-whisper": "#E8F5E9",          // mint_whisper (admin icon bg)
+        "ultramarine": "#1E40AF",           // ultramarine (feature-request badge)
+        "mirror-blue": "#2563EB",           // mirror_blue
       },
       fontFamily: {
         nunito: ["Nunito", "sans-serif"],

@@ -8,6 +8,7 @@ import { isEmailAddressValid, cleanNameInput } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
+import RequiredAsterisk from "@/components/RequiredAsterisk";
 
 interface Country {
   id: string | number;
@@ -156,10 +157,10 @@ export default function RegisterPage() {
         </div>
 
         {/* Name */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-6 ml-6 mb-1.5" style={labelStyle}>
-          Name *
+        <p className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5" style={labelStyle}>
+          Name<RequiredAsterisk />
         </p>
-        <div className="px-4">
+        <div className="px-3">
           <input
             type="text"
             placeholder="Your full name"
@@ -171,10 +172,10 @@ export default function RegisterPage() {
         </div>
 
         {/* Email */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-4 ml-6 mb-1.5" style={labelStyle}>
-          Email Address *
+        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
+          Email Address<RequiredAsterisk />
         </p>
-        <div className="px-4">
+        <div className="px-3">
           <input
             type="email"
             inputMode="email"
@@ -188,10 +189,10 @@ export default function RegisterPage() {
         </div>
 
         {/* Country */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-4 ml-6 mb-1.5" style={labelStyle}>
-          Country *
+        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
+          Country<RequiredAsterisk />
         </p>
-        <div className="px-4 relative">
+        <div className="px-3 relative">
           <select
             value={countryId}
             onChange={(e) => setCountryId(e.target.value)}
@@ -210,7 +211,7 @@ export default function RegisterPage() {
               </option>
             ))}
           </select>
-          <div className="absolute right-7 top-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path d="M4 6L8 10L12 6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
@@ -218,7 +219,7 @@ export default function RegisterPage() {
         </div>
 
         {/* PIN — disabled until country + email + name are valid */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-5 ml-6 mb-3" style={labelStyle}>
+        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
           Enter PIN
         </p>
         <PinInput
@@ -235,7 +236,7 @@ export default function RegisterPage() {
 
         {/* Confirm PIN — disabled until PIN is complete */}
         <div ref={confirmPinRef}>
-          <p className="text-xs uppercase tracking-wide mt-5 ml-6 mb-3" style={labelStyle}>
+          <p className="text-xs uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
             Confirm PIN
           </p>
           <PinInput
@@ -256,7 +257,7 @@ export default function RegisterPage() {
       </div>
 
       {/* Proceed button — fixed outside scroll area */}
-      <div className="px-4 mt-4">
+      <div className="px-3 mt-4">
         <button
           onClick={handleProceed}
           disabled={!isReady || isLoading}
