@@ -134,7 +134,7 @@ export default function BulkUploadPage() {
             disabled={isUploading}
             className="w-full flex flex-col items-center justify-center rounded-2xl"
             style={{
-              border: "2px dashed #2563EB",
+              border: "2px dashed #007BFF",
               backgroundColor: "#F6F9FD",
               padding: "32px 16px",
               cursor: isUploading ? "not-allowed" : "pointer",
@@ -142,7 +142,7 @@ export default function BulkUploadPage() {
           >
             <span
               className="flex items-center justify-center"
-              style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: "#2563EB" }}
+              style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: "#007BFF" }}
             >
               {isUploading ? (
                 <svg className="animate-spin" width="26" height="26" viewBox="0 0 24 24" fill="none">
@@ -157,13 +157,13 @@ export default function BulkUploadPage() {
             </span>
             <p
               className="font-bold uppercase tracking-wide mt-3"
-              style={{ color: "#2563EB", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+              style={{ color: "#1E40AF", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
             >
               {isUploading ? "Uploading..." : "Upload Feeds"}
             </p>
             <p
               className="mt-1"
-              style={{ color: "#2563EB", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+              style={{ color: "#2563EB", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
             >
               Tap to browse CSV or Excel
             </p>
@@ -177,7 +177,7 @@ export default function BulkUploadPage() {
           />
           <p
             className="mt-3 text-center italic"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+            style={{ color: "#999999", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
           >
             * Only files stored on your device are supported.
           </p>
@@ -190,14 +190,14 @@ export default function BulkUploadPage() {
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
         >
           <div className="grid grid-cols-2 gap-3">
-            {/* STANDARD Feeds — green theme */}
+            {/* STANDARD Feeds — Android honeydew bg + dark_green_turquoise icon */}
             <button
               onClick={handleExport}
               disabled={isExporting || isExportingCustom}
               className="flex flex-col items-start rounded-2xl px-3 py-4"
               style={{
-                backgroundColor: "#E4F7EF",
-                border: "none",
+                backgroundColor: "#F0FDF4",
+                border: "1px solid rgba(16,185,129,0.18)",
                 cursor: isExporting || isExportingCustom ? "not-allowed" : "pointer",
                 opacity: isExporting || isExportingCustom ? 0.7 : 1,
               }}
@@ -208,33 +208,33 @@ export default function BulkUploadPage() {
               >
                 {isExporting ? (
                   <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="#1CA069" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                    <circle cx="12" cy="12" r="10" stroke="#10B981" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                   </svg>
                 ) : (
                   /* database / standard icon */
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <ellipse cx="12" cy="5" rx="8" ry="2.5" stroke="#1CA069" strokeWidth="1.8" />
-                    <path d="M4 5v14c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5V5" stroke="#1CA069" strokeWidth="1.8" />
-                    <path d="M4 12c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5" stroke="#1CA069" strokeWidth="1.8" />
+                    <ellipse cx="12" cy="5" rx="8" ry="2.5" stroke="#10B981" strokeWidth="1.8" />
+                    <path d="M4 5v14c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5V5" stroke="#10B981" strokeWidth="1.8" />
+                    <path d="M4 12c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5" stroke="#10B981" strokeWidth="1.8" />
                   </svg>
                 )}
               </span>
-              <p className="font-bold uppercase tracking-wide mt-3" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+              <p className="font-bold uppercase tracking-wide mt-3" style={{ color: "#069460", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
                 Standard
               </p>
-              <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18, marginTop: 2 }}>
+              <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18, marginTop: 2 }}>
                 Feeds
               </p>
             </button>
 
-            {/* FILTERED Custom Feeds — orange theme */}
+            {/* FILTERED Custom Feeds — Android aesthetic_white bg + hot_orange icon */}
             <button
               onClick={handleExportCustom}
               disabled={isExporting || isExportingCustom}
               className="flex flex-col items-start rounded-2xl px-3 py-4"
               style={{
-                backgroundColor: "#FFF3E0",
-                border: "none",
+                backgroundColor: "#FFFAF2",
+                border: "1px solid rgba(255,109,0,0.18)",
                 cursor: isExporting || isExportingCustom ? "not-allowed" : "pointer",
                 opacity: isExporting || isExportingCustom ? 0.7 : 1,
               }}
@@ -245,24 +245,24 @@ export default function BulkUploadPage() {
               >
                 {isExportingCustom ? (
                   <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="#FF7800" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                    <circle cx="12" cy="12" r="10" stroke="#FF6D00" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                   </svg>
                 ) : (
                   /* hub / filtered icon */
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="2.5" fill="#FF7800" />
-                    <circle cx="12" cy="4" r="1.8" fill="#FF7800" />
-                    <circle cx="12" cy="20" r="1.8" fill="#FF7800" />
-                    <circle cx="4" cy="12" r="1.8" fill="#FF7800" />
-                    <circle cx="20" cy="12" r="1.8" fill="#FF7800" />
-                    <path d="M12 6.5v3M12 14.5v3M5.8 12h3.7M14.5 12h3.7" stroke="#FF7800" strokeWidth="1.5" strokeLinecap="round" />
+                    <circle cx="12" cy="12" r="2.5" fill="#FF6D00" />
+                    <circle cx="12" cy="4" r="1.8" fill="#FF6D00" />
+                    <circle cx="12" cy="20" r="1.8" fill="#FF6D00" />
+                    <circle cx="4" cy="12" r="1.8" fill="#FF6D00" />
+                    <circle cx="20" cy="12" r="1.8" fill="#FF6D00" />
+                    <path d="M12 6.5v3M12 14.5v3M5.8 12h3.7M14.5 12h3.7" stroke="#FF6D00" strokeWidth="1.5" strokeLinecap="round" />
                   </svg>
                 )}
               </span>
-              <p className="font-bold uppercase tracking-wide mt-3" style={{ color: "#FF7800", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+              <p className="font-bold uppercase tracking-wide mt-3" style={{ color: "#E65100", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
                 Filtered
               </p>
-              <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18, marginTop: 2 }}>
+              <p className="font-bold" style={{ color: "#3E2723", fontFamily: "Nunito, sans-serif", fontSize: 18, marginTop: 2 }}>
                 Custom Feeds
               </p>
             </button>

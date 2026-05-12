@@ -211,18 +211,27 @@ export default function AdminUsersPage() {
               <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "8px 12px 0" }}>
                 {u.name}
               </p>
-              {/* Email */}
-              <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif", margin: "2px 12px 0" }}>
-                {u.email_id}
-              </p>
-              {/* Country tag */}
-              {getCountryName(u.country) && (
-                <span
-                  className="inline-block font-bold"
-                  style={{ backgroundColor: "#F0FDF4", color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12, padding: "2px 10px", borderRadius: 50, margin: "6px 12px 0" }}
-                >
-                  {getCountryName(u.country)}
+              {/* Email — with ic_email prefix (Android layout_item_user.xml drawableStart) */}
+              <div className="flex items-center gap-1.5" style={{ margin: "10px 12px 0" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#6D6D6D" strokeWidth="1.8" />
+                  <path d="M3 7l9 6 9-6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" />
+                </svg>
+                <span style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                  {u.email_id}
                 </span>
+              </div>
+              {/* Country — with ic_location prefix (Android drawableStart) */}
+              {getCountryName(u.country) && (
+                <div className="flex items-center gap-1.5" style={{ margin: "4px 12px 0" }}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                    <path d="M12 22s7-7.58 7-12a7 7 0 0 0-14 0c0 4.42 7 12 7 12z" stroke="#6D6D6D" strokeWidth="1.8" strokeLinejoin="round" />
+                    <circle cx="12" cy="10" r="2.5" stroke="#6D6D6D" strokeWidth="1.8" />
+                  </svg>
+                  <span style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                    {getCountryName(u.country)}
+                  </span>
+                </div>
               )}
             </div>
           ))
