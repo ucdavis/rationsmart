@@ -8,6 +8,7 @@ import { isEmailAddressValid } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
+import { IcBack } from "@/components/Icons";
 
 export default function ForgotPinPage() {
   const router = useRouter();
@@ -55,9 +56,7 @@ export default function ForgotPinPage() {
           style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
           aria-label="Back"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M12.5 5L7.5 10L12.5 15" stroke="#064E3B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <IcBack size={20} color="#064E3B" />
         </button>
         <h1
           className="flex-1 text-center text-base font-bold"
@@ -113,6 +112,18 @@ export default function ForgotPinPage() {
         ) : (
           /* Form state */
           <div className="px-3">
+            <p
+              className="text-center font-bold mt-5"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+            >
+              Reset Your PIN
+            </p>
+            <p
+              className="text-center text-sm mt-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              Enter your registered email to receive a reset link
+            </p>
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}

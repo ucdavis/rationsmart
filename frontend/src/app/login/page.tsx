@@ -162,11 +162,11 @@ export default function LoginPage() {
         </div>
 
         {/* Register link */}
-        <div className="flex justify-center mt-3">
+        <div className="flex justify-center mt-2.5">
           <button
             onClick={() => router.push("/register")}
             className="text-base"
-            style={{ background: "none", border: "none", cursor: "pointer" }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
           >
             <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>New User? </span>
             <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>Register here</span>
@@ -174,11 +174,11 @@ export default function LoginPage() {
         </div>
 
         {/* Forgot PIN */}
-        <div className="flex justify-center mt-3 mb-8">
+        <div className="flex justify-center mt-2.5 mb-6">
           <button
             onClick={() => router.push("/forgot-pin")}
             className="text-base"
-            style={{ background: "none", border: "none", cursor: "pointer" }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
           >
             <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Forgot PIN? </span>
             <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>Tap here</span>

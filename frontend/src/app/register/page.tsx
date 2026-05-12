@@ -9,6 +9,7 @@ import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
+import { IcBack } from "@/components/Icons";
 
 interface Country {
   id: string | number;
@@ -39,7 +40,6 @@ export default function RegisterPage() {
         const data = res.data;
         const list: Country[] = Array.isArray(data) ? data : [];
         setCountries(list);
-        if (list.length > 0) setCountryId(String(list[0].id));
       })
       .catch(() => showSnackbar("Could not load countries", "error"))
       .finally(() => setLoadingCountries(false));
@@ -136,9 +136,7 @@ export default function RegisterPage() {
           style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
           aria-label="Back"
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-            <path d="M12.5 5L7.5 10L12.5 15" stroke="#064E3B" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          <IcBack size={20} color="#064E3B" />
         </button>
         <h1
           className="flex-1 text-center text-base font-bold"
@@ -204,7 +202,7 @@ export default function RegisterPage() {
               opacity: loadingCountries ? 0.6 : 1,
             }}
           >
-            {loadingCountries && <option value="">Loading countries...</option>}
+            <option value="">{loadingCountries ? "Loading countries..." : "Select"}</option>
             {countries.map((c) => (
               <option key={String(c.id)} value={String(c.id)}>
                 {c.name}

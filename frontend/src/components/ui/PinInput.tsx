@@ -83,10 +83,11 @@ export default function PinInput({
           disabled={disabled}
           className="flex-1 h-14 text-center text-lg font-bold rounded-2xl border-none focus:outline-none focus:ring-2 focus:ring-primary-dark transition-all"
           style={{
-            backgroundColor: "#F1F5F9",
-            color: "#231F20",
+            backgroundColor: disabled ? "#EBEAEA" : "#F1F5F9",
+            color: disabled ? "#999999" : "#231F20",
             fontFamily: "Nunito, sans-serif",
-            opacity: disabled ? 0.5 : 1,
+            opacity: disabled ? 0.55 : 1,
+            cursor: disabled ? "not-allowed" : "text",
             maxWidth: 72,
           }}
         />

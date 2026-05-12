@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
-import { IcForward } from "@/components/Icons";
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -39,9 +38,9 @@ export default function WelcomePage() {
         <div className="mt-6 px-4 text-center">
           <p
             className="text-xl font-bold leading-snug"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
           >
-            Smart feeding.{"\n"}Maximum yield.{"\n"}Minimal cost.
+            {"Smart feeding.\nMaximum yield.\nMinimal cost."}
           </p>
         </div>
       </div>
@@ -58,7 +57,9 @@ export default function WelcomePage() {
           }}
         >
           <span>Continue</span>
-          <IcForward size={20} color="#FFFFFF" />
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <path d="M5 12h14M13 6l6 6-6 6" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
 
         <div className="mt-5">
