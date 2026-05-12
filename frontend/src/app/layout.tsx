@@ -121,7 +121,7 @@ export default function RootLayout({
             </p>
             <p
               style={{
-                color: "#064E3B",
+                color: "#1CA069",
                 fontSize: 14,
                 margin: "2px 0 0",
                 fontFamily: "Nunito, sans-serif",
