@@ -5,40 +5,47 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
-import { IcBulkUpload } from "@/components/Icons";
+
+/** Section header with left green accent bar (matches Android sub-section style) */
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 mt-5 ml-3">
+      <span style={{ width: 4, height: 18, borderRadius: 2, backgroundColor: "#064E3B" }} />
+      <p
+        className="font-bold uppercase tracking-wide"
+        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+      >
+        {children}
+      </p>
+    </div>
+  );
+}
 
 export default function BulkUploadPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
   const fileRef = useRef<HTMLInputElement>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isDownloadingTemplate, setIsDownloadingTemplate] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
   const [isExportingCustom, setIsExportingCustom] = useState(false);
-  const [uploadResult, setUploadResult] = useState<string | null>(null);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    setSelectedFile(file);
-    setUploadResult(null);
-  };
-
-  const handleUpload = async () => {
-    if (!selectedFile || !user?.id) return;
+    if (!file || !user?.id) return;
     setIsUploading(true);
     try {
-      const res = await bulkUploadFeeds(user.id, selectedFile);
+      const res = await bulkUploadFeeds(user.id, file);
       const msg = res.data?.message ?? "Upload successful";
-      setUploadResult(msg);
       showSnackbar(msg, "success");
-      setSelectedFile(null);
-      if (fileRef.current) fileRef.current.value = "";
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Upload failed";
       showSnackbar(msg, "error");
     } finally {
       setIsUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
     }
   };
 
@@ -46,31 +53,41 @@ export default function BulkUploadPage() {
     "https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx";
 
   const handleDownloadTemplate = () => {
+    setIsDownloadingTemplate(true);
     const a = document.createElement("a");
     a.href = TEMPLATE_URL;
     a.download = "feeds_table_template.xlsx";
     a.click();
+    // Template is direct CDN; treat as success after the click
+    setTimeout(() => {
+      setIsDownloadingTemplate(false);
+      showSnackbar("Template downloaded", "success");
+    }, 500);
   };
 
-  const triggerDownload = (res: { data: { url?: string; file_url?: string } }, filename: string) => {
+  const triggerDownload = (res: { data: { url?: string; file_url?: string; record_count?: number } }, filename: string, isCustom: boolean) => {
     const url = res.data?.url ?? res.data?.file_url;
+    const count = res.data?.record_count;
     if (url) {
       const a = document.createElement("a");
       a.href = url;
       a.download = filename;
       a.click();
-      showSnackbar("Export started", "success");
-    } else {
-      showSnackbar("Export complete", "success");
     }
+    setExportSuccess(
+      count !== undefined
+        ? `${isCustom ? "Custom f" : "F"}eeds exported successfully. ${count} record${count === 1 ? "" : "s"} exported.`
+        : `${isCustom ? "Custom f" : "F"}eeds exported successfully.`
+    );
   };
 
   const handleExport = async () => {
     if (!user?.id) return;
     setIsExporting(true);
+    setExportSuccess(null);
     try {
       const res = await exportAdminFeeds(user.id);
-      triggerDownload(res, "feeds_export.csv");
+      triggerDownload(res, "feeds_export.csv", false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Export failed";
       showSnackbar(msg, "error");
@@ -82,9 +99,10 @@ export default function BulkUploadPage() {
   const handleExportCustom = async () => {
     if (!user?.id) return;
     setIsExportingCustom(true);
+    setExportSuccess(null);
     try {
       const res = await exportCustomFeeds(user.id);
-      triggerDownload(res, "custom_feeds_export.csv");
+      triggerDownload(res, "custom_feeds_export.csv", true);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Export failed";
       showSnackbar(msg, "error");
@@ -95,46 +113,60 @@ export default function BulkUploadPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-      <Toolbar type="back" title="Bulk Upload" onBack={() => router.back()} />
+      <Toolbar type="back" title="Feed Management" onBack={() => router.back()} />
 
-      {/* Page header: Data Sync subtitle + Feed Export & Upload title */}
-      <div style={{ paddingInline: 12, paddingTop: 20, paddingBottom: 4 }}>
+      {/* Page header */}
+      <div className="ml-3 mt-5">
         <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Data Sync</p>
         <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Feed Export & Upload</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 pt-4 pb-8">
-        {/* Upload card */}
+      <div className="flex-1 overflow-y-auto pb-28">
+        {/* ── UPLOAD ── */}
+        <SectionHeader>Upload</SectionHeader>
         <div
-          className="rounded-2xl bg-white px-4 py-5 mb-4"
+          className="mx-3 mt-3 bg-white rounded-2xl px-3 py-3"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
         >
-          <p className="text-base font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-            Bulk Upload Feeds
-          </p>
-          <p className="text-xs mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-            Upload a CSV or Excel file to add multiple feeds at once
-          </p>
-
-          {/* File picker */}
+          {/* Dashed picker */}
           <button
             onClick={() => fileRef.current?.click()}
-            className="w-full flex flex-col items-center justify-center rounded-2xl py-8 mb-4"
+            disabled={isUploading}
+            className="w-full flex flex-col items-center justify-center rounded-2xl"
             style={{
-              border: "2px dashed #064E3B",
-              backgroundColor: "transparent",
-              cursor: "pointer",
+              border: "2px dashed #2563EB",
+              backgroundColor: "#F6F9FD",
+              padding: "32px 16px",
+              cursor: isUploading ? "not-allowed" : "pointer",
             }}
           >
-            <IcBulkUpload size={36} color="#064E3B" />
-            <p className="text-sm font-bold mt-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-              {selectedFile ? selectedFile.name : "Tap to select file"}
+            <span
+              className="flex items-center justify-center"
+              style={{ width: 56, height: 56, borderRadius: 14, backgroundColor: "#2563EB" }}
+            >
+              {isUploading ? (
+                <svg className="animate-spin" width="26" height="26" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#FFFFFF" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                </svg>
+              ) : (
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <path d="M16 16l-4-4-4 4M12 12v9" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+            </span>
+            <p
+              className="font-bold uppercase tracking-wide mt-3"
+              style={{ color: "#2563EB", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+            >
+              {isUploading ? "Uploading..." : "Upload Feeds"}
             </p>
-            {!selectedFile && (
-              <p className="text-xs mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                CSV or Excel (.csv, .xlsx)
-              </p>
-            )}
+            <p
+              className="mt-1"
+              style={{ color: "#2563EB", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+            >
+              Tap to browse CSV or Excel
+            </p>
           </button>
           <input
             ref={fileRef}
@@ -143,130 +175,165 @@ export default function BulkUploadPage() {
             onChange={handleFileChange}
             style={{ display: "none" }}
           />
-
-          {/* Upload button */}
-          <button
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-            className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: selectedFile && !isUploading ? "#064E3B" : "#D3D3D3",
-              color: selectedFile && !isUploading ? "white" : "#999999",
-              border: "none",
-              fontFamily: "Nunito, sans-serif",
-              cursor: selectedFile && !isUploading ? "pointer" : "not-allowed",
-            }}
+          <p
+            className="mt-3 text-center italic"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
           >
-            {isUploading ? (
-              <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-                Uploading...
-              </>
-            ) : "Upload Feeds"}
-          </button>
+            * Only files stored on your device are supported.
+          </p>
+        </div>
 
-          {uploadResult && (
-            <p className="text-sm font-bold text-center mt-3" style={{ color: "#05BC6D", fontFamily: "Nunito, sans-serif" }}>
-              {uploadResult}
-            </p>
+        {/* ── DOWNLOAD ── */}
+        <SectionHeader>Download</SectionHeader>
+        <div
+          className="mx-3 mt-3 bg-white rounded-2xl px-3 py-3"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+        >
+          <div className="grid grid-cols-2 gap-3">
+            {/* STANDARD Feeds — green theme */}
+            <button
+              onClick={handleExport}
+              disabled={isExporting || isExportingCustom}
+              className="flex flex-col items-start rounded-2xl px-3 py-4"
+              style={{
+                backgroundColor: "#E4F7EF",
+                border: "none",
+                cursor: isExporting || isExportingCustom ? "not-allowed" : "pointer",
+                opacity: isExporting || isExportingCustom ? 0.7 : 1,
+              }}
+            >
+              <span
+                className="flex items-center justify-center"
+                style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#FFFFFF" }}
+              >
+                {isExporting ? (
+                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="#1CA069" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  /* database / standard icon */
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <ellipse cx="12" cy="5" rx="8" ry="2.5" stroke="#1CA069" strokeWidth="1.8" />
+                    <path d="M4 5v14c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5V5" stroke="#1CA069" strokeWidth="1.8" />
+                    <path d="M4 12c0 1.38 3.58 2.5 8 2.5s8-1.12 8-2.5" stroke="#1CA069" strokeWidth="1.8" />
+                  </svg>
+                )}
+              </span>
+              <p className="font-bold uppercase tracking-wide mt-3" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                Standard
+              </p>
+              <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18, marginTop: 2 }}>
+                Feeds
+              </p>
+            </button>
+
+            {/* FILTERED Custom Feeds — orange theme */}
+            <button
+              onClick={handleExportCustom}
+              disabled={isExporting || isExportingCustom}
+              className="flex flex-col items-start rounded-2xl px-3 py-4"
+              style={{
+                backgroundColor: "#FFF3E0",
+                border: "none",
+                cursor: isExporting || isExportingCustom ? "not-allowed" : "pointer",
+                opacity: isExporting || isExportingCustom ? 0.7 : 1,
+              }}
+            >
+              <span
+                className="flex items-center justify-center"
+                style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: "#FFFFFF" }}
+              >
+                {isExportingCustom ? (
+                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="#FF7800" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  /* hub / filtered icon */
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="2.5" fill="#FF7800" />
+                    <circle cx="12" cy="4" r="1.8" fill="#FF7800" />
+                    <circle cx="12" cy="20" r="1.8" fill="#FF7800" />
+                    <circle cx="4" cy="12" r="1.8" fill="#FF7800" />
+                    <circle cx="20" cy="12" r="1.8" fill="#FF7800" />
+                    <path d="M12 6.5v3M12 14.5v3M5.8 12h3.7M14.5 12h3.7" stroke="#FF7800" strokeWidth="1.5" strokeLinecap="round" />
+                  </svg>
+                )}
+              </span>
+              <p className="font-bold uppercase tracking-wide mt-3" style={{ color: "#FF7800", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                Filtered
+              </p>
+              <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18, marginTop: 2 }}>
+                Custom Feeds
+              </p>
+            </button>
+          </div>
+
+          {/* Export Successful notification */}
+          {exportSuccess && (
+            <>
+              <div style={{ height: 1, backgroundColor: "#064E3B", marginTop: 16, marginBottom: 12 }} />
+              <div
+                className="flex items-start gap-3 px-3 py-3 rounded-2xl"
+                style={{ backgroundColor: "#E4F7EF", border: "1px solid rgba(5,188,109,0.25)" }}
+              >
+                <span
+                  className="flex items-center justify-center flex-shrink-0"
+                  style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#1CA069" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 12l5 5L20 7" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </span>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                    Export Successful
+                  </p>
+                  <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 13, marginTop: 2 }}>
+                    {exportSuccess}
+                  </p>
+                </div>
+              </div>
+            </>
           )}
         </div>
+      </div>
 
-        {/* Download Template card */}
-        <div
-          className="rounded-2xl bg-white px-4 py-5 mb-4"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+      {/* Fixed bottom Download Template button (green gradient) */}
+      <div
+        className="px-3 py-3"
+        style={{
+          position: "fixed",
+          bottom: 0,
+          left: "50%",
+          transform: "translateX(-50%)",
+          width: "100%",
+          maxWidth: 430,
+          backgroundColor: "transparent",
+          zIndex: 30,
+        }}
+      >
+        <button
+          onClick={handleDownloadTemplate}
+          disabled={isDownloadingTemplate}
+          className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base text-white"
+          style={{
+            background: "linear-gradient(180deg, #1CA069 0%, #064E3B 100%)",
+            border: "none",
+            cursor: isDownloadingTemplate ? "not-allowed" : "pointer",
+            fontFamily: "Nunito, sans-serif",
+            boxShadow: "0 4px 14px rgba(6,78,59,0.28)",
+          }}
         >
-          <p className="text-base font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-            Download Template
-          </p>
-          <p className="text-xs mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-            Download the Excel template to fill in feed data for bulk upload
-          </p>
-          <button
-            onClick={handleDownloadTemplate}
-            className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: "transparent",
-              color: "#064E3B",
-              border: "2px solid #064E3B",
-              fontFamily: "Nunito, sans-serif",
-              cursor: "pointer",
-            }}
+          {isDownloadingTemplate ? "Downloading..." : "Download Template"}
+          <span
+            className="flex items-center justify-center"
+            style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: "#FFFFFF" }}
           >
-            Download Template (.xlsx)
-          </button>
-        </div>
-
-        {/* Export Feeds card */}
-        <div
-          className="rounded-2xl bg-white px-4 py-5 mb-4"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
-        >
-          <p className="text-base font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-            Export Feeds
-          </p>
-          <p className="text-xs mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-            Download the current feed database as a CSV file
-          </p>
-          <button
-            onClick={handleExport}
-            disabled={isExporting}
-            className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: "transparent",
-              color: isExporting ? "#999999" : "#064E3B",
-              border: `2px solid ${isExporting ? "#D3D3D3" : "#064E3B"}`,
-              fontFamily: "Nunito, sans-serif",
-              cursor: isExporting ? "not-allowed" : "pointer",
-            }}
-          >
-            {isExporting ? (
-              <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-                Exporting...
-              </>
-            ) : "Export Feeds"}
-          </button>
-        </div>
-
-        {/* Export Custom Feeds card */}
-        <div
-          className="rounded-2xl bg-white px-4 py-5"
-          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
-        >
-          <p className="text-base font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-            Export Custom Feeds
-          </p>
-          <p className="text-xs mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-            Download custom (user-added) feeds as a CSV file
-          </p>
-          <button
-            onClick={handleExportCustom}
-            disabled={isExportingCustom}
-            className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-            style={{
-              backgroundColor: "transparent",
-              color: isExportingCustom ? "#999999" : "#064E3B",
-              border: `2px solid ${isExportingCustom ? "#D3D3D3" : "#064E3B"}`,
-              fontFamily: "Nunito, sans-serif",
-              cursor: isExportingCustom ? "not-allowed" : "pointer",
-            }}
-          >
-            {isExportingCustom ? (
-              <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-                Exporting...
-              </>
-            ) : "Export Custom Feeds"}
-          </button>
-        </div>
+            <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+              <path d="M7 2v8M3.5 7L7 10.5L10.5 7M2 12h10" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </span>
+        </button>
       </div>
     </div>
   );

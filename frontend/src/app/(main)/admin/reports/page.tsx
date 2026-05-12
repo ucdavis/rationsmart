@@ -86,84 +86,100 @@ export default function AdminReportsPage() {
             <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No reports found</p>
           </div>
         ) : (
-          reports.map((r) => (
-            <div
-              key={r.simulation_id}
-              className="mx-3 bg-white overflow-hidden"
-              style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16, paddingBottom: 10, opacity: loadingId === r.simulation_id ? 0.6 : 1 }}
-            >
-              {/* Top row: icon pill + user name + View Report pill */}
-              <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
-                <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                  <div
-                    className="flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 60, padding: 6 }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                      <rect x="4" y="3" width="16" height="18" rx="2" stroke="#064E3B" strokeWidth="1.8" />
-                      <path d="M8 8h8M8 12h8M8 16h5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                  <p className="font-bold truncate text-base flex-1 min-w-0" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}>
-                    {r.user_name || r.user_email || "Unknown User"}
-                  </p>
-                </div>
-                <button
-                  onClick={() => viewReport(r.simulation_id)}
-                  disabled={!!loadingId}
-                  className="flex items-center gap-1.5 font-bold flex-shrink-0"
-                  style={{
-                    backgroundColor: "#E4F7EF",
-                    borderRadius: 60,
-                    padding: "8px 12px",
-                    border: "none",
-                    cursor: loadingId ? "not-allowed" : "pointer",
-                    color: "#064E3B",
-                    fontFamily: "Nunito, sans-serif",
-                    fontSize: 12,
-                    marginLeft: 8,
-                  }}
-                >
-                  {loadingId === r.simulation_id ? (
-                    <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="#064E3B" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                    </svg>
-                  ) : (
-                    <>
-                      View Report
-                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                        <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="#064E3B" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          reports.map((r) => {
+            // Derive report type: explicit report_mode wins; otherwise infer from optimization_status
+            const isEvaluation =
+              r.report_mode === "evaluation" ||
+              (r.optimization_status?.toLowerCase().includes("evaluat") ?? false);
+            const reportTypeLabel = isEvaluation ? "Evaluation" : "Recommendation";
+            // Theme colors: Recommendation = celtic_blue, Evaluation = vivid_gamboge
+            const btnBg = isEvaluation ? "rgba(255,152,0,0.15)" : "rgba(41,108,211,0.15)";
+            const btnText = isEvaluation ? "#FF9800" : "#296CD3";
+            const circleBg = isEvaluation ? "#FF9800" : "#296CD3";
+            return (
+              <div
+                key={r.simulation_id}
+                className="mx-3 bg-white overflow-hidden"
+                style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16, paddingBottom: 12, opacity: loadingId === r.simulation_id ? 0.6 : 1 }}
+              >
+                {/* Top row: doc-icon + user name + themed View Report pill */}
+                <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div
+                      className="flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 60, padding: 6 }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <rect x="4" y="3" width="16" height="18" rx="2" stroke="#064E3B" strokeWidth="1.8" />
+                        <path d="M8 8h8M8 12h8M8 16h5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
-                    </>
-                  )}
-                </button>
-              </div>
+                    </div>
+                    <p className="font-bold truncate text-base flex-1 min-w-0" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}>
+                      {r.user_name || r.user_email || "Unknown User"}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => viewReport(r.simulation_id)}
+                    disabled={!!loadingId}
+                    className="flex items-center gap-2 font-bold flex-shrink-0"
+                    style={{
+                      backgroundColor: btnBg,
+                      borderRadius: 60,
+                      padding: "6px 6px 6px 14px",
+                      border: "none",
+                      cursor: loadingId ? "not-allowed" : "pointer",
+                      color: btnText,
+                      fontFamily: "Nunito, sans-serif",
+                      fontSize: 13,
+                      marginLeft: 8,
+                    }}
+                  >
+                    {loadingId === r.simulation_id ? (
+                      <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke={btnText} strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                      </svg>
+                    ) : (
+                      <>
+                        View Report
+                        <span
+                          className="flex items-center justify-center"
+                          style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: circleBg }}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
+                            <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      </>
+                    )}
+                  </button>
+                </div>
 
-              {/* Simulation ID (left) + Report Type (right) */}
-              <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
-                <div>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Simulation ID</p>
+                {/* SIMULATION ID (left) + REPORT TYPE (right) */}
+                <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
+                  <div>
+                    <p className="uppercase tracking-wide" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Simulation ID</p>
+                    <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                      {r.simulation_name || r.simulation_id || "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="uppercase tracking-wide" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Report Type</p>
+                    <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                      {reportTypeLabel}
+                    </p>
+                  </div>
+                </div>
+
+                {/* DATE */}
+                <div style={{ padding: "10px 10px 0" }}>
+                  <p className="uppercase tracking-wide" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Date</p>
                   <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
-                    {r.simulation_id || "—"}
+                    {toAdminReportDisplayDate(r.created_at)}
                   </p>
                 </div>
-                <div>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Report Type</p>
-                  <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
-                    {r.report_mode === "evaluation" ? "Diet Evaluation" : r.report_mode === "recommendation" ? "Diet Recommendation" : "—"}
-                  </p>
-                </div>
               </div>
-
-              {/* Date */}
-              <div style={{ padding: "10px 10px 0" }}>
-                <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Date</p>
-                <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
-                  {toAdminReportDisplayDate(r.created_at)}
-                </p>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>
