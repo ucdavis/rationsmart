@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { login, getUserProfile, getCountries } from "@/lib/api";
+import { login, getUserProfile, getCountries, resetPin } from "@/lib/api";
 import { isEmailAddressValid } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
@@ -19,7 +19,29 @@ export default function LoginPage() {
   const [pin, setPin] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Reset-PIN bottom sheet state
+  const [showResetSheet, setShowResetSheet] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
   const isReady = isEmailAddressValid(email.trim()) && pin.length === 4;
+  const isResetReady = isEmailAddressValid(resetEmail.trim());
+
+  const handleResetSend = async () => {
+    if (!isResetReady || isSendingReset) return;
+    setIsSendingReset(true);
+    try {
+      await resetPin(resetEmail.trim());
+      showSnackbar("Reset instructions sent to your email", "success");
+      setShowResetSheet(false);
+      setResetEmail("");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to send reset email";
+      showSnackbar(message, "error");
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
 
   const handleProceed = async () => {
     if (!isReady || isLoading) return;
@@ -176,7 +198,7 @@ export default function LoginPage() {
         {/* Forgot PIN */}
         <div className="flex justify-center mt-2.5 mb-6">
           <button
-            onClick={() => router.push("/forgot-pin")}
+            onClick={() => setShowResetSheet(true)}
             className="text-base"
             style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
           >
@@ -188,6 +210,111 @@ export default function LoginPage() {
 
       {/* Powered by footer */}
       <PoweredBy />
+
+      {/* Reset-PIN bottom sheet — Android dialog_get_new_pin parity */}
+      {showResetSheet && (
+        <>
+          {/* Backdrop dims login behind */}
+          <div
+            className="fixed inset-0 z-50"
+            style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+            onClick={() => !isSendingReset && setShowResetSheet(false)}
+          />
+          {/* Sheet */}
+          <div
+            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white pb-5"
+            style={{
+              maxWidth: 430,
+              zIndex: 51,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              animation: "slideUp 0.28s cubic-bezier(0.22,1,0.36,1)",
+            }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-4 mb-4">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+
+            {/* Title */}
+            <p
+              className="text-center font-bold"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+            >
+              Reset Your PIN
+            </p>
+            {/* Subtitle */}
+            <p
+              className="text-center mt-1 px-3"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+            >
+              Enter your registered email to receive a reset link
+            </p>
+
+            {/* Email label */}
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              Email Address<RequiredAsterisk />
+            </p>
+            <div className="px-3">
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                style={{
+                  backgroundColor: "#F1F5F9",
+                  color: "#231F20",
+                  fontFamily: "Nunito, sans-serif",
+                }}
+                autoFocus
+              />
+            </div>
+
+            {/* Proceed button */}
+            <div className="px-3 mt-5">
+              <button
+                onClick={handleResetSend}
+                disabled={!isResetReady || isSendingReset}
+                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: isResetReady && !isSendingReset ? "#064E3B" : "#D3D3D3",
+                  color: isResetReady && !isSendingReset ? "#FFFFFF" : "#999999",
+                  fontFamily: "Nunito, sans-serif",
+                  border: "none",
+                  cursor: isResetReady && !isSendingReset ? "pointer" : "not-allowed",
+                  transition: "background-color 0.2s, color 0.2s",
+                }}
+              >
+                {isSendingReset ? (
+                  <>
+                    <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                    </svg>
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  <>
+                    Proceed
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* PoweredBy inside sheet */}
+            <div className="mt-8">
+              <PoweredBy />
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
