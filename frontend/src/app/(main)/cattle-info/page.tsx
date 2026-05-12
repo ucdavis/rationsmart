@@ -623,7 +623,7 @@ export default function CattleInfoPage() {
                 <SelectInput
                   value={form.milk_protein_percent}
                   onChange={set("milk_protein_percent")}
-                  options={MILK_PROTEIN_OPTIONS.map((v) => ({ value: v, label: v + "%" }))}
+                  options={MILK_PROTEIN_OPTIONS.map((v) => ({ value: v, label: v }))}
                   placeholder="Select"
                 />
               </div>
@@ -632,7 +632,7 @@ export default function CattleInfoPage() {
                 <SelectInput
                   value={form.milk_fat_percent}
                   onChange={set("milk_fat_percent")}
-                  options={MILK_FAT_OPTIONS.map((v) => ({ value: v, label: v + "%" }))}
+                  options={MILK_FAT_OPTIONS.map((v) => ({ value: v, label: v }))}
                   placeholder="Select"
                 />
               </div>
@@ -692,8 +692,14 @@ export default function CattleInfoPage() {
             {/* Distance Walked + Topography — shown only when grazing is ON */}
             {form.grazing && (
               <>
-                <FieldLabel>Topography *</FieldLabel>
-                <div className="flex flex-col gap-3 mt-2 ml-1">
+                {/* Topography: label + radios all on one row (matches Android start_toEndOf layout) */}
+                <div className="flex items-center gap-5 mt-3 ml-1 mb-1">
+                  <span
+                    className="text-xs font-bold uppercase tracking-wide"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    Topography<span style={{ color: "#FC2E20" }}>{" *"}</span>
+                  </span>
                   {(["Flat", "Hilly"] as const).map((opt) => (
                     <button
                       key={opt}
