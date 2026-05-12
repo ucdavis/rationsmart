@@ -40,7 +40,8 @@ function StarRow({ rating }: { rating: number }) {
   return (
     <div className="flex gap-0.5">
       {[1,2,3,4,5].map((s) => (
-        <IcStar key={s} size={14} filled={s <= rating} color={s <= rating ? "#064E3B" : "#E4F7EF"} />
+        // Android mustard_yellow #E3B505 for filled; silver_sand #C2C2C2 outline for empty
+        <IcStar key={s} size={16} filled={s <= rating} color={s <= rating ? "#E3B505" : "#C2C2C2"} />
       ))}
     </div>
   );

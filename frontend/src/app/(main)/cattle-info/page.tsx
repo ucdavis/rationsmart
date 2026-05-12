@@ -476,10 +476,13 @@ export default function CattleInfoPage() {
               onClick={() => setShowHistoryModal(true)}
               className="flex items-center justify-center rounded-xl border-none p-0"
               style={{ width: 36, height: 36, backgroundColor: "#E4F7EF", cursor: "pointer" }}
+              aria-label="Simulation history"
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <circle cx="9" cy="9" r="7.5" stroke="#064E3B" strokeWidth="1.6" />
-                <path d="M9 6V9.5L11 11" stroke="#064E3B" strokeWidth="1.5" strokeLinecap="round" />
+              {/* History icon: clock + counter-clockwise arrow, matches Android ic_history */}
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <path d="M3 12a9 9 0 1 0 3-6.7" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M3 3v5h5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M12 7v5l3 2" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </button>
           }

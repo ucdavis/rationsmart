@@ -150,6 +150,8 @@ export default function AdminFeedsPage() {
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
   const [tab, setTab] = useState<TabType>("feeds");
+  // Android-style nav: landing view shows 3 cards; sub-views show one section
+  const [section, setSection] = useState<"landing" | TabType>("landing");
   const [feedTypes, setFeedTypes] = useState<AdminFeedType[]>([]);
   const [feedCategories, setFeedCategories] = useState<AdminFeedCategory[]>([]);
   const [feeds, setFeeds] = useState<AdminFeed[]>([]);
@@ -427,47 +429,100 @@ export default function AdminFeedsPage() {
     transition: "all 0.15s",
   } as const);
 
+  const goToSection = (s: TabType) => {
+    setTab(s);
+    setSection(s);
+  };
+
+  const sectionTitle = section === "types" ? "Feed Type" : section === "categories" ? "Feed Category" : section === "feeds" ? "Feed" : "Feed Management";
+
+  // ─── LANDING: 3 nav cards ──────────────────────────────────────────────────
+  if (section === "landing") {
+    return (
+      <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
+        <Toolbar type="back" title="Feed Management" onBack={() => router.back()} />
+
+        <div className="ml-3 mt-5">
+          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Administration</p>
+          <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20, fontWeight: 700 }}>Configure Resources</p>
+        </div>
+
+        <div className="px-3 mt-5 space-y-3">
+          {([
+            { key: "types" as TabType, label: "Feed Type" },
+            { key: "categories" as TabType, label: "Feed Category" },
+            { key: "feeds" as TabType, label: "Feed" },
+          ]).map((c) => (
+            <button
+              key={c.key}
+              onClick={() => goToSection(c.key)}
+              className="w-full flex items-center justify-between bg-white"
+              style={{
+                borderRadius: 16,
+                padding: "16px 16px 16px 14px",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                border: "none",
+                cursor: "pointer",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* left green accent bar */}
+              <span
+                style={{
+                  position: "absolute",
+                  left: 0, top: 12, bottom: 12,
+                  width: 4,
+                  borderRadius: 2,
+                  backgroundColor: "#064E3B",
+                }}
+              />
+              <span
+                className="font-bold"
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16, paddingLeft: 8 }}
+              >
+                {c.label}
+              </span>
+              <span
+                className="flex items-center justify-center"
+                style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#E4F7EF" }}
+              >
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                  <path d="M5 3l4 4-4 4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-      <Toolbar type="back" title="Feed Management" onBack={() => router.back()} />
+      <Toolbar type="back" title={sectionTitle} onBack={() => setSection("landing")} />
 
-      {/* Page header */}
-      <div className="ml-3 mt-5">
-        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Administration</p>
-        <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20, fontWeight: 700 }}>Configure Resources</p>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex px-3 pt-3 gap-2">
-        {(["feeds", "types", "categories"] as TabType[]).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={btnStyle(tab === t)}>
-            {t === "feeds" ? "Feeds" : t === "types" ? "Types" : "Categories"}
-          </button>
-        ))}
-      </div>
+      {/* MANAGEMENT subheader (matches Android list screens) */}
+      <p
+        className="font-bold uppercase tracking-wide mt-5 ml-3 mb-2"
+        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+      >
+        Management
+      </p>
 
       {/* ── FEEDS TAB ── */}
       {tab === "feeds" && (
         <>
-          {/* Search + Add */}
-          <div className="flex gap-2 px-3 pt-3">
-            <div className="flex-1 relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search feeds..."
-                className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              />
-            </div>
-            <button
-              onClick={openAddFeed}
-              className="flex items-center justify-center rounded-2xl px-4 font-bold text-sm text-white"
-              style={{ backgroundColor: "#064E3B", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif", whiteSpace: "nowrap" }}
-            >
-              + Add
-            </button>
+          {/* Search row (no Add button — matches Android list screens) */}
+          <div className="px-3 pt-3">
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search feeds..."
+              className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+            />
           </div>
           {/* Filter row */}
           <div className="flex gap-2 px-3 pt-2 pb-1 overflow-x-auto">
@@ -582,15 +637,6 @@ export default function AdminFeedsPage() {
       {/* ── TYPES TAB ── */}
       {tab === "types" && (
         <>
-          <div className="flex justify-end px-3 pt-3">
-            <button
-              onClick={() => { setNewTypeName(""); setShowTypeModal(true); }}
-              className="px-4 py-2.5 rounded-2xl font-bold text-sm text-white"
-              style={{ backgroundColor: "#064E3B", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
-            >
-              + Add Type
-            </button>
-          </div>
           <div className="flex-1 overflow-y-auto pt-2 pb-6">
             {isLoading ? [0,1,2].map((i) => <SkeletonCard key={i} />) : (
               feedTypes.length === 0 ? (
@@ -620,15 +666,6 @@ export default function AdminFeedsPage() {
       {/* ── CATEGORIES TAB ── */}
       {tab === "categories" && (
         <>
-          <div className="flex justify-end px-3 pt-3">
-            <button
-              onClick={() => { setNewCatName(""); setNewCatTypeId(""); setShowCatModal(true); }}
-              className="px-4 py-2.5 rounded-2xl font-bold text-sm text-white"
-              style={{ backgroundColor: "#064E3B", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
-            >
-              + Add Category
-            </button>
-          </div>
           <div className="flex-1 overflow-y-auto pt-2 pb-6">
             {isLoading ? [0,1,2].map((i) => <SkeletonCard key={i} />) : (
               feedCategories.length === 0 ? (

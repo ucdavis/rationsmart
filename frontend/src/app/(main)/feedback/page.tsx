@@ -45,7 +45,7 @@ function StarRating({
           <IcStar
             size={size}
             filled={star <= (hovered || rating)}
-            color={star <= (hovered || rating) ? "#FFC107" : "#C2C2C2"}
+            color={star <= (hovered || rating) ? "#E3B505" : "#C2C2C2"}
           />
         </button>
       ))}
