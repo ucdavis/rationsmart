@@ -18,12 +18,27 @@ export default function InstallPrompt() {
   // before any navigation happens, so this must run unconditionally on mount.
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) return;
+
     const handler = (e: Event) => {
       e.preventDefault();
       setInstallEvent(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+
+    // Android only removes the home-screen shortcut when the user "uninstalls"
+    // the PWA — it does NOT clear localStorage. So stale auth data from a
+    // previous session survives a reinstall and sends the user straight to the
+    // home screen instead of login. Clearing storage on every install/reinstall
+    // guarantees a fresh start.
+    const onInstalled = () => {
+      localStorage.removeItem("rationsmart-storage");
+    };
+    window.addEventListener("appinstalled", onInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handler);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
   // Show the banner only after leaving the splash screen
@@ -38,7 +53,11 @@ export default function InstallPrompt() {
     if (installEvent) {
       await installEvent.prompt();
       const { outcome } = await installEvent.userChoice;
-      if (outcome === "accepted") setVisible(false);
+      if (outcome === "accepted") {
+        // Clear stale auth so the standalone app always opens to login
+        localStorage.removeItem("rationsmart-storage");
+        setVisible(false);
+      }
     } else {
       setShowSteps(true);
     }
