@@ -11,7 +11,10 @@ export default function SplashScreen() {
   const user = useStore((s) => s.user);
 
   useEffect(() => {
-    // Restore visibility — SplashGuard may have hidden the body to prevent flash
+    // Remove the HTML-level splash overlay — React has taken over, the content below is ready.
+    // Also restore body visibility in case SplashGuard hid it on a redirect from another path.
+    const overlay = document.getElementById("pwa-splash");
+    if (overlay) overlay.remove();
     document.body.style.visibility = "visible";
   }, []);
 
