@@ -8,7 +8,7 @@ export default function PoweredBy() {
       </span>
       <span
         className="text-sm"
-        style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}
+        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
       >
         DigitalGreen
       </span>

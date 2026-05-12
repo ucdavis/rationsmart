@@ -219,11 +219,12 @@ export default function LoginPage() {
             style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
             onClick={() => !isSendingReset && setShowResetSheet(false)}
           />
-          {/* Sheet */}
+          {/* Sheet — left/right:0 + mx-auto so animation transform doesn't fight the centering */}
           <div
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full bg-white pb-5"
+            className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
               maxWidth: 430,
+              width: "100%",
               zIndex: 51,
               borderTopLeftRadius: 24,
               borderTopRightRadius: 24,
