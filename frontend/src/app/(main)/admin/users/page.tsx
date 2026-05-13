@@ -213,11 +213,15 @@ export default function AdminUsersPage() {
         )}
       </div>
 
-      {/* User Detail Dialog */}
+      {/* User Detail Dialog — confined to centered column */}
       {selectedUser && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center"
-          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+          className="fixed top-0 h-full z-50 flex items-end justify-center"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.4)",
+          }}
           onClick={() => setSelectedUser(null)}
         >
           <div

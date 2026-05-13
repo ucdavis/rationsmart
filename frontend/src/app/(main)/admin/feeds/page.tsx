@@ -759,11 +759,15 @@ export default function AdminFeedsPage() {
         </>
       )}
 
-      {/* ══ ADD/EDIT FEED MODAL ══ */}
+      {/* ══ ADD/EDIT FEED MODAL ══ — confined to centered column */}
       {showFeedModal && (
         <div
-          className="fixed inset-0 z-50 flex flex-col justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowFeedModal(false); }}
         >
           <div className="bg-white rounded-t-2xl px-4 pt-5 pb-8 overflow-y-auto" style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
@@ -929,7 +933,7 @@ export default function AdminFeedsPage() {
 
       {/* ══ ADD TYPE MODAL ══ */}
       {showTypeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl p-5 w-full max-w-sm" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
             <h3 className="text-base font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Add Feed Type</h3>
             <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Type Name *</p>
@@ -958,7 +962,7 @@ export default function AdminFeedsPage() {
 
       {/* ══ ADD CATEGORY MODAL ══ */}
       {showCatModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl p-5 w-full max-w-sm" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
             <h3 className="text-base font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Add Category</h3>
             {/* Android cascade: Feed Type → Category Name */}
@@ -1004,7 +1008,7 @@ export default function AdminFeedsPage() {
 
       {/* ══ CONFIRM DELETE FEED ══ */}
       {confirmDeleteFeed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl w-full max-w-xs pb-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
             <div className="flex justify-center mt-7 mb-4">
               <div className="flex items-center justify-center" style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}>
@@ -1034,7 +1038,7 @@ export default function AdminFeedsPage() {
 
       {/* ══ CONFIRM DELETE TYPE ══ */}
       {confirmDeleteType && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl w-full max-w-xs pb-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
             <div className="flex justify-center mt-7 mb-4">
               <div className="flex items-center justify-center" style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}>
@@ -1064,7 +1068,7 @@ export default function AdminFeedsPage() {
 
       {/* ══ CONFIRM DELETE CATEGORY ══ */}
       {confirmDeleteCat && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-6" style={{ backgroundColor: "rgba(0,0,0,0.5)" }}>
+        <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
           <div className="bg-white rounded-2xl w-full max-w-xs pb-5" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
             <div className="flex justify-center mt-7 mb-4">
               <div className="flex items-center justify-center" style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}>

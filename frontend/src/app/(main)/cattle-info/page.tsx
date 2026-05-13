@@ -816,10 +816,14 @@ export default function CattleInfoPage() {
       {/* Simulation History Bottom-Sheet Modal */}
       {showHistoryModal && (
         <>
-          {/* Backdrop */}
+          {/* Backdrop — confined to centered column */}
           <div
-            className="fixed inset-0 z-50"
-            style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
+            className="fixed top-0 h-full z-50"
+            style={{
+              left: "max(0px, calc((100vw - 480px) / 2))",
+              width: "min(100vw, 480px)",
+              backgroundColor: "rgba(0,0,0,0.4)",
+            }}
             onClick={() => setShowHistoryModal(false)}
           />
           {/* Sheet */}

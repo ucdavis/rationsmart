@@ -209,11 +209,15 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
         <PoweredBy />
       </div>
 
-      {/* Logout confirmation modal */}
+      {/* Logout confirmation modal — confined to centered column */}
       {showLogoutConfirm && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center px-6"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="fixed top-0 h-full z-[100] flex items-center justify-center px-6"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
         >
           <div className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
             {/* Icon */}

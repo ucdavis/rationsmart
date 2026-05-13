@@ -587,8 +587,12 @@ export default function FeedRow({
         const submitReady = !isSavingEdit && !isLoadingEdit && editFeedName.trim() !== "";
         return (
         <div
-          className="fixed inset-0 z-50 flex flex-col justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.45)",
+          }}
           onClick={(e) => { if (e.target === e.currentTarget && !isSavingEdit) setShowEditModal(false); }}
         >
           <div

@@ -218,10 +218,14 @@ export default function LoginPage() {
       {/* Reset-PIN bottom sheet — Android dialog_get_new_pin parity */}
       {showResetSheet && (
         <>
-          {/* Backdrop dims login behind */}
+          {/* Backdrop dims login behind — confined to centered column */}
           <div
-            className="fixed inset-0 z-50"
-            style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+            className="fixed top-0 h-full z-50"
+            style={{
+              left: "max(0px, calc((100vw - 480px) / 2))",
+              width: "min(100vw, 480px)",
+              backgroundColor: "rgba(0,0,0,0.45)",
+            }}
             onClick={() => !isSendingReset && setShowResetSheet(false)}
           />
           {/* Sheet — left/right:0 + mx-auto so animation transform doesn't fight the centering */}

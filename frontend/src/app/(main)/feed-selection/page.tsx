@@ -580,11 +580,16 @@ export default function FeedSelectionPage() {
         </button>
       </div>
 
-      {/* Custom Feed Modal */}
+      {/* Custom Feed Modal — confined to the 480px centered column so the
+          bottom sheet does not span the entire desktop viewport. */}
       {showCustomFeedModal && (
         <div
-          className="fixed inset-0 z-50 flex flex-col justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.45)",
+          }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowCustomFeedModal(false); }}
         >
           <div
@@ -799,11 +804,15 @@ export default function FeedSelectionPage() {
         </div>
       )}
 
-      {/* Incomplete Feeds Dialog */}
+      {/* Incomplete Feeds Dialog — confined to centered column */}
       {showIncompleteFeedsDialog && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center px-4"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          className="fixed top-0 h-full z-[100] flex items-center justify-center px-4"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
         >
           <div className="bg-white w-full max-w-xs" style={{ borderRadius: 16, paddingBottom: 30 }}>
             {/* Orange warning icon pill */}
@@ -908,11 +917,15 @@ export default function FeedSelectionPage() {
         </div>
       )}
 
-      {/* Custom Diet Limits Modal (bottom sheet) */}
+      {/* Custom Diet Limits Modal (bottom sheet) — confined to centered column */}
       {showLimitsModal && (
         <div
-          className="fixed inset-0 z-50 flex flex-col justify-end"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.45)",
+          }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowLimitsModal(false); }}
         >
           <div
