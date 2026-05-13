@@ -353,34 +353,52 @@ export default function FeedRow({
         if (index === 0 && !item.feed_type_name) {
           const forage = types.find((t) => t.name === "Forage");
           if (forage) onUpdate(item.id, { feed_type_id: forage.id, feed_type_name: forage.name });
+        } else if (item.feed_type_name) {
+          // Restored from simulation history — sync the placeholder id
+          // (assigned in loadSimulation) with the real index in the
+          // freshly fetched type list so the dropdown shows the selection.
+          const match = types.find((t) => t.name === item.feed_type_name);
+          if (match && match.id !== item.feed_type_id) {
+            onUpdate(item.id, { feed_type_id: match.id });
+          }
         }
       })
       .catch(() => showSnackbar("Could not load feed types", "error"))
       .finally(() => setLoadingTypes(false));
   }, [user?.country_id, showSnackbar]);
 
+  // Categories cascade. We defer the reset until AFTER fetching the new
+  // list and only clear category_name/sub_category if the stored values
+  // are not in the freshly loaded options — that way simulation-history
+  // restoration keeps its values, while a user-driven type change still
+  // wipes downstream selections.
   useEffect(() => {
     if (!item.feed_type_name || !user?.country_id || !user?.id) return;
     setLoadingCats(true);
-    setCategories([]);
-    setSubCategories([]);
-    onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "" });
     getFeedCategories(item.feed_type_name, user.country_id, user.id)
       .then((res) => {
         const data = res.data;
         const names: string[] = (Array.isArray(data) ? data : data?.unique_feed_categories ?? []).filter(Boolean);
-        setCategories(names.map((n, i) => ({ id: i + 1, name: n })));
+        const newCats = names.map((n, i) => ({ id: i + 1, name: n }));
+        setCategories(newCats);
+        const matched = newCats.find((c) => c.name === item.category_name);
+        if (!matched) {
+          onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
+          setSubCategories([]);
+        } else if (matched.id !== item.category_id) {
+          onUpdate(item.id, { category_id: matched.id });
+        }
       })
       .catch(() => showSnackbar("Could not load categories", "error"))
       .finally(() => setLoadingCats(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_type_name, user?.country_id, user?.id]);
 
+  // Sub-categories cascade. Same pattern — only reset feed_uuid if the
+  // previously stored uuid isn't present in the freshly loaded list.
   useEffect(() => {
     if (!item.category_name || !item.feed_type_name || !user?.country_id || !user?.id) return;
     setLoadingSubs(true);
-    setSubCategories([]);
-    onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
     getFeedSubCategories(item.feed_type_name, item.category_name, user.country_id, user.id)
       .then((res) => {
         const data = res.data;
@@ -391,6 +409,21 @@ export default function FeedRow({
             feed_uuid: s.feed_uuid,
           }));
         setSubCategories(list);
+        const match = list.find(
+          (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
+        );
+        if (!match) {
+          onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
+        } else if (
+          match.feed_uuid !== item.feed_uuid ||
+          match.feed_name !== item.sub_category_name
+        ) {
+          onUpdate(item.id, {
+            sub_category_id: 1,
+            sub_category_name: match.feed_name,
+            feed_uuid: match.feed_uuid,
+          });
+        }
       })
       .catch(() => showSnackbar("Could not load sub-categories", "error"))
       .finally(() => setLoadingSubs(false));

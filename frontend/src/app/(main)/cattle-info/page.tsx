@@ -169,7 +169,9 @@ function SelectInput({
 export default function CattleInfoPage() {
   const router = useRouter();
   const { openDrawer } = useDrawer();
-  const { cattleInfo, setCattleInfo, user, showSnackbar, reportData } = useStore((s) => ({
+  const { cattleInfo, setCattleInfo, user, showSnackbar, reportData, setFeedSelections, setFeedSelectionType } = useStore((s) => ({
+    setFeedSelections: s.setFeedSelections,
+    setFeedSelectionType: s.setFeedSelectionType,
     cattleInfo: s.cattleInfo,
     setCattleInfo: s.setCattleInfo,
     user: s.user,
@@ -264,6 +266,47 @@ export default function CattleInfoPage() {
         distance_walked: ci?.distance != null ? String(ci.distance) : prev.distance_walked,
         topography: ci?.topography ?? prev.topography,
       }));
+
+      // Populate Feed Selection from the simulation — matches Android
+      // FeedViewModel.populateFromSimulation (FeedViewModel.kt:881-958)
+      // which builds a feed list from simulationDetails.feedSelection
+      // and pushes it to _feeds. PWA stores it on the Zustand store so
+      // the feed-selection page picks it up on mount.
+      const feedSelectionList = Array.isArray(data?.feed_selection) ? data.feed_selection : [];
+      if (feedSelectionList.length > 0) {
+        const restoredItems = feedSelectionList.map((sel: {
+          feed_type?: string;
+          feed_category?: string;
+          feed_name?: string;
+          feed_id?: string;
+          price_per_kg?: number | string | null;
+          quantity_as_fed?: number | string | null;
+        }, idx: number) => ({
+          id: `feed_restored_${idx}_${Date.now()}`,
+          feed_type_id: sel.feed_type ? idx + 1 : null,
+          feed_type_name: sel.feed_type ?? "",
+          category_id: sel.feed_category ? idx + 1 : null,
+          category_name: sel.feed_category ?? "",
+          sub_category_id: sel.feed_id ? 1 : null,
+          sub_category_name: sel.feed_name ?? "",
+          feed_uuid: sel.feed_id ?? null,
+          price_per_kg: sel.price_per_kg != null && sel.price_per_kg !== "" ? Number(sel.price_per_kg) : null,
+          quantity_kg: sel.quantity_as_fed != null && sel.quantity_as_fed !== "" ? Number(sel.quantity_as_fed) : null,
+        }));
+        setFeedSelections(restoredItems);
+
+        // Android: if every quantity_as_fed is null → Recommendation;
+        // otherwise Evaluation (FeedViewModel.kt:894-900).
+        const isEvaluation = feedSelectionList.some(
+          (s: { quantity_as_fed?: number | string | null }) =>
+            s.quantity_as_fed != null && s.quantity_as_fed !== ""
+        );
+        setFeedSelectionType(isEvaluation ? "evaluation" : "recommendation");
+      } else {
+        // Empty simulation — reset so we don't carry over a previous case.
+        setFeedSelections([]);
+      }
+
       setErrors({});
       showSnackbar("Simulation loaded successfully", "success");
       setShowHistoryModal(false);
