@@ -209,7 +209,10 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
         <PoweredBy />
       </div>
 
-      {/* Logout confirmation modal — confined to centered column */}
+      {/* Logout confirmation modal — confined to centered column.
+          Tapping the scrim closes the dialog (matches Android
+          AlertDialog default behaviour where setCanceledOnTouchOutside
+          is true). */}
       {showLogoutConfirm && (
         <div
           className="fixed top-0 h-full z-[100] flex items-center justify-center px-6"
@@ -218,8 +221,13 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutConfirm(false); }}
         >
-          <div className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}>
+          <div
+            className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
+            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             {/* Icon */}
             <div className="flex justify-center mb-4">
               <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(5,188,109,0.15)" }}>

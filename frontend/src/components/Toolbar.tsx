@@ -23,7 +23,7 @@ export default function Toolbar({
 }: ToolbarProps) {
   return (
     <div
-      className="flex items-center px-3 py-3 gap-3"
+      className="flex items-center px-3 gap-3"
       style={{
         // Transparent so the page's bg / gradient extends through the toolbar
         // (matches Android — no visible band between toolbar and content).
@@ -31,6 +31,14 @@ export default function Toolbar({
         position: "sticky",
         top: 0,
         zIndex: 40,
+        // Push the toolbar below the status bar when the PWA is launched
+        // in standalone mode (iOS apple-mobile-web-app-capable +
+        // viewport-fit=cover, Android display=standalone). Without this
+        // the back/menu button and the title sit underneath the status
+        // bar — visible mainly on admin screens because their gradient
+        // bleeds into the unsafe area and makes the missing inset obvious.
+        paddingTop: "max(12px, env(safe-area-inset-top))",
+        paddingBottom: 12,
       }}
     >
       {/* Left button */}
