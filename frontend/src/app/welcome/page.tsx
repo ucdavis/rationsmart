@@ -18,34 +18,38 @@ export default function WelcomePage() {
         <AppBranding />
       </div>
 
-      {/* Illustration + tagline. The image is a 2048×2048 (1:1) PNG, so we
-          render it with width:100% / height:auto so it scales preserving
-          aspect ratio — no cropping at top/bottom. Pinned to the bottom of
-          the flex-1 area (Android ImageView default scaleType=fitCenter
-          between branding bottom and tagline top). */}
-      <div className="flex-1 flex flex-col items-center justify-end px-3 pb-2">
+      {/* Illustration sits right under branding (matches Android: image
+          starts directly below app_branding, fills horizontally with 12dp
+          margin). 1:1 PNG renders with width:100% h:auto so it scales
+          preserving aspect ratio — no cropping. */}
+      <div className="px-3 mt-3 flex justify-center">
         <Image
           src="/images/ic_welcome_image.png"
           alt="Welcome illustration"
-          width={400}
-          height={400}
-          style={{ width: "100%", height: "auto", maxWidth: 360 }}
+          width={500}
+          height={500}
+          style={{ width: "100%", height: "auto", maxWidth: 400 }}
           priority
         />
-
-        {/* Tagline — small gap below image, matches Android offset_20 */}
-        <div className="mt-3 px-4 text-center">
-          <p
-            className="text-xl font-bold leading-snug"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
-          >
-            {"Smart feeding.\nMaximum yield.\nMinimal cost."}
-          </p>
-        </div>
       </div>
 
+      {/* Tagline directly below image (small offset_20 gap) */}
+      <div className="mt-3 px-4 text-center">
+        <p
+          className="text-xl font-bold leading-snug"
+          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
+        >
+          {"Smart feeding.\nMaximum yield.\nMinimal cost."}
+        </p>
+      </div>
+
+      {/* Flex spacer — any leftover vertical space falls here, between
+          tagline and the bottom button (Android btn_continue is bottom-
+          anchored to the powered_by include, so spare space pushes upward). */}
+      <div className="flex-1" />
+
       {/* Bottom: CTA button + powered by */}
-      <div className="px-3 pb-8">
+      <div className="px-3 pb-5">
         <button
           onClick={() => router.push("/login")}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-full font-bold text-base text-white"
