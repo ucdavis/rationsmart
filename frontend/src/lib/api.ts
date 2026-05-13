@@ -482,16 +482,22 @@ export const deleteAdminFeed = (feed_id: string, admin_user_id: string) =>
   api.delete(`/admin/delete-feed/${feed_id}`, { params: { admin_user_id } });
 
 // POST /admin/add-feed-category?admin_user_id=
-export const addAdminFeedCategory = (admin_user_id: string, body: { category_name: string; feed_type_id: string }) =>
-  api.post("/admin/add-feed-category", body, { params: { admin_user_id } });
+// Android AddFeedCategoryRequest: { category_name, description, feed_type_id, sort_order }
+export const addAdminFeedCategory = (
+  admin_user_id: string,
+  body: { category_name: string; description: string; feed_type_id: string; sort_order: number }
+) => api.post("/admin/add-feed-category", body, { params: { admin_user_id } });
 
 // DELETE /admin/delete-feed-category/{category_id}?admin_user_id=
 export const deleteAdminFeedCategory = (category_id: string, admin_user_id: string) =>
   api.delete(`/admin/delete-feed-category/${category_id}`, { params: { admin_user_id } });
 
 // POST /admin/add-feed-type?admin_user_id=
-export const addAdminFeedType = (admin_user_id: string, body: { type_name: string }) =>
-  api.post("/admin/add-feed-type", body, { params: { admin_user_id } });
+// Android AddFeedTypeRequest: { type_name, description, sort_order }
+export const addAdminFeedType = (
+  admin_user_id: string,
+  body: { type_name: string; description: string; sort_order: number }
+) => api.post("/admin/add-feed-type", body, { params: { admin_user_id } });
 
 // DELETE /admin/delete-feed-type/{type_id}?admin_user_id=
 export const deleteAdminFeedType = (type_id: string, admin_user_id: string) =>

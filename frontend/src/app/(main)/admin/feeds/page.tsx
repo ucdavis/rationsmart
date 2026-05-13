@@ -173,17 +173,19 @@ export default function AdminFeedsPage() {
   const [deletingFeedId, setDeletingFeedId] = useState<string | null>(null);
   const [confirmDeleteFeed, setConfirmDeleteFeed] = useState<AdminFeed | null>(null);
 
-  // Category modal state
+  // Category modal state (Android dialog_feed_category.xml fields)
   const [showCatModal, setShowCatModal] = useState(false);
   const [newCatName, setNewCatName] = useState("");
   const [newCatTypeId, setNewCatTypeId] = useState("");
+  const [newCatDescription, setNewCatDescription] = useState("");
   const [isSavingCat, setIsSavingCat] = useState(false);
   const [deletingCatId, setDeletingCatId] = useState<string | null>(null);
   const [confirmDeleteCat, setConfirmDeleteCat] = useState<AdminFeedCategory | null>(null);
 
-  // Type modal state
+  // Type modal state (Android dialog_feed_type.xml fields)
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [newTypeName, setNewTypeName] = useState("");
+  const [newTypeDescription, setNewTypeDescription] = useState("");
   const [isSavingType, setIsSavingType] = useState(false);
   const [deletingTypeId, setDeletingTypeId] = useState<string | null>(null);
   const [confirmDeleteType, setConfirmDeleteType] = useState<AdminFeedType | null>(null);
@@ -272,6 +274,10 @@ export default function AdminFeedsPage() {
       return;
     }
     setIsSavingFeed(true);
+    // Match Android FeedRequest: every nutrient is a non-null Double (default 0.0),
+    // every string field is non-null (default ""). fd_code and the three metadata
+    // fields are not exposed in the Android dialog UI, so we always send "" for them.
+    const num = (v: string) => (v ? Number(v) : 0);
     const body = {
       fd_name: feedForm.fd_name.trim(),
       fd_type: feedForm.fd_type,
@@ -279,27 +285,27 @@ export default function AdminFeedsPage() {
       fd_country_name: feedForm.fd_country_name,
       fd_country_cd: feedForm.fd_country_cd,
       ...(feedForm.fd_country_id ? { fd_country_id: feedForm.fd_country_id } : {}),
-      fd_code: feedForm.fd_code,
-      fd_dm: feedForm.fd_dm ? Number(feedForm.fd_dm) : 0,
-      fd_cp: feedForm.fd_cp ? Number(feedForm.fd_cp) : 0,
-      fd_ee: feedForm.fd_ee ? Number(feedForm.fd_ee) : 0,
-      fd_cf: feedForm.fd_cf ? Number(feedForm.fd_cf) : 0,
-      fd_ash: feedForm.fd_ash ? Number(feedForm.fd_ash) : 0,
-      fd_ndf: feedForm.fd_ndf ? Number(feedForm.fd_ndf) : 0,
-      fd_adf: feedForm.fd_adf ? Number(feedForm.fd_adf) : 0,
-      fd_ca: feedForm.fd_ca ? Number(feedForm.fd_ca) : 0,
-      fd_p: feedForm.fd_p ? Number(feedForm.fd_p) : 0,
-      fd_st: feedForm.fd_st ? Number(feedForm.fd_st) : 0,
-      fd_cellulose: feedForm.fd_cellulose ? Number(feedForm.fd_cellulose) : null,
-      fd_hemicellulose: feedForm.fd_hemicellulose ? Number(feedForm.fd_hemicellulose) : null,
-      fd_lg: feedForm.fd_lg ? Number(feedForm.fd_lg) : null,
-      fd_ndin: feedForm.fd_ndin ? Number(feedForm.fd_ndin) : null,
-      fd_nfe: feedForm.fd_nfe ? Number(feedForm.fd_nfe) : null,
-      fd_npn_cp: feedForm.fd_npn_cp ? Number(feedForm.fd_npn_cp) : null,
-      fd_adin: feedForm.fd_adin ? Number(feedForm.fd_adin) : null,
-      fd_ipb_local_lab: feedForm.fd_ipb_local_lab || null,
-      fd_orginin: feedForm.fd_orginin || null,
-      fd_season: feedForm.fd_season || null,
+      fd_code: "",
+      fd_dm: num(feedForm.fd_dm),
+      fd_ash: num(feedForm.fd_ash),
+      fd_cellulose: num(feedForm.fd_cellulose),
+      fd_cf: num(feedForm.fd_cf),
+      fd_cp: num(feedForm.fd_cp),
+      fd_ee: num(feedForm.fd_ee),
+      fd_hemicellulose: num(feedForm.fd_hemicellulose),
+      fd_st: num(feedForm.fd_st),
+      fd_ndf: num(feedForm.fd_ndf),
+      fd_adf: num(feedForm.fd_adf),
+      fd_lg: num(feedForm.fd_lg),
+      fd_ndin: num(feedForm.fd_ndin),
+      fd_nfe: num(feedForm.fd_nfe),
+      fd_npn_cp: num(feedForm.fd_npn_cp),
+      fd_adin: num(feedForm.fd_adin),
+      fd_ca: num(feedForm.fd_ca),
+      fd_p: num(feedForm.fd_p),
+      fd_ipb_local_lab: "",
+      fd_orginin: "",
+      fd_season: "",
     };
     try {
       if (editingFeed?.feed_id) {
@@ -342,11 +348,17 @@ export default function AdminFeedsPage() {
     }
     setIsSavingCat(true);
     try {
-      await addAdminFeedCategory(user.id, { category_name: newCatName.trim(), feed_type_id: newCatTypeId });
+      await addAdminFeedCategory(user.id, {
+        category_name: newCatName.trim(),
+        description: newCatDescription.trim(),
+        feed_type_id: newCatTypeId,
+        sort_order: feedCategories.length + 1,
+      });
       showSnackbar("Category added successfully", "success");
       setShowCatModal(false);
       setNewCatName("");
       setNewCatTypeId("");
+      setNewCatDescription("");
       loadAll();
     } catch (err: unknown) {
       showSnackbar(err instanceof Error ? err.message : "Save failed", "error");
@@ -379,10 +391,15 @@ export default function AdminFeedsPage() {
     }
     setIsSavingType(true);
     try {
-      await addAdminFeedType(user.id, { type_name: newTypeName.trim() });
+      await addAdminFeedType(user.id, {
+        type_name: newTypeName.trim(),
+        description: newTypeDescription.trim(),
+        sort_order: feedTypes.length + 1,
+      });
       showSnackbar("Feed type added successfully", "success");
       setShowTypeModal(false);
       setNewTypeName("");
+      setNewTypeDescription("");
       loadAll();
     } catch (err: unknown) {
       showSnackbar(err instanceof Error ? err.message : "Save failed", "error");
@@ -809,145 +826,183 @@ export default function AdminFeedsPage() {
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowFeedModal(false); }}
         >
-          <div className="bg-white rounded-t-2xl px-4 pt-5 pb-8 overflow-y-auto" style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-                {editingFeed ? "Edit Feed" : "Add Feed"}
-              </h3>
-              <button onClick={() => setShowFeedModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
-              </button>
-            </div>
+          <div className="bg-white rounded-t-2xl px-4 pt-5 pb-8 overflow-y-auto" style={{ maxHeight: "92vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
+            {/* Header — Android dialog_add_feed: centered "Add Feed" bold green
+                font_20. dialog_edit_feed: left-aligned "Edit Feed" regular font_16. */}
+            {editingFeed ? (
+              <div className="flex items-center justify-between mb-5">
+                <h3
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, fontWeight: 400 }}
+                >
+                  Edit Feed
+                </h3>
+                <button onClick={() => setShowFeedModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+            ) : (
+              <div className="relative mb-5">
+                <h3
+                  className="text-center font-bold"
+                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+                >
+                  Add Feed
+                </h3>
+                <button
+                  onClick={() => setShowFeedModal(false)}
+                  style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
+                  aria-label="Close"
+                >
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
+                </button>
+              </div>
+            )}
 
-            {/* Required fields — Android cascade: Country → Feed Type → Category → Feed Name → Feed Code */}
-            <div className="space-y-3 mb-4">
-              <div>
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Country *</p>
-                <div className="relative">
-                  <select
-                    value={feedForm.fd_country_name}
-                    onChange={(e) => {
-                      const c = countries.find((x) => x.name === e.target.value);
-                      setFeedForm((p) => ({ ...p, fd_country_name: e.target.value, fd_country_cd: c?.country_code ?? "", fd_type: "", fd_category: "" }));
-                    }}
-                    className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                    style={{ backgroundColor: "#F1F5F9", color: feedForm.fd_country_name ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif" }}
-                  >
-                    <option value="">Select country...</option>
-                    {countries.map((c) => <option key={String(c.id)} value={c.name}>{c.name}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
+            {/* Base fields — in EDIT mode all four are read-only (bright_gray
+                bg, no border). In ADD mode they cascade: country → type →
+                category → name (each disabled until the previous is picked). */}
+            {(() => {
+              const isEdit = !!editingFeed;
+              const inputStyle = (disabled: boolean) => ({
+                backgroundColor: disabled ? "#EBEAEA" : "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                borderRadius: 16,
+                padding: "12px 14px",
+                fontSize: 14,
+                border: "none",
+                width: "100%",
+                opacity: disabled ? 0.85 : 1,
+                cursor: disabled ? "not-allowed" : "auto",
+              } as const);
+
+              return (
+                <div className="space-y-3 mb-4">
+                  {/* COUNTRY * */}
+                  <div>
+                    <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                      COUNTRY<span style={{ color: "#FC2E20" }}> *</span>
+                    </p>
+                    {isEdit ? (
+                      <div style={inputStyle(true)}>{feedForm.fd_country_name || "N/A"}</div>
+                    ) : (
+                      <div className="relative">
+                        <select
+                          value={feedForm.fd_country_name}
+                          onChange={(e) => {
+                            const c = countries.find((x) => x.name === e.target.value);
+                            setFeedForm((p) => ({ ...p, fd_country_name: e.target.value, fd_country_cd: c?.country_code ?? "", fd_country_id: String(c?.id ?? ""), fd_type: "", fd_category: "", fd_name: "" }));
+                          }}
+                          className="appearance-none focus:outline-none pr-8"
+                          style={{ ...inputStyle(false), color: feedForm.fd_country_name ? "#231F20" : "#999" }}
+                        >
+                          <option value="">Select country...</option>
+                          {countries.map((c) => <option key={String(c.id)} value={c.name}>{c.name}</option>)}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* FEED TYPE * — disabled until country selected (Add only) */}
+                  <div>
+                    <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                      FEED TYPE<span style={{ color: "#FC2E20" }}> *</span>
+                    </p>
+                    {isEdit ? (
+                      <div style={inputStyle(true)}>{feedForm.fd_type || "N/A"}</div>
+                    ) : (
+                      <div className="relative">
+                        <select
+                          value={feedForm.fd_type}
+                          disabled={!feedForm.fd_country_name}
+                          onChange={(e) => setFeedForm((p) => ({ ...p, fd_type: e.target.value, fd_category: "", fd_name: "" }))}
+                          className="appearance-none focus:outline-none pr-8"
+                          style={{ ...inputStyle(!feedForm.fd_country_name), color: feedForm.fd_type ? "#231F20" : "#999" }}
+                        >
+                          <option value="">{!feedForm.fd_country_name ? "Select country first" : "Select type..."}</option>
+                          {feedTypes.map((ft) => <option key={ft.id} value={getName(ft)}>{getName(ft)}</option>)}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* FEED CATEGORY * — disabled until type selected (Add only) */}
+                  <div>
+                    <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                      FEED CATEGORY<span style={{ color: "#FC2E20" }}> *</span>
+                    </p>
+                    {isEdit ? (
+                      <div style={inputStyle(true)}>{feedForm.fd_category || "N/A"}</div>
+                    ) : (
+                      <div className="relative">
+                        <select
+                          value={feedForm.fd_category}
+                          disabled={!feedForm.fd_type}
+                          onChange={(e) => setFeedForm((p) => ({ ...p, fd_category: e.target.value, fd_name: "" }))}
+                          className="appearance-none focus:outline-none pr-8"
+                          style={{ ...inputStyle(!feedForm.fd_type), color: feedForm.fd_category ? "#231F20" : "#999" }}
+                        >
+                          <option value="">{!feedForm.fd_type ? "Select type first" : "Select category..."}</option>
+                          {feedCategories
+                            .filter((fc) => !feedForm.fd_type || getFeedTypeName(fc) === feedForm.fd_type)
+                            .map((fc) => <option key={fc.id} value={getCatName(fc)}>{getCatName(fc)}</option>)}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* FEED NAME * — disabled until category selected (Add only) */}
+                  <div>
+                    <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                      FEED NAME<span style={{ color: "#FC2E20" }}> *</span>
+                    </p>
+                    {isEdit ? (
+                      <div style={inputStyle(true)}>{feedForm.fd_name || "N/A"}</div>
+                    ) : (
+                      <input
+                        type="text"
+                        value={feedForm.fd_name}
+                        disabled={!feedForm.fd_category}
+                        onChange={(e) => setFeedForm((p) => ({ ...p, fd_name: e.target.value }))}
+                        placeholder={!feedForm.fd_category ? "Select category first" : "e.g. Maize Silage"}
+                        className="focus:outline-none"
+                        style={inputStyle(!feedForm.fd_category)}
+                      />
+                    )}
                   </div>
                 </div>
-              </div>
+              );
+            })()}
 
-              <div>
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Type *</p>
-                <div className="relative">
-                  <select
-                    value={feedForm.fd_type}
-                    disabled={!feedForm.fd_country_name}
-                    onChange={(e) => setFeedForm((p) => ({ ...p, fd_type: e.target.value, fd_category: "" }))}
-                    className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                    style={{ backgroundColor: feedForm.fd_country_name ? "#F1F5F9" : "#E8EDEB", color: feedForm.fd_type ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif", opacity: !feedForm.fd_country_name ? 0.6 : 1 }}
-                  >
-                    <option value="">{!feedForm.fd_country_name ? "Select country first" : "Select type..."}</option>
-                    {feedTypes.map((ft) => <option key={ft.id} value={getName(ft)}>{getName(ft)}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Category</p>
-                <div className="relative">
-                  <select
-                    value={feedForm.fd_category}
-                    disabled={!feedForm.fd_type}
-                    onChange={(e) => setFeedForm((p) => ({ ...p, fd_category: e.target.value }))}
-                    className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                    style={{ backgroundColor: feedForm.fd_type ? "#F1F5F9" : "#E8EDEB", color: feedForm.fd_category ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif", opacity: !feedForm.fd_type ? 0.6 : 1 }}
-                  >
-                    <option value="">{!feedForm.fd_type ? "Select type first" : "Select category..."}</option>
-                    {feedCategories
-                      .filter((fc) => !feedForm.fd_type || getFeedTypeName(fc) === feedForm.fd_type)
-                      .map((fc) => <option key={fc.id} value={getCatName(fc)}>{getCatName(fc)}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Name *</p>
-                <input
-                  type="text"
-                  value={feedForm.fd_name}
-                  onChange={(e) => setFeedForm((p) => ({ ...p, fd_name: e.target.value }))}
-                  placeholder="e.g. Maize Silage"
-                  className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                />
-              </div>
-
-              <div>
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Code</p>
-                <input
-                  type="text"
-                  value={feedForm.fd_code}
-                  onChange={(e) => setFeedForm((p) => ({ ...p, fd_code: e.target.value }))}
-                  placeholder="e.g. MS001"
-                  className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none"
-                  style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                />
-              </div>
-            </div>
-
-            {/* Nutrient fields */}
+            {/* Nutrient fields — 17 fields matching Android layout_nutrient_info.xml */}
             <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Nutrient Composition (%)</p>
             <div className="grid grid-cols-2 gap-3">
               <NutrientInput label="Dry Matter (DM)" value={feedForm.fd_dm} onChange={(v) => setFeedForm((p) => ({ ...p, fd_dm: v }))} />
+              <NutrientInput label="Ash" value={feedForm.fd_ash} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ash: v }))} />
+              <NutrientInput label="Cellulose" value={feedForm.fd_cellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
+              <NutrientInput label="Crude Fiber (CF)" value={feedForm.fd_cf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cf: v }))} />
               <NutrientInput label="Crude Protein (CP)" value={feedForm.fd_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cp: v }))} />
               <NutrientInput label="Ether Extract (EE)" value={feedForm.fd_ee} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ee: v }))} />
-              <NutrientInput label="Crude Fiber (CF)" value={feedForm.fd_cf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cf: v }))} />
-              <NutrientInput label="Ash" value={feedForm.fd_ash} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ash: v }))} />
+              <NutrientInput label="Hemicellulose" value={feedForm.fd_hemicellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
+              <NutrientInput label="Starch (ST)" value={feedForm.fd_st} onChange={(v) => setFeedForm((p) => ({ ...p, fd_st: v }))} />
               <NutrientInput label="NDF" value={feedForm.fd_ndf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndf: v }))} />
               <NutrientInput label="ADF" value={feedForm.fd_adf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_adf: v }))} />
-              <NutrientInput label="Calcium (Ca)" value={feedForm.fd_ca} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ca: v }))} />
-              <NutrientInput label="Phosphorus (P)" value={feedForm.fd_p} onChange={(v) => setFeedForm((p) => ({ ...p, fd_p: v }))} />
-              <NutrientInput label="Starch (ST)" value={feedForm.fd_st} onChange={(v) => setFeedForm((p) => ({ ...p, fd_st: v }))} />
-              <NutrientInput label="Cellulose" value={feedForm.fd_cellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
-              <NutrientInput label="Hemicellulose" value={feedForm.fd_hemicellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
               <NutrientInput label="Lignin" value={feedForm.fd_lg} onChange={(v) => setFeedForm((p) => ({ ...p, fd_lg: v }))} />
               <NutrientInput label="NDIN" value={feedForm.fd_ndin} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndin: v }))} />
               <NutrientInput label="NFE" value={feedForm.fd_nfe} onChange={(v) => setFeedForm((p) => ({ ...p, fd_nfe: v }))} />
-              <NutrientInput label="NPN Crude Protein" value={feedForm.fd_npn_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
+              <NutrientInput label="NPN CP" value={feedForm.fd_npn_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
               <NutrientInput label="ADIN" value={feedForm.fd_adin} onChange={(v) => setFeedForm((p) => ({ ...p, fd_adin: v }))} />
-            </div>
-
-            {/* Metadata fields */}
-            <div className="space-y-3 mt-3">
-              {[
-                { label: "IPB Local Lab", key: "fd_ipb_local_lab" as const },
-                { label: "Origin (Orginin)", key: "fd_orginin" as const },
-                { label: "Season", key: "fd_season" as const },
-              ].map(({ label, key }) => (
-                <div key={key}>
-                  <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{label}</p>
-                  <input
-                    type="text"
-                    value={feedForm[key]}
-                    onChange={(e) => setFeedForm((p) => ({ ...p, [key]: e.target.value }))}
-                    placeholder={`Enter ${label.toLowerCase()}...`}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                    style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                  />
-                </div>
-              ))}
+              <NutrientInput label="Calcium (Ca)" value={feedForm.fd_ca} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ca: v }))} />
+              <NutrientInput label="Phosphorus (P)" value={feedForm.fd_p} onChange={(v) => setFeedForm((p) => ({ ...p, fd_p: v }))} />
             </div>
 
             <button
@@ -963,55 +1018,151 @@ export default function AdminFeedsPage() {
               }}
             >
               {isSavingFeed ? (
-                <><svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" /></svg>Saving...</>
-              ) : (editingFeed ? "Update Feed" : "Add Feed")}
+                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" /></svg>
+              ) : "Submit"}
             </button>
           </div>
         </div>
       )}
 
-      {/* ══ ADD TYPE MODAL ══ */}
+      {/* ══ ADD TYPE MODAL ══ — matches Android dialog_feed_type.xml */}
       {showTypeModal && (
         <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-sm" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <h3 className="text-base font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Add Feed Type</h3>
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Type Name *</p>
+          <div className="bg-white rounded-2xl w-full max-w-sm" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)", padding: "30px 12px 30px" }}>
+            {/* Centered title: dark_aquamarine_green, font_20, bold */}
+            <h3
+              className="text-center font-bold"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, marginBottom: 20 }}
+            >
+              Add Feed Type
+            </h3>
+
+            {/* FEED TYPE * label + input */}
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+            >
+              FEED TYPE<span style={{ color: "#FC2E20" }}> *</span>
+            </p>
             <input
               type="text"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
-              placeholder="e.g. Roughage"
-              className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark mb-5"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              placeholder="e.g. Forage"
+              className="w-full focus:outline-none mb-3"
+              style={{
+                backgroundColor: "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                borderRadius: 16,
+                padding: "12px 14px",
+                fontSize: 14,
+                border: "none",
+              }}
             />
-            <div className="flex gap-3">
-              <button onClick={() => setShowTypeModal(false)} className="flex-1 py-3 rounded-xl font-bold" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>Cancel</button>
-              <button
-                onClick={handleSaveType}
-                disabled={!newTypeName.trim() || isSavingType}
-                className="flex-1 py-3 rounded-xl font-bold flex items-center justify-center gap-2"
-                style={{ backgroundColor: newTypeName.trim() && !isSavingType ? "#064E3B" : "#D3D3D3", color: newTypeName.trim() && !isSavingType ? "white" : "#999", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-              >
-                {isSavingType ? "Saving..." : "Add"}
-              </button>
-            </div>
+
+            {/* DESCRIPTION label + multiline textarea (4:1 aspect, max 100 chars) */}
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+            >
+              Description
+            </p>
+            <textarea
+              value={newTypeDescription}
+              onChange={(e) => setNewTypeDescription(e.target.value)}
+              maxLength={100}
+              placeholder="Short description"
+              className="w-full focus:outline-none mb-5"
+              style={{
+                backgroundColor: "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                borderRadius: 16,
+                padding: "12px 14px",
+                fontSize: 14,
+                border: "none",
+                resize: "none",
+                minHeight: 80,
+              }}
+            />
+
+            {/* Submit button — Android LoadingButton: disabled state =
+                light_gray_new bg + spanish_gray text; enabled =
+                dark_aquamarine_green bg + white text; corner 12. */}
+            <button
+              onClick={handleSaveType}
+              disabled={!newTypeName.trim() || isSavingType}
+              className="w-full font-bold flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: newTypeName.trim() && !isSavingType ? "#064E3B" : "#D3D3D3",
+                color: newTypeName.trim() && !isSavingType ? "white" : "#999",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: newTypeName.trim() && !isSavingType ? "pointer" : "not-allowed",
+                padding: "12px 0",
+                borderRadius: 12,
+                fontSize: 16,
+              }}
+            >
+              {isSavingType ? (
+                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                </svg>
+              ) : "Submit"}
+            </button>
+
+            {/* Cancel link — small text-only secondary action */}
+            <button
+              onClick={() => { setShowTypeModal(false); setNewTypeName(""); setNewTypeDescription(""); }}
+              className="w-full mt-3"
+              style={{
+                background: "none",
+                border: "none",
+                color: "#6D6D6D",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 14,
+                cursor: "pointer",
+              }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
 
-      {/* ══ ADD CATEGORY MODAL ══ */}
+      {/* ══ ADD CATEGORY MODAL ══ — matches Android dialog_feed_category.xml */}
       {showCatModal && (
         <div className="fixed top-0 h-full z-50 flex items-center justify-center px-6" style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}>
-          <div className="bg-white rounded-2xl p-5 w-full max-w-sm" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}>
-            <h3 className="text-base font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Add Category</h3>
-            {/* Android cascade: Feed Type → Category Name */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Type *</p>
+          <div className="bg-white rounded-2xl w-full max-w-sm" style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)", padding: "30px 12px 30px" }}>
+            <h3
+              className="text-center font-bold"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, marginBottom: 20 }}
+            >
+              Add Feed Category
+            </h3>
+
+            {/* FEED TYPE * dropdown (required) */}
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+            >
+              FEED TYPE<span style={{ color: "#FC2E20" }}> *</span>
+            </p>
             <div className="relative mb-3">
               <select
                 value={newCatTypeId}
-                onChange={(e) => { setNewCatTypeId(e.target.value); setNewCatName(""); }}
-                className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                style={{ backgroundColor: "#F1F5F9", color: newCatTypeId ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif" }}
+                onChange={(e) => { setNewCatTypeId(e.target.value); setNewCatName(""); setNewCatDescription(""); }}
+                className="w-full focus:outline-none appearance-none pr-8"
+                style={{
+                  backgroundColor: "#F1F5F9",
+                  color: newCatTypeId ? "#231F20" : "#999",
+                  fontFamily: "Nunito, sans-serif",
+                  borderRadius: 16,
+                  padding: "12px 14px",
+                  fontSize: 14,
+                  border: "none",
+                }}
               >
                 <option value="">Select type...</option>
                 {feedTypes.map((ft) => <option key={ft.id} value={ft.id}>{getName(ft)}</option>)}
@@ -1020,27 +1171,92 @@ export default function AdminFeedsPage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
               </div>
             </div>
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Category Name *</p>
+
+            {/* FEED CATEGORY * input — disabled until type selected
+                (bright_gray bg when disabled). */}
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+            >
+              FEED CATEGORY<span style={{ color: "#FC2E20" }}> *</span>
+            </p>
             <input
               type="text"
               value={newCatName}
               disabled={!newCatTypeId}
               onChange={(e) => setNewCatName(e.target.value)}
               placeholder={!newCatTypeId ? "Select feed type first" : "e.g. Cereal Grains"}
-              className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark mb-5"
-              style={{ backgroundColor: newCatTypeId ? "#F1F5F9" : "#E8EDEB", color: "#231F20", fontFamily: "Nunito, sans-serif", opacity: !newCatTypeId ? 0.6 : 1 }}
+              className="w-full focus:outline-none mb-3"
+              style={{
+                backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                opacity: !newCatTypeId ? 0.6 : 1,
+                borderRadius: 16,
+                padding: "12px 14px",
+                fontSize: 14,
+                border: "none",
+              }}
             />
-            <div className="flex gap-3">
-              <button onClick={() => setShowCatModal(false)} className="flex-1 py-3 rounded-xl font-bold" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}>Cancel</button>
-              <button
-                onClick={handleSaveCategory}
-                disabled={!newCatName.trim() || !newCatTypeId || isSavingCat}
-                className="flex-1 py-3 rounded-xl font-bold"
-                style={{ backgroundColor: newCatName.trim() && newCatTypeId && !isSavingCat ? "#064E3B" : "#D3D3D3", color: newCatName.trim() && newCatTypeId && !isSavingCat ? "white" : "#999", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-              >
-                {isSavingCat ? "Saving..." : "Add"}
-              </button>
-            </div>
+
+            {/* DESCRIPTION multiline — disabled until type selected */}
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+            >
+              Description
+            </p>
+            <textarea
+              value={newCatDescription}
+              disabled={!newCatTypeId}
+              onChange={(e) => setNewCatDescription(e.target.value)}
+              maxLength={100}
+              placeholder={!newCatTypeId ? "Select feed type first" : "Short description"}
+              className="w-full focus:outline-none mb-5"
+              style={{
+                backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                opacity: !newCatTypeId ? 0.6 : 1,
+                borderRadius: 16,
+                padding: "12px 14px",
+                fontSize: 14,
+                border: "none",
+                resize: "none",
+                minHeight: 80,
+              }}
+            />
+
+            {/* Submit — disabled until type + category filled */}
+            <button
+              onClick={handleSaveCategory}
+              disabled={!newCatName.trim() || !newCatTypeId || isSavingCat}
+              className="w-full font-bold flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: newCatName.trim() && newCatTypeId && !isSavingCat ? "#064E3B" : "#D3D3D3",
+                color: newCatName.trim() && newCatTypeId && !isSavingCat ? "white" : "#999",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: newCatName.trim() && newCatTypeId && !isSavingCat ? "pointer" : "not-allowed",
+                padding: "12px 0",
+                borderRadius: 12,
+                fontSize: 16,
+              }}
+            >
+              {isSavingCat ? (
+                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                </svg>
+              ) : "Submit"}
+            </button>
+
+            <button
+              onClick={() => { setShowCatModal(false); setNewCatTypeId(""); setNewCatName(""); setNewCatDescription(""); }}
+              className="w-full mt-3"
+              style={{ background: "none", border: "none", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, cursor: "pointer" }}
+            >
+              Cancel
+            </button>
           </div>
         </div>
       )}
