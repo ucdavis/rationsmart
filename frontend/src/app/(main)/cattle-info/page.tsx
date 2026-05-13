@@ -19,6 +19,7 @@ import SectionCard from "@/components/SectionCard";
 import Toolbar from "@/components/Toolbar";
 import {
   IcSimulationDetails,
+  IcSimulationHistory,
   IcAnimalCharacteristics,
   IcReproductiveData,
   IcMilkProduction,
@@ -91,7 +92,7 @@ const EMPTY_FORM: FormState = {
   milk_fat_percent: "3.5",
   average_temperature: "25",
   grazing: false,
-  distance_walked: "0",
+  distance_walked: "",
   topography: "Flat",
 };
 
@@ -478,12 +479,8 @@ export default function CattleInfoPage() {
               style={{ width: 36, height: 36, backgroundColor: "#E4F7EF", cursor: "pointer" }}
               aria-label="Simulation history"
             >
-              {/* History icon: clock + counter-clockwise arrow, matches Android ic_history */}
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <path d="M3 12a9 9 0 1 0 3-6.7" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M3 3v5h5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M12 7v5l3 2" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              {/* Android ic_simulation_history — filled icon, regular weight (no stroke). */}
+              <IcSimulationHistory size={20} color="#064E3B" />
             </button>
           }
         >
@@ -680,10 +677,13 @@ export default function CattleInfoPage() {
                   checked={form.grazing}
                   onChange={(e) => {
                     const checked = e.target.checked;
+                    // Always clear distance_walked when the toggle changes
+                    // state — fresh entry expected each time grazing flips,
+                    // never carry over a previous value (or default "0").
                     setForm((p) => ({
                       ...p,
                       grazing: checked,
-                      distance_walked: checked ? p.distance_walked : "0",
+                      distance_walked: "",
                       topography: checked ? p.topography : "Flat",
                     }));
                   }}
