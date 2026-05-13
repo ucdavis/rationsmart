@@ -18,11 +18,8 @@ export default function WelcomePage() {
         <AppBranding />
       </div>
 
-      {/* Illustration sits right under branding (matches Android: image
-          starts directly below app_branding, fills horizontally with 12dp
-          margin). 1:1 PNG renders with width:100% h:auto so it scales
-          preserving aspect ratio — no cropping. */}
-      <div className="px-3 mt-3 flex justify-center">
+      {/* Comfortable breathing room between logo and illustration */}
+      <div className="px-3 mt-10 flex justify-center">
         <Image
           src="/images/ic_welcome_image.png"
           alt="Welcome illustration"
