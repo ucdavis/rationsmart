@@ -222,7 +222,7 @@ export default function AdminUsersPage() {
         >
           <div
             className="w-full rounded-t-3xl bg-white px-5 py-6"
-            style={{ maxWidth: 430, maxHeight: "85vh", overflowY: "auto" }}
+            style={{ maxWidth: "100%", maxHeight: "85vh", overflowY: "auto" }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}

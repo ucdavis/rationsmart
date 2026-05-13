@@ -78,7 +78,7 @@ export default function InstallPrompt() {
         <div
           style={{
             backgroundColor: "#fff", borderRadius: "16px 16px 0 0",
-            padding: "24px 24px 40px", width: "100%", maxWidth: 430,
+            padding: "24px 24px 40px", width: "100%", maxWidth: "100%",
             boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
           }}
           onClick={(e) => e.stopPropagation()}
@@ -121,7 +121,7 @@ export default function InstallPrompt() {
     >
       <div
         style={{
-          width: "100%", maxWidth: 430, padding: "0 12px 16px",
+          width: "100%", maxWidth: "100%", padding: "0 12px 16px",
           pointerEvents: "auto",
         }}
       >

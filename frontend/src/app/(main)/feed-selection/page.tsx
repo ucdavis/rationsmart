@@ -492,7 +492,7 @@ export default function FeedSelectionPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: 430,
+          maxWidth: "100%",
           backgroundColor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
