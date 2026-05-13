@@ -117,6 +117,10 @@ export default function FeedSelectionPage() {
 
   // Custom Feed modal state
   const [showCustomFeedModal, setShowCustomFeedModal] = useState(false);
+  // Two collapsible sections, both expanded by default (matches Android
+  // DialogFeedDetails isFeedDetailsExpanded/isNutritionalInfoExpanded = true).
+  const [feedDetailsExpanded, setFeedDetailsExpanded] = useState(true);
+  const [nutritionalInfoExpanded, setNutritionalInfoExpanded] = useState(true);
   const [customFeedForm, setCustomFeedForm] = useState(EMPTY_CUSTOM);
   const [customFeedTypes, setCustomFeedTypes] = useState<string[]>([]);
   const [customFeedCategories, setCustomFeedCategories] = useState<string[]>([]);
@@ -541,14 +545,20 @@ export default function FeedSelectionPage() {
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
             style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
-            {/* Title — matches Android dialog_add_feed.xml tv_title:
-                centered, bold, 20sp, dark_aquamarine_green */}
-            <div className="relative mb-5">
+            {/* Drag handle (matches Android view_drag_handle) */}
+            <div className="flex justify-center mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+
+            {/* Title — matches Android DialogFeedDetails tv_title:
+                "Add Custom Feed" for isAdd=true, "Edit Nutritional Information"
+                for isAdd=false. Centered, bold, 20sp, dark_aquamarine_green. */}
+            <div className="relative mb-4">
               <h3
                 className="text-center font-bold"
                 style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
               >
-                Add Feed
+                Add Custom Feed
               </h3>
               <button
                 onClick={() => setShowCustomFeedModal(false)}
@@ -559,20 +569,26 @@ export default function FeedSelectionPage() {
               </button>
             </div>
 
-            {/* Country — auto-filled from user profile, read-only display
-                (matches Android til_country which is initially editable but
-                in end-user context we have a single country tied to the user) */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Country<span style={{ color: "#FC2E20" }}> *</span>
-            </p>
-            <div
-              className="rounded-xl px-4 py-3 text-sm mb-3"
-              style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-            >
-              {user?.country || "—"}
-            </div>
+            {/* Separator line below title (matches Android view_separator_feed_details) */}
+            <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
 
-            {/* Feed Type — gated on country (always satisfied since user has one) */}
+            {/* "Feed Details" expand/collapse header (matches Android cvExpandFeedDetails) */}
+            <button
+              onClick={() => setFeedDetailsExpanded((p) => !p)}
+              className="w-full flex items-center justify-between mb-3"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            >
+              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                Feed Details
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: feedDetailsExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                <path d="M3 5l5 5 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {feedDetailsExpanded && (
+            <>
+            {/* Feed Type — first required field (no Country in Android end-user UI) */}
             <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
               Feed Type<span style={{ color: "#FC2E20" }}> *</span>
             </p>
@@ -630,30 +646,59 @@ export default function FeedSelectionPage() {
               )}
             </div>
 
-            {/* Feed Name — gated on category (matches Android dialog_add_feed til_feed_name
-                which is enabled=false initially and toggled on by adapter logic
-                after category is picked) */}
+            {/* Feed Name — gated on category. Android DialogFeedDetails
+                also shows a user-name prefix (e.g. "John-") via
+                PrefsManager.getUserNamePrefix(). We render the same. */}
             <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
               Feed Name<span style={{ color: "#FC2E20" }}> *</span>
             </p>
-            <input
-              type="text"
-              value={customFeedForm.feed_name}
-              onChange={(e) => setCustomFeedForm((p) => ({ ...p, feed_name: e.target.value }))}
-              disabled={!customFeedForm.feed_category}
-              className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark mb-4"
+            <div
+              className="flex items-center rounded-xl mb-4"
               style={{
                 backgroundColor: !customFeedForm.feed_category ? "#EBEAEA" : "#F1F5F9",
-                color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 opacity: !customFeedForm.feed_category ? 0.6 : 1,
-                cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
               }}
-            />
+            >
+              <span
+                className="pl-4 pr-1 text-sm"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                {user?.name ? `${user.name.split(" ")[0]}-` : ""}
+              </span>
+              <input
+                type="text"
+                value={customFeedForm.feed_name}
+                onChange={(e) => setCustomFeedForm((p) => ({ ...p, feed_name: e.target.value }))}
+                disabled={!customFeedForm.feed_category}
+                className="flex-1 bg-transparent px-1 py-3 text-sm border-none focus:outline-none"
+                style={{
+                  color: "#231F20",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
+                }}
+              />
+            </div>
+            </>
+            )}
 
-            {/* Nutrient Composition — 17 fields, ordering & names match Android
-                layout_nutrient_info.xml row-by-row */}
-            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+            {/* "Nutritional Information" expand/collapse header
+                (matches Android cvExpandNutritionalInformation) */}
+            <button
+              onClick={() => setNutritionalInfoExpanded((p) => !p)}
+              className="w-full flex items-center justify-between mb-3"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            >
+              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                Nutritional Information
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: nutritionalInfoExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                <path d="M3 5l5 5 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {nutritionalInfoExpanded && (
+            <>
+            <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
               Nutrient Composition (%)
             </p>
             <div className="grid grid-cols-2 gap-3 mb-5">
@@ -675,6 +720,8 @@ export default function FeedSelectionPage() {
               <CustomFeedNutrientInput label="Calcium" value={customFeedForm.fd_ca} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ca: v }))} />
               <CustomFeedNutrientInput label="Phosphorus" value={customFeedForm.fd_p} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_p: v }))} />
             </div>
+            </>
+            )}
 
             {/* Submit — Android btn_submit. Disabled (light_gray_new bg +
                 spanish_gray text) until ALL four required fields are filled. */}
