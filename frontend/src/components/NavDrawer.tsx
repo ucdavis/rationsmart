@@ -141,54 +141,52 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
 
         {/* Menu items — order matches Android NavigationDrawerItem exactly */}
         <div className="flex-1 overflow-y-auto">
-          {(user?.is_admin ? adminMenuItems : userMenuItems).map((item, idx, arr) => (
-            <div key={item.href}>
-              <button
-                onClick={() => handleNavigate(item.href)}
-                className="w-full flex items-center justify-between px-4 py-4"
-                style={{
-                  background: "none",
-                  border: "none",
-                  outline: "none",
-                  cursor: "pointer",
-                  WebkitTapHighlightColor: "transparent",
-                }}
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
+          {(user?.is_admin ? adminMenuItems : userMenuItems).map((item) => (
+            <button
+              key={item.href}
+              onClick={() => handleNavigate(item.href)}
+              className="w-full flex items-center justify-between px-4 py-4"
+              style={{
+                background: "none",
+                border: "none",
+                outline: "none",
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
+                <span
+                  className="text-base truncate"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {item.label}
+                </span>
+                {item.badge && (
+                  // Matches Android tv_item_status: nunito_regular (not bold),
+                  // font_12, dark_aquamarine_green text, bg_nav_menu_status pill
                   <span
-                    className="text-base truncate"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    style={{
+                      backgroundColor: "#E4F7EF",
+                      color: "#064E3B",
+                      fontFamily: "Nunito, sans-serif",
+                      fontSize: 12,
+                      fontWeight: 400,
+                      padding: "2px 10px",
+                      borderRadius: 60,
+                      flexShrink: 0,
+                    }}
                   >
-                    {item.label}
+                    {item.badge}
                   </span>
-                  {item.badge && (
-                    <span
-                      className="font-bold"
-                      style={{
-                        backgroundColor: "#E4F7EF",
-                        color: "#064E3B",
-                        fontFamily: "Nunito, sans-serif",
-                        fontSize: 12,
-                        padding: "2px 10px",
-                        borderRadius: 60,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
-                <IcArrowRight size={16} color="#064E3B" />
-              </button>
-              {idx < arr.length - 1 && (
-                <div style={{ height: 1, backgroundColor: "#E2E8F0", marginLeft: 52 }} />
-              )}
-            </div>
+                )}
+              </div>
+              <IcArrowRight size={16} color="#064E3B" />
+            </button>
           ))}
 
-          {/* Logout — red, no arrow */}
-          <div style={{ height: 1, backgroundColor: "#E2E8F0", marginLeft: 52 }} />
+          {/* Logout — red, no arrow. No divider above (Android nav drawer
+              has no separator lines between items per layout_item_nav_drawer_menu). */}
           <button
             onClick={() => setShowLogoutConfirm(true)}
             className="w-full flex items-center gap-3 px-4 py-4"
