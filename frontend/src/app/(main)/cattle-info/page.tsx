@@ -501,6 +501,12 @@ export default function CattleInfoPage() {
       country_name: user?.country ?? "",
     });
     setErrors({});
+    // Clear any feed selections that were restored from a simulation —
+    // otherwise tapping Continue after Reset would land the user on
+    // Feed Selection with stale rows still populated. Reset
+    // feedSelectionType to the default "recommendation" too.
+    setFeedSelections([]);
+    setFeedSelectionType("recommendation");
   };
 
   return (
