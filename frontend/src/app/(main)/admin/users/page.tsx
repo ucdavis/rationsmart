@@ -157,22 +157,23 @@ export default function AdminUsersPage() {
             >
               {/* Top row: rounded-square avatar + ROLE label | status badge top-right */}
               <div className="flex items-start justify-between gap-3" style={{ padding: "12px 12px 0" }}>
-                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                <div className="flex items-center flex-1 min-w-0" style={{ gap: 12 }}>
                   {/* Rounded-square avatar pill — matches Android cv_role
-                      (mint_whisper bg, 16dp corner, 10dp content padding). */}
+                      (mint_whisper bg, 16dp corner, 10dp content padding,
+                      24dp icon → 44dp pill). */}
                   <div
                     className="flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: "#E8F5E9", borderRadius: 16, padding: 10 }}
                   >
                     {u.is_admin ? (
                       /* ic_admin — shield with face inside */
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
                         <path d="M17,11c0.34,0 0.67,0.04 1,0.09V7.58c0,-0.8 -0.47,-1.52 -1.2,-1.83l-5.5,-2.4c-0.51,-0.22 -1.09,-0.22 -1.6,0l-5.5,2.4C3.47,6.07 3,6.79 3,7.58v3.6c0,4.54 3.2,8.79 7.5,9.82c0.55,-0.13 1.08,-0.32 1.6,-0.55C11.41,19.47 11,18.28 11,17C11,13.69 13.69,11 17,11z" />
                         <path d="M17,13c-2.21,0 -4,1.79 -4,4c0,2.21 1.79,4 4,4s4,-1.79 4,-4C21,14.79 19.21,13 17,13zM17,14.38c0.62,0 1.12,0.51 1.12,1.12s-0.51,1.12 -1.12,1.12s-1.12,-0.51 -1.12,-1.12S16.38,14.38 17,14.38zM17,19.75c-0.93,0 -1.74,-0.46 -2.24,-1.17c0.05,-0.72 1.51,-1.08 2.24,-1.08s2.19,0.36 2.24,1.08C18.74,19.29 17.93,19.75 17,19.75z" />
                       </svg>
                     ) : (
                       /* ic_user — solid filled person silhouette */
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
                         <path d="M12,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM12,14c-2.67,0 -8,1.34 -8,4v1c0,0.55 0.45,1 1,1h14c0.55,0 1,-0.45 1,-1v-1c0,-2.66 -5.33,-4 -8,-4z" />
                       </svg>
                     )}
@@ -203,26 +204,26 @@ export default function AdminUsersPage() {
                   {togglingId === u.id ? "..." : u.is_active ? "ACTIVE" : "INACTIVE"}
                 </button>
               </div>
-              {/* Name — aligned with avatar (12 + 36 avatar + 12 gap = 60 left, OR start under avatar at 12) */}
-              <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "4px 12px 0 64px" }}>
+              {/* Name — starts after the 44px avatar pill (12 card pad + 44 avatar + 12 gap = 68) */}
+              <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "4px 12px 0 68px" }}>
                 {u.name}
               </p>
-              {/* Email row — envelope icon prefix */}
-              <div className="flex items-center gap-1.5" style={{ margin: "8px 12px 0 64px" }}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                  <rect x="3" y="5" width="18" height="14" rx="2" stroke="#6D6D6D" strokeWidth="1.8" />
-                  <path d="M3 7l9 6 9-6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" />
+              {/* Email row — envelope icon prefix. Android ic_email is a
+                  FILLED envelope (not outlined), tinted dark_silver. 16dp size. */}
+              <div className="flex items-center" style={{ margin: "8px 12px 0 68px", gap: 4 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="#6D6D6D" style={{ flexShrink: 0 }}>
+                  <path d="M20,4L4,4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2L22,6c0,-1.1 -0.9,-2 -2,-2zM19.6,8.25l-6.54,4.09c-0.65,0.41 -1.47,0.41 -2.12,0L4.4,8.25c-0.25,-0.16 -0.4,-0.43 -0.4,-0.72 0,-0.67 0.73,-1.07 1.3,-0.72L12,11l6.7,-4.19c0.57,-0.35 1.3,0.05 1.3,0.72 0,0.29 -0.15,0.56 -0.4,0.72z" />
                 </svg>
                 <span className="truncate" style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
                   {u.email_id}
                 </span>
               </div>
-              {/* Country row — location pin icon prefix */}
+              {/* Country row — location pin (filled) icon prefix. Android
+                  ic_location renders as a filled outline pin with center dot. */}
               {getCountryName(u.country) && (
-                <div className="flex items-center gap-1.5" style={{ margin: "4px 12px 0 64px" }}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                    <path d="M12 22s7-7.58 7-12a7 7 0 0 0-14 0c0 4.42 7 12 7 12z" stroke="#6D6D6D" strokeWidth="1.8" strokeLinejoin="round" />
-                    <circle cx="12" cy="10" r="2.5" stroke="#6D6D6D" strokeWidth="1.8" />
+                <div className="flex items-center" style={{ margin: "4px 12px 0 68px", gap: 4 }}>
+                  <svg width="16" height="16" viewBox="0 0 960 960" fill="#6D6D6D" style={{ flexShrink: 0 }}>
+                    <path d="M480,769q119,-107 179.5,-197T720,411q0,-105 -68.5,-174T480,168q-103,0 -171.5,69T240,411q0,71 60.5,161T480,769ZM480,841q-13,0 -24.5,-4.5T433,823q-40,-35 -86.5,-82T260,640q-40,-54 -66,-112.5T168,411q0,-134 89,-224.5T480,96q133,0 222.5,90.5T792,411q0,58 -26.5,117t-66,113q-39.5,54 -86,100.5T527,823q-11,9 -22.5,13.5T480,841ZM480,480q30,0 51,-21t21,-51q0,-30 -21,-51t-51,-21q-30,0 -51,21t-21,51q0,30 21,51t51,21Z" />
                   </svg>
                   <span style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
                     {getCountryName(u.country)}
