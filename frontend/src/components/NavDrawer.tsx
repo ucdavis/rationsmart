@@ -71,6 +71,10 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
   // 480px column, creating a big visual disconnect.
   const containerLeft = "max(0px, calc((100vw - 480px) / 2))";
   const containerWidth = "min(100vw, 480px)";
+  // When closed, the drawer must move left by 100% of its own width PLUS
+  // the centered-column offset, otherwise on desktop translateX(-100%)
+  // only shifts it 340px and it's still visible to the left of the content.
+  const hiddenTransform = `translateX(calc(-100% - ${containerLeft}))`;
 
   return (
     <>
@@ -93,7 +97,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
         style={{
           left: containerLeft,
           width: "min(82vw, 340px)",
-          transform: open ? "translateX(0)" : "translateX(-100%)",
+          transform: open ? "translateX(0)" : hiddenTransform,
           transition: "transform 0.28s cubic-bezier(0.22,1,0.36,1)",
           boxShadow: open ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
         }}
