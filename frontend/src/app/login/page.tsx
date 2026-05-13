@@ -237,7 +237,7 @@ export default function LoginPage() {
           <div
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
-              maxWidth: "min(100vw, 480px)",
+              maxWidth: "100vw",
               width: "100%",
               zIndex: 51,
               borderTopLeftRadius: 24,

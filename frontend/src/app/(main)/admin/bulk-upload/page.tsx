@@ -307,7 +307,7 @@ export default function BulkUploadPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "min(100vw, 480px)",
+          maxWidth: "100vw",
           backgroundColor: "transparent",
           zIndex: 30,
         }}
