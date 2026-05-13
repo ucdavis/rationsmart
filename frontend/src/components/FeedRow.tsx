@@ -153,9 +153,12 @@ export default function FeedRow({
   // remain read-only per Android dialog_edit_feed.xml (all four fields enabled="false").
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  // 17 nutrient fields — matches Android layout_nutrient_info.xml exactly
   const [editForm, setEditForm] = useState({
-    fd_dm: "", fd_cp: "", fd_ee: "", fd_cf: "", fd_ash: "",
-    fd_ndf: "", fd_adf: "", fd_ca: "", fd_p: "", fd_st: "",
+    fd_dm: "", fd_ash: "", fd_cellulose: "", fd_cf: "", fd_cp: "",
+    fd_ee: "", fd_hemicellulose: "", fd_st: "", fd_ndf: "", fd_adf: "",
+    fd_lg: "", fd_ndin: "", nfe_pct: "", fd_npn_cp: "", fd_adin: "",
+    fd_ca: "", fd_p: "",
   });
 
   const canEdit = !!item.feed_uuid;
@@ -468,22 +471,30 @@ export default function FeedRow({
               </div>
             ))}
 
-            {/* Nutritional inputs (editable) */}
+            {/* Nutritional inputs (editable) — 17 fields per Android
+                layout_nutrient_info.xml */}
             <p className="text-xs font-bold uppercase mt-2 mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-              Nutrient Composition (%) — optional
+              Nutrient Composition (%)
             </p>
             <div className="grid grid-cols-2 gap-3 mb-5">
               {[
-                ["fd_dm", "Dry Matter (DM)"],
-                ["fd_cp", "Crude Protein (CP)"],
-                ["fd_ee", "Ether Extract (EE)"],
-                ["fd_cf", "Crude Fiber (CF)"],
+                ["fd_dm", "Dry Matter"],
                 ["fd_ash", "Ash"],
+                ["fd_cellulose", "Cellulose"],
+                ["fd_cf", "Crude Fiber"],
+                ["fd_cp", "Crude Protein"],
+                ["fd_ee", "Ether Extract"],
+                ["fd_hemicellulose", "Hemicellulose"],
+                ["fd_st", "Starch"],
                 ["fd_ndf", "NDF"],
                 ["fd_adf", "ADF"],
-                ["fd_ca", "Calcium (Ca)"],
-                ["fd_p", "Phosphorus (P)"],
-                ["fd_st", "Starch"],
+                ["fd_lg", "Lignin"],
+                ["fd_ndin", "NDIN"],
+                ["nfe_pct", "NFE"],
+                ["fd_npn_cp", "NPN CP"],
+                ["fd_adin", "ADIN"],
+                ["fd_ca", "Calcium"],
+                ["fd_p", "Phosphorus"],
               ].map(([k, label]) => (
                 <div key={k}>
                   <p className="text-xs mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{label}</p>
