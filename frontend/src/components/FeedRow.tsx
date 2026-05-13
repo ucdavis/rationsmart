@@ -21,48 +21,47 @@ interface FeedRowProps {
   onDelete: (id: string) => void;
 }
 
-const selStyle = {
-  backgroundColor: "#F1F5F9",
-  color: "#231F20",
-  fontFamily: "Nunito, sans-serif",
-  borderRadius: 16,
-  border: "none",
-  width: "100%",
-  fontSize: 14,
-  padding: "10px 32px 10px 12px",
-  appearance: "none" as const,
-  WebkitAppearance: "none" as const,
-  outline: "none",
-  minHeight: 48,
-};
-
-const inputStyle = {
-  backgroundColor: "#F1F5F9",
-  color: "#231F20",
-  fontFamily: "Nunito, sans-serif",
-  borderRadius: 16,
-  border: "none",
-  width: "100%",
-  fontSize: 14,
-  padding: "10px 12px",
-  outline: "none",
-  minHeight: 48,
-  boxSizing: "border-box" as const,
-};
-
-function ColLabel({ children }: { children: React.ReactNode }) {
+// Label-inside-field design (Android Material outlined-style):
+// "Feed Type *" sits at the top-left of the gray filled box, value below.
+function FieldBox({
+  label,
+  hasValue,
+  disabled,
+  children,
+}: {
+  label: string;
+  hasValue: boolean;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <p style={{
-      color: "#6D6D6D",
-      fontFamily: "Nunito, sans-serif",
-      fontSize: 11,
-      fontWeight: 700,
-      margin: "0 0 4px 2px",
-      textTransform: "uppercase",
-      letterSpacing: "0.03em",
-    }}>
+    <div
+      style={{
+        backgroundColor: "#F1F5F9",
+        borderRadius: 16,
+        padding: "8px 12px 10px",
+        position: "relative",
+        opacity: disabled ? 0.55 : 1,
+        cursor: disabled ? "not-allowed" : "auto",
+        minHeight: 60,
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+      }}
+    >
+      <span
+        style={{
+          color: hasValue ? "#064E3B" : "#6D6D6D",
+          fontFamily: "Nunito, sans-serif",
+          fontSize: 12,
+          marginBottom: 2,
+        }}
+      >
+        {label}
+        <span style={{ color: "#FC2E20" }}>{" *"}</span>
+      </span>
       {children}
-    </p>
+    </div>
   );
 }
 
@@ -80,29 +79,47 @@ function ColSelect({
   placeholder: string;
 }) {
   return (
-    <div style={{ position: "relative" }}>
+    <div style={{ position: "relative", width: "100%" }}>
       <select
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
         style={{
-          ...selStyle,
+          backgroundColor: "transparent",
           color: value ? "#231F20" : "#9CA3AF",
-          opacity: disabled ? 0.5 : 1,
+          fontFamily: "Nunito, sans-serif",
+          border: "none",
+          width: "100%",
+          fontSize: 14,
+          padding: "0 24px 0 0",
+          appearance: "none",
+          WebkitAppearance: "none",
+          outline: "none",
           cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
         <option value="">{placeholder}</option>
         {children}
       </select>
-      <div style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-        <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
+      <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </div>
     </div>
   );
 }
+
+const innerInputStyle = {
+  backgroundColor: "transparent",
+  color: "#231F20",
+  fontFamily: "Nunito, sans-serif",
+  border: "none",
+  width: "100%",
+  fontSize: 14,
+  padding: 0,
+  outline: "none",
+};
 
 export default function FeedRow({
   item,
@@ -237,11 +254,10 @@ export default function FeedRow({
 
       {/* Row 1: Feed Type (left) + Feed Category (right) */}
       <div style={{ ...colGap, padding: "0 10px 10px" }}>
-        <div>
-          <ColLabel>Feed Type</ColLabel>
-          {loadingTypes ? (
-            <div className="shimmer" style={{ height: 48, borderRadius: 16 }} />
-          ) : (
+        {loadingTypes ? (
+          <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
+        ) : (
+          <FieldBox label="Feed Type" hasValue={!!item.feed_type_id} disabled={feedTypeLocked}>
             <ColSelect
               value={item.feed_type_id ?? ""}
               onChange={(v) => {
@@ -255,13 +271,12 @@ export default function FeedRow({
                 <option key={ft.id} value={ft.id}>{ft.name}</option>
               ))}
             </ColSelect>
-          )}
-        </div>
-        <div>
-          <ColLabel>Category</ColLabel>
-          {loadingCats ? (
-            <div className="shimmer" style={{ height: 48, borderRadius: 16 }} />
-          ) : (
+          </FieldBox>
+        )}
+        {loadingCats ? (
+          <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
+        ) : (
+          <FieldBox label="Feed Category" hasValue={!!item.category_id} disabled={!item.feed_type_id}>
             <ColSelect
               value={item.category_id ?? ""}
               onChange={(v) => {
@@ -275,17 +290,16 @@ export default function FeedRow({
                 <option key={c.id} value={c.id}>{c.name}</option>
               ))}
             </ColSelect>
-          )}
-        </div>
+          </FieldBox>
+        )}
       </div>
 
       {/* Row 2: Feed Sub-category (left) + Price (right) */}
       <div style={{ ...colGap, padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
-        <div>
-          <ColLabel>Feed</ColLabel>
-          {loadingSubs ? (
-            <div className="shimmer" style={{ height: 48, borderRadius: 16 }} />
-          ) : (
+        {loadingSubs ? (
+          <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
+        ) : (
+          <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_id}>
             <ColSelect
               value={item.feed_uuid ?? ""}
               onChange={(v) => {
@@ -303,61 +317,54 @@ export default function FeedRow({
                 <option key={s.feed_uuid} value={s.feed_uuid}>{s.feed_name}</option>
               ))}
             </ColSelect>
-          )}
-        </div>
-        <div>
-          <ColLabel>Price/kg ({currencySymbol})</ColLabel>
+          </FieldBox>
+        )}
+        <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid}>
           <input
             type="number"
             inputMode="decimal"
             min={0}
             step={0.01}
-            placeholder={!item.feed_uuid ? "Select feed" : "0.00"}
             disabled={!item.feed_uuid}
             value={item.price_per_kg ?? ""}
             onChange={(e) =>
               onUpdate(item.id, { price_per_kg: e.target.value ? Number(e.target.value) : null })
             }
-            style={{ ...inputStyle, opacity: !item.feed_uuid ? 0.5 : 1, cursor: !item.feed_uuid ? "not-allowed" : "text" }}
+            style={{ ...innerInputStyle, cursor: !item.feed_uuid ? "not-allowed" : "text" }}
           />
-        </div>
+        </FieldBox>
       </div>
 
       {/* Row 3: Quantity (left) + Cost display (right) — evaluation mode only */}
       {showQuantity && (
         <div style={{ ...colGap, padding: "0 10px 16px" }}>
-          <div>
-            <ColLabel>Quantity (kg)</ColLabel>
+          <FieldBox label="Quantity" hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg}>
             <input
               type="number"
               inputMode="decimal"
               min={0}
               step={0.1}
-              placeholder={!item.price_per_kg ? "Enter price" : "0.0"}
               disabled={!item.price_per_kg}
               value={item.quantity_kg ?? ""}
               onChange={(e) =>
                 onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
               }
-              style={{ ...inputStyle, opacity: !item.price_per_kg ? 0.5 : 1, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
+              style={{ ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
             />
-          </div>
-          <div>
-            <ColLabel>Cost/day</ColLabel>
+          </FieldBox>
+          <FieldBox label="Cost" hasValue={!!cost} disabled={!cost}>
             <input
               type="text"
               readOnly
               value={cost ? `${currencySymbol}${cost}` : ""}
-              placeholder="—"
               style={{
-                ...inputStyle,
-                backgroundColor: "#EBEAEA",
+                ...innerInputStyle,
                 color: cost ? "#064E3B" : "#9CA3AF",
                 fontWeight: cost ? 700 : 400,
                 cursor: "default",
               }}
             />
-          </div>
+          </FieldBox>
         </div>
       )}
     </div>

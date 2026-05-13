@@ -439,6 +439,7 @@ export default function FeedSelectionPage() {
                 fontSize: 14,
                 fontWeight: feedSelectionType === mode ? 700 : 400,
                 color: feedSelectionType === mode ? "#064E3B" : "#6D6D6D",
+                whiteSpace: "nowrap",
               }}
             >
               {mode === "recommendation" ? "Diet Recommendation" : "Diet Evaluation"}
