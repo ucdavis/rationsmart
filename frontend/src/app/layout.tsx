@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-    "msapplication-TileColor": "#1CA069",
+    "msapplication-TileColor": "#FFFFFF",
   },
 };
 
@@ -24,7 +24,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#1CA069",
+  // White status bar / Android system bar to match the Android app
+  themeColor: "#FFFFFF",
   viewportFit: "cover",
 };
 
@@ -48,7 +49,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="RationSmart" />
         <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#1CA069" />
+        <meta name="theme-color" content="#FFFFFF" />
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
