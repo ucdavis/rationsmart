@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { updateUserProfile, deleteAccount, getCountries, resetPin } from "@/lib/api";
+import { isEmailAddressValid } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
+import PoweredBy from "@/components/PoweredBy";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
@@ -29,7 +31,14 @@ export default function ProfilePage() {
 
   const [name, setName] = useState(user?.name ?? "");
   const [isSaving, setIsSaving] = useState(false);
-  const [isResettingPin, setIsResettingPin] = useState(false);
+  // Reset-PIN sheet — opens on the Reset PIN button click and asks the
+  // user to confirm/edit the email before firing the API (matches the
+  // Login screen's Forgot PIN flow / Android dialog_get_new_pin).
+  // Previously the button hit /auth/forgot-pin with user.email directly,
+  // which surprised users who registered with a different address.
+  const [showResetSheet, setShowResetSheet] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPinSheet, setShowPinSheet] = useState(false);
   const [deletePin, setDeletePin] = useState("");
@@ -100,16 +109,35 @@ export default function ProfilePage() {
     }
   };
 
-  const handleResetPin = async () => {
+  // Open the email-confirmation sheet instead of firing the API
+  // immediately. Pre-fill with the signed-in user's email — they can
+  // tweak it if they registered with a different address.
+  const handleResetPin = () => {
     if (!user) return;
-    setIsResettingPin(true);
+    setResetEmail(user.email ?? "");
+    setShowResetSheet(true);
+  };
+
+  const isResetReady = isEmailAddressValid(resetEmail.trim());
+
+  const handleResetSend = async () => {
+    if (!isResetReady || isSendingReset) return;
+    setIsSendingReset(true);
     try {
-      await resetPin(user.email);
-      showSnackbar("PIN reset email sent. Please check your inbox.", "success");
+      const res = await resetPin(resetEmail.trim());
+      const successMsg = (res.data as { message?: string })?.message;
+      showSnackbar(successMsg ?? "PIN reset email sent. Please check your inbox.", "success");
+      setShowResetSheet(false);
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Failed to send reset email", "error");
+      const message =
+        err instanceof Error && err.message && err.message !== "Network Error"
+          ? err.message
+          : err instanceof Error && err.message === "Network Error"
+            ? "Please make sure your device has internet connectivity."
+            : "Failed to send reset email. Please try again.";
+      showSnackbar(message, "error");
     } finally {
-      setIsResettingPin(false);
+      setIsSendingReset(false);
     }
   };
 
@@ -247,38 +275,133 @@ export default function ProfilePage() {
 
           <button
             onClick={handleResetPin}
-            disabled={isResettingPin}
             className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
-              color: isResettingPin ? "#999999" : "#296CD3",                              // celtic_blue
-              backgroundColor: isResettingPin ? "#F1F5F9" : "rgba(41,108,211,0.25)",      // celtic_blue_25
+              color: "#296CD3",                              // celtic_blue
+              backgroundColor: "rgba(41,108,211,0.25)",      // celtic_blue_25
               fontFamily: "Nunito, sans-serif",
-              cursor: isResettingPin ? "not-allowed" : "pointer",
+              cursor: "pointer",
               borderRadius: 14,
             }}
           >
-            {isResettingPin ? (
-              <>
-                <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-                Sending...
-              </>
-            ) : (
-              <>
-                {/* ic_reset_pin — Material Symbols refresh arrow with
-                    inset padlock (filled path, viewport 24x24) */}
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#296CD3">
-                  <path d="M13.26,3C8.17,2.86 4,6.94 4,12H2.21c-0.45,0 -0.67,0.54 -0.35,0.85l2.79,2.79c0.2,0.2 0.51,0.2 0.71,0l2.8,-2.79C8.46,12.54 8.24,12 7.79,12H6c0,-3.89 3.2,-7.06 7.1,-7c3.71,0.05 6.84,3.18 6.9,6.9c0.06,3.91 -3.1,7.1 -7,7.1c-1.59,0 -3.05,-0.53 -4.23,-1.43c-0.4,-0.3 -0.96,-0.27 -1.31,0.09l0,0c-0.43,0.43 -0.39,1.14 0.09,1.5C9.06,20.31 10.95,21 13,21c5.06,0 9.14,-4.17 9,-9.25C21.87,7.05 17.95,3.13 13.26,3zM15,11v-1c0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2v1c-0.55,0 -1,0.45 -1,1v3c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-3C16,11.45 15.55,11 15,11zM14,11h-2v-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1V11z" />
-                </svg>
-                Reset PIN
-              </>
-            )}
+            {/* ic_reset_pin — Material Symbols refresh arrow with
+                inset padlock (filled path, viewport 24x24) */}
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#296CD3">
+              <path d="M13.26,3C8.17,2.86 4,6.94 4,12H2.21c-0.45,0 -0.67,0.54 -0.35,0.85l2.79,2.79c0.2,0.2 0.51,0.2 0.71,0l2.8,-2.79C8.46,12.54 8.24,12 7.79,12H6c0,-3.89 3.2,-7.06 7.1,-7c3.71,0.05 6.84,3.18 6.9,6.9c0.06,3.91 -3.1,7.1 -7,7.1c-1.59,0 -3.05,-0.53 -4.23,-1.43c-0.4,-0.3 -0.96,-0.27 -1.31,0.09l0,0c-0.43,0.43 -0.39,1.14 0.09,1.5C9.06,20.31 10.95,21 13,21c5.06,0 9.14,-4.17 9,-9.25C21.87,7.05 17.95,3.13 13.26,3zM15,11v-1c0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2v1c-0.55,0 -1,0.45 -1,1v3c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-3C16,11.45 15.55,11 15,11zM14,11h-2v-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1V11z" />
+            </svg>
+            Reset PIN
           </button>
         </div>
 
       </div>
+
+      {/* Reset-PIN bottom sheet — mirrors Login's Forgot PIN flow. The
+          email field is pre-filled with the signed-in user's email but
+          editable; nothing is sent until the user taps Proceed. */}
+      {showResetSheet && (
+        <>
+          {/* Backdrop — confined to centered column. Tap to dismiss. */}
+          <div
+            className="fixed top-0 h-full z-50"
+            style={{
+              left: "max(0px, calc((100vw - 480px) / 2))",
+              width: "min(100vw, 480px)",
+              backgroundColor: "rgba(0,0,0,0.45)",
+            }}
+            onClick={() => !isSendingReset && setShowResetSheet(false)}
+          />
+          {/* Sheet */}
+          <div
+            className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
+            style={{
+              maxWidth: "min(100vw, 480px)",
+              width: "100%",
+              zIndex: 51,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              animation: "slideUp 0.28s cubic-bezier(0.22,1,0.36,1)",
+            }}
+          >
+            {/* Drag handle */}
+            <div className="flex justify-center pt-4 mb-4">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+
+            {/* Title */}
+            <p
+              className="text-center font-bold"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+            >
+              Reset Your PIN
+            </p>
+            <p
+              className="text-center mt-1 px-3"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+            >
+              Enter your registered email to receive a reset link
+            </p>
+
+            {/* Email label + input */}
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              Email Address <span style={{ color: "#FC2E20" }}>*</span>
+            </p>
+            <div className="px-3">
+              <input
+                type="email"
+                inputMode="email"
+                autoComplete="email"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+                className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                style={{
+                  backgroundColor: "#F1F5F9",
+                  color: "#231F20",
+                  fontFamily: "Nunito, sans-serif",
+                }}
+                aria-label="Email address"
+              />
+            </div>
+
+            {/* Proceed */}
+            <div className="px-3 mt-5">
+              <button
+                onClick={handleResetSend}
+                disabled={!isResetReady || isSendingReset}
+                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: isResetReady && !isSendingReset ? "#064E3B" : "#D3D3D3",
+                  color: isResetReady && !isSendingReset ? "#FFFFFF" : "#999999",
+                  fontFamily: "Nunito, sans-serif",
+                  border: "none",
+                  cursor: isResetReady && !isSendingReset ? "pointer" : "not-allowed",
+                  transition: "background-color 0.2s, color 0.2s",
+                }}
+              >
+                {isSendingReset ? (
+                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <>
+                    Proceed
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </>
+                )}
+              </button>
+            </div>
+
+            <div className="mt-8">
+              <PoweredBy />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Delete Account confirmation dialog — confined to centered column */}
       {showDeleteDialog && (
