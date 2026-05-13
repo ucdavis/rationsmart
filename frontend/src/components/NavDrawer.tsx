@@ -64,23 +64,35 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
     router.replace("/welcome");
   };
 
+  // The app's centered container is capped at 480px via min(100vw, 480px)
+  // in layout.tsx. Both the overlay and drawer must align with that column,
+  // not the full viewport — otherwise on desktop the drawer slides out from
+  // the far left of the browser window while the content sits in a centered
+  // 480px column, creating a big visual disconnect.
+  const containerLeft = "max(0px, calc((100vw - 480px) / 2))";
+  const containerWidth = "min(100vw, 480px)";
+
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay — confined to the centered content column */}
       {open && (
         <div
-          className="fixed inset-0 z-40"
-          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          className="fixed top-0 h-full z-40"
+          style={{
+            left: containerLeft,
+            width: containerWidth,
+            backgroundColor: "rgba(0,0,0,0.45)",
+          }}
           onClick={onClose}
         />
       )}
 
-      {/* Drawer */}
+      {/* Drawer — slides from the left edge of the centered content column */}
       <div
-        className="fixed top-0 left-0 h-full z-50 flex flex-col bg-white"
+        className="fixed top-0 h-full z-50 flex flex-col bg-white"
         style={{
-          width: "82%",
-          maxWidth: 340,
+          left: containerLeft,
+          width: "min(82vw, 340px)",
           transform: open ? "translateX(0)" : "translateX(-100%)",
           transition: "transform 0.28s cubic-bezier(0.22,1,0.36,1)",
           boxShadow: open ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
