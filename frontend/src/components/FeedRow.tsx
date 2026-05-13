@@ -21,8 +21,10 @@ interface FeedRowProps {
   onDelete: (id: string) => void;
 }
 
-// Label-inside-field design (Android Material outlined-style):
-// "Feed Type *" sits at the top-left of the gray filled box, value below.
+// Android Material OutlinedBox style:
+// - White background, thin border (gray when empty, dark-green when selected).
+// - Label sits ON the top border line at left, with a small white-bg cutout
+//   that "interrupts" the border. The red asterisk follows the label.
 function FieldBox({
   label,
   hasValue,
@@ -37,9 +39,10 @@ function FieldBox({
   return (
     <div
       style={{
-        backgroundColor: "#F1F5F9",
+        backgroundColor: "#FFFFFF",
         borderRadius: 16,
-        padding: "8px 12px 10px",
+        border: `1.5px solid ${hasValue ? "#064E3B" : "#DCE0E4"}`,
+        padding: "16px 12px 12px",
         position: "relative",
         opacity: disabled ? 0.55 : 1,
         cursor: disabled ? "not-allowed" : "auto",
@@ -49,12 +52,17 @@ function FieldBox({
         justifyContent: "center",
       }}
     >
+      {/* Label cutout on the border */}
       <span
         style={{
+          position: "absolute",
+          top: -8,
+          left: 12,
+          backgroundColor: "#FFFFFF",
+          padding: "0 6px",
           color: hasValue ? "#064E3B" : "#6D6D6D",
           fontFamily: "Nunito, sans-serif",
           fontSize: 12,
-          marginBottom: 2,
         }}
       >
         {label}
