@@ -88,7 +88,11 @@ export default function FeedbackPage() {
   const loadHistory = () => {
     if (!user) return;
     setLoadingHistory(true);
-    getMyFeedback(user.id)
+    // Match Android FeedbackRepository.fetchFeedbacks() which passes
+    // limit=5 / offset=0 (FeedbackRepository.kt:13-15). The count badge
+    // shows the returned array size, so PWA must request the same page
+    // size — otherwise we'd show "11 TOTAL" while Android shows "5".
+    getMyFeedback(user.id, 5, 0)
       .then((res) => {
         const data = res.data;
         setHistory(Array.isArray(data) ? data : data?.feedbacks ?? []);
@@ -226,8 +230,11 @@ export default function FeedbackPage() {
             ) : (
               <>
                 Submit Feedback
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                {/* ic_submit_feedback — Material Symbols "send" (paper plane),
+                    iconGravity=textEnd. Single filled path tinted with
+                    currentColor so it matches the button's text color. */}
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3.4,20.4l17.45,-7.48c0.81,-0.35 0.81,-1.49 0,-1.84L3.4,3.6c-0.66,-0.29 -1.39,0.2 -1.39,0.91L2,9.12c0,0.5 0.37,0.93 0.87,0.99L17,12 2.87,13.88c-0.5,0.07 -0.87,0.5 -0.87,1l0.01,4.61c0,0.71 0.73,1.2 1.39,0.91z" />
                 </svg>
               </>
             )}
