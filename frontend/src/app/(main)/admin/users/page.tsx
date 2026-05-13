@@ -42,21 +42,36 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
-  const load = (q = search, s = statusFilter) => {
+  const load = async (q = search, s = statusFilter) => {
     if (!user?.id) return;
     setIsLoading(true);
     // Backend response shape: { users, total_count, page, page_size, total_pages }.
-    // Fetch a large single page so admin sees the full list without pagination
-    // UI (Android paginates 20/page, but uses total_count for the header count).
-    getAdminUsers(user.id, 1, 500, "", s, q)
-      .then((res) => {
+    // Backend caps page_size at 100, so for admins with > 100 users we fetch
+    // every page in sequence and concatenate. Android handles this via the
+    // Paging library + infinite scroll; we materialize it client-side instead.
+    const PAGE_SIZE = 100;
+    try {
+      const all: AdminUser[] = [];
+      let page = 1;
+      let totalCount = 0;
+      let totalPages = 1;
+      do {
+        const res = await getAdminUsers(user.id, page, PAGE_SIZE, "", s, q);
         const data = res.data;
-        const list = Array.isArray(data) ? data : data?.users ?? data?.items ?? [];
-        setUsers(list);
-        setTotal(data?.total_count ?? data?.total ?? list.length);
-      })
-      .catch(() => showSnackbar("Could not load users", "error"))
-      .finally(() => setIsLoading(false));
+        const list: AdminUser[] = Array.isArray(data) ? data : data?.users ?? data?.items ?? [];
+        all.push(...list);
+        totalCount = data?.total_count ?? data?.total ?? all.length;
+        totalPages = data?.total_pages ?? Math.ceil(totalCount / PAGE_SIZE);
+        if (list.length < PAGE_SIZE) break;
+        page += 1;
+      } while (page <= totalPages);
+      setUsers(all);
+      setTotal(totalCount);
+    } catch {
+      showSnackbar("Could not load users", "error");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => { load(); }, [user?.id]);
