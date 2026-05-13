@@ -18,24 +18,20 @@ export default function WelcomePage() {
         <AppBranding />
       </div>
 
-      {/* Illustration + tagline — pinned to the bottom of the flex-1 area
-          so empty space falls between the app branding and the image, NOT
-          between image and tagline (matches Android constraint chain:
-          image bottom → tagline top, with a small 20dp gap). */}
-      <div className="flex-1 flex flex-col items-center justify-end px-6 pb-2">
-        <div
-          className="w-full rounded-2xl overflow-hidden flex items-center justify-center"
-          style={{ maxWidth: 340, height: 240 }}
-        >
-          <Image
-            src="/images/ic_welcome_image.png"
-            alt="Welcome illustration"
-            width={340}
-            height={240}
-            className="object-cover w-full h-full"
-            priority
-          />
-        </div>
+      {/* Illustration + tagline. The image is a 2048×2048 (1:1) PNG, so we
+          render it with width:100% / height:auto so it scales preserving
+          aspect ratio — no cropping at top/bottom. Pinned to the bottom of
+          the flex-1 area (Android ImageView default scaleType=fitCenter
+          between branding bottom and tagline top). */}
+      <div className="flex-1 flex flex-col items-center justify-end px-3 pb-2">
+        <Image
+          src="/images/ic_welcome_image.png"
+          alt="Welcome illustration"
+          width={400}
+          height={400}
+          style={{ width: "100%", height: "auto", maxWidth: 360 }}
+          priority
+        />
 
         {/* Tagline — small gap below image, matches Android offset_20 */}
         <div className="mt-3 px-4 text-center">
