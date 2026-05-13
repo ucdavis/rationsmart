@@ -34,14 +34,14 @@ export default function ProfilePage() {
   const [showPinSheet, setShowPinSheet] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string }>>([]);
+  const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string; currency?: string }>>([]);
   const [selectedCountryId, setSelectedCountryId] = useState(user?.country_id ?? "");
 
   useEffect(() => {
     getCountries()
       .then((res) => {
         const list = res.data ?? [];
-        setCountries(list.map((c) => ({ id: c.id, name: c.name, country_code: c.country_code ?? c.code })));
+        setCountries(list.map((c) => ({ id: c.id, name: c.name, country_code: c.country_code ?? c.code, currency: c.currency ?? undefined })));
       })
       .catch(() => {
         // silently ignore — dropdown will just be empty
@@ -59,12 +59,16 @@ export default function ProfilePage() {
     try {
       await updateUserProfile(user.email, { name: name.trim(), country_id: String(selectedCountryId) });
       const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
+      // Carry the selected country's currency through to the user too,
+      // otherwise feed-selection / report keep showing the previous
+      // country's code after a profile-side country change.
       setUser({
         ...user,
         name: name.trim(),
         country_id: String(selectedCountryId),
         country: selectedCountry?.name ?? user.country,
         country_code: selectedCountry?.country_code ?? user.country_code,
+        currency: selectedCountry?.currency ?? user.currency,
       });
       showSnackbar("Profile updated!", "success");
     } catch (err: unknown) {
