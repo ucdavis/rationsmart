@@ -1,11 +1,69 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFeedTypes, getFeedCategories, getFeedSubCategories, updateCustomFeed } from "@/lib/api";
+import { getFeedTypes, getFeedCategories, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
 import type { FeedItem } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
+
+// Match Android DialogFeedDetails: layout chosen by feedCategory.
+type NutrientLayout = "additive" | "mineral" | "general";
+function getNutrientLayout(category: string): NutrientLayout {
+  if (category === "Additive") return "additive";
+  if (category === "Mineral" || category === "Minerals") return "mineral";
+  return "general";
+}
+
+type EditFormKey =
+  | "fd_dm" | "fd_ash" | "fd_cp" | "fd_npn_cp" | "fd_ee" | "fd_st"
+  | "fd_ndf" | "fd_adf" | "fd_lg" | "fd_ndin" | "fd_adin" | "fd_ca" | "fd_p";
+
+const NUTRIENT_FIELDS_ADDITIVE: { key: EditFormKey; label: string }[] = [
+  { key: "fd_dm", label: "Dry Matter" },
+  { key: "fd_ash", label: "Ash" },
+  { key: "fd_cp", label: "Protein" },
+  { key: "fd_npn_cp", label: "NPN" },
+  { key: "fd_ee", label: "Ether Extract" },
+  { key: "fd_st", label: "Starch" },
+  { key: "fd_ndf", label: "NDF" },
+  { key: "fd_adf", label: "ADF" },
+  { key: "fd_lg", label: "Lignin" },
+  { key: "fd_ndin", label: "NDIN" },
+  { key: "fd_adin", label: "ADIN" },
+  { key: "fd_ca", label: "Calcium" },
+  { key: "fd_p", label: "Phosphorus" },
+];
+const NUTRIENT_FIELDS_GENERAL: { key: EditFormKey; label: string }[] = [
+  { key: "fd_dm", label: "Dry Matter" },
+  { key: "fd_ash", label: "Ash" },
+  { key: "fd_cp", label: "Protein" },
+  { key: "fd_ee", label: "Ether Extract" },
+  { key: "fd_st", label: "Starch" },
+  { key: "fd_ndf", label: "NDF" },
+  { key: "fd_adf", label: "ADF" },
+  { key: "fd_lg", label: "Lignin" },
+  { key: "fd_ndin", label: "NDIN" },
+  { key: "fd_adin", label: "ADIN" },
+  { key: "fd_ca", label: "Calcium" },
+  { key: "fd_p", label: "Phosphorus" },
+];
+const NUTRIENT_FIELDS_MINERAL: { key: EditFormKey; label: string }[] = [
+  { key: "fd_dm", label: "Dry Matter" },
+  { key: "fd_ash", label: "Ash" },
+  { key: "fd_ca", label: "Calcium" },
+  { key: "fd_p", label: "Phosphorus" },
+];
+
+// Decimal-or-empty string for response numerics (matches Android
+// formatFeedBreakdownData which strips trailing zeros/decimals).
+function fmtNum(v: unknown): string {
+  if (v === null || v === undefined || v === "") return "";
+  const n = Number(v);
+  if (!Number.isFinite(n)) return "";
+  if (n === 0) return "0";
+  return String(parseFloat(n.toFixed(4)));
+}
 
 interface FeedType { id: number; name: string; }
 interface FeedCategory { id: number; name: string; }
@@ -149,45 +207,132 @@ export default function FeedRow({
   const [loadingCats, setLoadingCats] = useState(false);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
-  // Edit feed modal — only nutritional values are editable; type/category/feed name
-  // remain read-only per Android dialog_edit_feed.xml (all four fields enabled="false").
+  // Edit feed bottom sheet — matches Android DialogFeedDetails with isAdd=false.
+  // On open, calls /check-insert-or-update with countryId + feed_uuid:
+  //   isInsert=true  → "Add Custom Feed" title, name editable with user prefix
+  //   isInsert=false → "Edit Nutritional Information" title, name disabled,
+  //                    prefix is the part before "-" in feedName (if present)
+  // Nutrient layout (Additive/Mineral/General) is chosen by category.
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
-  // 17 nutrient fields — matches Android layout_nutrient_info.xml exactly
-  const [editForm, setEditForm] = useState({
-    fd_dm: "", fd_ash: "", fd_cellulose: "", fd_cf: "", fd_cp: "",
-    fd_ee: "", fd_hemicellulose: "", fd_st: "", fd_ndf: "", fd_adf: "",
-    fd_lg: "", fd_ndin: "", nfe_pct: "", fd_npn_cp: "", fd_adin: "",
-    fd_ca: "", fd_p: "",
+  const [isLoadingEdit, setIsLoadingEdit] = useState(false);
+  const [editIsInsert, setEditIsInsert] = useState(false);
+  const [editFeedName, setEditFeedName] = useState("");
+  const [editNamePrefix, setEditNamePrefix] = useState("");
+  const [editFeedDetailsExpanded, setEditFeedDetailsExpanded] = useState(true);
+  const [editNutritionalInfoExpanded, setEditNutritionalInfoExpanded] = useState(true);
+  const [editForm, setEditForm] = useState<Record<EditFormKey, string>>({
+    fd_dm: "", fd_ash: "", fd_cp: "", fd_npn_cp: "", fd_ee: "", fd_st: "",
+    fd_ndf: "", fd_adf: "", fd_lg: "", fd_ndin: "", fd_adin: "", fd_ca: "", fd_p: "",
   });
 
   const canEdit = !!item.feed_uuid;
 
-  const openEditModal = () => {
-    if (!canEdit) return;
-    // Pre-populate with empty values; user fills in updated values
+  const openEditModal = async () => {
+    if (!canEdit || !item.feed_uuid || !user?.country_id || !user?.id) return;
     setShowEditModal(true);
+    setIsLoadingEdit(true);
+    setEditForm({
+      fd_dm: "", fd_ash: "", fd_cp: "", fd_npn_cp: "", fd_ee: "", fd_st: "",
+      fd_ndf: "", fd_adf: "", fd_lg: "", fd_ndin: "", fd_adin: "", fd_ca: "", fd_p: "",
+    });
+    try {
+      const res = await checkInsertOrUpdate(user.country_id, item.feed_uuid, user.id);
+      const data = res.data as {
+        is_insert?: boolean;
+        insert_feed?: boolean;
+        feed_details?: Record<string, unknown> & { feed_name?: string };
+      };
+      const isInsert = data?.is_insert ?? data?.insert_feed ?? false;
+      const details = data?.feed_details ?? {};
+      setEditIsInsert(isInsert);
+      // Prefill nutrient fields from response (zeros render as "0")
+      setEditForm({
+        fd_dm: fmtNum(details.fd_dm),
+        fd_ash: fmtNum(details.fd_ash),
+        fd_cp: fmtNum(details.fd_cp),
+        fd_npn_cp: fmtNum(details.fd_npn_cp),
+        fd_ee: fmtNum(details.fd_ee),
+        fd_st: fmtNum(details.fd_st),
+        fd_ndf: fmtNum(details.fd_ndf),
+        fd_adf: fmtNum(details.fd_adf),
+        fd_lg: fmtNum(details.fd_lg),
+        fd_ndin: fmtNum(details.fd_ndin),
+        fd_adin: fmtNum(details.fd_adin),
+        fd_ca: fmtNum(details.fd_ca),
+        fd_p: fmtNum(details.fd_p),
+      });
+      // Name prefix logic from Android DialogFeedDetails:
+      // isInsert=false + name contains "-" → prefix = "firstPart-", value = secondPart
+      // else → prefix = user name prefix (first word of full name)
+      const fullName = (details.feed_name as string) ?? item.sub_category_name ?? "";
+      const userPrefix = user.name ? `${user.name.split(" ")[0]}-` : "";
+      if (!isInsert && fullName.includes("-")) {
+        const idx = fullName.indexOf("-");
+        const firstPart = fullName.substring(0, idx + 1);
+        const secondPart = fullName.substring(idx + 1);
+        setEditNamePrefix(firstPart);
+        setEditFeedName(secondPart);
+      } else {
+        setEditNamePrefix(userPrefix);
+        setEditFeedName(fullName);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not load feed details";
+      showSnackbar(msg, "error");
+      setShowEditModal(false);
+    } finally {
+      setIsLoadingEdit(false);
+    }
   };
 
   const handleEditSubmit = async () => {
     if (!user?.id || !user?.country_id || !item.feed_uuid) return;
     setIsSavingEdit(true);
     try {
-      const feed_details: Record<string, unknown> = {};
-      Object.entries(editForm).forEach(([k, v]) => {
-        if (v !== "") feed_details[k] = Number(v);
-      });
-      feed_details.fd_name = item.sub_category_name ?? "";
-      feed_details.fd_type = item.feed_type_name ?? "";
-      feed_details.fd_category = item.category_name ?? "";
-      await updateCustomFeed({
-        country_id: user.country_id,
-        user_id: user.id,
-        feed_id: item.feed_uuid,
-        feed_insert: false,
-        feed_details,
-      });
-      showSnackbar("Nutritional values updated", "success");
+      // Mirror Android FeedDetailsViewModel: empty → 0.0 (toDoubleOrZero).
+      const toNum = (v: string) => (v ? Number(v) : 0);
+      const feed_details: Record<string, unknown> = {
+        feed_name: editIsInsert ? `${editNamePrefix}${editFeedName.trim()}` : `${editNamePrefix}${editFeedName.trim()}`,
+        feed_type: item.feed_type_name ?? "",
+        feed_category: item.category_name ?? "",
+        country_code: user.country_code ?? "",
+        country_name: user.country ?? "",
+        fd_dm: toNum(editForm.fd_dm),
+        fd_ash: toNum(editForm.fd_ash),
+        fd_cp: toNum(editForm.fd_cp),
+        fd_npn_cp: toNum(editForm.fd_npn_cp),
+        fd_ee: toNum(editForm.fd_ee),
+        fd_st: toNum(editForm.fd_st),
+        fd_ndf: toNum(editForm.fd_ndf),
+        fd_adf: toNum(editForm.fd_adf),
+        fd_lg: toNum(editForm.fd_lg),
+        fd_ndin: toNum(editForm.fd_ndin),
+        fd_adin: toNum(editForm.fd_adin),
+        fd_ca: toNum(editForm.fd_ca),
+        fd_p: toNum(editForm.fd_p),
+      };
+      if (editIsInsert) {
+        const res = await insertCustomFeed({
+          country_id: user.country_id,
+          user_id: user.id,
+          feed_insert: true,
+          feed_details,
+        });
+        const newName = (res.data?.feed_details?.feed_name as string) ?? `${editNamePrefix}${editFeedName.trim()}`;
+        const newId = (res.data?.feed_details?.feed_id as string) ?? item.feed_uuid;
+        onUpdate(item.id, { sub_category_name: newName, feed_uuid: newId });
+        showSnackbar("Custom feed saved", "success");
+      } else {
+        await updateCustomFeed({
+          country_id: user.country_id,
+          user_id: user.id,
+          feed_id: item.feed_uuid,
+          feed_insert: false,
+          feed_details,
+        });
+        showSnackbar("Nutritional values updated", "success");
+      }
       setShowEditModal(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Update failed";
@@ -427,24 +572,45 @@ export default function FeedRow({
         </div>
       )}
 
-      {/* Edit Feed modal — matches Android dialog_edit_feed.xml:
-          all four base fields are read-only (Country, Feed Type, Feed Category,
-          Feed Name), only nutritional values are editable. */}
-      {showEditModal && (
+      {/* Edit Feed bottom sheet — matches Android DialogFeedDetails (isAdd=false).
+          On open, /check-insert-or-update determines isInsert:
+            isInsert=true  → title "Add Custom Feed", name editable with user prefix
+            isInsert=false → title "Edit Nutritional Information", name disabled,
+                             prefix derived from "-" split of existing feed name. */}
+      {showEditModal && (() => {
+        const layout = getNutrientLayout(item.category_name);
+        const fields =
+          layout === "additive" ? NUTRIENT_FIELDS_ADDITIVE :
+          layout === "mineral" ? NUTRIENT_FIELDS_MINERAL :
+          NUTRIENT_FIELDS_GENERAL;
+        const title = editIsInsert ? "Add Custom Feed" : "Edit Nutritional Information";
+        const submitReady = !isSavingEdit && !isLoadingEdit && editFeedName.trim() !== "";
+        return (
         <div
           className="fixed inset-0 z-50 flex flex-col justify-end"
           style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
           onClick={(e) => { if (e.target === e.currentTarget && !isSavingEdit) setShowEditModal(false); }}
         >
           <div
-            className="bg-white rounded-t-2xl px-4 pt-5 pb-6 overflow-y-auto"
+            className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
             style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
-            <div className="flex items-center justify-between mb-4">
-              <p className="text-base font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Edit Feed</p>
+            {/* Drag handle (Android view_drag_handle) */}
+            <div className="flex justify-center mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+
+            {/* Title with close button */}
+            <div className="relative mb-4">
+              <h3
+                className="text-center font-bold"
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+              >
+                {title}
+              </h3>
               <button
                 onClick={() => !isSavingEdit && setShowEditModal(false)}
-                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
                 aria-label="Close"
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -453,69 +619,139 @@ export default function FeedRow({
               </button>
             </div>
 
-            {/* Read-only fields (gray filled, no border) */}
-            {[
-              { label: "Country", value: user?.country ?? "" },
-              { label: "Feed Type", value: item.feed_type_name ?? "" },
-              { label: "Feed Category", value: item.category_name ?? "" },
-              { label: "Feed Name", value: item.sub_category_name ?? "" },
-            ].map((f) => (
-              <div key={f.label} className="mb-3">
-                <p className="text-xs mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{f.label}</p>
+            {/* Separator line below title */}
+            <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
+
+            {isLoadingEdit ? (
+              <div className="flex items-center justify-center py-12">
+                <svg className="animate-spin" width="28" height="28" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="#064E3B" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                </svg>
+              </div>
+            ) : (
+            <>
+            {/* Feed Details collapsible section */}
+            <button
+              onClick={() => setEditFeedDetailsExpanded((p) => !p)}
+              className="w-full flex items-center justify-between mb-3"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            >
+              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                Feed Details
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: editFeedDetailsExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                <path d="M3 5l5 5 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {editFeedDetailsExpanded && (
+              <>
+                {/* Feed Type — read-only */}
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                  Feed Type
+                </p>
                 <div
-                  className="rounded-xl px-3 py-3 text-sm"
+                  className="rounded-xl px-4 py-3 text-sm mb-3"
                   style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
                 >
-                  {f.value || "—"}
+                  {item.feed_type_name || "—"}
                 </div>
-              </div>
-            ))}
 
-            {/* Nutritional inputs (editable) — 17 fields per Android
-                layout_nutrient_info.xml */}
-            <p className="text-xs font-bold uppercase mt-2 mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-              Nutrient Composition (%)
-            </p>
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              {[
-                ["fd_dm", "Dry Matter"],
-                ["fd_ash", "Ash"],
-                ["fd_cellulose", "Cellulose"],
-                ["fd_cf", "Crude Fiber"],
-                ["fd_cp", "Crude Protein"],
-                ["fd_ee", "Ether Extract"],
-                ["fd_hemicellulose", "Hemicellulose"],
-                ["fd_st", "Starch"],
-                ["fd_ndf", "NDF"],
-                ["fd_adf", "ADF"],
-                ["fd_lg", "Lignin"],
-                ["fd_ndin", "NDIN"],
-                ["nfe_pct", "NFE"],
-                ["fd_npn_cp", "NPN CP"],
-                ["fd_adin", "ADIN"],
-                ["fd_ca", "Calcium"],
-                ["fd_p", "Phosphorus"],
-              ].map(([k, label]) => (
-                <div key={k}>
-                  <p className="text-xs mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{label}</p>
+                {/* Feed Category — read-only */}
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                  Feed Category
+                </p>
+                <div
+                  className="rounded-xl px-4 py-3 text-sm mb-3"
+                  style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {item.category_name || "—"}
+                </div>
+
+                {/* Feed Name — prefix + editable suffix (or fully disabled when
+                    isInsert=false and the original name already contains "-"). */}
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                  Feed Name<span style={{ color: "#FC2E20" }}> *</span>
+                </p>
+                <div
+                  className="flex items-center rounded-xl mb-4"
+                  style={{
+                    backgroundColor: editIsInsert ? "#F1F5F9" : "#EBEAEA",
+                  }}
+                >
+                  {editNamePrefix && (
+                    <span
+                      className="pl-4 pr-1 text-sm"
+                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {editNamePrefix}
+                    </span>
+                  )}
                   <input
-                    type="number"
-                    inputMode="decimal"
-                    value={editForm[k as keyof typeof editForm]}
-                    onChange={(e) => setEditForm((p) => ({ ...p, [k]: e.target.value }))}
-                    placeholder="0.00"
-                    className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                    style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    type="text"
+                    value={editFeedName}
+                    onChange={(e) => setEditFeedName(e.target.value.replace(/[^a-zA-Z0-9\s]/g, ""))}
+                    disabled={!editIsInsert}
+                    className="flex-1 bg-transparent px-3 py-3 text-sm border-none focus:outline-none"
+                    style={{
+                      color: "#231F20",
+                      fontFamily: "Nunito, sans-serif",
+                      cursor: !editIsInsert ? "not-allowed" : "text",
+                    }}
                   />
                 </div>
-              ))}
-            </div>
+              </>
+            )}
+
+            {/* Nutritional Information collapsible section */}
+            <button
+              onClick={() => setEditNutritionalInfoExpanded((p) => !p)}
+              className="w-full flex items-center justify-between mb-3"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+            >
+              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                Nutritional Information
+              </span>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: editNutritionalInfoExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
+                <path d="M3 5l5 5 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {editNutritionalInfoExpanded && (
+              <>
+                <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                  Nutrient Composition (%)
+                </p>
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                  {fields.map((f) => (
+                    <div key={f.key}>
+                      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{f.label}</p>
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        value={editForm[f.key]}
+                        onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))}
+                        placeholder="0.00"
+                        className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                        style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
 
             <button
               onClick={handleEditSubmit}
-              disabled={isSavingEdit}
-              className="w-full py-3.5 rounded-xl font-bold text-base text-white flex items-center justify-center"
-              style={{ backgroundColor: "#064E3B", border: "none", fontFamily: "Nunito, sans-serif", cursor: isSavingEdit ? "not-allowed" : "pointer" }}
+              disabled={!submitReady}
+              className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center"
+              style={{
+                backgroundColor: submitReady ? "#064E3B" : "#D3D3D3",
+                color: submitReady ? "white" : "#999",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: submitReady ? "pointer" : "not-allowed",
+              }}
             >
               {isSavingEdit ? (
                 <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -523,9 +759,12 @@ export default function FeedRow({
                 </svg>
               ) : "Submit"}
             </button>
+            </>
+            )}
           </div>
         </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
