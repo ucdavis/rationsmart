@@ -29,29 +29,33 @@ export default function Snackbar() {
 
   if (!snackbar || !snackbar.visible) return null;
 
-  const colorMap = {
-    success: "#05BC6D",
-    error: "#E44A4A",
-    info: "#1565C0",
+  // Matches Android showCustomSnackBar (Ext.kt):
+  // SUCCESS = dark_aquamarine_green #064E3B / white text
+  // ERROR   = mustard #FFDB58 / raisin_black #231F20 text
+  // INFO    = azure #007BFF / white text
+  const styleMap = {
+    success: { bg: "#064E3B", text: "#FFFFFF" },
+    error:   { bg: "#FFDB58", text: "#231F20" },
+    info:    { bg: "#007BFF", text: "#FFFFFF" },
   };
+  const s = styleMap[snackbar.type];
 
   const iconMap = {
     success: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.25)" />
-        <path d="M5.5 10.5L8.5 13.5L14.5 7" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path d="M5 12l5 5L20 7" stroke={s.text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
     error: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.25)" />
-        <path d="M7 7L13 13M13 7L7 13" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke={s.text} strokeWidth="2" />
+        <path d="M12 7v6M12 16v1" stroke={s.text} strokeWidth="2.2" strokeLinecap="round" />
       </svg>
     ),
     info: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <circle cx="10" cy="10" r="10" fill="rgba(255,255,255,0.25)" />
-        <path d="M10 9V14M10 7V6.5" stroke="white" strokeWidth="2" strokeLinecap="round" />
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke={s.text} strokeWidth="2" />
+        <path d="M12 8v6M12 16v1" stroke={s.text} strokeWidth="2.2" strokeLinecap="round" />
       </svg>
     ),
   };
@@ -60,21 +64,22 @@ export default function Snackbar() {
     <div
       className={exiting ? "snackbar-exit" : "snackbar-enter"}
       style={{
+        // Android: gravity = TOP | CENTER_HORIZONTAL (snackbar shows at top)
         position: "fixed",
-        bottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)",
-        left: 16,
-        right: 16,
+        top: "calc(env(safe-area-inset-top, 0px) + 12px)",
+        left: 12,
+        right: 12,
         zIndex: 9999,
         display: "flex",
         alignItems: "center",
         gap: 12,
-        padding: "14px 16px",
+        padding: "12px 12px 12px 14px",
         borderRadius: 16,
-        backgroundColor: colorMap[snackbar.type],
-        color: "white",
+        backgroundColor: s.bg,
+        color: s.text,
         fontFamily: "Nunito, sans-serif",
         fontWeight: 700,
-        fontSize: 14,
+        fontSize: 16,
         boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
         maxWidth: 420,
         margin: "0 auto",
@@ -82,25 +87,27 @@ export default function Snackbar() {
     >
       <div style={{ flexShrink: 0 }}>{iconMap[snackbar.type]}</div>
       <span style={{ flex: 1 }}>{snackbar.message}</span>
+      {/* Close button — white circle with the snackbar's bg color as the X tint (matches Android cv_close) */}
       <button
         onClick={() => {
           setExiting(true);
           setTimeout(() => hideSnackbar(), 220);
         }}
         style={{
-          background: "none",
+          background: "#FFFFFF",
           border: "none",
-          color: "white",
           cursor: "pointer",
-          opacity: 0.75,
-          padding: 0,
+          padding: 6,
+          borderRadius: 999,
           display: "flex",
           alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
         }}
         aria-label="Dismiss"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M4 4L12 12M12 4L4 12" stroke="white" strokeWidth="2" strokeLinecap="round" />
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 2L12 12M12 2L2 12" stroke={s.bg} strokeWidth="2" strokeLinecap="round" />
         </svg>
       </button>
     </div>

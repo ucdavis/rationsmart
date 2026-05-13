@@ -166,18 +166,9 @@ export default function LoginPage() {
             }}
           >
             {isLoading ? (
-              <>
-                <svg
-                  className="animate-spin"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-                <span>Signing in...</span>
-              </>
+              <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+              </svg>
             ) : (
               "Proceed"
             )}
@@ -305,12 +296,9 @@ export default function LoginPage() {
                 }}
               >
                 {isSendingReset ? (
-                  <>
-                    <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                    </svg>
-                    <span>Sending...</span>
-                  </>
+                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  </svg>
                 ) : (
                   <>
                     Proceed
