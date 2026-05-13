@@ -541,19 +541,41 @@ export default function FeedSelectionPage() {
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
             style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
-            <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Add Custom Feed</h3>
-              <button onClick={() => setShowCustomFeedModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
+            {/* Title — matches Android dialog_add_feed.xml tv_title:
+                centered, bold, 20sp, dark_aquamarine_green */}
+            <div className="relative mb-5">
+              <h3
+                className="text-center font-bold"
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+              >
+                Add Feed
+              </h3>
+              <button
+                onClick={() => setShowCustomFeedModal(false)}
+                style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
+                aria-label="Close"
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
               </button>
             </div>
 
-            <p className="text-xs mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Add a custom feed item with its nutritional composition. It will be available in your feed list.
+            {/* Country — auto-filled from user profile, read-only display
+                (matches Android til_country which is initially editable but
+                in end-user context we have a single country tied to the user) */}
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Country<span style={{ color: "#FC2E20" }}> *</span>
             </p>
+            <div
+              className="rounded-xl px-4 py-3 text-sm mb-3"
+              style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+            >
+              {user?.country || "—"}
+            </div>
 
-            {/* Feed Type */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Type *</p>
+            {/* Feed Type — gated on country (always satisfied since user has one) */}
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Feed Type<span style={{ color: "#FC2E20" }}> *</span>
+            </p>
             <div className="relative mb-3">
               {loadingCustomTypes ? (
                 <div className="h-11 rounded-xl shimmer" />
@@ -562,10 +584,11 @@ export default function FeedSelectionPage() {
                   <select
                     value={customFeedForm.feed_type}
                     onChange={(e) => handleCustomTypeChange(e.target.value)}
+                    disabled={!user?.country_id}
                     className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
                     style={{ backgroundColor: "#F1F5F9", color: customFeedForm.feed_type ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif" }}
                   >
-                    <option value="">Select feed type...</option>
+                    <option value="">Select feed type</option>
                     {customFeedTypes.map((t) => <option key={t} value={t}>{t}</option>)}
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -575,8 +598,10 @@ export default function FeedSelectionPage() {
               )}
             </div>
 
-            {/* Feed Category */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Category</p>
+            {/* Feed Category — gated on feed type */}
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Feed Category<span style={{ color: "#FC2E20" }}> *</span>
+            </p>
             <div className="relative mb-3">
               {loadingCustomCats ? (
                 <div className="h-11 rounded-xl shimmer" />
@@ -587,9 +612,15 @@ export default function FeedSelectionPage() {
                     onChange={(e) => setCustomFeedForm((p) => ({ ...p, feed_category: e.target.value }))}
                     disabled={!customFeedForm.feed_type}
                     className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                    style={{ backgroundColor: "#F1F5F9", color: customFeedForm.feed_category ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif", opacity: !customFeedForm.feed_type ? 0.5 : 1 }}
+                    style={{
+                      backgroundColor: !customFeedForm.feed_type ? "#EBEAEA" : "#F1F5F9",
+                      color: customFeedForm.feed_category ? "#231F20" : "#999",
+                      fontFamily: "Nunito, sans-serif",
+                      opacity: !customFeedForm.feed_type ? 0.6 : 1,
+                      cursor: !customFeedForm.feed_type ? "not-allowed" : "pointer",
+                    }}
                   >
-                    <option value="">{!customFeedForm.feed_type ? "Select type first" : "Select category..."}</option>
+                    <option value="">{!customFeedForm.feed_type ? "Select type first" : "Select category"}</option>
                     {customFeedCategories.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                   <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -599,55 +630,77 @@ export default function FeedSelectionPage() {
               )}
             </div>
 
-            {/* Feed Name */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Feed Name *</p>
+            {/* Feed Name — gated on category (matches Android dialog_add_feed til_feed_name
+                which is enabled=false initially and toggled on by adapter logic
+                after category is picked) */}
+            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Feed Name<span style={{ color: "#FC2E20" }}> *</span>
+            </p>
             <input
               type="text"
               value={customFeedForm.feed_name}
               onChange={(e) => setCustomFeedForm((p) => ({ ...p, feed_name: e.target.value }))}
-              placeholder="e.g. Local Maize Bran"
+              disabled={!customFeedForm.feed_category}
               className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark mb-4"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              style={{
+                backgroundColor: !customFeedForm.feed_category ? "#EBEAEA" : "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                opacity: !customFeedForm.feed_category ? 0.6 : 1,
+                cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
+              }}
             />
 
-            {/* Nutrients */}
-            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Nutrient Composition (%) — optional</p>
+            {/* Nutrient Composition — 17 fields, ordering & names match Android
+                layout_nutrient_info.xml row-by-row */}
+            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+              Nutrient Composition (%)
+            </p>
             <div className="grid grid-cols-2 gap-3 mb-5">
-              <CustomFeedNutrientInput label="Dry Matter (DM)" value={customFeedForm.fd_dm} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_dm: v }))} />
-              <CustomFeedNutrientInput label="Crude Protein (CP)" value={customFeedForm.fd_cp} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cp: v }))} />
-              <CustomFeedNutrientInput label="Ether Extract (EE)" value={customFeedForm.fd_ee} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ee: v }))} />
-              <CustomFeedNutrientInput label="Crude Fiber (CF)" value={customFeedForm.fd_cf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cf: v }))} />
+              <CustomFeedNutrientInput label="Dry Matter" value={customFeedForm.fd_dm} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_dm: v }))} />
               <CustomFeedNutrientInput label="Ash" value={customFeedForm.fd_ash} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ash: v }))} />
+              <CustomFeedNutrientInput label="Cellulose" value={customFeedForm.fd_cellulose} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
+              <CustomFeedNutrientInput label="Crude Fiber" value={customFeedForm.fd_cf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cf: v }))} />
+              <CustomFeedNutrientInput label="Crude Protein" value={customFeedForm.fd_cp} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cp: v }))} />
+              <CustomFeedNutrientInput label="Ether Extract" value={customFeedForm.fd_ee} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ee: v }))} />
+              <CustomFeedNutrientInput label="Hemicellulose" value={customFeedForm.fd_hemicellulose} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
+              <CustomFeedNutrientInput label="Starch" value={customFeedForm.fd_st} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_st: v }))} />
               <CustomFeedNutrientInput label="NDF" value={customFeedForm.fd_ndf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ndf: v }))} />
               <CustomFeedNutrientInput label="ADF" value={customFeedForm.fd_adf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_adf: v }))} />
-              <CustomFeedNutrientInput label="Calcium (Ca)" value={customFeedForm.fd_ca} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ca: v }))} />
-              <CustomFeedNutrientInput label="Phosphorus (P)" value={customFeedForm.fd_p} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_p: v }))} />
-              <CustomFeedNutrientInput label="Starch (ST)" value={customFeedForm.fd_st} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_st: v }))} />
-              <CustomFeedNutrientInput label="ADIN" value={customFeedForm.fd_adin} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_adin: v }))} />
-              <CustomFeedNutrientInput label="Cellulose" value={customFeedForm.fd_cellulose} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
-              <CustomFeedNutrientInput label="Hemicellulose" value={customFeedForm.fd_hemicellulose} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
-              <CustomFeedNutrientInput label="Lignin (LG)" value={customFeedForm.fd_lg} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_lg: v }))} />
+              <CustomFeedNutrientInput label="Lignin" value={customFeedForm.fd_lg} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_lg: v }))} />
               <CustomFeedNutrientInput label="NDIN" value={customFeedForm.fd_ndin} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ndin: v }))} />
-              <CustomFeedNutrientInput label="NFE (%)" value={customFeedForm.nfe_pct} onChange={(v) => setCustomFeedForm((p) => ({ ...p, nfe_pct: v }))} />
-              <CustomFeedNutrientInput label="NPN Crude Protein" value={customFeedForm.fd_npn_cp} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
+              <CustomFeedNutrientInput label="NFE" value={customFeedForm.nfe_pct} onChange={(v) => setCustomFeedForm((p) => ({ ...p, nfe_pct: v }))} />
+              <CustomFeedNutrientInput label="NPN CP" value={customFeedForm.fd_npn_cp} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
+              <CustomFeedNutrientInput label="ADIN" value={customFeedForm.fd_adin} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_adin: v }))} />
+              <CustomFeedNutrientInput label="Calcium" value={customFeedForm.fd_ca} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ca: v }))} />
+              <CustomFeedNutrientInput label="Phosphorus" value={customFeedForm.fd_p} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_p: v }))} />
             </div>
 
-            <button
-              onClick={handleSaveCustomFeed}
-              disabled={!customFeedForm.feed_name.trim() || !customFeedForm.feed_type || isSavingCustom}
-              className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: customFeedForm.feed_name.trim() && customFeedForm.feed_type && !isSavingCustom ? "#064E3B" : "#D3D3D3",
-                color: customFeedForm.feed_name.trim() && customFeedForm.feed_type && !isSavingCustom ? "white" : "#999",
-                border: "none",
-                fontFamily: "Nunito, sans-serif",
-                cursor: customFeedForm.feed_name.trim() && customFeedForm.feed_type && !isSavingCustom ? "pointer" : "not-allowed",
-              }}
-            >
-              {isSavingCustom ? (
-                <><svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" /></svg>Saving...</>
-              ) : "Save Custom Feed"}
-            </button>
+            {/* Submit — Android btn_submit. Disabled (light_gray_new bg +
+                spanish_gray text) until ALL four required fields are filled. */}
+            {(() => {
+              const ready = !!user?.country_id && !!customFeedForm.feed_type && !!customFeedForm.feed_category && customFeedForm.feed_name.trim() !== "" && !isSavingCustom;
+              return (
+                <button
+                  onClick={handleSaveCustomFeed}
+                  disabled={!ready}
+                  className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
+                  style={{
+                    backgroundColor: ready ? "#064E3B" : "#D3D3D3",
+                    color: ready ? "white" : "#999",
+                    border: "none",
+                    fontFamily: "Nunito, sans-serif",
+                    cursor: ready ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {isSavingCustom ? (
+                    <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                    </svg>
+                  ) : "Submit"}
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
