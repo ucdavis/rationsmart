@@ -214,13 +214,13 @@ function TotalCostFooter({ label, value }: { label: string; value: string }) {
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, cattleInfo, reportData, feedSelectionType, showSnackbar, setFeedSelectionType } = useStore((s) => ({
+  const { user, cattleInfo, reportData, showSnackbar, setFeedSelectionType, setFeedSelections } = useStore((s) => ({
     user: s.user,
     cattleInfo: s.cattleInfo,
     reportData: s.reportData,
-    feedSelectionType: s.feedSelectionType,
     showSnackbar: s.showSnackbar,
     setFeedSelectionType: s.setFeedSelectionType,
+    setFeedSelections: s.setFeedSelections,
   }));
 
   const [isSaving, setIsSaving] = useState(false);
@@ -337,6 +337,74 @@ export default function ReportPage() {
   const simulationId = isEval
     ? ((evalRaw?.simulation_id as string | undefined) ?? cattleInfo?.simulation_name ?? "")
     : (recReport?.report_info?.simulation_id ?? cattleInfo?.simulation_name ?? "");
+
+  // Diet rating state machine — mirrors FragmentRecommendationReport
+  // .initUi() when (dietRating). Drives the Simulation Status banner
+  // (color/icon/title) and the visibility of Solution Summary,
+  // Cost-Effective Diet, Environmental Impact, and the Notes card.
+  const dietRating = (recReport?.report_info?.diet_rating ?? "").toUpperCase();
+  const isErrorState = dietRating === "ERROR_NO_BEST" || dietRating === "ERROR_PRECHECK" || dietRating === "ERROR_NO_RESULT";
+  const isAdvisory = dietRating === "ADVISORY";
+  const isInfeasible = dietRating === "INFEASIBLE";
+  const isOptimalOrUnknown = !isErrorState && !isAdvisory && !isInfeasible;
+  // Per Android: hide solution/cost/env when there is no feasible solution.
+  const showSolutionSections = !isErrorState;
+  // Per Android: hide the entire Notes card when dietRating is OPTIMAL / else.
+  const showNotesCard = !isOptimalOrUnknown;
+
+  type BannerTheme = { bg: string; stroke: string; iconBg: string; titleColor: string; bodyColor: string; statusText: string };
+  const banner: BannerTheme = (() => {
+    if (isAdvisory) {
+      return {
+        bg: "rgba(255,152,0,0.15)",        // vivid_gamboge_15
+        stroke: "rgba(255,152,0,0.30)",    // vivid_gamboge_30
+        iconBg: "#FFB300",                  // dark_yellow
+        titleColor: "#FF7800",              // fire_orange
+        bodyColor: "#FF9800",               // vivid_gamboge
+        statusText: "Solution has safety/nutritional violations",
+      };
+    }
+    if (isErrorState) {
+      return {
+        bg: "#FEC5BB",                       // peachy_pink
+        stroke: "rgba(228,74,74,0.20)",     // carmine_pink_20
+        iconBg: "#E44A4A",                  // red_shimmer
+        titleColor: "#FC2E20",              // red_ryb
+        bodyColor: "#E44A4A",               // carmine_pink
+        statusText: "No optimized solution found",
+      };
+    }
+    if (isInfeasible) {
+      return {
+        bg: "#F0FDF4",                       // honeydew
+        stroke: "rgba(5,188,109,0.15)",     // go_green_15
+        iconBg: "#10B981",                  // dark_green_turquoise
+        titleColor: "#1CA069",              // la_salle_green
+        bodyColor: "#064E3B",               // dark_aquamarine_green
+        statusText: "Solution has safety/nutritional violations",
+      };
+    }
+    // Optimal / else
+    return {
+      bg: "#F0FDF4",
+      stroke: "rgba(5,188,109,0.15)",
+      iconBg: "#10B981",
+      titleColor: "#1CA069",
+      bodyColor: "#064E3B",
+      statusText: "Optimized solution found",
+    };
+  })();
+
+  // Build osPoints + rwPoints exactly the way FragmentRecommendationReport
+  // does: filter empty strings out of violated_parameters; concat
+  // recommendations + warnings; if both are empty insert the
+  // "No recommendation/warnings available!" placeholder.
+  const violatedRaw = recReport?.additional_information?.violated_parameters ?? [];
+  const recommendationsRaw = recReport?.additional_information?.recommendations ?? [];
+  const warningsRaw = recReport?.additional_information?.warnings ?? [];
+  const osPoints = violatedRaw.filter((s) => s && s.trim().length > 0);
+  const rwPoints = [...recommendationsRaw, ...warningsRaw];
+  const rwDisplay = rwPoints.length === 0 ? ["No recommendation/warnings available!"] : rwPoints;
 
   // Total cost sums for footers
   const recTotalCost = recReport?.least_cost_diet
@@ -616,8 +684,8 @@ export default function ReportPage() {
         {/* ─── RECOMMENDATION SECTIONS ─── */}
         {!isEval && recReport && (
           <>
-            {/* Solution Summary */}
-            {recReport.solution_summary && (
+            {/* Solution Summary — hidden when diet rating is ERROR_* per Android */}
+            {showSolutionSections && recReport.solution_summary && (
               <SCard title="Solution Summary" icon={<IcSimulationDetails size={24} color="#064E3B" />}>
                 {/* Daily Cost */}
                 {recReport.solution_summary.daily_cost != null && (
@@ -681,10 +749,9 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Cost-Effective Diet — Android layout_cost_effective_diet:
-                column headers NAME / PRICE / AF_KG / COST in dark_silver,
-                cost values in crayola_green, total footer in honeydew bg. */}
-            {recReport.least_cost_diet && recReport.least_cost_diet.length > 0 && (
+            {/* Cost-Effective Diet — hidden when diet rating is ERROR_*
+                (matches FragmentRecommendationReport.kt:218). */}
+            {showSolutionSections && recReport.least_cost_diet && recReport.least_cost_diet.length > 0 && (
               <SCard
                 title="Cost-Effective Diet"
                 icon={
@@ -744,11 +811,9 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Environmental Impact — Android layout_environment_impact:
-                4 LinearProgressIndicator bars with values, then a
-                CLASSIFICATION banner (water bg, ultramarine icon + title)
-                + footnote in italic blue about Ym (%). */}
-            {recReport.environmental_impact && (() => {
+            {/* Environmental Impact — also hidden when diet rating is
+                ERROR_* (matches FragmentRecommendationReport.kt:219). */}
+            {showSolutionSections && recReport.environmental_impact && (() => {
               const env = recReport.environmental_impact;
               const productionVal = Number(env.methane_production_grams_per_day ?? 0);
               const yieldVal = Number(env.methane_yield_grams_per_kg_dmi ?? 0);
@@ -828,89 +893,92 @@ export default function ReportPage() {
               );
             })()}
 
-            {/* Notes — Android layout_additional_information / recommendations
-                _warnings: SIMULATION STATUS banner (vivid_gamboge_15 bg,
-                hot_orange icon) when violations exist; then "Violated
-                Parameters:" heading with bullet-like rows showing each
-                violation. Recommendations and warnings render below. */}
-            {recReport.additional_information && (
-              ((recReport.additional_information.violated_parameters?.length ?? 0) > 0 ||
-                (recReport.additional_information.recommendations?.length ?? 0) > 0 ||
-                (recReport.additional_information.warnings?.length ?? 0) > 0) ? (
-                <SCard
-                  title="Notes"
-                  icon={
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
-                      <rect x="3" y="4" width="18" height="16" rx="2" />
-                      <path d="M7 10v6M11 8v8M15 12v4M19 6v10" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
-                    </svg>
-                  }
+            {/* Notes — Android layout_additional_information.
+                Hidden entirely when dietRating resolves to OPTIMAL / else
+                (FragmentRecommendationReport.kt:232 hides
+                layoutAdditionalInformation). Otherwise renders a Simulation
+                Status banner themed by dietRating, then optionally the
+                Optimization Summary (violated_parameters) and the
+                Recommendations & Warnings list. */}
+            {showNotesCard && recReport.additional_information && (
+              <SCard
+                title="Notes"
+                icon={
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                    <path d="M7 10v6M11 8v8M15 12v4M19 6v10" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                }
+              >
+                {/* SIMULATION STATUS banner — colored by dietRating */}
+                <div
+                  className="flex items-center gap-3"
+                  style={{ backgroundColor: banner.bg, border: `1px solid ${banner.stroke}`, borderRadius: 14, padding: 10 }}
                 >
-                  {(recReport.additional_information.violated_parameters?.length ?? 0) > 0 && (
-                    <>
-                      <div
-                        className="flex items-center gap-3"
-                        style={{ backgroundColor: "rgba(255,152,0,0.15)", border: "1px solid rgba(255,152,0,0.30)", borderRadius: 14, padding: 10 }}
-                      >
-                        <div
-                          className="flex items-center justify-center flex-shrink-0"
-                          style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "#FFB300" }}
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
-                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-6h2zm0-8h-2V6h2z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-bold uppercase" style={{ color: "#FF7800", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>
-                            Simulation Status
-                          </p>
-                          <p style={{ color: "#FF7800", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                            Solution has safety/nutritional violations
-                          </p>
-                        </div>
-                      </div>
+                  <div
+                    className="flex items-center justify-center flex-shrink-0"
+                    style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: banner.iconBg }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                      {isErrorState ? (
+                        // X (no solution)
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm4 14.59L14.59 18 12 15.41 9.41 18 8 16.59 10.59 14 8 11.41 9.41 10 12 12.59 14.59 10 16 11.41 13.41 14 16 16.59z" />
+                      ) : isAdvisory ? (
+                        // i (info)
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-6h2zm0-8h-2V6h2z" />
+                      ) : (
+                        // ✓ check (optimal / infeasible-with-solution)
+                        <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm-1 15l-5-5 1.41-1.41L11 14.17l7.59-7.59L20 8z" />
+                      )}
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold uppercase" style={{ color: banner.titleColor, fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>
+                      Simulation Status
+                    </p>
+                    <p style={{ color: banner.bodyColor, fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                      {banner.statusText}
+                    </p>
+                  </div>
+                </div>
 
-                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 16 }}>
-                        Violated Parameters:
-                      </p>
-                      <div className="mt-3 space-y-3">
-                        {(recReport.additional_information.violated_parameters ?? []).map((item, i) => (
-                          <div key={i} className="flex items-start gap-3">
-                            <div
-                              className="flex items-center justify-center flex-shrink-0"
-                              style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6, marginTop: 2 }}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                                <path d="M9 11l3 3L20 6M4 12l3 3" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </div>
-                            <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, lineHeight: 1.5 }}>
-                              {item}
-                            </p>
+                {/* Violated Parameters (osPoints) — only when non-empty,
+                    matching FragmentRecommendationReport.kt:260-262
+                    which hides layoutOptimizationSummary when osPoints
+                    is empty. */}
+                {osPoints.length > 0 && (
+                  <>
+                    <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 16 }}>
+                      Violated Parameters:
+                    </p>
+                    <div className="mt-3 space-y-3">
+                      {osPoints.map((item, i) => (
+                        <div key={i} className="flex items-start gap-3">
+                          <div
+                            className="flex items-center justify-center flex-shrink-0"
+                            style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6, marginTop: 2 }}
+                          >
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                              <path d="M9 11l3 3L20 6M4 12l3 3" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
                           </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
+                          <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, lineHeight: 1.5 }}>
+                            {item}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
 
-                  {(recReport.additional_information.recommendations?.length ?? 0) > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginBottom: 8 }}>
-                        Recommendations:
-                      </p>
-                      <BulletList items={recReport.additional_information.recommendations ?? []} color="#064E3B" />
-                    </div>
-                  )}
-                  {(recReport.additional_information.warnings?.length ?? 0) > 0 && (
-                    <div style={{ marginTop: 16 }}>
-                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginBottom: 8 }}>
-                        Warnings:
-                      </p>
-                      <BulletList items={recReport.additional_information.warnings ?? []} color="#FF9800" />
-                    </div>
-                  )}
-                </SCard>
-              ) : null
+                {/* Recommendations & Warnings — always rendered (Android
+                    falls back to "No recommendation/warnings available!"
+                    when both lists are empty). */}
+                <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 16, marginBottom: 8 }}>
+                  Recommendations &amp; Warnings:
+                </p>
+                <BulletList items={rwDisplay} color={rwPoints.length === 0 ? "#6D6D6D" : "#064E3B"} />
+              </SCard>
             )}
           </>
         )}
@@ -971,7 +1039,13 @@ export default function ReportPage() {
         )}
         <div className="flex gap-3">
           <button
-            onClick={() => router.push("/cattle-info")}
+            onClick={() => {
+              // Match Android btnNewCase: clears feed selections + report
+              // so the next pass starts from a clean Cattle Info step.
+              setFeedSelections([]);
+              setFeedSelectionType("recommendation");
+              router.push("/cattle-info");
+            }}
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
             style={{
               border: "2px solid #064E3B",
