@@ -132,7 +132,9 @@ export default function AdminFeedbackPage() {
               </div>
               <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
                 <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Overall Rating</p>
-                <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(1) ?? "—"}</p>
+                {/* Match Android tv_overall_rating: 2 decimal places (e.g. 3.83, 3.95).
+                    The previous .toFixed(1) was rounding 3.95 to "4.0". */}
+                <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(2) ?? "—"}</p>
               </div>
             </div>
           </>
@@ -171,15 +173,17 @@ export default function AdminFeedbackPage() {
                     >
                       {cs.icon}
                     </div>
+                    {/* Name (font_16 bold raisin_black) + Email always rendered
+                        (font_12 regular raisin_black, "N/A" if missing) —
+                        matches AdminFeedbackListAdapter.kt:81+79 which sets both
+                        unconditionally via toStringOrNA(). */}
                     <div className="min-w-0">
                       <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                        {fb.user_name ?? fb.user_email ?? "Unknown"}
+                        {fb.user_name || "N/A"}
                       </p>
-                      {fb.user_email && fb.user_name && (
-                        <p className="truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                          {fb.user_email}
-                        </p>
-                      )}
+                      <p className="truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                        {fb.user_email || "N/A"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex flex-col items-end flex-shrink-0 ml-2">
@@ -194,15 +198,14 @@ export default function AdminFeedbackPage() {
                     </div>
                   </div>
                 </div>
-                {/* Feedback text */}
-                {fb.text_feedback && (
-                  <p
-                    className="text-sm"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", margin: "14px 12px 0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}
-                  >
-                    {fb.text_feedback}
-                  </p>
-                )}
+                {/* Feedback text — Android falls back to "Feedback not provided!"
+                    when the field is empty (AdminFeedbackListAdapter.kt:80). */}
+                <p
+                  className="text-sm"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", margin: "14px 12px 0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}
+                >
+                  {fb.text_feedback || "Feedback not provided!"}
+                </p>
                 {/* Date */}
                 <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, margin: "10px 12px 0" }}>
                   {toFeedReportDisplayDate(fb.created_at)}
