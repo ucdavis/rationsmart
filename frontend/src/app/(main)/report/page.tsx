@@ -31,6 +31,10 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+// Card header — matches Android layout_*_report cards: icon in a
+// go_green_15 (rgba(5,188,109,0.15)) pill with a dark_aquamarine_green
+// tinted icon (24dp inside 6dp content padding, corner 10), then title
+// bold font_16 raisin_black to the right.
 function SCard({
   title,
   icon,
@@ -44,20 +48,20 @@ function SCard({
 }) {
   return (
     <div
-      className="mx-3 my-2.5 bg-white overflow-hidden"
+      className="mx-3 my-2 bg-white overflow-hidden"
       style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
     >
       {title && (
-        <div className="flex items-center" style={{ margin: "10px 0 14px 10px" }}>
+        <div className="flex items-center gap-2.5" style={{ padding: "10px 10px 14px" }}>
           {icon && (
             <div
               className="flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6, marginRight: 10 }}
+              style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6 }}
             >
               {icon}
             </div>
           )}
-          <p className="text-base font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
             {title}
           </p>
         </div>
@@ -67,6 +71,87 @@ function SCard({
     </div>
   );
 }
+
+// Label/value pair as used by layout_animal_characteristics_report:
+// label = nunito_bold, font_12, dark_silver; value = nunito_bold,
+// font_16, raisin_black.
+function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+        {label}
+      </p>
+      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>
+        {value}
+      </p>
+    </div>
+  );
+}
+
+// Progress bar — Android LinearProgressIndicator with trackCornerRadius=6
+// and small filled circles at both ends. Track is the same color as the
+// indicator but at ~15% alpha. The dots draw at the actual progress
+// position and at the right end.
+function MethaneBar({ progress, color }: { progress: number; color: string }) {
+  const pct = Math.max(0, Math.min(100, progress));
+  return (
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: 6,
+        borderRadius: 6,
+        backgroundColor: `${color}26`,
+        marginTop: 6,
+      }}
+    >
+      <div
+        style={{
+          width: `${pct}%`,
+          height: "100%",
+          borderRadius: 6,
+          backgroundColor: color,
+          transition: "width 0.3s",
+        }}
+      />
+      {/* Cap dot at end of fill */}
+      <span
+        style={{
+          position: "absolute",
+          left: `calc(${pct}% - 4px)`,
+          top: -1,
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          backgroundColor: color,
+        }}
+      />
+      {/* Cap dot at right end of track */}
+      <span
+        style={{
+          position: "absolute",
+          right: -1,
+          top: -1,
+          width: 8,
+          height: 8,
+          borderRadius: "50%",
+          backgroundColor: color,
+        }}
+      />
+    </div>
+  );
+}
+
+// Android MethaneUiRanges constants (utils/MethaneUiRanges.kt)
+const MAX_METHANE_PRODUCTION = 1000.0; // g/day
+const MAX_METHANE_YIELD = 100.0;       // g/kg DMI
+const MAX_METHANE_INTENSITY = 100.0;   // g/kg ECM
+const MAX_YM_PERCENT = 100.0;          // %
+const calcPct = (v: number | string | null | undefined, max: number) => {
+  const n = Number(v ?? 0);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(100, (n / max) * 100);
+};
 
 function MetricTile({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
@@ -229,11 +314,29 @@ export default function ReportPage() {
     }
   };
 
-  const generatedOn = isEval
-    ? new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-    : (recReport?.report_info?.generated_date
-        ? new Date(recReport.report_info.generated_date).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-        : new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }));
+  // Android Ext.toReportDisplayDate renders as e.g. "May 13, 2026 at 07:32 AM".
+  const formatReportDate = (raw?: string | null) => {
+    const d = raw ? new Date(raw) : new Date();
+    if (isNaN(d.getTime())) return "—";
+    const datePart = d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    const timePart = d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return `${datePart} at ${timePart}`;
+  };
+  // EvaluationResponse doesn't carry generated_date / user_name / simulation_id
+  // at top level — fall back to the local store and current time. Recommendation
+  // payload has report_info with those fields populated.
+  const evalRaw = evalReport as unknown as Record<string, unknown> | null;
+  const generatedOn = formatReportDate(
+    isEval
+      ? ((evalRaw?.generated_at as string | undefined) ?? null)
+      : (recReport?.report_info?.generated_date ?? null)
+  );
+  const ownerName = isEval
+    ? (user?.name ?? "")
+    : (recReport?.report_info?.user_name ?? user?.name ?? "");
+  const simulationId = isEval
+    ? ((evalRaw?.simulation_id as string | undefined) ?? cattleInfo?.simulation_name ?? "")
+    : (recReport?.report_info?.simulation_id ?? cattleInfo?.simulation_name ?? "");
 
   // Total cost sums for footers
   const recTotalCost = recReport?.least_cost_diet
@@ -256,73 +359,52 @@ export default function ReportPage() {
       />
 
       <div className="flex-1 overflow-y-auto pb-28">
-        {/* Section 1: Report Details */}
-        <SCard
-          title="Report Details"
-          icon={<IcSimulationDetails size={24} color="#064E3B" />}
-        >
-          <div className="grid grid-cols-2 gap-x-3 gap-y-[10px]">
-            <div>
-              <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>
-                {isEval ? "Diet Type" : "Report ID"}
-              </p>
-              <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
-                {isEval ? "Diet Evaluation" : (reportIdForSave || "—")}
-              </p>
-            </div>
-            <div>
-              <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>Status</p>
-              <div className="mt-1">
-                <StatusBadge status={statusLabel} />
-              </div>
-            </div>
-            {!isEval && recReport?.report_info?.user_name && (
-              <div className="col-span-2">
-                <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>Owner Name</p>
-                <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
-                  {recReport.report_info.user_name}
-                </p>
-              </div>
-            )}
+        {/* Section 1: Report Details — matches Android layout_report:
+            REPORT ID | SIMULATION ID, OWNER NAME (full), GENERATED ON (full).
+            No Status badge — Android does not show one here. */}
+        <SCard title="Report Details" icon={<IcSimulationDetails size={24} color="#064E3B" />}>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+            <LabelValue label="Report ID" value={reportIdForSave || "N/A"} />
+            <LabelValue label="Simulation ID" value={simulationId || "N/A"} />
             <div className="col-span-2">
-              <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>Generated On</p>
-              <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
-                {generatedOn}
-              </p>
+              <LabelValue label="Owner Name" value={ownerName || "N/A"} />
+            </div>
+            <div className="col-span-2">
+              <LabelValue label="Generated On" value={generatedOn} />
             </div>
           </div>
         </SCard>
 
-        {/* Section 2: Animal Characteristics */}
+        {/* Section 2: Animal Characteristics — field order from
+            layout_animal_characteristics_report.xml:
+            Breed | Body Weight
+            Body Condition Score | Daily BW Gain
+            Parity | Days in Milk
+            Days of Pregnancy | Temperature
+            Distance | Topography
+            Milk Production | Milk Protein %
+            Milk Fat % */}
         {cattleInfo && (
           <SCard title="Animal Characteristics" icon={<IcAnimalCharacteristics size={24} color="#064E3B" />}>
-            <div className="grid grid-cols-2 gap-x-3 gap-y-[10px]">
-              {([
-                ["Breed", cattleInfo.breed],
-                ["Body Weight", `${cattleInfo.body_weight} kg`],
-                ["Body Condition Score", `${cattleInfo.body_condition_score}`],
-                ["Body Weight Gain", `${cattleInfo.body_weight_gain} kg/day`],
-                ["Days in Milk", `${cattleInfo.days_in_milk}`],
-                ["Days of Pregnancy", `${cattleInfo.days_of_pregnancy}`],
-                ["Milk Production", `${cattleInfo.milk_production} L/day`],
-                ["Milk Protein %", `${cattleInfo.milk_protein_percent}%`],
-                ["Milk Fat %", `${cattleInfo.milk_fat_percent}%`],
-                ["Parity", `${cattleInfo.parity}`],
-                ["Avg. Temperature", `${cattleInfo.average_temperature} °C`],
-                ...(cattleInfo.grazing ? [
-                  ["Topography", cattleInfo.topography],
-                  ["Distance Walked", `${cattleInfo.distance} km`],
-                ] as [string, string | number | undefined][] : []),
-              ] as [string, string | number | undefined][]).map(([label, value]) => (
-                <div key={label as string}>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif", fontWeight: "bold" }}>
-                    {label}
-                  </p>
-                  <p className="font-bold" style={{ color: "#231F20", fontSize: 16, fontFamily: "Nunito, sans-serif" }}>
-                    {value}
-                  </p>
-                </div>
-              ))}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+              <LabelValue label="Breed" value={cattleInfo.breed || "N/A"} />
+              <LabelValue label="Body Weight" value={`${cattleInfo.body_weight} Kg`} />
+              <LabelValue label="Body Condition Score" value={`${cattleInfo.body_condition_score}`} />
+              <LabelValue label="Daily BW Gain" value={`${cattleInfo.body_weight_gain} kg/day`} />
+              <LabelValue label="Parity" value={`${cattleInfo.parity}`} />
+              <LabelValue label="Days in Milk" value={`${cattleInfo.days_in_milk} Days`} />
+              <LabelValue label="Days of Pregnancy" value={`${cattleInfo.days_of_pregnancy} Days`} />
+              <LabelValue label="Temperature" value={`${cattleInfo.average_temperature} °C`} />
+              <LabelValue
+                label="Distance"
+                value={cattleInfo.grazing ? `${Number(cattleInfo.distance ?? 0).toFixed(2)} km` : "0.00 km"}
+              />
+              <LabelValue label="Topography" value={cattleInfo.grazing ? (cattleInfo.topography || "N/A") : "Not Selected"} />
+              <LabelValue label="Milk Production" value={`${cattleInfo.milk_production} Liter`} />
+              <LabelValue label="Milk Protein %" value={`${cattleInfo.milk_protein_percent} %`} />
+              <div className="col-span-2">
+                <LabelValue label="Milk Fat %" value={`${cattleInfo.milk_fat_percent} %`} />
+              </div>
             </div>
           </SCard>
         )}
@@ -599,103 +681,236 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Cost Effective Diet */}
+            {/* Cost-Effective Diet — Android layout_cost_effective_diet:
+                column headers NAME / PRICE / AF_KG / COST in dark_silver,
+                cost values in crayola_green, total footer in honeydew bg. */}
             {recReport.least_cost_diet && recReport.least_cost_diet.length > 0 && (
               <SCard
-                title="Cost Effective Diet"
+                title="Cost-Effective Diet"
                 icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
-                    <path d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                    <path d="M12 2C9 2 5 4 5 8c0 2.5 2 3.5 4 4-1 2-1 5 0 7 1 1.5 3 2 5 2-1-2-1-5 1-7v9h-2v-9c-2 0-4-1-4-3 0-4 3-4 3-4z" opacity="0.3"/>
+                    <path d="M3 14c0-1.5 1.5-3 4-3s4 1.5 4 3v6H3v-6z" />
+                    <path d="M3 17h8M3 20h8" stroke="#FFFFFF" strokeWidth="0.6" />
                   </svg>
                 }
                 footer={
-                  <TotalCostFooter
-                    label="Total Diet Cost"
-                    value={`${currencySymbol}${fmt(recTotalCost)}`}
-                  />
+                  <div
+                    className="flex items-center justify-between"
+                    style={{ backgroundColor: "#E4F7EF", padding: "12px 14px" }}
+                  >
+                    <span
+                      className="font-bold uppercase"
+                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}
+                    >
+                      Total Diet Cost
+                    </span>
+                    <span
+                      className="font-bold"
+                      style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                    >
+                      {fmt(recTotalCost)} {user?.currency || ""}
+                    </span>
+                  </div>
                 }
               >
                 <div
-                  className="flex text-xs font-bold py-2 px-1 rounded-lg mb-1"
-                  style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  className="grid items-center py-3 px-2"
+                  style={{
+                    gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
+                    borderBottom: "1px solid #E2E8F0",
+                  }}
                 >
-                  <span className="flex-1">Name</span>
-                  <span className="w-16 text-right">Price/kg</span>
-                  <span className="w-16 text-right">Qty (kg)</span>
-                  <span className="w-16 text-right">Cost</span>
+                  <span className="font-bold uppercase" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>NAME</span>
+                  <span className="font-bold uppercase text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>PRICE</span>
+                  <span className="font-bold uppercase text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>AF_KG</span>
+                  <span className="font-bold uppercase text-right" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>COST</span>
                 </div>
                 {recReport.least_cost_diet.map((row: CostEffectiveDiet, i: number) => (
                   <div
                     key={i}
-                    className="flex items-center py-2 px-1 border-b last:border-0"
-                    style={{ borderColor: "#F1F5F9" }}
+                    className="grid items-center py-3 px-2"
+                    style={{
+                      gridTemplateColumns: "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
+                      borderBottom: "1px solid #F1F5F9",
+                    }}
                   >
-                    <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.feed_name}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.price_per_kg)}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_kg_per_day, 1)}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.daily_cost)}</span>
+                    <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{row.feed_name}</span>
+                    <span className="text-center" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.price_per_kg, 0)}</span>
+                    <span className="text-center" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.quantity_kg_per_day, 2)}</span>
+                    <span className="text-right font-bold" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.daily_cost, 0)}</span>
                   </div>
                 ))}
               </SCard>
             )}
 
-            {/* Environmental Impact */}
-            {recReport.environmental_impact && (
-              <SCard title="Environment Impact" icon={<IcEnvironment size={24} color="#064E3B" />}>
-                <div className="grid grid-cols-2 gap-3">
-                  {recReport.environmental_impact.methane_production_grams_per_day && (
-                    <MetricTile label="CH₄ Production" value={recReport.environmental_impact.methane_production_grams_per_day} unit="g/day" />
-                  )}
-                  {recReport.environmental_impact.methane_intensity_grams_per_kg_ecm && (
-                    <MetricTile label="CH₄ Intensity" value={recReport.environmental_impact.methane_intensity_grams_per_kg_ecm} unit="g/kg ECM" />
-                  )}
-                  {recReport.environmental_impact.methane_yield_grams_per_kg_dmi && (
-                    <MetricTile label="CH₄ Yield" value={recReport.environmental_impact.methane_yield_grams_per_kg_dmi} unit="g/kg DMI" />
-                  )}
-                  {recReport.environmental_impact["Ym (%)"] && (
-                    <MetricTile label="Ym (%)" value={recReport.environmental_impact["Ym (%)"]} unit="conversion rate" />
-                  )}
-                </div>
-                {recReport.environmental_impact.classification && (
-                  <div className="flex items-center justify-between rounded-xl px-3 py-2.5 mt-3" style={{ backgroundColor: "#F8FAF9" }}>
-                    <span className="text-sm font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Classification</span>
-                    <span className="text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{recReport.environmental_impact.classification}</span>
+            {/* Environmental Impact — Android layout_environment_impact:
+                4 LinearProgressIndicator bars with values, then a
+                CLASSIFICATION banner (water bg, ultramarine icon + title)
+                + footnote in italic blue about Ym (%). */}
+            {recReport.environmental_impact && (() => {
+              const env = recReport.environmental_impact;
+              const productionVal = Number(env.methane_production_grams_per_day ?? 0);
+              const yieldVal = Number(env.methane_yield_grams_per_kg_dmi ?? 0);
+              const intensityVal = Number(env.methane_intensity_grams_per_kg_ecm ?? 0);
+              const envRaw = env as unknown as Record<string, unknown>;
+              const ymVal = Number(env["Ym (%)"] ?? (envRaw.methane_conversion_rate_percent as number | string | undefined) ?? 0);
+              return (
+                <SCard title="Environmental Impact" icon={<IcEnvironment size={24} color="#064E3B" />}>
+                  {/* Methane Production */}
+                  <div className="flex items-center justify-between mt-1">
+                    <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Methane Production</p>
+                    <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                      {fmt(productionVal, 2)} g/day
+                    </p>
                   </div>
-                )}
-              </SCard>
-            )}
+                  <MethaneBar progress={calcPct(productionVal, MAX_METHANE_PRODUCTION)} color="#1CA069" />
 
-            {/* Optimization Violations + Recommendations & Warnings */}
-            {recReport.additional_information && (
-              <>
-                {(recReport.additional_information.violated_parameters?.length ?? 0) > 0 && (
-                  <SCard title="Violated Parameters" icon={
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
-                      <path d="M12 9v4M12 17h.01" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
-                    </svg>
-                  }>
-                    <BulletList items={recReport.additional_information.violated_parameters} color="#E44A4A" />
-                  </SCard>
-                )}
-                {((recReport.additional_information.recommendations?.length ?? 0) > 0 ||
-                  (recReport.additional_information.warnings?.length ?? 0) > 0) && (
-                  <SCard title="Recommendations" icon={
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <path d="M9 11l3 3 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      <path d="M12 22c5.52 0 10-4.48 10-10S17.52 2 12 2 2 6.48 2 12s4.48 10 10 10z" stroke="#064E3B" strokeWidth="1.8" />
-                    </svg>
-                  }>
-                    <BulletList items={recReport.additional_information.recommendations ?? []} color="#064E3B" />
-                    {(recReport.additional_information.warnings?.length ?? 0) > 0 && (
-                      <div className="mt-2">
-                        <BulletList items={recReport.additional_information.warnings ?? []} color="#FF9800" />
+                  {/* Methane Yield */}
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Methane Yield</p>
+                    <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                      {fmt(yieldVal, 2)} g/kg DMI
+                    </p>
+                  </div>
+                  <MethaneBar progress={calcPct(yieldVal, MAX_METHANE_YIELD)} color="#064E3B" />
+
+                  {/* Methane Intensity */}
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Methane Intensity</p>
+                    <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                      {fmt(intensityVal, 2)} g/kg ECM
+                    </p>
+                  </div>
+                  <MethaneBar progress={calcPct(intensityVal, MAX_METHANE_INTENSITY)} color="#296CD3" />
+
+                  {/* Methane Conversion Rate (Ym %) */}
+                  <div className="flex items-center justify-between mt-4">
+                    <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Methane Conversion Rate (Ym %)</p>
+                    <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                      {fmt(ymVal, 2)} %
+                    </p>
+                  </div>
+                  <MethaneBar progress={calcPct(ymVal, MAX_YM_PERCENT)} color="#FF9800" />
+
+                  {/* Classification banner */}
+                  {env.classification && (
+                    <div
+                      className="flex items-center gap-3 mt-5"
+                      style={{ backgroundColor: "#E3F2FD", border: "1px solid rgba(41,108,211,0.25)", borderRadius: 16, padding: "10px 12px" }}
+                    >
+                      <div
+                        className="flex items-center justify-center flex-shrink-0"
+                        style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "#1E40AF" }}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                          <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-6h2zm0-8h-2V6h2z" />
+                        </svg>
                       </div>
-                    )}
-                  </SCard>
-                )}
-              </>
+                      <div>
+                        <p className="font-bold uppercase" style={{ color: "#1E40AF", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>
+                          Classification
+                        </p>
+                        <p className="font-bold" style={{ color: "#1E40AF", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                          {env.classification}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Ym footnote */}
+                  <p
+                    style={{ color: "#1E40AF", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 12 }}
+                  >
+                    * Ym (%) = percentage of energy intake lost as methane.
+                  </p>
+                </SCard>
+              );
+            })()}
+
+            {/* Notes — Android layout_additional_information / recommendations
+                _warnings: SIMULATION STATUS banner (vivid_gamboge_15 bg,
+                hot_orange icon) when violations exist; then "Violated
+                Parameters:" heading with bullet-like rows showing each
+                violation. Recommendations and warnings render below. */}
+            {recReport.additional_information && (
+              ((recReport.additional_information.violated_parameters?.length ?? 0) > 0 ||
+                (recReport.additional_information.recommendations?.length ?? 0) > 0 ||
+                (recReport.additional_information.warnings?.length ?? 0) > 0) ? (
+                <SCard
+                  title="Notes"
+                  icon={
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <path d="M7 10v6M11 8v8M15 12v4M19 6v10" stroke="#FFFFFF" strokeWidth="1.6" strokeLinecap="round" />
+                    </svg>
+                  }
+                >
+                  {(recReport.additional_information.violated_parameters?.length ?? 0) > 0 && (
+                    <>
+                      <div
+                        className="flex items-center gap-3"
+                        style={{ backgroundColor: "rgba(255,152,0,0.15)", border: "1px solid rgba(255,152,0,0.30)", borderRadius: 14, padding: 10 }}
+                      >
+                        <div
+                          className="flex items-center justify-center flex-shrink-0"
+                          style={{ width: 36, height: 36, borderRadius: "50%", backgroundColor: "#FFB300" }}
+                        >
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                            <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-6h2zm0-8h-2V6h2z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-bold uppercase" style={{ color: "#FF7800", fontFamily: "Nunito, sans-serif", fontSize: 12, letterSpacing: 0.5 }}>
+                            Simulation Status
+                          </p>
+                          <p style={{ color: "#FF7800", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                            Solution has safety/nutritional violations
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 16 }}>
+                        Violated Parameters:
+                      </p>
+                      <div className="mt-3 space-y-3">
+                        {(recReport.additional_information.violated_parameters ?? []).map((item, i) => (
+                          <div key={i} className="flex items-start gap-3">
+                            <div
+                              className="flex items-center justify-center flex-shrink-0"
+                              style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6, marginTop: 2 }}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 11l3 3L20 6M4 12l3 3" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </div>
+                            <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, lineHeight: 1.5 }}>
+                              {item}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+
+                  {(recReport.additional_information.recommendations?.length ?? 0) > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginBottom: 8 }}>
+                        Recommendations:
+                      </p>
+                      <BulletList items={recReport.additional_information.recommendations ?? []} color="#064E3B" />
+                    </div>
+                  )}
+                  {(recReport.additional_information.warnings?.length ?? 0) > 0 && (
+                    <div style={{ marginTop: 16 }}>
+                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginBottom: 8 }}>
+                        Warnings:
+                      </p>
+                      <BulletList items={recReport.additional_information.warnings ?? []} color="#FF9800" />
+                    </div>
+                  )}
+                </SCard>
+              ) : null
             )}
           </>
         )}
