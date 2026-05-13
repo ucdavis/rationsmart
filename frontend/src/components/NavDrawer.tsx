@@ -197,7 +197,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           >
             <IcLogoutNav size={20} color="#E44A4A" />
             <span
-              className="text-base font-bold"
+              className="text-base"
               style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
             >
               Logout
