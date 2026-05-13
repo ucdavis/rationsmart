@@ -31,29 +31,75 @@ const LIMIT_ROWS: { label: string; key: keyof DietLimits }[] = [
   { label: "Starch Max (%)", key: "starch_max" },
 ];
 
-// Custom feed form
+// Custom feed form — keys mirror Android FeedDetailsViewModel fields.
+// Android DialogFeedDetails only shows the 13 nutrients listed below
+// (Additive layout = all 13; General omits NPN; Mineral keeps only 4).
 const EMPTY_CUSTOM = {
   feed_type: "",
   feed_category: "",
   feed_name: "",
-  fd_dm: "",
-  fd_cp: "",
-  fd_ee: "",
-  fd_cf: "",
-  fd_ash: "",
-  fd_ndf: "",
-  fd_adf: "",
-  fd_ca: "",
-  fd_p: "",
-  fd_st: "",
-  fd_adin: "",
-  fd_cellulose: "",
-  fd_hemicellulose: "",
-  fd_lg: "",
-  fd_ndin: "",
-  nfe_pct: "",
-  fd_npn_cp: "",
+  fd_dm: "",        // Dry Matter
+  fd_ash: "",       // Ash
+  fd_cp: "",        // Crude Protein
+  fd_npn_cp: "",    // NPN (Additive only)
+  fd_ee: "",        // Ether Extract
+  fd_st: "",        // Starch
+  fd_ndf: "",       // NDF
+  fd_adf: "",       // ADF
+  fd_lg: "",        // Lignin
+  fd_ndin: "",      // NDIN
+  fd_adin: "",      // ADIN
+  fd_ca: "",        // Calcium
+  fd_p: "",         // Phosphorus
 };
+
+// Match Android DialogFeedDetails category → layout mapping.
+// "Additive" → 13 fields incl. NPN
+// "Mineral"/"Minerals" → 4 fields (DM, Ash, Ca, P)
+// else → General (12 fields, no NPN)
+type NutrientLayout = "additive" | "mineral" | "general";
+function getNutrientLayout(category: string): NutrientLayout {
+  if (category === "Additive") return "additive";
+  if (category === "Mineral" || category === "Minerals") return "mineral";
+  return "general";
+}
+
+type CustomFeedFormKey = keyof typeof EMPTY_CUSTOM;
+const NUTRIENT_FIELDS_ADDITIVE: { key: CustomFeedFormKey; label: string }[] = [
+  { key: "fd_dm", label: "Dry Matter" },
+  { key: "fd_ash", label: "Ash" },
+  { key: "fd_cp", label: "Protein" },
+  { key: "fd_npn_cp", label: "NPN" },
+  { key: "fd_ee", label: "Ether Extract" },
+  { key: "fd_st", label: "Starch" },
+  { key: "fd_ndf", label: "NDF" },
+  { key: "fd_adf", label: "ADF" },
+  { key: "fd_lg", label: "Lignin" },
+  { key: "fd_ndin", label: "NDIN" },
+  { key: "fd_adin", label: "ADIN" },
+  { key: "fd_ca", label: "Calcium" },
+  { key: "fd_p", label: "Phosphorus" },
+];
+const NUTRIENT_FIELDS_GENERAL: { key: CustomFeedFormKey; label: string }[] = [
+  { key: "fd_dm", label: "Dry Matter" },
+  { key: "fd_ash", label: "Ash" },
+  { key: "fd_cp", label: "Protein" },
+  { key: "fd_ee", label: "Ether Extract" },
+  { key: "fd_st", label: "Starch" },
+  { key: "fd_ndf", label: "NDF" },
+  { key: "fd_adf", label: "ADF" },
+  { key: "fd_lg", label: "Lignin" },
+  { key: "fd_ndin", label: "NDIN" },
+  { key: "fd_adin", label: "ADIN" },
+  { key: "fd_ca", label: "Calcium" },
+  { key: "fd_p", label: "Phosphorus" },
+];
+const NUTRIENT_FIELDS_MINERAL: { key: CustomFeedFormKey; label: string }[] = [
+  { key: "fd_dm", label: "Dry Matter" },
+  { key: "fd_ash", label: "Ash" },
+  { key: "fd_ca", label: "Calcium" },
+  { key: "fd_p", label: "Phosphorus" },
+];
 
 function CustomFeedNutrientInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
   return (
@@ -174,29 +220,29 @@ export default function FeedSelectionPage() {
     }
     setIsSavingCustom(true);
     try {
+      // Match Android FeedDetailsViewModel.insertFeed payload: numeric fields
+      // default to 0.0 (toDoubleOrZero) for any nutrient the chosen layout
+      // does not surface. We mirror that — empty inputs become 0.
+      const toNum = (v: string) => (v ? Number(v) : 0);
       const feedDetails = {
         feed_name: customFeedForm.feed_name.trim(),
         feed_type: customFeedForm.feed_type,
         feed_category: customFeedForm.feed_category,
         country_code: user.country_code ?? "",
         country_name: user.country ?? "",
-        fd_dm: customFeedForm.fd_dm ? Number(customFeedForm.fd_dm) : null,
-        fd_cp: customFeedForm.fd_cp ? Number(customFeedForm.fd_cp) : null,
-        fd_ee: customFeedForm.fd_ee ? Number(customFeedForm.fd_ee) : null,
-        fd_cf: customFeedForm.fd_cf ? Number(customFeedForm.fd_cf) : null,
-        fd_ash: customFeedForm.fd_ash ? Number(customFeedForm.fd_ash) : null,
-        fd_ndf: customFeedForm.fd_ndf ? Number(customFeedForm.fd_ndf) : null,
-        fd_adf: customFeedForm.fd_adf ? Number(customFeedForm.fd_adf) : null,
-        fd_ca: customFeedForm.fd_ca ? Number(customFeedForm.fd_ca) : null,
-        fd_p: customFeedForm.fd_p ? Number(customFeedForm.fd_p) : null,
-        fd_st: customFeedForm.fd_st ? Number(customFeedForm.fd_st) : null,
-        fd_adin: customFeedForm.fd_adin ? Number(customFeedForm.fd_adin) : null,
-        fd_cellulose: customFeedForm.fd_cellulose ? Number(customFeedForm.fd_cellulose) : null,
-        fd_hemicellulose: customFeedForm.fd_hemicellulose ? Number(customFeedForm.fd_hemicellulose) : null,
-        fd_lg: customFeedForm.fd_lg ? Number(customFeedForm.fd_lg) : null,
-        fd_ndin: customFeedForm.fd_ndin ? Number(customFeedForm.fd_ndin) : null,
-        nfe_pct: customFeedForm.nfe_pct ? Number(customFeedForm.nfe_pct) : null,
-        fd_npn_cp: customFeedForm.fd_npn_cp ? Number(customFeedForm.fd_npn_cp) : null,
+        fd_dm: toNum(customFeedForm.fd_dm),
+        fd_ash: toNum(customFeedForm.fd_ash),
+        fd_cp: toNum(customFeedForm.fd_cp),
+        fd_npn_cp: toNum(customFeedForm.fd_npn_cp),
+        fd_ee: toNum(customFeedForm.fd_ee),
+        fd_st: toNum(customFeedForm.fd_st),
+        fd_ndf: toNum(customFeedForm.fd_ndf),
+        fd_adf: toNum(customFeedForm.fd_adf),
+        fd_lg: toNum(customFeedForm.fd_lg),
+        fd_ndin: toNum(customFeedForm.fd_ndin),
+        fd_adin: toNum(customFeedForm.fd_adin),
+        fd_ca: toNum(customFeedForm.fd_ca),
+        fd_p: toNum(customFeedForm.fd_p),
       };
 
       // Check if it already exists
@@ -696,32 +742,33 @@ export default function FeedSelectionPage() {
               </svg>
             </button>
 
-            {nutritionalInfoExpanded && (
-            <>
-            <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Nutrient Composition (%)
-            </p>
-            <div className="grid grid-cols-2 gap-3 mb-5">
-              <CustomFeedNutrientInput label="Dry Matter" value={customFeedForm.fd_dm} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_dm: v }))} />
-              <CustomFeedNutrientInput label="Ash" value={customFeedForm.fd_ash} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ash: v }))} />
-              <CustomFeedNutrientInput label="Cellulose" value={customFeedForm.fd_cellulose} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
-              <CustomFeedNutrientInput label="Crude Fiber" value={customFeedForm.fd_cf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cf: v }))} />
-              <CustomFeedNutrientInput label="Crude Protein" value={customFeedForm.fd_cp} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_cp: v }))} />
-              <CustomFeedNutrientInput label="Ether Extract" value={customFeedForm.fd_ee} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ee: v }))} />
-              <CustomFeedNutrientInput label="Hemicellulose" value={customFeedForm.fd_hemicellulose} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
-              <CustomFeedNutrientInput label="Starch" value={customFeedForm.fd_st} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_st: v }))} />
-              <CustomFeedNutrientInput label="NDF" value={customFeedForm.fd_ndf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ndf: v }))} />
-              <CustomFeedNutrientInput label="ADF" value={customFeedForm.fd_adf} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_adf: v }))} />
-              <CustomFeedNutrientInput label="Lignin" value={customFeedForm.fd_lg} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_lg: v }))} />
-              <CustomFeedNutrientInput label="NDIN" value={customFeedForm.fd_ndin} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ndin: v }))} />
-              <CustomFeedNutrientInput label="NFE" value={customFeedForm.nfe_pct} onChange={(v) => setCustomFeedForm((p) => ({ ...p, nfe_pct: v }))} />
-              <CustomFeedNutrientInput label="NPN CP" value={customFeedForm.fd_npn_cp} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
-              <CustomFeedNutrientInput label="ADIN" value={customFeedForm.fd_adin} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_adin: v }))} />
-              <CustomFeedNutrientInput label="Calcium" value={customFeedForm.fd_ca} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_ca: v }))} />
-              <CustomFeedNutrientInput label="Phosphorus" value={customFeedForm.fd_p} onChange={(v) => setCustomFeedForm((p) => ({ ...p, fd_p: v }))} />
-            </div>
-            </>
-            )}
+            {nutritionalInfoExpanded && (() => {
+              // Match Android DialogFeedDetails: layout is chosen by feedCategory.
+              // Before category is selected, default to General (matches Android
+              // initUi where layoutNutrientInfoGeneral.root.visibility = VISIBLE).
+              const layout = getNutrientLayout(customFeedForm.feed_category);
+              const fields =
+                layout === "additive" ? NUTRIENT_FIELDS_ADDITIVE :
+                layout === "mineral" ? NUTRIENT_FIELDS_MINERAL :
+                NUTRIENT_FIELDS_GENERAL;
+              return (
+                <>
+                  <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                    Nutrient Composition (%)
+                  </p>
+                  <div className="grid grid-cols-2 gap-3 mb-5">
+                    {fields.map((f) => (
+                      <CustomFeedNutrientInput
+                        key={f.key}
+                        label={f.label}
+                        value={customFeedForm[f.key]}
+                        onChange={(v) => setCustomFeedForm((p) => ({ ...p, [f.key]: v }))}
+                      />
+                    ))}
+                  </div>
+                </>
+              );
+            })()}
 
             {/* Submit — Android btn_submit. Disabled (light_gray_new bg +
                 spanish_gray text) until ALL four required fields are filled. */}
