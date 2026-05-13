@@ -403,7 +403,9 @@ export default function ProfilePage() {
         </>
       )}
 
-      {/* Delete Account confirmation dialog — confined to centered column */}
+      {/* Delete Account confirmation dialog — mirrors Android
+          dialog_confirm_delete_account.xml. Scrim dismiss matches the
+          MaterialAlertDialog default (setCanceledOnTouchOutside=true). */}
       {showDeleteDialog && (
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
@@ -412,44 +414,64 @@ export default function ProfilePage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
+          onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteDialog(false); }}
         >
           <div
             className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
           >
+            {/* ic_additional_information — alert "!" inside an outlined
+                circle, tinted red_ryb, inside a carmine_pink_20 pill. */}
             <div
               className="flex items-center justify-center mx-auto mb-4"
-              style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(228,74,74,0.2)" }}
+              style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(228,74,74,0.20)" }}
             >
-              <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-                <path d="M4 7h18M10 7V5h6v2M16 7v13H10V7h6zM7 7l1 13M19 7l-1 13" stroke="#FC2E20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="28" height="28" viewBox="0 0 960 960" fill="#FC2E20">
+                <path d="M480,680q17,0 28.5,-11.5T520,640v-160q0,-17 -11.5,-28.5T480,440q-17,0 -28.5,11.5T440,480v160q0,17 11.5,28.5T480,680ZM480,360q17,0 28.5,-11.5T520,320q0,-17 -11.5,-28.5T480,280q-17,0 -28.5,11.5T440,320q0,17 11.5,28.5T480,360ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
               </svg>
             </div>
+
+            {/* Title — Android string @delete_account: "Are you sure you
+                want\nto delete your account?" */}
             <h3
               className="text-center font-bold mb-2 mx-3"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, whiteSpace: "pre-line" }}
             >
-              Are you sure you want to delete your account?
+              {"Are you sure you want\nto delete your account?"}
             </h3>
+
+            {/* Description — Android string @delete_account_message */}
             <p
               className="text-center text-sm mb-5 mx-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
             >
-              This action is permanent. Your account and data will be deleted permanently.
+              {"This action is permanent. Your account\nand data will be deleted\npermanently."}
             </p>
+
             <div className="flex gap-3">
+              {/* NO — outlined dark green button with ic_cancel (X-in-circle) */}
               <button
                 onClick={() => setShowDeleteDialog(false)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
                 style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}
               >
+                <svg width="18" height="18" viewBox="0 0 960 960" fill="#064E3B">
+                  <path d="m480,536 l116,116q11,11 28,11t28,-11q11,-11 11,-28t-11,-28L536,480l116,-116q11,-11 11,-28t-11,-28q-11,-11 -28,-11t-28,11L480,424 364,308q-11,-11 -28,-11t-28,11q-11,11 -11,28t11,28l116,116 -116,116q-11,11 -11,28t11,28q11,11 28,11t28,-11l116,-116ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
+                </svg>
                 No
               </button>
+
+              {/* YES — filled carmine_pink button with ic_delete_account
+                  (filled trash, same icon as the Profile Delete button) */}
               <button
                 onClick={() => { setShowDeleteDialog(false); setShowPinSheet(true); }}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
+                className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
                 style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}
               >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                  <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
+                </svg>
                 Yes
               </button>
             </div>
@@ -457,7 +479,11 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* PIN entry bottom sheet (second step of delete) — confined to centered column */}
+      {/* Submit PIN bottom sheet — mirrors Android dialog_submit_pin.xml:
+          mint drag handle (bg_bottom_sheet_pin = go_green_15), bold
+          dark_aquamarine_green title, 4-digit PIN input, full-pill submit
+          (light_gray_new disabled, dark_aquamarine_green enabled), then
+          PoweredBy at the bottom. Tap-outside-to-dismiss. */}
       {showPinSheet && (
         <div
           className="fixed top-0 h-full z-50 flex items-end justify-center"
@@ -466,14 +492,16 @@ export default function ProfilePage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
+          onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) { setShowPinSheet(false); setDeletePin(""); } }}
         >
           <div
-            className="bg-white rounded-t-2xl w-full max-w-[430px] pb-10 pt-5 px-4"
+            className="bg-white rounded-t-2xl w-full max-w-[430px] pb-5 pt-5 px-4"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.15)" }}
+            onClick={(e) => e.stopPropagation()}
           >
-            {/* Drag handle */}
+            {/* Drag handle — bg_bottom_sheet_pin = go_green_15 (mint) */}
             <div className="flex justify-center mb-5">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#E2E8F0" }} />
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "rgba(5,188,109,0.15)" }} />
             </div>
             <h3
               className="text-center font-bold mb-5"
@@ -497,14 +525,15 @@ export default function ProfilePage() {
                 }}
               >
                 {isDeleting ? (
-                  <>
-                    <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                    </svg>
-                    Deleting...
-                  </>
+                  <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  </svg>
                 ) : "Submit"}
               </button>
+            </div>
+
+            <div className="mt-8">
+              <PoweredBy />
             </div>
           </div>
         </div>
