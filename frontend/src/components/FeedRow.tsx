@@ -363,7 +363,13 @@ export default function FeedRow({
           }
         }
       })
-      .catch(() => showSnackbar("Could not load feed types", "error"))
+      .catch(() => {
+        // Silence the toast when the row already has a stored type name
+        // (simulation restore case) — the value is still displayed from
+        // the store, so the only effect of the failure is an empty
+        // dropdown. A toast here would be a false alarm.
+        if (!item.feed_type_name) showSnackbar("Could not load feed types", "error");
+      })
       .finally(() => setLoadingTypes(false));
   }, [user?.country_id, showSnackbar]);
 
@@ -389,7 +395,12 @@ export default function FeedRow({
           onUpdate(item.id, { category_id: matched.id });
         }
       })
-      .catch(() => showSnackbar("Could not load categories", "error"))
+      .catch(() => {
+        // Same rationale as the types fetch: if the row already has a
+        // restored category_name, the visible state is intact and the
+        // empty dropdown is the only consequence. Don't alarm the user.
+        if (!item.category_name) showSnackbar("Could not load categories", "error");
+      })
       .finally(() => setLoadingCats(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_type_name, user?.country_id, user?.id]);
@@ -425,7 +436,11 @@ export default function FeedRow({
           });
         }
       })
-      .catch(() => showSnackbar("Could not load sub-categories", "error"))
+      .catch(() => {
+        // If the row already has a restored sub_category_name / feed_uuid,
+        // the visible state is intact — suppress the toast.
+        if (!item.sub_category_name && !item.feed_uuid) showSnackbar("Could not load sub-categories", "error");
+      })
       .finally(() => setLoadingSubs(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.category_name, item.feed_type_name, user?.country_id, user?.id]);
