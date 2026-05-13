@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
+import { IcArrowRight } from "@/components/Icons";
 
 export default function WelcomePage() {
   const router = useRouter();
@@ -18,8 +19,11 @@ export default function WelcomePage() {
         <AppBranding />
       </div>
 
-      {/* Comfortable breathing room between logo and illustration */}
-      <div className="px-3 mt-10 flex justify-center">
+      {/* Top spacer — pushes the image down toward the vertical center */}
+      <div className="flex-1" />
+
+      {/* Illustration centered vertically between branding and button */}
+      <div className="px-3 flex justify-center">
         <Image
           src="/images/ic_welcome_image.png"
           alt="Welcome illustration"
@@ -40,9 +44,7 @@ export default function WelcomePage() {
         </p>
       </div>
 
-      {/* Flex spacer — any leftover vertical space falls here, between
-          tagline and the bottom button (Android btn_continue is bottom-
-          anchored to the powered_by include, so spare space pushes upward). */}
+      {/* Bottom spacer — keeps the image+tagline group vertically centered */}
       <div className="flex-1" />
 
       {/* Bottom: CTA button + powered by */}
@@ -57,9 +59,8 @@ export default function WelcomePage() {
           }}
         >
           <span>Continue</span>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M5 12h14M13 6l6 6-6 6" stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+          {/* Android ic_arrow_right drawable — chevron only, no stem */}
+          <IcArrowRight size={20} color="#FFFFFF" />
         </button>
 
         <div className="mt-5">
