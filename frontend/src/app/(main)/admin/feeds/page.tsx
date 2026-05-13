@@ -164,9 +164,6 @@ export default function AdminFeedsPage() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterType, setFilterType] = useState("");
-  const [filterCategory, setFilterCategory] = useState("");
-  const [filterCountry, setFilterCountry] = useState("");
 
   // Feed modal state
   const [showFeedModal, setShowFeedModal] = useState(false);
@@ -221,20 +218,10 @@ export default function AdminFeedsPage() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  // Match Android FragmentFeed search: filter by feed name only.
   const filteredFeeds = feeds.filter((f) => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      const textMatch =
-        f.fd_name?.toLowerCase().includes(q) ||
-        f.fd_type?.toLowerCase().includes(q) ||
-        f.fd_category?.toLowerCase().includes(q) ||
-        f.fd_country_name?.toLowerCase().includes(q);
-      if (!textMatch) return false;
-    }
-    if (filterType && f.fd_type !== filterType) return false;
-    if (filterCategory && f.fd_category !== filterCategory) return false;
-    if (filterCountry && f.fd_country_name !== filterCountry) return false;
-    return true;
+    if (!searchQuery) return true;
+    return f.fd_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
   });
 
   // ── Feed CRUD ──────────────────────────────────────────────────────────────
@@ -516,67 +503,36 @@ export default function AdminFeedsPage() {
         Management
       </p>
 
-      {/* ── FEEDS TAB ── */}
+      {/* ── FEEDS TAB ── (matches Android fragment_feed.xml: search-by-name only,
+          no filter dropdowns; FAB for add) */}
       {tab === "feeds" && (
         <>
-          {/* Search row (no Add button — matches Android list screens) */}
+          {/* Search by feed name — matches Android til_search_feed */}
           <div className="px-3 pt-3">
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search feeds..."
-              className="w-full rounded-2xl px-4 py-3 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-            />
-          </div>
-          {/* Filter row */}
-          <div className="flex gap-2 px-3 pt-2 pb-1 overflow-x-auto">
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="rounded-xl px-3 py-2 text-xs font-bold border-none focus:outline-none appearance-none flex-shrink-0"
-              style={{ backgroundColor: filterType ? "#064E3B" : "#F1F5F9", color: filterType ? "white" : "#6D6D6D", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+            <div
+              className="flex items-center"
+              style={{
+                backgroundColor: "#F1F5F9",
+                borderRadius: 16,
+                padding: "10px 14px",
+              }}
             >
-              <option value="">All Types</option>
-              {feedTypes.map((ft) => (
-                <option key={ft.id} value={getName(ft)}>{getName(ft)}</option>
-              ))}
-            </select>
-            <select
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
-              className="rounded-xl px-3 py-2 text-xs font-bold border-none focus:outline-none appearance-none flex-shrink-0"
-              style={{ backgroundColor: filterCategory ? "#064E3B" : "#F1F5F9", color: filterCategory ? "white" : "#6D6D6D", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-            >
-              <option value="">All Categories</option>
-              {feedCategories.map((fc) => (
-                <option key={fc.id} value={getCatName(fc)}>{getCatName(fc)}</option>
-              ))}
-            </select>
-            <select
-              value={filterCountry}
-              onChange={(e) => setFilterCountry(e.target.value)}
-              className="rounded-xl px-3 py-2 text-xs font-bold border-none focus:outline-none appearance-none flex-shrink-0"
-              style={{ backgroundColor: filterCountry ? "#064E3B" : "#F1F5F9", color: filterCountry ? "white" : "#6D6D6D", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-            >
-              <option value="">All Countries</option>
-              {Array.from(new Set(feeds.map((f) => f.fd_country_name).filter(Boolean))).map((c) => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
-            {(filterType || filterCategory || filterCountry) && (
-              <button
-                onClick={() => { setFilterType(""); setFilterCategory(""); setFilterCountry(""); }}
-                className="rounded-xl px-3 py-2 text-xs font-bold flex-shrink-0"
-                style={{ backgroundColor: "rgba(228,74,74,0.2)", color: "#E44A4A", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
-              >
-                Clear
-              </button>
-            )}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+                <circle cx="11" cy="11" r="7" stroke="#6D6D6D" strokeWidth="2" />
+                <path d="M21 21l-4.35-4.35" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search by feed name"
+                className="flex-1 bg-transparent border-none focus:outline-none ml-2"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+              />
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto pt-2 pb-6">
+          <div className="flex-1 overflow-y-auto pt-2" style={{ paddingBottom: 100 }}>
             {isLoading ? (
               [0,1,2,3].map((i) => <SkeletonCard key={i} />)
             ) : filteredFeeds.length === 0 ? (
@@ -595,31 +551,30 @@ export default function AdminFeedsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0" style={{ marginRight: 10 }}>
                       <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>
-                        {f.fd_name || "—"}
+                        {f.fd_name || "N/A"}
                       </p>
-                      {f.fd_category && (
-                        <p className="font-bold uppercase" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>
-                          {f.fd_category}
-                        </p>
-                      )}
-                      {f.fd_type && (
-                        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 10 }}>
-                          {f.fd_type}
-                        </p>
-                      )}
+                      <p className="uppercase" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 10 }}>
+                        {f.fd_category || "N/A"}
+                      </p>
+                      <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 10 }}>
+                        {f.fd_type || "N/A"}
+                      </p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
+                      {/* Edit: go_green_15 bg + dark_aquamarine_green tint,
+                          icon = ic_edit_nutrient_info */}
                       <button
                         onClick={() => openEditFeed(f)}
                         className="flex items-center justify-center"
                         style={{ borderRadius: 60, backgroundColor: "rgba(5,188,109,0.15)", padding: 10, border: "none", cursor: "pointer" }}
                         aria-label="Edit feed"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="20" height="20" viewBox="0 0 960 960" fill="#064E3B">
+                          <path d="M216,744h51l375,-375 -51,-51 -375,375v51ZM180.18,816q-15.18,0 -25.68,-10.3 -10.5,-10.29 -10.5,-25.52v-86.85q0,-14.33 5,-27.33 5,-13 16,-24l477,-477q11,-11 23.84,-16 12.83,-5 27,-5 14.16,0 27.16,5t24,16l51,51q11,11 16,24t5,26.54q0,14.45 -5.02,27.54T795,318L318,795q-11,11 -23.95,16t-27.24,5h-86.63ZM744,267l-51,-51 51,51ZM616.05,343.95L591,318l51,51 -25.95,-25.05Z" />
                         </svg>
                       </button>
+                      {/* Delete: carmine_pink_20 bg + red_ryb tint,
+                          icon = ic_delete */}
                       <button
                         onClick={() => setConfirmDeleteFeed(f)}
                         disabled={deletingFeedId === f.feed_id}
@@ -627,8 +582,8 @@ export default function AdminFeedsPage() {
                         style={{ borderRadius: 60, backgroundColor: "rgba(228,74,74,0.2)", padding: 10, border: "none", cursor: "pointer" }}
                         aria-label="Delete feed"
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#E44A4A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
+                          <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
                         </svg>
                       </button>
                     </div>
@@ -637,117 +592,175 @@ export default function AdminFeedsPage() {
               ))
             )}
           </div>
+
+          {/* Floating Action Button — Android btn_add_feed (dark_aquamarine_green
+              bg, white +, 56dp, bottom-right inside the centered column). */}
+          <button
+            onClick={openAddFeed}
+            aria-label="Add feed"
+            style={{
+              position: "fixed",
+              bottom: 20,
+              right: "max(12px, calc((100vw - 480px) / 2 + 12px))",
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: "#064E3B",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 20,
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 960 960" fill="#FFFFFF">
+              <path d="M440,520L240,520q-17,0 -28.5,-11.5T200,480q0,-17 11.5,-28.5T240,440h200v-200q0,-17 11.5,-28.5T480,200q17,0 28.5,11.5T520,240v200h200q17,0 28.5,11.5T760,480q0,17 -11.5,28.5T720,520L520,520v200q0,17 -11.5,28.5T480,760q-17,0 -28.5,-11.5T440,720v-200Z" />
+            </svg>
+          </button>
         </>
       )}
 
-      {/* ── TYPES TAB ── */}
+      {/* ── TYPES TAB ── (matches Android fragment_feed_type.xml +
+          layout_item_feed_type.xml: card with name + status badge, description,
+          delete (top-right). No search/filters; FAB for add.) */}
       {tab === "types" && (
         <>
-          <div className="flex-1 overflow-y-auto pt-2 pb-6">
+          <div className="flex-1 overflow-y-auto pt-2" style={{ paddingBottom: 100 }}>
             {isLoading ? [0,1,2].map((i) => <SkeletonCard key={i} />) : (
               feedTypes.length === 0 ? (
                 <div className="flex items-center justify-center py-16">
                   <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No feed types found</p>
                 </div>
               ) : feedTypes.map((ft) => {
-                // Android layout: name + ACTIVE/INACTIVE badge | description | delete (top-right)
-                const isActive = ft.is_active !== false; // default true
+                // Active by default — Android adapter shows ACTIVE badge unless
+                // is_active is explicitly false.
+                const isActive = ft.is_active !== false;
                 return (
                   <div key={ft.id} className="mx-3 my-2 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getName(ft)}</p>
+                        <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getName(ft) || "N/A"}</p>
                         <span
                           className="font-bold uppercase flex-shrink-0"
                           style={{
-                            backgroundColor: isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.15)",
+                            backgroundColor: isActive ? "#F0FDF4" : "#FEC5BB",
                             color: isActive ? "#064E3B" : "#E44A4A",
+                            border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
                             fontFamily: "Nunito, sans-serif",
                             fontSize: 10,
                             padding: "2px 10px",
-                            borderRadius: 60,
+                            borderRadius: 10,
                           }}
                         >
                           {isActive ? "ACTIVE" : "INACTIVE"}
                         </span>
                       </div>
+                      {/* Delete — Android ic_delete inside circular pill
+                          (carmine_pink_20 bg, red_ryb tint) */}
                       <button
                         onClick={() => setConfirmDeleteType(ft)}
                         disabled={deletingTypeId === ft.id}
                         className="flex items-center justify-center flex-shrink-0"
-                        style={{ width: 38, height: 38, backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, cursor: "pointer" }}
+                        style={{ backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, padding: 10, cursor: "pointer" }}
                         aria-label="Delete type"
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" stroke="#FC2E20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
+                          <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
                         </svg>
                       </button>
                     </div>
-                    {ft.description && (
-                      <p className="mt-2" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                        {ft.description}
-                      </p>
-                    )}
+                    <p className="mt-2" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                      {ft.description || "N/A"}
+                    </p>
                   </div>
                 );
               })
             )}
           </div>
+
+          {/* FAB — btn_add_feed_type */}
+          <button
+            onClick={() => setShowTypeModal(true)}
+            aria-label="Add feed type"
+            style={{
+              position: "fixed",
+              bottom: 20,
+              right: "max(12px, calc((100vw - 480px) / 2 + 12px))",
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: "#064E3B",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 20,
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 960 960" fill="#FFFFFF">
+              <path d="M440,520L240,520q-17,0 -28.5,-11.5T200,480q0,-17 11.5,-28.5T240,440h200v-200q0,-17 11.5,-28.5T480,200q17,0 28.5,11.5T520,240v200h200q17,0 28.5,11.5T760,480q0,17 -11.5,28.5T720,520L520,520v200q0,17 -11.5,28.5T480,760q-17,0 -28.5,-11.5T440,720v-200Z" />
+            </svg>
+          </button>
         </>
       )}
 
-      {/* ── CATEGORIES TAB ── */}
+      {/* ── CATEGORIES TAB ── (matches Android fragment_feed_category.xml +
+          layout_item_feed_category.xml: name + status badge | TYPE | description
+          + delete at bottom-right. No search/filters; FAB for add.) */}
       {tab === "categories" && (
         <>
-          <div className="flex-1 overflow-y-auto pt-2 pb-6">
+          <div className="flex-1 overflow-y-auto pt-2" style={{ paddingBottom: 100 }}>
             {isLoading ? [0,1,2].map((i) => <SkeletonCard key={i} />) : (
               feedCategories.length === 0 ? (
                 <div className="flex items-center justify-center py-16">
                   <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No categories found</p>
                 </div>
               ) : feedCategories.map((fc) => {
-                // Android layout_item_feed_category.xml: name + status | TYPE (uppercase green) | description | delete (bottom-right)
                 const isActive = fc.is_active !== false;
                 return (
                   <div key={fc.id} className="mx-3 my-2 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-bold flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getCatName(fc)}</p>
+                      <p className="font-bold flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getCatName(fc) || "N/A"}</p>
                       <span
                         className="font-bold uppercase flex-shrink-0"
                         style={{
-                          backgroundColor: isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.15)",
+                          backgroundColor: isActive ? "#F0FDF4" : "#FEC5BB",
                           color: isActive ? "#064E3B" : "#E44A4A",
+                          border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
                           fontFamily: "Nunito, sans-serif",
                           fontSize: 10,
                           padding: "2px 10px",
-                          borderRadius: 60,
+                          borderRadius: 10,
                           marginTop: 4,
                         }}
                       >
                         {isActive ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </div>
-                    {getFeedTypeName(fc) && (
-                      <p
-                        className="uppercase tracking-wide mt-2"
-                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
-                      >
-                        {getFeedTypeName(fc)}
-                      </p>
-                    )}
+                    <p
+                      className="uppercase mt-2"
+                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+                    >
+                      {getFeedTypeName(fc) || "N/A"}
+                    </p>
                     <div className="flex items-end justify-between gap-3 mt-2">
                       <p className="flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                        {fc.description ?? ""}
+                        {fc.description || "N/A"}
                       </p>
+                      {/* Delete — Android ic_delete inside circular pill */}
                       <button
                         onClick={() => setConfirmDeleteCat(fc)}
                         disabled={deletingCatId === fc.id}
                         className="flex items-center justify-center flex-shrink-0"
-                        style={{ width: 38, height: 38, backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, cursor: "pointer" }}
+                        style={{ backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, padding: 10, cursor: "pointer" }}
                         aria-label="Delete category"
                       >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                          <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" stroke="#FC2E20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
+                          <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
                         </svg>
                       </button>
                     </div>
@@ -756,6 +769,32 @@ export default function AdminFeedsPage() {
               })
             )}
           </div>
+
+          {/* FAB — btn_add_feed_category */}
+          <button
+            onClick={() => setShowCatModal(true)}
+            aria-label="Add feed category"
+            style={{
+              position: "fixed",
+              bottom: 20,
+              right: "max(12px, calc((100vw - 480px) / 2 + 12px))",
+              width: 56,
+              height: 56,
+              borderRadius: 28,
+              backgroundColor: "#064E3B",
+              border: "none",
+              cursor: "pointer",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 20,
+            }}
+          >
+            <svg width="24" height="24" viewBox="0 0 960 960" fill="#FFFFFF">
+              <path d="M440,520L240,520q-17,0 -28.5,-11.5T200,480q0,-17 11.5,-28.5T240,440h200v-200q0,-17 11.5,-28.5T480,200q17,0 28.5,11.5T520,240v200h200q17,0 28.5,11.5T760,480q0,17 -11.5,28.5T720,520L520,520v200q0,17 -11.5,28.5T480,760q-17,0 -28.5,-11.5T440,720v-200Z" />
+            </svg>
+          </button>
         </>
       )}
 
