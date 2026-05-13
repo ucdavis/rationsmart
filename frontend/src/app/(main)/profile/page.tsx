@@ -195,23 +195,35 @@ export default function ProfilePage() {
             style={inputStyle()}
           />
 
-          {/* Country (editable dropdown) */}
+          {/* Country (editable dropdown) — appearance-none strips the
+              native chevron, so we overlay an Android-style ic_text_drop_down
+              caret on the right. */}
           <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
-          <select
-            value={selectedCountryId}
-            onChange={(e) => setSelectedCountryId(e.target.value)}
-            className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
-            style={{ ...inputStyle(), cursor: "pointer" }}
-          >
-            {countries.length === 0 && (
-              <option value={user.country_id}>{user.country}</option>
-            )}
-            {countries.map((c) => (
-              <option key={c.id} value={String(c.id)}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={selectedCountryId}
+              onChange={(e) => setSelectedCountryId(e.target.value)}
+              className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
+              style={{ ...inputStyle(), cursor: "pointer" }}
+            >
+              {countries.length === 0 && (
+                <option value={user.country_id}>{user.country}</option>
+              )}
+              {countries.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <div
+              className="absolute pointer-events-none"
+              style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
 
           {/* Save Changes */}
           <button
