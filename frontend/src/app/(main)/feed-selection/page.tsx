@@ -448,14 +448,18 @@ export default function FeedSelectionPage() {
         </button>
       </div>
 
-      {/* Radio group: Diet Recommendation / Diet Evaluation */}
-      <div className="flex items-center gap-6 px-5 pt-4 pb-1">
+      {/* Radio group: Diet Recommendation | Diet Evaluation.
+          Matches Android rg_feed_selection_type which is a horizontal
+          RadioGroup with weightSum=2 + each RadioButton weight=1 — so
+          each radio lines up under the button above it (Recommendation
+          under Custom Diet Limits, Evaluation under Custom Feed). */}
+      <div className="grid grid-cols-2 gap-3 px-4 pt-3 pb-1">
         {(["recommendation", "evaluation"] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => setFeedSelectionType(mode)}
             className="flex items-center gap-2"
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, justifyContent: "flex-start" }}
           >
             {/* Radio button */}
             <div
