@@ -77,10 +77,11 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           boxShadow: open ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
         }}
       >
-        {/* Close button + Profile */}
-        <div className="flex items-start justify-between pt-12 pb-4 px-4">
+        {/* Close button + Profile — items-center so the X aligns with the
+            avatar row vertically (was items-start which left the X up top). */}
+        <div className="flex items-center justify-between pt-12 pb-4 px-4">
           {/* Profile section */}
-          <div className="flex items-center gap-3 flex-1 min-w-0 mt-1">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
             <div
               className="flex items-center justify-center flex-shrink-0"
               style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 20 }}
@@ -124,7 +125,13 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               <button
                 onClick={() => handleNavigate(item.href)}
                 className="w-full flex items-center justify-between px-4 py-4"
-                style={{ background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  background: "none",
+                  border: "none",
+                  outline: "none",
+                  cursor: "pointer",
+                  WebkitTapHighlightColor: "transparent",
+                }}
               >
                 <div className="flex items-center gap-3">
                   <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
