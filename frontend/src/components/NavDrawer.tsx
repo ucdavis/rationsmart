@@ -116,7 +116,9 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           </button>
         </div>
 
-        {/* Profile section — avatar + name + email on its own row */}
+        {/* Profile section — avatar + name + email on its own row.
+            No divider after — Android nav drawer has no separator between
+            the profile section and the menu items. */}
         <div className="flex items-center gap-3 px-4 pb-4">
           <div
             className="flex items-center justify-center flex-shrink-0"
@@ -139,9 +141,6 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             </p>
           </div>
         </div>
-
-        {/* Divider */}
-        <div style={{ height: 1, backgroundColor: "#E2E8F0", marginBottom: 4 }} />
 
         {/* Menu items — order matches Android NavigationDrawerItem exactly */}
         <div className="flex-1 overflow-y-auto">
