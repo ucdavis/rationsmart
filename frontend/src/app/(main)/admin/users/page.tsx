@@ -45,12 +45,15 @@ export default function AdminUsersPage() {
   const load = (q = search, s = statusFilter) => {
     if (!user?.id) return;
     setIsLoading(true);
-    getAdminUsers(user.id, 1, 50, "", s, q)
+    // Backend response shape: { users, total_count, page, page_size, total_pages }.
+    // Fetch a large single page so admin sees the full list without pagination
+    // UI (Android paginates 20/page, but uses total_count for the header count).
+    getAdminUsers(user.id, 1, 500, "", s, q)
       .then((res) => {
         const data = res.data;
         const list = Array.isArray(data) ? data : data?.users ?? data?.items ?? [];
         setUsers(list);
-        setTotal(data?.total ?? list.length);
+        setTotal(data?.total_count ?? data?.total ?? list.length);
       })
       .catch(() => showSnackbar("Could not load users", "error"))
       .finally(() => setIsLoading(false));
