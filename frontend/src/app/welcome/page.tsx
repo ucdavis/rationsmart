@@ -18,8 +18,11 @@ export default function WelcomePage() {
         <AppBranding />
       </div>
 
-      {/* Illustration */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
+      {/* Illustration + tagline — pinned to the bottom of the flex-1 area
+          so empty space falls between the app branding and the image, NOT
+          between image and tagline (matches Android constraint chain:
+          image bottom → tagline top, with a small 20dp gap). */}
+      <div className="flex-1 flex flex-col items-center justify-end px-6 pb-2">
         <div
           className="w-full rounded-2xl overflow-hidden flex items-center justify-center"
           style={{ maxWidth: 340, height: 240 }}
@@ -34,8 +37,8 @@ export default function WelcomePage() {
           />
         </div>
 
-        {/* Tagline */}
-        <div className="mt-6 px-4 text-center">
+        {/* Tagline — small gap below image, matches Android offset_20 */}
+        <div className="mt-3 px-4 text-center">
           <p
             className="text-xl font-bold leading-snug"
             style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
