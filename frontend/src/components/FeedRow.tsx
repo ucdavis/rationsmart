@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFeedTypes, getFeedCategories, getFeedSubCategories } from "@/lib/api";
+import { getFeedTypes, getFeedCategories, getFeedSubCategories, updateCustomFeed } from "@/lib/api";
 import type { FeedItem } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
@@ -141,6 +141,51 @@ export default function FeedRow({
   const [loadingCats, setLoadingCats] = useState(false);
   const [loadingSubs, setLoadingSubs] = useState(false);
 
+  // Edit feed modal — only nutritional values are editable; type/category/feed name
+  // remain read-only per Android dialog_edit_feed.xml (all four fields enabled="false").
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [editForm, setEditForm] = useState({
+    fd_dm: "", fd_cp: "", fd_ee: "", fd_cf: "", fd_ash: "",
+    fd_ndf: "", fd_adf: "", fd_ca: "", fd_p: "", fd_st: "",
+  });
+
+  const canEdit = !!item.feed_uuid;
+
+  const openEditModal = () => {
+    if (!canEdit) return;
+    // Pre-populate with empty values; user fills in updated values
+    setShowEditModal(true);
+  };
+
+  const handleEditSubmit = async () => {
+    if (!user?.id || !user?.country_id || !item.feed_uuid) return;
+    setIsSavingEdit(true);
+    try {
+      const feed_details: Record<string, unknown> = {};
+      Object.entries(editForm).forEach(([k, v]) => {
+        if (v !== "") feed_details[k] = Number(v);
+      });
+      feed_details.fd_name = item.sub_category_name ?? "";
+      feed_details.fd_type = item.feed_type_name ?? "";
+      feed_details.fd_category = item.category_name ?? "";
+      await updateCustomFeed({
+        country_id: user.country_id,
+        user_id: user.id,
+        feed_id: item.feed_uuid,
+        feed_insert: false,
+        feed_details,
+      });
+      showSnackbar("Nutritional values updated", "success");
+      setShowEditModal(false);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Update failed";
+      showSnackbar(msg, "error");
+    } finally {
+      setIsSavingEdit(false);
+    }
+  };
+
   useEffect(() => {
     if (!user?.country_id || !user?.id) return;
     getFeedTypes(user.country_id, user.id)
@@ -211,23 +256,26 @@ export default function FeedRow({
           FEED {index + 1}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {/* Edit button — present on all cards, matching Android */}
+          {/* Edit button — green/active once feed is selected (matches Android
+              where cv_edit uses go_green_15 bg + dark_aquamarine_green icon). */}
           <button
+            onClick={openEditModal}
+            disabled={!canEdit}
             style={{
-              backgroundColor: "#D3D3D3",
+              backgroundColor: canEdit ? "rgba(5,188,109,0.15)" : "#D3D3D3",
               borderRadius: 10,
               padding: 8,
               border: "none",
-              cursor: "default",
+              cursor: canEdit ? "pointer" : "default",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               flexShrink: 0,
             }}
-            aria-label="Edit feed"
+            aria-label="Edit feed nutritional values"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke={canEdit ? "#064E3B" : "#6D6D6D"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
           {index > 0 && (
@@ -365,6 +413,98 @@ export default function FeedRow({
               }}
             />
           </FieldBox>
+        </div>
+      )}
+
+      {/* Edit Feed modal — matches Android dialog_edit_feed.xml:
+          all four base fields are read-only (Country, Feed Type, Feed Category,
+          Feed Name), only nutritional values are editable. */}
+      {showEditModal && (
+        <div
+          className="fixed inset-0 z-50 flex flex-col justify-end"
+          style={{ backgroundColor: "rgba(0,0,0,0.45)" }}
+          onClick={(e) => { if (e.target === e.currentTarget && !isSavingEdit) setShowEditModal(false); }}
+        >
+          <div
+            className="bg-white rounded-t-2xl px-4 pt-5 pb-6 overflow-y-auto"
+            style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-base font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Edit Feed</p>
+              <button
+                onClick={() => !isSavingEdit && setShowEditModal(false)}
+                style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                aria-label="Close"
+              >
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Read-only fields (gray filled, no border) */}
+            {[
+              { label: "Country", value: user?.country ?? "" },
+              { label: "Feed Type", value: item.feed_type_name ?? "" },
+              { label: "Feed Category", value: item.category_name ?? "" },
+              { label: "Feed Name", value: item.sub_category_name ?? "" },
+            ].map((f) => (
+              <div key={f.label} className="mb-3">
+                <p className="text-xs mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{f.label}</p>
+                <div
+                  className="rounded-xl px-3 py-3 text-sm"
+                  style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {f.value || "—"}
+                </div>
+              </div>
+            ))}
+
+            {/* Nutritional inputs (editable) */}
+            <p className="text-xs font-bold uppercase mt-2 mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+              Nutrient Composition (%) — optional
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-5">
+              {[
+                ["fd_dm", "Dry Matter (DM)"],
+                ["fd_cp", "Crude Protein (CP)"],
+                ["fd_ee", "Ether Extract (EE)"],
+                ["fd_cf", "Crude Fiber (CF)"],
+                ["fd_ash", "Ash"],
+                ["fd_ndf", "NDF"],
+                ["fd_adf", "ADF"],
+                ["fd_ca", "Calcium (Ca)"],
+                ["fd_p", "Phosphorus (P)"],
+                ["fd_st", "Starch"],
+              ].map(([k, label]) => (
+                <div key={k}>
+                  <p className="text-xs mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{label}</p>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    value={editForm[k as keyof typeof editForm]}
+                    onChange={(e) => setEditForm((p) => ({ ...p, [k]: e.target.value }))}
+                    placeholder="0.00"
+                    className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                    style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <button
+              onClick={handleEditSubmit}
+              disabled={isSavingEdit}
+              className="w-full py-3.5 rounded-xl font-bold text-base text-white flex items-center justify-center"
+              style={{ backgroundColor: "#064E3B", border: "none", fontFamily: "Nunito, sans-serif", cursor: isSavingEdit ? "not-allowed" : "pointer" }}
+            >
+              {isSavingEdit ? (
+                <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                </svg>
+              ) : "Submit"}
+            </button>
+          </div>
         </div>
       )}
     </div>
