@@ -105,82 +105,78 @@ export default function ReportsPage() {
                   className="mx-3 bg-white overflow-hidden"
                   style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16 }}
                 >
-                  {/* Top row: report icon pill (left) + View Report pill (right) */}
+                  {/* Top row: ic_report_nav doc icon (top-left) + View Report
+                      pill (top-right). Matches layout_item_report.xml:19-67. */}
                   <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
                     <div
                       className="flex items-center justify-center"
                       style={{ borderRadius: 60, backgroundColor: "rgba(5,188,109,0.15)", padding: 6 }}
                     >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                        <rect x="4" y="3" width="16" height="18" rx="2" stroke="#064E3B" strokeWidth="1.8" />
-                        <path d="M8 8h8M8 12h8M8 16h5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                      {/* ic_report_nav — Material Symbols "description" (filled
+                          document with corner notch and inset lines) */}
+                      <svg width="24" height="24" viewBox="0 0 960 960" fill="#064E3B">
+                        <path d="M360,720h240q17,0 28.5,-11.5T640,680q0,-17 -11.5,-28.5T600,640L360,640q-17,0 -28.5,11.5T320,680q0,17 11.5,28.5T360,720ZM360,560h240q17,0 28.5,-11.5T640,520q0,-17 -11.5,-28.5T600,480L360,480q-17,0 -28.5,11.5T320,520q0,17 11.5,28.5T360,560ZM240,880q-33,0 -56.5,-23.5T160,800v-640q0,-33 23.5,-56.5T240,80h287q16,0 30.5,6t25.5,17l194,194q11,11 17,25.5t6,30.5v447q0,33 -23.5,56.5T720,880L240,880ZM520,320v-160L240,160v640h480v-440L560,360q-17,0 -28.5,-11.5T520,320Z" />
                       </svg>
                     </div>
                     {report.bucket_url && (
                       <button
                         onClick={() => openPdf(report.bucket_url!)}
-                        className="flex items-center gap-2 font-bold"
+                        className="flex items-center font-bold"
                         style={{
                           borderRadius: 60,
-                          backgroundColor: "#E4F7EF",
-                          padding: "6px 6px 6px 14px",
+                          backgroundColor: "#E4F7EF",   // bright_gray_new
+                          padding: "8px 14px",
+                          gap: 8,
                           border: "none",
                           cursor: "pointer",
-                          color: "#064E3B",
+                          color: "#064E3B",              // dark_aquamarine_green
                           fontFamily: "Nunito, sans-serif",
-                          fontSize: 13,
+                          fontSize: 12,                  // font_12 (matches Android)
                         }}
                       >
                         View Report
-                        {/* Filled green circle with white arrow (matches Android) */}
-                        <span
-                          className="flex items-center justify-center"
-                          style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: "#064E3B" }}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                            <path d="M2.5 7h9M8 3.5l3.5 3.5L8 10.5" stroke="#FFFFFF" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </span>
+                        {/* ic_view_report — single filled path (circle with
+                            inset right-arrow tail), tinted dark_aquamarine_green */}
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#064E3B">
+                          <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
+                        </svg>
                       </button>
                     )}
                   </div>
 
-                  {/* Simulation ID label + value */}
-                  <p
-                    className="uppercase tracking-wide"
-                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 20, marginLeft: 10 }}
-                  >
+                  {/* SIMULATION ID — always visible (Android keeps tv_title_simulation_id
+                      and tv_simulation_id visible at all times). */}
+                  <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 20, marginLeft: 10 }}>
                     Simulation ID
                   </p>
                   <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "4px 10px 0 10px" }}>
-                    {report.simulation_id ?? "—"}
+                    {report.simulation_id || "N/A"}
                   </p>
 
-                  {/* Expandable: Report ID, Report Type, Date */}
+                  {/* Expanded: Report ID + Report Type side by side, then DATE */}
                   {isExpanded && (
                     <div style={{ padding: "0 10px" }}>
-                      {report.report_id && (
-                        <>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>Report ID</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_id}</p>
-                        </>
-                      )}
-                      {report.report_type && (
-                        <>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>Report Type</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_type}</p>
-                        </>
-                      )}
-                      {report.report_created_date && (
-                        <>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>Date</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{formatDate(report.report_created_date)}</p>
-                        </>
-                      )}
+                      <div className="grid grid-cols-2 gap-x-3" style={{ marginTop: 10 }}>
+                        <div>
+                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Report ID</p>
+                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_id || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Report Type</p>
+                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_type || "N/A"}</p>
+                        </div>
+                      </div>
+                      <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>Date</p>
+                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>
+                        {report.report_created_date ? formatDate(report.report_created_date) : "N/A"}
+                      </p>
                     </div>
                   )}
 
-                  {/* Expand/collapse bottom card */}
+                  {/* Expand/collapse strip — full-width go_green_15 bar at the
+                      bottom of the card containing ic_expand_report_card (a
+                      Material "arrow_drop_down" filled triangle). Rotates
+                      180° when expanded (matches ReportListAdapter.animateIcon). */}
                   <button
                     onClick={() => setExpandedId(isExpanded ? null : cardId)}
                     className="w-full flex items-center justify-center"
@@ -189,17 +185,18 @@ export default function ReportsPage() {
                       backgroundColor: "rgba(5,188,109,0.15)",
                       border: "none",
                       cursor: "pointer",
-                      padding: "8px 0",
+                      padding: "6px 0",
                     }}
+                    aria-label={isExpanded ? "Collapse" : "Expand"}
                   >
                     <svg
                       width="24"
                       height="24"
-                      viewBox="0 0 24 24"
+                      viewBox="0 0 960 960"
                       fill="#064E3B"
-                      style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}
+                      style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.3s linear" }}
                     >
-                      <path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" />
+                      <path d="M459,579 L314,434q-3,-3 -4.5,-6.5T308,420q0,-8 5.5,-14t14.5,-6h304q9,0 14.5,6t5.5,14q0,2 -6,14L501,579q-5,5 -10,7t-11,2q-6,0 -11,-2t-10,-7Z" />
                     </svg>
                   </button>
                 </div>
