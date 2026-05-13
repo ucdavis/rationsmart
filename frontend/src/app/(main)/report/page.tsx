@@ -710,7 +710,7 @@ export default function ReportPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "100vw",
+          maxWidth: "min(100vw, 480px)",
           backgroundColor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
