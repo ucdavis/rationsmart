@@ -25,8 +25,9 @@ export default function Toolbar({
     <div
       className="flex items-center px-3 py-3 gap-3"
       style={{
-        backgroundColor: "#F8FAF9",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+        // Transparent so the page's bg / gradient extends through the toolbar
+        // (matches Android — no visible band between toolbar and content).
+        backgroundColor: "transparent",
         position: "sticky",
         top: 0,
         zIndex: 40,

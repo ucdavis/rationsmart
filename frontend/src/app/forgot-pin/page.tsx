@@ -45,12 +45,11 @@ export default function ForgotPinPage() {
       className="flex flex-col min-h-screen"
       style={{ backgroundColor: "#F8FAF9" }}
     >
-      {/* Toolbar */}
+      {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
         style={{
-          backgroundColor: "#F8FAF9",
-          boxShadow: "0 1px 4px rgba(0,0,0,0.07)",
+          backgroundColor: "transparent",
           position: "sticky",
           top: 0,
           zIndex: 40,

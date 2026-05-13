@@ -139,6 +139,8 @@ export default function RootLayout({
         <div
           style={{
             width: "100%",
+            maxWidth: "min(100vw, 480px)",
+            margin: "0 auto",
             minHeight: "100vh",
             position: "relative",
             backgroundColor: "#FFFFFF",

@@ -772,7 +772,7 @@ export default function CattleInfoPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "100%",
+          maxWidth: "min(100vw, 480px)",
           backgroundColor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
@@ -823,7 +823,7 @@ export default function CattleInfoPage() {
           {/* Sheet */}
           <div
             className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full rounded-t-3xl bg-white pb-8 overflow-y-auto"
-            style={{ maxWidth: "100%", maxHeight: "80vh", zIndex: 51 }}
+            style={{ maxWidth: "min(100vw, 480px)", maxHeight: "80vh", zIndex: 51 }}
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-4 mb-5">
