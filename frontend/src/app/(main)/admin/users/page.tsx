@@ -158,21 +158,22 @@ export default function AdminUsersPage() {
               {/* Top row: rounded-square avatar + ROLE label | status badge top-right */}
               <div className="flex items-start justify-between gap-3" style={{ padding: "12px 12px 0" }}>
                 <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                  {/* Rounded-square avatar pill — matches Android cv_role */}
+                  {/* Rounded-square avatar pill — matches Android cv_role
+                      (mint_whisper bg, 16dp corner, 10dp content padding). */}
                   <div
                     className="flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: "#E8F5E9", borderRadius: 16, padding: 10 }}
                   >
                     {u.is_admin ? (
+                      /* ic_admin — shield with face inside */
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
-                        <path d="M12 2L3 7l9 5 9-5-9-5z" />
-                        <path d="M3 17l9 5 9-5-1.5-0.83L12 20.17 4.5 16.17 3 17z" />
-                        <path d="M3 12l9 5 9-5-1.5-0.83L12 15.17 4.5 11.17 3 12z" />
+                        <path d="M17,11c0.34,0 0.67,0.04 1,0.09V7.58c0,-0.8 -0.47,-1.52 -1.2,-1.83l-5.5,-2.4c-0.51,-0.22 -1.09,-0.22 -1.6,0l-5.5,2.4C3.47,6.07 3,6.79 3,7.58v3.6c0,4.54 3.2,8.79 7.5,9.82c0.55,-0.13 1.08,-0.32 1.6,-0.55C11.41,19.47 11,18.28 11,17C11,13.69 13.69,11 17,11z" />
+                        <path d="M17,13c-2.21,0 -4,1.79 -4,4c0,2.21 1.79,4 4,4s4,-1.79 4,-4C21,14.79 19.21,13 17,13zM17,14.38c0.62,0 1.12,0.51 1.12,1.12s-0.51,1.12 -1.12,1.12s-1.12,-0.51 -1.12,-1.12S16.38,14.38 17,14.38zM17,19.75c-0.93,0 -1.74,-0.46 -2.24,-1.17c0.05,-0.72 1.51,-1.08 2.24,-1.08s2.19,0.36 2.24,1.08C18.74,19.29 17.93,19.75 17,19.75z" />
                       </svg>
                     ) : (
+                      /* ic_user — solid filled person silhouette */
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
-                        <circle cx="12" cy="8" r="4" />
-                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M12,12c2.21,0 4,-1.79 4,-4s-1.79,-4 -4,-4 -4,1.79 -4,4 1.79,4 4,4zM12,14c-2.67,0 -8,1.34 -8,4v1c0,0.55 0.45,1 1,1h14c0.55,0 1,-0.45 1,-1v-1c0,-2.66 -5.33,-4 -8,-4z" />
                       </svg>
                     )}
                   </div>
@@ -180,16 +181,18 @@ export default function AdminUsersPage() {
                     {u.is_admin ? "ADMIN" : "USER"}
                   </span>
                 </div>
-                {/* Status toggle */}
+                {/* Status badge — Android bg_active_gradient / bg_inactive_gradient:
+                    rounded rect (10dp), solid honeydew/peachy_pink bg, 1dp colored
+                    stroke. Text colors: dark_aquamarine_green / carmine_pink. */}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleToggle(u); }}
                   disabled={togglingId === u.id}
                   className="font-bold"
                   style={{
-                    backgroundColor: u.is_active ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.15)",
-                    color: u.is_active ? "#05BC6D" : "#E44A4A",
-                    border: "none",
-                    borderRadius: 60,
+                    backgroundColor: u.is_active ? "#F0FDF4" : "#FEC5BB",
+                    color: u.is_active ? "#064E3B" : "#E44A4A",
+                    border: `1px solid ${u.is_active ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
+                    borderRadius: 10,
                     padding: "2px 10px",
                     fontSize: 10,
                     cursor: togglingId === u.id ? "not-allowed" : "pointer",
