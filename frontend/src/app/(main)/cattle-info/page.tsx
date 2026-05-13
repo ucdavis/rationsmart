@@ -656,9 +656,9 @@ export default function CattleInfoPage() {
               style={inputStyle}
             />
 
-            {/* Active Grazing toggle */}
+            {/* Active Grazing toggle — Android cv_active_grazing marginTop offset_10 (10dp) */}
             <div
-              className="flex items-center justify-between px-4 py-3 mt-4"
+              className="flex items-center justify-between px-4 py-3 mt-2.5"
               style={{
                 backgroundColor: "#F0FDF4",
                 border: "1px solid rgba(5,188,109,0.15)",
@@ -695,8 +695,10 @@ export default function CattleInfoPage() {
             {/* Distance Walked + Topography — shown only when grazing is ON */}
             {form.grazing && (
               <>
-                {/* Topography: label + radios all on one row (matches Android start_toEndOf layout) */}
-                <div className="flex items-center gap-5 mt-3 ml-1 mb-1">
+                {/* Topography: label + radios all on one row (matches Android start_toEndOf layout)
+                    Android rg_topography marginTop offset_12 (12dp) and no bottom margin
+                    — the next field's own mt-3 (offset_12 12dp) handles the spacing. */}
+                <div className="flex items-center gap-5 mt-3 ml-1">
                   <span
                     className="text-xs font-bold uppercase tracking-wide"
                     style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
