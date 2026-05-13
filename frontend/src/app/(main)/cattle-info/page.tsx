@@ -37,6 +37,7 @@ interface Country {
   name: string;
   code?: string;
   country_code?: string;
+  currency?: string;
 }
 
 interface FormState {
@@ -169,12 +170,13 @@ function SelectInput({
 export default function CattleInfoPage() {
   const router = useRouter();
   const { openDrawer } = useDrawer();
-  const { cattleInfo, setCattleInfo, user, showSnackbar, reportData, setFeedSelections, setFeedSelectionType } = useStore((s) => ({
+  const { cattleInfo, setCattleInfo, user, setUser, showSnackbar, reportData, setFeedSelections, setFeedSelectionType } = useStore((s) => ({
     setFeedSelections: s.setFeedSelections,
     setFeedSelectionType: s.setFeedSelectionType,
     cattleInfo: s.cattleInfo,
     setCattleInfo: s.setCattleInfo,
     user: s.user,
+    setUser: s.setUser,
     showSnackbar: s.showSnackbar,
     reportData: s.reportData,
   }));
@@ -472,6 +474,20 @@ export default function CattleInfoPage() {
   const handleContinue = () => {
     if (!requiredFilled) return;
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
+    // Sync the user's active currency / country code with the country
+    // they just picked. Without this, feed-selection / report would
+    // keep showing the currency that was set at login (e.g. user logs
+    // in as Vietnam → switches to India here → feed-selection still
+    // reads user.currency = "VND" → labels stay "Price VND/KG").
+    if (user && selectedCountry && (selectedCountry.currency !== user.currency || String(selectedCountry.id) !== String(user.country_id))) {
+      setUser({
+        ...user,
+        country_id: String(selectedCountry.id),
+        country: selectedCountry.name,
+        country_code: selectedCountry.country_code ?? selectedCountry.code ?? user.country_code,
+        currency: selectedCountry.currency ?? user.currency,
+      });
+    }
     setCattleInfo({
       simulation_name: form.simulation_name.trim(),
       country: selectedCountry?.name ?? form.country_name,
