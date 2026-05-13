@@ -437,12 +437,22 @@ export const exportAdminFeeds = (admin_user_id: string) =>
   api.get("/admin/export-feeds", { params: { admin_user_id } });
 
 // POST /admin/bulk-upload-feeds?admin_user_id= (multipart form data)
-export const bulkUploadFeeds = (admin_user_id: string, file: File) => {
+// onProgress receives 0..100 percentage during upload.
+export const bulkUploadFeeds = (
+  admin_user_id: string,
+  file: File,
+  onProgress?: (pct: number) => void,
+) => {
   const form = new FormData();
   form.append("file", file);
   return api.post("/admin/bulk-upload-feeds", form, {
     params: { admin_user_id },
     headers: { "Content-Type": "multipart/form-data" },
+    onUploadProgress: (evt) => {
+      if (onProgress && evt.total) {
+        onProgress(Math.round((evt.loaded * 100) / evt.total));
+      }
+    },
   });
 };
 
