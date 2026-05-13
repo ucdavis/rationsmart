@@ -604,11 +604,14 @@ export default function FeedRow({
               style={{ ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
             />
           </FieldBox>
+          {/* Cost cell — Android shows the number plus the currency code
+              (e.g. "2,800 INR"); the prior glyph-prefix variant rendered as
+              "₹2800" / "PHP2800" which looked off. */}
           <FieldBox label="Cost" hasValue={!!cost} disabled={!cost}>
             <input
               type="text"
               readOnly
-              value={cost ? `${currencySymbol}${cost}` : ""}
+              value={cost ? `${cost}${currencySymbol ? ` ${currencySymbol}` : ""}` : ""}
               style={{
                 ...innerInputStyle,
                 color: cost ? "#064E3B" : "#9CA3AF",

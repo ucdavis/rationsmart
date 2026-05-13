@@ -226,18 +226,17 @@ export default function ReportPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
 
+  // Use the user's / report's currency CODE (PHP / INR / VND / …)
+  // directly. Android renders totals as e.g. "108,199.8 VND" — value
+  // with the code as a suffix — rather than swapping in a glyph.
   const currencySymbol = (() => {
     const reportCurrency =
       (reportData as EvaluationResponse)?.cost_analysis?.currency ??
       (reportData as EvaluationResponse)?.currency ??
       null;
-    const code = user?.currency || reportCurrency || "";
-    if (!code) return "";
-    try {
-      const sym = (0).toLocaleString("en", { style: "currency", currency: code, minimumFractionDigits: 0 }).replace(/[0-9,.\s]/g, "").trim();
-      return sym || code;
-    } catch { return code; }
+    return user?.currency || reportCurrency || "";
   })();
+  const currencySuffix = currencySymbol ? ` ${currencySymbol}` : "";
 
   const fmt = (n: number | string | null | undefined, d = 2) => {
     if (n === null || n === undefined || n === "") return "—";
@@ -513,12 +512,12 @@ export default function ReportPage() {
               <div className="flex gap-3 mb-3">
                 <MetricTile
                   label="Total Diet Cost"
-                  value={`${currencySymbol}${fmt(evalReport.cost_analysis?.total_diet_cost_as_fed)}`}
+                  value={`${fmt(evalReport.cost_analysis?.total_diet_cost_as_fed)}${currencySuffix}`}
                   unit=""
                 />
                 <MetricTile
                   label="Cost/Litre Milk"
-                  value={`${currencySymbol}${fmt(evalReport.cost_analysis?.feed_cost_per_kg_milk)}`}
+                  value={`${fmt(evalReport.cost_analysis?.feed_cost_per_kg_milk)}${currencySuffix}`}
                   unit="per litre"
                 />
               </div>
@@ -545,7 +544,7 @@ export default function ReportPage() {
                 footer={
                   <TotalCostFooter
                     label="Total Diet Cost"
-                    value={`${currencySymbol}${fmt(evalTotalCost)}`}
+                    value={`${fmt(evalTotalCost)}${currencySuffix}`}
                   />
                 }
               >
@@ -554,7 +553,7 @@ export default function ReportPage() {
                   style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
                 >
                   <span className="flex-1">Feed</span>
-                  <span className="w-16 text-right">Price/kg</span>
+                  <span className="w-20 text-right">{currencySymbol ? `Price/kg (${currencySymbol})` : "Price/kg"}</span>
                   <span className="w-16 text-right">As Fed</span>
                   <span className="w-16 text-right">Cost/day</span>
                 </div>
@@ -565,9 +564,9 @@ export default function ReportPage() {
                     style={{ borderColor: "#F1F5F9" }}
                   >
                     <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.feed_name}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.price_per_kg)}</span>
+                    <span className="w-20 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.price_per_kg)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_as_fed_kg_per_day, 1)}</span>
-                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{currencySymbol}{fmt(row.total_cost)}</span>
+                    <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.total_cost)}</span>
                   </div>
                 ))}
               </SCard>
@@ -697,12 +696,14 @@ export default function ReportPage() {
                       </svg>
                       <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Daily Cost</p>
                     </div>
+                    {/* Value first, currency code as suffix —
+                        matches Android "108,199.8 VND" formatting. */}
                     <div className="flex items-baseline gap-1.5">
                       <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>
-                        {currencySymbol}{Number(recReport.solution_summary.daily_cost).toFixed(2)}
+                        {Number(recReport.solution_summary.daily_cost).toFixed(2)}
                       </p>
                       <p style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
-                        {user?.currency || ""}
+                        {currencySymbol}
                       </p>
                     </div>
                   </div>

@@ -144,11 +144,9 @@ export default function FeedSelectionPage() {
     showSnackbar: s.showSnackbar,
   }));
 
-  const currencySymbol = (() => {
-    const code = user?.currency ?? "";
-    try { return (0).toLocaleString("en", { style: "currency", currency: code, minimumFractionDigits: 0 }).replace(/[0-9,.\s]/g, "").trim() || code || "$"; }
-    catch { return code || "$"; }
-  })();
+  // Use the user's currency CODE directly (PHP / INR / VND / …) so the
+  // Price field label reads e.g. "Price PHP/KG", matching Android.
+  const currencySymbol = user?.currency ?? "";
 
   const [items, setItems] = useState<FeedItem[]>(() => {
     const stored = feedSelections.length > 0 ? [...feedSelections] : [];
