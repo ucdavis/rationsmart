@@ -623,7 +623,8 @@ export default function FeedSelectionPage() {
             {/* Separator line below title (matches Android view_separator_feed_details) */}
             <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
 
-            {/* "Feed Details" expand/collapse header (matches Android cvExpandFeedDetails) */}
+            {/* "Feed Details" expand/collapse header (matches Android cvExpandFeedDetails).
+                Icon mirrors Android drawables: minus when expanded, plus when collapsed. */}
             <button
               onClick={() => setFeedDetailsExpanded((p) => !p)}
               className="w-full flex items-center justify-between mb-3"
@@ -632,8 +633,11 @@ export default function FeedSelectionPage() {
               <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
                 Feed Details
               </span>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: feedDetailsExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                <path d="M3 5l5 5 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                {!feedDetailsExpanded && (
+                  <path d="M9 3v12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                )}
               </svg>
             </button>
 
@@ -733,7 +737,8 @@ export default function FeedSelectionPage() {
             )}
 
             {/* "Nutritional Information" expand/collapse header
-                (matches Android cvExpandNutritionalInformation) */}
+                (matches Android cvExpandNutritionalInformation).
+                Icon mirrors Android drawables: minus when expanded, plus when collapsed. */}
             <button
               onClick={() => setNutritionalInfoExpanded((p) => !p)}
               className="w-full flex items-center justify-between mb-3"
@@ -742,8 +747,11 @@ export default function FeedSelectionPage() {
               <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
                 Nutritional Information
               </span>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ transform: nutritionalInfoExpanded ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>
-                <path d="M3 5l5 5 5-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                {!nutritionalInfoExpanded && (
+                  <path d="M9 3v12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                )}
               </svg>
             </button>
 
