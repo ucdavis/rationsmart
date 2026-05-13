@@ -22,17 +22,26 @@ interface NavDrawerProps {
   onClose: () => void;
 }
 
-// User options order matches Android NavigationDrawerItem.userOptions exactly
-const userMenuItems = [
+// User options order matches Android NavigationDrawerItem.userOptions exactly.
+// `badge: "Ongoing"` shows a light-green pill next to the label (matches Android
+// where Help & Support and Terms & Conditions display an "Ongoing" status chip).
+type MenuItem = {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  badge?: string;
+};
+
+const userMenuItems: MenuItem[] = [
   { label: "Profile", href: "/profile", icon: <IcProfileNav size={20} color="#064E3B" /> },
   { label: "Feed Reports", href: "/reports", icon: <IcReportNav size={20} color="#064E3B" /> },
-  { label: "Help & Support", href: "/help", icon: <IcHelpSupport size={20} color="#064E3B" /> },
+  { label: "Help & Support", href: "/help", icon: <IcHelpSupport size={20} color="#064E3B" />, badge: "Ongoing" },
   { label: "Feedback", href: "/feedback", icon: <IcFeedbackNav size={20} color="#064E3B" /> },
-  { label: "Terms & Conditions", href: "/terms", icon: <IcTerms size={20} color="#064E3B" /> },
+  { label: "Terms & Conditions", href: "/terms", icon: <IcTerms size={20} color="#064E3B" />, badge: "Ongoing" },
 ];
 
 // Admin options: Admin first, then same as userOptions
-const adminMenuItems = [
+const adminMenuItems: MenuItem[] = [
   { label: "Admin", href: "/admin", icon: <IcAdminNav size={20} color="#064E3B" /> },
   ...userMenuItems,
 ];
@@ -77,42 +86,42 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           boxShadow: open ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
         }}
       >
-        {/* Close button + Profile — items-center so the X aligns with the
-            avatar row vertically (was items-start which left the X up top). */}
-        <div className="flex items-center justify-between pt-12 pb-4 px-4">
-          {/* Profile section */}
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div
-              className="flex items-center justify-center flex-shrink-0"
-              style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 20 }}
-            >
-              <IcUser size={30} color="#064E3B" />
-            </div>
-            <div className="min-w-0">
-              <p
-                className="font-bold truncate"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-              >
-                {user?.name || "User"}
-              </p>
-              <p
-                className="text-sm truncate"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
-                {user?.email || ""}
-              </p>
-            </div>
-          </div>
-
-          {/* Close button */}
+        {/* Close button — top-right corner of the drawer (matches Android
+            cv_close which is layout_gravity="end" at the top of the
+            NavigationView, NOT inline with the profile row). */}
+        <div className="flex justify-end pt-8 pb-2 px-4">
           <button
             onClick={onClose}
             className="flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 36, height: 36, backgroundColor: "#F0FDF4", marginLeft: 8 }}
+            style={{ width: 36, height: 36, backgroundColor: "#F0FDF4" }}
             aria-label="Close drawer"
           >
             <IcClose size={18} color="#064E3B" />
           </button>
+        </div>
+
+        {/* Profile section — avatar + name + email on its own row */}
+        <div className="flex items-center gap-3 px-4 pb-4">
+          <div
+            className="flex items-center justify-center flex-shrink-0"
+            style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 20 }}
+          >
+            <IcUser size={30} color="#064E3B" />
+          </div>
+          <div className="min-w-0">
+            <p
+              className="font-bold truncate"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
+              {user?.name || "User"}
+            </p>
+            <p
+              className="text-sm truncate"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+            >
+              {user?.email || ""}
+            </p>
+          </div>
         </div>
 
         {/* Divider */}
@@ -133,14 +142,30 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   WebkitTapHighlightColor: "transparent",
                 }}
               >
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 min-w-0">
                   <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
                   <span
-                    className="text-base"
+                    className="text-base truncate"
                     style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
                   >
                     {item.label}
                   </span>
+                  {item.badge && (
+                    <span
+                      className="font-bold"
+                      style={{
+                        backgroundColor: "#E4F7EF",
+                        color: "#064E3B",
+                        fontFamily: "Nunito, sans-serif",
+                        fontSize: 12,
+                        padding: "2px 10px",
+                        borderRadius: 60,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.badge}
+                    </span>
+                  )}
                 </div>
                 <IcArrowRight size={16} color="#064E3B" />
               </button>
