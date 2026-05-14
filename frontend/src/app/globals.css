@@ -48,6 +48,16 @@ body {
   overscroll-behavior: none;
 }
 
+/* Tailwind's min-h-screen defaults to min-height: 100vh, which on Android
+   PWAs in standalone mode excludes the gesture / nav area at the bottom.
+   Override to 100dvh (dynamic viewport height) so page backgrounds —
+   including the admin sage→mint gradient — extend all the way to the
+   bottom edge without exposing a white strip below the home indicator.
+   The @supports fallback keeps older browsers on 100vh. */
+@supports (height: 100dvh) {
+  .min-h-screen { min-height: 100dvh; }
+}
+
 input,
 select,
 textarea {

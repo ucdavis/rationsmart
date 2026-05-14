@@ -142,9 +142,19 @@ export default function RootLayout({
             width: "100%",
             maxWidth: "min(100vw, 480px)",
             margin: "0 auto",
-            minHeight: "100vh",
+            // 100dvh (dynamic viewport height) includes the system gesture
+            // / nav bar area on Android, so a page's min-h-screen background
+            // extends all the way to the bottom edge instead of stopping at
+            // 100vh and exposing a white strip below the home indicator.
+            minHeight: "100dvh",
             position: "relative",
-            backgroundColor: "#FFFFFF",
+            // The centered column itself should NOT impose a colour. Each
+            // page owns its background (white for the regular screens,
+            // sage→mint gradient for admin). Leaving this opaque white
+            // showed thin white strips around admin pages whenever the
+            // page content didn't fill 100% of the column (status-bar
+            // / gesture-bar / screen-edge curvature in standalone mode).
+            backgroundColor: "transparent",
           }}
         >
           <SplashGuard />
