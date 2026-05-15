@@ -4,6 +4,7 @@ import Snackbar from "@/components/ui/Snackbar";
 import SplashGuard from "@/components/SplashGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import SplashOverlay from "@/components/SplashOverlay";
+import NumberInputGuard from "@/components/NumberInputGuard";
 
 export const metadata: Metadata = {
   title: "RationSmart",
@@ -90,6 +91,7 @@ export default function RootLayout({
           }}
         >
           <SplashGuard />
+          <NumberInputGuard />
           {children}
           <Snackbar />
           <InstallPrompt />
