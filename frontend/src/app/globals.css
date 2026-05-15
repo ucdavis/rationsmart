@@ -71,6 +71,26 @@ textarea:focus {
   outline: none;
 }
 
+/* Native <option> rendering. Chrome / Safari paint the currently-
+   selected option with a tinted accent (light-green on most Macs
+   because of the OS accent colour), which made the open dropdown
+   look mismatched against the other items. Force every option to a
+   plain white row so the menu matches the Android Spinner /
+   AutoCompleteTextView look. accent-color also keeps the focus ring
+   on selects in our brand colour. */
+select {
+  accent-color: #064E3B;
+}
+select option {
+  background-color: #FFFFFF !important;
+  color: #231F20 !important;
+}
+select option:checked,
+select option:hover {
+  background-color: #FFFFFF !important;
+  color: #231F20 !important;
+}
+
 ::-webkit-scrollbar {
   width: 3px;
 }
