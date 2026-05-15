@@ -277,7 +277,18 @@ export default function FeedRow({
         });
         const newName = (res.data?.feed_details?.feed_name as string) ?? `${editNamePrefix}${editFeedName.trim()}`;
         const newId = (res.data?.feed_details?.feed_id as string) ?? item.feed_uuid;
-        onUpdate(item.id, { sub_category_name: newName, feed_uuid: newId });
+        // Android DialogFeedDetails repopulates the spinner after insert
+        // so the new feed becomes the selected option. We mirror that
+        // by appending the new entry to the local sub-category list
+        // *before* committing the row update — otherwise CustomSelect
+        // can't find feed_uuid in its options and falls back to the
+        // "Select feed" placeholder until the next cascade refetch.
+        setSubCategories((prev) =>
+          prev.some((s) => s.feed_uuid === newId)
+            ? prev
+            : [...prev, { feed_name: newName, feed_uuid: newId }]
+        );
+        onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId });
         showSnackbar("Custom feed saved", "success");
       } else {
         await updateCustomFeed({
@@ -287,6 +298,17 @@ export default function FeedRow({
           feed_insert: false,
           feed_details,
         });
+        // Reflect any feed-name edit in the dropdown label without
+        // waiting for a cascade refetch.
+        const updatedName = `${editNamePrefix}${editFeedName.trim()}`;
+        if (updatedName && updatedName !== item.sub_category_name) {
+          setSubCategories((prev) =>
+            prev.map((s) =>
+              s.feed_uuid === item.feed_uuid ? { ...s, feed_name: updatedName } : s
+            )
+          );
+          onUpdate(item.id, { sub_category_name: updatedName });
+        }
         showSnackbar("Nutritional values updated", "success");
       }
       setShowEditModal(false);

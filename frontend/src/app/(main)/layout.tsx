@@ -15,13 +15,31 @@ export default function MainLayout({
   const user = useStore((s) => s.user);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Zustand persist hydrates from localStorage on the client, but Next.js
+  // SSR renders this layout with user=null (no localStorage on the server).
+  // React's first client render must match the server snapshot for
+  // hydration, so we initialise `hydrated` to false here, then flip it
+  // true in a client-only effect — at which point the store's persisted
+  // user value is reliably available. Redirecting before hydration would
+  // bounce every authenticated refresh to /welcome, which is the bug the
+  // user was hitting on every hard reload.
+  const [hydrated, setHydrated] = useState(false);
   useEffect(() => {
-    if (!user) {
+    if (useStore.persist.hasHydrated()) {
+      setHydrated(true);
+      return;
+    }
+    const unsub = useStore.persist.onFinishHydration(() => setHydrated(true));
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (hydrated && !user) {
       router.replace("/welcome");
     }
-  }, [user, router]);
+  }, [hydrated, user, router]);
 
-  if (!user) {
+  if (!hydrated || !user) {
     return (
       <div
         className="flex items-center justify-center min-h-screen"
