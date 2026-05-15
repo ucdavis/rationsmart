@@ -7,17 +7,26 @@ export default function SplashGuard() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Auth / public pages that should NEVER be redirected to splash —
+  // typing /welcome (or any of these) into the URL bar lands the user
+  // directly there, no 2s splash detour. Listing the explicit set is
+  // simpler than trying to derive it from the auth state because we
+  // run before the persist store rehydrates.
+  const PUBLIC_PATHS = new Set(["/welcome", "/login", "/register", "/forgot-pin", "/terms", "/help"]);
+
   useEffect(() => {
-    // Make sure the body is visible regardless of what we decide
-    // below — the inline script in layout.tsx hides it on every non-"/"
-    // path to avoid flashing the previous page, so if we ever NOT
-    // redirect, we have to unhide it ourselves.
+    // The inline script in layout.tsx hides the body on every non-"/"
+    // path to avoid flashing the previous page. Whenever we decide
+    // NOT to redirect we have to unhide it ourselves.
     const restoreBody = () => { document.body.style.visibility = "visible"; };
 
     if (pathname === "/") {
       // Splash page handles its own visibility / overlay removal.
       return;
     }
+
+    // Auth / public pages bypass the splash redirect entirely.
+    if (PUBLIC_PATHS.has(pathname)) { restoreBody(); return; }
 
     const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
 
@@ -39,7 +48,16 @@ export default function SplashGuard() {
     // service worker last cached. Body is still hidden by the inline
     // script in layout.tsx so the redirect is silent.
     router.replace("/");
-  }, [pathname, router]);
+    // IMPORTANT: deps are [] on purpose. The decision is made once on
+    // the very first mount of the root layout. A previous attempt that
+    // used [pathname, router] introduced an infinite redirect loop:
+    //   1. /welcome → effect redirects to /
+    //   2. / mounts → pathname changes → effect re-fires (early return)
+    //   3. splash's 2s timer redirects back to /welcome
+    //   4. pathname changes to /welcome → effect re-fires → redirects to /
+    //   5. … loop.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 }
