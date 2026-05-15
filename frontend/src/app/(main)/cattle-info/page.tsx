@@ -17,6 +17,7 @@ import {
 } from "@/lib/validators";
 import SectionCard from "@/components/SectionCard";
 import Toolbar from "@/components/Toolbar";
+import CustomSelect from "@/components/CustomSelect";
 import {
   IcSimulationDetails,
   IcSimulationHistory,
@@ -142,27 +143,25 @@ function SelectInput({
   placeholder?: string;
   disabled?: boolean;
 }) {
+  // Outer gray-pill keeps the rounded chrome consistent with other fields;
+  // CustomSelect renders its own zebra-striped popup matching Android's
+  // DropDownListAdapter (mint/white alternating rows).
   return (
-    <div className="relative">
-      <select
+    <div
+      className="rounded-2xl px-4 py-3"
+      style={{
+        ...inputStyle,
+        opacity: disabled ? 0.55 : 1,
+      }}
+    >
+      <CustomSelect
+        transparentTrigger
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={onChange}
+        options={options}
+        placeholder={placeholder ?? "Select"}
         disabled={disabled}
-        className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark pr-9 appearance-none"
-        style={{ ...inputStyle, color: value ? "#231F20" : "#999999", opacity: disabled ? 0.55 : 1 }}
-      >
-        {placeholder && <option value="">{placeholder}</option>}
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
+      />
     </div>
   );
 }

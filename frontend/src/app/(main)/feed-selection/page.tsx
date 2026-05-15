@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
+import CustomSelect from "@/components/CustomSelect";
 import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS } from "@/lib/api";
 import type { FeedItem, DietLimits } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
@@ -651,21 +652,19 @@ export default function FeedSelectionPage() {
               {loadingCustomTypes ? (
                 <div className="h-11 rounded-xl shimmer" />
               ) : (
-                <>
-                  <select
+                <div
+                  className="rounded-xl px-4 py-3"
+                  style={{ backgroundColor: "#F1F5F9", opacity: !user?.country_id ? 0.6 : 1 }}
+                >
+                  <CustomSelect
+                    transparentTrigger
                     value={customFeedForm.feed_type}
-                    onChange={(e) => handleCustomTypeChange(e.target.value)}
+                    onChange={handleCustomTypeChange}
                     disabled={!user?.country_id}
-                    className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                    style={{ backgroundColor: "#F1F5F9", color: customFeedForm.feed_type ? "#231F20" : "#999", fontFamily: "Nunito, sans-serif" }}
-                  >
-                    <option value="">Select feed type</option>
-                    {customFeedTypes.map((t) => <option key={t} value={t}>{t}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                  </div>
-                </>
+                    placeholder="Select feed type"
+                    options={customFeedTypes.map((t) => ({ value: t, label: t }))}
+                  />
+                </div>
               )}
             </div>
 
@@ -677,27 +676,22 @@ export default function FeedSelectionPage() {
               {loadingCustomCats ? (
                 <div className="h-11 rounded-xl shimmer" />
               ) : (
-                <>
-                  <select
+                <div
+                  className="rounded-xl px-4 py-3"
+                  style={{
+                    backgroundColor: !customFeedForm.feed_type ? "#EBEAEA" : "#F1F5F9",
+                    opacity: !customFeedForm.feed_type ? 0.6 : 1,
+                  }}
+                >
+                  <CustomSelect
+                    transparentTrigger
                     value={customFeedForm.feed_category}
-                    onChange={(e) => setCustomFeedForm((p) => ({ ...p, feed_category: e.target.value }))}
+                    onChange={(v) => setCustomFeedForm((p) => ({ ...p, feed_category: v }))}
                     disabled={!customFeedForm.feed_type}
-                    className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none appearance-none pr-8"
-                    style={{
-                      backgroundColor: !customFeedForm.feed_type ? "#EBEAEA" : "#F1F5F9",
-                      color: customFeedForm.feed_category ? "#231F20" : "#999",
-                      fontFamily: "Nunito, sans-serif",
-                      opacity: !customFeedForm.feed_type ? 0.6 : 1,
-                      cursor: !customFeedForm.feed_type ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    <option value="">{!customFeedForm.feed_type ? "Select type first" : "Select category"}</option>
-                    {customFeedCategories.map((c) => <option key={c} value={c}>{c}</option>)}
-                  </select>
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                  </div>
-                </>
+                    placeholder={!customFeedForm.feed_type ? "Select type first" : "Select category"}
+                    options={customFeedCategories.map((c) => ({ value: c, label: c }))}
+                  />
+                </div>
               )}
             </div>
 
