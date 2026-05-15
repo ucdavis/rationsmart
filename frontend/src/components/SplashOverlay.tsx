@@ -1,27 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // Pre-hydration splash overlay. SSR renders it so the user sees
-// branded content the moment the HTML reaches the browser (FCP). On
-// the client we unmount it as soon as React has mounted — the page
-// underneath is now hydrated and ready to take over.
+// branded RationSmart content the moment the HTML reaches the browser
+// (FCP). After React hydrates we unmount it; never re-renders on
+// in-app navigation thereafter.
 //
-// Why a component instead of a static <div> in layout.tsx?
-// The static-div approach caused the overlay to reappear on every
-// in-app navigation: the layout JSX always contained the div, the
-// pre-hydration inline script removed it from the DOM, then React
-// reconciled (saw the JSX still expected it) and put it right back.
-// Result: the white splash flashed on top of every page.
-//
-// A stateful component instead: SSR + first client render both have
-// visible=true (no hydration mismatch). useEffect flips it to false
-// the moment React has finished hydrating. After that point the
-// component renders null on every subsequent render, including the
-// next-page render after a router push.
+// Path-aware duration:
+// - On "/" (the splash route): stay visible for SPLASH_DURATION_MS so
+//   the user sees the branded screen for the full splash window even
+//   though the React splash page underneath has already painted its
+//   own AppBranding. The splash page's 2s redirect timer ticks in
+//   parallel — both finish at roughly the same moment, so the user
+//   sees a clean cross-fade into /welcome or /cattle-info.
+// - Anywhere else: hide immediately after mount. We don't want a 2s
+//   splash to interrupt a hard refresh on /cattle-info or an in-app
+//   navigation.
+const SPLASH_DURATION_MS = 2000;
+
 export default function SplashOverlay() {
+  const pathname = usePathname();
   const [visible, setVisible] = useState(true);
-  useEffect(() => { setVisible(false); }, []);
+
+  useEffect(() => {
+    if (pathname !== "/") {
+      setVisible(false);
+      return;
+    }
+    const timer = setTimeout(() => setVisible(false), SPLASH_DURATION_MS);
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
   if (!visible) return null;
   return (
     <div

@@ -110,15 +110,15 @@ export const useStore = create<AppState>()(
         feedSelections: state.feedSelections,
         dietLimits: state.dietLimits,
       }),
-      // SSR hydration safety. By default the persist middleware reads
-      // localStorage synchronously the first time useStore is called on
-      // the client, which means the server-rendered HTML (initial state,
-      // user: null) differs from the client's first render (rehydrated
-      // user: { ... }). React throws "Hydration failed" (errors #418 /
-      // #423). skipHydration prevents that auto-read; a one-shot
-      // <StoreHydrator /> in the root layout calls rehydrate() from
-      // useEffect so SSR and the client's first render now agree.
-      skipHydration: true,
+      // NOTE: skipHydration was enabled here in an earlier commit to
+      // silence React #418/#423 hydration mismatches caused by persist
+      // reading localStorage synchronously on the client's first render.
+      // It also broke real persistence — after every hard refresh the
+      // login prompt came back because the store sat at initial state
+      // for so long the splash's 2s timer fired with user=null and
+      // redirected to /welcome. The mismatch warnings are recoverable
+      // (React just client-renders the root) and harmless in practice,
+      // so default hydration behavior is fine.
     }
   )
 );
