@@ -3,6 +3,7 @@ import "./globals.css";
 import Snackbar from "@/components/ui/Snackbar";
 import SplashGuard from "@/components/SplashGuard";
 import InstallPrompt from "@/components/InstallPrompt";
+import StoreHydrator from "@/components/StoreHydrator";
 
 export const metadata: Metadata = {
   title: "RationSmart",
@@ -157,6 +158,7 @@ export default function RootLayout({
             backgroundColor: "transparent",
           }}
         >
+          <StoreHydrator />
           <SplashGuard />
           {children}
           <Snackbar />
