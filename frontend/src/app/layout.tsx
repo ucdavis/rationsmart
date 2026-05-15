@@ -133,9 +133,18 @@ export default function RootLayout({
             </p>
           </div>
         </div>
+        {/* Pre-hydration script — on any non-"/" path, remove the splash
+            overlay immediately so the user sees the page render rather
+            than a stuck splash. Previously this also set
+            document.body.style.visibility="hidden" to avoid a redirect
+            flash, but that wedged the app whenever any JS work (Zustand
+            rehydrate, service-worker network race, slow chunk fetch)
+            took more than a frame — the user just saw a blank screen
+            until something else unhid it. The redirect "flash" is fine
+            for the rare cold-launch case. */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){var s=document.getElementById('pwa-splash');if(location.pathname!=='/'){s&&s.remove();document.body.style.visibility='hidden';}})();`,
+            __html: `(function(){var s=document.getElementById('pwa-splash');if(location.pathname!=='/'){s&&s.remove();}})();`,
           }}
         />
         <div
