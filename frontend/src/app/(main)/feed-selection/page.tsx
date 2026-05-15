@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
+import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS } from "@/lib/api";
 import type { FeedItem, DietLimits } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
@@ -564,23 +565,20 @@ export default function FeedSelectionPage() {
             transition: "background-color 0.2s",
           }}
         >
-          {isLoading ? (
-            <>
-              <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-              </svg>
-              <span>Calculating...</span>
-            </>
-          ) : (
-            <>
-              <span>{isEvaluation ? "Get Evaluation" : "Generate Recommendation"}</span>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M4.5 9H13.5M10 5.5L13.5 9L10 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </>
-          )}
+          {/* Button text/icon stays unchanged while loading — the progress
+              UI lives in the GeneratingReportDialog overlay below, matching
+              Android dialog_generating_report (a modal MaterialAlertDialog
+              shown for the duration of the API call). */}
+          <span>{isEvaluation ? "Get Evaluation" : "Generate Recommendation"}</span>
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+            <path d="M4.5 9H13.5M10 5.5L13.5 9L10 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
         </button>
       </div>
+
+      {/* Modal "Generating your report" dialog while recommendDiet /
+          evaluateDiet is in flight. Mirrors Android dialog_generating_report. */}
+      {isLoading && <GeneratingReportDialog />}
 
       {/* Custom Feed Modal — confined to the 480px centered column so the
           bottom sheet does not span the entire desktop viewport. */}

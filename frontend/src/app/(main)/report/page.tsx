@@ -683,21 +683,30 @@ export default function ReportPage() {
         {/* ─── RECOMMENDATION SECTIONS ─── */}
         {!isEval && recReport && (
           <>
-            {/* Solution Summary — hidden when diet rating is ERROR_* per Android */}
+            {/* Solution Summary — icons sourced directly from Android
+                drawables (ic_solution_summary, ic_daily_cost,
+                ic_milk_production_20, ic_dm_intake). Hidden when diet
+                rating is ERROR_*. */}
             {showSolutionSections && recReport.solution_summary && (
-              <SCard title="Solution Summary" icon={<IcSimulationDetails size={24} color="#064E3B" />}>
-                {/* Daily Cost */}
+              <SCard
+                title="Solution Summary"
+                icon={
+                  /* ic_solution_summary — clipboard with checkmark */
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                    <path d="M18,12c-3.314,0 -6,2.686 -6,6s2.686,6 6,6 6,-2.686 6,-6 -2.686,-6 -6,-6ZM21.683,17.712l-2.703,2.614c-0.452,0.446 -1.052,0.671 -1.653,0.671s-1.203,-0.225 -1.663,-0.674l-1.354,-1.332c-0.395,-0.387 -0.4,-1.02 -0.014,-1.414 0.386,-0.395 1.019,-0.401 1.414,-0.014l1.354,1.331c0.144,0.142 0.38,0.139 0.522,-0.002l2.713,-2.624c0.397,-0.381 1.031,-0.37 1.414,0.029 0.382,0.398 0.369,1.031 -0.029,1.414ZM10,18c0,-4.411 3.589,-8 8,-8 0.692,0 1.359,0.097 2,0.263v-3.263c0,-2.045 -1.237,-3.802 -3,-4.576L17,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L13,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L9,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L5,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1.424C1.237,3.198 0,4.955 0,7v12c0,2.757 2.243,5 5,5h7.726c-1.667,-1.467 -2.726,-3.61 -2.726,-6ZM5,7L15,7c0.553,0 1,0.448 1,1s-0.447,1 -1,1L5,9c-0.553,0 -1,-0.448 -1,-1s0.447,-1 1,-1ZM8.5,13h-3.5c-0.553,0 -1,-0.448 -1,-1s0.447,-1 1,-1h3.5c0.553,0 1,0.448 1,1s-0.447,1 -1,1Z" />
+                  </svg>
+                }
+              >
+                {/* Daily Cost — ic_daily_cost (filled $ in circle, go_green tint) */}
                 {recReport.solution_summary.daily_cost != null && (
                   <div style={{ marginBottom: 10 }}>
                     <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="9" stroke="#05BC6D" strokeWidth="2" />
-                        <path d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4" stroke="#05BC6D" strokeWidth="1.6" strokeLinecap="round" />
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#05BC6D">
+                        <path d="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10s10,-4.48 10,-10S17.52,2 12,2zM12.88,17.76v0.36c0,0.48 -0.39,0.88 -0.88,0.88h0c-0.48,0 -0.88,-0.39 -0.88,-0.88v-0.42c-0.63,-0.15 -1.93,-0.61 -2.69,-2.1c-0.23,-0.44 -0.01,-0.99 0.45,-1.18l0.07,-0.03c0.41,-0.17 0.87,0 1.08,0.39c0.32,0.61 0.95,1.37 2.12,1.37c0.93,0 1.98,-0.48 1.98,-1.61c0,-0.96 -0.7,-1.46 -2.28,-2.03c-1.1,-0.39 -3.35,-1.03 -3.35,-3.31c0,-0.1 0.01,-2.4 2.62,-2.96V5.88C11.12,5.39 11.52,5 12,5h0c0.48,0 0.88,0.39 0.88,0.88v0.37c1.07,0.19 1.75,0.76 2.16,1.3c0.34,0.44 0.16,1.08 -0.36,1.3l0,0C14.32,9 13.9,8.88 13.66,8.57c-0.28,-0.38 -0.78,-0.77 -1.6,-0.77c-0.7,0 -1.81,0.37 -1.81,1.39c0,0.95 0.86,1.31 2.64,1.9c2.4,0.83 3.01,2.05 3.01,3.45C15.9,17.17 13.4,17.67 12.88,17.76z" />
                       </svg>
                       <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Daily Cost</p>
                     </div>
-                    {/* Value first, currency code as suffix —
-                        matches Android "108,199.8 VND" formatting. */}
+                    {/* Value + currency code suffix — Android "108,199.8 VND" */}
                     <div className="flex items-baseline gap-1.5">
                       <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>
                         {Number(recReport.solution_summary.daily_cost).toFixed(2)}
@@ -708,16 +717,16 @@ export default function ReportPage() {
                     </div>
                   </div>
                 )}
-                {/* Milk Production + DM Intake (2-col) */}
+                {/* Milk Production + Dry Matter Intake — 2 columns */}
                 <div className="grid grid-cols-2 gap-x-4">
                   {recReport.solution_summary.milk_production && (() => {
                     const parts = recReport.solution_summary.milk_production.split(" ");
                     return (
                       <div>
                         <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M8 3h8l1 4H7L8 3z" stroke="#007BFF" strokeWidth="1.8" strokeLinejoin="round" />
-                            <path d="M6 7c0 0-2 3-2 7a8 8 0 0 0 16 0c0-4-2-7-2-7" stroke="#007BFF" strokeWidth="1.8" strokeLinecap="round" />
+                          {/* ic_milk_production_20 — droplet with notch (azure tint) */}
+                          <svg width="18" height="18" viewBox="0 0 20 20" fill="#007BFF">
+                            <path d="M10.65,2.55c-0.38,-0.33 -0.93,-0.33 -1.31,0C7.7,4 3.5,8.01 3.5,11.5c0,3.59 2.91,6.5 6.5,6.5s6.5,-2.91 6.5,-6.5C16.5,8.01 12.3,4 10.65,2.55zM7.03,11.93c0.24,1.66 1.79,2.77 3.4,2.54c0.3,-0.04 0.57,0.19 0.57,0.49c0,0.28 -0.2,0.47 -0.42,0.5c-2.23,0.31 -4.22,-1.23 -4.54,-3.39C6,11.77 6.23,11.5 6.54,11.5C6.79,11.5 7,11.68 7.03,11.93z" />
                           </svg>
                           <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Milk Production</p>
                         </div>
@@ -733,9 +742,9 @@ export default function ReportPage() {
                     return (
                       <div>
                         <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 3C9 3 5 6 5 12s4 9 7 9 7-3 7-9-4-9-7-9z" stroke="#FF9800" strokeWidth="1.8" strokeLinecap="round" />
-                            <path d="M12 8v5l3 2" stroke="#FF9800" strokeWidth="1.6" strokeLinecap="round" />
+                          {/* ic_dm_intake — Material Symbols "grass" (vivid_gamboge tint) */}
+                          <svg width="20" height="20" viewBox="0 0 960 960" fill="#FF9800">
+                            <path d="M120,800q-17,0 -28.5,-11.5T80,760q0,-17 11.5,-28.5T120,720h190q-17,-63 -56,-114t-94,-83q-22,-13 -21,-28.5t27,-14.5q131,2 222.5,95T480,800L120,800ZM560,800q0,-42 -9,-83.5T525,637q42,-69 112.5,-112T794,480q24,-1 25,15.5T800,523q-55,32 -94,83t-56,114h190q17,0 28.5,11.5T880,760q0,17 -11.5,28.5T840,800L560,800ZM480,561q0,-106 60.5,-188.5T696,258q23,-8 34,5t-9,32q-32,30 -55.5,67T626,441q-44,21 -80.5,51.5T480,561ZM407,486q-12,-9 -24,-17t-25,-16q0,-6 1,-12.5t1,-12.5q0,-53 -11.5,-101T315,234q-11,-22 1.5,-32.5T349,207q36,29 63.5,66t44.5,81q-18,30 -31,63.5T407,486Z" />
                           </svg>
                           <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Dry Matter Intake</p>
                         </div>
