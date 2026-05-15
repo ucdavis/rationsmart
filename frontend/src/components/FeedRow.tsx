@@ -6,6 +6,7 @@ import type { FeedItem } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
+import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
 
 // Match Android DialogFeedDetails: layout chosen by feedCategory.
 type NutrientLayout = "additive" | "mineral" | "general";
@@ -127,51 +128,6 @@ function FieldBox({
         <span style={{ color: "#FC2E20" }}>{" *"}</span>
       </span>
       {children}
-    </div>
-  );
-}
-
-function ColSelect({
-  value,
-  onChange,
-  disabled,
-  children,
-  placeholder,
-}: {
-  value: string | number;
-  onChange: (v: string) => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-  placeholder: string;
-}) {
-  return (
-    <div style={{ position: "relative", width: "100%" }}>
-      <select
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value)}
-        disabled={disabled}
-        style={{
-          backgroundColor: "transparent",
-          color: value ? "#231F20" : "#9CA3AF",
-          fontFamily: "Nunito, sans-serif",
-          border: "none",
-          width: "100%",
-          fontSize: 14,
-          padding: "0 24px 0 0",
-          appearance: "none",
-          WebkitAppearance: "none",
-          outline: "none",
-          cursor: disabled ? "not-allowed" : "pointer",
-        }}
-      >
-        <option value="">{placeholder}</option>
-        {children}
-      </select>
-      <div style={{ position: "absolute", right: 0, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </div>
     </div>
   );
 }
@@ -510,38 +466,34 @@ export default function FeedRow({
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
           <FieldBox label="Feed Type" hasValue={!!item.feed_type_id} disabled={feedTypeLocked}>
-            <ColSelect
-              value={item.feed_type_id ?? ""}
+            <CustomSelect
+              transparentTrigger
+              value={item.feed_type_id != null ? String(item.feed_type_id) : ""}
               onChange={(v) => {
                 const selected = feedTypes.find((f) => f.id === Number(v));
                 onUpdate(item.id, { feed_type_id: selected?.id ?? null, feed_type_name: selected?.name ?? "" });
               }}
               disabled={feedTypeLocked}
               placeholder="Select type"
-            >
-              {feedTypes.map((ft) => (
-                <option key={ft.id} value={ft.id}>{ft.name}</option>
-              ))}
-            </ColSelect>
+              options={feedTypes.map<CustomSelectOption>((ft) => ({ value: String(ft.id), label: ft.name }))}
+            />
           </FieldBox>
         )}
         {loadingCats ? (
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
           <FieldBox label="Feed Category" hasValue={!!item.category_id} disabled={!item.feed_type_id}>
-            <ColSelect
-              value={item.category_id ?? ""}
+            <CustomSelect
+              transparentTrigger
+              value={item.category_id != null ? String(item.category_id) : ""}
               onChange={(v) => {
                 const selected = categories.find((c) => c.id === Number(v));
                 onUpdate(item.id, { category_id: selected?.id ?? null, category_name: selected?.name ?? "" });
               }}
               disabled={!item.feed_type_id}
               placeholder={!item.feed_type_id ? "Select type first" : "Select"}
-            >
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </ColSelect>
+              options={categories.map<CustomSelectOption>((c) => ({ value: String(c.id), label: c.name }))}
+            />
           </FieldBox>
         )}
       </div>
@@ -552,7 +504,8 @@ export default function FeedRow({
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
           <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_id}>
-            <ColSelect
+            <CustomSelect
+              transparentTrigger
               value={item.feed_uuid ?? ""}
               onChange={(v) => {
                 const selected = subCategories.find((s) => s.feed_uuid === v);
@@ -564,11 +517,8 @@ export default function FeedRow({
               }}
               disabled={!item.category_id}
               placeholder={!item.category_id ? "Select category" : "Select feed"}
-            >
-              {subCategories.map((s) => (
-                <option key={s.feed_uuid} value={s.feed_uuid}>{s.feed_name}</option>
-              ))}
-            </ColSelect>
+              options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.feed_name }))}
+            />
           </FieldBox>
         )}
         <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid}>
