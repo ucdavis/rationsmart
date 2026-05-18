@@ -71,6 +71,7 @@ export default function RootLayout({
             subsequent navigations. */}
         <SplashOverlay />
         <div
+          className="app-column"
           style={{
             width: "100%",
             maxWidth: "min(100vw, 480px)",

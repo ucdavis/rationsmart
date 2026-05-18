@@ -58,6 +58,19 @@ body {
   .min-h-screen { min-height: 100dvh; }
 }
 
+/* The centred 480-px column gives every browser-tab visitor a mobile-
+   preview frame on desktop. But once a user installs the PWA we want
+   it to feel like a native app, so the column should fill the viewport
+   — otherwise tablets / foldables / large phones land on a 480-px slab
+   with body-grey gutters on both sides. display-mode: standalone fires
+   only for the installed PWA (Android home-screen launch, iOS Add to
+   Home Screen, desktop PWA window), so browser tabs are unaffected. */
+@media (display-mode: standalone) {
+  .app-column {
+    max-width: 100% !important;
+  }
+}
+
 input,
 select,
 textarea {

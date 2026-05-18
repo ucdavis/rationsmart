@@ -21,33 +21,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
     if (meta) meta.setAttribute("content", ADMIN_THEME);
-
-    // On phones the 480-px column equals the viewport, but if the
-    // device has curved edges / non-zero safe-area-inset-left|right
-    // (or the viewport is just slightly wider than 480), the body
-    // background — #F8FAF9 off-white from globals.css — peeks through
-    // on both sides as white padding. Mirror the gradient onto <body>
-    // only at mobile widths so it fills the entire screen on phones,
-    // while leaving the mobile-frame look intact on desktop.
-    const GRADIENT = "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)";
-    const mq = window.matchMedia("(max-width: 480px)");
-    const apply = () => {
-      if (mq.matches) {
-        document.body.style.background = GRADIENT;
-        document.body.style.backgroundAttachment = "fixed";
-      } else {
-        document.body.style.background = "";
-        document.body.style.backgroundAttachment = "";
-      }
-    };
-    apply();
-    mq.addEventListener("change", apply);
-
     return () => {
       if (meta) meta.setAttribute("content", DEFAULT_THEME);
-      mq.removeEventListener("change", apply);
-      document.body.style.background = "";
-      document.body.style.backgroundAttachment = "";
     };
   }, []);
 
