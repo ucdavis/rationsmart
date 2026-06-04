@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import CustomSelect from "@/components/CustomSelect";
-import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS } from "@/lib/api";
-import type { FeedItem, DietLimits } from "@/lib/api";
+import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds } from "@/lib/api";
+import type { FeedItem, DietLimits, FeedSearchResult } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
 
 let idCounter = 0;
@@ -177,6 +177,81 @@ export default function FeedSelectionPage() {
   const [loadingCustomTypes, setLoadingCustomTypes] = useState(false);
   const [loadingCustomCats, setLoadingCustomCats] = useState(false);
   const [isSavingCustom, setIsSavingCustom] = useState(false);
+
+  // Y3 §1.1.1 — type-and-search for feed ingredients.
+  // - searchQuery: live text from the input
+  // - searchResults: array returned from searchFeeds() (stub returns []
+  //   until Maria ships GET /search-feeds)
+  // - searchOpen: dropdown visibility (open whenever query has text)
+  // - activeRowId: which FeedRow gets populated when a result is tapped.
+  //   Defaults to the first row that has no feed_uuid; user can override
+  //   by tapping a specific row before searching.
+  // - isSearching: in-flight indicator for the results dropdown
+  // Debounced by 250 ms so we don't fire on every keystroke.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FeedSearchResult[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Debounced search effect — query → /search-feeds (currently stub)
+  useEffect(() => {
+    if (!searchQuery.trim() || !user?.id || !user?.country_id) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      searchFeeds(searchQuery.trim(), user.country_id, user.id)
+        .then((res) => {
+          setSearchResults(res.data ?? []);
+        })
+        .catch(() => setSearchResults([]))
+        .finally(() => setIsSearching(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery, user?.id, user?.country_id]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [searchOpen]);
+
+  // Apply a search result to the first empty row (or the first row if all
+  // are populated). Mirrors what the doc asks: "When an ingredient is
+  // selected, automatically populate Feed Type, Feed Category, and Feed."
+  const applySearchResult = (result: FeedSearchResult) => {
+    setItems((prev) => {
+      const targetIdx = prev.findIndex((r) => !r.feed_uuid);
+      const idx = targetIdx === -1 ? 0 : targetIdx;
+      const next = prev.map((row, i) =>
+        i === idx
+          ? {
+              ...row,
+              feed_type_name: result.feed_type,
+              category_name: result.feed_category,
+              sub_category_name: result.feed_name,
+              feed_uuid: result.feed_uuid,
+              sub_category_id: 1,
+              // FeedRow's cascade effects will repopulate the *_id fields
+              // when the dropdown lists arrive — leaving them null here
+              // would clear them prematurely.
+            }
+          : row
+      );
+      setFeedSelections(next);
+      return next;
+    });
+    setSearchQuery("");
+    setSearchOpen(false);
+  };
 
   const openCustomFeedModal = async () => {
     setCustomFeedForm(EMPTY_CUSTOM);
@@ -516,6 +591,112 @@ export default function FeedSelectionPage() {
             </span>
           </button>
         ))}
+      </div>
+
+      {/* Y3 §1.1.1 — type-and-search for feed ingredients. Single global
+          search bar; selecting a result auto-populates Feed Type +
+          Category + Feed on the first empty row (or row 1 if all rows
+          are populated). Dropdown-driven flow on each FeedRow still
+          works as the alternative path. */}
+      <div ref={searchContainerRef} className="px-3 pt-3" style={{ position: "relative" }}>
+        <div
+          className="flex items-center gap-2 rounded-2xl px-3 py-2.5"
+          style={{ backgroundColor: "#F1F5F9", border: "1.5px solid #DCE0E4" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <circle cx="7" cy="7" r="5" stroke="#6D6D6D" strokeWidth="1.5" />
+            <path d="M11 11l3 3" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
+            onFocus={() => searchQuery.trim() && setSearchOpen(true)}
+            placeholder="Search feeds (e.g. corn, silage)"
+            className="flex-1 border-none focus:outline-none"
+            style={{
+              backgroundColor: "transparent",
+              color: "#231F20",
+              fontFamily: "Nunito, sans-serif",
+              fontSize: 14,
+            }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+              aria-label="Clear search"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#6D6D6D" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {searchOpen && searchQuery.trim() && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% - 2px)",
+              left: 12,
+              right: 12,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 10,
+              boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+              maxHeight: 320,
+              overflowY: "auto",
+              zIndex: 50,
+            }}
+          >
+            {isSearching ? (
+              <div
+                style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+              >
+                Searching…
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div
+                style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+              >
+                {/* Stubbed empty state until /search-feeds is live. */}
+                No matches yet. (Search backend coming soon.)
+              </div>
+            ) : (
+              searchResults.map((r, i) => (
+                <button
+                  key={`${r.feed_uuid}_${i}`}
+                  type="button"
+                  onClick={() => applySearchResult(r)}
+                  className="w-full text-left"
+                  style={{
+                    background: i % 2 === 1 ? "#E4F7EF" : "#FFFFFF",
+                    border: "none",
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    display: "block",
+                    fontFamily: "Nunito, sans-serif",
+                  }}
+                >
+                  <p
+                    style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}
+                  >
+                    {r.feed_name}
+                  </p>
+                  <p
+                    style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}
+                  >
+                    {r.feed_type} · {r.feed_category}
+                  </p>
+                </button>
+              ))
+            )}
+          </div>
+        )}
       </div>
 
       {/* Feed list */}

@@ -587,4 +587,22 @@ export const updateCustomFeed = (body: {
 // GET /feed-classification/structure
 export const getFeedClassification = () => api.get("/feed-classification/structure");
 
+// Y3 §1.1.1 — feed search. Backend endpoint not yet live.
+// TODO(maria-y3): swap to real `api.get("/search-feeds", { params: ... })`
+// once Maria ships GET /search-feeds. Until then this stub returns []
+// so the search-bar UI compiles and renders an empty results list.
+export interface FeedSearchResult {
+  feed_uuid: string;
+  feed_name: string;
+  feed_type: string;
+  feed_category: string;
+}
+export const searchFeeds = async (
+  _query: string,
+  _country_id: string,
+  _user_id: string
+): Promise<{ data: FeedSearchResult[] }> => {
+  return Promise.resolve({ data: [] });
+};
+
 export default api;
