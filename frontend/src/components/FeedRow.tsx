@@ -595,6 +595,93 @@ export default function FeedRow({
         </div>
       )}
 
+      {/* Y3 §1.1.2 — "Set inclusion limits" toggle + optional Min/Max inputs.
+          Disabled until a feed is actually selected (no point setting bounds
+          on an empty row). When toggle flips OFF we DO NOT clear the stored
+          min/max values — that way toggling back ON restores the user's
+          prior numbers (matches expected UX). The recommendDiet payload
+          omits bounds entirely whenever the toggle is off, so off-but-stored
+          values have zero backend effect. */}
+      <div style={{ padding: "0 10px 14px" }}>
+        <button
+          type="button"
+          onClick={() => {
+            if (!item.feed_uuid) return;
+            onUpdate(item.id, { inclusion_limits_enabled: !item.inclusion_limits_enabled });
+          }}
+          disabled={!item.feed_uuid}
+          className="w-full flex items-center justify-between"
+          style={{
+            background: "none",
+            border: "none",
+            cursor: item.feed_uuid ? "pointer" : "not-allowed",
+            padding: "8px 4px",
+            opacity: item.feed_uuid ? 1 : 0.55,
+          }}
+          aria-expanded={item.inclusion_limits_enabled}
+        >
+          <span
+            className="font-bold"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
+          >
+            Set inclusion limits
+          </span>
+          <span className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={item.inclusion_limits_enabled}
+              onChange={() => {
+                if (!item.feed_uuid) return;
+                onUpdate(item.id, { inclusion_limits_enabled: !item.inclusion_limits_enabled });
+              }}
+              disabled={!item.feed_uuid}
+            />
+            <span className="toggle-slider" />
+          </span>
+        </button>
+
+        {item.inclusion_limits_enabled && (
+          <div style={{ ...colGap, marginTop: 8 }}>
+            <FieldBox
+              label="Min (kg/day)"
+              hasValue={item.min_kg_per_day != null}
+              disabled={false}
+            >
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step={0.01}
+                placeholder="NA"
+                value={item.min_kg_per_day ?? ""}
+                onChange={(e) =>
+                  onUpdate(item.id, { min_kg_per_day: e.target.value ? Number(e.target.value) : null })
+                }
+                style={innerInputStyle}
+              />
+            </FieldBox>
+            <FieldBox
+              label="Max (kg/day)"
+              hasValue={item.max_kg_per_day != null}
+              disabled={false}
+            >
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step={0.01}
+                placeholder="No upper bound"
+                value={item.max_kg_per_day ?? ""}
+                onChange={(e) =>
+                  onUpdate(item.id, { max_kg_per_day: e.target.value ? Number(e.target.value) : null })
+                }
+                style={innerInputStyle}
+              />
+            </FieldBox>
+          </div>
+        )}
+      </div>
+
       {/* Edit Feed bottom sheet — matches Android DialogFeedDetails (isAdd=false).
           On open, /check-insert-or-update determines isInsert:
             isInsert=true  → title "Add Custom Feed", name editable with user prefix

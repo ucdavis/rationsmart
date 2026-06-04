@@ -305,18 +305,30 @@ export default function CattleInfoPage() {
           feed_id?: string;
           price_per_kg?: number | string | null;
           quantity_as_fed?: number | string | null;
-        }, idx: number) => ({
-          id: `feed_restored_${idx}_${Date.now()}`,
-          feed_type_id: sel.feed_type ? idx + 1 : null,
-          feed_type_name: sel.feed_type ?? "",
-          category_id: sel.feed_category ? idx + 1 : null,
-          category_name: sel.feed_category ?? "",
-          sub_category_id: sel.feed_id ? 1 : null,
-          sub_category_name: sel.feed_name ?? "",
-          feed_uuid: sel.feed_id ?? null,
-          price_per_kg: sel.price_per_kg != null && sel.price_per_kg !== "" ? Number(sel.price_per_kg) : null,
-          quantity_kg: sel.quantity_as_fed != null && sel.quantity_as_fed !== "" ? Number(sel.quantity_as_fed) : null,
-        }));
+          // Y3 §1.1.2 — backend may echo these on simulation restore.
+          // TODO(maria-y3): confirm canonical keys on /fetch-simulation-details.
+          min_kg_per_day?: number | string | null;
+          max_kg_per_day?: number | string | null;
+        }, idx: number) => {
+          const minVal = sel.min_kg_per_day != null && sel.min_kg_per_day !== "" ? Number(sel.min_kg_per_day) : null;
+          const maxVal = sel.max_kg_per_day != null && sel.max_kg_per_day !== "" ? Number(sel.max_kg_per_day) : null;
+          return {
+            id: `feed_restored_${idx}_${Date.now()}`,
+            feed_type_id: sel.feed_type ? idx + 1 : null,
+            feed_type_name: sel.feed_type ?? "",
+            category_id: sel.feed_category ? idx + 1 : null,
+            category_name: sel.feed_category ?? "",
+            sub_category_id: sel.feed_id ? 1 : null,
+            sub_category_name: sel.feed_name ?? "",
+            feed_uuid: sel.feed_id ?? null,
+            price_per_kg: sel.price_per_kg != null && sel.price_per_kg !== "" ? Number(sel.price_per_kg) : null,
+            quantity_kg: sel.quantity_as_fed != null && sel.quantity_as_fed !== "" ? Number(sel.quantity_as_fed) : null,
+            // Toggle defaults ON when either bound is present in the restored payload.
+            inclusion_limits_enabled: minVal != null || maxVal != null,
+            min_kg_per_day: minVal,
+            max_kg_per_day: maxVal,
+          };
+        });
         setFeedSelections(restoredItems);
 
         // Android: if every quantity_as_fed is null → Recommendation;

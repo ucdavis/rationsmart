@@ -23,6 +23,10 @@ const createFeedItem = (): FeedItem => ({
   feed_uuid: null,
   price_per_kg: null,
   quantity_kg: null,
+  // Y3 §1.1.2 — toggle off by default; bounds blank.
+  inclusion_limits_enabled: false,
+  min_kg_per_day: null,
+  max_kg_per_day: null,
 });
 
 // Matches Android BaseThresholds — single max value per nutrient
@@ -373,10 +377,22 @@ export default function FeedSelectionPage() {
           country_id: cattleInfo.country_id,
           simulation_id: simulationId,
           cattle_info: cattlePayload,
-          feed_selection: validItems.map((item) => ({
-            feed_id: item.feed_uuid!,
-            price_per_kg: item.price_per_kg!,
-          })),
+          feed_selection: validItems.map((item) => {
+            // Y3 §1.1.2 — only include bounds when the toggle is ON AND
+            // the corresponding side has a value. Blank min → omit min;
+            // blank max → omit max; toggle off → omit both. Backend
+            // §2.4 reads these and overrides default constraints.
+            // TODO(maria-y3): confirm canonical key names.
+            const base: { feed_id: string; price_per_kg: number; min_kg_per_day?: number; max_kg_per_day?: number } = {
+              feed_id: item.feed_uuid!,
+              price_per_kg: item.price_per_kg!,
+            };
+            if (item.inclusion_limits_enabled) {
+              if (item.min_kg_per_day != null) base.min_kg_per_day = item.min_kg_per_day;
+              if (item.max_kg_per_day != null) base.max_kg_per_day = item.max_kg_per_day;
+            }
+            return base;
+          }),
           // Android always sends base_thresholds; merge user limits over defaults
           base_thresholds: { ...DEFAULT_BASE_THRESHOLDS, ...limits },
         });

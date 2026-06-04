@@ -56,6 +56,14 @@ export interface FeedItem {
   feed_uuid: string | null;    // feed_id sent to the API (from FeedSubCategory.feed_uuid)
   price_per_kg: number | null;
   quantity_kg: number | null;
+  // Y3 §1.1.2 — per-feed inclusion limits. Toggle controls visibility AND
+  // whether the bounds are sent to the optimizer. Both bounds independently
+  // optional even when the toggle is on (blank min = NA, blank max = no
+  // upper bound). TODO(maria-y3): confirm payload key names —
+  // min_kg_per_day / max_kg_per_day suggested.
+  inclusion_limits_enabled: boolean;
+  min_kg_per_day: number | null;
+  max_kg_per_day: number | null;
 }
 
 // Matches Android BaseThresholds — single max value per nutrient
@@ -154,6 +162,12 @@ export interface RecommendationRequest {
   feed_selection: Array<{
     feed_id: string;
     price_per_kg: number;
+    // Y3 §1.1.2 — optional per-feed inclusion bounds (kg/day, as-fed).
+    // Omitted entirely when the toggle is off. Either bound can also be
+    // null when the toggle is on but the user left that side blank.
+    // TODO(maria-y3): confirm canonical field names; backend §2.4 reads these.
+    min_kg_per_day?: number | null;
+    max_kg_per_day?: number | null;
   }>;
   base_thresholds: DietLimits;   // Android always sends this — never omit
 }
