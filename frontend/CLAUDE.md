@@ -27,24 +27,78 @@ or Kotlin source first, then implement against it. Never guess.**
 
 ---
 
-## 2. Two-URL deployment topology — do not confuse
+## 2. Two-URL deployment topology — DEV vs PROD
 
-**Two independent Vercel projects, same GitHub repo.** Every push to `main`
-deploys BOTH in parallel.
+**Two independent Vercel projects, same GitHub repo, same `main` branch.**
+Both are GitHub-integrated, so a single `git push origin main` triggers
+both projects to redeploy in parallel.
 
-| Vercel project | Public URL | Backend env vars | Purpose |
+### URLs and projects
+
+| Vercel project | Project ID | Primary URL (auto-generated) | Aliased URL (use this to share) | Backend |
+|---|---|---|---|---|
+| `rationsmart-pwa` | `<OLD_DEV_PROJECT_ID>` | `rationsmart-pwa.vercel.app` | (same — no alias) | **dev** `<DEV_BACKEND_IP>:8000` |
+| `rationsmart-prod` | `<OLD_PROD_PROJECT_ID>` | `rationsmart-prod.vercel.app` | **`rationsmart.vercel.app`** | **prod** `<PROD_BACKEND_IP>:8000` |
+
+This directory (`~/Desktop/RationSmart-PWA`) is linked to `rationsmart-pwa`
+via `.vercel/project.json` — so any plain `vercel ...` command operates on
+the **dev** project. To operate on `rationsmart-prod` from CLI, use the
+worktree pattern in §13.
+
+### Env-var scoping — read carefully
+
+The proxy at `src/app/api/proxy/[...path]/route.ts` reads:
+```ts
+const BACKEND_HOST = process.env.BACKEND_HOST ?? "<DEV_BACKEND_IP>";
+const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
+```
+
+Current Vercel env-var state (verified 2026-06-04):
+
+| Project | BACKEND_HOST scope | BACKEND_PORT scope | Result |
 |---|---|---|---|
-| `rationsmart-pwa` | https://rationsmart-pwa.vercel.app | `BACKEND_HOST=<DEV_BACKEND_IP>`, `BACKEND_PORT=8000` | Dev / internal testing |
-| `rationsmart-prod` | https://rationsmart.vercel.app | `BACKEND_HOST=<PROD_BACKEND_IP>`, `BACKEND_PORT=8000` | Prod / share-with-others |
+| `rationsmart-pwa` (dev) | **Development** only | **Development** only | Production deploys read NO env vars → falls back to the hardcoded `<DEV_BACKEND_IP>:8000` defaults → still hits dev backend by coincidence. |
+| `rationsmart-prod` (prod) | **Production** | **Production** | Production deploys hit `<PROD_BACKEND_IP>:8000` from env. |
 
-The active backend is debug-visible on every proxied response via
-`x-backend-env: dev|prod|custom` and `x-backend-host: <ip>:<port>` headers,
-emitted from `src/app/api/proxy/[...path]/route.ts` on both the
-normal-response and 307-redirect-follow paths.
+**This means the hardcoded defaults in `route.ts` are load-bearing for the
+dev URL.** Do NOT change those defaults to prod values "for safety" — that
+would silently flip `rationsmart-pwa.vercel.app` to hit the prod backend.
 
-**Never add a Production-scoped env var to `rationsmart-pwa`** — it would
-silently flip the dev URL to prod. Env scoping is the only thing keeping the
-two URLs apart.
+**Never add a Production-scoped env var to `rationsmart-pwa`** unless it
+matches the dev backend (`<DEV_BACKEND_IP>` / `8000`). Mixing prod values into
+the dev project would silently flip the dev URL to prod.
+
+### How to verify which backend a URL is hitting
+
+Every proxied response carries debug headers (emitted on both the
+normal-response and the 307-redirect-follow branches):
+
+```bash
+$ curl -sI https://rationsmart-pwa.vercel.app/api/proxy/auth/countries
+x-backend-env: dev
+x-backend-host: <DEV_BACKEND_IP>:8000
+
+$ curl -sI https://rationsmart.vercel.app/api/proxy/auth/countries
+x-backend-env: prod
+x-backend-host: <PROD_BACKEND_IP>:8000
+```
+
+`x-backend-env` is computed from `BACKEND_HOST` — `dev` for `<DEV_BACKEND_IP>`,
+`prod` for `<PROD_BACKEND_IP>`, `custom` for anything else.
+
+### Mental model
+
+- **Code changes:** `git push origin main` → both URLs update.
+- **Backend swap on prod:** update env var on `rationsmart-prod`, redeploy.
+- **Backend swap on dev:** either update env var on `rationsmart-pwa`
+  *and* set the scope to **Production** (or All Environments), OR change
+  the hardcoded default in `route.ts`. Updating the env var without
+  scoping it to Production won't actually affect the deployed dev URL.
+- **Share with external testers:** give them `rationsmart.vercel.app`
+  (prod).
+- **Internal experimentation / debugging:** use `rationsmart-pwa.vercel.app`
+  (dev). Don't tell external users about it — its backend may have
+  half-built data.
 
 ---
 
@@ -52,9 +106,15 @@ two URLs apart.
 
 1. **Push + deploy on every code change.** After any modification:
    ```
-   git push origin main      # auto-deploys both projects
-   vercel --prod --yes       # belt-and-braces for the dev project
+   git push origin main      # auto-deploys BOTH projects via GitHub integration
+   vercel --prod --yes       # belt-and-braces for the dev project (this dir's link)
    ```
+   The `git push` is what actually deploys both projects. The `vercel --prod`
+   is a habit from the user's standing instruction "push code to github &
+   deploy on every change" and acts as an extra explicit Production deploy
+   on the dev project specifically (this repo's `.vercel/project.json`
+   points to `rationsmart-pwa`). If GitHub integration ever silently
+   detaches, the explicit deploy keeps the dev URL fresh.
 2. **Android first, then mirror.** Read the corresponding Kotlin / XML before
    writing PWA code for any reported mismatch. Layout / behaviour comments
    throughout the codebase reference specific Android files (e.g.
@@ -140,8 +200,16 @@ include the group name).
   to Login button).
 - API: `resetPin(email)`.
 
-#### `/terms` and `/help` — Static text pages
-- Plain layout with `<Toolbar type="back">`. No state, no API calls.
+#### `/terms` — Static T&Cs (`src/app/terms/page.tsx`)
+- 9 hardcoded sections (Acceptance, Use of Service, Data Privacy, Accuracy,
+  Account, IP, Liability, Changes, Contact). Header: "Last updated:
+  January 2025 · Digital Green Foundation".
+
+#### `/help` — Help & Support (`src/app/help/page.tsx`)
+- Single white card with 3 rows: **User Manual** (no handler — TODO),
+  **FAQs** (no handler — TODO), **Contact Us** → `mailto:admin@digitalgreen.org`.
+- The TODO items render as non-clickable rows. When User Manual / FAQs
+  get content, wire the `onPress` handlers in `items` array.
 
 ### Auth-gated routes (under `src/app/(main)/`)
 
@@ -181,30 +249,46 @@ true (see §10.1).
 
 #### `/feed-selection` — Diet recommend / evaluate (`src/app/(main)/feed-selection/page.tsx`, 996 lines)
 - Toolbar: `type="back"`.
+- **Page initializes with 3 default FeedRow instances** (matches Android —
+  if the store has fewer than 3 stored selections, the array is padded
+  with empty rows up to 3). Restored simulations override this when
+  loaded from `/cattle-info`.
+- "Custom Diet Limits" + "Custom Feed" pill buttons across the top.
+  **Custom Diet Limits is DISABLED in evaluation mode** (`disabled={isEvaluation}`)
+  — limits only apply to recommendation.
 - Radio toggle Recommendation/Evaluation. In Evaluation mode every row
   also shows Quantity (kg/day) + computed Cost cell.
-- "Custom Diet Limits" and "Custom Feed" pill buttons across the top
-  of the form area (matching Android two-button row).
-- `FeedRow` per feed (initially 1, "+ Add Feed" button up to N). Each
-  row has its own internal API state for type/category/feed dropdowns
-  (see §6 FeedRow).
-- Custom Feed bottom sheet (Android `DialogAddCustomFeed`):
-  - Loads feed types via `getFeedTypes(user.country_id, user.id)`,
-    categories via `getFeedCategories(feed_type, country, user)`.
-  - Nutritional fields collapsible. On submit: `checkInsertOrUpdate`
-    (only when editing an existing user-owned feed name), then
-    `insertCustomFeed(...)`.
-- Custom Diet Limits modal: edits `dietLimits` Partial<DietLimits> (ash,
-  ee, ndf, starch maxes). Saved values flow into `recommendDiet`'s
-  `base_thresholds` merged over `DEFAULT_BASE_THRESHOLDS`.
+- `FeedRow` per feed. **The first row's feed_type is LOCKED in
+  recommendation mode** (`feedTypeLocked={index === 0 && !isEvaluation}`)
+  — defaults to "Forage" and cannot be changed. Each row owns its own
+  API state for type/category/feed dropdowns (see §6 FeedRow).
+- "+ Add More Feed" button has dashed-border styling (Android parity).
+- **Custom Feed bottom sheet** (Android `DialogAddCustomFeed`):
+  - Two collapsible sections — Feed Details (name + type + category) and
+    Nutritional Information (13 fields: DM, Ash, CP, NPN-CP, EE, ST,
+    NDF, ADF, LG, NDIN, ADIN, Ca, P). Both expanded by default. Unlike
+    the FeedRow edit dialog (which switches layout by category), the
+    Custom Feed modal always shows all 13 fields.
+  - Loads feed types via `getFeedTypes(user.country_id, user.id)` on
+    open. Categories cascade via `getFeedCategories(...)` when type
+    changes.
+  - On save: `checkInsertOrUpdate(country_id, feed_name, user_id)` —
+    note the key is the **feed NAME** here, not feed_uuid. If
+    `insert_feed=false` (server says a feed of this name already exists
+    for this user), call `updateCustomFeed`; else call `insertCustomFeed`.
+- **Custom Diet Limits modal:** edits `Partial<DietLimits>` (ash, ee,
+  ndf, starch maxes). Empty input deletes the key. Saved values flow
+  into `recommendDiet`'s `base_thresholds`, merged over
+  `DEFAULT_BASE_THRESHOLDS`.
 - `handleGenerateClick` — pre-flight: any row that has partial selection
-  but missing required pieces (feed_uuid, price_per_kg, quantity when
-  evaluation) is shown in an "Incomplete Feeds" dialog before allowing
-  submission. Otherwise `generateReport()` fires.
-- `generateReport()` calls either `evaluateDiet({...})` or
-  `recommendDiet({...})`, sets `reportData` (with `mode` discriminator),
-  sets `dietLimits`, pushes `/report`. `GeneratingReportDialog` overlays
-  during the request.
+  (type or category started) but missing required pieces (feed_uuid,
+  price_per_kg, quantity when evaluation) is shown in an "Incomplete
+  Feeds" dialog with a list of feed names/indices before allowing
+  submission. Empty rows are silently ignored. Otherwise
+  `generateReport()` fires.
+- `generateReport()` calls `evaluateDiet({...})` or `recommendDiet({...})`,
+  sets `reportData` (with `mode` discriminator), `setDietLimits(limits)`,
+  pushes `/report`. `GeneratingReportDialog` overlays during the request.
 
 #### `/report` — Diet report (`src/app/(main)/report/page.tsx`, 1101 lines)
 - Reads `reportData` (union of `EvaluationResponse | RecommendationResponse`,
@@ -231,11 +315,29 @@ true (see §10.1).
     & Warnings" (concat of `recommendations + warnings`) and "Violated
     Parameters" (filter empties from `violated_parameters`). Empty arrays
     render `"No recommendation/warnings available!"` placeholder.
-- `saveReport` button: POST `/save-report` with `{report_id, user_id}`,
-  flips an `isSaving` state, shows backend's `message`.
+- **Bottom action bar (fixed):**
+  - **"New Case"** (outline button with `IcNewCase`): clears
+    `feedSelections`, sets `feedSelectionType: "recommendation"`, pushes
+    `/cattle-info`. Matches Android `btnNewCase`.
+  - **"Save Report"** (filled): POST `/save-report` with `{report_id,
+    user_id}`. Response can carry the PDF URL in any of `bucket_url`,
+    `report.bucket_url`, or `pdf_url` (defensive parsing because the
+    backend has historically varied). On success a **"View PDF"** button
+    appears between the action row and the cards — opens the URL in a
+    new tab (`window.open(pdfUrl, "_blank", "noopener,noreferrer")`).
 - Currency rendering: `currencySymbol` reads first from `cost_analysis.currency`
   (evaluation), then `currency`, then `user.currency`. Always rendered as
   suffix `"108.5 VND"`.
+- `MethaneBar` component (Android `LinearProgressIndicator` parity):
+  bar height 6 px, fill + dot at progress position, dot at right end.
+  Track color is `${color}26` (~15% alpha of the fill).
+- `MethaneUiRanges` constants ported from Android: production max
+  `1000` g/day, yield max `100` g/kg DMI, intensity max `100` g/kg ECM,
+  Ym max `100%`.
+- Statuses that the `StatusBadge` understands (used in some banners):
+  `Optimized` / `Optimised` / `OPTIMAL` → green; `Not Optimized` /
+  `Not Feasible` / `INFEASIBLE` → red; `Evaluation` / `Evaluated` /
+  `ADVISORY` → orange.
 
 #### `/profile` — User profile (`src/app/(main)/profile/page.tsx`, 555 lines)
 - Inputs: Name (`cleanNameInput` again), Country (`SelectInput`).
@@ -290,20 +392,36 @@ Admin layout sets sage→mint gradient AND swaps `<meta theme-color>` to
   toggle calls `toggleUserStatus(user_id, admin_user_id, is_active)`.
 
 #### `/admin/feeds` — Feed/Category/Type CRUD (`src/app/(main)/admin/feeds/page.tsx`, 1355 lines)
-- Three-tab navigation (`tab` state = "feeds" | "types" | "categories"),
-  driven by a `section` state ("landing" | tab name) that toggles between
-  card landing view and the sub-section list.
+- **Two-level navigation**:
+  - **Landing view** (`section === "landing"`): 3 nav cards — Feed Type,
+    Feed Category, Feed. Each has a 4-px green accent bar on the left
+    and an arrow chip on the right. Title bar: "Configure Resources"
+    subtitle + "Administration" tagline.
+  - **Sub-section view** (`section === "feeds" | "types" | "categories"`):
+    list view with Add button + per-row edit/delete. Toolbar back button
+    returns to the landing view, NOT the prior page.
 - `loadAll()` runs `Promise.all([getAdminFeedTypes, getAdminFeedCategories,
-  getAdminFeeds, getCountries])`.
-- Feed CRUD: openAdd / openEdit pre-fills `feedForm`. Save → `addAdminFeed`
-  or `updateAdminFeed(feed_id, ...)` with the FULL nutritional payload
-  (every field is a `Number(v) || 0`). Delete via `deleteAdminFeed`.
-- Category CRUD: `addAdminFeedCategory({category_name, description,
-  feed_type_id, sort_order})` / `deleteAdminFeedCategory`.
-- Type CRUD: `addAdminFeedType({type_name, description, sort_order})` /
-  `deleteAdminFeedType`.
-- Confirm-delete dialog reused across all three (icon `ic_additional_information`,
-  carmine_pink delete button).
+  getAdminFeeds, getCountries])` once on mount; every successful CRUD
+  call re-runs it.
+- **Feed CRUD modal**: 23 fields total (3 metadata: name/type/category,
+  Country selector, then 19 nutrient numerics + `fd_code`). openAdd /
+  openEdit pre-fills `feedForm`. Save → `addAdminFeed` or
+  `updateAdminFeed(feed_id, ...)` with the FULL nutritional payload
+  (every numeric is `Number(v) || 0`; metadata fields like `fd_ipb_local_lab`,
+  `fd_orginin`, `fd_season`, `fd_code` are always sent as empty string
+  because the Android dialog doesn't expose them). Delete via
+  `deleteAdminFeed` → confirm dialog.
+- **Category CRUD**: dialog form has `category_name`, `description`,
+  `feed_type_id` (`SelectInput`). On save sends
+  `{category_name, description, feed_type_id, sort_order: 0}` to
+  `addAdminFeedCategory`. Delete via `deleteAdminFeedCategory`.
+- **Type CRUD**: dialog form has `type_name`, `description`. Sends
+  `{type_name, description, sort_order: 0}` to `addAdminFeedType`.
+  Delete via `deleteAdminFeedType`.
+- All three confirm-delete dialogs share styling (icon
+  `ic_additional_information`, carmine_pink delete button).
+- Feeds tab has a search box (filters by `fd_name` only, matching
+  Android `FragmentFeed`).
 
 #### `/admin/feedback` — Feedback list + stats (`src/app/(main)/admin/feedback/page.tsx`)
 - Loads via `Promise.all([getAdminFeedbacks(user.id, 50, 0),
@@ -325,15 +443,33 @@ Admin layout sets sage→mint gradient AND swaps `<meta theme-color>` to
   admin side (matches Android `FragmentAdminFeedReports.onClickViewReport`
   which calls `FileUtils.sharePdf`).
 
-#### `/admin/bulk-upload` — Import / Export (`src/app/(main)/admin/bulk-upload/page.tsx`)
-- Three cards: Upload Feed CSV (drag-drop / browse), Export Standard
-  Feeds, Export Custom Feeds.
-- Upload: `bulkUploadFeeds(admin_user_id, file, onProgress)` →
-  `multipart/form-data` POST, `onUploadProgress` drives a progress bar.
-- Export: `exportAdminFeeds(admin_user_id)` or `exportCustomFeeds(...)`,
-  result becomes a CSV download.
-- Each panel has its own status enum (idle | uploading | success | error)
-  and message strings; both reset to idle after a few seconds.
+#### `/admin/bulk-upload` — Import / Export / Template (`src/app/(main)/admin/bulk-upload/page.tsx`)
+Four actions on this page:
+
+1. **Upload Feed CSV** (top card): file picker → "Cancel" + "Confirm
+   Upload" buttons. On confirm calls
+   `bulkUploadFeeds(admin_user_id, file, onProgress)` (multipart/form-data
+   POST). `onUploadProgress` drives a linear progress bar (track
+   `#E4F7EF`, fill go_green). Upload status enum: `idle | uploading |
+   successful | failed`. Backend's `message` is shown in the success banner.
+2. **Export Standard Feeds**: calls `exportAdminFeeds(admin_user_id)` →
+   GET `/admin/export-feeds`. Status banner colors are GREEN (sage_breeze
+   theme).
+3. **Export Custom Feeds**: calls `exportCustomFeeds(admin_user_id)` →
+   GET `/admin/export-custom-feeds`. Status banner colors are ORANGE
+   (vivid_gamboge theme).
+4. **Download Template** (fixed-position green-gradient button at the
+   bottom of the screen): hits a **static S3 URL**, not the backend:
+   ```
+   https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx
+   ```
+   The filename is misspelled "tempate" — this is the actual server-side
+   filename and matches Android. Saved client-side as
+   `feeds_table_template.xlsx` (corrected spelling). Triggers via a
+   synthetic `<a download>` click.
+
+Each panel owns its own status enum + status banner. Banners auto-clear
+after a successful or failed operation.
 
 ---
 
@@ -390,6 +526,15 @@ Feed (sub-category) — all use `CustomSelect` with `transparentTrigger`.
 Native `<select>` was abandoned because it can't do Android's
 zebra-striped popup reliably across browsers (see §10.7).
 
+**Per-row UI rules:**
+- **Header reads `FEED <index+1>`** ("FEED 1", "FEED 2", ...).
+- **Delete button only visible for `index > 0`** — FEED 1 cannot be
+  deleted (it's the implicit "main" feed row). Matches Android.
+- Edit button is enabled only when `canEdit` (the row has a selected
+  feed). Active styling uses go_green_15 bg + dark_aquamarine_green icon;
+  disabled uses light_gray_new + dark_silver.
+- Cost cell renders `${cost} ${currencySymbol}` (suffix, not prefix).
+
 ---
 
 ## 7. API surface (`src/lib/api.ts`)
@@ -443,6 +588,20 @@ FastAPI). axios instance has a response error interceptor that extracts
 | `checkInsertOrUpdate(country_id, feed_id, user_id)` | POST `/check-insert-or-update` body |
 | `insertCustomFeed({country_id, user_id, feed_insert:true, feed_details})` | POST `/insert-custom-feed` |
 | `updateCustomFeed({country_id, user_id, feed_id, feed_insert:false, feed_details})` | POST `/update-custom-feed` |
+
+**`checkInsertOrUpdate` returns `{ insert_feed: boolean, feed_details: { feed_id, ... } }`**.
+The PWA uses it in two distinct ways — same endpoint, different semantic
+keying:
+
+- **FeedRow edit dialog** (`openEditModal`): pass `item.feed_uuid` as the
+  `feed_id` argument. The response tells you whether the upcoming save
+  will INSERT (creating a user-owned derivative because the source feed
+  is read-only) or UPDATE (because it's already user-owned).
+- **Custom Feed bottom sheet** (`handleSaveCustomFeed`): pass the
+  TRIMMED feed NAME as the `feed_id` argument. The response tells you
+  whether to INSERT a new custom feed by that name or UPDATE an existing
+  one. (The endpoint accepts a name string here, not a UUID — server
+  resolves both kinds.)
 
 ### Admin
 | Function | Method · Path |
@@ -557,7 +716,8 @@ All return `"Not available"` for null/invalid input.
 
 ## 10. Known landmines — read before changing related code
 
-Each fix has a non-obvious "why". These bugs cost real session time.
+Each fix has a non-obvious "why". 14 entries. These bugs cost real
+session time; don't relearn them.
 
 ### 10.1 Persist hydration race → "asks for login after every refresh"
 Next.js SSR renders `(main)/layout.tsx` with `user=null` because
@@ -657,7 +817,25 @@ clear localStorage. `InstallPrompt` listens for `appinstalled` (Chrome's
 post-install event) and `localStorage.removeItem("rationsmart-storage")`
 so a freshly installed PWA always opens to login.
 
-### 10.13 SW cache → "stuck on splash" / "old bundle"
+### 10.13 Dev URL relies on hardcoded proxy defaults
+The `rationsmart-pwa` (dev) Vercel project only has `BACKEND_HOST` and
+`BACKEND_PORT` scoped to the `Development` environment. Production
+deploys read NO env vars and rely on the hardcoded fallback in
+`src/app/api/proxy/[...path]/route.ts`:
+```ts
+const BACKEND_HOST = process.env.BACKEND_HOST ?? "<DEV_BACKEND_IP>";
+const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
+```
+**Don't change those defaults to prod values "for safety"** — that would
+silently flip `rationsmart-pwa.vercel.app` to hit the prod backend. If
+you need to move the dev backend, either:
+1. Re-scope the env vars to Production (or All Environments) on the
+   `rationsmart-pwa` project, OR
+2. Update the hardcoded defaults in `route.ts`.
+The `x-backend-env` debug header on every response is the canonical
+"which backend am I hitting right now" check.
+
+### 10.14 SW cache → "stuck on splash" / "old bundle"
 The Workbox NetworkFirst strategy can pin a bad bundle if the user
 doesn't bust the cache. Triage: DevTools → Application → Service Workers
 → Unregister → hard refresh. Worst case: Application → Storage → Clear
@@ -696,6 +874,29 @@ storage. `partialize` keeps: `user`, `feedSelectionType`, `cattleInfo`,
 `feedSelections`, `dietLimits`. `reportData` and `snackbar` are session-only.
 
 `skipHydration` is DISABLED — see §10.1.
+
+### How `feedSelections` is consumed
+
+`/feed-selection` pads the stored array up to **3 rows minimum** when it
+mounts (`while (stored.length < 3) stored.push(createFeedItem())`). So:
+- A brand-new session shows 3 empty FeedRow instances.
+- A restored simulation with 5 stored items shows 5 rows.
+- A restored simulation with 1 stored item shows that 1 + 2 empty rows
+  padded to reach 3.
+
+Use `setFeedSelections([...])` directly when you want to override (e.g.
+after Reset on cattle-info → empty array; after simulation restore →
+the loaded array). The 3-row pad runs only on initial mount.
+
+### How `user.pin` and localStorage `user_id` interact
+
+`setUser(user)` writes the user object via persist AND also writes
+`localStorage.setItem("user_id", user.id)` as a side effect. `logout()`
+removes `user_id` from localStorage in addition to clearing the store.
+The `user_id` localStorage key is not actively read anywhere in the
+current PWA — it's vestigial parity with Android (which uses
+SharedPreferences for the same purpose). Don't remove it; future
+features may rely on it as an independent fast path.
 
 ### `User` shape
 ```ts
@@ -775,12 +976,31 @@ after label.
    action needed.
 
 ### Backend swap (e.g. moving prod IP)
-1. Update the env var on the right project. Prod = `rationsmart-prod`,
-   dev = `rationsmart-pwa`.
-2. `vercel env rm BACKEND_HOST production` then `vercel env add` — env
-   changes don't auto-redeploy; trigger a fresh deploy.
-3. Verify: `curl -sI https://rationsmart.vercel.app/api/proxy/auth/countries`
-   → look for `x-backend-host` / `x-backend-env` in the response.
+
+**For prod** (`rationsmart-prod` → `rationsmart.vercel.app`):
+1. Operate from a prod-linked worktree (see "Operating on the prod
+   project from CLI" below) OR use the Vercel dashboard.
+2. `vercel env rm BACKEND_HOST production` then
+   `vercel env add BACKEND_HOST production` with the new value. Repeat
+   for `BACKEND_PORT` if changed.
+3. Trigger a redeploy — env-var changes don't auto-redeploy. Either
+   `vercel --prod --yes` from the worktree, or push any code change.
+4. Verify: `curl -sI https://rationsmart.vercel.app/api/proxy/auth/countries`
+   → `x-backend-env: prod`, `x-backend-host` matches the new IP.
+
+**For dev** (`rationsmart-pwa` → `rationsmart-pwa.vercel.app`):
+The dev project's env vars are scoped to `Development` only (§10.13), so
+updating them via `vercel env add ... development` will NOT change the
+deployed Production URL behavior. To move the dev backend you have two
+options:
+- **Option A — code change:** edit the hardcoded fallback in
+  `src/app/api/proxy/[...path]/route.ts:4-5`. Push to main; both projects
+  redeploy (prod is unaffected because its env vars override the fallback).
+- **Option B — env-var rescope:** re-add `BACKEND_HOST` and `BACKEND_PORT`
+  on the `rationsmart-pwa` project scoped to **Production** (or All
+  Environments) with the new value, then trigger a redeploy.
+Verify with `x-backend-env: dev` (or `custom` if you pointed at something
+other than the two known IPs).
 
 ### Operating on the prod project from CLI
 The repo at `~/Desktop/RationSmart-PWA` is linked to
