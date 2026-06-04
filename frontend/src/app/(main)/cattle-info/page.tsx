@@ -215,6 +215,8 @@ export default function CattleInfoPage() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [loadingSimId, setLoadingSimId] = useState<string | null>(null);
+  // §1.2 Grazing info tooltip — tap-driven popover, no hover (mobile-first)
+  const [showGrazingTooltip, setShowGrazingTooltip] = useState(false);
 
   useEffect(() => {
     getCountries()
@@ -717,7 +719,9 @@ export default function CattleInfoPage() {
               style={inputStyle}
             />
 
-            {/* Active Grazing toggle — Android cv_active_grazing marginTop offset_10 (10dp) */}
+            {/* Active Grazing toggle — Android cv_active_grazing marginTop offset_10 (10dp).
+                §1.2 Y3: "i" icon next to the label opens a tooltip explaining
+                what grazing does to energy requirements. */}
             <div
               className="flex items-center justify-between px-4 py-3 mt-2.5"
               style={{
@@ -734,6 +738,33 @@ export default function CattleInfoPage() {
                 >
                   Active Grazing
                 </span>
+                <button
+                  type="button"
+                  onClick={() => setShowGrazingTooltip((p) => !p)}
+                  aria-label="What does Active Grazing do?"
+                  aria-expanded={showGrazingTooltip}
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    backgroundColor: showGrazingTooltip ? "#064E3B" : "rgba(5,188,109,0.15)",
+                    color: showGrazingTooltip ? "#FFFFFF" : "#064E3B",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontFamily: "Nunito, sans-serif",
+                    fontSize: 13,
+                    fontWeight: 700,
+                    fontStyle: "italic",
+                    lineHeight: 1,
+                    padding: 0,
+                    flexShrink: 0,
+                  }}
+                >
+                  i
+                </button>
               </div>
               <label className="toggle-switch">
                 <input
@@ -755,6 +786,72 @@ export default function CattleInfoPage() {
                 <span className="toggle-slider" />
               </label>
             </div>
+
+            {/* §1.2 Y3 tooltip — appears below the toggle row when "i" is tapped.
+                Text is the exact copy from the Refinements Y3 doc. */}
+            {showGrazingTooltip && (
+              <div
+                role="tooltip"
+                className="mt-2 px-4 py-3 flex gap-2.5"
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  border: "1px solid rgba(5,188,109,0.30)",
+                  borderRadius: 16,
+                  boxShadow: "0 4px 14px rgba(6,78,59,0.10)",
+                }}
+              >
+                <span
+                  style={{
+                    flexShrink: 0,
+                    width: 18,
+                    height: 18,
+                    borderRadius: "50%",
+                    backgroundColor: "#064E3B",
+                    color: "#FFFFFF",
+                    fontFamily: "Nunito, sans-serif",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    fontStyle: "italic",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginTop: 2,
+                  }}
+                  aria-hidden
+                >
+                  i
+                </span>
+                <p
+                  className="text-sm"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", lineHeight: 1.5, margin: 0 }}
+                >
+                  Grazing activity increases energy requirements. If enabled,
+                  RationSmart adds an extra energy allowance based on
+                  topography and distance walked. Leave this off for housed
+                  animals.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowGrazingTooltip(false)}
+                  aria-label="Close tooltip"
+                  style={{
+                    flexShrink: 0,
+                    width: 22,
+                    height: 22,
+                    borderRadius: "50%",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    padding: 0,
+                    color: "#6D6D6D",
+                  }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  </svg>
+                </button>
+              </div>
+            )}
 
             {/* Distance Walked + Topography — shown only when grazing is ON */}
             {form.grazing && (
