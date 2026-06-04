@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
-import { getCountries, getUserReports, getSimulationDetails } from "@/lib/api";
+import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, isLactating } from "@/lib/api";
+import type { AnimalCategory } from "@/lib/api";
 import {
   containsMultipleDecimalPoints,
   getDecimalPointIndex,
@@ -59,6 +60,11 @@ interface FormState {
   grazing: boolean;
   distance_walked: string;  // km walked; shown when grazing=ON
   topography: string;       // "Flat" or "Hilly"; shown when grazing=ON
+  // Y3 §1.3 — milk price for §2.1 margin card. Optional (blank = null).
+  milk_price: string;
+  // Y3 §1.4 — drives form gating (hides Milk Production for non-lactating)
+  // and report-side §2.3 section visibility.
+  animal_category: AnimalCategory;
 }
 
 interface HistoryItem {
@@ -96,6 +102,11 @@ const EMPTY_FORM: FormState = {
   grazing: false,
   distance_walked: "",
   topography: "Flat",
+  // Y3 §1.3 — blank means user did not provide; payload sends null.
+  milk_price: "",
+  // Y3 §1.4 — default preserves existing behaviour (PWA was implicitly
+  // lactating-cow-only before this change).
+  animal_category: "Lactating Cow",
 };
 
 const inputStyle = {
@@ -200,6 +211,10 @@ export default function CattleInfoPage() {
         grazing: cattleInfo.grazing ?? false,
         distance_walked: cattleInfo.distance != null ? String(cattleInfo.distance) : "0",
         topography: cattleInfo.topography ?? "Flat",
+        // Y3 §1.3 / §1.4 — fall back to defaults if a pre-Y3 cattleInfo
+        // record is in storage (i.e. saved before these fields existed).
+        milk_price: cattleInfo.milk_price != null ? String(cattleInfo.milk_price) : "",
+        animal_category: cattleInfo.animal_category ?? "Lactating Cow",
       };
     }
     return {
@@ -268,6 +283,12 @@ export default function CattleInfoPage() {
         grazing: ci?.grazing ?? prev.grazing,
         distance_walked: ci?.distance != null ? String(ci.distance) : prev.distance_walked,
         topography: ci?.topography ?? prev.topography,
+        // Y3 §1.3 / §1.4 — restore Y3 fields from simulation when Maria's
+        // backend echoes them back on /fetch-simulation-details. Until
+        // then these reads will silently fall through to prev (unchanged).
+        // TODO(maria-y3): confirm response keys for milk_price + animal_category.
+        milk_price: ci?.milk_price != null ? String(ci.milk_price) : prev.milk_price,
+        animal_category: (ci?.animal_category as AnimalCategory | undefined) ?? prev.animal_category,
       }));
 
       // Populate Feed Selection from the simulation — matches Android
@@ -446,7 +467,13 @@ export default function CattleInfoPage() {
 
   const hasFieldErrors = Object.values(errors).some(Boolean);
 
-  // Mirrors Android FeedViewModel.enableButton() exactly
+  // Y3 §1.4 — non-lactating categories (Dry Cow / Heifer / Baby Calf)
+  // don't produce milk, so Milk Production fields are neither rendered
+  // nor required. `showMilkSection` is the single source of truth for
+  // both render-gating and required-field checks.
+  const showMilkSection = isLactating(form.animal_category);
+
+  // Mirrors Android FeedViewModel.enableButton() exactly, extended for §1.4
   const bw = parseFloat(form.body_weight);
   const bwGain = parseFloat(form.body_weight_gain);
   const bcs = parseFloat(form.body_condition_score);
@@ -454,6 +481,12 @@ export default function CattleInfoPage() {
   const dop = parseInt(form.days_of_pregnancy);
   const temp = parseFloat(form.average_temperature);
   const mp = parseFloat(form.milk_production);
+
+  const milkFieldsValid = !showMilkSection || (
+    !isNaN(mp) && mp > 0 && mp <= 59 &&
+    form.milk_fat_percent !== "" &&
+    form.milk_protein_percent !== ""
+  );
 
   const requiredFilled =
     form.simulation_name.trim() !== "" &&
@@ -465,9 +498,7 @@ export default function CattleInfoPage() {
     !isNaN(dim) && dim >= 0 && dim <= 400 &&
     !isNaN(dop) && dop >= 0 && dop <= 280 &&
     form.parity !== "" &&
-    !isNaN(mp) && mp > 0 && mp <= 59 &&
-    form.milk_fat_percent !== "" &&
-    form.milk_protein_percent !== "" &&
+    milkFieldsValid &&
     !isNaN(temp) && temp !== 0 &&
     (!form.grazing || (parseFloat(form.distance_walked) > 0 && form.topography !== "")) &&
     !hasFieldErrors;
@@ -507,6 +538,10 @@ export default function CattleInfoPage() {
       grazing: form.grazing,
       distance: form.grazing && form.distance_walked ? Number(form.distance_walked) : 0,
       topography: form.grazing ? form.topography : "Flat",
+      // Y3 §1.3 — null when blank; backend treats null as "no margin card".
+      milk_price: form.milk_price ? Number(form.milk_price) : null,
+      // Y3 §1.4
+      animal_category: form.animal_category,
     });
     router.push("/feed-selection");
   };
@@ -569,6 +604,18 @@ export default function CattleInfoPage() {
               }}
               options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
               placeholder="Select country"
+            />
+
+            {/* Y3 §1.4 — Animal Category selector. Sits in Simulation
+                Details (top of the form) because the choice gates
+                downstream sections (Milk Production hidden for
+                non-lactating) and §2.3 report sections. */}
+            <FieldLabel>Animal Category *</FieldLabel>
+            <SelectInput
+              value={form.animal_category}
+              onChange={(v) => set("animal_category")(v)}
+              options={ANIMAL_CATEGORIES.map((c) => ({ value: c, label: c }))}
+              placeholder="Select category"
             />
           </div>
         </SectionCard>
@@ -669,7 +716,11 @@ export default function CattleInfoPage() {
           </div>
         </SectionCard>
 
-        {/* Section 4: Milk Production */}
+        {/* Section 4: Milk Production — Y3 §1.4: hidden for non-lactating
+            categories so the user isn't prompted for fields that don't
+            apply. The form's required-field gating (`milkFieldsValid`)
+            skips this section when hidden. */}
+        {showMilkSection && (
         <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title="Milk Production">
           <div className="px-3">
             <FieldLabel>Milk Production (L) *</FieldLabel>
@@ -703,8 +754,24 @@ export default function CattleInfoPage() {
                 />
               </div>
             </div>
+
+            {/* Y3 §1.3 — Milk Price input. Optional. Currency suffix comes
+                from the user's selected country. Used by §2.1 margin card. */}
+            <FieldLabel>Milk Price ({user?.currency || "currency"}/L)</FieldLabel>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step={0.01}
+              value={form.milk_price}
+              onChange={(e) => set("milk_price")(e.target.value)}
+              placeholder="Optional"
+              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+              style={inputStyle}
+            />
           </div>
         </SectionCard>
+        )}
 
         {/* Section 5: Environment */}
         <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title="Environment">

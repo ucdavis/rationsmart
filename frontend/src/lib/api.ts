@@ -28,7 +28,22 @@ export interface CattleInfo {
   grazing: boolean;
   distance: number;    // km walked while grazing; 0 when grazing=false
   topography: string;  // "Flat" or "Hilly"; always "Flat" when grazing=false
+  // Y3 §1.3 — milk price for §2.1 cost-per-liter comparison. Currency is
+  // user's selected country currency (rendered as suffix by report page).
+  // Optional: null means user did not provide a price; backend should skip
+  // the margin card in that case.
+  milk_price: number | null;
+  // Y3 §1.4 — drives report-side section gating (§2.3) and may also gate
+  // form sections (Milk Production hidden for non-lactating). Default
+  // "Lactating Cow" preserves existing behaviour.
+  // TODO(maria): confirm field name (animal_category vs state_phys) and
+  // exact string values when the backend contract lands.
+  animal_category: AnimalCategory;
 }
+
+export type AnimalCategory = "Lactating Cow" | "Dry Cow" | "Heifer" | "Baby Calf/Heifer";
+export const ANIMAL_CATEGORIES: AnimalCategory[] = ["Lactating Cow", "Dry Cow", "Heifer", "Baby Calf/Heifer"];
+export const isLactating = (cat: AnimalCategory): boolean => cat === "Lactating Cow";
 
 export interface FeedItem {
   id: string;
@@ -70,6 +85,11 @@ export interface CattleInfoPayload {
   parity: number;
   temperature: number;
   topography: string;
+  // Y3 §1.3 / §1.4 — confirm exact backend field names with Maria.
+  // Placeholder snake_case names used here; renaming is a one-line patch.
+  // TODO(maria-y3): finalize field names + units (price per L? per Kg?).
+  milk_price?: number | null;
+  animal_category?: string;     // one of AnimalCategory string values
 }
 
 // Android default BaseThresholds (ash=10, fat/ee=7, ndf=45, starch=26)
@@ -81,6 +101,11 @@ export const DEFAULT_BASE_THRESHOLDS: DietLimits = {
 };
 
 export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
+  // Y3 §1.4 — `lactating` is now derived from the user's category choice
+  // instead of being hardcoded true. The Android app always sent `true`;
+  // once Maria's backend honours `animal_category` we may remove the
+  // legacy `lactating` field entirely.
+  const isLactating = ci.animal_category === "Lactating Cow";
   return {
     breed: ci.breed,
     bc_score: ci.body_condition_score,
@@ -91,13 +116,18 @@ export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
     days_of_pregnancy: ci.days_of_pregnancy,
     distance: ci.grazing ? (ci.distance ?? 0) : 0,
     grazing: ci.grazing,
-    lactating: true,          // Android hardcodes true
+    lactating: isLactating,
     fat_milk: ci.milk_fat_percent,
     milk_production: ci.milk_production,
     tp_milk: ci.milk_protein_percent,
     parity: ci.parity,
     temperature: ci.average_temperature,
     topography: ci.grazing ? (ci.topography ?? "Flat") : "Flat",
+    // Y3 §1.3 / §1.4 — optional payload extras. null/undefined keys are
+    // safely ignored by FastAPI; once Maria confirms canonical names just
+    // rename these two keys here + in CattleInfoPayload.
+    milk_price: ci.milk_price ?? null,
+    animal_category: ci.animal_category,
   };
 }
 
