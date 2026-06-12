@@ -1,5 +1,11 @@
 import os
-from pydantic import BaseSettings, validator
+
+# pydantic v2 moved BaseSettings to the pydantic-settings package.
+# This try/except works with both pydantic v1 and v2.
+try:
+    from pydantic_settings import BaseSettings
+except ImportError:
+    from pydantic import BaseSettings  # type: ignore[no-redef]  # pydantic v1
 
 # Computed once at import time; can be overridden by OPTIMIZATION_POOL_WORKERS env var.
 _default_pool_workers = max(1, (os.cpu_count() or 2) - 1)
