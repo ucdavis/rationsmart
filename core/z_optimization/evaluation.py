@@ -207,7 +207,7 @@ def evaluate_diet(
     intermediate_results_values = None
     An_MPm = float(diet_summary_values[16]) if len(diet_summary_values) > 16 else np.nan
 
-    milk_target_input = float(animal_inputs["Trg_MilkProd_L"])
+    milk_target_input = float(animal_requirements["Trg_MilkProd_L"])
     milk_support = predict_total_milk_supported(
         Supply_NEl=diet_summary_values[1],
         Supply_MP=diet_summary_values[2],
@@ -221,9 +221,9 @@ def evaluate_diet(
         An_MPg=animal_requirements["An_MPg"],
         An_MPp=animal_requirements["An_MPp"],
         Trg_NEmilk_Milk=animal_requirements["Trg_NEmilk_Milk"],
-        Trg_MilkTPp=animal_inputs["Trg_MilkTPp"],
+        Trg_MilkTPp=animal_requirements["Trg_MilkTPp"],
         Trg_MilkProd=milk_target_input,
-        An_LactDay=animal_inputs["An_LactDay"],
+        An_LactDay=animal_requirements["An_LactDay"],
         An_BW=animal_requirements["An_BW"],
         ingredient_amounts_DM=ingredient_amounts_dm,
         f_nd=f_nd_aug,
