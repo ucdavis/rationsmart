@@ -259,7 +259,7 @@ async def run_diet_recommendation(
         "status": result.status,
         "post_results": result.post_results,
         "animal_requirements": result.animal_requirements,
-        "simulation_id": simulation_id,
+        "simulation_id": request.simulation_id,
         "report_id": report_id,
     }
     response = build_diet_response(
