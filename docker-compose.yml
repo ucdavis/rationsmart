@@ -1,5 +1,3 @@
-version: "3.9"
-
 # PostgreSQL runs natively on the host (port 9900) — no db service here.
 # Containers reach the host DB via host.docker.internal (resolved by extra_hosts below).
 # Set POSTGRES_HOST=host.docker.internal in .env on the server.
