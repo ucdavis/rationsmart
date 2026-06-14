@@ -7,9 +7,9 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List, Optional, Set, Tuple
 
-from config import ALLOW_INFEASIBLE_REPORTS
-from constraints_config import CONSTRAINT_PROFILES, DEFAULT_SEVERITY_LABELS, get_constraint_profile
-from constraints_adequacy import classify_deviation
+from .config import ALLOW_INFEASIBLE_REPORTS
+from .constraints_config import CONSTRAINT_PROFILES, DEFAULT_SEVERITY_LABELS, get_constraint_profile
+from .constraints_adequacy import classify_deviation
 
 ########################################################
 # PRE-OPTIMIZATION FEASIBILITY CHECK

@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 
 # Import utilities
-from utilities import preprocess_dataframe, rename_variable, replace_na_and_negatives
+from .utilities import preprocess_dataframe, rename_variable, replace_na_and_negatives
 
 # Feed column mapping from database/Excel (lowercase) to Engine (CamelCase)
 FEED_COLUMN_MAPPING = { 

@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Any, Dict, List, Tuple
 
 import numpy as np
-from constraints_config import DEFAULT_SEVERITY_LABELS, get_constraint_profile
+from .constraints_config import DEFAULT_SEVERITY_LABELS, get_constraint_profile
 
 ########################################################
 # HELPER FUNCTIONS

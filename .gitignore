@@ -44,3 +44,6 @@ logs/
 # Temporary / generated
 temp_work/
 results/
+
+# Deployment helpers — contain live credentials and server details
+imp_files/

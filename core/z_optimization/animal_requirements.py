@@ -16,7 +16,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Import utilities
-from utilities import adjust_dmi_temperature
+from .utilities import adjust_dmi_temperature
 
 # Animal input mapping from API (lowercase) to Engine (CamelCase)
 ANIMAL_INPUT_MAPPING = {

@@ -1,0 +1,63 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "cattle_info": {
+      "body_weight": 550.0,
+      "breed": "Holstein",
+      "lactating": true,
+      "milk_production": 30.0,
+      "days_in_milk": 150,
+      "parity": 1,
+      "days_of_pregnancy": 90,
+      "tp_milk": 3.0,
+      "fat_milk": 4.0,
+      "temperature": 25.0,
+      "topography": "Flat",
+      "distance": 1.0,
+      "grazing": false,
+      "calving_interval": 370,
+      "bw_gain": 0.5,
+      "bc_score": 3.5
+    },
+    "feed_selection": [
+      {
+        "feed_id": "6f6069fc-46a0-4e24-938e-254400f97ca8",
+        "feed_name": "Commercial concentrate",
+        "feed_category": "Energy Source",
+        "feed_type": "Concentrate",
+        "price_per_kg": 9000.0,
+        "quantity_as_fed": null
+      },
+      {
+        "feed_id": "3d933411-7df7-4226-92b2-f6568386171b",
+        "feed_name": "Mombasa Guinea, Dry Season",
+        "feed_category": "Grass/Legume Forage",
+        "feed_type": "Forage",
+        "price_per_kg": 960.0,
+        "quantity_as_fed": null
+      },
+      {
+        "feed_id": "3f05cd4e-36b4-422a-b6d4-557110b7f847",
+        "feed_name": "Rice straw, Dry Season",
+        "feed_category": "Grain Crop Forage",
+        "feed_type": "Forage",
+        "price_per_kg": 1500.0,
+        "quantity_as_fed": null
+      },
+      {
+        "feed_id": "eefab186-9f1c-4b35-9cc7-ea580d776816",
+        "feed_name": "Wet beer residue",
+        "feed_category": "By-Product/Other",
+        "feed_type": "Concentrate",
+        "price_per_kg": 1650.0,
+        "quantity_as_fed": null
+      }
+    ],
+    "user_id": "06a83ece-5d1a-470b-9c23-fd1c8bdbd8c7",
+    "country_name": "Vietnam",
+    "simulation_id": "diet-rec-2492l0effx",
+    "report_id": "rec-9580hbrpoi",
+    "custom_constraints": null
+  }
+}

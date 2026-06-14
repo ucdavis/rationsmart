@@ -1,10 +1,7 @@
 import logging
-import sys
 import os
-# Add the current directory to sys.path to support both standalone and package imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.append(current_dir)
+
+logger = logging.getLogger(__name__)
 
 import pandas as pd
 import numpy as np
@@ -46,7 +43,7 @@ warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 # from config import Constraints, CONSTRAINT_TOLERANCE_RANGES
 
 # Import utility functions
-from utilities import (
+from .utilities import (
     adjust_dmi_temperature,
     preprocess_dataframe,
     rename_variable,
@@ -57,7 +54,7 @@ from utilities import (
 )
 
 # Import animal requirements functions
-from animal_requirements import (
+from .animal_requirements import (
     rsm_calculate_an_requirements,
     rsm_create_animal_inputs_dataframe,
     rsm_create_animal_requirements_dataframe,
@@ -65,13 +62,13 @@ from animal_requirements import (
 )
 
 # Import feed processing functions
-from feed_processing import (
+from .feed_processing import (
     rsm_process_feed_library,
     rsm_process_feed_dataframe
 )
 
-# Import constraint evaluation functions
-from constraints import (
+# Import constraint evaluation functions (module not yet ported — will resolve in Task 2.11)
+from .constraints import (
     evaluate_constraints,
     build_conditional_constraints,
     evaluate_constraint_adequacy,
@@ -94,7 +91,7 @@ from constraints import (
 )
 
 # Import optimization core
-from optimization_core import (
+from .optimization_core import (
     rsm_bounds_xlxu,
     _project_to_simplex,
     SimplexPlusDmiRepair,
@@ -109,29 +106,29 @@ from optimization_core import (
     EpsilonUpdateCallback
 )
 
-# Import solution selection
-from solution_selection import (
+# Import solution selection (module not yet ported — will resolve in Task 2.11)
+from .solution_selection import (
     rsm_solution_selection,
     SELECTION_CONFIG
 )
 
 # Import report generation
-from report_generation import (
+from .report_generation import (
     calculate_weighted_absorption,
     rsm_create_solution_summary,
     generate_report_from_runner_results,
     print_selected_feeds
 )
 
-# Import post-optimization analysis
-from post_analysis import (
+# Import post-optimization analysis (module not yet ported — will resolve in Task 2.11)
+from .post_analysis import (
     rsm_run_post_optimization_analysis,
     rsm_clean_solution,
     user_warnings
 )
 
 # Import diet tables
-from diet_tables import (
+from .diet_tables import (
     rsm_create_diet_table,
     rsm_generate_nutrient_comparison,
     rsm_create_final_diet_dataframe,
@@ -186,30 +183,30 @@ def rsm_main(animal_inputs, feed_data, simulation_id=None, user_id=None, report_
     # ===================================================================
     # 2. CALCULATE ANIMAL REQUIREMENTS
     # ===================================================================
-    print("🐄 Calculating animal nutritional requirements...")
+    logger.info("Calculating animal nutritional requirements...")
     animal_requirements = rsm_calculate_an_requirements(animal_inputs) #(gen.animal_inputs)
-    print("✅ Animal requirements calculated successfully")
+    logger.info("Animal requirements calculated successfully")
 
     # ===================================================================
     # 3. PROCESS FEED DATA
     # ===================================================================
-    print("📚 Processing feed data...")
+    logger.info("Processing feed data...")
     # Process feed data using the same logic as rsm_process_feed_library
     f_nd, Dt = rsm_process_feed_dataframe(feed_data)
-    print(f"✅ Feed data processed: {len(f_nd['Fd_Name'])} feeds loaded")
+    logger.info("Feed data processed: %d feeds loaded", len(f_nd['Fd_Name']))
 
 
     # ===================================================================
     # 4. RUN OPTIMIZATION
     # ===================================================================
-    print("🔧 Running ration optimization...")
+    logger.info("Running ration optimization...")
 
     # run optimization
     results = rsm_run_optimization(animal_requirements=animal_requirements, f_nd=f_nd, cfg=RUN_CONFIG)
 
     # Check if optimization was successful
     if results is None:
-        print("❌ Optimization failed - no results returned")
+        logger.error("Optimization failed - no results returned")
         return {
             'status': 'ERROR',
             'error_message': 'Optimization failed - no results returned',
@@ -227,12 +224,12 @@ def rsm_main(animal_inputs, feed_data, simulation_id=None, user_id=None, report_
     # ===================================================================
     # 5. POST-OPTIMIZATION ANALYSIS
     # ===================================================================
-    print("📊 Analyzing optimization results...")
+    logger.info("Analyzing optimization results...")
     post_results = rsm_run_post_optimization_analysis(results, f_nd, animal_requirements)
     
     # Check if post-optimization analysis was successful
     if post_results is None:
-        print("❌ Post-optimization analysis failed - no results returned")
+        logger.error("Post-optimization analysis failed - no results returned")
         return {
             'status': 'ERROR',
             'error_message': 'Post-optimization analysis failed - no results returned',
@@ -246,28 +243,17 @@ def rsm_main(animal_inputs, feed_data, simulation_id=None, user_id=None, report_
     policy = violation_report.get('policy', {})
     
     if post_results['status'] != 'SUCCESS':
-        print(f"❌ Post-optimization analysis failed: {post_results.get('error_message', 'Unknown error')}")
+        logger.error("Post-optimization analysis failed: %s", post_results.get('error_message', 'Unknown error'))
     else:
-        print("✅ Post-optimization analysis completed")
+        logger.info("Post-optimization analysis completed")
     
     # Single policy display logic
     if policy:
-        print(f"\n📊 POLICY ANALYSIS:")
-        print("=" * 60)
-        print(f"🏷️  {policy.get('title', 'Policy Analysis')}")
-        print(f"📋 {policy.get('summary', 'No summary available')}")
-        
-        if policy.get('user_messages'):
-            print()
-            for msg in policy.get('user_messages', []):
-                print(f"   {msg}")
-        print("=" * 60)
+        logger.info("POLICY ANALYSIS: %s | %s", policy.get('title', 'Policy Analysis'), policy.get('summary', 'No summary available'))
+        for msg in policy.get('user_messages', []):
+            logger.info(msg)
     elif violation_report.get('console_output'):
-        # Fallback if no policy available
-        print("\n📊 CONSTRAINT ANALYSIS:")
-        print("=" * 60)
-        print(violation_report['console_output'])
-        print("=" * 60)
+        logger.info("CONSTRAINT ANALYSIS: %s", violation_report['console_output'])
     
     # Return error instead of exiting
     if post_results['status'] != 'SUCCESS':
@@ -281,23 +267,13 @@ def rsm_main(animal_inputs, feed_data, simulation_id=None, user_id=None, report_
     # ===================================================================
     # 6. DISPLAY FINAL RESULTS
     # ===================================================================
-    print("\n" + "="*60)
-    print("🎉 RATION FORMULATION COMPLETED SUCCESSFULLY!")  
-    print("="*60)
-    
-    # Display available results
-    print(f"\n🔍 BEST RESULT:")
-    print("=" * 40)
-    
+    logger.info("RATION FORMULATION COMPLETED SUCCESSFULLY!")
     for key, value in post_results.items():
         if isinstance(value, (int, float, str)):
-            print(f"  • {key}: {value}")
+            logger.debug("  %s: %s", key, value)
         else:
-            print(f"  • {key}: {type(value).__name__}")
-    
-    print("\n" + "="*60)
-    print("✅ All operations completed successfully!")
-    print("="*60)
+            logger.debug("  %s: %s", key, type(value).__name__)
+    logger.info("All operations completed successfully!")
     
     # Add metadata to post_results (same as dr_main) to fix dr_generate_report compatibility
     post_results.update({

@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # ── Feed types ───────────────────────────────────────────────────────────────
@@ -23,13 +23,12 @@ class FeedTypeUpdate(BaseModel):
 
 
 class FeedTypeResponse(FeedTypeBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 
 # ── Feed categories ──────────────────────────────────────────────────────────
@@ -53,35 +52,34 @@ class FeedCategoryUpdate(BaseModel):
 
 
 class FeedCategoryResponse(FeedCategoryBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     feed_type: Optional[FeedTypeResponse] = None
 
-    class Config:
-        orm_mode = True
-
 
 # ── Feed classification structure ────────────────────────────────────────────
 
 class FeedClassificationStructure(BaseModel):
-    types: List[FeedTypeResponse]
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        orm_mode = True
+    types: List[FeedTypeResponse]
 
 
 class FeedClassificationStructureResponse(BaseModel):
-    feed_classification: List[Dict[str, Any]]
+    model_config = ConfigDict(from_attributes=True)
 
-    class Config:
-        orm_mode = True
+    feed_classification: List[Dict[str, Any]]
 
 
 # ── Individual feed details ──────────────────────────────────────────────────
 
 class FeedDetailsResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     feed_id: str
     fd_code: Optional[Union[float, str]] = None
     fd_name: str
@@ -113,20 +111,16 @@ class FeedDetailsResponse(BaseModel):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
-
 
 class FeedDescriptionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     feed_cd: Optional[str] = None
     row_id: int
     feed_uuid: str
     feed_name: str
     feed_category: str
     feed_type: str
-
-    class Config:
-        orm_mode = True
 
 
 # ── Admin feed management ────────────────────────────────────────────────────

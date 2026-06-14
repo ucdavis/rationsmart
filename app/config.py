@@ -1,11 +1,6 @@
 import os
 
-# pydantic v2 moved BaseSettings to the pydantic-settings package.
-# This try/except works with both pydantic v1 and v2.
-try:
-    from pydantic_settings import BaseSettings
-except ImportError:
-    from pydantic import BaseSettings  # type: ignore[no-redef]  # pydantic v1
+from pydantic_settings import BaseSettings
 
 # Computed once at import time; can be overridden by OPTIMIZATION_POOL_WORKERS env var.
 _default_pool_workers = max(1, (os.cpu_count() or 2) - 1)
@@ -33,10 +28,10 @@ class Settings(BaseSettings):
     aws_region: str = "ap-southeast-2"
     aws_s3_bucket: str = "ucd-reports"
 
-    # ── Security (Phase 2 adds JWT fields) ────────────────────────────────────
-    # jwt_secret_key: str
-    # jwt_algorithm: str = "HS256"
-    # jwt_access_token_expire_minutes: int = 60
+    # ── Security ──────────────────────────────────────────────────────────────
+    jwt_secret_key: str
+    jwt_algorithm: str = "HS256"
+    jwt_access_token_expire_minutes: int = 60 * 24 * 7  # 7 days
 
     # ── Optimization ──────────────────────────────────────────────────────────
     optimization_pool_workers: int = _default_pool_workers
@@ -45,6 +40,12 @@ class Settings(BaseSettings):
 
     # ── PIN migration ─────────────────────────────────────────────────────────
     force_pin_reset_for_legacy_users: bool = True
+
+    # ── Redis ─────────────────────────────────────────────────────────────────
+    redis_url: str = "redis://localhost:6379/0"
+
+    # ── CORS ──────────────────────────────────────────────────────────────────
+    allowed_origins: str = "http://localhost:3000,http://localhost:8080"
 
     # ── App ───────────────────────────────────────────────────────────────────
     workers: int = 3
@@ -56,9 +57,7 @@ class Settings(BaseSettings):
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = {"env_file": ".env", "case_sensitive": False}
 
 
 settings = Settings()

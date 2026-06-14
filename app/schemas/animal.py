@@ -1,8 +1,8 @@
 import uuid
 from datetime import date, datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Annotated, Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ── Basic animal characteristics (legacy endpoint) ───────────────────────────
@@ -32,24 +32,25 @@ class AnimalCharacteristics(BaseModel):
 # ── Cattle info (used in diet recommendation & evaluation) ───────────────────
 
 class CattleInfo(BaseModel):
-    body_weight: float = Field(..., description="Body weight in kg", example=650)
-    breed: str = Field(..., example="Holstein cross")
-    lactating: bool = Field(..., example=True)
-    milk_production: float = Field(..., description="Litres per day", example=25.0)
-    days_in_milk: int = Field(..., example=100)
-    parity: int = Field(..., example=2)
-    days_of_pregnancy: int = Field(..., example=0)
-    tp_milk: float = Field(..., description="True protein % in milk", example=3.2)
-    fat_milk: float = Field(..., description="Fat % in milk", example=3.8)
-    temperature: float = Field(..., description="Ambient temperature °C", example=20.0)
-    topography: str = Field(..., description="Flat or Hilly", example="Flat")
-    distance: float = Field(..., description="Walking distance km", example=1.0)
-    grazing: bool = Field(False, example=False)
-    calving_interval: int = Field(..., description="Days", example=370)
-    bw_gain: float = Field(0.2, description="Body weight gain kg/day", example=0.2)
-    bc_score: float = Field(3.0, description="Body condition score 1–5", example=3.0)
+    body_weight: float = Field(..., description="Body weight in kg")
+    breed: str
+    lactating: bool
+    milk_production: float = Field(..., description="Litres per day")
+    days_in_milk: int
+    parity: int
+    days_of_pregnancy: int
+    tp_milk: float = Field(..., description="True protein % in milk")
+    fat_milk: float = Field(..., description="Fat % in milk")
+    temperature: float = Field(..., description="Ambient temperature °C")
+    topography: str = Field(..., description="Flat or Hilly")
+    distance: float = Field(..., description="Walking distance km")
+    grazing: bool = Field(False)
+    calving_interval: int = Field(..., description="Days")
+    bw_gain: float = Field(0.2, description="Body weight gain kg/day")
+    bc_score: float = Field(3.0, description="Body condition score 1–5")
 
-    @validator('body_weight', 'milk_production', 'tp_milk', 'fat_milk', 'temperature', 'distance', 'bw_gain', 'bc_score')
+    @field_validator('body_weight', 'milk_production', 'tp_milk', 'fat_milk', 'temperature', 'distance', 'bw_gain', 'bc_score', mode='before')
+    @classmethod
     def round_floats(cls, v):
         return round(float(v), 2)
 
@@ -60,11 +61,13 @@ class FeedWithPrice(BaseModel):
     feed_id: str = Field(..., description="Feed UUID")
     price_per_kg: float = Field(..., ge=0, description="Price per kg in local currency")
 
-    @validator('price_per_kg')
+    @field_validator('price_per_kg', mode='before')
+    @classmethod
     def round_price(cls, v):
         return round(float(v), 2)
 
-    @validator('feed_id')
+    @field_validator('feed_id', mode='before')
+    @classmethod
     def validate_feed_id(cls, v):
         try:
             uuid.UUID(v)
@@ -76,12 +79,13 @@ class FeedWithPrice(BaseModel):
 # ── Diet thresholds ──────────────────────────────────────────────────────────
 
 class BaseThresholds(BaseModel):
-    ndf_max: Optional[float] = Field(None, description="Max Fiber % diet DM", example=40.0)
-    starch_max: Optional[float] = Field(None, description="Max Starch % diet DM", example=26.0)
-    ee_max: Optional[float] = Field(None, description="Max Fat % diet DM", example=7.0)
-    ash_max: Optional[float] = Field(None, description="Max Ash % diet DM", example=15.0)
+    ndf_max: Optional[float] = Field(None, description="Max Fiber % diet DM")
+    starch_max: Optional[float] = Field(None, description="Max Starch % diet DM")
+    ee_max: Optional[float] = Field(None, description="Max Fat % diet DM")
+    ash_max: Optional[float] = Field(None, description="Max Ash % diet DM")
 
-    @validator('ndf_max', 'starch_max', 'ee_max', 'ash_max')
+    @field_validator('ndf_max', 'starch_max', 'ee_max', 'ash_max', mode='before')
+    @classmethod
     def round_floats(cls, v):
         if v is None:
             return None
@@ -91,14 +95,15 @@ class BaseThresholds(BaseModel):
 # ── Diet recommendation ──────────────────────────────────────────────────────
 
 class DietRecommendationRequest(BaseModel):
-    simulation_id: str = Field(..., example="sim-1234")
+    simulation_id: str
     user_id: str
     country_id: str
     cattle_info: CattleInfo
     feed_selection: List[FeedWithPrice] = Field(..., description="Feeds with prices")
     base_thresholds: Optional[BaseThresholds] = None
 
-    @validator('user_id')
+    @field_validator('user_id', mode='before')
+    @classmethod
     def validate_user_id(cls, v):
         try:
             uuid.UUID(v)
@@ -106,7 +111,8 @@ class DietRecommendationRequest(BaseModel):
         except ValueError:
             raise ValueError('user_id must be a valid UUID')
 
-    @validator('country_id')
+    @field_validator('country_id', mode='before')
+    @classmethod
     def validate_country_id(cls, v):
         try:
             uuid.UUID(v)
@@ -152,6 +158,8 @@ class DietSummaryDetailed(BaseModel):
 
 
 class DietRecommendationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     simulation_id: str
     report_id: str
     animal_characteristics: AnimalCharacteristicsData
@@ -169,9 +177,6 @@ class DietRecommendationResponse(BaseModel):
     optimization_details: Dict[str, Any]
     ration_evaluation: Dict[str, Any]
 
-    class Config:
-        orm_mode = True
-
 
 # ── Diet evaluation ──────────────────────────────────────────────────────────
 
@@ -180,11 +185,13 @@ class FeedEvaluationItem(BaseModel):
     quantity_as_fed: float = Field(..., gt=0, description="kg/day as-fed")
     price_per_kg: float = Field(..., ge=0)
 
-    @validator('quantity_as_fed', 'price_per_kg')
+    @field_validator('quantity_as_fed', 'price_per_kg', mode='before')
+    @classmethod
     def round_floats(cls, v):
         return round(float(v), 2)
 
-    @validator('feed_id')
+    @field_validator('feed_id', mode='before')
+    @classmethod
     def validate_feed_id(cls, v):
         try:
             uuid.UUID(v)
@@ -196,12 +203,13 @@ class FeedEvaluationItem(BaseModel):
 class DietEvaluationRequest(BaseModel):
     user_id: str
     country_id: str
-    simulation_id: str = Field(..., example="sim-1234")
+    simulation_id: str
     currency: str = Field(..., max_length=3, description="e.g. INR, USD")
     cattle_info: CattleInfo
-    feed_evaluation: List[FeedEvaluationItem] = Field(..., min_items=1)
+    feed_evaluation: Annotated[List[FeedEvaluationItem], Field(min_length=1)]
 
-    @validator('user_id')
+    @field_validator('user_id', mode='before')
+    @classmethod
     def validate_user_id(cls, v):
         try:
             uuid.UUID(v)
@@ -209,7 +217,8 @@ class DietEvaluationRequest(BaseModel):
         except ValueError:
             raise ValueError('user_id must be a valid UUID')
 
-    @validator('country_id')
+    @field_validator('country_id', mode='before')
+    @classmethod
     def validate_country_id(cls, v):
         try:
             uuid.UUID(v)
@@ -217,7 +226,8 @@ class DietEvaluationRequest(BaseModel):
         except ValueError:
             raise ValueError('country_id must be a valid UUID')
 
-    @validator('currency')
+    @field_validator('currency', mode='before')
+    @classmethod
     def validate_currency(cls, v):
         import re
         if not re.match(r'^[A-Z]{3}$', v):
@@ -256,6 +266,8 @@ class CostAnalysis(BaseModel):
 
 
 class MethaneAnalysis(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     methane_emission_mj_per_day: float
     methane_production_g_per_day: float
     methane_yield_g_per_kg_dmi: float
@@ -264,9 +276,6 @@ class MethaneAnalysis(BaseModel):
     classification: str
     warnings: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
-
-    class Config:
-        allow_population_by_field_name = True
 
 
 class NutrientBalance(BaseModel):
@@ -296,6 +305,8 @@ class DietEvaluationSummary(BaseModel):
 
 
 class DietEvaluationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     simulation_id: str
     report_id: str
     currency: str
@@ -308,9 +319,6 @@ class DietEvaluationResponse(BaseModel):
     nutrient_balance: NutrientBalance
     feed_breakdown: List[FeedBreakdownItem]
     animal_information: Optional[Dict[str, Any]] = None
-
-    class Config:
-        orm_mode = True
 
 
 # ── Feed analytics ───────────────────────────────────────────────────────────
@@ -348,19 +356,20 @@ class FeedAnalyticsUpdate(BaseModel):
 
 
 class FeedAnalyticsResponse(FeedAnalyticsBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     created_on: datetime
     updated_on: datetime
 
-    @validator('id', pre=True)
+    @field_validator('id', mode='before')
+    @classmethod
     def convert_uuid_to_str(cls, v):
         return str(v) if v else v
 
-    @validator('rcmd_dt', pre=True)
+    @field_validator('rcmd_dt', mode='before')
+    @classmethod
     def convert_date(cls, v):
         if isinstance(v, date):
             return v.isoformat()
         return v
-
-    class Config:
-        orm_mode = True

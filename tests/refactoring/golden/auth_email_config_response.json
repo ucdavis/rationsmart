@@ -1,0 +1,10 @@
+{
+  "status": 200,
+  "body": {
+    "status": "error",
+    "message": "Email configuration test failed: (535, b'5.7.8 Username and Password not accepted. For more information, go to\\n5.7.8  https://support.google.com/mail/?p=BadCredentials d2e1a72fcca58-8434afd50e6sm7184592b3a.30 - gsmtp')",
+    "smtp_server": "smtp.gmail.com",
+    "smtp_port": 587,
+    "from_email": "rationsmart.dev@gmail.com"
+  }
+}

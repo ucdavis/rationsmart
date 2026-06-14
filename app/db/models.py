@@ -44,6 +44,11 @@ class UserInformationModel(Base):
     is_active = Column(Boolean, nullable=False, server_default=text("true"), default=True)
     admin_level = Column(String(20), nullable=True)
     user_role = Column(String(30), nullable=True)
+    # ── Task 2.7: email verification ──────────────────────────────────────────
+    is_email_verified = Column(Boolean, nullable=False, server_default=text("false"), default=False)
+    email_verify_token = Column(String(64), nullable=True, index=True)
+    email_verify_token_exp = Column(DateTime(timezone=True), nullable=True)
+    requires_pin_reset = Column(Boolean, nullable=False, server_default=text("false"), default=False)
 
     __table_args__ = (
         CheckConstraint(

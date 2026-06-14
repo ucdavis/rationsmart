@@ -1,0 +1,20 @@
+{
+  "status": 200,
+  "body": {
+    "total_feedbacks": 29,
+    "average_rating": 3.95,
+    "rating_distribution": {
+      "5": "31%",
+      "4": "10%",
+      "3": "21%",
+      "2": "7%",
+      "1": "0%"
+    },
+    "feedback_type_distribution": {
+      "General": 16,
+      "Defect": 6,
+      "Feature Request": 7
+    },
+    "recent_feedbacks": 0
+  }
+}

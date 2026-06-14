@@ -13,7 +13,7 @@ This module exposes:
 from __future__ import annotations
 from typing import Any, Dict, Iterable, Optional, Sequence, Tuple
 import numpy as np
-from constraints_config import (
+from .constraints_config import (
     CONSTRAINT_ORDER,
     CONSTRAINT_PROFILES,
     DEFAULT_SEVERITY_LABELS,
@@ -22,7 +22,7 @@ from constraints_config import (
     HARD_CONSTRAINTS,
     get_constraint_profile,
 )
-from utilities import classify_feed_categories
+from .utilities import classify_feed_categories
 
 # Purpose: Compute positive violation ratio relative to target/limit.
 # Notes: Returns -1.0 when values are missing or compliant.

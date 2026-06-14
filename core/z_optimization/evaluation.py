@@ -6,13 +6,13 @@ import pandas as pd
 
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
-from animal_requirements import (
+from .animal_requirements import (
     rsm_calculate_an_requirements,
     rsm_create_animal_inputs_dataframe,
 )
-from feed_processing import rsm_process_feed_library, rsm_process_feed_dataframe
-from optimization_core import rsm_diet_supply
-from diet_tables import (
+from .feed_processing import rsm_process_feed_library, rsm_process_feed_dataframe
+from .optimization_core import rsm_diet_supply
+from .diet_tables import (
     rsm_calculate_methane_emissions,
     rsm_calculate_water_intake,
     rsm_create_diet_table,
@@ -21,8 +21,8 @@ from diet_tables import (
     rsm_create_ration_evaluation,
     rsm_generate_nutrient_comparison,
 )
-from report_generation import generate_report_from_runner_results
-from utilities import (
+from .report_generation import generate_report_from_runner_results
+from .utilities import (
     convert_af_to_dm,
     rename_variable,
     replace_na_and_negatives,

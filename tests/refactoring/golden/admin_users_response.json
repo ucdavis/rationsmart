@@ -1,0 +1,193 @@
+{
+  "status": 200,
+  "body": {
+    "success": true,
+    "message": "Retrieved 20 users successfully",
+    "users": [
+      {
+        "id": "553e644a-ddf3-4f62-8bc3-7b35c5a2206e",
+        "name": "xyz",
+        "email_id": "xyz1@xyz.com",
+        "country": "Vietnam",
+        "is_active": false,
+        "is_admin": false,
+        "created_at": "2025-09-27T14:30:49.237774"
+      },
+      {
+        "id": "6265c560-a5c2-48a4-bd22-889eb52c46e1",
+        "name": "Jagannath Acharya",
+        "email_id": "jacharya@digitalgreen.org",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-09-09T12:57:41.531333"
+      },
+      {
+        "id": "2e19d043-27d2-45d0-8ded-ee972314ec0c",
+        "name": "Jagannath Acharya",
+        "email_id": "jagannathacharya89@gmail.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2026-04-14T10:19:58.596703"
+      },
+      {
+        "id": "b2b0ea0b-22d1-4ab7-a5ec-5f019fffbdc6",
+        "name": "a2",
+        "email_id": "a1@a1.com",
+        "country": "Vietnam",
+        "is_active": false,
+        "is_admin": false,
+        "created_at": "2025-09-27T15:04:25.625431"
+      },
+      {
+        "id": "835e519a-9db6-474f-ae4b-93e19aebc74b",
+        "name": "Jagananth Acharya",
+        "email_id": "jagannathacharya@gmail.com",
+        "country": "India",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2026-04-14T10:37:57.474946"
+      },
+      {
+        "id": "a8f808fb-ef24-4d9b-8e05-a658422866fe",
+        "name": "Maria",
+        "email_id": "mariahelena.oliveira822@gmail.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-02T01:43:16.308188"
+      },
+      {
+        "id": "d074bcec-2783-48c2-89ff-b47c3a428c35",
+        "name": "Test User 2",
+        "email_id": "test2@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-11-06T17:31:31.028258"
+      },
+      {
+        "id": "73467e67-33d0-4b21-a827-8f13b2db604a",
+        "name": "Maria",
+        "email_id": "mhdeoliveira@ucdavis.edu",
+        "country": "United States",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-09-10T13:08:55.924019"
+      },
+      {
+        "id": "b965effe-9ee9-4b4e-a334-5b190e733518",
+        "name": "DB Test User",
+        "email_id": "test-db-user-1765947483612-3169@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T04:58:03.740260"
+      },
+      {
+        "id": "1dc16046-b22b-4ff0-b3a9-b212f2c2378c",
+        "name": "API Test User",
+        "email_id": "test-api-1765948649692@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T05:17:29.795827"
+      },
+      {
+        "id": "6eac813f-6745-46cf-bdda-1813c1a32ae8",
+        "name": "Precision Test",
+        "email_id": "test-precision-1765960581541-7053@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T08:36:21.582678"
+      },
+      {
+        "id": "e1b79369-0034-46ca-bb95-2377c868a750",
+        "name": "API Test User",
+        "email_id": "test-api-1765965811038@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T10:03:31.085038"
+      },
+      {
+        "id": "74654624-9a74-428c-a0bf-ddce01057144",
+        "name": "Toggle Test User",
+        "email_id": "test-toggle-1765958107173-2889@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T07:55:07.214546"
+      },
+      {
+        "id": "5cd9780d-fc44-4db4-a5cb-90c87368bbc6",
+        "name": "Jagannath Acharya",
+        "email_id": "jagannathacharya123@gmail.com",
+        "country": "India",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2026-04-14T10:39:06.318558"
+      },
+      {
+        "id": "ac87d895-3b9f-45f1-b0bd-7df1efad088f",
+        "name": "Precision Test",
+        "email_id": "test-precision-1765947483780-9083@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T04:58:03.900640"
+      },
+      {
+        "id": "05c3432a-cf26-4f09-b8a0-52b01e36ff56",
+        "name": "Feedback Test User",
+        "email_id": "test-feedback-db-1765947483812-9731@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T04:58:03.930002"
+      },
+      {
+        "id": "e636d74e-73de-4eec-ac55-24ed5a7a7b0b",
+        "name": "Toggle Test User",
+        "email_id": "test-toggle-1765947484553-7061@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T04:58:04.672046"
+      },
+      {
+        "id": "7d6197b4-60a0-4824-a285-ed48722b43ca",
+        "name": "Admin Toggle Test",
+        "email_id": "test-admin-toggle-1765947484610-5415@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T04:58:04.732864"
+      },
+      {
+        "id": "2314b1ce-065f-41db-b272-d16cdfe9b896",
+        "name": "Admin DB Test",
+        "email_id": "test-admin-db-1765950354491-2455@example.com",
+        "country": "Vietnam",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2025-12-17T05:45:54.572892"
+      },
+      {
+        "id": "bd298fdc-09a7-4b7d-ad9b-4894c077c76d",
+        "name": "Dummy",
+        "email_id": "dummy@gmail.com",
+        "country": "India",
+        "is_active": true,
+        "is_admin": false,
+        "created_at": "2026-04-14T10:45:24.915093"
+      }
+    ],
+    "total_count": 117,
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 6
+  }
+}

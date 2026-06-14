@@ -1,0 +1,26 @@
+{
+  "status": 200,
+  "body": {
+    "feed_classification": [
+      {
+        "type": "Forage",
+        "categories": [
+          "By-Product/Other-Forage",
+          "Grain Crop Forage",
+          "Grass/Legume Forage"
+        ]
+      },
+      {
+        "type": "Concentrate",
+        "categories": [
+          "Additive",
+          "By-Product/Other",
+          "Energy Source",
+          "Plant Protein",
+          "Sugar/Sugar Alcohol",
+          "Minerals"
+        ]
+      }
+    ]
+  }
+}

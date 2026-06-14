@@ -9,7 +9,7 @@ import logging
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from repositories.feed_repository import FeedRepository
 from repositories.user_repository import UserRepository
@@ -27,115 +27,114 @@ _NUMERIC_COLUMNS = {
 
 # ── Feed type / category CRUD ─────────────────────────────────────────────────
 
-def create_feed_type(
-    db: Session, data: Dict[str, Any]
+async def create_feed_type(
+    db: AsyncSession, data: Dict[str, Any]
 ) -> Tuple[bool, str, Optional[Any]]:
     """Create a new feed type. Caller must commit."""
     repo = FeedRepository(db)
-    ft = repo.create_feed_type(data)
+    ft = await repo.create_feed_type(data)
     return True, "Feed type created successfully", ft
 
 
-def delete_feed_type(
-    db: Session, type_id: str
+async def delete_feed_type(
+    db: AsyncSession, type_id: str
 ) -> Tuple[bool, str]:
     """Delete a feed type if it has no feeds or categories. Caller must commit."""
     repo = FeedRepository(db)
-    ft = repo.get_feed_type_by_id(type_id)
+    ft = await repo.get_feed_type_by_id(type_id)
     if not ft:
         return False, "Feed type not found"
 
-    if repo.count_categories_by_type(type_id) > 0:
+    if await repo.count_categories_by_type(type_id) > 0:
         return False, "Cannot delete: feed type has associated categories"
-    if repo.count_feeds_by_type_name(ft.type_name) > 0:
+    if await repo.count_feeds_by_type_name(ft.type_name) > 0:
         return False, "Cannot delete: feeds are assigned to this type"
 
-    repo.delete_feed_type(ft)
+    await repo.delete_feed_type(ft)
     return True, f"Feed type '{ft.type_name}' deleted"
 
 
-def create_feed_category(
-    db: Session, data: Dict[str, Any]
+async def create_feed_category(
+    db: AsyncSession, data: Dict[str, Any]
 ) -> Tuple[bool, str, Optional[Any]]:
     """Create a new feed category. Caller must commit."""
     repo = FeedRepository(db)
-    ft = repo.get_feed_type_by_id(data["feed_type_id"])
+    ft = await repo.get_feed_type_by_id(data["feed_type_id"])
     if not ft:
         return False, "Feed type not found", None
-    cat = repo.create_feed_category(data)
+    cat = await repo.create_feed_category(data)
     return True, "Feed category created successfully", cat
 
 
-def delete_feed_category(
-    db: Session, category_id: str
+async def delete_feed_category(
+    db: AsyncSession, category_id: str
 ) -> Tuple[bool, str]:
     """Delete a feed category if no feeds are assigned. Caller must commit."""
     repo = FeedRepository(db)
-    cat = repo.get_category_by_id(category_id)
+    cat = await repo.get_category_by_id(category_id)
     if not cat:
         return False, "Feed category not found"
 
-    if repo.count_feeds_by_category_name(cat.category_name) > 0:
+    if await repo.count_feeds_by_category_name(cat.category_name) > 0:
         return False, "Cannot delete: feeds are assigned to this category"
 
-    repo.delete_feed_category(cat)
+    await repo.delete_feed_category(cat)
     return True, f"Feed category '{cat.category_name}' deleted"
 
 
 # ── Feed CRUD ─────────────────────────────────────────────────────────────────
 
-def create_feed(
-    db: Session, data: Dict[str, Any]
+async def create_feed(
+    db: AsyncSession, data: Dict[str, Any]
 ) -> Tuple[bool, str, Optional[Any]]:
     """Create a new standard feed. Caller must commit."""
     repo = FeedRepository(db)
     user_repo = UserRepository(db)
 
-    existing = repo.get_by_name(data["fd_name"])
-    if existing:
+    if await repo.get_by_name(data["fd_name"]):
         return False, f"Feed '{data['fd_name']}' already exists", None
 
     country_id = None
     if data.get("fd_country_name"):
-        country = user_repo.get_country_by_name(data["fd_country_name"])
+        country = await user_repo.get_country_by_name(data["fd_country_name"])
         if not country:
             return False, f"Country '{data['fd_country_name']}' not found", None
         country_id = str(country.id)
 
-    feed = repo.create(data, country_id=country_id)
+    feed = await repo.create(data, country_id=country_id)
     return True, "Feed created successfully", feed
 
 
-def update_feed(
-    db: Session, feed_id: str, data: Dict[str, Any]
+async def update_feed(
+    db: AsyncSession, feed_id: str, data: Dict[str, Any]
 ) -> Tuple[bool, str, Optional[Any]]:
     """Update an existing feed. Caller must commit."""
     repo = FeedRepository(db)
-    feed = repo.get_by_id(feed_id)
+    feed = await repo.get_by_id(feed_id)
     if not feed:
         return False, "Feed not found", None
 
     if "fd_name" in data:
-        dup = repo.get_by_name(data["fd_name"])
+        dup = await repo.get_by_name(data["fd_name"])
         if dup and str(dup.id) != feed_id:
             return False, f"Another feed named '{data['fd_name']}' already exists", None
 
-    updated = repo.update(feed, data)
+    updated = await repo.update(feed, data)
     return True, "Feed updated successfully", updated
 
 
-def delete_feed(db: Session, feed_id: str) -> Tuple[bool, str]:
+async def delete_feed(db: AsyncSession, feed_id: str) -> Tuple[bool, str]:
     """Delete a feed. Caller must commit."""
     repo = FeedRepository(db)
-    feed = repo.get_by_id(feed_id)
+    feed = await repo.get_by_id(feed_id)
     if not feed:
         return False, "Feed not found"
-    repo.delete(feed)
+    await repo.delete(feed)
     return True, f"Feed '{feed.fd_name}' deleted"
 
 
-def list_feeds(
-    db: Session,
+async def list_feeds(
+    db: AsyncSession,
     skip: int = 0,
     limit: int = 20,
     feed_type: Optional[str] = None,
@@ -144,7 +143,7 @@ def list_feeds(
     search: Optional[str] = None,
 ) -> Tuple[List[Any], int]:
     repo = FeedRepository(db)
-    return repo.get_all(
+    return await repo.get_all(
         skip=skip,
         limit=limit,
         feed_type=feed_type,
@@ -156,8 +155,8 @@ def list_feeds(
 
 # ── Bulk upload ───────────────────────────────────────────────────────────────
 
-def bulk_upload_feeds(
-    db: Session, file_bytes: bytes
+async def bulk_upload_feeds(
+    db: AsyncSession, file_bytes: bytes
 ) -> Dict[str, Any]:
     """
     Parse an Excel file and upsert feeds.
@@ -209,7 +208,6 @@ def bulk_upload_feeds(
                 failed.append({"row": row_num, "reason": "fd_name is empty"})
                 continue
 
-            # Validate numeric columns
             invalid_numeric = []
             for col in _NUMERIC_COLUMNS:
                 val = row.get(col)
@@ -225,7 +223,7 @@ def bulk_upload_feeds(
             country_name = str(row.get("fd_country_name", "")).strip()
             country_id = None
             if country_name:
-                c = user_repo.get_country_by_name(country_name)
+                c = await user_repo.get_country_by_name(country_name)
                 country_id = str(c.id) if c else None
 
             data: Dict[str, Any] = {
@@ -240,19 +238,19 @@ def bulk_upload_feeds(
                 val = row.get(col)
                 data[col] = float(val) if val is not None and val != "" else None
 
-            existing_feed = repo.get_by_name(fd_name)
+            existing_feed = await repo.get_by_name(fd_name)
             if existing_feed:
-                repo.update(existing_feed, data)
+                await repo.update(existing_feed, data)
                 updated += 1
                 existing += 1
             else:
-                repo.create(data, country_id=country_id)
+                await repo.create(data, country_id=country_id)
                 success_count += 1
 
         except Exception as exc:
             failed.append({"row": row_num, "reason": str(exc)})
 
-    db.flush()
+    await db.flush()
     return {
         "success": True,
         "message": f"Processed {total} records: {success_count} new, {updated} updated, {len(failed)} failed",
@@ -268,7 +266,7 @@ def bulk_upload_feeds(
 
 # ── Export ────────────────────────────────────────────────────────────────────
 
-def export_feeds(db: Session) -> Tuple[bytes, str]:
+async def export_feeds(db: AsyncSession) -> Tuple[bytes, str]:
     """
     Export all standard feeds as Excel bytes.
     Returns (file_bytes, filename).
@@ -276,7 +274,7 @@ def export_feeds(db: Session) -> Tuple[bytes, str]:
     import pandas as pd
 
     repo = FeedRepository(db)
-    feeds = repo.get_all_for_export()
+    feeds = await repo.get_all_for_export()
 
     rows = []
     for f in feeds:
@@ -317,12 +315,12 @@ def export_feeds(db: Session) -> Tuple[bytes, str]:
     return buf.getvalue(), filename
 
 
-def export_custom_feeds(db: Session) -> Tuple[bytes, str]:
+async def export_custom_feeds(db: AsyncSession) -> Tuple[bytes, str]:
     """Export all custom feeds as Excel bytes."""
     import pandas as pd
 
     repo = FeedRepository(db)
-    feeds = repo.get_all_custom_for_export()
+    feeds = await repo.get_all_custom_for_export()
 
     rows = [
         {

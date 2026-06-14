@@ -6,13 +6,15 @@ PDF generation and S3 upload are triggered as background tasks (Task 2.8).
 
 No FastAPI imports. All DB access goes through repositories.
 """
+import dataclasses
 import logging
 import uuid as _uuid_mod
 from concurrent.futures import ProcessPoolExecutor
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import CustomFeed, Feed, FeedAnalytics, Report
 from repositories.feed_repository import FeedRepository
@@ -22,10 +24,79 @@ from repositories.user_repository import UserRepository
 logger = logging.getLogger(__name__)
 
 
+# ── Feed record ───────────────────────────────────────────────────────────────
+
+@dataclass
+class FeedRecord:
+    """Typed bridge between ORM feed objects and the optimizer's dict interface."""
+    feed_id: str
+    fd_name: str
+    fd_type: str = ""
+    fd_category: str = ""
+    fd_country_name: str = ""
+    fd_code: Optional[str] = None
+    fd_dm: float = 0.0
+    fd_ash: float = 0.0
+    fd_cp: float = 0.0
+    fd_npn_cp: float = 0.0
+    fd_ee: float = 0.0
+    fd_cf: float = 0.0
+    fd_nfe: float = 0.0
+    fd_st: float = 0.0
+    fd_ndf: float = 0.0
+    fd_hemicellulose: float = 0.0
+    fd_adf: float = 0.0
+    fd_cellulose: float = 0.0
+    fd_lg: float = 0.0
+    fd_ndin: float = 0.0
+    fd_adin: float = 0.0
+    fd_ca: float = 0.0
+    fd_p: float = 0.0
+    price_per_kg: float = 0.0
+    quantity_as_fed: Optional[float] = None
+
+    @classmethod
+    def from_orm(
+        cls,
+        feed: Any,
+        fid: str,
+        country_name: str = "",
+        price_per_kg: float = 0.0,
+        quantity_as_fed: Optional[float] = None,
+    ) -> "FeedRecord":
+        return cls(
+            feed_id=fid,
+            fd_name=feed.fd_name or "",
+            fd_type=feed.fd_type or "",
+            fd_category=feed.fd_category or "",
+            fd_country_name=feed.fd_country_name or country_name,
+            fd_code=getattr(feed, "fd_code", None),
+            fd_dm=float(feed.fd_dm or 0),
+            fd_ash=float(feed.fd_ash or 0),
+            fd_cp=float(feed.fd_cp or 0),
+            fd_npn_cp=float(feed.fd_npn_cp or 0),
+            fd_ee=float(feed.fd_ee or 0),
+            fd_cf=float(feed.fd_cf or 0),
+            fd_nfe=float(feed.fd_nfe or 0),
+            fd_st=float(feed.fd_st or 0),
+            fd_ndf=float(feed.fd_ndf or 0),
+            fd_hemicellulose=float(feed.fd_hemicellulose or 0),
+            fd_adf=float(feed.fd_adf or 0),
+            fd_cellulose=float(feed.fd_cellulose or 0),
+            fd_lg=float(feed.fd_lg or 0),
+            fd_ndin=float(feed.fd_ndin or 0),
+            fd_adin=float(feed.fd_adin or 0),
+            fd_ca=float(feed.fd_ca or 0),
+            fd_p=float(feed.fd_p or 0),
+            price_per_kg=price_per_kg,
+            quantity_as_fed=quantity_as_fed,
+        )
+
+
 # ── Feed lookup helpers ───────────────────────────────────────────────────────
 
-def get_feed_details(
-    db: Session, feed_id: str, user_id: str
+async def get_feed_details(
+    db: AsyncSession, feed_id: str, user_id: str
 ) -> Optional[Dict[str, Any]]:
     """
     Look up a feed by ID from the standard or custom_feeds table.
@@ -34,15 +105,15 @@ def get_feed_details(
     repo = FeedRepository(db)
     user_repo = UserRepository(db)
 
-    feed: Optional[Feed | CustomFeed] = repo.get_by_id(feed_id)
+    feed: Optional[Feed | CustomFeed] = await repo.get_by_id(feed_id)
     if feed is None:
-        feed = repo.get_custom_by_id(feed_id, user_id)
+        feed = await repo.get_custom_by_id(feed_id, user_id)
     if feed is None:
         return None
 
     country_name = ""
     if feed.fd_country_id:
-        country = user_repo.get_country_by_id(str(feed.fd_country_id))
+        country = await user_repo.get_country_by_id(str(feed.fd_country_id))
         country_name = country.name if country else ""
 
     return {
@@ -74,8 +145,8 @@ def get_feed_details(
     }
 
 
-def _build_feed_data_list(
-    db: Session,
+async def _build_feed_data_list(
+    db: AsyncSession,
     feed_selection: List[Any],
     user_id: str,
 ) -> Tuple[List[Dict], List[str]]:
@@ -86,8 +157,8 @@ def _build_feed_data_list(
     feed_repo = FeedRepository(db)
     ids = [item.feed_id for item in feed_selection]
 
-    std_map = {str(f.id): f for f in feed_repo.get_by_ids(ids)}
-    cust_map = {str(f.id): f for f in feed_repo.get_custom_by_ids(ids)}
+    std_map = {str(f.id): f for f in await feed_repo.get_by_ids(ids)}
+    cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids)}
     user_repo = UserRepository(db)
 
     feed_data_list = []
@@ -101,43 +172,18 @@ def _build_feed_data_list(
 
         country_name = ""
         if feed.fd_country_id:
-            c = user_repo.get_country_by_id(str(feed.fd_country_id))
+            c = await user_repo.get_country_by_id(str(feed.fd_country_id))
             country_name = c.name if c else ""
 
-        feed_data_list.append(
-            {
-                "feed_id": fid,
-                "fd_name": feed.fd_name,
-                "fd_type": feed.fd_type or "",
-                "fd_category": feed.fd_category or "",
-                "fd_country_name": feed.fd_country_name or country_name,
-                "price_per_kg": item.price_per_kg,
-                "fd_dm": float(feed.fd_dm or 0),
-                "fd_ash": float(feed.fd_ash or 0),
-                "fd_cp": float(feed.fd_cp or 0),
-                "fd_npn_cp": float(feed.fd_npn_cp or 0),
-                "fd_ee": float(feed.fd_ee or 0),
-                "fd_cf": float(feed.fd_cf or 0),
-                "fd_nfe": float(feed.fd_nfe or 0),
-                "fd_st": float(feed.fd_st or 0),
-                "fd_ndf": float(feed.fd_ndf or 0),
-                "fd_hemicellulose": float(feed.fd_hemicellulose or 0),
-                "fd_adf": float(feed.fd_adf or 0),
-                "fd_cellulose": float(feed.fd_cellulose or 0),
-                "fd_lg": float(feed.fd_lg or 0),
-                "fd_ndin": float(feed.fd_ndin or 0),
-                "fd_adin": float(feed.fd_adin or 0),
-                "fd_ca": float(feed.fd_ca or 0),
-                "fd_p": float(feed.fd_p or 0),
-            }
-        )
+        rec = FeedRecord.from_orm(feed, fid, country_name, price_per_kg=item.price_per_kg)
+        feed_data_list.append(dataclasses.asdict(rec))
     return feed_data_list, missing
 
 
 # ── Diet recommendation ───────────────────────────────────────────────────────
 
 async def run_diet_recommendation(
-    db: Session,
+    db: AsyncSession,
     pool: ProcessPoolExecutor,
     request: Any,
     user_id: str,
@@ -157,7 +203,7 @@ async def run_diet_recommendation(
     from core.z_optimization.reporting import build_diet_response
 
     # 1 — Resolve feeds
-    feed_data_list, missing = _build_feed_data_list(db, request.feed_selection, user_id)
+    feed_data_list, missing = await _build_feed_data_list(db, request.feed_selection, user_id)
     if not feed_data_list:
         raise ValueError("No valid feeds found for the provided feed IDs.")
     if missing:
@@ -207,19 +253,28 @@ async def run_diet_recommendation(
     )
 
     # 4 — Build API response
+    # reporting.py uses dict-access; convert OptimizationResult to a compat dict.
     report_id = f"rec-{_uuid_mod.uuid4().hex[:8]}"
+    result_dict = {
+        "status": result.status,
+        "post_results": result.post_results,
+        "animal_requirements": result.animal_requirements,
+        "simulation_id": simulation_id,
+        "report_id": report_id,
+    }
     response = build_diet_response(
-        result=result,
-        animal_inputs=animal_inputs,
-        feed_data_list=feed_data_list,
+        optimization_results=result_dict,
+        cattle_info=request.cattle_info,
         simulation_id=request.simulation_id,
         report_id=report_id,
+        user_name="",
+        currency=getattr(request, "currency", "$"),
     )
 
     # 5 — Persist report record (no PDF yet — Task 2.8 adds that)
     country_id = request.country_id
     report_repo = ReportRepository(db)
-    report_repo.delete_unsaved_for_user(user_id)
+    await report_repo.delete_unsaved_for_user(user_id)
 
     new_report = Report(
         report_id=report_id,
@@ -237,16 +292,16 @@ async def run_diet_recommendation(
         save_report=False,
         saved_to_bucket=False,
     )
-    report_repo.save(new_report)
-    db.commit()
+    await report_repo.save(new_report)
+    await db.commit()
 
     return response
 
 
 # ── Diet evaluation ───────────────────────────────────────────────────────────
 
-def run_diet_evaluation(
-    db: Session,
+async def run_diet_evaluation(
+    db: AsyncSession,
     request: Any,
     user_id: str,
 ) -> Dict[str, Any]:
@@ -261,8 +316,8 @@ def run_diet_evaluation(
     feed_repo = FeedRepository(db)
     user_repo = UserRepository(db)
     ids = [item.feed_id for item in request.feed_evaluation]
-    std_map = {str(f.id): f for f in feed_repo.get_by_ids(ids)}
-    cust_map = {str(f.id): f for f in feed_repo.get_custom_by_ids(ids)}
+    std_map = {str(f.id): f for f in await feed_repo.get_by_ids(ids)}
+    cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids)}
 
     feed_data_list = []
     for item in request.feed_evaluation:
@@ -270,26 +325,10 @@ def run_diet_evaluation(
         feed = std_map.get(fid) or cust_map.get(fid)
         if feed is None:
             continue
-        feed_data_list.append(
-            {
-                "feed_id": fid,
-                "fd_name": feed.fd_name,
-                "fd_type": feed.fd_type or "",
-                "fd_category": feed.fd_category or "",
-                "price_per_kg": item.price_per_kg,
-                "quantity_as_fed": item.quantity_as_fed,
-                "fd_dm": float(feed.fd_dm or 0),
-                "fd_cp": float(feed.fd_cp or 0),
-                "fd_ndf": float(feed.fd_ndf or 0),
-                "fd_adf": float(feed.fd_adf or 0),
-                "fd_ee": float(feed.fd_ee or 0),
-                "fd_ca": float(feed.fd_ca or 0),
-                "fd_p": float(feed.fd_p or 0),
-                "fd_ash": float(feed.fd_ash or 0),
-                "fd_st": float(feed.fd_st or 0),
-                "fd_lg": float(feed.fd_lg or 0),
-            }
+        rec = FeedRecord.from_orm(
+            feed, fid, price_per_kg=item.price_per_kg, quantity_as_fed=item.quantity_as_fed
         )
+        feed_data_list.append(dataclasses.asdict(rec))
 
     cattle = request.cattle_info
     animal_inputs = {
@@ -311,23 +350,24 @@ def run_diet_evaluation(
         "bc_score": cattle.bc_score,
     }
 
-    country = user_repo.get_country_by_id(request.country_id)
+    country = await user_repo.get_country_by_id(request.country_id)
     country_name = country.name if country else ""
 
     eval_result = evaluate_diet(animal_inputs, feed_data_list)
     report_id = f"eval-{_uuid_mod.uuid4().hex[:8]}"
     response = build_evaluation_response(
-        result=eval_result,
-        animal_inputs=animal_inputs,
-        feed_data_list=feed_data_list,
+        evaluation_results=eval_result,
+        cattle_info=request.cattle_info,
         simulation_id=request.simulation_id,
         report_id=report_id,
         currency=request.currency,
         country_name=country_name,
+        feed_evaluation=request.feed_evaluation,
+        feeds=feed_data_list,
     )
 
     report_repo = ReportRepository(db)
-    report_repo.delete_unsaved_for_user(user_id)
+    await report_repo.delete_unsaved_for_user(user_id)
 
     new_report = Report(
         report_id=report_id,
@@ -344,64 +384,64 @@ def run_diet_evaluation(
         save_report=False,
         saved_to_bucket=False,
     )
-    report_repo.save(new_report)
+    await report_repo.save(new_report)
     return response
 
 
 # ── Feed analytics ────────────────────────────────────────────────────────────
 
-def save_feed_analytics(db: Session, data: Dict[str, Any]) -> FeedAnalytics:
+async def save_feed_analytics(db: AsyncSession, data: Dict[str, Any]) -> FeedAnalytics:
     """Persist a feed analytics record. Caller must commit."""
     record = FeedAnalytics(**data)
-    ReportRepository(db).save_feed_analytics(record)
+    await ReportRepository(db).save_feed_analytics(record)
     return record
 
 
 # ── Custom feed operations ────────────────────────────────────────────────────
 
-def get_unique_feed_types(db: Session, country_id: str, user_id: str) -> List[str]:
-    return FeedRepository(db).get_unique_types(country_id, user_id)
+async def get_unique_feed_types(db: AsyncSession, country_id: str, user_id: str) -> List[str]:
+    return await FeedRepository(db).get_unique_types(country_id, user_id)
 
 
-def get_unique_feed_categories(db: Session, country_id: str, user_id: str) -> List[str]:
-    return FeedRepository(db).get_unique_categories(country_id, user_id)
+async def get_unique_feed_categories(db: AsyncSession, country_id: str, user_id: str) -> List[str]:
+    return await FeedRepository(db).get_unique_categories(country_id, user_id)
 
 
-def get_feed_names(
-    db: Session,
+async def get_feed_names(
+    db: AsyncSession,
     country_id: str,
     user_id: str,
     feed_type: Optional[str] = None,
     category: Optional[str] = None,
 ) -> Tuple[List, List]:
-    return FeedRepository(db).get_feed_names(country_id, user_id, feed_type, category)
+    return await FeedRepository(db).get_feed_names(country_id, user_id, feed_type, category)
 
 
-def check_insert_or_update(
-    db: Session, feed_id: str, user_id: str
+async def check_insert_or_update(
+    db: AsyncSession, feed_id: str, user_id: str
 ) -> Tuple[str, Optional[CustomFeed]]:
     """Returns ('insert', None) or ('update', existing_feed)."""
-    existing = FeedRepository(db).get_custom_by_id(feed_id, user_id)
+    existing = await FeedRepository(db).get_custom_by_id(feed_id, user_id)
     if existing:
         return "update", existing
     return "insert", None
 
 
-def insert_custom_feed(db: Session, data: Dict[str, Any]) -> CustomFeed:
+async def insert_custom_feed(db: AsyncSession, data: Dict[str, Any]) -> CustomFeed:
     """Create a new custom feed. Caller must commit."""
     from app.models import generate_next_custom_feed_code  # legacy helper still in old models
 
     if "fd_code" not in data:
         data["fd_code"] = generate_next_custom_feed_code(db)
-    return FeedRepository(db).create_custom_feed(data)
+    return await FeedRepository(db).create_custom_feed(data)
 
 
-def update_custom_feed(
-    db: Session, feed_id: str, user_id: str, data: Dict[str, Any]
+async def update_custom_feed(
+    db: AsyncSession, feed_id: str, user_id: str, data: Dict[str, Any]
 ) -> Tuple[bool, Optional[CustomFeed]]:
     """Update an existing custom feed. Caller must commit."""
-    feed = FeedRepository(db).get_custom_by_id(feed_id, user_id)
+    feed = await FeedRepository(db).get_custom_by_id(feed_id, user_id)
     if not feed:
         return False, None
-    updated = FeedRepository(db).update_custom_feed(feed, data)
+    updated = await FeedRepository(db).update_custom_feed(feed, data)
     return True, updated

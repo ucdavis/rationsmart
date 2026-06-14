@@ -1,0 +1,21 @@
+{
+  "status": 200,
+  "body": {
+    "id": "06a83ece-5d1a-470b-9c23-fd1c8bdbd8c7",
+    "name": "Satish Bagali",
+    "email_id": "satish.bagali@gmail.com",
+    "country_id": "4e7d054d-6fbd-4db6-a939-0ca79590cedb",
+    "country": {
+      "id": "4e7d054d-6fbd-4db6-a939-0ca79590cedb",
+      "name": "India",
+      "country_code": "IND",
+      "currency": "INR",
+      "is_active": true,
+      "created_at": "2025-06-26T09:05:18.531469",
+      "updated_at": "2025-12-20T13:19:10.460859"
+    },
+    "is_admin": true,
+    "created_at": "2025-11-27T16:47:48.726078",
+    "updated_at": "2026-03-09T07:28:18.084422"
+  }
+}

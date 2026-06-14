@@ -6,12 +6,11 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 from pathlib import Path
 
-# Import existing utilities for formatting
-from app.utils import format_value_with_unit, safe_float, ensure_json_safe
+import logging
 
-# Set up logger
-from middleware.logging_config import get_logger
-logger = get_logger("reporting")
+from .utilities import format_value_with_unit, safe_float, ensure_json_safe
+
+logger = logging.getLogger(__name__)
 
 def build_diet_response(
     optimization_results: Dict[str, Any],
@@ -449,6 +448,10 @@ def build_evaluation_response(
 
     return ensure_json_safe(response_data)
 
+# generate_evaluation_background_reports and generate_background_reports have been
+# moved to services/report_service.py (Task 2.8) — they owned DB sessions and S3
+# uploads which do not belong in the pure optimization core.
+
 def generate_evaluation_background_reports(
     evaluation_results: Dict[str, Any],
     user_id: str,
@@ -461,7 +464,6 @@ def generate_evaluation_background_reports(
     feeds: List[Any] = [],
     user_name: str = "User",
     db_session: Any = None,
-    use_db_context: bool = False
 ):
     """
     Runs in background task. Generates HTML and PDF reports for diet evaluation.
@@ -478,7 +480,7 @@ def generate_evaluation_background_reports(
         abs_html_path = os.path.abspath(html_report_path)
         logger.info(f"[{simulation_id}] Generating Evaluation HTML report at: {abs_html_path}")
         
-        from .report_generator_v2 import rsm_generate_report_v2 as rsm_generate_report
+        from .report_generation import rsm_generate_report_v2 as rsm_generate_report
         rsm_generate_report(
             evaluation_results.get('post_results', {}), 
             evaluation_results.get('animal_requirements', {}), 
@@ -493,28 +495,18 @@ def generate_evaluation_background_reports(
         logger.info(f"[{simulation_id}] Evaluation HTML report created")
 
         # 3. Generate PDF and Save to S3/DB
-        local_session = None
-        active_session = db_session
-
-        if use_db_context and not active_session:
-            from app.dependencies import SessionLocal
-            local_session = SessionLocal()
-            active_session = local_session
-
-        try:
-            if active_session:
-                from .pdf_service_v2 import eval_pdf_report_generator_v2
-                eval_pdf_report_generator_v2(
-                    api_response_data, 
-                    user_id, 
-                    simulation_id, 
-                    report_id, 
-                    active_session
-                )
-                logger.info(f"[{simulation_id}] Background evaluation report generation complete")
-        finally:
-            if local_session:
-                local_session.close()
+        # SessionLocal is never created in core (Task 2.8). The caller must pass
+        # db_session; if none is provided the PDF/upload step is skipped silently.
+        if db_session is not None:
+            from .pdf_service import eval_pdf_report_generator_v2
+            eval_pdf_report_generator_v2(
+                api_response_data,
+                user_id,
+                simulation_id,
+                report_id,
+                db_session,
+            )
+            logger.info(f"[{simulation_id}] Background evaluation report generation complete")
 
     except Exception as e:
         logger.error(f"[{simulation_id}] Background evaluation report task failed: {str(e)}", exc_info=True)
@@ -529,8 +521,7 @@ def generate_background_reports(
     country_name: str = "Vietnam",
     currency: str = "$",
     db_session: Any = None,
-    use_db_context: bool = False,
-    api_response_data: Optional[Dict[str, Any]] = None
+    api_response_data: Optional[Dict[str, Any]] = None,
 ):
     """
     Runs in background task. Generates HTML and PDF reports.
@@ -551,7 +542,7 @@ def generate_background_reports(
         abs_html_path = os.path.abspath(html_report_path)
         logger.info(f"[{simulation_id}] Generating HTML report at absolute path: {abs_html_path}")
         
-        from .report_generator_v2 import rsm_generate_report_v2 as rsm_generate_report
+        from .report_generation import rsm_generate_report_v2 as rsm_generate_report
         rsm_generate_report(
             optimization_results.get('post_results', {}), 
             optimization_results.get('animal_requirements', {}), 
@@ -566,28 +557,18 @@ def generate_background_reports(
         logger.info(f"[{simulation_id}] HTML report created: {html_report_path}")
 
         # 3. Generate PDF and Save to S3/DB
-        local_session = None
-        active_session = db_session
-
-        if use_db_context and not active_session:
-            from app.dependencies import SessionLocal
-            local_session = SessionLocal()
-            active_session = local_session
-
-        try:
-            if active_session:
-                from .pdf_service_v2 import rec_pdf_report_generator_v2
-                rec_pdf_report_generator_v2(
-                    api_response_data, 
-                    user_id, 
-                    simulation_id, 
-                    report_id, 
-                    active_session
-                )
-                logger.info(f"[{simulation_id}] Background report generation complete")
-        finally:
-            if local_session:
-                local_session.close()
+        # SessionLocal is never created in core (Task 2.8). The caller must pass
+        # db_session; if none is provided the PDF/upload step is skipped silently.
+        if db_session is not None:
+            from .pdf_service import rec_pdf_report_generator_v2
+            rec_pdf_report_generator_v2(
+                api_response_data,
+                user_id,
+                simulation_id,
+                report_id,
+                db_session,
+            )
+            logger.info(f"[{simulation_id}] Background report generation complete")
 
     except Exception as e:
         logger.error(f"[{simulation_id}] Background report task failed: {str(e)}", exc_info=True)

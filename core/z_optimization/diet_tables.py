@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 
 # Import from utilities
-from utilities import rename_variable, replace_na_and_negatives
+from .utilities import rename_variable, replace_na_and_negatives
 
 # Purpose: Build a diet table with DM/AF inclusions and per-ingredient costs.
 # Notes: Returns the table plus total cost using rounded AF inclusions.

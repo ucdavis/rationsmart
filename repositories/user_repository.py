@@ -1,81 +1,115 @@
 import uuid
 from datetime import datetime
-from typing import List, Optional, Tuple
+from typing import Any, List, Optional, Tuple
 
-from sqlalchemy.orm import Session
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import CountryModel, UserInformationModel
 
 
 class UserRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: AsyncSession):
         self.db = db
 
     # ── Lookup ────────────────────────────────────────────────────────────────
 
-    def get_by_email(self, email: str) -> Optional[UserInformationModel]:
-        return (
-            self.db.query(UserInformationModel)
-            .filter(
+    async def get_by_email(self, email: str) -> Optional[UserInformationModel]:
+        result = await self.db.execute(
+            select(UserInformationModel).where(
                 UserInformationModel.email_id == email.lower().strip(),
                 UserInformationModel.email_id.isnot(None),
             )
-            .first()
         )
+        return result.scalars().first()
 
-    def get_by_id(self, user_id: str) -> Optional[UserInformationModel]:
+    async def get_by_id(self, user_id: str) -> Optional[UserInformationModel]:
         try:
             uid = uuid.UUID(str(user_id))
         except ValueError:
             return None
-        return (
-            self.db.query(UserInformationModel)
-            .filter(UserInformationModel.id == uid)
-            .first()
+        result = await self.db.execute(
+            select(UserInformationModel).where(UserInformationModel.id == uid)
         )
+        return result.scalars().first()
 
-    def get_admin_by_id(self, user_id: str) -> Optional[UserInformationModel]:
+    async def get_admin_by_id(self, user_id: str) -> Optional[UserInformationModel]:
         """Returns user only if they have admin privileges."""
         try:
             uid = uuid.UUID(str(user_id))
         except ValueError:
             return None
-        return (
-            self.db.query(UserInformationModel)
-            .filter(
+        result = await self.db.execute(
+            select(UserInformationModel).where(
                 UserInformationModel.id == uid,
                 UserInformationModel.is_admin == True,  # noqa: E712
             )
-            .first()
         )
+        return result.scalars().first()
 
-    def is_admin(self, user_id: str) -> bool:
-        user = self.get_by_id(user_id)
+    async def is_admin(self, user_id: str) -> bool:
+        user = await self.get_by_id(user_id)
         return bool(user and user.is_admin)
 
     # ── Create ────────────────────────────────────────────────────────────────
 
-    def create(
-        self, name: str, email: str, pin_hash: str, country_id: str
+    async def create(
+        self,
+        name: str,
+        email: str,
+        pin_hash: str,
+        country_id: str,
+        is_active: bool = False,
+        is_email_verified: bool = False,
     ) -> UserInformationModel:
         user = UserInformationModel(
             name=name.strip(),
             email_id=email.lower().strip(),
             pin_hash=pin_hash,
             country_id=country_id,
+            is_active=is_active,
+            is_email_verified=is_email_verified,
         )
         self.db.add(user)
-        self.db.flush()
+        await self.db.flush()
         return user
+
+    # ── Email verification ────────────────────────────────────────────────────
+
+    async def get_by_email_verify_token(self, token: str) -> Optional[UserInformationModel]:
+        result = await self.db.execute(
+            select(UserInformationModel).where(
+                UserInformationModel.email_verify_token == token
+            )
+        )
+        return result.scalars().first()
+
+    async def set_email_verification_token(
+        self,
+        user: UserInformationModel,
+        token: str,
+        expiry: Any,
+    ) -> None:
+        user.email_verify_token = token
+        user.email_verify_token_exp = expiry
+        await self.db.flush()
+
+    async def mark_email_verified(self, user: UserInformationModel) -> None:
+        user.is_email_verified = True
+        user.is_active = True
+        user.email_verify_token = None
+        user.email_verify_token_exp = None
+        user.updated_at = datetime.utcnow()
+        await self.db.flush()
 
     # ── Update ────────────────────────────────────────────────────────────────
 
-    def update_pin_hash(self, user: UserInformationModel, new_hash: str) -> None:
+    async def update_pin_hash(self, user: UserInformationModel, new_hash: str) -> None:
         user.pin_hash = new_hash
         user.updated_at = datetime.utcnow()
-        self.db.flush()
+        await self.db.flush()
 
-    def update_profile(
+    async def update_profile(
         self,
         user: UserInformationModel,
         name: Optional[str] = None,
@@ -86,22 +120,22 @@ class UserRepository:
         if country_id is not None:
             user.country_id = country_id
         user.updated_at = datetime.utcnow()
-        self.db.flush()
+        await self.db.flush()
         return user
 
-    def deactivate(self, user: UserInformationModel) -> None:
+    async def deactivate(self, user: UserInformationModel) -> None:
         user.is_active = False
         user.updated_at = datetime.utcnow()
-        self.db.flush()
+        await self.db.flush()
 
-    def toggle_status(self, user: UserInformationModel, active: bool) -> None:
+    async def toggle_status(self, user: UserInformationModel, active: bool) -> None:
         user.is_active = active
         user.updated_at = datetime.utcnow()
-        self.db.flush()
+        await self.db.flush()
 
     # ── List (admin) ──────────────────────────────────────────────────────────
 
-    def list_all(
+    async def list_all(
         self,
         skip: int = 0,
         limit: int = 20,
@@ -110,45 +144,50 @@ class UserRepository:
         search: Optional[str] = None,
     ) -> Tuple[List, int]:
         """Returns (rows, total_count). Each row has UserInformationModel + country_name label."""
-        query = (
-            self.db.query(
-                UserInformationModel,
-                CountryModel.name.label("country_name"),
-            )
+        q = (
+            select(UserInformationModel, CountryModel.name.label("country_name"))
             .join(CountryModel, UserInformationModel.country_id == CountryModel.id)
         )
 
         if country_filter:
-            query = query.filter(
-                CountryModel.name.ilike(f"%{country_filter}%")
-            )
+            q = q.where(CountryModel.name.ilike(f"%{country_filter}%"))
         if status_filter == "active":
-            query = query.filter(UserInformationModel.is_active == True)  # noqa: E712
+            q = q.where(UserInformationModel.is_active == True)  # noqa: E712
         elif status_filter == "inactive":
-            query = query.filter(UserInformationModel.is_active == False)  # noqa: E712
+            q = q.where(UserInformationModel.is_active == False)  # noqa: E712
         if search:
-            query = query.filter(
+            q = q.where(
                 UserInformationModel.name.ilike(f"%{search}%")
                 | UserInformationModel.email_id.ilike(f"%{search}%")
             )
 
-        total = query.count()
-        rows = query.offset(skip).limit(limit).all()
+        count_result = await self.db.execute(
+            select(func.count()).select_from(q.subquery())
+        )
+        total = count_result.scalar_one()
+
+        rows_result = await self.db.execute(q.offset(skip).limit(limit))
+        rows = rows_result.all()
         return rows, total
 
     # ── Countries ─────────────────────────────────────────────────────────────
 
-    def get_all_countries(self) -> List[CountryModel]:
-        return (
-            self.db.query(CountryModel)
-            .filter(CountryModel.is_active == True)  # noqa: E712
+    async def get_all_countries(self) -> List[CountryModel]:
+        result = await self.db.execute(
+            select(CountryModel)
+            .where(CountryModel.is_active == True)  # noqa: E712
             .order_by(CountryModel.name)
-            .all()
         )
+        return result.scalars().all()
 
-    def get_country_by_id(self, country_id: str) -> Optional[CountryModel]:
-        return (
-            self.db.query(CountryModel)
-            .filter(CountryModel.id == country_id)
-            .first()
+    async def get_country_by_id(self, country_id: str) -> Optional[CountryModel]:
+        result = await self.db.execute(
+            select(CountryModel).where(CountryModel.id == country_id)
         )
+        return result.scalars().first()
+
+    async def get_country_by_name(self, name: str) -> Optional[CountryModel]:
+        result = await self.db.execute(
+            select(CountryModel).where(CountryModel.name.ilike(name))
+        )
+        return result.scalars().first()

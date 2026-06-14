@@ -1,6 +1,9 @@
+import logging
 import numpy as np
 from typing import Optional
-from utilities import safe_divide, safe_sum, calculate_discount, calculate_MEact, classify_feed_categories
+from .utilities import safe_divide, safe_sum, calculate_discount, calculate_MEact, classify_feed_categories
+
+logger = logging.getLogger(__name__)
 
 # Purpose: Calculate nutrient supply vector from ingredient quantities and feed data.
 # Notes: Raises on invalid inputs; returns 17-element array with supply and balance metrics.
@@ -140,7 +143,7 @@ def rsm_diet_supply(x, f_nd, animal_requirements, is_heifer: Optional[bool] = No
         return results
     
     except Exception as e:
-        print(f"Error in diet_supply: {e}")
+        logger.error("Error in diet_supply: %s", e)
         # Return default values
         fallback = np.full(19, np.nan)
         return fallback if not is_batch else np.full((x_arr.shape[0], 19), np.nan)

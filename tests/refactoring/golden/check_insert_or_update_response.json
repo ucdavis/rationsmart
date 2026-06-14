@@ -1,0 +1,40 @@
+{
+  "status": 200,
+  "body": {
+    "insert_feed": true,
+    "user_id": "06a83ece-5d1a-470b-9c23-fd1c8bdbd8c7",
+    "country_id": "6c2a0573-1500-4603-8795-633ff80f1b00",
+    "feed_details": {
+      "feed_id": "6f6069fc-46a0-4e24-938e-254400f97ca8",
+      "fd_code": null,
+      "fd_name": "Commercial concentrate",
+      "fd_type": "Concentrate",
+      "fd_category": "Energy Source",
+      "fd_country_id": "6c2a0573-1500-4603-8795-633ff80f1b00",
+      "fd_country_name": "Vietnam",
+      "fd_country_cd": "",
+      "fd_dm": 90.25,
+      "fd_ash": 9.49,
+      "fd_cp": 20.84,
+      "fd_ee": 6.02,
+      "fd_st": 33.18,
+      "fd_ndf": 13.78,
+      "fd_adf": 0.66,
+      "fd_lg": 3.26,
+      "fd_ndin": 0.09,
+      "fd_adin": 0.11,
+      "fd_ca": 1.19,
+      "fd_p": 0.54,
+      "fd_cf": 0.0,
+      "fd_nfe": 0.0,
+      "fd_hemicellulose": 0.0,
+      "fd_cellulose": 0.0,
+      "fd_npn_cp": 0.0,
+      "fd_season": "",
+      "fd_orginin": "",
+      "fd_ipb_local_lab": "",
+      "created_at": "2026-03-09T09:17:15.816733",
+      "updated_at": "2026-03-09T09:17:15.816743"
+    }
+  }
+}

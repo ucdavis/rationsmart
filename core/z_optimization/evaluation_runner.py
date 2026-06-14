@@ -2,8 +2,11 @@
 RationSmart evaluation runner
 """
 
+import logging
 import numpy as np
-from evaluation import evaluate_diet, generate_evaluation_html, report_diet_eval
+from .evaluation import evaluate_diet, generate_evaluation_html, report_diet_eval
+
+logger = logging.getLogger(__name__)
 
 # Purpose: Run a single evaluation pass with default inputs and emit console/HTML outputs.
 # Notes: Seeds default animal/feed values, prints milk support, and writes an HTML report.
@@ -32,13 +35,10 @@ def main():
 
     results = evaluate_diet(animal_inputs, ingredient_amounts_AF)
 
-    print("\n" + "=" * 60)
-    print("🐄 RATION EVALUATION RESULTS")
-    print("=" * 60)
-    print(report_diet_eval(results["milk_support"]))
+    logger.info("RATION EVALUATION RESULTS: %s", report_diet_eval(results["milk_support"]))
 
     output_file = generate_evaluation_html(results["report_ready"])
-    print(f"✅ Evaluation report generated at: {output_file}")
+    logger.info("Evaluation report generated at: %s", output_file)
 
 
 if __name__ == "__main__":

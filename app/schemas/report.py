@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.animal import CattleInfo
 
@@ -9,6 +9,8 @@ from app.schemas.animal import CattleInfo
 # ── PDF report (diet_reports table) ──────────────────────────────────────────
 
 class PDFReportMetadata(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     user_id: str
     simulation_id: str
@@ -18,26 +20,21 @@ class PDFReportMetadata(BaseModel):
     created_at: Optional[str] = None
     updated_at: Optional[str] = None
 
-    class Config:
-        orm_mode = True
-
 
 class PDFReportList(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     reports: List[PDFReportMetadata]
     total_count: int
 
-    class Config:
-        orm_mode = True
-
 
 class PDFReportResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     success: bool
     message: str
     report_id: Optional[str] = None
     report_metadata: Optional[PDFReportMetadata] = None
-
-    class Config:
-        orm_mode = True
 
 
 # ── Reports table (reports) ──────────────────────────────────────────────────
@@ -57,19 +54,18 @@ class ReportCreate(ReportBase):
 
 
 class ReportResponse(ReportBase):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     json_result: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
-    class Config:
-        orm_mode = True
-
 
 # ── Save report ──────────────────────────────────────────────────────────────
 
 class SaveReportRequest(BaseModel):
-    report_id: str = Field(..., description="Report ID to save", example="rec-abc123")
+    report_id: str = Field(..., description="Report ID to save")
     user_id: str = Field(..., description="User UUID who owns the report")
 
 
@@ -177,7 +173,8 @@ class FeedbackSubmitRequest(BaseModel):
     overall_rating: Optional[int] = Field(None, ge=1, le=5)
     text_feedback: Optional[str] = Field(None, max_length=1000)
 
-    @validator('feedback_type')
+    @field_validator('feedback_type', mode='before')
+    @classmethod
     def validate_feedback_type(cls, v):
         allowed = ('General', 'Defect', 'Feature Request')
         if v not in allowed:
@@ -186,17 +183,18 @@ class FeedbackSubmitRequest(BaseModel):
 
 
 class UserFeedbackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     overall_rating: Optional[int] = None
     text_feedback: Optional[str] = None
     feedback_type: str
     created_at: datetime
 
-    class Config:
-        orm_mode = True
-
 
 class AdminFeedbackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     user_name: str
     user_email: str
@@ -204,9 +202,6 @@ class AdminFeedbackResponse(BaseModel):
     text_feedback: Optional[str] = None
     feedback_type: str
     created_at: datetime
-
-    class Config:
-        orm_mode = True
 
 
 class FeedbackListResponse(BaseModel):

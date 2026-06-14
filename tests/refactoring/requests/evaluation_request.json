@@ -1,0 +1,31 @@
+{
+  "_comment": "Phase 0 golden-input — Evaluation. Same 4 Vietnam feeds as the recommendation (feed_ids verified via DB); quantity_as_fed values are the user-chosen inputs from eval_diet-eval-1717hbrpoi.html. country_id is VIETNAM; currency VND (Vietnam). user_id is the requested India user.",
+  "simulation_id": "diet-eval-1717hbrpoi",
+  "user_id": "06a83ece-5d1a-470b-9c23-fd1c8bdbd8c7",
+  "country_id": "6c2a0573-1500-4603-8795-633ff80f1b00",
+  "currency": "VND",
+  "cattle_info": {
+    "breed": "Holstein",
+    "lactating": true,
+    "body_weight": 550.0,
+    "bc_score": 3.5,
+    "bw_gain": 0.5,
+    "parity": 1,
+    "days_in_milk": 150,
+    "days_of_pregnancy": 90,
+    "temperature": 25.0,
+    "distance": 1.0,
+    "topography": "Flat",
+    "grazing": false,
+    "milk_production": 30.0,
+    "tp_milk": 3.0,
+    "fat_milk": 4.0,
+    "calving_interval": 370
+  },
+  "feed_evaluation": [
+    { "feed_id": "6f6069fc-46a0-4e24-938e-254400f97ca8", "quantity_as_fed": 3.0, "price_per_kg": 9000.0, "_feed": "Commercial concentrate (Vietnam)" },
+    { "feed_id": "3d933411-7df7-4226-92b2-f6568386171b", "quantity_as_fed": 5.0, "price_per_kg": 960.0,  "_feed": "Mombasa Guinea, Dry Season (Vietnam)" },
+    { "feed_id": "3f05cd4e-36b4-422a-b6d4-557110b7f847", "quantity_as_fed": 4.0, "price_per_kg": 1500.0, "_feed": "Rice straw, Dry Season (Vietnam)" },
+    { "feed_id": "eefab186-9f1c-4b35-9cc7-ea580d776816", "quantity_as_fed": 2.0, "price_per_kg": 1650.0, "_feed": "Wet beer residue (Vietnam)" }
+  ]
+}

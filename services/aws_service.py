@@ -9,9 +9,9 @@ import boto3
 from datetime import datetime
 from typing import Optional, Tuple
 from botocore.exceptions import ClientError, NoCredentialsError
-from middleware.logging_config import get_logger
+import logging
 
-logger = get_logger("aws_service")
+logger = logging.getLogger(__name__)
 
 class AWSService:
     def __init__(self):

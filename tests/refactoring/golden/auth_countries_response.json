@@ -1,0 +1,32 @@
+{
+  "status": 200,
+  "body": [
+    {
+      "id": "4e7d054d-6fbd-4db6-a939-0ca79590cedb",
+      "name": "India",
+      "country_code": "IND",
+      "currency": "INR",
+      "is_active": true,
+      "created_at": "2025-06-26T09:05:18.531469",
+      "updated_at": "2025-12-20T13:19:10.460859"
+    },
+    {
+      "id": "5de63a84-a44f-4f6a-992f-6558b3e0c30d",
+      "name": "Philippines",
+      "country_code": "PHL",
+      "currency": "PHP",
+      "is_active": true,
+      "created_at": "2025-06-26T09:05:18.531469",
+      "updated_at": "2025-12-20T13:19:10.460859"
+    },
+    {
+      "id": "6c2a0573-1500-4603-8795-633ff80f1b00",
+      "name": "Vietnam",
+      "country_code": "VNM",
+      "currency": "VND",
+      "is_active": true,
+      "created_at": "2025-06-26T09:05:18.531469",
+      "updated_at": "2025-09-09T12:12:29.231707"
+    }
+  ]
+}

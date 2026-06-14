@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 # ── Shared ──────────────────────────────────────────────────────────────────
@@ -28,6 +28,8 @@ def _validate_pin_digits(v: str, *, min_len: int = 6, max_len: int = 6) -> str:
 # ── Country ──────────────────────────────────────────────────────────────────
 
 class Country(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: Optional[str] = Field(None, description="Country UUID")
     name: str = Field(..., max_length=100, description="Country name")
     country_code: str = Field(..., max_length=3, description="ISO 3-letter country code")
@@ -35,9 +37,6 @@ class Country(BaseModel):
     is_active: bool = Field(..., description="Active for registration")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 
 # ── Registration / Login ─────────────────────────────────────────────────────
@@ -48,15 +47,18 @@ class UserRegistration(BaseModel):
     pin: str = Field(..., min_length=6, max_length=6, description="6-digit PIN")
     country_id: str = Field(..., description="Country UUID")
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
-    @validator('pin')
+    @field_validator('pin', mode='before')
+    @classmethod
     def validate_pin(cls, v):
         return _validate_pin_digits(v, min_len=6, max_len=6)
 
-    @validator('name')
+    @field_validator('name', mode='before')
+    @classmethod
     def validate_name(cls, v):
         v = v.strip()
         if not v:
@@ -69,11 +71,13 @@ class UserLogin(BaseModel):
     # Accept 4–6 digits: legacy users have 4-digit PINs; migration gate in service layer forces reset.
     pin: str = Field(..., min_length=4, max_length=6, description="4–6 digit PIN")
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
-    @validator('pin')
+    @field_validator('pin', mode='before')
+    @classmethod
     def validate_pin(cls, v):
         return _validate_pin_digits(v, min_len=4, max_len=6)
 
@@ -81,6 +85,8 @@ class UserLogin(BaseModel):
 # ── User responses ───────────────────────────────────────────────────────────
 
 class UserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str = Field(..., description="User UUID")
     name: str
     email_id: str
@@ -89,9 +95,6 @@ class UserResponse(BaseModel):
     is_admin: bool = False
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 
 class AuthenticationResponse(BaseModel):
@@ -121,7 +124,8 @@ class LoginResponse(BaseModel):
 class ForgotPinRequest(BaseModel):
     email_id: str = Field(..., max_length=255)
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
@@ -137,15 +141,18 @@ class ChangePinRequest(BaseModel):
     current_pin: str = Field(..., min_length=4, max_length=6, description="Current PIN (4-digit legacy or 6-digit)")
     new_pin: str = Field(..., min_length=6, max_length=6, description="New 6-digit PIN")
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
-    @validator('current_pin')
+    @field_validator('current_pin', mode='before')
+    @classmethod
     def validate_current_pin(cls, v):
         return _validate_pin_digits(v, min_len=4, max_len=6)
 
-    @validator('new_pin')
+    @field_validator('new_pin', mode='before')
+    @classmethod
     def validate_new_pin(cls, v):
         return _validate_pin_digits(v, min_len=6, max_len=6)
 
@@ -164,7 +171,8 @@ class VerifyEmailRequest(BaseModel):
 class ResendVerificationRequest(BaseModel):
     email_id: str = Field(..., max_length=255)
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
@@ -173,17 +181,20 @@ class SetNewPinRequest(BaseModel):
     """Used in the PIN migration gate to upgrade a legacy 4-digit PIN to 6 digits."""
     email_id: str = Field(..., max_length=255)
     old_pin: str = Field(..., min_length=4, max_length=4, description="Existing legacy 4-digit PIN")
-    new_pin: str = Field(..., min_length=6, max_length=6, description="New 6-digit PIN")
+    new_pin: str = Field(..., min_length=6, max_length=6, description="New 6-digit PIN", pattern=r'^\d{6}$')
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
-    @validator('old_pin')
+    @field_validator('old_pin', mode='before')
+    @classmethod
     def validate_old_pin(cls, v):
         return _validate_pin_digits(v, min_len=4, max_len=4)
 
-    @validator('new_pin')
+    @field_validator('new_pin', mode='before')
+    @classmethod
     def validate_new_pin(cls, v):
         return _validate_pin_digits(v, min_len=6, max_len=6)
 
@@ -191,30 +202,32 @@ class SetNewPinRequest(BaseModel):
 # ── User information / update ────────────────────────────────────────────────
 
 class UserInformation(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     name: str = Field(..., max_length=100)
     email_id: str = Field(..., max_length=255)
     country_id: str
 
-    @validator('email_id')
+    @field_validator('email_id', mode='before')
+    @classmethod
     def validate_email(cls, v):
         return _validate_email(v)
 
-    @validator('name')
+    @field_validator('name', mode='before')
+    @classmethod
     def validate_name(cls, v):
         v = v.strip()
         if not v:
             raise ValueError('Name cannot be empty')
         return v
 
-    class Config:
-        orm_mode = True
-
 
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
     country_id: Optional[str] = None
 
-    @validator('name')
+    @field_validator('name', mode='before')
+    @classmethod
     def validate_name(cls, v):
         if v is not None:
             v = v.strip()
@@ -222,7 +235,8 @@ class UserUpdateRequest(BaseModel):
                 raise ValueError('Name cannot be empty if provided')
         return v
 
-    @validator('country_id')
+    @field_validator('country_id', mode='before')
+    @classmethod
     def validate_country_id(cls, v):
         if v is not None:
             try:
@@ -250,6 +264,8 @@ class UserDeleteAccountResponse(BaseModel):
 # ── Admin user management ────────────────────────────────────────────────────
 
 class AdminUserListItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: str
     name: str
     email_id: str
@@ -257,9 +273,6 @@ class AdminUserListItem(BaseModel):
     is_active: bool
     is_admin: bool
     created_at: Optional[datetime] = None
-
-    class Config:
-        orm_mode = True
 
 
 class AdminUserListResponse(BaseModel):
@@ -275,7 +288,8 @@ class AdminUserListResponse(BaseModel):
 class AdminUserToggleRequest(BaseModel):
     action: str = Field(..., description="'enable' or 'disable'")
 
-    @validator('action')
+    @field_validator('action', mode='before')
+    @classmethod
     def validate_action(cls, v):
         if v.lower() not in ('enable', 'disable'):
             raise ValueError('action must be "enable" or "disable"')

@@ -26,14 +26,16 @@ from pymoo.core.repair import Repair
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
 
+logger = logging.getLogger(__name__)
+
 # Imports
-from config import nsga3_config, ALLOW_INFEASIBLE_REPORTS
-from constraints_config import CONSTRAINT_PROFILES, CONSTRAINT_ORDER, get_constraint_profile
-from utilities import safe_divide, safe_sum, calculate_discount, calculate_MEact, classify_feed_categories
-from constraints_adequacy import compute_adequacy, summarize_constraint_result
-from feasibility import feasibility_precheck
-from diet_supply import rsm_diet_supply
-from rationsmart_warnings import pre_feasibility_warnings
+from .config import nsga3_config, ALLOW_INFEASIBLE_REPORTS
+from .constraints_config import CONSTRAINT_PROFILES, CONSTRAINT_ORDER, get_constraint_profile
+from .utilities import safe_divide, safe_sum, calculate_discount, calculate_MEact, classify_feed_categories
+from .constraints_adequacy import compute_adequacy, summarize_constraint_result
+from .feasibility import feasibility_precheck
+from .diet_supply import rsm_diet_supply
+from .rationsmart_warnings import pre_feasibility_warnings
 
 ########################################################
 # Optimization BOUNDS
@@ -92,9 +94,9 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
             xl[idx] = max(xl[idx], mineral_min_proportion)
             # Fix inconsistent mineral bounds
             if xl[idx] > xu[idx]:
-                print(f"   WARNING: Mineral bound conflict for {feed_names[idx]}, adjusting min to max")
+                logger.warning("Mineral bound conflict for %s, adjusting min to max", feed_names[idx])
                 xl[idx] = xu[idx]
-            print(f"   Mineral bounds: {feed_names[idx]} {xl[idx]*100:.1f}% - {xu[idx]*100:.1f}%")
+            logger.debug("Mineral bounds: %s %.1f%% - %.1f%%", feed_names[idx], xl[idx]*100, xu[idx]*100)
     
     # Urea cap
     if urea_indices.size:
@@ -104,7 +106,7 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
         urea_limit = thr["urea_max"]
         for idx in urea_indices:
             xu[idx] = min(xu[idx], urea_limit)
-            print(f"   Urea cap: {feed_names[idx]} ≤ {urea_limit*100:.1f}%")
+            logger.debug("Urea cap: %s <= %.1f%%", feed_names[idx], urea_limit*100)
     
     # Fix inconsistent bounds
     inconsistent = xl > xu
@@ -116,7 +118,7 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
     if total_xl > 1.0:
         scale_factor = 0.95 / total_xl
         xl[:n] *= scale_factor
-        print(f"   Scaled bounds by {scale_factor:.3f}")
+        logger.debug("Scaled bounds by %.3f", scale_factor)
     
     final_total = np.sum(xl[:n])
 
@@ -569,7 +571,7 @@ class DietProblemCostOnly(Problem):
                 constraint_results[i] = constraint_result
 
             except Exception as exc:
-                print(f"⚠️ Cost-only evaluation failed for solution {i}: {exc}")
+                logger.warning("Cost-only evaluation failed for solution %d: %s", i, exc)
                 F[i, 0] = 1e6
                 G[i, :] = 1e6
                 constraint_results[i] = {"raw_cost": 1e6, "penalized_cost": 1e6}
@@ -639,9 +641,9 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
     precheck = pre_feasibility_warnings(precheck_raw, state_for_precheck)
     cfg["precheck"] = precheck
     if precheck.get("messages"):
-        prefix = "⚠️" if precheck.get("status") != "error" else "❌"
+        log_fn = logger.error if precheck.get("status") == "error" else logger.warning
         for msg in precheck["messages"]:
-            print(f"{prefix} {msg}")
+            log_fn(msg)
     if precheck.get("status") == "error":
         return None, None, cfg
 
@@ -710,13 +712,13 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
             callback=combined_cb,
         )
         elapsed = time.time() - start_time
-        print(f"✅ NSGA3 cost-only optimization finished in {elapsed:.2f} seconds ({result.algorithm.n_gen} generations)")
+        logger.info("NSGA3 cost-only optimization finished in %.2f seconds (%d generations)", elapsed, result.algorithm.n_gen)
         result.constraint_details = getattr(problem, "constraint_details", None)
         result.constraint_results = getattr(problem, "constraint_results", None)
         result.constraint_results_history = getattr(problem, "constraint_results_history", None)
         return result, problem, cfg
     except Exception as exc:
-        print(f"❌ NSGA3 cost-only optimization failed: {exc}")
+        logger.error("NSGA3 cost-only optimization failed: %s", exc)
         return None, problem, cfg
 
 
@@ -845,7 +847,7 @@ def _select_best_cost_solution(result, problem, cfg):
         selected_constraint_result = final_cr
         selected_details = final_cr.get("details", selected_details)
     except Exception as exc:
-        print(f"⚠️ Final constraint check failed for selected solution: {exc}")
+        logger.warning("Final constraint check failed for selected solution: %s", exc)
 
     return {
         "index": int(best_idx),

@@ -1,5 +1,4 @@
-# Phase 1: Python 3.9 (upgraded to 3.12 in Phase 3)
-FROM python:3.9-slim
+FROM python:3.12-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

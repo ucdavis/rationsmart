@@ -1,501 +1,736 @@
 #!/usr/bin/env python3
 """
-PDF Service for Diet Recommendation Reports
-Handles PDF generation, storage, and retrieval from database
+PDF Service for Diet Recommendation Reports.
+
+Task 2.8 — ORM imports removed from core.
+  - PDFService class (v3.0, used DietReport ORM) is stubbed; Task 2.11 will consolidate.
+  - rec/eval generators accept user_name/user_email as plain params rather than DB lookups.
+  - DB update logic removed; callers in services/ are responsible for updating the report record.
+  - get_country_* helpers use raw SQL so no app.models import is needed.
 """
 
-import uuid
-import random
-import string
+import logging
 import os
+import pandas as pd
+import random
+import re
+import string
+import time
+import uuid
 from datetime import datetime
-from typing import Optional, List
+from html.parser import HTMLParser
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy import text
 from sqlalchemy.orm import Session
-from sqlalchemy import desc
 
-from app.models import DietReport, Report, UserInformationModel, CountryModel
-from .pdf_generator import generate_diet_recommendation_pdf
-from middleware.logging_config import get_logger
+logger = logging.getLogger(__name__)
 
-logger = get_logger("pdf_service")
+
+# ── Stubbed v3.0 class (Task 2.11 consolidates pdf_service* into one module) ──
 
 class PDFService:
+    """
+    V3.0 PDF service — retained as a stub so existing import sites don't break.
+    All methods raise NotImplementedError; use the module-level functions below
+    (or pdf_service_v2 for the active v4.0 path) until Task 2.11 consolidates them.
+    """
+
     def __init__(self, db: Session):
         self.db = db
-    
-    def generate_and_store_pdf(self, api_response: dict, user_id: str, simulation_id: str) -> Optional[DietReport]:
-        """
-        Generate a PDF report and store it in the database
-        
-        Args:
-            api_response (dict): Complete API response from diet recommendation
-            user_id (str): User ID who requested the report
-            simulation_id (str): Simulation ID for the diet recommendation
-            
-        Returns:
-            DietReport: The created report record, or None if failed
-        """
-        try:
-            logger.info(f"Generating PDF for simulation_id: {simulation_id}, user_id: {user_id}")
-            
-            # Fetch user information from database
-            user_info = self.db.query(UserInformationModel).filter(
-                UserInformationModel.id == uuid.UUID(user_id)
-            ).first()
-            
-            if not user_info:
-                logger.warning(f"User information not found for user_id: {user_id}")
-                user_name = "Unknown User"
-                user_email = "unknown@email.com"
-            else:
-                user_name = user_info.name
-                user_email = user_info.email_id
-            
-            # Generate the PDF with user information
-            report_id = api_response.get('report_info', {}).get('report_id')
-            pdf_bytes = generate_diet_recommendation_pdf(api_response, user_id, simulation_id, user_name, user_email, report_id)
-            
-            # Create filename
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            file_name = f"diet_report_{simulation_id}_{timestamp}.pdf"
-            
-            # Create report name
-            report_name = f"Diet Recommendation Report - {simulation_id}"
-            
-            # Create database record
-            report = DietReport(
-                user_id=uuid.UUID(user_id),
-                simulation_id=simulation_id,
-                report_name=report_name,
-                file_name=file_name,
-                pdf_data=pdf_bytes,
-                file_size=len(pdf_bytes)
-            )
-            
-            # Save to database
-            self.db.add(report)
-            self.db.commit()
-            self.db.refresh(report)
-            
-            logger.info(f"PDF generated and stored successfully. Report ID: {report.id}, Size: {len(pdf_bytes)} bytes")
-            return report
-            
-        except Exception as e:
-            logger.error(f"Failed to generate and store PDF: {str(e)}")
-            self.db.rollback()
-            return None
-    
-    def get_report_by_id(self, report_id: str, user_id: str) -> Optional[DietReport]:
-        """
-        Retrieve a specific report by ID for a user
-        
-        Args:
-            report_id (str): Report ID
-            user_id (str): User ID (for security)
-            
-        Returns:
-            DietReport: The report record, or None if not found
-        """
-        try:
-            report = self.db.query(DietReport).filter(
-                DietReport.id == uuid.UUID(report_id),
-                DietReport.user_id == uuid.UUID(user_id)
-            ).first()
-            
-            return report
-            
-        except Exception as e:
-            logger.error(f"Failed to retrieve report {report_id}: {str(e)}")
-            return None
-    
-    def get_reports_by_user(self, user_id: str, limit: int = 50) -> List[DietReport]:
-        """
-        Get all reports for a specific user
-        
-        Args:
-            user_id (str): User ID
-            limit (int): Maximum number of reports to return
-            
-        Returns:
-            List[DietReport]: List of report records
-        """
-        try:
-            reports = self.db.query(DietReport).filter(
-                DietReport.user_id == uuid.UUID(user_id)
-            ).order_by(desc(DietReport.created_at)).limit(limit).all()
-            
-            return reports
-            
-        except Exception as e:
-            logger.error(f"Failed to retrieve reports for user {user_id}: {str(e)}")
-            return []
-    
-    def get_report_by_case_id(self, case_id: str, user_id: str) -> Optional[DietReport]:
-        """
-        Get the most recent report for a specific case ID
-        
-        Args:
-            case_id (str): Case ID
-            user_id (str): User ID (for security)
-            
-        Returns:
-            DietReport: The most recent report for the case, or None if not found
-        """
-        try:
-            report = self.db.query(DietReport).filter(
-                DietReport.case_id == case_id,
-                DietReport.user_id == uuid.UUID(user_id)
-            ).order_by(desc(DietReport.created_at)).first()
-            
-            return report
-            
-        except Exception as e:
-            logger.error(f"Failed to retrieve report for case {case_id}: {str(e)}")
-            return None
-    
-    def delete_report(self, report_id: str, user_id: str) -> bool:
-        """
-        Delete a specific report
-        
-        Args:
-            report_id (str): Report ID
-            user_id (str): User ID (for security)
-            
-        Returns:
-            bool: True if deleted successfully, False otherwise
-        """
-        try:
-            report = self.db.query(DietReport).filter(
-                DietReport.id == uuid.UUID(report_id),
-                DietReport.user_id == uuid.UUID(user_id)
-            ).first()
-            
-            if report:
-                self.db.delete(report)
-                self.db.commit()
-                logger.info(f"Report {report_id} deleted successfully")
-                return True
-            else:
-                logger.warning(f"Report {report_id} not found for user {user_id}")
-                return False
-                
-        except Exception as e:
-            logger.error(f"Failed to delete report {report_id}: {str(e)}")
-            self.db.rollback()
-            return False
-    
-    def get_report_metadata(self, report_id: str, user_id: str) -> Optional[dict]:
-        """
-        Get report metadata without the PDF data
-        
-        Args:
-            report_id (str): Report ID
-            user_id (str): User ID (for security)
-            
-        Returns:
-            dict: Report metadata, or None if not found
-        """
-        try:
-            report = self.db.query(DietReport).filter(
-                DietReport.id == uuid.UUID(report_id),
-                DietReport.user_id == uuid.UUID(user_id)
-            ).first()
-            
-            if report:
-                return {
-                    "id": str(report.id),
-                    "user_id": str(report.user_id),
-                    "case_id": report.case_id if report.case_id is not None else "",
-                    "report_name": report.report_name if report.report_name is not None else "",
-                    "file_name": report.file_name if report.file_name is not None else "",
-                    "file_size": report.file_size,
-                    "created_at": report.created_at.isoformat() if report.created_at else "",
-                    "updated_at": report.updated_at.isoformat() if report.updated_at else ""
-                }
-            
-            return None
-            
-        except Exception as e:
-            logger.error(f"Failed to retrieve report metadata {report_id}: {str(e)}")
-            return None
 
+    def generate_and_store_pdf(self, *args, **kwargs):
+        raise NotImplementedError("Use rec_pdf_report_generator or pdf_service_v2 instead")
+
+    def get_report_by_id(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_reports_by_user(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_report_by_case_id(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def delete_report(self, *args, **kwargs):
+        raise NotImplementedError
+
+    def get_report_metadata(self, *args, **kwargs):
+        raise NotImplementedError
+
+
+# ── Utility functions ─────────────────────────────────────────────────────────
 
 def generate_report_id(report_type: str = 'rec', db: Session = None) -> str:
     """
-    Generate a unique report ID in format 'rec-xxxxxxxxxx' or 'eval-xxxxxxxxxx'
-    where xxxxxxxxxx is a 10-character alphanumeric string with timestamp component
-    
-    Args:
-        report_type (str): Type of report ('rec' or 'eval')
-        db (Session): Database session for uniqueness check (optional)
-        
-    Returns:
-        str: Unique report ID
+    Generate a unique report ID (format: '<type>-<4-digit-ts><6-char-random>').
+    If *db* is provided, checks uniqueness against the reports table.
     """
-    import time
-    from app.models import Report
-    
     max_attempts = 10
-    for attempt in range(max_attempts):
-        # Generate timestamp-based component (last 4 digits of timestamp)
+    for _ in range(max_attempts):
         timestamp_suffix = str(int(time.time() * 1000))[-4:]
-        
-        # Generate 6-character random alphanumeric string
         chars = string.ascii_lowercase + string.digits
         random_suffix = ''.join(random.choice(chars) for _ in range(6))
-        
-        # Combine timestamp and random components
         report_id = f"{report_type}-{timestamp_suffix}{random_suffix}"
-        
-        # If database session is provided, check for uniqueness
+
         if db is not None:
-            existing_report = db.query(Report).filter(Report.report_id == report_id).first()
-            if existing_report is None:
+            row = db.execute(
+                text("SELECT 1 FROM reports WHERE report_id = :rid"),
+                {"rid": report_id},
+            ).fetchone()
+            if row is None:
                 return report_id
         else:
-            # If no database check, return the generated ID
             return report_id
-    
-    # If we've exhausted all attempts, raise an error
-    raise Exception(f"Failed to generate unique report ID after {max_attempts} attempts")
+
+    raise RuntimeError(f"Failed to generate unique report ID after {max_attempts} attempts")
 
 
 def get_country_name_by_id(country_id: str, db: Session) -> str:
-    """
-    Get country name by country ID
-    
-    Args:
-        country_id (str): Country ID
-        db (Session): Database session
-        
-    Returns:
-        str: Country name or "Unknown Country" if not found
-    """
+    """Return country name for *country_id*, or 'Unknown Country' if not found."""
     try:
         if not country_id:
             return "Unknown Country"
-            
-        country_info = db.query(CountryModel).filter(
-            CountryModel.id == uuid.UUID(country_id)
-        ).first()
-        
-        if country_info and country_info.name:
-            return country_info.name
-        else:
-            logger.warning(f"Country information not found for country_id: {country_id}")
-            return "Unknown Country"
-    except Exception as e:
-        logger.error(f"Error getting country name for country_id {country_id}: {str(e)}")
+        row = db.execute(
+            text("SELECT name FROM country WHERE id = :cid"),
+            {"cid": country_id},
+        ).fetchone()
+        return row[0] if row and row[0] else "Unknown Country"
+    except Exception as exc:
+        logger.error("Error getting country name for %s: %s", country_id, exc)
         return "Unknown Country"
 
 
 def get_currency_by_country_id(country_id: str, db: Session) -> str:
-    """
-    Get country currency by country ID
-    
-    Args:
-        country_id (str): Country ID
-        db (Session): Database session
-        
-    Returns:
-        str: Country currency symbol/code or "$" if not found
-    """
+    """Return currency code for *country_id*, or '$' if not found."""
     try:
         if not country_id:
             return "$"
-            
-        country_info = db.query(CountryModel).filter(
-            CountryModel.id == uuid.UUID(country_id)
-        ).first()
-        
-        if country_info and country_info.currency:
-            return country_info.currency
-        else:
-            logger.warning(f"Currency information not found for country_id: {country_id}")
-            return "$"
-    except Exception as e:
-        logger.error(f"Error getting currency for country_id {country_id}: {str(e)}")
+        row = db.execute(
+            text("SELECT currency FROM country WHERE id = :cid"),
+            {"cid": country_id},
+        ).fetchone()
+        return row[0] if row and row[0] else "$"
+    except Exception as exc:
+        logger.error("Error getting currency for %s: %s", country_id, exc)
         return "$"
 
 
-def rec_pdf_report_generator(api_response: dict, user_id: str, simulation_id: str, report_id: str, db: Session) -> None:
-    """
-    Asynchronously generate PDF report, upload to AWS bucket, and store metadata in reports table
-    This function is designed to be called as fire-and-forget
-    
-    Args:
-        api_response (dict): Complete API response from diet recommendation
-        user_id (str): User ID who requested the report
-        simulation_id (str): Simulation ID from the request
-        report_id (str): Pre-generated report ID to use
-        db (Session): Database session
-    """
-    try:
-        logger.info(f"Starting async PDF report generation for simulation_id: {simulation_id}, user_id: {user_id}, report_id: {report_id}")
-        
-        # Fetch user information from database
-        user_info = db.query(UserInformationModel).filter(
-            UserInformationModel.id == uuid.UUID(user_id)
-        ).first()
-        
-        if not user_info:
-            logger.warning(f"User information not found for user_id: {user_id}")
-            user_name = "Unknown User"
-            user_email = "unknown@email.com"
-        else:
-            user_name = user_info.name
-            user_email = user_info.email_id
-        
-        # Generate PDF using existing generator with user information
-        pdf_bytes = generate_diet_recommendation_pdf(api_response, user_id, simulation_id, user_name, user_email, report_id)
-        
-        # Upload PDF directly to AWS bucket
-        from services.aws_service import aws_service
-        success, bucket_url, error_message = aws_service.upload_pdf_to_s3(
-            pdf_data=pdf_bytes,
-            user_id=user_id,
-            report_id=report_id
-        )
-        
-        # Store API response as Python dict (not JSON string) to match evaluation API format
-        json_result = api_response
-        
-        # UPDATE the existing report record instead of creating a new one
-        report = db.query(Report).filter(Report.report_id == report_id).first()
-        
-        if report:
-            if success:
-                report.bucket_url = bucket_url
-                report.json_result = json_result
-                report.saved_to_bucket = True
-                report.updated_at = datetime.utcnow()
-                logger.info(f"PDF report uploaded to AWS and record updated. Report ID: {report_id}, Bucket URL: {bucket_url}")
-            else:
-                report.json_result = json_result
-                report.saved_to_bucket = False
-                report.updated_at = datetime.utcnow()
-                logger.error(f"Failed to upload PDF to AWS for report_id {report_id}, record updated with error status")
-            
-            db.commit()
-            db.refresh(report)
-        else:
-            # Fallback if record wasn't created synchronously for some reason
-            if success:
-                report = Report(
-                    report_id=report_id,
-                    report_type='rec',
-                    user_id=uuid.UUID(user_id),
-                    bucket_url=bucket_url,
-                    json_result=json_result,
-                    saved_to_bucket=True,
-                    save_report=False,
-                    report=None
-                )
-            else:
-                report = Report(
-                    report_id=report_id,
-                    report_type='rec',
-                    user_id=uuid.UUID(user_id),
-                    bucket_url=None,
-                    json_result=json_result,
-                    saved_to_bucket=False,
-                    save_report=False,
-                    report=None
-                )
-            db.add(report)
-            db.commit()
-            logger.warning(f"Report record not found for update, created new record instead. Report ID: {report_id}")
-        
-    except Exception as e:
-        logger.error(f"Failed to generate/upload PDF report for simulation_id {simulation_id}: {str(e)}")
-        # Don't raise the exception - this is fire-and-forget
-        try:
-            db.rollback()
-        except:
-            pass  # Ignore rollback errors in async context
+# ── PDF generators (v1 path — Task 2.11 consolidates into pdf_service_v2) ─────
 
-def eval_pdf_report_generator(api_response: dict, user_id: str, simulation_id: str, report_id: str, db: Session) -> None:
+def rec_pdf_report_generator(
+    api_response: dict,
+    user_id: str,
+    simulation_id: str,
+    report_id: str,
+    db: Session,
+    user_name: str = "",
+    user_email: str = "",
+) -> None:
     """
-    Asynchronously generate PDF report for evaluation, upload to AWS bucket, and store metadata in reports table.
-    Designed to be called as fire-and-forget.
+    Generate a recommendation PDF and upload to S3.
+    DB record update is the caller's responsibility (moved to services/report_service.py
+    in Task 2.8 to keep core free of ORM imports).
     """
     try:
-        logger.info(f"Starting async Evaluation PDF report generation for simulation_id: {simulation_id}, user_id: {user_id}, report_id: {report_id}")
-        
-        # Fetch user information from database
-        user_info = db.query(UserInformationModel).filter(
-            UserInformationModel.id == uuid.UUID(user_id)
-        ).first()
-        
-        if not user_info:
-            logger.warning(f"User information not found for user_id: {user_id}")
-            user_name = "Unknown User"
-            user_email = "unknown@email.com"
-        else:
-            user_name = user_info.name
-            user_email = user_info.email_id
-        
-        # Generate PDF using evaluation-specific generator
-        from core.z_optimization.pdf_generator import generate_diet_evaluation_pdf
-        pdf_bytes = generate_diet_evaluation_pdf(api_response, user_id, simulation_id, user_name, user_email, report_id)
-        
-        # Upload PDF directly to AWS bucket
+        logger.info(
+            "Starting PDF report generation: simulation=%s report=%s",
+            simulation_id, report_id,
+        )
+        pdf_bytes = generate_diet_recommendation_pdf(
+            api_response, user_id, simulation_id, user_name, user_email, report_id
+        )
+
         from services.aws_service import aws_service
         success, bucket_url, error_message = aws_service.upload_pdf_to_s3(
-            pdf_data=pdf_bytes,
-            user_id=user_id,
-            report_id=report_id
+            pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
         )
-        
-        # UPDATE the existing report record instead of creating a new one
-        report = db.query(Report).filter(Report.report_id == report_id).first()
-        
-        if report:
-            if success:
-                report.bucket_url = bucket_url
-                report.json_result = api_response
-                report.saved_to_bucket = True
-                report.updated_at = datetime.utcnow()
-                logger.info(f"Evaluation PDF report uploaded to AWS and record updated. Report ID: {report_id}, URL: {bucket_url}")
-            else:
-                report.json_result = api_response
-                report.saved_to_bucket = False
-                report.updated_at = datetime.utcnow()
-                logger.error(f"Failed to upload Evaluation PDF to AWS for report_id {report_id}, record updated with error status")
-            
-            db.commit()
-            db.refresh(report)
+
+        # Persist result without importing ORM models
+        if success:
+            db.execute(
+                text(
+                    "UPDATE reports SET bucket_url=:url, json_result=:jr, "
+                    "saved_to_bucket=true, updated_at=:now "
+                    "WHERE report_id=:rid"
+                ),
+                {"url": bucket_url, "jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+            )
         else:
-            # Fallback if record wasn't created synchronously for some reason
-            if success:
-                report = Report(
-                    report_id=report_id,
-                    report_type='eval',
-                    user_id=uuid.UUID(user_id),
-                    bucket_url=bucket_url,
-                    json_result=api_response,
-                    saved_to_bucket=True,
-                    save_report=False,
-                    report=None
-                )
-            else:
-                report = Report(
-                    report_id=report_id,
-                    report_type='eval',
-                    user_id=uuid.UUID(user_id),
-                    bucket_url=None,
-                    json_result=api_response,
-                    saved_to_bucket=False,
-                    save_report=False,
-                    report=None
-                )
-            db.add(report)
-            db.commit()
-            logger.warning(f"Evaluation report record not found for update, created new record instead. Report ID: {report_id}")
-        
-    except Exception as e:
-        logger.error(f"Failed to generate/upload Evaluation PDF report: {str(e)}")
+            db.execute(
+                text(
+                    "UPDATE reports SET json_result=:jr, saved_to_bucket=false, "
+                    "updated_at=:now WHERE report_id=:rid"
+                ),
+                {"jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+            )
+        db.commit()
+        logger.info("PDF report complete: report=%s bucket_url=%s", report_id, bucket_url if success else "N/A")
+
+    except Exception as exc:
+        logger.error("PDF generation failed (simulation=%s): %s", simulation_id, exc, exc_info=True)
         try:
             db.rollback()
-        except:
+        except Exception:
             pass
+
+
+def eval_pdf_report_generator(
+    api_response: dict,
+    user_id: str,
+    simulation_id: str,
+    report_id: str,
+    db: Session,
+    user_name: str = "",
+    user_email: str = "",
+) -> None:
+    """Evaluation variant of rec_pdf_report_generator."""
+    try:
+        logger.info(
+            "Starting evaluation PDF generation: simulation=%s report=%s",
+            simulation_id, report_id,
+        )
+        pdf_bytes = generate_diet_evaluation_pdf(
+            api_response, user_id, simulation_id, user_name, user_email, report_id
+        )
+
+        from services.aws_service import aws_service
+        success, bucket_url, _ = aws_service.upload_pdf_to_s3(
+            pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
+        )
+
+        if success:
+            db.execute(
+                text(
+                    "UPDATE reports SET bucket_url=:url, json_result=:jr, "
+                    "saved_to_bucket=true, updated_at=:now WHERE report_id=:rid"
+                ),
+                {"url": bucket_url, "jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+            )
+        else:
+            db.execute(
+                text(
+                    "UPDATE reports SET json_result=:jr, saved_to_bucket=false, "
+                    "updated_at=:now WHERE report_id=:rid"
+                ),
+                {"jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+            )
+        db.commit()
+        logger.info("Evaluation PDF complete: report=%s", report_id)
+
+    except Exception as exc:
+        logger.error("Evaluation PDF failed (simulation=%s): %s", simulation_id, exc, exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+
+# ── pdf_generator_v4: WeasyPrint HTML-to-PDF (merged in Task 2.11) ─────────────
+
+def generate_pdf_v4(html_file_path: str, output_pdf_path: Optional[str] = None) -> bytes:
+    """Convert a print-friendly HTML file to PDF bytes using WeasyPrint."""
+    try:
+        if not os.path.exists(html_file_path):
+            raise FileNotFoundError(f"HTML file not found at {html_file_path}")
+        logger.info("Generating PDF V4 from %s", html_file_path)
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        from weasyprint import HTML
+        html_obj = HTML(string=html_content, base_url=os.path.dirname(html_file_path))
+        pdf_bytes = html_obj.write_pdf(target=output_pdf_path)
+        logger.info("PDF V4 generated. Size: %s bytes", len(pdf_bytes) if pdf_bytes else "N/A")
+        return pdf_bytes
+    except Exception as e:
+        logger.error("Failed to generate PDF V4: %s", e)
+        raise
+
+
+# ── pdf_service_v2: v2 DB-level PDF generators (merged in Task 2.11) ───────────
+
+def generate_pdf_bytes(html_report_path: str) -> bytes:
+    """Pure function: convert an HTML file to PDF bytes."""
+    pdf_bytes = generate_pdf_v4(html_report_path)
+    if not pdf_bytes:
+        raise RuntimeError(f"HTML-to-PDF conversion failed for {html_report_path}")
+    return pdf_bytes
+
+
+def rec_pdf_report_generator_v2(
+    api_response: dict,
+    user_id: str,
+    simulation_id: str,
+    report_id: str,
+    db: Session,
+    user_name: str = "",
+) -> None:
+    """Generate a recommendation PDF from an already-written HTML file, upload to S3."""
+    try:
+        logger.info("V2 PDF report generation: simulation=%s report=%s", simulation_id, report_id)
+        html_report_path = f"result_html/diet-{report_id}.html"
+        pdf_output_path = f"result_html/diet-{report_id}.pdf"
+        pdf_bytes = generate_pdf_bytes(html_report_path)
+        with open(pdf_output_path, "wb") as f:
+            f.write(pdf_bytes)
+        from services.aws_service import aws_service
+        success, bucket_url, error_message = aws_service.upload_pdf_to_s3(
+            pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
+        )
+        if success:
+            db.execute(
+                text(
+                    "UPDATE reports SET bucket_url=:url, json_result=:jr, "
+                    "saved_to_bucket=true, updated_at=:now WHERE report_id=:rid"
+                ),
+                {"url": bucket_url, "jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+            )
+            logger.info("V2 PDF uploaded. report=%s url=%s", report_id, bucket_url)
+        else:
+            db.execute(
+                text(
+                    "UPDATE reports SET json_result=:jr, saved_to_bucket=false, "
+                    "updated_at=:now WHERE report_id=:rid"
+                ),
+                {"jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+            )
+            logger.error("V2 PDF upload failed for report=%s", report_id)
+        db.commit()
+    except Exception as exc:
+        logger.error("V2 PDF generation/upload failed (simulation=%s): %s", simulation_id, exc, exc_info=True)
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
+
+def eval_pdf_report_generator_v2(
+    api_response: dict,
+    user_id: str,
+    simulation_id: str,
+    report_id: str,
+    db: Session,
+    user_name: str = "",
+) -> None:
+    """Evaluation variant — same HTML-to-PDF path as recommendation."""
+    rec_pdf_report_generator_v2(api_response, user_id, simulation_id, report_id, db, user_name)
+
+
+# ── pdf_generator: PDF helpers and recommendation/evaluation generators (merged) ─
+
+class _ProportionsTableHTMLParser(HTMLParser):
+    """Lightweight parser to extract a table by CSS class without lxml."""
+
+    def __init__(self, target_class: str):
+        super().__init__()
+        self.target_class = target_class
+        self.capture_table = False
+        self.table_depth = 0
+        self.section = "body"
+        self.current_row = None
+        self.capturing_cell = False
+        self.cell_buffer: list = []
+        self.headers: list = []
+        self.rows: list = []
+
+    def handle_starttag(self, tag, attrs):
+        attrs_dict = dict(attrs)
+        if tag == "table":
+            class_attr = attrs_dict.get("class", "")
+            class_tokens = class_attr.split()
+            if self.capture_table:
+                self.table_depth += 1
+            elif self.target_class in class_attr or self.target_class in class_tokens:
+                self.capture_table = True
+                self.table_depth = 1
+        elif self.capture_table:
+            if tag == "thead":
+                self.section = "header"
+            elif tag == "tbody":
+                self.section = "body"
+            elif tag == "tr":
+                self.current_row = []
+            elif tag in ("th", "td"):
+                self.capturing_cell = True
+                self.cell_buffer = []
+
+    def handle_endtag(self, tag):
+        if tag == "table" and self.capture_table:
+            self.table_depth -= 1
+            if self.table_depth == 0:
+                self.capture_table = False
+        elif self.capture_table:
+            if tag in ("th", "td") and self.capturing_cell:
+                text_val = "".join(self.cell_buffer).strip()
+                if self.current_row is not None:
+                    self.current_row.append(text_val)
+                self.capturing_cell = False
+                self.cell_buffer = []
+            elif tag == "tr" and self.current_row is not None:
+                if self.section == "header":
+                    self.headers.append(self.current_row)
+                else:
+                    self.rows.append(self.current_row)
+                self.current_row = None
+            elif tag == "thead":
+                self.section = "body"
+
+    def handle_data(self, data):
+        if self.capture_table and self.capturing_cell:
+            self.cell_buffer.append(data)
+
+
+def _transpose_table_by_class(
+    html_content: str,
+    table_class: str,
+    section_anchor: Optional[str] = None,
+    base_identifier_cols: Optional[list] = None,
+    replacement_class: str = "proportions-table-transposed",
+) -> str:
+    """Locate a table by CSS class, transpose it, and replace the original markup."""
+    base_identifier_cols = base_identifier_cols or ["Ingr_Type", "Name"]
+    try:
+        anchor_idx = html_content.find(section_anchor) if section_anchor else 0
+        search_start = anchor_idx if anchor_idx != -1 else 0
+        pattern = re.compile(
+            rf'(<table[^>]*class="[^"]*{re.escape(table_class)}[^"]*"[^>]*>.*?</table>)',
+            re.DOTALL,
+        )
+        match = pattern.search(html_content, search_start)
+        if not match:
+            return html_content
+        table_html = match.group(1)
+        parser = _ProportionsTableHTMLParser(table_class)
+        parser.feed(table_html)
+        if not parser.rows:
+            return html_content
+        header_row = parser.headers[-1] if parser.headers else [f"Col {i+1}" for i in range(len(parser.rows[0]))]
+        max_len = max(len(header_row), *(len(r) for r in parser.rows))
+        header_row = header_row + [""] * (max_len - len(header_row))
+        normalized_rows = [row + [""] * (max_len - len(row)) for row in parser.rows]
+        df = pd.DataFrame(normalized_rows, columns=header_row)
+        nutrient_cols = [c for c in df.columns if c not in base_identifier_cols]
+        if not nutrient_cols:
+            return html_content
+        if all(col in df.columns for col in base_identifier_cols):
+            type_series = df[base_identifier_cols[0]].fillna("").astype(str).str.strip()
+            name_series = df[base_identifier_cols[1]].fillna("").astype(str).str.strip()
+            combined = [" - ".join(p for p in (t, n) if p).strip() for t, n in zip(type_series, name_series)]
+            col_names = [c if c else name or f"Item {i+1}" for i, (c, name) in enumerate(zip(combined, name_series))]
+        elif base_identifier_cols and base_identifier_cols[1] in df.columns:
+            col_names = df[base_identifier_cols[1]].astype(str).tolist()
+        else:
+            col_names = [f"Item {i+1}" for i in range(len(df))]
+        value_df = df[nutrient_cols].T
+        value_df.columns = col_names
+        value_df.insert(0, "Metric", nutrient_cols)
+        value_df.reset_index(drop=True, inplace=True)
+        transposed_html = value_df.to_html(index=False, classes=f"dataframe {replacement_class}", border=1)
+        wrapper_html = "\n<div class='table-container'>\n" + transposed_html + "\n</div>\n"
+        return html_content[:match.start()] + wrapper_html + html_content[match.end():]
+    except Exception as e:
+        logger.warning("Failed to transpose table with class %s: %s", table_class, e)
+        return html_content
+
+
+def _optimize_html_for_pdf(html_content: str) -> str:
+    """Optimize HTML/CSS for WeasyPrint PDF rendering."""
+    try:
+        lower_html = html_content.lower()
+        start = lower_html.find("<style")
+        end = lower_html.find("</style>", start + 6) if start != -1 else -1
+        if start != -1 and end != -1:
+            end += len("</style>")
+            style_block = html_content[start:end]
+            opt = style_block
+            opt = opt.replace("display: flex;", "display: block;")
+            opt = opt.replace("display:flex;", "display: block;")
+            opt = opt.replace("display: grid;", "display: block;")
+            opt = opt.replace("display:grid;", "display: block;")
+            for token in ["gap:", "row-gap:", "column-gap:"]:
+                while token in opt:
+                    idx = opt.find(token)
+                    semi = opt.find(";", idx)
+                    if semi == -1:
+                        break
+                    opt = opt[:idx] + opt[semi + 1:]
+            opt = opt.replace("white-space: nowrap;", "white-space: normal; word-wrap: break-word;")
+            opt = opt.replace("font-size: 14px;", "font-size: 12px;")
+            opt = opt.replace(
+                "background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);", "background: #f5f7fa;"
+            )
+            opt = opt.replace("border-left: 4px solid", "border-left: 2px solid")
+            pdf_overrides = """
+      /* PDF-specific layout tweaks */
+      @page { margin: 0.5in; }
+      body { background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); padding: 0; margin: 0; }
+      .header { background: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%); padding: 18px 10px 10px 10px; }
+      .report-meta { display: block; width: 100%; margin: 8px 0 2px 0; padding: 4px 0; }
+      .report-meta::after { content: ""; display: block; clear: both; }
+      .report-meta .meta-item { display: block; float: left; width: 20%; padding: 2px 4px; font-size: 0.85em; box-sizing: border-box; }
+      .report-meta .meta-item:last-child { width: 20%; }
+      .report-meta .meta-item strong { display: block; font-size: 1.0em; }
+      .report-meta .meta-item .meta-value { display: block; margin-top: 2px; font-size: 0.85em; }
+      .container { border: none; box-shadow: none; margin: 0.08in auto; max-width: 98%; }
+      .metric-grid { display: table; width: 100%; margin: 4px 0; }
+      .metric-grid .metric-item { display: table-cell; padding: 8px 10px; }
+      .metric-grid .metric-value { font-size: 1.26em; }
+      .metric-grid .metric-label { font-size: 0.8em; }
+      .requirements-table { width: 90%; min-width: 90%; margin: 0; }
+      .requirements-table th:nth-child(1), .requirements-table td:nth-child(1) { width: 50%; }
+      .requirements-table th:nth-child(2), .requirements-table td:nth-child(2) { width: 25%; }
+      .requirements-table th:nth-child(3), .requirements-table td:nth-child(3) { width: 25%; }
+      .diet-table { width: 90%; min-width: 90%; margin: 0; }
+      .diet-table th:nth-child(1), .diet-table td:nth-child(1) { width: 40%; }
+      .diet-table th:nth-child(2), .diet-table td:nth-child(2) { width: 20%; }
+      .diet-table th:nth-child(3), .diet-table td:nth-child(3) { width: 20%; }
+      .diet-table th:nth-child(4), .diet-table td:nth-child(4) { width: 20%; }
+      .animal-info-table { width: 90%; min-width: 90%; margin: 0; }
+      .animal-info-table th:nth-child(1), .animal-info-table td:nth-child(1) { width: 50%; }
+      .animal-info-table th:nth-child(2), .animal-info-table td:nth-child(2) { width: 25%; }
+      .animal-info-table th:nth-child(3), .animal-info-table td:nth-child(3) { width: 25%; }
+      .animal-info-table th, .animal-info-table td, .requirements-table th, .requirements-table td,
+      .diet-table th, .diet-table td, .proportions-table-transposed th, .proportions-table-transposed td,
+      .environmental-table th, .environmental-table td { padding: 4px 6px; font-size: 1.0em; }
+      .environmental-table { width: 70%; min-width: 70%; margin: 0; }
+      .environmental-table th:nth-child(1), .environmental-table td:nth-child(1) { width: 60%; }
+      .environmental-table th:nth-child(2), .environmental-table td:nth-child(2) { width: 40%; }
+      .animal-info-table th, .requirements-table th, .diet-table th,
+      .proportions-table-transposed th, .environmental-table th { text-align: left; background: #1e88e5; color: #ffffff; }
+      table.proportions-table-transposed { width: 90%; min-width: 90%; margin: 0; table-layout: auto; }
+      .proportions-table-transposed th { white-space: normal; word-wrap: break-word; }
+      .section, .table-container, table { page-break-inside: avoid; break-inside: avoid; }
+      .section { margin: 6px 0; padding: 10px 18px; }
+      .section h2 { margin-top: 2px; margin-bottom: 3px; font-size: 1.45em; color: #2e7d32; font-weight: 500; }
+"""
+            opt = opt.replace("</style>", f"{pdf_overrides}\n    </style>", 1)
+            html_content = html_content[:start] + opt + html_content[end:]
+        else:
+            html_content = html_content.replace("display: flex;", "display: block;")
+            html_content = html_content.replace("display:flex;", "display: block;")
+            html_content = html_content.replace("display: grid;", "display: block;")
+            html_content = html_content.replace("display:grid;", "display: block;")
+            html_content = html_content.replace("white-space: nowrap;", "white-space: normal; word-wrap: break-word;")
+        html_content = _normalize_generated_timestamp(html_content)
+        return html_content
+    except Exception as e:
+        logger.warning("HTML optimization for PDF failed, using original HTML. Error: %s", e)
+        return html_content
+
+
+def _transpose_proportions_table(html_content: str) -> str:
+    return _transpose_table_by_class(
+        html_content,
+        table_class="proportions-table",
+        section_anchor="<h2><span class='emoji'>📊</span>Nutrient Proportions (%)</h2>",
+    )
+
+
+def _inject_transposed_proportions_from_api(html_content: str, api_response: dict) -> str:
+    """Inject a transposed Nutrient Proportions table from API response data."""
+    try:
+        diet_proportions = api_response.get("diet_proportions")
+        if diet_proportions is None:
+            logger.warning("PDF transpose: diet_proportions missing in API response")
+            return _transpose_proportions_table(html_content)
+        if isinstance(diet_proportions, pd.DataFrame):
+            df = diet_proportions.copy()
+        elif isinstance(diet_proportions, list) and len(diet_proportions) > 0:
+            df = pd.DataFrame(diet_proportions)
+        else:
+            logger.warning("PDF transpose: diet_proportions has unsupported type (%s)", type(diet_proportions))
+            return _transpose_proportions_table(html_content)
+        if df.empty:
+            logger.warning("PDF transpose: diet_proportions DataFrame is empty")
+            return _transpose_proportions_table(html_content)
+        base_cols = ["Ingr_Type", "Name"]
+        nutrient_cols = [c for c in df.columns if c not in base_cols]
+        if not nutrient_cols:
+            return _transpose_proportions_table(html_content)
+        if all(col in df.columns for col in base_cols):
+            col_names = (df["Ingr_Type"].astype(str) + " - " + df["Name"].astype(str)).tolist()
+        elif "Name" in df.columns:
+            col_names = df["Name"].astype(str).tolist()
+        else:
+            col_names = [f"Item {i+1}" for i in range(len(df))]
+        value_df = df[nutrient_cols].T
+        value_df.columns = col_names
+        value_df.insert(0, "Metric", nutrient_cols)
+        value_df.reset_index(drop=True, inplace=True)
+        transposed_table_html = value_df.to_html(index=False, classes="dataframe proportions-table-transposed", border=1)
+        wrapper_html = "\n<div class='table-container'>\n" + transposed_table_html + "\n</div>\n"
+        anchor = "<h2><span class='emoji'>📊</span>Nutrient Proportions (%)</h2>"
+        anchor_idx = html_content.find(anchor)
+        if anchor_idx == -1:
+            return html_content + wrapper_html
+        table_start = html_content.find("<table", anchor_idx)
+        if table_start == -1:
+            return html_content + wrapper_html
+        table_end = html_content.find("</table>", table_start)
+        if table_end == -1:
+            return html_content + wrapper_html
+        after_table = table_end + len("</table>")
+        return html_content[:table_start] + wrapper_html + html_content[after_table:]
+    except Exception as e:
+        logger.warning("Failed to inject transposed diet_proportions table from API: %s", e)
+        return _transpose_proportions_table(html_content)
+
+
+def _transpose_feed_tables(html_content: str) -> str:
+    """Transpose both Forage and Concentrate tables for PDF view."""
+    html_content = _transpose_table_by_class(
+        html_content, table_class="forage-table",
+        section_anchor="<h2><span class='emoji'>🌾</span>Forage</h2>",
+    )
+    html_content = _transpose_table_by_class(
+        html_content, table_class="concentrate-table",
+        section_anchor="<h2><span class='emoji'>🌽</span>Concentrate</h2>",
+    )
+    return html_content
+
+
+def _find_section_block(html_content: str, header_marker: str):
+    header_idx = html_content.find(header_marker)
+    if header_idx == -1:
+        return None
+    section_start = html_content.rfind("<div", 0, header_idx)
+    if section_start == -1:
+        return None
+    section_end = _find_matching_div_end(html_content, section_start)
+    if section_end == -1:
+        return None
+    return html_content[section_start:section_end], section_start, section_end
+
+
+def _find_matching_div_end(html_content: str, start_idx: int) -> int:
+    div_pattern = re.compile(r"<(/?)div\b", re.IGNORECASE)
+    depth = 0
+    for match in div_pattern.finditer(html_content, start_idx):
+        is_closing = match.group(1) == "/"
+        if not is_closing:
+            depth += 1
+        else:
+            depth -= 1
+            if depth == 0:
+                return match.end()
+    return -1
+
+
+def _reorder_sections_for_pdf(html_content: str) -> str:
+    """Reorder sections: Summary + Diet + Env on page 1; Animal + details on page 2."""
+    markers = {
+        "solution": "<h2><span class='emoji'>📊</span>Solution Summary</h2>",
+        "diet": "<h2><span class='emoji'>🍽️</span>Least Cost Diet</h2>",
+        "environment": "<h2><span class='emoji'>🌍</span>Environmental Impact</h2>",
+        "animal": "<h2><span class='emoji'>🐄</span>Animal Information</h2>",
+    }
+    sections = {}
+    for key in ("solution", "diet", "environment", "animal"):
+        block = _find_section_block(html_content, markers[key])
+        if block is None:
+            return html_content
+        sections[key] = block
+    remove_keys = ["diet", "environment", "animal"]
+    for key in sorted(remove_keys, key=lambda k: sections[k][1], reverse=True):
+        _, start, end = sections[key]
+        html_content = html_content[:start] + html_content[end:]
+    solution_block = _find_section_block(html_content, markers["solution"])
+    if solution_block is None:
+        return html_content
+    _, _, solution_end = solution_block
+    insertion = (
+        sections["diet"][0]
+        + sections["environment"][0]
+        + "<div class='page-break'></div>"
+        + sections["animal"][0]
+    )
+    return html_content[:solution_end] + insertion + html_content[solution_end:]
+
+
+def _repl_timestamp(match: re.Match) -> str:
+    original = match.group(1)
+    try:
+        dt = datetime.strptime(original, "%B %d, %Y at %I:%M %p")
+        return dt.strftime("%b %d, %Y %H:%M")
+    except Exception:
+        return original
+
+
+def _normalize_generated_timestamp(html_content: str) -> str:
+    """Normalize 'Generated' header timestamp from 12-hour to 24-hour for PDF."""
+    pattern = r'([A-Za-z]+ \d{1,2}, \d{4} at \d{1,2}:\d{2} (AM|PM))'
+    try:
+        return re.sub(pattern, _repl_timestamp, html_content)
+    except Exception as e:
+        logger.warning("Failed to normalize Generated timestamp in PDF HTML: %s", e)
+        return html_content
+
+
+def generate_diet_recommendation_pdf(
+    api_response: dict,
+    user_id: str,
+    simulation_id: str,
+    user_name: str = None,
+    user_email: str = None,
+    report_id: str = None,
+) -> bytes:
+    """Generate a recommendation PDF from the HTML file written to result_html/."""
+    try:
+        if not report_id:
+            report_id = api_response.get("report_info", {}).get("report_id")
+        logger.info("Generating PDF V3 for simulation_id: %s, report_id: %s", simulation_id, report_id)
+        if report_id:
+            html_file_path = f"result_html/diet-{report_id}.html"
+        else:
+            html_file_path = f"result_html/diet_report_{simulation_id}.html"
+        if not os.path.exists(html_file_path):
+            alt_path = (
+                f"result_html/diet_report_{simulation_id}.html"
+                if report_id
+                else f"result_html/diet-{report_id}.html"
+            )
+            if os.path.exists(alt_path):
+                html_file_path = alt_path
+            else:
+                raise FileNotFoundError(f"HTML file not found at {html_file_path} or {alt_path}")
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        logger.info("Successfully read HTML file: %s", html_file_path)
+        html_content = _inject_transposed_proportions_from_api(html_content, api_response)
+        html_content = _transpose_feed_tables(html_content)
+        html_content = _reorder_sections_for_pdf(html_content)
+        html_content = _optimize_html_for_pdf(html_content)
+        from weasyprint import HTML
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        logger.info("PDF V3 generated successfully. Size: %d bytes", len(pdf_bytes))
+        return pdf_bytes
+    except Exception as e:
+        logger.error("Failed to generate PDF V3: %s", e)
+        raise
+
+
+def generate_diet_evaluation_pdf(
+    api_response: dict,
+    user_id: str,
+    simulation_id: str,
+    user_name: str = None,
+    user_email: str = None,
+    report_id: str = None,
+) -> bytes:
+    """Generate an evaluation PDF from the HTML file written to result_html/."""
+    try:
+        if not report_id:
+            report_id = api_response.get("report_id")
+        logger.info("Generating Evaluation PDF V3 for simulation_id: %s, report_id: %s", simulation_id, report_id)
+        html_file_path = f"result_html/diet-{report_id}.html"
+        if not os.path.exists(html_file_path):
+            raise FileNotFoundError(f"HTML file not found at {html_file_path}")
+        with open(html_file_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        logger.info("Successfully read Evaluation HTML file: %s", html_file_path)
+        html_content = _optimize_html_for_pdf(html_content)
+        from weasyprint import HTML
+        pdf_bytes = HTML(string=html_content).write_pdf()
+        logger.info("Evaluation PDF V3 generated. Size: %d bytes", len(pdf_bytes))
+        return pdf_bytes
+    except Exception as e:
+        logger.error("Failed to generate Evaluation PDF V3: %s", e)
+        raise

@@ -4,25 +4,22 @@ RationSmart NSGA-III runner.
 
 from __future__ import annotations
 
-import sys
+import logging
 import os
-# Add the current directory to sys.path to support both standalone and package imports
-current_dir = os.path.dirname(os.path.abspath(__file__))
-if current_dir not in sys.path:
-    sys.path.append(current_dir)
-
 from typing import Any, Dict
+
+logger = logging.getLogger(__name__)
 from pathlib import Path
 from datetime import datetime
 
-from animal_requirements import (
+from .animal_requirements import (
     rsm_calculate_an_requirements,
     rsm_create_animal_inputs_dataframe,
 )
-from feed_processing import rsm_process_feed_library, rsm_process_feed_dataframe
-from optimization_core import nsga3_optimization, _select_best_cost_solution
-from diet_supply import rsm_diet_supply
-from diet_tables import (
+from .feed_processing import rsm_process_feed_library, rsm_process_feed_dataframe
+from .optimization_core import nsga3_optimization, _select_best_cost_solution
+from .diet_supply import rsm_diet_supply
+from .diet_tables import (
     rsm_create_diet_table,
     rsm_generate_nutrient_comparison,
     rsm_create_final_diet_dataframe,
@@ -31,10 +28,11 @@ from diet_tables import (
     rsm_create_proportions_dataframe,
     rsm_calculate_methane_emissions,
 )
-from report_generation import generate_report_from_runner_results
-from rationsmart_warnings import post_feasibility_warnings
-from constraints_adequacy import compute_adequacy
-from feasibility import feasibility_postcheck
+from .report_generation import generate_report_from_runner_results
+from .rationsmart_warnings import post_feasibility_warnings
+from .constraints_adequacy import compute_adequacy
+from .feasibility import feasibility_postcheck
+from .result_types import OptimizationResult
 
 
 
@@ -54,23 +52,40 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
 
     precheck = cfg.get("precheck") if isinstance(cfg, dict) else None
     if precheck:
-        status = precheck.get("status")
-        if status == "error":
-            print("❌ Optimization skipped: pre-check found blocking issues.")
-            return {
-                "status": "ERROR",
-                "error_message": "Pre-check found blocking issues",
-                "precheck": precheck
-            }
-        if status == "warning":
-            print("⚠️ Pre-check warnings detected; continuing optimization.")
+        precheck_status = precheck.get("status")
+        if precheck_status == "error":
+            logger.error("Optimization skipped: pre-check found blocking issues.")
+            return OptimizationResult(
+                status="ERROR",
+                total_cost=0.0,
+                water_intake=0.0,
+                diet_table={},
+                nutrient_comparison={},
+                methane_report={},
+                ration_evaluation={},
+                animal_requirements={},
+                messages=[],
+                allow_report=False,
+                error_message="Pre-check found blocking issues",
+            )
+        if precheck_status == "warning":
+            logger.warning("Pre-check warnings detected; continuing optimization.")
 
     if result is None or problem is None:
-        print("❌ Optimization did not return a solution.")
-        return {
-            "status": "ERROR",
-            "error_message": "Optimization did not return a solution"
-        }
+        logger.error("Optimization did not return a solution.")
+        return OptimizationResult(
+            status="ERROR",
+            total_cost=0.0,
+            water_intake=0.0,
+            diet_table={},
+            nutrient_comparison={},
+            methane_report={},
+            ration_evaluation={},
+            animal_requirements={},
+            messages=[],
+            allow_report=False,
+            error_message="Optimization did not return a solution",
+        )
 
     # Select best feasible-first solution
     best = _select_best_cost_solution(result, problem, cfg)
@@ -94,23 +109,31 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
             violated_rule="A",
         )
         if postcheck.get("messages"):
-            for line in postcheck["messages"]:
-                print(f"⚠️ {line}")
-        
-        return {
-            "status": "FAILED",
-            "error_message": "No acceptable solution found",
-            "post_results": {
-                "status": postcheck["status"],
-                "messages": postcheck.get("messages", []),
-                "worst_constraints": postcheck.get("worst_constraints", []),
-                "animal_inputs": animal_inputs_df,
-                "diet_supply_results": {},  # Add empty dict for safety
-                "water_intake": 0.0,
-                "total_cost": 0.0
-            },
-            "animal_requirements": problem.animal_requirements
+            logger.warning("Postcheck warnings: %s", "; ".join(postcheck["messages"]))
+
+        post_results = {
+            "status": postcheck["status"],
+            "messages": postcheck.get("messages", []),
+            "worst_constraints": postcheck.get("worst_constraints", []),
+            "animal_inputs": animal_inputs_df,
+            "diet_supply_results": {},
+            "water_intake": 0.0,
+            "total_cost": 0.0,
         }
+        return OptimizationResult(
+            status="FAILED",
+            total_cost=0.0,
+            water_intake=0.0,
+            diet_table={},
+            nutrient_comparison={},
+            methane_report={},
+            ration_evaluation={},
+            animal_requirements=problem.animal_requirements,
+            messages=postcheck.get("messages", []),
+            allow_report=False,
+            error_message="No acceptable solution found",
+            post_results=post_results,
+        )
 
     # Compute diet supply for the best quantities and re-run full constraint check for reporting
     q = best["q"]
@@ -134,7 +157,7 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
             best["constraint_result"] = best_full_cr
             best["constraint_details"] = best_full_cr.get("details", {})
     except Exception as exc:
-        print(f"⚠️ Final constraint check for reporting failed: {exc}")
+        logger.warning("Final constraint check for reporting failed: %s", exc)
 
     diet_supply = rsm_diet_supply(q, problem.f_nd, problem.animal_requirements)
 
@@ -163,13 +186,9 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
         thresholds=getattr(problem, 'thr', None)
     )
     if constraint_messages.get("messages"):
-        print("ℹ️ Constraint summary:")
-        for line in constraint_messages["messages"]:
-            print(f"   - {line}")
+        logger.info("Constraint summary: %s", "; ".join(constraint_messages["messages"]))
     if postcheck.get("messages"):
-        print("ℹ️ Postcheck:")
-        for line in postcheck["messages"]:
-            print(f"   - {line}")
+        logger.info("Postcheck: %s", "; ".join(postcheck["messages"]))
 
     summary = {
         "status": postcheck["status"],
@@ -183,46 +202,49 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
         "animal_requirements": problem.animal_requirements,
     }
 
-    print("✅ NSGA3 run complete.")
-    print(f"Cost (AF): {summary['cost']:.2f} | Violation: {summary['violation']:.4f} | Status: {summary['status']}")
+    logger.info("NSGA3 run complete.")
+    logger.info("Cost (AF): %.2f | Violation: %.4f | Status: %s", summary['cost'], summary['violation'], summary['status'])
 
-    report_ready = {
-        "allow_report": bool(postcheck["allow_report"]),
-        "post_optimization": {
-            "status": postcheck["status"],
-            "messages": list(postcheck.get("messages") or []),
-            "worst_constraints": list(postcheck.get("worst_constraints") or []),
-            "total_cost": total_cost_real,
-            "water_intake": water_intake,
-            "diet_supply_results": diet_supply,
-            "animal_inputs": animal_inputs_df,
-            "ration_evaluation": ration_evaluation,
-            "diet_table": diet_table,
-            "Dt": Dt,
-            "Dt_kg": final_diet_df,
-            "dt_proportions": dt_proportions,
-            "dt_forages": dt_forages,
-            "dt_concentrates": dt_concentrates,
-            "dt_results": dt_results,
-            "nutrient_comparison": nutrient_comparison,
-            "methane_report": methane_report,
-            "best_solution_result": q,
-            "constraint_messages": constraint_messages,
-        },
-        "animal_requirements": problem.animal_requirements,
+    all_messages = list(postcheck.get("messages") or []) + list(constraint_messages.get("messages") or [])
+
+    post_results = {
+        "status": postcheck["status"],
+        "messages": list(postcheck.get("messages") or []),
+        "worst_constraints": list(postcheck.get("worst_constraints") or []),
+        "total_cost": total_cost_real,
+        "water_intake": water_intake,
+        "diet_supply_results": diet_supply,
+        "animal_inputs": animal_inputs_df,
+        "ration_evaluation": ration_evaluation,
+        "diet_table": diet_table,
+        "Dt": Dt,
+        "Dt_kg": final_diet_df,
+        "dt_proportions": dt_proportions,
+        "dt_forages": dt_forages,
+        "dt_concentrates": dt_concentrates,
+        "dt_results": dt_results,
+        "nutrient_comparison": nutrient_comparison,
+        "methane_report": methane_report,
+        "best_solution_result": q,
+        "constraint_messages": constraint_messages,
     }
 
-    # NSGA3 runner now returns raw results. 
-    # Official HTML/PDF reports are handled by core/z_optimization/reporting.py 
-    # in a background task for better API performance.
-    
-    return {
-        "status": "SUCCESS",
-        "post_results": report_ready["post_optimization"],
-        "animal_requirements": problem.animal_requirements,
-        "simulation_id": simulation_id,
-        "report_id": report_id,
-        "report_ready": report_ready
-    }
+    return OptimizationResult(
+        status=postcheck["status"],
+        total_cost=total_cost_real,
+        water_intake=water_intake,
+        diet_table=diet_table,
+        nutrient_comparison=nutrient_comparison,
+        methane_report=methane_report,
+        ration_evaluation=ration_evaluation,
+        animal_requirements=problem.animal_requirements,
+        messages=all_messages,
+        allow_report=bool(postcheck["allow_report"]),
+        simulation_id=simulation_id,
+        report_id=report_id,
+        quantities=q,
+        diet_supply=diet_supply,
+        post_results=post_results,
+    )
 
 

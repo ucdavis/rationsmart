@@ -308,3 +308,68 @@ def classify_feed_categories(f_nd):
 ########################################################
 # Utility for Message Handling
 ########################################################
+
+
+########################################################
+# Formatting / JSON-safety helpers (moved from app/utils.py — Task 2.8)
+# Kept here so core/ has zero upward imports into app/.
+########################################################
+
+def round_numeric_value(value, decimal_places=2):
+    """Round a numeric value to *decimal_places* using ROUND_HALF_UP. Returns None on invalid input."""
+    from decimal import Decimal, ROUND_HALF_UP, InvalidOperation
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        value = str(value)
+    if not value or str(value).strip() == '':
+        return None
+    value_lower = str(value).lower().strip()
+    if value_lower in ('nan', 'inf', '-inf', 'null', 'none'):
+        return None
+    try:
+        rounded = Decimal(str(value)).quantize(
+            Decimal('0.' + '0' * decimal_places),
+            rounding=ROUND_HALF_UP,
+        )
+        return float(rounded)
+    except (ValueError, TypeError, OverflowError, InvalidOperation):
+        return None
+
+
+def format_value_with_unit(value, unit):
+    """Format a numeric value with a unit string; returns None for blank/None values."""
+    if value is None or value == '':
+        return None
+    if value == 0:
+        return 0
+    if isinstance(value, (int, float)) and value == int(value):
+        return f"{int(value)} {unit}"
+    return f"{value:.2f} {unit}"
+
+
+def safe_float(value):
+    """Coerce *value* to float; returns 0.0 on failure."""
+    if value is None or value == '':
+        return 0.0
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return 0.0
+
+
+def ensure_json_safe(value):
+    """Recursively replace NaN/inf with 0.0 and numpy scalars with plain Python types."""
+    import numpy as np
+    if isinstance(value, dict):
+        return {k: ensure_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [ensure_json_safe(v) for v in value]
+    if isinstance(value, (int, str, bool)) or value is None:
+        return value
+    if isinstance(value, float):
+        return 0.0 if (np.isnan(value) or np.isinf(value)) else value
+    if hasattr(value, 'item'):  # numpy scalar
+        val = value.item()
+        return 0.0 if (np.isnan(val) or np.isinf(val)) else val
+    return value
