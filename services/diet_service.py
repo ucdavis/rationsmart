@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import CustomFeed, Feed, FeedAnalytics, Report
@@ -262,13 +263,25 @@ async def run_diet_recommendation(
         "simulation_id": request.simulation_id,
         "report_id": report_id,
     }
+    currency = "$"
+    try:
+        row = await db.execute(
+            text("SELECT currency FROM country WHERE id = :cid"),
+            {"cid": request.country_id},
+        )
+        val = row.scalar_one_or_none()
+        if val:
+            currency = val
+    except Exception:
+        pass
+
     response = build_diet_response(
         optimization_results=result_dict,
         cattle_info=request.cattle_info,
         simulation_id=request.simulation_id,
         report_id=report_id,
         user_name="",
-        currency=getattr(request, "currency", "$"),
+        currency=currency,
     )
 
     # 5 — Persist report record (no PDF yet — Task 2.8 adds that)
