@@ -11,15 +11,13 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, Optional, Tuple
 
-from passlib.context import CryptContext
+import bcrypt as _bcrypt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import UserInformationModel
 from repositories.user_repository import UserRepository
 
 logger = logging.getLogger(__name__)
-
-_pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 # ── PIN primitives ────────────────────────────────────────────────────────────
@@ -31,7 +29,7 @@ def generate_pin() -> str:
 
 def hash_pin(pin: str) -> str:
     """Bcrypt-hash a PIN. Always produces a $2b$ prefixed string."""
-    return _pwd_context.hash(pin)
+    return _bcrypt.hashpw(pin.encode(), _bcrypt.gensalt()).decode()
 
 
 def verify_pin(pin: str, hashed_pin: str) -> bool:
@@ -43,7 +41,7 @@ def verify_pin(pin: str, hashed_pin: str) -> bool:
     - Legacy SHA-256 (32-char hex salt + 64-char hex digest): old 4-digit PINs.
     """
     if hashed_pin.startswith("$2b$"):
-        return _pwd_context.verify(pin, hashed_pin)
+        return _bcrypt.checkpw(pin.encode(), hashed_pin.encode())
     # Legacy SHA-256 path
     if len(hashed_pin) < 96:
         return False
