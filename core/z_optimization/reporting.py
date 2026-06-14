@@ -403,18 +403,20 @@ def build_evaluation_response(
     
     for item in feed_evaluation:
         feed_id = item.feed_id
-        # Find the feed object from database list to get its name
-        feed_obj = next((f for f in feeds if str(f.id) == feed_id), None)
+        # feeds may be ORM objects or plain dicts (from dataclasses.asdict)
+        def _fid(f): return str(f["feed_id"] if isinstance(f, dict) else f.id)
+        def _fname(f): return (f["fd_name"] if isinstance(f, dict) else f.fd_name) or ""
+        feed_obj = next((f for f in feeds if _fid(f) == feed_id), None)
         if not feed_obj:
             continue
-            
+
         # Find index in engine results
         try:
-            idx = engine_feed_names.index(feed_obj.fd_name)
+            idx = engine_feed_names.index(_fname(feed_obj))
             
             feed_breakdown.append({
                 "feed_id": feed_id,
-                "feed_name": feed_obj.fd_name if feed_obj.fd_name is not None else "",
+                "feed_name": _fname(feed_obj),
                 "feed_type": f_nd["Fd_Type"][idx] if f_nd["Fd_Type"][idx] is not None else "",
                 "quantity_as_fed_kg_per_day": round(float(ingredient_amounts_af[idx]), 2),
                 "quantity_dm_kg_per_day": round(float(ingredient_amounts_dm[idx]), 2),
