@@ -16,9 +16,10 @@ import numpy as np
 from .utilities import preprocess_dataframe, rename_variable, replace_na_and_negatives
 
 # Feed column mapping from database/Excel (lowercase) to Engine (CamelCase)
-FEED_COLUMN_MAPPING = { 
-    "fd_name": "Fd_Name", "fd_category": "Fd_Category", "fd_type": "Fd_Type", 
-    "fd_cost": "Fd_Cost", "fd_dm": "Fd_DM", "fd_ash": "Fd_Ash", "fd_cp": "Fd_CP",
+FEED_COLUMN_MAPPING = {
+    "fd_name": "Fd_Name", "fd_category": "Fd_Category", "fd_type": "Fd_Type",
+    "fd_cost": "Fd_Cost", "price_per_kg": "Fd_Cost",
+    "fd_dm": "Fd_DM", "fd_ash": "Fd_Ash", "fd_cp": "Fd_CP",
     "fd_npn_cp": "Fd_NPN_CP", "fd_ee": "Fd_EE", "fd_st": "Fd_St", "fd_ndf": "Fd_NDF",
     "fd_adf": "Fd_ADF", "fd_lg": "Fd_Lg", "fd_ndin": "Fd_NDIN", "fd_adin": "Fd_ADIN", 
     "fd_ca": "Fd_Ca", "fd_p": "Fd_P", "fd_country_name": "Fd_Country", 
