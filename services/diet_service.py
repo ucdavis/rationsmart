@@ -353,7 +353,8 @@ async def run_diet_evaluation(
     country = await user_repo.get_country_by_id(request.country_id)
     country_name = country.name if country else ""
 
-    eval_result = evaluate_diet(animal_inputs, feed_data_list)
+    ingredient_amounts_af = [f["quantity_as_fed"] or 0.0 for f in feed_data_list]
+    eval_result = evaluate_diet(animal_inputs, ingredient_amounts_af, feed_data_list=feed_data_list)
     report_id = f"eval-{_uuid_mod.uuid4().hex[:8]}"
     response = build_evaluation_response(
         evaluation_results=eval_result,
