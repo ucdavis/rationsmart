@@ -86,8 +86,17 @@ app.include_router(feed_classification_router, prefix="/v1/feed-classification")
 app.include_router(user_feedback_router, prefix="/v1/user-feedback")
 
 
-@app.get("/health")
+@app.get("/health", summary="Service health check")
 async def health(db: AsyncSession = Depends(get_db)):
+    """
+    Check the liveness of the API and its dependencies (PostgreSQL database and Redis cache).
+
+    No authentication required.
+
+    Returns HTTP `200` with `status: healthy` when both dependencies are reachable,
+    or HTTP `503` with `status: degraded` when one or more dependencies are unavailable.
+    Also reports the running API version.
+    """
     from sqlalchemy import text
     from app.feed_cache import _redis
 
@@ -118,8 +127,13 @@ async def health(db: AsyncSession = Depends(get_db)):
     )
 
 
-@app.get("/")
+@app.get("/", summary="API root — service info")
 async def root():
+    """
+    Returns the service name, current version, and running status.
+
+    No authentication required. Use `GET /health` for a full dependency health check.
+    """
     return {
         "service": "RationSmart",
         "version": "4.0.0",

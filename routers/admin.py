@@ -57,7 +57,7 @@ def _feed_detail(f) -> FeedDetailsResponse:
 
 # ── User management ───────────────────────────────────────────────────────────
 
-@router.get("/users", response_model=AdminUserListResponse)
+@router.get("/users", response_model=AdminUserListResponse, summary="List all registered users (admin)")
 async def list_users(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -67,6 +67,17 @@ async def list_users(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return a paginated list of all registered users. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Optional query parameters:**
+    - `page` (default 1), `page_size` (default 20, max 100) — pagination.
+    - `country` — filter by country name.
+    - `status` — filter by account status (`active` or `inactive`).
+    - `search` — substring search across name and email.
+    """
     skip = (page - 1) * page_size
     rows, total = await UserRepository(db).list_all(
         skip=skip, limit=page_size,
@@ -90,13 +101,25 @@ async def list_users(
     )
 
 
-@router.put("/users/{user_id}/toggle-status", response_model=AdminUserToggleResponse)
+@router.put("/users/{user_id}/toggle-status", response_model=AdminUserToggleResponse,
+            summary="Enable or disable a user account (admin)")
 async def toggle_user_status(
     user_id: str,
     body: AdminUserToggleRequest,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Activate or deactivate a user account. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `user_id` — UUID of the target user.
+
+    **Mandatory body field:** `action` — `"enable"` to activate, `"disable"` to deactivate.
+
+    An admin cannot toggle their own account. Returns `400` if attempting self-modification, `404` if the user is not found.
+    """
     if user_id == str(admin_user.id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot change your own status")
     repo = UserRepository(db)
@@ -118,7 +141,8 @@ async def toggle_user_status(
 
 # ── Feed CRUD ─────────────────────────────────────────────────────────────────
 
-@router.get("/list-feeds", response_model=AdminFeedListResponse)
+@router.get("/list-feeds", response_model=AdminFeedListResponse,
+            summary="List all standard feeds with filters (admin)")
 async def list_feeds(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
@@ -129,6 +153,18 @@ async def list_feeds(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return a paginated, filterable list of all standard feeds in the database. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Optional query parameters:**
+    - `page` (default 1), `page_size` (default 20, max 100).
+    - `feed_type` — filter by feed type name.
+    - `feed_category` — filter by category name.
+    - `country_name` — filter by country name.
+    - `search` — substring search on feed name.
+    """
     skip = (page - 1) * page_size
     feeds, total = await feed_service.list_feeds(
         db, skip=skip, limit=page_size,
@@ -144,12 +180,21 @@ async def list_feeds(
     )
 
 
-@router.post("/add-feed", response_model=AdminFeedResponse)
+@router.post("/add-feed", response_model=AdminFeedResponse, summary="Add a new standard feed (admin)")
 async def add_feed(
     body: AdminFeedRequest,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Create a new standard (global) feed entry visible to all users. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Mandatory body fields:** `fd_name`, `fd_type`, `fd_category`, `fd_country_name`, `fd_country_cd`, and nutritional values (`fd_dm`, `fd_cp`, `fd_ndf`, `fd_adf`, `fd_ee`, `fd_ash`, `fd_ca`, `fd_p`).
+
+    Returns `400` if required fields are missing or a duplicate feed is detected.
+    """
     success, message, feed = await feed_service.create_feed(db, body.dict())
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
@@ -162,13 +207,25 @@ async def add_feed(
     return AdminFeedResponse(success=True, message=message, feed=feed_resp)
 
 
-@router.put("/update-feed/{feed_id}", response_model=AdminFeedResponse)
+@router.put("/update-feed/{feed_id}", response_model=AdminFeedResponse,
+            summary="Update an existing standard feed (admin)")
 async def update_feed(
     feed_id: str,
     body: AdminFeedRequest,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Update the details or nutritional composition of an existing standard feed. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `feed_id` — UUID of the feed to update.
+
+    **Body:** Any subset of feed fields (partial update supported; `null` fields are ignored).
+
+    Returns `404` if not found, `400` for validation errors.
+    """
     success, message, feed = await feed_service.update_feed(db, feed_id, body.dict(exclude_none=True))
     if not success:
         code = status.HTTP_404_NOT_FOUND if "not found" in message.lower() else status.HTTP_400_BAD_REQUEST
@@ -181,12 +238,21 @@ async def update_feed(
     return AdminFeedResponse(success=True, message=message, feed=feed_resp)
 
 
-@router.delete("/delete-feed/{feed_id}")
+@router.delete("/delete-feed/{feed_id}", summary="Delete a standard feed (admin)")
 async def delete_feed(
     feed_id: str,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Permanently remove a standard feed from the database. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `feed_id` — UUID of the feed to delete.
+
+    Returns `404` if the feed does not exist.
+    """
     success, message = await feed_service.delete_feed(db, feed_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
@@ -196,12 +262,23 @@ async def delete_feed(
 
 # ── Bulk upload / export ──────────────────────────────────────────────────────
 
-@router.post("/bulk-upload-feeds", response_model=AdminBulkUploadResponse)
+@router.post("/bulk-upload-feeds", response_model=AdminBulkUploadResponse,
+             summary="Bulk-import feeds from an Excel file (admin)")
 async def bulk_upload_feeds(
     file: UploadFile = File(...),
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Upload an Excel file (`.xlsx` or `.xls`) to batch-insert standard feeds. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Mandatory form field:** `file` — the Excel workbook. Accepted formats: `.xlsx`, `.xls`.
+
+    The workbook must match the expected column schema (use `GET /v1/admin/export-feeds` to download a template).
+    Returns a summary of rows inserted, skipped, and any per-row errors.
+    """
     if not file.filename.endswith((".xlsx", ".xls")):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File must be an Excel file (.xlsx or .xls)")
     content = await file.read()
@@ -211,11 +288,18 @@ async def bulk_upload_feeds(
     return AdminBulkUploadResponse(**result)
 
 
-@router.get("/export-feeds")
+@router.get("/export-feeds", summary="Download all standard feeds as an Excel file (admin)")
 async def export_feeds(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Export the full standard feed catalogue to an `.xlsx` file for download or use as a bulk-upload template. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Returns a streaming Excel file with `Content-Disposition: attachment`.
+    """
     file_bytes, filename = await feed_service.export_feeds(db)
     return StreamingResponse(
         iter([file_bytes]),
@@ -224,11 +308,18 @@ async def export_feeds(
     )
 
 
-@router.get("/export-custom-feeds")
+@router.get("/export-custom-feeds", summary="Download all custom feeds as an Excel file (admin)")
 async def export_custom_feeds(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Export all user-created custom feeds across all users to an `.xlsx` file. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Returns a streaming Excel file with `Content-Disposition: attachment`.
+    """
     file_bytes, filename = await feed_service.export_custom_feeds(db)
     return StreamingResponse(
         iter([file_bytes]),
@@ -237,23 +328,42 @@ async def export_custom_feeds(
     )
 
 
-@router.get("/read-bulk-upload-logfile/", response_model=AdminBulkLogResponse)
+@router.get("/read-bulk-upload-logfile/", response_model=AdminBulkLogResponse,
+            summary="Get bulk upload log metadata (admin)")
 async def read_bulk_upload_logfile(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Returns bulk upload log metadata. S3 URL resolution is in Task 2.8."""
+    """
+    Retrieve metadata about the most recent bulk feed upload log file. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Status:** S3 URL resolution is pending — currently returns a placeholder response.
+    """
     return AdminBulkLogResponse(success=True, message="Log retrieval pending Task 2.8 (S3 integration)")
 
 
 # ── Feed types ────────────────────────────────────────────────────────────────
 
-@router.post("/add-feed-type", response_model=AdminFeedTypeResponse)
+@router.post("/add-feed-type", response_model=AdminFeedTypeResponse,
+             summary="Create a new feed type (admin)")
 async def add_feed_type(
     body: AdminFeedTypeRequest,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Add a new top-level feed type (e.g. Roughage, Concentrate, Mineral supplement). Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Mandatory body fields:** `type_name` (unique string).
+
+    **Optional body fields:** `description`, `sort_order` (integer for display ordering).
+
+    Returns `400` if a feed type with the same name already exists.
+    """
     success, message, ft = await feed_service.create_feed_type(db, body.dict())
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
@@ -266,12 +376,21 @@ async def add_feed_type(
     return AdminFeedTypeResponse(success=True, message=message, feed_type=ft_resp)
 
 
-@router.delete("/delete-feed-type/{type_id}")
+@router.delete("/delete-feed-type/{type_id}", summary="Delete a feed type (admin)")
 async def delete_feed_type(
     type_id: str,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Remove a feed type from the classification hierarchy. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `type_id` — UUID of the feed type.
+
+    Returns `404` if not found; `409` if the type is still referenced by existing feeds or categories.
+    """
     success, message = await feed_service.delete_feed_type(db, type_id)
     if not success:
         code = status.HTTP_404_NOT_FOUND if "not found" in message.lower() else status.HTTP_409_CONFLICT
@@ -280,11 +399,18 @@ async def delete_feed_type(
     return {"success": True, "message": message}
 
 
-@router.get("/list-feed-types")
+@router.get("/list-feed-types", summary="List all active feed types (admin)")
 async def list_feed_types(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return the ID and name of every active feed type. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Use the returned `id` values when creating or filtering feed categories.
+    """
     result = await db.execute(
         select(FeedType).where(FeedType.is_active == True)  # noqa: E712
     )
@@ -294,12 +420,24 @@ async def list_feed_types(
 
 # ── Feed categories ───────────────────────────────────────────────────────────
 
-@router.post("/add-feed-category", response_model=AdminFeedCategoryResponse)
+@router.post("/add-feed-category", response_model=AdminFeedCategoryResponse,
+             summary="Create a new feed category under a feed type (admin)")
 async def add_feed_category(
     body: AdminFeedCategoryRequest,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Add a new feed category nested under an existing feed type. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Mandatory body fields:** `category_name` (unique within the type), `feed_type_id` (UUID of the parent feed type from `GET /v1/admin/list-feed-types`).
+
+    **Optional body fields:** `description`, `sort_order`.
+
+    Returns `404` if the parent feed type is not found; `400` if the category name already exists under that type.
+    """
     success, message, cat = await feed_service.create_feed_category(db, body.dict())
     if not success:
         code = status.HTTP_404_NOT_FOUND if "not found" in message.lower() else status.HTTP_400_BAD_REQUEST
@@ -313,12 +451,21 @@ async def add_feed_category(
     return AdminFeedCategoryResponse(success=True, message=message, feed_category=cat_resp)
 
 
-@router.delete("/delete-feed-category/{category_id}")
+@router.delete("/delete-feed-category/{category_id}", summary="Delete a feed category (admin)")
 async def delete_feed_category(
     category_id: str,
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Remove a feed category from the classification hierarchy. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `category_id` — UUID of the feed category.
+
+    Returns `404` if not found; `409` if the category is still referenced by existing feeds.
+    """
     success, message = await feed_service.delete_feed_category(db, category_id)
     if not success:
         code = status.HTTP_404_NOT_FOUND if "not found" in message.lower() else status.HTTP_409_CONFLICT
@@ -327,11 +474,18 @@ async def delete_feed_category(
     return {"success": True, "message": message}
 
 
-@router.get("/list-feed-categories")
+@router.get("/list-feed-categories", summary="List all active feed categories (admin)")
 async def list_feed_categories(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return all active feed categories with their ID, name, and parent feed type ID. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Use the returned `id` values when assigning feeds to categories.
+    """
     result = await db.execute(
         select(FeedCategory).where(FeedCategory.is_active == True)  # noqa: E712
     )
@@ -344,13 +498,23 @@ async def list_feed_categories(
 
 # ── User feedback (admin) ─────────────────────────────────────────────────────
 
-@router.get("/user-feedback/all", response_model=AdminFeedbackListResponse)
+@router.get("/user-feedback/all", response_model=AdminFeedbackListResponse,
+            summary="List all user feedback entries (admin)")
 async def all_feedback(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return a paginated list of all feedback submitted by users across the platform. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Optional query parameters:** `page` (default 1), `page_size` (default 20, max 100).
+
+    Each entry includes the user's name, email, rating, feedback text, and submission timestamp.
+    """
     skip = (page - 1) * page_size
     rows, total = await ReportRepository(db).get_all_feedback(skip=skip, limit=page_size)
     items = []
@@ -369,24 +533,40 @@ async def all_feedback(
     return AdminFeedbackListResponse(feedbacks=items, total_count=total)
 
 
-@router.get("/user-feedback/stats", response_model=FeedbackStatsResponse)
+@router.get("/user-feedback/stats", response_model=FeedbackStatsResponse,
+            summary="Get aggregate feedback statistics (admin)")
 async def feedback_stats(
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return platform-wide feedback statistics: total count, average rating, rating distribution. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+    """
     stats = await ReportRepository(db).get_feedback_stats()
     return FeedbackStatsResponse(**stats)
 
 
 # ── Reports (admin) ───────────────────────────────────────────────────────────
 
-@router.get("/get-all-reports/", response_model=AdminGetAllReportsResponse)
+@router.get("/get-all-reports/", response_model=AdminGetAllReportsResponse,
+            summary="List all saved reports across all users (admin)")
 async def get_all_reports(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """
+    Return a paginated list of every saved diet report across all users on the platform. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Optional query parameters:** `page` (default 1), `page_size` (default 20, max 100).
+
+    Each item includes the report ID, owning user, report type, and creation timestamp.
+    """
     skip = (page - 1) * page_size
     reports, total = await report_service.get_all_saved_reports(db, skip=skip, limit=page_size)
     total_pages = math.ceil(total / page_size) if total else 1

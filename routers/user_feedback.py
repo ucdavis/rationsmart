@@ -16,13 +16,24 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["User Feedback"])
 
 
-@router.post("/submit", response_model=UserFeedbackResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/submit", response_model=UserFeedbackResponse, status_code=status.HTTP_201_CREATED,
+             summary="Submit app feedback")
 async def submit_feedback(
     body: FeedbackSubmitRequest,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Submit feedback for the mobile app. Identity comes from the JWT."""
+    """
+    Submit a feedback entry for the RationSmart mobile app. The submitting user is identified via the JWT.
+
+    **Requires:** Bearer JWT.
+
+    **Mandatory body fields:** `overall_rating` (integer 1–5).
+
+    **Optional body fields:** `text_feedback` (free-text comments), `feedback_type` (category string, e.g. `"bug"`, `"suggestion"`).
+
+    Returns the saved feedback record with its assigned `id` and `created_at` timestamp.
+    """
     feedback = UserFeedback(
         user_id=current_user.id,
         overall_rating=body.overall_rating,
@@ -41,14 +52,24 @@ async def submit_feedback(
     )
 
 
-@router.get("/my", response_model=FeedbackListResponse)
+@router.get("/my", response_model=FeedbackListResponse, summary="Get the authenticated user's feedback history")
 async def get_my_feedback(
     limit: int = Query(50, ge=1, le=100),
     offset: int = Query(0, ge=0),
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Retrieve the authenticated user's own feedback history."""
+    """
+    Retrieve all feedback submissions made by the currently authenticated user.
+
+    **Requires:** Bearer JWT.
+
+    **Optional query parameters:**
+    - `limit` (default 50, max 100) — number of records to return.
+    - `offset` (default 0) — number of records to skip for pagination.
+
+    Returns a list of feedback entries and the total count across all pages.
+    """
     repo = ReportRepository(db)
     all_feedback = await repo.get_feedback_by_user(str(current_user.id))
     paged = all_feedback[offset: offset + limit]

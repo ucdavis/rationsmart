@@ -63,8 +63,17 @@ async def _user_response(user: UserInformationModel, db: AsyncSession) -> UserRe
     )
 
 
-@router.post("/register", response_model=AuthenticationResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", response_model=AuthenticationResponse, status_code=status.HTTP_201_CREATED,
+             summary="Register a new user account")
 async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
+    """
+    Create a new RationSmart user account and send an email verification link.
+
+    **Mandatory fields:** `name`, `email_id`, `pin` (6-digit), `country_id` (UUID — get valid IDs from `GET /v1/auth/countries`).
+
+    The account remains inactive until the user clicks the verification link sent to their email.
+    Login returns `403` until email is confirmed.
+    """
     user, error, verify_token = await auth_service.register(
         db, name=body.name, email=body.email_id, pin=body.pin, country_id=body.country_id
     )
@@ -89,9 +98,20 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
     )
 
 
-@router.post("/login", response_model=LoginResponse)
+@router.post("/login", response_model=LoginResponse, summary="Authenticate and receive a JWT token")
 @limiter.limit("10/minute")
 async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(get_db)):
+    """
+    Authenticate with email and PIN; returns a bearer JWT for use in `Authorization: Bearer <token>` headers.
+
+    **Mandatory fields:** `email_id`, `pin`.
+
+    **Rate limit:** 10 requests / minute per IP.
+
+    - `401` — wrong credentials.
+    - `403` — email address not yet verified; call `POST /v1/auth/resend-verification` to get a fresh link.
+    - If `requires_pin_reset: true` is returned, call `POST /v1/auth/set-new-pin` before continuing (legacy 4-digit PIN upgrade).
+    """
     user, error, needs_reset = await auth_service.login(db, body.email_id, body.pin)
     if not user:
         if error == "EMAIL_NOT_VERIFIED":
@@ -123,22 +143,45 @@ async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(ge
     )
 
 
-@router.get("/countries", response_model=List[Country])
+@router.get("/countries", response_model=List[Country], summary="List all supported countries")
 async def get_countries(db: AsyncSession = Depends(get_db)):
+    """
+    Return the full list of countries supported by RationSmart.
+
+    Use the returned `id` (UUID) as `country_id` when registering a user or filtering feeds.
+    No authentication required.
+    """
     countries = await UserRepository(db).get_all_countries()
     return [_country_schema(c) for c in countries]
 
 
-@router.get("/user/{email_id}", response_model=UserResponse)
+@router.get("/user/{email_id}", response_model=UserResponse, summary="Get user profile by email")
 async def get_user(email_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Fetch the profile of any registered user by their email address.
+
+    **Path parameter:** `email_id` — the user's registered email address (URL-encoded if it contains `+` or special characters).
+
+    Returns `404` if no account with that email exists.
+    """
     user = await UserRepository(db).get_by_email(email_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     return await _user_response(user, db)
 
 
-@router.put("/user/{email_id}", response_model=UserResponse)
+@router.put("/user/{email_id}", response_model=UserResponse, summary="Update user profile")
 async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Update the name and/or country of a registered user.
+
+    **Path parameter:** `email_id` — the user's email address.
+
+    **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries`).
+    Omit a field to leave it unchanged.
+
+    Returns `404` if the user is not found; `400` if `country_id` is invalid.
+    """
     repo = UserRepository(db)
     user = await repo.get_by_email(email_id)
     if not user:
@@ -152,8 +195,16 @@ async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession =
     return await _user_response(user, db)
 
 
-@router.post("/forgot-pin", response_model=ForgotPinResponse)
+@router.post("/forgot-pin", response_model=ForgotPinResponse, summary="Request a PIN reset via email")
 async def forgot_pin(body: ForgotPinRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Generate a new temporary PIN and send it to the user's registered email address.
+
+    **Mandatory field:** `email_id`.
+
+    Returns `404` if no account is found for that email.
+    After receiving the temporary PIN, the user should call `POST /v1/auth/change-pin` to set a permanent one.
+    """
     success, message, new_pin = await auth_service.forgot_pin(db, body.email_id)
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
@@ -171,8 +222,15 @@ async def forgot_pin(body: ForgotPinRequest, db: AsyncSession = Depends(get_db))
     return ForgotPinResponse(success=True, message=f"New PIN sent to {user.email_id}.", new_pin=new_pin)
 
 
-@router.post("/change-pin", response_model=ChangePinResponse)
+@router.post("/change-pin", response_model=ChangePinResponse, summary="Change the current PIN")
 async def change_pin(body: ChangePinRequest, db: AsyncSession = Depends(get_db)):
+    """
+    Change the authenticated user's PIN by supplying the current PIN and a new 6-digit PIN.
+
+    **Mandatory fields:** `email_id`, `current_pin`, `new_pin` (6 digits, must differ from `current_pin`).
+
+    Returns `400` if the current PIN is wrong or the new PIN matches the old one.
+    """
     if body.current_pin == body.new_pin:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="New PIN must differ from current PIN")
     success, message = await auth_service.change_pin(db, body.email_id, body.current_pin, body.new_pin)
@@ -182,9 +240,16 @@ async def change_pin(body: ChangePinRequest, db: AsyncSession = Depends(get_db))
     return ChangePinResponse(success=True, message=message)
 
 
-@router.post("/set-new-pin")
+@router.post("/set-new-pin", summary="Upgrade legacy 4-digit PIN to a 6-digit PIN")
 async def set_new_pin(body: SetNewPinRequest, db: AsyncSession = Depends(get_db)):
-    """PIN migration gate: upgrade a legacy 4-digit PIN to a 6-digit bcrypt PIN."""
+    """
+    One-time PIN migration: upgrade a legacy 4-digit PIN to a new 6-digit bcrypt-hashed PIN.
+
+    **Mandatory fields:** `email_id`, `old_pin` (the existing 4-digit PIN), `new_pin` (6 digits).
+
+    Only needed when `POST /v1/auth/login` returns `requires_pin_reset: true`.
+    Returns `400` if the old PIN is incorrect or the new PIN format is invalid.
+    """
     success, message = await auth_service.set_new_pin(db, body.email_id, body.old_pin, body.new_pin)
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
@@ -192,9 +257,16 @@ async def set_new_pin(body: SetNewPinRequest, db: AsyncSession = Depends(get_db)
     return {"success": True, "message": message}
 
 
-@router.post("/verify-email")
+@router.post("/verify-email", summary="Verify email address and activate account")
 async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_db)):
-    """Consume the one-time token emailed on registration and activate the account."""
+    """
+    Consume the one-time token emailed after registration to activate the account and receive a JWT.
+
+    **Mandatory field:** `token` — copied from the verification link sent to the user's email.
+
+    Returns `400` if the token is invalid or already used.
+    On success, returns the user profile and a valid JWT (same shape as `POST /v1/auth/login`).
+    """
     user, error = await auth_service.verify_email_token(db, body.token)
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
@@ -208,9 +280,16 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     }
 
 
-@router.post("/resend-verification")
+@router.post("/resend-verification", summary="Resend the email verification link")
 async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
-    """Issue a fresh verification token for an unverified account."""
+    """
+    Issue a new one-time verification token and resend the activation email.
+
+    **Mandatory field:** `email_id`.
+
+    Use when the original verification email expired or was not received.
+    Returns `400` if the account does not exist or is already verified.
+    """
     new_token, error = await auth_service.resend_verification(db, body.email_id)
     if not new_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
@@ -228,9 +307,14 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
     return {"success": True, "message": "Verification email resent. Please check your inbox."}
 
 
-@router.get("/email-config")
+@router.get("/email-config", summary="Check email service configuration (diagnostic)")
 async def email_config():
-    """Diagnostic: returns email service configuration status."""
+    """
+    Diagnostic endpoint that returns the current email service configuration status.
+
+    Useful for verifying SMTP settings without sending a test email. No authentication required.
+    Not intended for production client use.
+    """
     return email_service.get_email_config()
 
 
@@ -241,13 +325,22 @@ class _PinBody(_BM):
     pin: str
 
 
-@router.post("/user-delete-account", response_model=UserDeleteAccountResponse)
+@router.post("/user-delete-account", response_model=UserDeleteAccountResponse,
+             summary="Deactivate the authenticated user's own account")
 async def delete_account(
     body: _PinBody,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Deactivate the authenticated user's own account (soft delete). PIN confirms intent."""
+    """
+    Soft-delete the currently authenticated user's account. The account is deactivated, not permanently erased.
+
+    **Requires:** Bearer JWT in `Authorization` header.
+
+    **Mandatory body field:** `pin` — the user's current 6-digit PIN (confirms intent to delete).
+
+    Returns `401` if the PIN is wrong. Returns the deactivated user's details on success.
+    """
     from datetime import datetime
 
     success, message = await auth_service.deactivate_account(db, str(current_user.id), body.pin)

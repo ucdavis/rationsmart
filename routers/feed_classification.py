@@ -41,9 +41,14 @@ def _cat_response(cat: FeedCategory) -> FeedCategoryResponse:
     )
 
 
-@router.get("/get-feed-types", response_model=List[FeedTypeResponse])
+@router.get("/get-feed-types", response_model=List[FeedTypeResponse],
+            summary="List all active feed types")
 async def get_feed_types(db: AsyncSession = Depends(get_db)):
-    """All active feed types, sorted by sort_order then name."""
+    """
+    Return all active feed types (e.g. Roughage, Concentrate) sorted by display order then name.
+
+    No authentication required. Use the returned `id` to fetch categories via `GET /v1/feed-classification/get-categories/{type_id}`.
+    """
     result = await db.execute(
         select(FeedType)
         .where(FeedType.is_active == True)  # noqa: E712
@@ -52,8 +57,17 @@ async def get_feed_types(db: AsyncSession = Depends(get_db)):
     return [_ft_response(ft) for ft in result.scalars().all()]
 
 
-@router.get("/types/{type_id}", response_model=FeedTypeResponse)
+@router.get("/types/{type_id}", response_model=FeedTypeResponse, summary="Get a feed type by UUID")
 async def get_feed_type(type_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Return the details of a single active feed type.
+
+    No authentication required.
+
+    **Path parameter:** `type_id` — UUID of the feed type.
+
+    Returns `400` for invalid UUID format; `404` if the type does not exist or is inactive.
+    """
     try:
         uuid.UUID(type_id)
     except ValueError:
@@ -68,8 +82,18 @@ async def get_feed_type(type_id: str, db: AsyncSession = Depends(get_db)):
     return _ft_response(ft)
 
 
-@router.get("/get-categories/{type_id}", response_model=List[FeedCategoryResponse])
+@router.get("/get-categories/{type_id}", response_model=List[FeedCategoryResponse],
+            summary="List all categories under a feed type")
 async def get_categories_by_type(type_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Return all active feed categories that belong to the specified feed type, sorted by display order then name.
+
+    No authentication required.
+
+    **Path parameter:** `type_id` — UUID of the parent feed type (from `GET /v1/feed-classification/get-feed-types`).
+
+    Returns `400` for invalid UUID; `404` if the feed type is not found or inactive.
+    """
     try:
         uuid.UUID(type_id)
     except ValueError:
@@ -89,8 +113,18 @@ async def get_categories_by_type(type_id: str, db: AsyncSession = Depends(get_db
     return [_cat_response(c) for c in cat_result.scalars().all()]
 
 
-@router.get("/get-feed-category/{category_id}", response_model=FeedCategoryResponse)
+@router.get("/get-feed-category/{category_id}", response_model=FeedCategoryResponse,
+            summary="Get a feed category by UUID")
 async def get_feed_category(category_id: str, db: AsyncSession = Depends(get_db)):
+    """
+    Return the details of a single active feed category, including its parent feed type.
+
+    No authentication required.
+
+    **Path parameter:** `category_id` — UUID of the feed category.
+
+    Returns `400` for invalid UUID format; `404` if the category does not exist or is inactive.
+    """
     try:
         uuid.UUID(category_id)
     except ValueError:
@@ -107,9 +141,17 @@ async def get_feed_category(category_id: str, db: AsyncSession = Depends(get_db)
     return _cat_response(cat)
 
 
-@router.get("/structure", response_model=Dict[str, List[Dict[str, Any]]])
+@router.get("/structure", response_model=Dict[str, List[Dict[str, Any]]],
+            summary="Get the full hierarchical feed classification structure")
 async def get_structure(db: AsyncSession = Depends(get_db)):
-    """Complete hierarchical feed classification structure."""
+    """
+    Return the complete feed taxonomy: a list of all active feed types, each with its list of active categories.
+
+    No authentication required.
+
+    Response shape: `{ "feed_classification": [ { "type": "...", "categories": ["...", "..."] }, ... ] }`.
+    Useful for populating UI dropdowns in a single call.
+    """
     ft_result = await db.execute(
         select(FeedType)
         .where(FeedType.is_active == True)  # noqa: E712
