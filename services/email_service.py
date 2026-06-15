@@ -56,15 +56,17 @@ class EmailService:
         )
 
     def _verification_html(self, user_name: str, token: str) -> str:
+        verify_url = f"{settings.api_base_url}/v1/auth/verify-email-link?token={token}"
         return f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
 <div style="background:#fff;border-radius:8px;padding:30px;box-shadow:0 2px 6px rgba(0,0,0,.1)">
   <h2 style="color:#2c5aa0">Hello {user_name}, welcome to RationSmart!</h2>
-  <p>Please use the verification code below to confirm your email address.</p>
-  <div style="background:#f0f4ff;padding:20px;border-radius:8px;text-align:center;margin:20px 0">
-    <p style="font-size:14px;color:#555;margin:0 0 8px">Verification Code</p>
-    <p style="font-size:32px;font-weight:bold;letter-spacing:6px;color:#2c5aa0;margin:0">{token}</p>
+  <p>Please click the button below to verify your email address and activate your account.</p>
+  <div style="text-align:center;margin:30px 0">
+    <a href="{verify_url}" style="background:#2c5aa0;color:#fff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block">
+      Verify Email
+    </a>
   </div>
-  <p>This code expires in 24 hours.</p>
+  <p style="color:#888;font-size:13px">This link expires in 24 hours. If you did not create a RationSmart account, you can ignore this email.</p>
 </div>
 </body></html>"""
 
@@ -108,7 +110,13 @@ class EmailService:
     async def send_verification_email(
         self, to_email: str, user_name: str, token: str
     ) -> Tuple[bool, Optional[str]]:
-        text = f"Hello {user_name},\n\nYour verification code is: {token}\n\nIt expires in 24 hours."
+        verify_url = f"{settings.api_base_url}/v1/auth/verify-email-link?token={token}"
+        text = (
+            f"Hello {user_name},\n\n"
+            f"Please open the link below to verify your email and activate your RationSmart account:\n\n"
+            f"{verify_url}\n\n"
+            f"This link expires in 24 hours.\n\n-- RationSmart"
+        )
         return self._send(
             to_email,
             subject="Verify your RationSmart email",

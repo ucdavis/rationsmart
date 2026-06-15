@@ -2,6 +2,7 @@ import logging
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.dependencies import get_current_user, get_db
@@ -255,6 +256,39 @@ async def set_new_pin(body: SetNewPinRequest, db: AsyncSession = Depends(get_db)
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
     await db.commit()
     return {"success": True, "message": message}
+
+
+@router.get("/verify-email-link", response_class=HTMLResponse,
+            summary="One-click email verification (used by the Verify Email button in the registration email)")
+async def verify_email_link(token: str, db: AsyncSession = Depends(get_db)):
+    """
+    Activate a user account by clicking the link in the registration email. No app interaction required.
+
+    **Query parameter:** `token` — the verification token embedded in the email link.
+
+    On success: returns an HTML page confirming the account is active. The user can now open the app and log in.
+    On failure: returns an HTML page explaining the error (invalid or expired token).
+    """
+    user, error = await auth_service.verify_email_token(db, token)
+    if not user:
+        html = f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:500px;margin:60px auto;text-align:center">
+<div style="background:#fff3cd;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+  <h2 style="color:#856404">Verification Failed</h2>
+  <p style="color:#555">{error or 'The verification link is invalid or has expired.'}</p>
+  <p style="color:#555;font-size:13px">Please open the RationSmart app and request a new verification email.</p>
+</div>
+</body></html>"""
+        return HTMLResponse(content=html, status_code=400)
+
+    await db.commit()
+    html = """<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:500px;margin:60px auto;text-align:center">
+<div style="background:#d1e7dd;border-radius:8px;padding:40px;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+  <h2 style="color:#0f5132">&#10003; Email Verified!</h2>
+  <p style="color:#155724">Your RationSmart account is now active.</p>
+  <p style="color:#155724">You can close this page and log in to the app.</p>
+</div>
+</body></html>"""
+    return HTMLResponse(content=html, status_code=200)
 
 
 @router.post("/verify-email", summary="Verify email address and activate account")
