@@ -49,7 +49,7 @@ class Settings(BaseSettings):
 
     # ── App ───────────────────────────────────────────────────────────────────
     workers: int = 3
-    api_base_url: str = "http://localhost:8000"
+    api_base_url: str
 
     @property
     def database_url(self) -> str:
