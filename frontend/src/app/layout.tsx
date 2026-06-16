@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import "./globals.css";
 import Snackbar from "@/components/ui/Snackbar";
 import SplashGuard from "@/components/SplashGuard";
@@ -56,20 +57,6 @@ export default function RootLayout({
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
-        {/* SW kill-switch — testing iteration only.
-            Old visits to this site installed a Workbox SW (configured
-            via @ducanh2912/next-pwa). With NetworkFirst + 24h cache it
-            kept serving stale chunks across rapid iteration. This
-            inline script runs once per page load, finds any registered
-            SWs, unregisters them, and nukes Cache Storage. Once a
-            visitor has run this once their browser is clean — the
-            testing project no longer registers a SW (DISABLE_PWA=true
-            in next.config.js) so no new SW will appear. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if(typeof navigator!=="undefined"&&navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{});if(typeof caches!=="undefined"){caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))).catch(()=>{});}}`,
-          }}
-        />
       </head>
       <body
         style={{
@@ -79,6 +66,19 @@ export default function RootLayout({
           padding: 0,
         }}
       >
+        {/* SW kill-switch — testing iteration only.
+            Old visits installed a Workbox SW (via @ducanh2912/next-pwa).
+            With NetworkFirst + 24h cache it served stale JS chunks for
+            up to a day across rapid iteration. Inline <script> tags in
+            <head> get stripped by Next.js App Router, so we use the
+            `next/script` component with strategy="beforeInteractive"
+            instead, which guarantees the unregister runs before any
+            page-level JS. The testing project no longer registers a
+            new SW (DISABLE_PWA=true in next.config.js); this script
+            cleans up old SWs already installed on visitors' browsers. */}
+        <Script id="sw-kill" strategy="beforeInteractive">
+          {`if(typeof navigator!=="undefined"&&navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(typeof caches!=="undefined"){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});}}`}
+        </Script>
         {/* SplashOverlay handles its own lifecycle: visible on SSR + first
             client render (no hydration mismatch), unmounts itself via
             useEffect once React has hydrated, and never re-renders on
