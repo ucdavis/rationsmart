@@ -50,9 +50,19 @@ export default function ReportsPage() {
     getSavedReports(user.id)
       .then((res) => {
         const data = res.data;
-        setReports(data?.reports ?? []);
+        const list = data?.reports ?? [];
+        console.log("[reports] Saved reports response:", {
+          count: list.length,
+          dates: list.map((r) => r.report_created_date),
+          ids: list.map((r) => r.report_id),
+          raw_response: data,
+        });
+        setReports(list);
       })
-      .catch(() => showSnackbar("Could not load reports", "error"))
+      .catch((err) => {
+        console.error("[reports] fetch failed:", err?.message, err?.response?.data);
+        showSnackbar("Could not load reports", "error");
+      })
       .finally(() => setIsLoading(false));
   }, [user, showSnackbar]);
 

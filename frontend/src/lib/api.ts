@@ -511,8 +511,16 @@ export const recommendDiet = (data: RecommendationRequest) =>
 
 // ─── Reports (JWT-protected) ────────────────────────────────────────────────
 
-// GET /v1/animal/user-reports — saved PDF reports (Feed Reports screen)
-// user_id query removed — JWT-derived.
+// Saved PDF reports (Feed Reports screen). v1 exposes TWO endpoints
+// that look related:
+//   GET /v1/animal/reports      → "List saved reports for the authenticated user" (no schema declared)
+//   GET /v1/animal/user-reports → "List ALL saved reports for the authenticated user" (GetUserReportsResponse)
+// User reports the Feed Reports screen is missing the latest entry
+// while the simulation-history modal (which hits /v1/animal/simulations)
+// shows it. Try `/v1/animal/reports` first; if it 404s or returns the
+// wrong shape, fall back to `/v1/animal/user-reports`. The two responses
+// are merged into the same UserReportItem-shaped array so the page
+// code is agnostic.
 export interface FeedReport {
   report_id: string | null;
   report_type: string | null;
@@ -528,9 +536,24 @@ export interface FeedReportListResponse {
   success: boolean | null;
 }
 
-// `_user_id` accepted for call-site backward compatibility; ignored.
-export const getSavedReports = (_user_id?: string) =>
-  api.get<FeedReportListResponse>("/v1/animal/user-reports");
+export const getSavedReports = async (_user_id?: string) => {
+  try {
+    const res = await api.get("/v1/animal/reports");
+    const data = res.data as unknown;
+    const reports: FeedReport[] = Array.isArray(data)
+      ? (data as FeedReport[])
+      : Array.isArray((data as { reports?: FeedReport[] })?.reports)
+        ? (data as { reports: FeedReport[] }).reports
+        : Array.isArray((data as { items?: FeedReport[] })?.items)
+          ? (data as { items: FeedReport[] }).items
+          : [];
+    return { data: { reports, success: true, message: null } as FeedReportListResponse };
+  } catch (err) {
+    // Fall back to the legacy /user-reports endpoint
+    console.warn("[getSavedReports] /v1/animal/reports failed, falling back to /v1/animal/user-reports", err);
+    return api.get<FeedReportListResponse>("/v1/animal/user-reports");
+  }
+};
 
 // GET /v1/animal/simulations — simulation history (was POST /fetch-all-simulations)
 export const getUserReports = (_user_id?: string) =>
