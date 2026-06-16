@@ -66,7 +66,23 @@ prod** until the prod backend is migrated. Don't merge `testing` →
 | Branch | Backend | Frontend URL | Hosting |
 |---|---|---|---|
 | `main` / `refinements-y3` | legacy (no `/v1`) | rationsmart-pwa.vercel.app **broken**, rationsmart.vercel.app **working** | Vercel |
-| `testing` | v1 API at <DEV_BACKEND_IP>:8000 | TBD — Firebase Hosting target | Firebase (planned) |
+| `testing` | v1 API at <DEV_BACKEND_IP>:8000 | **rationsmart-testing.vercel.app** (live) | Vercel (separate `rationsmart-testing` project, manual deploys) |
+
+### rationsmart-testing project specifics
+
+- Project ID: `<TESTING_PROJECT_ID>`
+- Env vars (Production): `BACKEND_HOST=<DEV_BACKEND_IP>`, `BACKEND_PORT=8000`
+- GitHub-linked but **productionBranch is still `main`** — Vercel API
+  refused programmatic edits to the production branch. Pushing to
+  `testing` triggers a Preview deployment (random URL), not Production.
+  To redeploy `testing` to `rationsmart-testing.vercel.app`, use the
+  worktree pattern in §13 + `vercel --prod --yes` from the worktree.
+  Or change productionBranch via Vercel dashboard → Settings → Git.
+- SSO disabled — publicly shareable.
+- `x-backend-env: dev` in responses (the proxy maps IP `<DEV_BACKEND_IP>`
+  to label `dev` because that's still the testing/dev host). Don't be
+  confused — the URL `rationsmart-testing.vercel.app` is the canonical
+  signal for which environment this is.
 
 ### Testing-branch workflow
 
