@@ -27,7 +27,70 @@ or Kotlin source first, then implement against it. Never guess.**
 
 ---
 
-## 2. Two-URL deployment topology — DEV vs PROD
+## 2. Deployment topology — DEV vs PROD vs TESTING
+
+Three environments now. The first two are Vercel-hosted; the third is a
+hard fork on the `testing` branch with a different API contract.
+
+### Status as of 2026-06-16
+
+The backend at `<DEV_BACKEND_IP>:8000` was migrated to **RationSmart v4.0.0**
+(API docs at `http://<DEV_BACKEND_IP>:8000/docs`, `/redoc`, `/openapi.json`).
+Legacy paths return 404 on that backend now — **the `rationsmart-pwa.vercel.app`
+dev URL is therefore non-functional on `main` / `refinements-y3`** because
+those branches still send legacy paths. Only `rationsmart.vercel.app`
+(prod → `<PROD_BACKEND_IP>:8000`, still legacy) keeps working.
+
+The `testing` branch is the v1-compatible client; it will be deployed to
+a **separate Firebase Hosting URL** so we can test the new API without
+touching the broken/working Vercel URLs.
+
+### The hard fork (testing branch)
+
+Key v1 backend changes:
+- All endpoints moved under `/v1/...`
+- Authenticated endpoints require `Authorization: Bearer <JWT>` (HTTPBearer)
+- PIN size: **6 digits** (legacy 4-digit accepted at login, with
+  `requires_pin_reset: true` triggering the `/set-new-pin` migration screen)
+- Many endpoints dropped the `user_id` query/body param — JWT-derived
+- `POST /update-custom-feed` → `PUT /v1/animal/custom-feeds?feed_id=`
+- `POST /fetch-all-simulations` (body) → `GET /v1/animal/simulations`
+- `POST /fetch-simulation-details` (body) → `GET /v1/animal/simulations/{report_id}`
+- `POST /check-insert-or-update` (body) → `POST /v1/animal/custom-feeds/check?feed_id=`
+
+The prod backend (`<PROD_BACKEND_IP>:8000`) is **still on the legacy API** —
+which means the `testing` branch's API client is **incompatible with
+prod** until the prod backend is migrated. Don't merge `testing` →
+`main` without coordinating with the backend team.
+
+| Branch | Backend | Frontend URL | Hosting |
+|---|---|---|---|
+| `main` / `refinements-y3` | legacy (no `/v1`) | rationsmart-pwa.vercel.app **broken**, rationsmart.vercel.app **working** | Vercel |
+| `testing` | v1 API at <DEV_BACKEND_IP>:8000 | TBD — Firebase Hosting target | Firebase (planned) |
+
+### Testing-branch workflow
+
+- **JWT auth.** `POST /v1/auth/login` returns `{user, token, requires_pin_reset}`.
+  Store the token on `User.token`; the axios interceptor in `src/lib/api.ts`
+  attaches `Authorization: Bearer <token>` to every subsequent request.
+  `src/lib/store.ts` wires this via `setTokenProvider(() => useStore.getState().user?.token ?? null)`
+  to avoid a circular import.
+- **6-digit PIN.** `PinInput` defaults to 6 boxes; pass `length={4}` only on
+  the `/set-new-pin` legacy-old-PIN field. Login PIN validation accepts
+  4-6 digits (legacy accounts can still sign in once, then are routed to
+  `/set-new-pin`).
+- **`requires_pin_reset` migration.** When `POST /v1/auth/login` returns
+  `requires_pin_reset: true`, `/login` redirects to
+  `/set-new-pin?email=&old_pin=` and that screen calls
+  `POST /v1/auth/set-new-pin` with `{email_id, old_pin (4-digit), new_pin (6-digit)}`.
+- **Param renames in api.ts.** `feed_category` → `category` on the
+  `feed-name` query; `country_filter` → `country`, `status_filter` →
+  `status` on admin/users; `admin_user_id` removed everywhere (JWT-derived).
+  The PWA call-site signatures still accept the legacy positional args
+  but mark them `_unused` so call sites don't need a rewrite.
+
+### Vercel projects (still in play for main / refinements-y3)
+
 
 **Two independent Vercel projects, same GitHub repo, same `main` branch.**
 Both are GitHub-integrated, so a single `git push origin main` triggers
