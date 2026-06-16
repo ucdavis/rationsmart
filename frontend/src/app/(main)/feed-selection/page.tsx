@@ -1237,13 +1237,15 @@ export default function FeedSelectionPage() {
 
             {(() => {
               // Y3 QA matrix: block Apply Limits when any field is out
-              // of its declared range. Default values (ash 10, ee 7,
-              // ndf 45, starch 26) are all within bounds, so a
-              // newly-opened modal with no user edits always passes.
+              // of its declared range OR when every field is empty (the
+              // modal exists to *set* at least one custom limit — if the
+              // user submits with nothing filled, the call is pointless).
               const anyOutOfRange = LIMIT_ROWS.some(({ key, min, max }) => {
                 const v = limits[key];
                 return v != null && (v < min || v > max);
               });
+              const anyFilled = LIMIT_ROWS.some(({ key }) => limits[key] != null);
+              const cantApply = anyOutOfRange || !anyFilled;
               return (
                 <button
                   onClick={() => {
@@ -1251,17 +1253,21 @@ export default function FeedSelectionPage() {
                       showSnackbar("Please correct out-of-range values before applying", "error");
                       return;
                     }
+                    if (!anyFilled) {
+                      showSnackbar("Enter at least one limit before applying", "info");
+                      return;
+                    }
                     setDietLimits(limits);
                     setShowLimitsModal(false);
                   }}
-                  disabled={anyOutOfRange}
+                  disabled={cantApply}
                   className="w-full py-4 rounded-xl font-bold text-base mt-2"
                   style={{
-                    backgroundColor: anyOutOfRange ? "#D3D3D3" : "#064E3B",
-                    color: anyOutOfRange ? "#999999" : "white",
+                    backgroundColor: cantApply ? "#D3D3D3" : "#064E3B",
+                    color: cantApply ? "#999999" : "white",
                     border: "none",
                     fontFamily: "Nunito, sans-serif",
-                    cursor: anyOutOfRange ? "not-allowed" : "pointer",
+                    cursor: cantApply ? "not-allowed" : "pointer",
                   }}
                 >
                   Apply Limits

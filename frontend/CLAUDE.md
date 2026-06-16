@@ -27,10 +27,29 @@ or Kotlin source first, then implement against it. Never guess.**
 
 ---
 
-## 2. Deployment topology — DEV vs PROD vs TESTING
+## 2. Deployment topology — TESTING only (2026-06-16)
 
-Three environments now. The first two are Vercel-hosted; the third is a
-hard fork on the `testing` branch with a different API contract.
+**As of 2026-06-16 only the `rationsmart-testing` Vercel project exists.**
+The two earlier projects — `rationsmart-pwa` (dev → <DEV_BACKEND_IP> legacy)
+and `rationsmart-prod` (prod → <PROD_BACKEND_IP> legacy) — were deleted at
+the user's request. Their URLs (`rationsmart-pwa.vercel.app`,
+`rationsmart.vercel.app`) now return 404 and are released back into
+Vercel's namespace.
+
+| Branch | URL | Backend | Project ID |
+|---|---|---|---|
+| `testing` | https://rationsmart-testing.vercel.app | `<DEV_BACKEND_IP>:8000` (v1 API, JWT, 6-digit PIN) | `<TESTING_PROJECT_ID>` |
+
+`main` and `refinements-y3` branches still exist in GitHub (the legacy
+code is preserved), but no Vercel project is currently linked to them
+and no URL serves them. The repo at `~/Desktop/RationSmart-PWA` is now
+linked to `rationsmart-testing` via `.vercel/project.json` — `vercel
+deploy ...` from this directory targets the testing project.
+
+Auto-deploy: every push to `testing` triggers GitHub Actions workflow
+`.github/workflows/deploy-testing.yml` which runs the Vercel CLI with
+`--prod` and aliases the new deployment to
+`rationsmart-testing.vercel.app`. ~90s end to end.
 
 ### Status as of 2026-06-16
 
