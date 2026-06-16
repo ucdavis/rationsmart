@@ -30,11 +30,14 @@ const createFeedItem = (): FeedItem => ({
 });
 
 // Matches Android BaseThresholds — single max value per nutrient
-const LIMIT_ROWS: { label: string; key: keyof DietLimits }[] = [
-  { label: "Ash Max (%)", key: "ash_max" },
-  { label: "EE Max (%) — Fat", key: "ee_max" },
-  { label: "NDF Max (%)", key: "ndf_max" },
-  { label: "Starch Max (%)", key: "starch_max" },
+// Custom Diet Limits — Y3 QA matrix specifies ranges per nutrient.
+// Values outside these bounds are clamped and a hint appears below
+// the field. min is always 0; max varies per nutrient.
+const LIMIT_ROWS: { label: string; key: keyof DietLimits; min: number; max: number }[] = [
+  { label: "Ash Max (%)",         key: "ash_max",    min: 0, max: 15  },
+  { label: "EE Max (%) — Fat",    key: "ee_max",     min: 0, max: 7   },
+  { label: "NDF Max (%) — Fiber", key: "ndf_max",    min: 0, max: 100 },
+  { label: "Starch Max (%)",      key: "starch_max", min: 0, max: 30  },
 ];
 
 // Custom feed form — keys mirror Android FeedDetailsViewModel fields.
@@ -1192,42 +1195,79 @@ export default function FeedSelectionPage() {
               </button>
             </div>
 
-            {LIMIT_ROWS.map(({ label, key }) => (
-              <div key={key} className="mb-4">
-                <p
-                  className="text-xs font-bold uppercase mb-2"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                >
-                  {label}
-                </p>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  placeholder="—"
-                  value={limits[key] ?? ""}
-                  onChange={(e) => updateLimit(key, e.target.value)}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                />
-              </div>
-            ))}
+            {LIMIT_ROWS.map(({ label, key, min, max }) => {
+              const val = limits[key];
+              const outOfRange = val != null && (val < min || val > max);
+              return (
+                <div key={key} className="mb-4">
+                  <p
+                    className="text-xs font-bold uppercase mb-2"
+                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    {label}
+                  </p>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="—"
+                    min={min}
+                    max={max}
+                    step="0.1"
+                    value={val ?? ""}
+                    onChange={(e) => updateLimit(key, e.target.value)}
+                    className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                    style={{
+                      backgroundColor: outOfRange ? "#FEC5BB" : "#F1F5F9",
+                      color: "#231F20",
+                      fontFamily: "Nunito, sans-serif",
+                    }}
+                  />
+                  <p
+                    className="text-xs mt-1 ml-1"
+                    style={{
+                      color: outOfRange ? "#E44A4A" : "#6D6D6D",
+                      fontFamily: "Nunito, sans-serif",
+                    }}
+                  >
+                    {outOfRange ? `Value must be between ${min} and ${max}` : `Range ${min} – ${max}`}
+                  </p>
+                </div>
+              );
+            })}
 
-            <button
-              onClick={() => {
-                setDietLimits(limits);
-                setShowLimitsModal(false);
-              }}
-              className="w-full py-4 rounded-xl font-bold text-base mt-2"
-              style={{
-                backgroundColor: "#064E3B",
-                color: "white",
-                border: "none",
-                fontFamily: "Nunito, sans-serif",
-                cursor: "pointer",
-              }}
-            >
-              Apply Limits
-            </button>
+            {(() => {
+              // Y3 QA matrix: block Apply Limits when any field is out
+              // of its declared range. Default values (ash 10, ee 7,
+              // ndf 45, starch 26) are all within bounds, so a
+              // newly-opened modal with no user edits always passes.
+              const anyOutOfRange = LIMIT_ROWS.some(({ key, min, max }) => {
+                const v = limits[key];
+                return v != null && (v < min || v > max);
+              });
+              return (
+                <button
+                  onClick={() => {
+                    if (anyOutOfRange) {
+                      showSnackbar("Please correct out-of-range values before applying", "error");
+                      return;
+                    }
+                    setDietLimits(limits);
+                    setShowLimitsModal(false);
+                  }}
+                  disabled={anyOutOfRange}
+                  className="w-full py-4 rounded-xl font-bold text-base mt-2"
+                  style={{
+                    backgroundColor: anyOutOfRange ? "#D3D3D3" : "#064E3B",
+                    color: anyOutOfRange ? "#999999" : "white",
+                    border: "none",
+                    fontFamily: "Nunito, sans-serif",
+                    cursor: anyOutOfRange ? "not-allowed" : "pointer",
+                  }}
+                >
+                  Apply Limits
+                </button>
+              );
+            })()}
           </div>
         </div>
       )}
