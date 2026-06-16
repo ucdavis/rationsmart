@@ -24,7 +24,10 @@ export default function LoginPage() {
   const [resetEmail, setResetEmail] = useState("");
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-  const isReady = isEmailAddressValid(email.trim()) && pin.length === 4;
+  // v1 backend accepts both legacy 4-digit and new 6-digit PINs at login —
+  // if the user has a legacy 4-digit PIN, the response will carry
+  // `requires_pin_reset: true` and we route them to /set-new-pin to upgrade.
+  const isReady = isEmailAddressValid(email.trim()) && pin.length >= 4 && pin.length <= 6;
   const isResetReady = isEmailAddressValid(resetEmail.trim());
 
   const handleResetSend = async () => {
@@ -55,14 +58,40 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const res = await login(email.trim(), pin);
-      const u = res.data?.user ?? res.data;
-      const emailId: string = u.email_id ?? email.trim();
+      const body = res.data as {
+        user?: Record<string, unknown> & {
+          id?: string;
+          name?: string;
+          email_id?: string;
+          country?: string | { name?: string; id?: string; country_code?: string };
+          country_id?: string;
+          country_code?: string;
+        };
+        token?: string | null;
+        requires_pin_reset?: boolean;
+        message?: string;
+      };
+
+      // v1 §requires_pin_reset: server tells us when the user just authenticated
+      // with a legacy 4-digit PIN and must upgrade to a 6-digit one before
+      // accessing the rest of the app. Route them to /set-new-pin with the
+      // email + old PIN pre-filled via query string (sensitive but lives only
+      // in the in-app URL until the migration completes).
+      if (body.requires_pin_reset) {
+        const qs = new URLSearchParams({ email: email.trim(), old_pin: pin });
+        router.replace(`/set-new-pin?${qs.toString()}`);
+        return;
+      }
+
+      const u = body.user ?? {};
+      const emailId: string = (u.email_id as string | undefined) ?? email.trim();
 
       // fetch profile + countries in parallel (non-critical)
       let is_admin = false;
       let currency = "";
       try {
-        const countryId = String(u.country_id ?? u.country?.id ?? "");
+        const country = u.country;
+        const countryId = String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? "");
         const [profileRes, countriesRes] = await Promise.allSettled([
           getUserProfile(emailId),
           getCountries(),
@@ -78,19 +107,22 @@ export default function LoginPage() {
 
       // Wipe any persisted simulation data from a previous session before setting the new user
       logout();
+      const country = u.country;
       setUser({
         id: String(u.id ?? ""),
-        name: u.name ?? "",
+        name: (u.name as string | undefined) ?? "",
         email: emailId,
-        country: u.country?.name ?? u.country ?? "",
-        country_id: String(u.country_id ?? u.country?.id ?? ""),
-        country_code: u.country?.country_code ?? u.country_code ?? "",
+        country: (typeof country === "object" ? country?.name : country) ?? "",
+        country_id: String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""),
+        country_code: (typeof country === "object" ? country?.country_code : undefined) ?? u.country_code ?? "",
         currency,
-        pin: pin,
+        pin,
         is_admin,
+        // v1: store the JWT so every subsequent animal/* + admin/* call
+        // can attach `Authorization: Bearer <token>` via the axios interceptor.
+        token: body.token ?? null,
       });
-      // Android shows backend's message via `uiData.data.message.toStringOrNA()`
-      const successMsg = (res.data as { message?: string })?.message;
+      const successMsg = body.message;
       if (successMsg) showSnackbar(successMsg, "success");
       router.replace("/cattle-info");
     } catch (err: unknown) {

@@ -89,13 +89,15 @@ export default function ProfilePage() {
   };
 
   const handleDelete = async () => {
-    if (deletePin.length !== 4) {
-      showSnackbar("Enter your 4-digit PIN to confirm", "error");
+    if (deletePin.length !== 6) {
+      showSnackbar("Enter your 6-digit PIN to confirm", "error");
       return;
     }
     setIsDeleting(true);
     try {
-      await deleteAccount(user.id, deletePin);
+      // v1 backend: POST /v1/auth/user-delete-account body { pin }.
+      // user_id no longer passed — derived from the JWT.
+      await deleteAccount(deletePin);
       setShowPinSheet(false);
       setDeletePin("");
       logout();
@@ -525,14 +527,14 @@ export default function ProfilePage() {
             <div className="mt-5">
               <button
                 onClick={handleDelete}
-                disabled={deletePin.length !== 4 || isDeleting}
+                disabled={deletePin.length !== 6 || isDeleting}
                 className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: deletePin.length === 4 && !isDeleting ? "#064E3B" : "#D3D3D3",
-                  color: deletePin.length === 4 && !isDeleting ? "white" : "#999999",
+                  backgroundColor: deletePin.length === 6 && !isDeleting ? "#064E3B" : "#D3D3D3",
+                  color: deletePin.length === 6 && !isDeleting ? "white" : "#999999",
                   border: "none",
                   fontFamily: "Nunito, sans-serif",
-                  cursor: deletePin.length === 4 && !isDeleting ? "pointer" : "not-allowed",
+                  cursor: deletePin.length === 6 && !isDeleting ? "pointer" : "not-allowed",
                   transition: "background-color 0.2s",
                 }}
               >

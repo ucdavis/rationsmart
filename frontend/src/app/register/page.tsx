@@ -52,13 +52,13 @@ export default function RegisterPage() {
     isEmailAddressValid(email.trim());
 
   // Android: confirm PIN enabled only when all 4 PIN digits are filled
-  const confirmPinEnabled = pin.length === 4;
+  const confirmPinEnabled = pin.length === 6;
 
   // Android: button enabled when all fields valid + PINs match
   const isReady =
     pinEnabled &&
-    pin.length === 4 &&
-    confirmPin.length === 4;
+    pin.length === 6 &&
+    confirmPin.length === 6;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleaned = cleanNameInput(e.target.value);
@@ -92,6 +92,9 @@ export default function RegisterPage() {
         currency: selectedCountry?.currency ?? "",
         pin,
         is_admin: false,
+        // v1 register response has no token; user logs in afterwards to
+        // obtain one. Until login, animal/* / admin/* calls will 401.
+        token: null,
       });
       // Android shows backend's message via uiData.data.message.toStringOrNA()
       const successMsg = (res.data as { message?: string })?.message;
@@ -235,7 +238,7 @@ export default function RegisterPage() {
           value={pin}
           onChange={(v) => {
             setPin(v);
-            if (v.length === 4 && confirmPinRef.current) {
+            if (v.length === 6 && confirmPinRef.current) {
               const first = confirmPinRef.current.querySelector("input");
               if (first) (first as HTMLInputElement).focus();
             }
@@ -255,7 +258,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        {confirmPin.length === 4 && pin !== confirmPin && (
+        {confirmPin.length === 6 && pin !== confirmPin && (
           <p
             className="text-xs font-bold text-center mt-2"
             style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
