@@ -550,25 +550,30 @@ export default function FeedRow({
               <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke={canEdit ? "#064E3B" : "#6D6D6D"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-          {index > 0 && (
-            <button
-              onClick={() => onDelete(item.id)}
-              style={{
-                backgroundColor: "#FEC5BB",
-                borderRadius: 10,
-                padding: 8,
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexShrink: 0,
-              }}
-              aria-label="Remove feed"
-            >
-              <IcDelete size={16} color="#FC2E20" />
-            </button>
-          )}
+          {/* Delete button — shown on every row for consistent UX. The
+              parent's `deleteItem` callback refuses to remove the last
+              remaining row (snackbar "At least one feed item is
+              required"), so even FEED 1 is safe to delete. Earlier the
+              gate was `index > 0` which hid this on the first row — but
+              that was inconsistent with every other card and confused
+              users into thinking FEED 1 was "permanent". */}
+          <button
+            onClick={() => onDelete(item.id)}
+            style={{
+              backgroundColor: "#FEC5BB",
+              borderRadius: 10,
+              padding: 8,
+              border: "none",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              flexShrink: 0,
+            }}
+            aria-label="Remove feed"
+          >
+            <IcDelete size={16} color="#FC2E20" />
+          </button>
         </div>
       </div>
 
