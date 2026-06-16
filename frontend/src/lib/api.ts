@@ -525,9 +525,14 @@ export const getAdminUsers = (
 ) =>
   api.get("/v1/admin/users", { params: { page, page_size, country, status, search } });
 
-// PUT /v1/admin/users/{user_id}/toggle-status — JWT-derived admin; body { is_active }
+// PUT /v1/admin/users/{user_id}/toggle-status — JWT-derived admin.
+// v1 body shape is AdminUserToggleRequest { action: string }, NOT
+// { is_active: bool } like legacy. The `action` value drives whether the
+// user is enabled or disabled. We pass "activate" / "deactivate" — the
+// other naming variant the server might prefer is "enable"/"disable";
+// swap if the backend rejects.
 export const toggleUserStatus = (user_id: string, _admin_user_id: string, is_active: boolean) =>
-  api.put(`/v1/admin/users/${user_id}/toggle-status`, { is_active });
+  api.put(`/v1/admin/users/${user_id}/toggle-status`, { action: is_active ? "activate" : "deactivate" });
 
 export const getAdminFeedTypes = (_admin_user_id: string) =>
   api.get("/v1/admin/list-feed-types");
@@ -535,8 +540,16 @@ export const getAdminFeedTypes = (_admin_user_id: string) =>
 export const getAdminFeedCategories = (_admin_user_id: string) =>
   api.get("/v1/admin/list-feed-categories");
 
-export const getAdminFeedbacks = (_admin_user_id: string, limit = 20, offset = 0) =>
-  api.get("/v1/admin/user-feedback/all", { params: { limit, offset } });
+// GET /v1/admin/user-feedback/all — JWT-derived admin.
+// v1 spec uses `page` + `page_size` (legacy was limit/offset). Function
+// signature retains the legacy positional `limit, offset` for backward
+// compatibility with callers — internally we map limit → page_size and
+// derive page from offset.
+export const getAdminFeedbacks = (_admin_user_id: string, limit = 20, offset = 0) => {
+  const page_size = Math.min(Math.max(limit || 20, 1), 100);
+  const page = Math.max(Math.floor((offset || 0) / page_size) + 1, 1);
+  return api.get("/v1/admin/user-feedback/all", { params: { page, page_size } });
+};
 
 export const getAdminFeedbackStats = (_admin_user_id: string) =>
   api.get("/v1/admin/user-feedback/stats");

@@ -96,8 +96,12 @@ const EMPTY_FORM: FormState = {
   days_of_pregnancy: "40",
   parity: "1",
   milk_production: "15",
-  milk_protein_percent: "3.0",
-  milk_fat_percent: "3.5",
+  // Defaults removed so the asterisk on Milk Protein % / Milk Fat %
+  // actually gates the Continue button. The legacy build pre-filled
+  // "3.0" / "3.5" which made the fields look mandatory but always
+  // pass validation. User reported the mismatch.
+  milk_protein_percent: "",
+  milk_fat_percent: "",
   average_temperature: "25",
   grazing: false,
   distance_walked: "",

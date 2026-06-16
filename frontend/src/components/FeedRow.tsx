@@ -321,9 +321,20 @@ export default function FeedRow({
   };
 
   useEffect(() => {
-    if (!user?.country_id || !user?.id) return;
+    if (!user?.country_id || !user?.id) {
+      // Temporary v1-migration diagnostic — without country_id the
+      // cascade short-circuits and dropdowns stay empty. Print so the
+      // user can see in DevTools whether the login response populated
+      // user.country_id correctly.
+      console.warn("[feed-cascade] skipping types fetch — missing user fields", {
+        has_country_id: !!user?.country_id,
+        has_id: !!user?.id,
+      });
+      return;
+    }
     getFeedTypes(user.country_id, user.id)
       .then((res) => {
+        console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
         // v1 /v1/animal/unique-feed-type/{country_id} returns the distinct
         // type *names* — per the swagger description "e.g. Roughage,
         // Concentrate". Shape could be a bare string[] OR an array of
@@ -362,7 +373,8 @@ export default function FeedRow({
           }
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[feed-cascade] feed types fetch failed:", err?.message, err?.response?.data);
         if (!item.feed_type_name) showSnackbar("Could not load feed types", "error");
       })
       .finally(() => setLoadingTypes(false));
@@ -378,6 +390,7 @@ export default function FeedRow({
     setLoadingCats(true);
     getFeedCategories(item.feed_type_name, user.country_id, user.id)
       .then((res) => {
+        console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
         // v1 /v1/animal/unique-feed-category returns "distinct feed
         // categories available for the given country" — bare array of
         // names OR FeedCategoryResponse objects OR a wrapper. Extract
@@ -411,7 +424,8 @@ export default function FeedRow({
           onUpdate(item.id, { category_id: matched.id });
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[feed-cascade] feed categories fetch failed:", err?.message, err?.response?.data);
         if (!item.category_name) showSnackbar("Could not load categories", "error");
       })
       .finally(() => setLoadingCats(false));
@@ -425,6 +439,7 @@ export default function FeedRow({
     setLoadingSubs(true);
     getFeedSubCategories(item.feed_type_name, item.category_name, user.country_id, user.id)
       .then((res) => {
+        console.log("[feed-cascade] /v1/animal/feed-name response:", res.data);
         // v1 /v1/animal/feed-name response (per swagger description):
         //   { standard_feeds: [...], custom_feeds: [...] }
         // Each item is a FeedDetailsResponse: { feed_id, fd_name, fd_type,
@@ -473,7 +488,8 @@ export default function FeedRow({
           });
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("[feed-cascade] sub-categories fetch failed:", err?.message, err?.response?.data);
         // If the row already has a restored sub_category_name / feed_uuid,
         // the visible state is intact — suppress the toast.
         if (!item.sub_category_name && !item.feed_uuid) showSnackbar("Could not load sub-categories", "error");
