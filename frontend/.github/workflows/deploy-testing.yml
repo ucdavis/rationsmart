@@ -1,14 +1,20 @@
-# Auto-deploy the `testing` branch to the rationsmart-testing Vercel
-# project. Vercel's `productionBranch` setting is locked to `main` for
-# this project (Vercel API rejected programmatic edits, and the dashboard
-# would require manual intervention). Instead we use a Vercel Deploy Hook
-# — a webhook URL that, when POSTed, triggers a production deployment
-# of whatever commit is referenced by the hook's branch.
+# Auto-deploy the `testing` branch to https://rationsmart-testing.vercel.app
+# as a PRODUCTION deployment.
 #
-# Hook URL is stored as a GitHub Actions secret so it's not committed.
-# Repo Settings → Secrets and variables → Actions → New repository secret
-#   Name:  VERCEL_TESTING_DEPLOY_HOOK
-#   Value: https://api.vercel.com/v1/integrations/deploy/<TESTING_PROJECT_ID>/yd1BSQ8EMX
+# Earlier this workflow hit a Vercel Deploy Hook URL — that worked but
+# produced *Preview* deployments because the rationsmart-testing
+# project's productionBranch is locked to `main` (the Vercel API
+# refused programmatic edits to change it). Preview deployments live
+# at random URLs and never update the aliased rationsmart-testing.vercel.app.
+#
+# Workaround: use the Vercel CLI's `--prod` flag in CI, which forces a
+# Production deployment regardless of the project's productionBranch
+# setting. Then alias the new deployment to the canonical URL.
+#
+# Required GitHub secrets (already configured):
+#   VERCEL_TOKEN                 — Vercel auth token (rotate from Vercel dashboard if leaked)
+#   VERCEL_ORG_ID                — <VERCEL_TEAM_ID>
+#   VERCEL_TESTING_PROJECT_ID    — <TESTING_PROJECT_ID>
 
 name: Deploy testing branch
 on:
@@ -17,16 +23,35 @@ on:
       - testing
 
 jobs:
-  trigger-vercel-deploy:
+  deploy:
     runs-on: ubuntu-latest
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TESTING_PROJECT_ID }}
     steps:
-      - name: Hit Vercel deploy hook
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Vercel CLI
+        run: npm install --global vercel@latest
+
+      - name: Pull Vercel environment
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build with Vercel
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Deploy as Production
+        id: deploy
         run: |
-          if [ -z "${{ secrets.VERCEL_TESTING_DEPLOY_HOOK }}" ]; then
-            echo "::error::VERCEL_TESTING_DEPLOY_HOOK secret is not set. Add it under Repo Settings → Secrets and variables → Actions."
-            exit 1
-          fi
-          response=$(curl -s -o /tmp/resp -w "%{http_code}" -X POST "${{ secrets.VERCEL_TESTING_DEPLOY_HOOK }}")
-          echo "HTTP $response"
-          cat /tmp/resp
-          [ "$response" = "200" ] || [ "$response" = "201" ]
+          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Deployed: $url"
+
+      - name: Alias to rationsmart-testing.vercel.app
+        run: |
+          url="${{ steps.deploy.outputs.url }}"
+          vercel alias set "$url" rationsmart-testing.vercel.app --token=${{ secrets.VERCEL_TOKEN }}
