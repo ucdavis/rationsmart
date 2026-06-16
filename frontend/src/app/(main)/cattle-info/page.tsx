@@ -519,6 +519,25 @@ export default function CattleInfoPage() {
     (!form.grazing || (parseFloat(form.distance_walked) > 0 && form.topography !== "")) &&
     !hasFieldErrors;
 
+  // Diagnostic — print which gating sub-expression is letting Continue
+  // be enabled when the user expects it disabled. Remove after the
+  // milk-protein-select-but-button-enabled bug is confirmed fixed.
+  if (typeof window !== "undefined") {
+    console.log("[cattle-info gating]", {
+      requiredFilled,
+      animal_category: form.animal_category,
+      showMilkSection,
+      milkFieldsValid,
+      milk_production: form.milk_production,
+      milk_protein_percent: form.milk_protein_percent,
+      milk_fat_percent: form.milk_fat_percent,
+      simulation_name: form.simulation_name,
+      breed: form.breed,
+      parity: form.parity,
+      hasFieldErrors,
+    });
+  }
+
   const handleContinue = () => {
     if (!requiredFilled) return;
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
