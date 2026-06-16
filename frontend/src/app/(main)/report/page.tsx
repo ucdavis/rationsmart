@@ -286,25 +286,62 @@ export default function ReportPage() {
     ? (evalReport?.evaluation_summary?.overall_status ?? "Evaluated")
     : (recReport?.report_info?.diet_rating ?? "—");
 
-  const reportIdForSave = isEval
-    ? (evalReport?.report_id ?? "")
-    : (recReport?.report_info?.report_id ?? "");
+  // Try every place the v1 backend might surface the report_id —
+  // legacy lived at report_info.report_id (recommendation) or top-
+  // level report_id (evaluation). v1 may put it elsewhere.
+  const reportIdForSave =
+    (isEval ? evalReport?.report_id : recReport?.report_info?.report_id) ??
+    (reportData as { report_id?: string })?.report_id ??
+    (reportData as { id?: string })?.id ??
+    "";
+
+  // Diagnostic — log the report payload + chosen report_id so the
+  // user can see whether save-report has anything to identify the
+  // simulation with.
+  if (typeof window !== "undefined") {
+    console.log("[report page] mount:", {
+      mode: report.mode,
+      reportIdForSave,
+      top_level_report_id: (reportData as { report_id?: string })?.report_id,
+      rec_report_info_report_id: recReport?.report_info?.report_id,
+      eval_report_id: evalReport?.report_id,
+      simulation_id_from_cattle_info: cattleInfo?.simulation_name,
+      full_reportData_keys: Object.keys(reportData ?? {}),
+    });
+  }
 
   const handleSave = async () => {
     if (!user || !reportIdForSave) {
+      console.warn("[save-report] aborting — no report_id available", {
+        reportData,
+        user_id: user?.id,
+      });
       showSnackbar("Report not ready — generate a report first", "info");
       return;
     }
     setIsSaving(true);
     try {
+      console.log("[save-report →] POST /v1/animal/save-report", {
+        report_id: reportIdForSave,
+        user_id: user.id,
+      });
       const res = await saveReport(reportIdForSave, user.id);
-      const url: string | null =
-        res.data?.bucket_url ??
-        res.data?.report?.bucket_url ??
-        res.data?.pdf_url ??
-        null;
+      console.log("[save-report ←] response:", res.data);
+      const body = res.data as {
+        success?: boolean;
+        message?: string;
+        bucket_url?: string | null;
+        error_message?: string | null;
+        report?: { bucket_url?: string | null };
+        pdf_url?: string | null;
+      };
+      if (body?.success === false || body?.error_message) {
+        showSnackbar(body?.error_message ?? body?.message ?? "Save returned an error", "error");
+        return;
+      }
+      const url = body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url ?? null;
       setPdfUrl(url);
-      showSnackbar("Report saved successfully!", "success");
+      showSnackbar(body?.message ?? "Report saved successfully!", "success");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to save report";
       showSnackbar(message, "error");
