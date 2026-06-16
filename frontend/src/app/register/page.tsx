@@ -21,7 +21,7 @@ interface Country {
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { setUser, logout } = useStore((s) => ({ setUser: s.setUser, logout: s.logout }));
+  // setUser/logout removed in v1 — register no longer auto-signs-in.
   const showSnackbar = useStore((s) => s.showSnackbar);
 
   const [name, setName] = useState("");
@@ -79,27 +79,21 @@ export default function RegisterPage() {
         pin,
         country_id: countryId,
       });
-      const u = res.data?.user ?? res.data;
-      const selectedCountry = countries.find((c) => String(c.id) === String(countryId));
-      logout();
-      setUser({
-        id: String(u.id ?? ""),
-        name: u.name ?? name.trim(),
-        email: u.email_id ?? email.trim(),
-        country: u.country?.name ?? selectedCountry?.name ?? "",
-        country_id: String(u.country_id ?? u.country?.id ?? countryId),
-        country_code: u.country?.country_code ?? selectedCountry?.country_code ?? selectedCountry?.code ?? "",
-        currency: selectedCountry?.currency ?? "",
-        pin,
-        is_admin: false,
-        // v1 register response has no token; user logs in afterwards to
-        // obtain one. Until login, animal/* / admin/* calls will 401.
-        token: null,
-      });
-      // Android shows backend's message via uiData.data.message.toStringOrNA()
+      // v1 register response has NO token (POST /v1/auth/register returns
+      // AuthenticationResponse with user but no JWT). If we set the user
+      // and push to /cattle-info, every API call there will 401 because
+      // the axios interceptor has no Bearer header to send.
+      //
+      // The v1 backend likely requires email verification — there's a
+      // /v1/auth/verify-email + /v1/auth/resend-verification flow. So:
+      // - DO NOT setUser yet (avoid a half-authenticated session)
+      // - DO NOT clear logout (no prior session to wipe)
+      // - Push to /verify-email with the email pre-filled so the user
+      //   can resend the verification link if needed, then return to
+      //   /login to obtain a real JWT.
       const successMsg = (res.data as { message?: string })?.message;
       if (successMsg) showSnackbar(successMsg, "success");
-      router.replace("/cattle-info");
+      router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err: unknown) {
       // Android fallback for non-400, non-network errors
       const message = err instanceof Error && err.message && err.message !== "Network Error"

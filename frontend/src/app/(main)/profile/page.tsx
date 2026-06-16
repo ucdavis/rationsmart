@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { updateUserProfile, deleteAccount, getCountries, resetPin } from "@/lib/api";
+import { updateUserProfile, deleteAccount, getCountries, resetPin, changePin } from "@/lib/api";
 import { isEmailAddressValid } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
@@ -41,6 +41,14 @@ export default function ProfilePage() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPinSheet, setShowPinSheet] = useState(false);
+  // Change-PIN bottom sheet — user-initiated PIN change. Distinct from
+  // Reset PIN (which is the forgot-pin email flow). Hits
+  // POST /v1/auth/change-pin {email_id, current_pin, new_pin}.
+  const [showChangePinSheet, setShowChangePinSheet] = useState(false);
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmNewPin, setConfirmNewPin] = useState("");
+  const [isChangingPin, setIsChangingPin] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string; currency?: string }>>([]);
@@ -118,6 +126,40 @@ export default function ProfilePage() {
     if (!user) return;
     setResetEmail(user.email ?? "");
     setShowResetSheet(true);
+  };
+
+  const openChangePinSheet = () => {
+    setCurrentPin("");
+    setNewPin("");
+    setConfirmNewPin("");
+    setShowChangePinSheet(true);
+  };
+
+  const isChangePinReady =
+    currentPin.length >= 4 && currentPin.length <= 6 &&
+    newPin.length === 6 &&
+    confirmNewPin.length === 6 &&
+    newPin === confirmNewPin;
+
+  const handleChangePin = async () => {
+    if (!user || !isChangePinReady || isChangingPin) return;
+    setIsChangingPin(true);
+    try {
+      const res = await changePin(user.email, currentPin, newPin);
+      const msg = (res.data as { message?: string })?.message;
+      showSnackbar(msg ?? "PIN changed successfully", "success");
+      setShowChangePinSheet(false);
+      setCurrentPin("");
+      setNewPin("");
+      setConfirmNewPin("");
+    } catch (err: unknown) {
+      const message = err instanceof Error && err.message
+        ? err.message
+        : "Could not change PIN. Please try again.";
+      showSnackbar(message, "error");
+    } finally {
+      setIsChangingPin(false);
+    }
   };
 
   const isResetReady = isEmailAddressValid(resetEmail.trim());
@@ -305,6 +347,31 @@ export default function ProfilePage() {
               <path d="M13.26,3C8.17,2.86 4,6.94 4,12H2.21c-0.45,0 -0.67,0.54 -0.35,0.85l2.79,2.79c0.2,0.2 0.51,0.2 0.71,0l2.8,-2.79C8.46,12.54 8.24,12 7.79,12H6c0,-3.89 3.2,-7.06 7.1,-7c3.71,0.05 6.84,3.18 6.9,6.9c0.06,3.91 -3.1,7.1 -7,7.1c-1.59,0 -3.05,-0.53 -4.23,-1.43c-0.4,-0.3 -0.96,-0.27 -1.31,0.09l0,0c-0.43,0.43 -0.39,1.14 0.09,1.5C9.06,20.31 10.95,21 13,21c5.06,0 9.14,-4.17 9,-9.25C21.87,7.05 17.95,3.13 13.26,3zM15,11v-1c0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2v1c-0.55,0 -1,0.45 -1,1v3c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-3C16,11.45 15.55,11 15,11zM14,11h-2v-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1V11z" />
             </svg>
             Reset PIN
+          </button>
+        </div>
+
+        {/* Change PIN — user-initiated PIN change. Distinct from Reset
+            PIN (which is the email-based forgot-pin flow). Full-width
+            below the Delete/Reset row so it doesn't crowd the buttons. */}
+        <div className="mx-3 mt-3">
+          <button
+            onClick={openChangePinSheet}
+            className="w-full py-3.5 text-base flex items-center justify-center gap-2"
+            style={{
+              border: "2px solid #064E3B",
+              color: "#064E3B",
+              backgroundColor: "white",
+              fontFamily: "Nunito, sans-serif",
+              cursor: "pointer",
+              borderRadius: 14,
+              fontWeight: 700,
+            }}
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <rect x="5" y="11" width="14" height="9" rx="2" stroke="#064E3B" strokeWidth="2" />
+              <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+            Change PIN
           </button>
         </div>
 
@@ -551,6 +618,114 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Change-PIN bottom sheet — confined to centered column.
+          Three PinInputs: current (4-6 digit accepting legacy),
+          new (6), confirm-new (6). Disabled cascade so user fills
+          top-to-bottom. */}
+      {showChangePinSheet && (
+        <>
+          <div
+            className="fixed top-0 h-full z-50"
+            style={{
+              left: "max(0px, calc((100vw - 480px) / 2))",
+              width: "min(100vw, 480px)",
+              backgroundColor: "rgba(0,0,0,0.45)",
+            }}
+            onClick={() => !isChangingPin && setShowChangePinSheet(false)}
+          />
+          <div
+            className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
+            style={{
+              maxWidth: "min(100vw, 480px)",
+              width: "100%",
+              zIndex: 51,
+              borderTopLeftRadius: 24,
+              borderTopRightRadius: 24,
+              animation: "slideUp 0.28s cubic-bezier(0.22,1,0.36,1)",
+              maxHeight: "92vh",
+              overflowY: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-center pt-4 mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+
+            <p
+              className="text-center font-bold"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+            >
+              Change Your PIN
+            </p>
+            <p
+              className="text-center mt-1 mb-4 px-4"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+            >
+              Enter your current PIN and choose a new 6-digit PIN.
+            </p>
+
+            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Current PIN
+            </p>
+            <PinInput value={currentPin} onChange={setCurrentPin} length={6} disabled={isChangingPin} />
+
+            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              New 6-digit PIN
+            </p>
+            <PinInput
+              value={newPin}
+              onChange={setNewPin}
+              length={6}
+              disabled={isChangingPin || (currentPin.length < 4 || currentPin.length > 6)}
+            />
+
+            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Confirm New PIN
+            </p>
+            <PinInput
+              value={confirmNewPin}
+              onChange={setConfirmNewPin}
+              length={6}
+              disabled={isChangingPin || newPin.length !== 6}
+            />
+
+            {confirmNewPin.length === 6 && newPin !== confirmNewPin && (
+              <p
+                className="text-xs font-bold text-center mt-2"
+                style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
+              >
+                New PINs do not match
+              </p>
+            )}
+
+            <div className="px-3 mt-5">
+              <button
+                onClick={handleChangePin}
+                disabled={!isChangePinReady || isChangingPin}
+                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
+                style={{
+                  backgroundColor: isChangePinReady && !isChangingPin ? "#064E3B" : "#D3D3D3",
+                  color: isChangePinReady && !isChangingPin ? "#FFFFFF" : "#999999",
+                  fontFamily: "Nunito, sans-serif",
+                  border: "none",
+                  cursor: isChangePinReady && !isChangingPin ? "pointer" : "not-allowed",
+                }}
+              >
+                {isChangingPin ? (
+                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  </svg>
+                ) : "Update PIN"}
+              </button>
+            </div>
+
+            <div className="mt-6">
+              <PoweredBy />
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
