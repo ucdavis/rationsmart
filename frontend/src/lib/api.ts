@@ -343,14 +343,59 @@ export const setTokenProvider = (fn: () => string | null) => {
   tokenProvider = fn;
 };
 
+// Build marker — visible in DevTools Console on first paint. Bump the
+// timestamp when pushing a diagnostic build so we can confirm the new
+// bundle is what's actually running (not a stale SW cache).
+if (typeof window !== "undefined") {
+  console.log("%c[RationSmart] testing build · v1+diag · 2026-06-16T11:30Z",
+    "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;");
+}
+
 api.interceptors.request.use((config) => {
   const token = tokenProvider();
   if (token) {
     config.headers = config.headers ?? {};
     (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
   }
+  // Verbose logger — prints every outgoing API call in DevTools so
+  // shape mismatches can be diagnosed without server-side access.
+  // Remove this block once feed-selection is stable.
+  if (typeof window !== "undefined") {
+    const method = (config.method || "GET").toUpperCase();
+    const url = (config.baseURL ?? "") + (config.url ?? "");
+    console.log(`[api →] ${method} ${url}`, {
+      params: config.params,
+      hasToken: !!token,
+      tokenPreview: token ? token.slice(0, 16) + "…" : null,
+      bodyKeys: config.data && typeof config.data === "object" && !(config.data instanceof FormData)
+        ? Object.keys(config.data as Record<string, unknown>)
+        : undefined,
+    });
+  }
   return config;
 });
+
+// Response logger — pairs with the request logger above so each call
+// is visible as a (→ request, ← response) pair in DevTools Console.
+api.interceptors.response.use(
+  (response) => {
+    if (typeof window !== "undefined") {
+      const method = (response.config.method || "GET").toUpperCase();
+      const url = (response.config.baseURL ?? "") + (response.config.url ?? "");
+      console.log(`[api ←] ${response.status} ${method} ${url}`, response.data);
+    }
+    return response;
+  },
+  (err) => {
+    if (typeof window !== "undefined") {
+      const cfg = err?.config ?? {};
+      const method = (cfg.method || "GET").toUpperCase();
+      const url = (cfg.baseURL ?? "") + (cfg.url ?? "");
+      console.error(`[api ×] ${err?.response?.status ?? "ERR"} ${method} ${url}`, err?.response?.data ?? err?.message);
+    }
+    return Promise.reject(err);
+  }
+);
 
 // Response error interceptor — safely extract message from FastAPI errors
 api.interceptors.response.use(
