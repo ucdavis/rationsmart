@@ -1078,24 +1078,73 @@ export default function ReportPage() {
           </button>
         )}
         {pdfUrl && (
-          <button
-            onClick={() => window.open(pdfUrl, "_blank", "noopener,noreferrer")}
-            className="w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 mb-3"
-            style={{
-              backgroundColor: "#F0FDF4",
-              color: "#064E3B",
-              border: "1px solid #064E3B",
-              fontFamily: "Nunito, sans-serif",
-              cursor: "pointer",
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M3.5 2h7.5l4 4v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" fill="none" />
-              <path d="M11 2v5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-              <path d="M5.5 10h7M5.5 12.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-            </svg>
-            View PDF
-          </button>
+          <div className="flex gap-3 mb-3">
+            <button
+              onClick={() => window.open(pdfUrl, "_blank", "noopener,noreferrer")}
+              className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: "#F0FDF4",
+                color: "#064E3B",
+                border: "1px solid #064E3B",
+                fontFamily: "Nunito, sans-serif",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                <path d="M3.5 2h7.5l4 4v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" stroke="currentColor" strokeWidth="1.4" fill="none" />
+                <path d="M11 2v5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+                <path d="M5.5 10h7M5.5 12.5h5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+              </svg>
+              View PDF
+            </button>
+            {/* Share report — Web Share API on mobile pops the native
+                sheet (WhatsApp / Telegram / etc.), matching the Android
+                "Share the report" function in the test matrix. Falls back
+                to copy-to-clipboard on desktop browsers without
+                navigator.share. */}
+            <button
+              onClick={async () => {
+                if (!pdfUrl) return;
+                const shareData = {
+                  title: "RationSmart Diet Report",
+                  text: `${isEval ? "Evaluation" : "Recommendation"} report for simulation ${simulationId}`,
+                  url: pdfUrl,
+                };
+                try {
+                  if (typeof navigator !== "undefined" && navigator.share) {
+                    await navigator.share(shareData);
+                  } else if (typeof navigator !== "undefined" && navigator.clipboard) {
+                    await navigator.clipboard.writeText(pdfUrl);
+                    showSnackbar("PDF link copied to clipboard", "success");
+                  } else {
+                    window.open(pdfUrl, "_blank", "noopener,noreferrer");
+                  }
+                } catch (err) {
+                  // navigator.share rejects with AbortError if the user
+                  // dismisses the sheet — that's not a real failure.
+                  if (err instanceof Error && err.name !== "AbortError") {
+                    showSnackbar("Could not share the report", "error");
+                  }
+                }
+              }}
+              className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
+              style={{
+                backgroundColor: "#064E3B",
+                color: "white",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: "pointer",
+              }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
+                <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
+                <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2" />
+                <path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+              Share Report
+            </button>
+          </div>
         )}
         <div className="flex gap-3">
           <button
