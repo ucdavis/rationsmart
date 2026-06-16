@@ -7,6 +7,7 @@ import type {
   RecommendationResponse,
   DietLimits,
 } from "./api";
+import { setTokenProvider } from "./api";
 
 export type { CattleInfo, FeedItem, DietLimits };
 
@@ -18,8 +19,13 @@ export interface User {
   country_id: string;
   country_code: string;
   currency: string;
-  pin: string;
+  pin: string;             // 6-digit on the v1 backend; 4-digit accepted for legacy login only
   is_admin: boolean;
+  // v1 testing-branch addition: JWT issued by POST /v1/auth/login.
+  // Every animal/* and admin/* request gets this as `Authorization: Bearer <token>`.
+  // setTokenProvider() below wires the api.ts axios instance to read the
+  // latest token on every request.
+  token: string | null;
 }
 
 interface SnackbarState {
@@ -39,6 +45,7 @@ interface AppState {
 
   // Actions
   setUser: (user: User) => void;
+  setToken: (token: string | null) => void;
   logout: () => void;
   setCattleInfo: (info: CattleInfo) => void;
   setFeedSelectionType: (type: "recommendation" | "evaluation") => void;
@@ -66,6 +73,11 @@ export const useStore = create<AppState>()(
         }
         set({ user });
       },
+
+      setToken: (token: string | null) =>
+        set((state) =>
+          state.user ? { user: { ...state.user, token } } : state
+        ),
 
       logout: () => {
         if (typeof window !== "undefined") {
@@ -122,3 +134,9 @@ export const useStore = create<AppState>()(
     }
   )
 );
+
+// v1 testing-branch: hand the axios interceptor in api.ts a function that
+// can read the latest JWT from the store on every request. Done as a
+// callback (not an import in api.ts) so we don't introduce a circular
+// dependency between api.ts and store.ts.
+setTokenProvider(() => useStore.getState().user?.token ?? null);

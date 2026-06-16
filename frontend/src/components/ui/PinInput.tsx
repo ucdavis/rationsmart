@@ -7,6 +7,13 @@ interface PinInputProps {
   onChange: (val: string) => void;
   onComplete?: (val: string) => void;
   disabled?: boolean;
+  /**
+   * Number of digit boxes to render. Defaults to 6 for the v1 backend.
+   * Set to 4 only when rendering the legacy "old PIN" field on the
+   * /set-new-pin migration screen (where the user enters their existing
+   * 4-digit PIN before choosing a new 6-digit one).
+   */
+  length?: number;
 }
 
 export default function PinInput({
@@ -14,15 +21,23 @@ export default function PinInput({
   onChange,
   onComplete,
   disabled = false,
+  length = 6,
 }: PinInputProps) {
-  const refs = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-  ];
+  // The number of refs has to be stable across renders, so we allocate
+  // up to 6 ref slots and slice the visible set below. This keeps the
+  // useRef call order constant (React rules of hooks).
+  const r0 = useRef<HTMLInputElement>(null);
+  const r1 = useRef<HTMLInputElement>(null);
+  const r2 = useRef<HTMLInputElement>(null);
+  const r3 = useRef<HTMLInputElement>(null);
+  const r4 = useRef<HTMLInputElement>(null);
+  const r5 = useRef<HTMLInputElement>(null);
+  const allRefs = [r0, r1, r2, r3, r4, r5];
+  const refs = allRefs.slice(0, length);
 
-  const digits = [0, 1, 2, 3].map((i) => value[i] ?? "");
+  const indices = Array.from({ length }, (_, i) => i);
+  const digits = indices.map((i) => value[i] ?? "");
+  const lastIndex = length - 1;
 
   const handleChange = (index: number, char: string) => {
     if (disabled) return;
@@ -32,10 +47,10 @@ export default function PinInput({
     const next = arr.join("").replace(/\s/g, "");
     onChange(next);
 
-    if (char && index < 3) {
+    if (char && index < lastIndex) {
       refs[index + 1].current?.focus();
     }
-    if (next.length === 4) {
+    if (next.length === length) {
       onComplete?.(next);
     }
   };
@@ -51,7 +66,7 @@ export default function PinInput({
       }
     } else if (e.key === "ArrowLeft" && index > 0) {
       refs[index - 1].current?.focus();
-    } else if (e.key === "ArrowRight" && index < 3) {
+    } else if (e.key === "ArrowRight" && index < lastIndex) {
       refs[index + 1].current?.focus();
     }
   };
@@ -59,16 +74,22 @@ export default function PinInput({
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     if (disabled) return;
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 4);
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
     onChange(pasted);
-    const focusIndex = Math.min(pasted.length, 3);
+    const focusIndex = Math.min(pasted.length, lastIndex);
     refs[focusIndex].current?.focus();
-    if (pasted.length === 4) onComplete?.(pasted);
+    if (pasted.length === length) onComplete?.(pasted);
   };
 
+  // 6 boxes is the new default; the row is narrower per box so the strip
+  // still fits the same 480-px column without overflow. The 4-box legacy
+  // variant keeps the old generous spacing.
+  const gapClass = length === 4 ? "gap-3" : "gap-2";
+  const boxMaxWidth = length === 4 ? 72 : 52;
+
   return (
-    <div className="flex gap-3 justify-between px-3">
-      {[0, 1, 2, 3].map((index) => (
+    <div className={`flex ${gapClass} justify-between px-3`}>
+      {indices.map((index) => (
         <input
           key={index}
           ref={refs[index]}
@@ -88,7 +109,7 @@ export default function PinInput({
             fontFamily: "Nunito, sans-serif",
             opacity: disabled ? 0.55 : 1,
             cursor: disabled ? "not-allowed" : "text",
-            maxWidth: 72,
+            maxWidth: boxMaxWidth,
           }}
         />
       ))}

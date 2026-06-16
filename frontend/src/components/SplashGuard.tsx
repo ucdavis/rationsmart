@@ -12,7 +12,7 @@ export default function SplashGuard() {
   // directly there, no 2s splash detour. Listing the explicit set is
   // simpler than trying to derive it from the auth state because we
   // run before the persist store rehydrates.
-  const PUBLIC_PATHS = new Set(["/welcome", "/login", "/register", "/forgot-pin", "/terms", "/help"]);
+  const PUBLIC_PATHS = new Set(["/welcome", "/login", "/register", "/forgot-pin", "/set-new-pin", "/terms", "/help"]);
 
   useEffect(() => {
     if (pathname === "/") return;

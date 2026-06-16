@@ -315,6 +315,20 @@ export interface Country {
 }
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
+//
+// Testing-branch note (2026-06): the backend at <DEV_BACKEND_IP>:8000 was migrated
+// to RationSmart v4.0.0:
+//   1. All endpoints now live under /v1/...
+//   2. Authenticated endpoints require Authorization: Bearer <jwt> (HTTPBearer)
+//   3. Many endpoints dropped the user_id query param — it's derived from
+//      the JWT instead
+//   4. Custom-feed update is now PUT (was POST) with feed_id as a query param
+//   5. /fetch-* POST endpoints became GET equivalents
+//   6. The dev/prod backends (<DEV_BACKEND_IP> was reused so the IP didn't change;
+//      <PROD_BACKEND_IP> is still on legacy) are still on the OLD API — this
+//      file is incompatible with them.
+// `tokenProvider` is set from src/lib/store.ts so the interceptor can read
+// the latest JWT on every request without a circular import.
 
 const api = axios.create({
   baseURL: "/api/proxy",
@@ -322,6 +336,20 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+let tokenProvider: () => string | null = () => null;
+export const setTokenProvider = (fn: () => string | null) => {
+  tokenProvider = fn;
+};
+
+api.interceptors.request.use((config) => {
+  const token = tokenProvider();
+  if (token) {
+    config.headers = config.headers ?? {};
+    (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
+  }
+  return config;
 });
 
 // Response error interceptor — safely extract message from FastAPI errors
@@ -346,62 +374,100 @@ api.interceptors.response.use(
 );
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
+// All auth-tier endpoints are PUBLIC (no Bearer header required) except where
+// noted. The `login` response carries the JWT used by every animal/* and
+// most admin/* endpoint below.
+
+export interface LoginResponse {
+  success: boolean;
+  message: string;
+  requires_pin_reset: boolean;
+  user: unknown | null;
+  token: string | null;
+}
 
 export const login = (email_id: string, pin: string) =>
-  api.post("/auth/login", { email_id, pin });
+  api.post<LoginResponse>("/v1/auth/login", { email_id, pin });
 
 export const register = (data: RegisterData) =>
-  api.post("/auth/register", data);
+  api.post("/v1/auth/register", data);
 
-// matches Android: POST /auth/forgot-pin with { email_id }
+// POST /v1/auth/forgot-pin — { email_id }
 export const resetPin = (email_id: string) =>
-  api.post("/auth/forgot-pin", { email_id });
+  api.post("/v1/auth/forgot-pin", { email_id });
 
-export const getCountries = () => api.get<Country[]>("/auth/countries");
+// POST /v1/auth/set-new-pin — { email_id, old_pin (4 digits), new_pin (6 digits) }
+// Used when login returns requires_pin_reset=true. Migrates a legacy
+// 4-digit PIN to a 6-digit one. Public endpoint (no JWT required because
+// the user has not finished authenticating yet).
+export const setNewPin = (email_id: string, old_pin: string, new_pin: string) =>
+  api.post("/v1/auth/set-new-pin", { email_id, old_pin, new_pin });
 
-// GET /auth/user/{email_id} — returns UserProfileInfoResponse (includes is_admin)
+// POST /v1/auth/change-pin — { email_id, current_pin (4-6), new_pin (6) }
+// User-initiated change from the profile screen.
+export const changePin = (email_id: string, current_pin: string, new_pin: string) =>
+  api.post("/v1/auth/change-pin", { email_id, current_pin, new_pin });
+
+// POST /v1/auth/verify-email — { token } — email verification flow
+export const verifyEmail = (token: string) =>
+  api.post("/v1/auth/verify-email", { token });
+
+// POST /v1/auth/resend-verification — { email_id }
+export const resendVerification = (email_id: string) =>
+  api.post("/v1/auth/resend-verification", { email_id });
+
+export const getCountries = () => api.get<Country[]>("/v1/auth/countries");
+
+// GET /v1/auth/user/{email_id} — public — returns UserProfileInfoResponse
 export const getUserProfile = (email_id: string) =>
-  api.get(`/auth/user/${encodeURIComponent(email_id)}`);
+  api.get(`/v1/auth/user/${encodeURIComponent(email_id)}`);
 
-// PUT /auth/user/{email_id} with { name, country_id }
+// PUT /v1/auth/user/{email_id} — public — { name, country_id }
 export const updateUserProfile = (email_id: string, data: { name: string; country_id: string }) =>
-  api.put(`/auth/user/${encodeURIComponent(email_id)}`, data);
+  api.put(`/v1/auth/user/${encodeURIComponent(email_id)}`, data);
 
-// POST /auth/user-delete-account — Android uses POST with query params
-export const deleteAccount = (user_id: string, pin: string) =>
-  api.post("/auth/user-delete-account", null, { params: { user_id, pin } });
+// POST /v1/auth/user-delete-account — JWT auth; body { pin } (6-digit)
+// user identity comes from the JWT, no more user_id query param.
+export const deleteAccount = (pin: string) =>
+  api.post("/v1/auth/user-delete-account", { pin });
 
-// ─── Feed ─────────────────────────────────────────────────────────────────────
+// ─── Feed taxonomy (JWT-protected) ──────────────────────────────────────────
+// user_id no longer passed — derived from the JWT by the backend.
+// Path / param renames vs legacy:
+//   /unique-feed-type/{country_id}/{user_id}  →  /v1/animal/unique-feed-type/{country_id}
+//   /unique-feed-category?feed_type=&country_id=&user_id=
+//                                              →  /v1/animal/unique-feed-category?country_id=&feed_type=
+//   /feed-name?feed_type=&feed_category=&country_id=&user_id=
+//                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
+//     NOTE: query param renamed from feed_category to category.
 
-// GET /unique-feed-type/{country_id}/{user_id} → List<String>
-export const getFeedTypes = (country_id: string, user_id: string) =>
-  api.get<string[]>(`/unique-feed-type/${country_id}/${user_id}`);
+export const getFeedTypes = (country_id: string, _user_id?: string) =>
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
 
-// GET /unique-feed-category/?feed_type=...&country_id=...&user_id=...
-export const getFeedCategories = (feed_type: string, country_id: string, user_id: string) =>
-  api.get("/unique-feed-category", { params: { feed_type, country_id, user_id } });
+export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
 
-// GET /feed-name/?feed_type=...&feed_category=...&country_id=...&user_id=...
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
 export const getFeedSubCategories = (
   feed_type: string,
   feed_category: string,
   country_id: string,
-  user_id: string
+  _user_id?: string
 ) =>
-  api.get("/feed-name", { params: { feed_type, feed_category, country_id, user_id } });
+  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category } });
 
-// ─── Evaluation & Recommendation ─────────────────────────────────────────────
+// ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────
 
 export const evaluateDiet = (data: EvaluationRequest) =>
-  api.post("/diet-evaluation-working", data);
+  api.post("/v1/animal/evaluate-diet", data);
 
 export const recommendDiet = (data: RecommendationRequest) =>
-  api.post("/diet-recommendation-working", data);
+  api.post("/v1/animal/diet-recommendation", data);
 
-// ─── Reports ─────────────────────────────────────────────────────────────────
+// ─── Reports (JWT-protected) ────────────────────────────────────────────────
 
-// GET /get-user-reports/?user_id= — saved PDF reports (Feed Reports screen)
+// GET /v1/animal/user-reports — saved PDF reports (Feed Reports screen)
+// user_id query removed — JWT-derived.
 export interface FeedReport {
   report_id: string | null;
   report_type: string | null;
@@ -417,80 +483,76 @@ export interface FeedReportListResponse {
   success: boolean | null;
 }
 
-export const getSavedReports = (user_id: string) =>
-  api.get<FeedReportListResponse>("/get-user-reports", { params: { user_id } });
+// `_user_id` accepted for call-site backward compatibility; ignored.
+export const getSavedReports = (_user_id?: string) =>
+  api.get<FeedReportListResponse>("/v1/animal/user-reports");
 
-// POST /fetch-all-simulations — simulation history (used in cattle-info history modal)
-export const getUserReports = (user_id: string) =>
-  api.post("/fetch-all-simulations", { user_id });
+// GET /v1/animal/simulations — simulation history (was POST /fetch-all-simulations)
+export const getUserReports = (_user_id?: string) =>
+  api.get("/v1/animal/simulations");
 
-// POST /save-report with { report_id, user_id }
+// POST /v1/animal/save-report — { report_id, user_id } (user_id still required in body per spec)
 export const saveReport = (report_id: string, user_id: string) =>
-  api.post("/save-report", { report_id, user_id });
+  api.post("/v1/animal/save-report", { report_id, user_id });
 
-export const getSimulationDetails = (report_id: string, user_id: string) =>
-  api.post("/fetch-simulation-details", { report_id, user_id });
+// GET /v1/animal/simulations/{report_id} (was POST /fetch-simulation-details)
+export const getSimulationDetails = (report_id: string, _user_id?: string) =>
+  api.get(`/v1/animal/simulations/${encodeURIComponent(report_id)}`);
 
-// ─── Feedback ─────────────────────────────────────────────────────────────────
+// ─── Feedback (JWT-protected) ───────────────────────────────────────────────
+// user_id no longer passed — JWT-derived.
 
-// POST /user-feedback/submit?user_id=... with { text_feedback, feedback_type, overall_rating }
 export const submitFeedback = (
-  user_id: string,
+  _user_id: string,
   data: { feedback_type: string; text_feedback?: string; overall_rating?: number }
-) => api.post("/user-feedback/submit", data, { params: { user_id } });
+) => api.post("/v1/user-feedback/submit", data);
 
-// GET /user-feedback/my?user_id=...&limit=...&offset=...
-export const getMyFeedback = (user_id: string, limit = 50, offset = 0) =>
-  api.get("/user-feedback/my", { params: { user_id, limit, offset } });
+export const getMyFeedback = (_user_id: string, limit = 50, offset = 0) =>
+  api.get("/v1/user-feedback/my", { params: { limit, offset } });
 
-// ─── Admin ────────────────────────────────────────────────────────────────────
+// ─── Admin (JWT-protected, server-side role check) ──────────────────────────
+// admin_user_id removed everywhere — JWT-derived.
+// Filter params renamed on /admin/users: country_filter → country,
+// status_filter → status.
 
-// GET /admin/users?admin_user_id=&page=&page_size=&country_filter=&status_filter=&search=
 export const getAdminUsers = (
-  admin_user_id: string,
+  _admin_user_id: string,
   page = 1,
   page_size = 20,
-  country_filter = "",
-  status_filter = "",
+  country = "",
+  status = "",
   search = ""
 ) =>
-  api.get("/admin/users", { params: { admin_user_id, page, page_size, country_filter, status_filter, search } });
+  api.get("/v1/admin/users", { params: { page, page_size, country, status, search } });
 
-// PUT /admin/users/{user_id}/toggle-status?admin_user_id=
-export const toggleUserStatus = (user_id: string, admin_user_id: string, is_active: boolean) =>
-  api.put(`/admin/users/${user_id}/toggle-status`, { is_active }, { params: { admin_user_id } });
+// PUT /v1/admin/users/{user_id}/toggle-status — JWT-derived admin; body { is_active }
+export const toggleUserStatus = (user_id: string, _admin_user_id: string, is_active: boolean) =>
+  api.put(`/v1/admin/users/${user_id}/toggle-status`, { is_active });
 
-// GET /admin/list-feed-types?admin_user_id=
-export const getAdminFeedTypes = (admin_user_id: string) =>
-  api.get("/admin/list-feed-types", { params: { admin_user_id } });
+export const getAdminFeedTypes = (_admin_user_id: string) =>
+  api.get("/v1/admin/list-feed-types");
 
-// GET /admin/list-feed-categories/?admin_user_id=
-export const getAdminFeedCategories = (admin_user_id: string) =>
-  api.get("/admin/list-feed-categories", { params: { admin_user_id } });
+export const getAdminFeedCategories = (_admin_user_id: string) =>
+  api.get("/v1/admin/list-feed-categories");
 
-// GET /admin/user-feedback/all?admin_user_id=&limit=&offset=
-export const getAdminFeedbacks = (admin_user_id: string, limit = 20, offset = 0) =>
-  api.get("/admin/user-feedback/all", { params: { admin_user_id, limit, offset } });
+export const getAdminFeedbacks = (_admin_user_id: string, limit = 20, offset = 0) =>
+  api.get("/v1/admin/user-feedback/all", { params: { limit, offset } });
 
-// GET /admin/user-feedback/stats?admin_user_id=
-export const getAdminFeedbackStats = (admin_user_id: string) =>
-  api.get("/admin/user-feedback/stats", { params: { admin_user_id } });
+export const getAdminFeedbackStats = (_admin_user_id: string) =>
+  api.get("/v1/admin/user-feedback/stats");
 
-// GET /admin/export-feeds?admin_user_id=
-export const exportAdminFeeds = (admin_user_id: string) =>
-  api.get("/admin/export-feeds", { params: { admin_user_id } });
+export const exportAdminFeeds = (_admin_user_id: string) =>
+  api.get("/v1/admin/export-feeds");
 
-// POST /admin/bulk-upload-feeds?admin_user_id= (multipart form data)
-// onProgress receives 0..100 percentage during upload.
+// POST /v1/admin/bulk-upload-feeds (multipart, JWT-derived admin)
 export const bulkUploadFeeds = (
-  admin_user_id: string,
+  _admin_user_id: string,
   file: File,
   onProgress?: (pct: number) => void,
 ) => {
   const form = new FormData();
   form.append("file", file);
-  return api.post("/admin/bulk-upload-feeds", form, {
-    params: { admin_user_id },
+  return api.post("/v1/admin/bulk-upload-feeds", form, {
     headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress: (evt) => {
       if (onProgress && evt.total) {
@@ -500,15 +562,14 @@ export const bulkUploadFeeds = (
   });
 };
 
-// GET /admin/get-all-reports/ (admin all reports)
-export const getAdminReports = (user_id: string, page = 1, page_size = 20) =>
-  api.get("/admin/get-all-reports", { params: { user_id, page, page_size } });
+// GET /v1/admin/get-all-reports/ — JWT-derived admin
+export const getAdminReports = (_user_id: string, page = 1, page_size = 20) =>
+  api.get("/v1/admin/get-all-reports/", { params: { page, page_size } });
 
-// ─── Admin Feed CRUD ──────────────────────────────────────────────────────────
+// ─── Admin Feed CRUD (JWT-protected) ────────────────────────────────────────
 
-// GET /admin/list-feeds/?admin_user_id=&page=&page_size=&feed_type=&feed_category=&country_name=&search=
 export const getAdminFeeds = (
-  admin_user_id: string,
+  _admin_user_id: string,
   page = 1,
   page_size = 20,
   feed_type = "",
@@ -516,81 +577,77 @@ export const getAdminFeeds = (
   country_name = "",
   search = ""
 ) =>
-  api.get("/admin/list-feeds", {
-    params: { admin_user_id, page, page_size, feed_type, feed_category, country_name, search },
+  api.get("/v1/admin/list-feeds", {
+    params: { page, page_size, feed_type, feed_category, country_name, search },
   });
 
-// POST /admin/add-feed?admin_user_id=
-export const addAdminFeed = (admin_user_id: string, body: Record<string, unknown>) =>
-  api.post("/admin/add-feed", body, { params: { admin_user_id } });
+export const addAdminFeed = (_admin_user_id: string, body: Record<string, unknown>) =>
+  api.post("/v1/admin/add-feed", body);
 
-// PUT /admin/update-feed/{feed_id}?admin_user_id=
 export const updateAdminFeed = (
   feed_id: string,
-  admin_user_id: string,
+  _admin_user_id: string,
   body: Record<string, unknown>
-) => api.put(`/admin/update-feed/${feed_id}`, body, { params: { admin_user_id } });
+) => api.put(`/v1/admin/update-feed/${feed_id}`, body);
 
-// DELETE /admin/delete-feed/{feed_id}?admin_user_id=
-export const deleteAdminFeed = (feed_id: string, admin_user_id: string) =>
-  api.delete(`/admin/delete-feed/${feed_id}`, { params: { admin_user_id } });
+export const deleteAdminFeed = (feed_id: string, _admin_user_id: string) =>
+  api.delete(`/v1/admin/delete-feed/${feed_id}`);
 
-// POST /admin/add-feed-category?admin_user_id=
-// Android AddFeedCategoryRequest: { category_name, description, feed_type_id, sort_order }
 export const addAdminFeedCategory = (
-  admin_user_id: string,
+  _admin_user_id: string,
   body: { category_name: string; description: string; feed_type_id: string; sort_order: number }
-) => api.post("/admin/add-feed-category", body, { params: { admin_user_id } });
+) => api.post("/v1/admin/add-feed-category", body);
 
-// DELETE /admin/delete-feed-category/{category_id}?admin_user_id=
-export const deleteAdminFeedCategory = (category_id: string, admin_user_id: string) =>
-  api.delete(`/admin/delete-feed-category/${category_id}`, { params: { admin_user_id } });
+export const deleteAdminFeedCategory = (category_id: string, _admin_user_id: string) =>
+  api.delete(`/v1/admin/delete-feed-category/${category_id}`);
 
-// POST /admin/add-feed-type?admin_user_id=
-// Android AddFeedTypeRequest: { type_name, description, sort_order }
 export const addAdminFeedType = (
-  admin_user_id: string,
+  _admin_user_id: string,
   body: { type_name: string; description: string; sort_order: number }
-) => api.post("/admin/add-feed-type", body, { params: { admin_user_id } });
+) => api.post("/v1/admin/add-feed-type", body);
 
-// DELETE /admin/delete-feed-type/{type_id}?admin_user_id=
-export const deleteAdminFeedType = (type_id: string, admin_user_id: string) =>
-  api.delete(`/admin/delete-feed-type/${type_id}`, { params: { admin_user_id } });
+export const deleteAdminFeedType = (type_id: string, _admin_user_id: string) =>
+  api.delete(`/v1/admin/delete-feed-type/${type_id}`);
 
-// GET /admin/export-custom-feeds?admin_user_id=
-export const exportCustomFeeds = (admin_user_id: string) =>
-  api.get("/admin/export-custom-feeds", { params: { admin_user_id } });
+export const exportCustomFeeds = (_admin_user_id: string) =>
+  api.get("/v1/admin/export-custom-feeds");
 
-// ─── Custom Feed (user) ───────────────────────────────────────────────────────
+// ─── Custom Feed (user, JWT-protected) ──────────────────────────────────────
+// All three endpoints restructured:
+//   POST /check-insert-or-update body{country_id,feed_id,user_id}
+//     → POST /v1/animal/custom-feeds/check?feed_id=...
+//   POST /insert-custom-feed
+//     → POST /v1/animal/custom-feeds
+//   POST /update-custom-feed (with feed_id in body)
+//     → PUT  /v1/animal/custom-feeds?feed_id=... (note method + query param!)
+// user_id derived from JWT in all three.
 
-// POST /check-insert-or-update — { country_id, feed_id, user_id }
-export const checkInsertOrUpdate = (country_id: string, feed_id: string, user_id: string) =>
-  api.post("/check-insert-or-update", { country_id, feed_id, user_id });
+export const checkInsertOrUpdate = (_country_id: string, feed_id: string, _user_id: string) =>
+  api.post("/v1/animal/custom-feeds/check", null, { params: { feed_id } });
 
-// POST /insert-custom-feed
 export const insertCustomFeed = (body: {
   country_id: string;
   user_id: string;
   feed_insert: boolean;
   feed_details: Record<string, unknown>;
-}) => api.post("/insert-custom-feed", body);
+}) => api.post("/v1/animal/custom-feeds", body);
 
-// POST /update-custom-feed
 export const updateCustomFeed = (body: {
   country_id: string;
   user_id: string;
   feed_id: string;
   feed_insert: boolean;
   feed_details: Record<string, unknown>;
-}) => api.post("/update-custom-feed", body);
+}) => api.put("/v1/animal/custom-feeds", body, { params: { feed_id: body.feed_id } });
 
-// GET /feed-classification/structure
-export const getFeedClassification = () => api.get("/feed-classification/structure");
+// GET /v1/feed-classification/structure (JWT-protected)
+export const getFeedClassification = () => api.get("/v1/feed-classification/structure");
 
 // Y3 §1.1.1 — feed search. Backend endpoint not yet live.
-// TODO(maria-y3): swap to real `api.get("/search-feeds", { params: ... })`
-// once Maria ships GET /search-feeds. Until then this stub returns []
-// so the search-bar UI compiles and renders an empty results list.
+// TODO(maria-y3): swap to real `api.get("/v1/animal/search-feeds", { params })`
+// once Maria ships the endpoint. Spec v4.0.0 does NOT include it yet.
+// Until then this stub returns [] so the search-bar UI compiles and renders
+// an empty results list.
 export interface FeedSearchResult {
   feed_uuid: string;
   feed_name: string;
