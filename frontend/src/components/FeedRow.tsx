@@ -359,11 +359,11 @@ export default function FeedRow({
         const types = names.map((n, i) => ({ id: i + 1, name: n }));
         setFeedTypes(types);
         if (index === 0 && !item.feed_type_name) {
-          // v1 backend renamed "Forage" → "Roughage". Try the new name
-          // first, then the legacy name, then fall back to the first type
-          // so the first row always has *something* selected.
-          const def = types.find((t) => t.name === "Roughage")
-            ?? types.find((t) => t.name === "Forage")
+          // v1 actual data still uses "Forage" (the spec description's
+          // mention of "Roughage" was just an example, not the canonical
+          // value). Prefer Forage → Roughage → first available type.
+          const def = types.find((t) => t.name === "Forage")
+            ?? types.find((t) => t.name === "Roughage")
             ?? types[0];
           if (def) onUpdate(item.id, { feed_type_id: def.id, feed_type_name: def.name });
         } else if (item.feed_type_name) {
