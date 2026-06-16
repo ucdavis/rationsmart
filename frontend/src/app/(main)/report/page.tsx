@@ -341,7 +341,20 @@ export default function ReportPage() {
       }
       const url = body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url ?? null;
       setPdfUrl(url);
-      showSnackbar(body?.message ?? "Report saved successfully!", "success");
+      // v1 quirk (2026-06-16): save-report often returns success=true
+      // with bucket_url=null because /v1/animal/reports/pdf is marked
+      // "not yet implemented" in the backend spec. The record gets
+      // saved but the PDF link doesn't exist, so the View-PDF button
+      // wouldn't work. Give the user a more honest message so they
+      // don't expect a clickable PDF that will never appear.
+      if (!url) {
+        showSnackbar(
+          (body?.message ?? "Report saved") + " (PDF generation pending — backend feature still being built)",
+          "info"
+        );
+      } else {
+        showSnackbar(body?.message ?? "Report saved successfully!", "success");
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to save report";
       showSnackbar(message, "error");

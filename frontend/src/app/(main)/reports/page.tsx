@@ -128,7 +128,7 @@ export default function ReportsPage() {
                         <path d="M360,720h240q17,0 28.5,-11.5T640,680q0,-17 -11.5,-28.5T600,640L360,640q-17,0 -28.5,11.5T320,680q0,17 11.5,28.5T360,720ZM360,560h240q17,0 28.5,-11.5T640,520q0,-17 -11.5,-28.5T600,480L360,480q-17,0 -28.5,11.5T320,520q0,17 11.5,28.5T360,560ZM240,880q-33,0 -56.5,-23.5T160,800v-640q0,-33 23.5,-56.5T240,80h287q16,0 30.5,6t25.5,17l194,194q11,11 17,25.5t6,30.5v447q0,33 -23.5,56.5T720,880L240,880ZM520,320v-160L240,160v640h480v-440L560,360q-17,0 -28.5,-11.5T520,320Z" />
                       </svg>
                     </div>
-                    {report.bucket_url && (
+                    {report.bucket_url ? (
                       <button
                         onClick={() => openPdf(report.bucket_url!)}
                         className="flex items-center font-bold"
@@ -145,12 +145,30 @@ export default function ReportsPage() {
                         }}
                       >
                         View Report
-                        {/* ic_view_report — single filled path (circle with
-                            inset right-arrow tail), tinted dark_aquamarine_green */}
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="#064E3B">
                           <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
                         </svg>
                       </button>
+                    ) : (
+                      // v1 quirk: save-report often returns success=true with
+                      // bucket_url=null because the PDF generation endpoint
+                      // (POST /v1/animal/reports/pdf) is marked "not yet
+                      // implemented" in the backend spec. Show the entry but
+                      // indicate the PDF isn't ready yet so the user knows
+                      // it's not a missing button.
+                      <span
+                        className="font-bold"
+                        style={{
+                          borderRadius: 60,
+                          backgroundColor: "#FFF4E5",
+                          padding: "8px 14px",
+                          color: "#FF9800",
+                          fontFamily: "Nunito, sans-serif",
+                          fontSize: 12,
+                        }}
+                      >
+                        PDF Pending
+                      </span>
                     )}
                   </div>
 
