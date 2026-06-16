@@ -265,8 +265,23 @@ export default function FeedSelectionPage() {
     setLoadingCustomTypes(true);
     try {
       const res = await getFeedTypes(user.country_id, user.id);
-      const data = res.data;
-      setCustomFeedTypes(Array.isArray(data) ? data : []);
+      // v1 backend may return bare string[] (e.g. ["Roughage","Concentrate"])
+      // OR objects with type_name OR a wrapper. Same defensive parsing
+      // as FeedRow's cascade — keep both paths in sync.
+      const data = res.data as unknown;
+      const raw: unknown[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
+          ? (data as { feed_types: unknown[] }).feed_types
+          : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
+            ? (data as { unique_feed_types: unknown[] }).unique_feed_types
+            : [];
+      const names: string[] = raw.map((it) => {
+        if (typeof it === "string") return it;
+        const o = it as { type_name?: string; name?: string };
+        return o?.type_name ?? o?.name ?? "";
+      }).filter((n) => n);
+      setCustomFeedTypes(names);
     } catch {
       showSnackbar("Could not load feed types", "error");
     } finally {
@@ -281,8 +296,21 @@ export default function FeedSelectionPage() {
     setLoadingCustomCats(true);
     try {
       const res = await getFeedCategories(feedType, user.country_id, user.id);
-      const data = res.data;
-      const names: string[] = (Array.isArray(data) ? data : data?.unique_feed_categories ?? []).filter(Boolean);
+      const data = res.data as unknown;
+      const raw: unknown[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { categories?: unknown[] })?.categories)
+          ? (data as { categories: unknown[] }).categories
+          : Array.isArray((data as { unique_feed_categories?: unknown[] })?.unique_feed_categories)
+            ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
+            : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
+              ? (data as { feed_categories: unknown[] }).feed_categories
+              : [];
+      const names: string[] = raw.map((it) => {
+        if (typeof it === "string") return it;
+        const o = it as { category_name?: string; name?: string };
+        return o?.category_name ?? o?.name ?? "";
+      }).filter((n) => n);
       setCustomFeedCategories(names);
     } catch {
       showSnackbar("Could not load categories", "error");

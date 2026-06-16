@@ -324,17 +324,38 @@ export default function FeedRow({
     if (!user?.country_id || !user?.id) return;
     getFeedTypes(user.country_id, user.id)
       .then((res) => {
-        const data = res.data;
-        const names: string[] = Array.isArray(data) ? data : [];
+        // v1 /v1/animal/unique-feed-type/{country_id} returns the distinct
+        // type *names* — per the swagger description "e.g. Roughage,
+        // Concentrate". Shape could be a bare string[] OR an array of
+        // FeedTypeResponse objects ({type_name, ...}) OR wrapped in
+        // {feed_types: [...]} (admin endpoint uses that wrapper). Be
+        // defensive: extract whichever shape comes back.
+        const data = res.data as unknown;
+        const raw: unknown[] = Array.isArray(data)
+          ? data
+          : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
+            ? (data as { feed_types: unknown[] }).feed_types
+            : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
+              ? (data as { unique_feed_types: unknown[] }).unique_feed_types
+              : [];
+        const names: string[] = raw
+          .map((it) => {
+            if (typeof it === "string") return it;
+            const o = it as { type_name?: string; name?: string };
+            return o?.type_name ?? o?.name ?? "";
+          })
+          .filter((n) => n);
         const types = names.map((n, i) => ({ id: i + 1, name: n }));
         setFeedTypes(types);
         if (index === 0 && !item.feed_type_name) {
-          const forage = types.find((t) => t.name === "Forage");
-          if (forage) onUpdate(item.id, { feed_type_id: forage.id, feed_type_name: forage.name });
+          // v1 backend renamed "Forage" → "Roughage". Try the new name
+          // first, then the legacy name, then fall back to the first type
+          // so the first row always has *something* selected.
+          const def = types.find((t) => t.name === "Roughage")
+            ?? types.find((t) => t.name === "Forage")
+            ?? types[0];
+          if (def) onUpdate(item.id, { feed_type_id: def.id, feed_type_name: def.name });
         } else if (item.feed_type_name) {
-          // Restored from simulation history — sync the placeholder id
-          // (assigned in loadSimulation) with the real index in the
-          // freshly fetched type list so the dropdown shows the selection.
           const match = types.find((t) => t.name === item.feed_type_name);
           if (match && match.id !== item.feed_type_id) {
             onUpdate(item.id, { feed_type_id: match.id });
@@ -342,10 +363,6 @@ export default function FeedRow({
         }
       })
       .catch(() => {
-        // Silence the toast when the row already has a stored type name
-        // (simulation restore case) — the value is still displayed from
-        // the store, so the only effect of the failure is an empty
-        // dropdown. A toast here would be a false alarm.
         if (!item.feed_type_name) showSnackbar("Could not load feed types", "error");
       })
       .finally(() => setLoadingTypes(false));
@@ -361,8 +378,29 @@ export default function FeedRow({
     setLoadingCats(true);
     getFeedCategories(item.feed_type_name, user.country_id, user.id)
       .then((res) => {
-        const data = res.data;
-        const names: string[] = (Array.isArray(data) ? data : data?.unique_feed_categories ?? []).filter(Boolean);
+        // v1 /v1/animal/unique-feed-category returns "distinct feed
+        // categories available for the given country" — bare array of
+        // names OR FeedCategoryResponse objects OR a wrapper. Extract
+        // whichever shape comes back. The v1 endpoint takes only
+        // country_id as a required param; type-side filtering happens
+        // client-side via the sub-category cascade below.
+        const data = res.data as unknown;
+        const raw: unknown[] = Array.isArray(data)
+          ? data
+          : Array.isArray((data as { categories?: unknown[] })?.categories)
+            ? (data as { categories: unknown[] }).categories
+            : Array.isArray((data as { unique_feed_categories?: unknown[] })?.unique_feed_categories)
+              ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
+              : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
+                ? (data as { feed_categories: unknown[] }).feed_categories
+                : [];
+        const names: string[] = raw
+          .map((it) => {
+            if (typeof it === "string") return it;
+            const o = it as { category_name?: string; name?: string };
+            return o?.category_name ?? o?.name ?? "";
+          })
+          .filter((n) => n);
         const newCats = names.map((n, i) => ({ id: i + 1, name: n }));
         setCategories(newCats);
         const matched = newCats.find((c) => c.name === item.category_name);
@@ -374,9 +412,6 @@ export default function FeedRow({
         }
       })
       .catch(() => {
-        // Same rationale as the types fetch: if the row already has a
-        // restored category_name, the visible state is intact and the
-        // empty dropdown is the only consequence. Don't alarm the user.
         if (!item.category_name) showSnackbar("Could not load categories", "error");
       })
       .finally(() => setLoadingCats(false));
@@ -390,13 +425,37 @@ export default function FeedRow({
     setLoadingSubs(true);
     getFeedSubCategories(item.feed_type_name, item.category_name, user.country_id, user.id)
       .then((res) => {
-        const data = res.data;
-        const list: FeedSubCategoryItem[] = (Array.isArray(data) ? data : data?.sub_categories ?? [])
-          .filter((s: { feed_name?: string; feed_uuid?: string }) => s.feed_name && s.feed_uuid)
-          .map((s: { feed_name: string; feed_uuid: string }) => ({
-            feed_name: s.feed_name,
-            feed_uuid: s.feed_uuid,
-          }));
+        // v1 /v1/animal/feed-name response (per swagger description):
+        //   { standard_feeds: [...], custom_feeds: [...] }
+        // Each item is a FeedDetailsResponse: { feed_id, fd_name, fd_type,
+        // fd_category, ... } — i.e. the UUID is `feed_id` (was `feed_uuid`
+        // on legacy) and the display name is `fd_name` (was `feed_name`).
+        // Defensive: also accept legacy bare array / sub_categories /
+        // feeds wrappers and the older feed_uuid / feed_name keys, so a
+        // shape regression doesn't break the dropdown.
+        const data = res.data as unknown;
+        const standardFeeds = (data as { standard_feeds?: unknown[] })?.standard_feeds;
+        const customFeeds = (data as { custom_feeds?: unknown[] })?.custom_feeds;
+        const raw: unknown[] = (Array.isArray(standardFeeds) || Array.isArray(customFeeds))
+          ? [...(Array.isArray(standardFeeds) ? standardFeeds : []), ...(Array.isArray(customFeeds) ? customFeeds : [])]
+          : Array.isArray(data)
+            ? data
+            : Array.isArray((data as { sub_categories?: unknown[] })?.sub_categories)
+              ? (data as { sub_categories: unknown[] }).sub_categories
+              : Array.isArray((data as { feeds?: unknown[] })?.feeds)
+                ? (data as { feeds: unknown[] }).feeds
+                : [];
+        const list: FeedSubCategoryItem[] = raw
+          .map((it) => {
+            const o = it as {
+              feed_id?: string; feed_uuid?: string; id?: string;
+              fd_name?: string; feed_name?: string; name?: string;
+            };
+            const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
+            const name = o?.fd_name ?? o?.feed_name ?? o?.name;
+            return uuid && name ? { feed_name: name, feed_uuid: uuid } : null;
+          })
+          .filter((s): s is FeedSubCategoryItem => s !== null);
         setSubCategories(list);
         const match = list.find(
           (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
