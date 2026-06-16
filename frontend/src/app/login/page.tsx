@@ -58,16 +58,25 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       const res = await login(email.trim(), pin);
+      // v1 LoginResponse:
+      //   { success, message, requires_pin_reset, user?: UserResponse, token?: TokenResponse }
+      // Where TokenResponse = { access_token, token_type, expires_in }.
+      // The earlier draft of this page stored the whole token object on
+      // `user.token` and the Bearer interceptor then sent
+      // "Authorization: Bearer [object Object]" — every authenticated call
+      // 401'd. We now extract `.access_token` (a plain JWT string).
+      // UserResponse.country is anyType (server may return a Country
+      // object OR a plain string OR null) so we defensively probe both.
       const body = res.data as {
         user?: Record<string, unknown> & {
           id?: string;
           name?: string;
           email_id?: string;
-          country?: string | { name?: string; id?: string; country_code?: string };
+          country?: string | { name?: string; id?: string; country_code?: string } | null;
           country_id?: string;
           country_code?: string;
         };
-        token?: string | null;
+        token?: { access_token?: string; token_type?: string; expires_in?: number } | string | null;
         requires_pin_reset?: boolean;
         message?: string;
       };
@@ -120,7 +129,13 @@ export default function LoginPage() {
         is_admin,
         // v1: store the JWT so every subsequent animal/* + admin/* call
         // can attach `Authorization: Bearer <token>` via the axios interceptor.
-        token: body.token ?? null,
+        // The login response's `token` field is a TokenResponse object —
+        // the JWT itself is in `access_token`. (We also handle the case
+        // where the backend ever returns a bare string, defensively.)
+        token:
+          typeof body.token === "string"
+            ? body.token
+            : (body.token?.access_token ?? null),
       });
       const successMsg = body.message;
       if (successMsg) showSnackbar(successMsg, "success");
