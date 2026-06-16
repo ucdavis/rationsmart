@@ -3,7 +3,12 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   cacheOnFrontEndNav: false,
   aggressiveFrontEndNavCaching: false,
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === "development",
+  // Disabled in dev AND when DISABLE_PWA=true (set on the testing
+  // Vercel project). The testing branch iterates fast, and the SW
+  // runtime cache keeps serving stale JS chunks for up to 24h, which
+  // makes diagnostic logs invisible until users clear site data.
+  // Skip the SW entirely on the testing deployment.
+  disable: process.env.NODE_ENV === "development" || process.env.DISABLE_PWA === "true",
   workboxOptions: {
     disableDevLogs: true,
     skipWaiting: true,
