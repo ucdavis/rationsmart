@@ -1,0 +1,32 @@
+# Auto-deploy the `testing` branch to the rationsmart-testing Vercel
+# project. Vercel's `productionBranch` setting is locked to `main` for
+# this project (Vercel API rejected programmatic edits, and the dashboard
+# would require manual intervention). Instead we use a Vercel Deploy Hook
+# — a webhook URL that, when POSTed, triggers a production deployment
+# of whatever commit is referenced by the hook's branch.
+#
+# Hook URL is stored as a GitHub Actions secret so it's not committed.
+# Repo Settings → Secrets and variables → Actions → New repository secret
+#   Name:  VERCEL_TESTING_DEPLOY_HOOK
+#   Value: https://api.vercel.com/v1/integrations/deploy/<TESTING_PROJECT_ID>/yd1BSQ8EMX
+
+name: Deploy testing branch
+on:
+  push:
+    branches:
+      - testing
+
+jobs:
+  trigger-vercel-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hit Vercel deploy hook
+        run: |
+          if [ -z "${{ secrets.VERCEL_TESTING_DEPLOY_HOOK }}" ]; then
+            echo "::error::VERCEL_TESTING_DEPLOY_HOOK secret is not set. Add it under Repo Settings → Secrets and variables → Actions."
+            exit 1
+          fi
+          response=$(curl -s -o /tmp/resp -w "%{http_code}" -X POST "${{ secrets.VERCEL_TESTING_DEPLOY_HOOK }}")
+          echo "HTTP $response"
+          cat /tmp/resp
+          [ "$response" = "200" ] || [ "$response" = "201" ]
