@@ -5,7 +5,31 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import Toolbar from "@/components/Toolbar";
 import { saveReport } from "@/lib/api";
-import type { EvaluationResponse, RecommendationResponse, FeedBreakdown, CostEffectiveDiet } from "@/lib/api";
+import type { EvaluationResponse, RecommendationResponse, FeedBreakdown, CostEffectiveDiet, AnimalCategory } from "@/lib/api";
+
+// Y3 §2.3 — frontend equivalent of the backend's build_report_context.
+// Maps the animal's physiological state (cattleInfo.animal_category,
+// which maps 1-to-1 with the backend's An_StatePhys field) to a set
+// of booleans indicating which report sections to render. Once Maria
+// ships a `report_context` block on the diet response, we'll prefer
+// that and fall back to this helper for older responses.
+type ReportContext = {
+  showMilkProductionSection: boolean;
+  showMilkCostMarginCard: boolean;
+  showSolutionSummaryMilk: boolean;
+  showCalfMilkFeedingSection: boolean;
+};
+function buildReportContext(category?: AnimalCategory | string | null): ReportContext {
+  const cat = (category ?? "").trim();
+  const isLactating = cat === "Lactating Cow";
+  const isCalf = cat === "Baby Calf/Heifer";
+  return {
+    showMilkProductionSection: isLactating,
+    showMilkCostMarginCard: isLactating,
+    showSolutionSummaryMilk: isLactating,
+    showCalfMilkFeedingSection: isCalf,
+  };
+}
 import { IcSave, IcNewCase, IcAnimalCharacteristics, IcEnvironment, IcSimulationDetails } from "@/components/Icons";
 
 function StatusBadge({ status }: { status: string }) {
@@ -226,6 +250,15 @@ export default function ReportPage() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  // §2.3 — gate report sections by animal state. When backend ships a
+  // server-built report_context, prefer that; otherwise compute locally
+  // from the form's animal_category. cattleInfo.animal_category is the
+  // 4-state enum (Lactating Cow / Dry Cow / Heifer / Baby Calf/Heifer).
+  const serverCtx = (reportData as { report_context?: Partial<ReportContext> } | null)?.report_context;
+  const reportCtx: ReportContext = serverCtx
+    ? { ...buildReportContext(cattleInfo?.animal_category), ...serverCtx }
+    : buildReportContext(cattleInfo?.animal_category);
 
   // Use the user's / report's currency CODE (PHP / INR / VND / …)
   // directly. Android renders totals as e.g. "108,199.8 VND" — value
@@ -518,11 +551,18 @@ export default function ReportPage() {
                 value={cattleInfo.grazing ? `${Number(cattleInfo.distance ?? 0).toFixed(2)} km` : "0.00 km"}
               />
               <LabelValue label="Topography" value={cattleInfo.grazing ? (cattleInfo.topography || "N/A") : "Not Selected"} />
-              <LabelValue label="Milk Production" value={`${cattleInfo.milk_production} Liter`} />
-              <LabelValue label="Milk Protein %" value={`${cattleInfo.milk_protein_percent} %`} />
-              <div className="col-span-2">
-                <LabelValue label="Milk Fat %" value={`${cattleInfo.milk_fat_percent} %`} />
-              </div>
+              {/* Y3 §2.3 — milk rows only for Lactating Cow. Other states
+                  don't capture milk values on the form, so showing them
+                  here would just print "0 Liter" / "0 %". */}
+              {reportCtx.showMilkProductionSection && (
+                <>
+                  <LabelValue label="Milk Production" value={`${cattleInfo.milk_production} Liter`} />
+                  <LabelValue label="Milk Protein %" value={`${cattleInfo.milk_protein_percent} %`} />
+                  <div className="col-span-2">
+                    <LabelValue label="Milk Fat %" value={`${cattleInfo.milk_fat_percent} %`} />
+                  </div>
+                </>
+              )}
             </div>
           </SCard>
         )}
@@ -535,6 +575,7 @@ export default function ReportPage() {
             Maria ships a backend MilkCostMargin block on the response
             (see docs/Search_Implmentation.md §12.5). */}
         {(() => {
+          if (!reportCtx.showMilkCostMarginCard) return null;
           const milkPrice = cattleInfo?.milk_price ?? null;
           const milkProduction = cattleInfo?.milk_production ?? null;
           if (milkPrice == null || !milkProduction) return null;
@@ -633,6 +674,89 @@ export default function ReportPage() {
                 <span className="font-bold" style={{ color: accent }}>
                   {(Math.abs(margin) * milkProduction).toFixed(2)} {currencySymbol}/day
                 </span>
+              </p>
+            </SCard>
+          );
+        })()}
+
+        {/* Y3 §2.3 — Calf milk-feeding section. Only renders for animals
+            in the "Baby Calf/Heifer" state. Backend will eventually ship
+            a CalfMilkFeedingPlan block on the response (see
+            docs/Search_Implmentation.md §14.3); until then the card
+            shows the rule-of-thumb default (10% of body weight per day,
+            split into 2 feedings, weaning ~8 weeks) using the cattle
+            info the user already entered. */}
+        {reportCtx.showCalfMilkFeedingSection && cattleInfo && (() => {
+          const bw = Number(cattleInfo.body_weight ?? 0);
+          if (bw <= 0) return null;
+          // Backend-supplied plan (when present) wins; else compute the
+          // rule-of-thumb. cattleInfo.body_weight is in kg → 10% by mass
+          // ≈ 10% by volume for whole cow milk (density ~1.03 g/mL).
+          const serverPlan = (reportData as { calf_milk_feeding_plan?: {
+            daily_milk_volume_l?: number;
+            feedings_per_day?: number;
+            estimated_weaning_age_days?: number;
+            notes?: string[];
+          } } | null)?.calf_milk_feeding_plan;
+          const dailyVolume = serverPlan?.daily_milk_volume_l ?? bw * 0.10;
+          const feedings = serverPlan?.feedings_per_day ?? 2;
+          const weaningDays = serverPlan?.estimated_weaning_age_days ?? 56;
+          const perFeedingL = dailyVolume / Math.max(feedings, 1);
+          const notes = serverPlan?.notes ?? [
+            "Use clean, warm milk at 38–40°C; never cold from the fridge.",
+            "Replace whole milk with a quality milk replacer if cost is a concern.",
+            "Wean gradually over 7–10 days once the calf eats 1.5–2 kg of starter daily.",
+          ];
+          return (
+            <SCard
+              title="Calf Milk Feeding"
+              icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M8 4h8v2l-1 2H9L8 6V4z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
+                  <path d="M9 8c-1 0-2 2-2 5a5 5 0 0 0 10 0c0-3-1-5-2-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                  <path d="M10 14a2 2 0 0 0 4 0" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              }
+            >
+              {/* Three tiles: daily volume, per-feeding split, weaning age */}
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                <div className="rounded-xl p-2.5" style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}>
+                  <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 10, letterSpacing: 0.3 }}>Daily milk</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-bold" style={{ color: "#064E3B", fontSize: 18, fontFamily: "Nunito, sans-serif" }}>{dailyVolume.toFixed(1)}</p>
+                    <p style={{ color: "#6D6D6D", fontSize: 11, fontFamily: "Nunito, sans-serif" }}>L</p>
+                  </div>
+                </div>
+                <div className="rounded-xl p-2.5" style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}>
+                  <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 10, letterSpacing: 0.3 }}>Per feeding</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-bold" style={{ color: "#064E3B", fontSize: 18, fontFamily: "Nunito, sans-serif" }}>{perFeedingL.toFixed(1)}</p>
+                    <p style={{ color: "#6D6D6D", fontSize: 11, fontFamily: "Nunito, sans-serif" }}>L × {feedings}</p>
+                  </div>
+                </div>
+                <div className="rounded-xl p-2.5" style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}>
+                  <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 10, letterSpacing: 0.3 }}>Wean by</p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-bold" style={{ color: "#064E3B", fontSize: 18, fontFamily: "Nunito, sans-serif" }}>{weaningDays}</p>
+                    <p style={{ color: "#6D6D6D", fontSize: 11, fontFamily: "Nunito, sans-serif" }}>days</p>
+                  </div>
+                </div>
+              </div>
+              {/* Notes */}
+              {notes.length > 0 && (
+                <div>
+                  {notes.map((n, i) => (
+                    <div key={i} className="flex items-start gap-2" style={{ marginBottom: 6 }}>
+                      <span style={{ flexShrink: 0, marginTop: 7, width: 4, height: 4, borderRadius: "50%", backgroundColor: "#1CA069" }} />
+                      <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 13, lineHeight: 1.45, margin: 0 }}>{n}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <p className="mt-2 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 11, fontStyle: "italic" }}>
+                {serverPlan
+                  ? "Plan from server. Adjust with vet guidance."
+                  : "Default plan — 10% of body weight per day. Backend will refine when available."}
               </p>
             </SCard>
           );
@@ -901,8 +1025,9 @@ export default function ReportPage() {
               </SCard>
             )}
 
-            {/* Milk Production Analysis */}
-            {evalReport.milk_production_analysis && (
+            {/* Milk Production Analysis — only relevant for lactating
+                animals (Y3 §2.3). Hidden for Dry Cow / Heifer / Calf. */}
+            {reportCtx.showMilkProductionSection && evalReport.milk_production_analysis && (
               <SCard title="Milk Production Analysis" icon={
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                   <path d="M8 3h8l1 4H7L8 3z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
@@ -1025,7 +1150,7 @@ export default function ReportPage() {
                 )}
                 {/* Milk Production + Dry Matter Intake — 2 columns */}
                 <div className="grid grid-cols-2 gap-x-4">
-                  {recReport.solution_summary.milk_production && (() => {
+                  {reportCtx.showSolutionSummaryMilk && recReport.solution_summary.milk_production && (() => {
                     const parts = recReport.solution_summary.milk_production.split(" ");
                     return (
                       <div>

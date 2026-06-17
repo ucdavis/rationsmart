@@ -861,3 +861,214 @@ Option B as a fallback if the new field is absent.
 5. Restoring a simulation with milk_price = 12500 → form pre-fills,
    margin card renders correctly.
 
+---
+
+## 13. Y3 §2.2 — Forage : Concentrate ratio (as-fed)
+
+The report summary shows a Forage:Concentrate ratio tile on a fresh
+matter (as-fed) basis, just under the Milk Cost Margin card.
+
+### 13.1 Frontend status — shipped (client-side compute)
+
+The tile is implemented entirely client-side from existing response
+fields. No backend change required to ship the card.
+
+| Mode | Data source | Per-row fields used |
+|---|---|---|
+| Evaluation | `evalReport.feed_breakdown[]` | `feed_type`, `quantity_as_fed_kg_per_day` |
+| Recommendation | `recReport.least_cost_diet[]` | `feed_name`, `quantity_kg_per_day` + cross-ref against the store's `feedSelections` by name to recover `feed_type` |
+
+Classification rule:
+- `feed_type ∈ {"Forage", "Roughage"}` (case-insensitive) → Forage bucket
+- Everything else with a known `feed_type` → Concentrate
+- Unclassified (recommendation rows where cross-ref failed) → Other
+
+Hidden when total as-fed = 0 or no diet rows parse.
+
+### 13.2 Optional backend improvement — `least_cost_diet[].feed_type`
+
+The cross-reference in recommendation mode is fragile — if a feed
+name returned in `least_cost_diet[]` doesn't match exactly what the
+user saw in the Feed dropdown, the line falls into the "Other"
+bucket and the percentages drift.
+
+**Ask:** add `feed_type` (string) to each item in `least_cost_diet[]`
+on the diet-recommendation response. Same string the search /
+unique-feed-type endpoints already use (`"Forage"` /
+`"Concentrate"` / etc.).
+
+```python
+class LeastCostDietItem(BaseModel):
+    feed_name: str
+    quantity_kg_per_day: float
+    price_per_kg: float
+    daily_cost: float
+    currency: str
+    feed_type: str | None = None    # <- add this
+```
+
+When this lands, the frontend cross-ref is dead code (kept as a
+fallback for older response shapes). Card numbers become precise.
+
+### 13.3 Optional backend improvement — pre-computed ratio block
+
+Even cleaner: bundle the F:C math into the response so the frontend
+doesn't have to sum across feed lines at all. Lets backend tweak
+the rounding / fresh-vs-dry-matter basis without a frontend release.
+
+```python
+class ForageConcentrateRatio(BaseModel):
+    forage_kg_as_fed: float
+    concentrate_kg_as_fed: float
+    other_kg_as_fed: float       # rows the optimizer couldn't classify
+    forage_pct: float            # 0–100
+    concentrate_pct: float
+    other_pct: float
+    basis: Literal["as_fed", "dry_matter"]   # always "as_fed" for now
+```
+
+Add as an optional top-level field on the recommendation /
+evaluation response:
+
+```python
+forage_concentrate_ratio: ForageConcentrateRatio | None = None
+```
+
+Frontend prefers this when present; falls back to client-side
+compute when absent. Same UI either way.
+
+### 13.4 Acceptance
+
+1. Recommendation diet with 60% Forage + 40% Concentrate by as-fed
+   weight → tile reads "60 : 40", legend shows both kg/day values.
+2. All-concentrate diet (no forage actually selected; should not
+   happen post-Forage-gate but defensive) → "0 : 100".
+3. Empty `least_cost_diet[]` or `feed_breakdown[]` → tile hidden.
+4. Once the backend ships §13.3, frontend swaps to those numbers
+   without UI change.
+
+---
+
+## 14. Y3 §2.3 — State-aware report sections + `build_report_context`
+
+Different animal categories make different report sections relevant.
+Per the spec: add a helper that reads `An_StatePhys` and returns a
+context object listing which sections to render.
+
+### 14.1 The four states
+
+| `An_StatePhys` (display string) | Lactating? | Pregnancy-relevant? | Calf-feeding section? |
+|---|---|---|---|
+| `Lactating Cow` | yes | yes | no |
+| `Dry Cow` | no | yes | no |
+| `Heifer` | no | sometimes | no |
+| `Baby Calf/Heifer` | no | no | **yes** |
+
+### 14.2 `build_report_context` — backend helper (recommended)
+
+Compute the context once on the backend so the frontend doesn't need
+the rules duplicated. Add this on the recommendation /
+evaluation response:
+
+```python
+class ReportContext(BaseModel):
+    show_milk_production_section: bool       # eval Milk Production card
+    show_milk_cost_margin_card: bool         # /report §2.1 tile
+    show_solution_summary_milk: bool         # rec Solution Summary milk row
+    show_calf_milk_feeding_section: bool     # NEW — only for Baby Calf/Heifer
+    notes: list[str]                         # state-specific copy
+
+def build_report_context(an_state_phys: str) -> ReportContext:
+    s = an_state_phys.strip()
+    is_lactating = s == "Lactating Cow"
+    is_calf = s == "Baby Calf/Heifer"
+    return ReportContext(
+        show_milk_production_section=is_lactating,
+        show_milk_cost_margin_card=is_lactating,
+        show_solution_summary_milk=is_lactating,
+        show_calf_milk_feeding_section=is_calf,
+        notes=_notes_for(s),    # implementation choice
+    )
+```
+
+Then on the diet-recommendation + evaluate-diet responses:
+
+```python
+report_context: ReportContext | None = None
+```
+
+### 14.3 Calf milk-feeding section — content
+
+Only renders when `show_calf_milk_feeding_section = True`. Contains
+the milk / milk-replacer schedule for the calf, derived from age +
+body weight. Recommended schema:
+
+```python
+class CalfMilkFeedingPlan(BaseModel):
+    daily_milk_volume_l: float        # whole milk or replacer equiv
+    feedings_per_day: int             # typically 2
+    estimated_weaning_age_days: int   # typically 56–63
+    milk_solids_pct: float | None     # for replacer
+    notes: list[str]                  # warnings / vet recommendations
+
+calf_milk_feeding_plan: CalfMilkFeedingPlan | None = None
+```
+
+Default rule (when no other data available):
+- daily volume = 10% of body_weight (kg) → in litres (whole milk)
+- feedings_per_day = 2
+- weaning_age_days = 56
+
+Backend can refine this with breed / season / health context later.
+
+### 14.4 Frontend status — partial, client-side now
+
+Until `report_context` ships on the response, the frontend computes
+the same booleans locally from `cattleInfo.animal_category`:
+
+```ts
+function buildReportContext(category?: AnimalCategory) {
+  const isLactating = category === "Lactating Cow";
+  const isCalf = category === "Baby Calf/Heifer";
+  return {
+    showMilkProductionSection: isLactating,
+    showMilkCostMarginCard: isLactating,
+    showSolutionSummaryMilk: isLactating,
+    showCalfMilkFeedingSection: isCalf,
+  };
+}
+```
+
+When the backend ships §14.2, the helper switches to:
+
+```ts
+const ctx = reportData.report_context ?? buildReportContext(cattleInfo.animal_category);
+```
+
+### 14.5 Sections gated by the helper
+
+| Section | Gate | Currently |
+|---|---|---|
+| Milk Cost Margin (§2.1 card) | `showMilkCostMarginCard` | Already implicit — hidden when `milk_price == null` |
+| Eval-mode Milk Production Analysis | `showMilkProductionSection` | NEEDS gating |
+| Rec-mode Solution Summary "Milk Production" + "Daily Cost / litre milk" rows | `showSolutionSummaryMilk` | NEEDS gating |
+| Cattle Info: "Milk Production" label-value row | `showMilkProductionSection` | NEEDS gating |
+| Forage:Concentrate Ratio | none | Always shown |
+| Cost-Effective Diet table | none | Always shown |
+| Environmental Impact | none | Always shown |
+| **Calf Milk Feeding section** | `showCalfMilkFeedingSection` | NEW — placeholder until backend ships content |
+
+### 14.6 Acceptance
+
+1. `Lactating Cow` → milk sections + margin card visible; calf
+   section hidden.
+2. `Dry Cow` → milk sections + margin card hidden; calf section
+   hidden.
+3. `Heifer` → milk sections + margin card hidden; calf section
+   hidden.
+4. `Baby Calf/Heifer` → milk sections + margin card hidden; calf
+   milk-feeding section visible.
+5. Backend swaps to `report_context` on the response → frontend
+   picks it up automatically with no code change (helper has the
+   fallback wired).
+
