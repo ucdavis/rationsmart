@@ -532,6 +532,18 @@ export default function FeedRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.category_name, item.feed_type_name, user?.country_id, user?.id]);
 
+  // When the selected feed clears (because the user changed feed type or
+  // category, or the cascade above invalidated the stored feed_uuid), the
+  // inclusion-limits toggle and any stored Min/Max numbers must also reset.
+  // Otherwise the new feed inherits stale bounds from the previous one,
+  // and the toggle stays "on" against no feed at all.
+  useEffect(() => {
+    if (!item.feed_uuid && (item.inclusion_limits_enabled || item.min_kg_per_day != null || item.max_kg_per_day != null)) {
+      onUpdate(item.id, { inclusion_limits_enabled: false, min_kg_per_day: null, max_kg_per_day: null });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.feed_uuid]);
+
   const cost = showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
     ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
     : null;
@@ -758,29 +770,18 @@ export default function FeedRow({
       </div>
 
       {/* Y3 §1.1.2 — "Set inclusion limits" toggle + optional Min/Max inputs.
-          Disabled until a feed is actually selected (no point setting bounds
-          on an empty row). When toggle flips OFF we DO NOT clear the stored
-          min/max values — that way toggling back ON restores the user's
-          prior numbers (matches expected UX). The recommendDiet payload
-          omits bounds entirely whenever the toggle is off, so off-but-stored
-          values have zero backend effect. */}
+          Gated on feed_uuid: no point setting bounds when no feed is
+          picked. The reset effect above clears the toggle + min/max
+          whenever feed_uuid goes null (e.g. after a feed-type or
+          category change cascades feed_uuid → null). Only the toggle
+          switch itself is interactive — clicking the label or the row
+          area no longer flips the state (was unintentionally broad).
+          The recommendDiet payload omits bounds entirely whenever the
+          toggle is off. */}
       <div style={{ padding: "0 10px 14px" }}>
-        <button
-          type="button"
-          onClick={() => {
-            if (!item.feed_uuid) return;
-            onUpdate(item.id, { inclusion_limits_enabled: !item.inclusion_limits_enabled });
-          }}
-          disabled={!item.feed_uuid}
+        <div
           className="w-full flex items-center justify-between"
-          style={{
-            background: "none",
-            border: "none",
-            cursor: item.feed_uuid ? "pointer" : "not-allowed",
-            padding: "8px 4px",
-            opacity: item.feed_uuid ? 1 : 0.55,
-          }}
-          aria-expanded={item.inclusion_limits_enabled}
+          style={{ padding: "8px 4px", opacity: item.feed_uuid ? 1 : 0.55 }}
         >
           <span
             className="font-bold"
@@ -788,7 +789,11 @@ export default function FeedRow({
           >
             Set inclusion limits
           </span>
-          <span className="toggle-switch">
+          <label
+            className="toggle-switch"
+            onClick={(e) => e.stopPropagation()}
+            style={{ cursor: item.feed_uuid ? "pointer" : "not-allowed" }}
+          >
             <input
               type="checkbox"
               checked={item.inclusion_limits_enabled}
@@ -799,8 +804,8 @@ export default function FeedRow({
               disabled={!item.feed_uuid}
             />
             <span className="toggle-slider" />
-          </span>
-        </button>
+          </label>
+        </div>
 
         {item.inclusion_limits_enabled && (
           <div style={{ ...colGap, marginTop: 8 }}>
