@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import CustomSelect from "@/components/CustomSelect";
-import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS } from "@/lib/api";
-import type { FeedItem, DietLimits } from "@/lib/api";
+import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds } from "@/lib/api";
+import type { FeedItem, DietLimits, FeedSearchResult } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
 
 let idCounter = 0;
@@ -199,9 +199,78 @@ export default function FeedSelectionPage() {
   const [loadingCustomCats, setLoadingCustomCats] = useState(false);
   const [isSavingCustom, setIsSavingCustom] = useState(false);
 
-  // Search moved to per-FeedRow (see src/components/FeedRow.tsx).
-  // Page-level search state / effects / applySearchResult removed in
-  // the layout refactor — each FeedRow now owns its own search bar.
+  // Y3 §1.1.1 — single page-level search bar. The user taps a FeedRow
+  // card to mark it as the "search target" (activeRowId); typing a
+  // query + tapping a result then populates that card. If no card is
+  // explicitly active when the user picks a result, fall back to the
+  // first row without a feed_uuid (or row 1 if all are populated).
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FeedSearchResult[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeRowId, setActiveRowId] = useState<string | null>(null);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Debounced search — 250 ms after last keystroke.
+  useEffect(() => {
+    if (!searchQuery.trim() || !user?.id || !user?.country_id) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      searchFeeds(searchQuery.trim(), user.country_id, user.id)
+        .then((res) => { setSearchResults(res.data ?? []); })
+        .catch(() => setSearchResults([]))
+        .finally(() => setIsSearching(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery, user?.id, user?.country_id]);
+
+  // Close result dropdown on outside click.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [searchOpen]);
+
+  // Apply the picked result to the targeted row. Target priority:
+  //   1. The explicitly-tapped activeRowId, if any
+  //   2. The first row whose feed_uuid is still null (empty row)
+  //   3. Row 0 as the final fallback
+  const applySearchResult = (result: FeedSearchResult) => {
+    setItems((prev) => {
+      let idx = -1;
+      if (activeRowId) idx = prev.findIndex((r) => r.id === activeRowId);
+      if (idx === -1) idx = prev.findIndex((r) => !r.feed_uuid);
+      if (idx === -1) idx = 0;
+      const next = prev.map((row, i) =>
+        i === idx
+          ? {
+              ...row,
+              feed_type_name: result.feed_type,
+              category_name: result.feed_category,
+              sub_category_name: result.feed_name,
+              feed_uuid: result.feed_uuid,
+              sub_category_id: 1,
+              // FeedRow's cascade `useEffect`s will repopulate the *_id
+              // fields when the dropdown lists arrive — leaving them
+              // null here would clear them prematurely.
+            }
+          : row
+      );
+      setFeedSelections(next);
+      return next;
+    });
+    setSearchQuery("");
+    setSearchOpen(false);
+    setActiveRowId(null);
+  };
 
   const openCustomFeedModal = async () => {
     setCustomFeedForm(EMPTY_CUSTOM);
@@ -582,10 +651,90 @@ export default function FeedSelectionPage() {
         ))}
       </div>
 
-      {/* Search lives per-FeedRow now (Y3 §1.1.1, see FeedRow.tsx).
-          Previously a single global search bar lived here — removed
-          when we moved to per-row search so each card has its own
-          search context. */}
+      {/* Y3 §1.1.1 — single page-level search. Tapping any FeedRow
+          marks it as the search target (a "Search target" pill +
+          dark-green ring appear on the active card). Typing here +
+          picking a result populates that target. With no card
+          explicitly tapped, the first empty row is filled. */}
+      <div ref={searchContainerRef} className="px-3 pt-3" style={{ position: "relative" }}>
+        <div
+          className="flex items-center gap-2 rounded-2xl px-3 py-2.5"
+          style={{ backgroundColor: "#F1F5F9", border: `1.5px solid ${searchOpen ? "#064E3B" : "#DCE0E4"}`, transition: "border-color 0.15s" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="7" cy="7" r="5" stroke="#6D6D6D" strokeWidth="1.5" />
+            <path d="M11 11l3 3" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+            onFocus={() => searchQuery.trim() && setSearchOpen(true)}
+            placeholder={activeRowId ? "Search feeds (target highlighted below)" : "Tap a card, then search (e.g. corn, silage)"}
+            className="flex-1 border-none focus:outline-none"
+            style={{ backgroundColor: "transparent", color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+              aria-label="Clear search"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#6D6D6D", flexShrink: 0 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {searchOpen && searchQuery.trim() && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% - 2px)",
+              left: 12,
+              right: 12,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 10,
+              boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+              maxHeight: 320,
+              overflowY: "auto",
+              zIndex: 50,
+            }}
+          >
+            {isSearching ? (
+              <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                Searching…
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                No matches yet. (Search backend coming soon.)
+              </div>
+            ) : (
+              searchResults.map((r, i) => (
+                <button
+                  key={`${r.feed_uuid}_${i}`}
+                  type="button"
+                  onClick={() => applySearchResult(r)}
+                  className="w-full text-left"
+                  style={{
+                    background: i % 2 === 1 ? "#E4F7EF" : "#FFFFFF",
+                    border: "none",
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    display: "block",
+                    fontFamily: "Nunito, sans-serif",
+                  }}
+                >
+                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>{r.feed_name}</p>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>{r.feed_type} · {r.feed_category}</p>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Feed list */}
       <div className="flex-1 overflow-y-auto px-3 pt-2" style={{ paddingBottom: 100 }}>
@@ -598,6 +747,8 @@ export default function FeedSelectionPage() {
               showQuantity={isEvaluation}
               feedTypeLocked={index === 0 && !isEvaluation}
               currencySymbol={currencySymbol}
+              isActive={activeRowId === item.id}
+              onActivate={setActiveRowId}
               onUpdate={updateItem}
               onDelete={deleteItem}
             />

@@ -22,52 +22,60 @@ Both paths must coexist — search does NOT replace the cascade.
 
 ---
 
-## 2. New FeedRow layout
+## 2. Page layout — single search + tap-to-target
+
+There is **one search bar at the top of the Feed Selection screen**,
+not one per card. The user taps a FeedRow card to mark it as the
+"search target"; the next picked result populates that card. With no
+card explicitly tapped, the first row with no feed selected is filled
+as a fallback.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ FEED 1                                   ✎   🗑     │
-│ ┌─────────────────────────────────────────────────┐ │
-│ │ 🔍  Search feeds (e.g. corn, silage)            │ │   row 1: search
-│ └─────────────────────────────────────────────────┘ │
-│                                                     │
-│  Feed Type *                                        │   row 2: type as radio
-│  ( ● Forage )   ( ○ Concentrate )                   │   (full width, 2 options)
-│                                                     │
-│  Feed Category *           Feed *                   │   row 3: category + feed
-│  ┌──────────────┐         ┌──────────────┐         │   (50 / 50)
-│  │ Select   ⌄  │         │ Select  ⌄   │         │
-│  └──────────────┘         └──────────────┘         │
-│                                                     │
-│  Set inclusion limits                       ⚪     │   row 4: toggle
-│                                                     │
-│  ── shown ONLY when the toggle above is ON ──       │
-│  Min (kg/day)              Max (kg/day)             │   row 5: min + max
-│  ┌──────────────┐         ┌──────────────┐         │   (50 / 50, directly
-│  │ NA           │         │ No upper bnd │         │   under the toggle)
-│  └──────────────┘         └──────────────┘         │
-│  ───────────────────────────────────────────        │
-│                                                     │
-│  Price VND/KG *                                     │   row 6: price (last,
-│  ┌─────────────────────────────────────────────┐   │   full width)
-│  │                                             │   │
-│  └─────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  Custom Diet Limits        Custom Feed                  │
+│  ( ○ Diet Recommendation )    ( ○ Diet Evaluation )     │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐ │   page-level
+│  │ 🔍  Tap a card, then search (e.g. corn, silage)   │ │   search bar
+│  └───────────────────────────────────────────────────┘ │   (one only)
+│                                                         │
+│  ╔═══════════════════════════════════════════════════╗ │   ← active card
+│  ║ FEED 1   [Search target]                ✎         ║ │     (dark green
+│  ║                                                   ║ │      ring + pill)
+│  ║   Feed Type *                                     ║ │
+│  ║   ( ● Forage )   ( ○ Concentrate )                ║ │
+│  ║   Feed Category *      Feed *                     ║ │
+│  ║   [Select   ⌄  ]      [Select   ⌄  ]              ║ │
+│  ║   Set inclusion limits                       ⚪   ║ │
+│  ║   Price VND/KG *                                  ║ │
+│  ║   [                                            ]  ║ │
+│  ╚═══════════════════════════════════════════════════╝ │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐ │   ← idle card
+│  │ FEED 2                                  ✎   🗑    │ │     (just shadow,
+│  │   …                                               │ │      no ring)
+│  └───────────────────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────┘
 ```
 
-Row order top → bottom:
+FeedRow card row order:
 
-1. Search bar
-2. Feed Type — radio, full width (currently 2 options: Forage,
-   Concentrate)
-3. Feed Category + Feed — single row, 50/50
-4. Set inclusion limits — toggle
-5. Min + Max — 50/50, **directly below the toggle**, shown ONLY when
+1. Feed Type — radio buttons, full width (currently 2 options:
+   Forage, Concentrate). Falls back to dropdown if backend ever
+   returns 3+ types.
+2. Feed Category + Feed — single row, 50/50 dropdowns
+3. Set inclusion limits — toggle
+4. Min + Max — 50/50, **directly below the toggle**, shown ONLY when
    the toggle is ON
-6. Price — full width, always last
+5. Price — full width, last
+6. Quantity + Cost — eval mode only, 50/50 below price
 
-If the backend ever adds a 3rd feed type, the radio flips back to a
-dropdown.
+Visual cues for the active card:
+
+- 2-px dark-green outer ring + soft drop shadow
+- "Search target" pill in the header, next to "FEED N"
+- Search bar placeholder switches from "Tap a card, then search…"
+  to "Search feeds (target highlighted below)"
 
 ---
 
@@ -85,8 +93,9 @@ dropdown.
 
 ### B. Search-first (new)
 
-1. Tap FEED 1
-2. Type "corn" in search bar
+1. Tap FEED 2 — card lights up with a dark-green ring + "Search
+   target" pill. `activeRowId` is now `"feed_2_…"`.
+2. Type "corn" in the page-level search bar at the top
 3. After 250 ms debounce: PWA calls
    `GET /v1/animal/search-feeds?query=corn&country_id=&limit=20`
 4. Results appear below the search bar:
@@ -98,35 +107,60 @@ dropdown.
    Concentrate · CEREAL/CEREAL BY-PRODUCT
    ```
 5. Tap "Whole corn silage, Dry Season"
-6. PWA writes all four values in one state update:
+6. PWA writes all four values into the **active** row (FEED 2):
    ```ts
-   onUpdate(item.id, {
+   // target priority:
+   //   1. activeRowId if set
+   //   2. first row with no feed_uuid (fallback for "no card tapped")
+   //   3. row 0 (last resort)
+   onUpdate(activeRowId, {
      feed_type_name: "Forage",
      category_name: "MAIZE FORAGE",
      sub_category_name: "Whole corn silage, Dry Season",
      feed_uuid: "abc-...",
    });
    ```
-7. Existing cascade effects re-run automatically:
+7. Existing cascade effects on that row re-run automatically:
    - Categories effect → fetches full category list for Forage
    - Sub-categories effect → fetches full feed list for (Forage,
      MAIZE FORAGE)
-8. Result: all dropdowns + radio reflect the picked feed. Opening
-   any dropdown still shows ALL valid options — the picked value is
-   just one of many.
+8. `activeRowId` is cleared (search task complete). FEED 2 loses
+   the green ring; the search bar's placeholder reverts to "Tap a
+   card, then search…".
+9. Result: FEED 2's dropdowns + radio reflect the picked feed.
+   Opening any dropdown shows ALL valid options — the picked value
+   is just one of many.
 
-### C. Mixed — cascade started, refined with search
+### C. Mixed — cascade started on one card, refined with search
 
-1. Pick Feed Type = "Concentrate" via radio
-2. Type "corn" in search bar — search is unscoped by default,
-   returns matches from any type
-3. If the picked feed belongs to a different type, the radio +
-   dropdowns switch to match the picked feed (overwriting the earlier
-   choice)
+1. On FEED 2: pick Feed Type = "Concentrate" via radio. Category
+   dropdown populates.
+2. Without tapping any specific card, type "corn" in the search
+   bar.
+3. Search returns matches; tap "Whole corn silage" (a Forage).
+4. With no `activeRowId` set, the fallback rule kicks in: populate
+   the first row whose `feed_uuid` is null. If FEED 1 is still
+   empty, the result lands there — leaving FEED 2's manually-picked
+   Concentrate type intact.
+5. If FEED 1 already has a feed, FEED 2 gets overwritten (its
+   manually-picked Concentrate flips to Forage to match the search
+   result).
 
 If scoped search is needed later ("only show results in the currently-
 picked type"), add a `feed_type` query param to
 `/v1/animal/search-feeds`. Default is unscoped.
+
+### G. No card tapped before searching
+
+1. The Generic case — user types in the search bar without first
+   tapping any card.
+2. Search bar placeholder reads "Tap a card, then search…" as a
+   hint that targeting is recommended.
+3. Picking a result still works: with no `activeRowId`, the first
+   row without a feed_uuid is filled. If every row is already
+   populated, row 1 is overwritten.
+4. This deliberately avoids "search does nothing" — there's always
+   a sensible target.
 
 ### D. Clear the search
 
@@ -219,14 +253,19 @@ the endpoint. Backend tasks:
 
 | Item | Status |
 |---|---|
-| Search bar UI on FeedRow | Shipped (stub) |
+| Single page-level search bar (top of /feed-selection) | Shipped (stub) |
+| Tap-card-to-mark-as-target | Shipped |
+| `activeRowId` state + visual highlight (ring + pill) | Shipped |
+| Search bar placeholder switches with target state | Shipped |
 | 250 ms debounce | Shipped |
-| Result dropdown with type+category subtitle | Shipped |
+| Result dropdown with `type · category` subtitle | Shipped |
 | Click-result → populate all 4 row fields in one update | Shipped |
+| Target priority (activeRowId → first empty → row 0) | Shipped |
 | Cascade refreshes dropdowns after search-pick | Shipped |
 | Defensive response parser (4 shape variants) | Shipped |
 | Race protection for rapid type changes | Shipped |
-| New FeedRow layout (radio, 50/50, toggle, min/max under toggle, price last) | Pending — separate commit |
+| New FeedRow layout (radio, 50/50, toggle, min/max under toggle, price last) | Shipped |
+| Forage-required gate before Generate | Shipped |
 | Real backend call | Blocked on backend |
 
 One-line swap in `src/lib/api.ts` `searchFeeds()` body when the
@@ -236,6 +275,32 @@ endpoint is live.
 
 ## 8. Acceptance criteria
 
+1. Pure cascade — works as before, no regressions
+2. Tap a card → it shows a dark-green ring + "Search target" pill;
+   `activeRowId` is set
+3. Tap a different card → ring + pill move to the new card
+4. Search-and-pick **with** a card active → that specific card is
+   populated
+5. Search-and-pick with **no** card active → first row with empty
+   feed is populated (fallback)
+6. After search-pick, the active card's ring disappears
+   (activeRowId clears)
+7. After search-pick, open Category dropdown → shows ALL
+   categories for picked type, with picked one highlighted
+8. After search-pick, open Feed dropdown → shows ALL feeds in
+   (type, category), with picked one highlighted
+9. Change Category after search → Feed refreshes, picked feed
+   cleared if not in new combo
+10. Search across types → picking either type's feed populates
+    radio + dropdowns correctly on the targeted card
+11. Clear search (X button) → picked feed stays in place
+12. No-match query → empty state, no errors
+13. Network error → snackbar, dropdowns unaffected
+14. Rapid type changes → no stale data in dropdowns (race-protected)
+
+<!-- Legacy numbered list left in place for git-diff readability — the
+     authoritative list is the 14 points above. -->
+<!--
 1. Pure cascade — works as before
 2. Search-only — type "corn", pick result, all 4 fields populated
 3. After search-pick, open Category dropdown — shows ALL categories
@@ -250,6 +315,7 @@ endpoint is live.
 8. No-match query — empty state, no errors
 9. Network error — snackbar, dropdowns unaffected
 10. Rapid type changes — no stale data in dropdowns (race-protected)
+-->
 
 ---
 
