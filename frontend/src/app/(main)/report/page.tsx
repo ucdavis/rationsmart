@@ -576,20 +576,36 @@ export default function ReportPage() {
             (see docs/Search_Implmentation.md §12.5). */}
         {(() => {
           if (!reportCtx.showMilkCostMarginCard) return null;
-          const milkPrice = cattleInfo?.milk_price ?? null;
-          const milkProduction = cattleInfo?.milk_production ?? null;
+          // Prefer the backend-computed MilkCostMargin block when Maria
+          // ships it (see docs/Search_Implmentation.md §12.5 Option A).
+          // Falls through to the client-side compute when the block is
+          // absent. Either path produces the same UI.
+          const serverMargin = (reportData as {
+            milk_cost_margin?: {
+              milk_price_per_litre?: number | null;
+              cost_per_litre?: number | null;
+              margin_per_litre?: number | null;
+              total_diet_cost_as_fed?: number | null;
+              daily_milk_production_l?: number | null;
+              currency?: string | null;
+            };
+          } | null)?.milk_cost_margin;
+          const milkPrice = serverMargin?.milk_price_per_litre ?? cattleInfo?.milk_price ?? null;
+          const milkProduction = serverMargin?.daily_milk_production_l ?? cattleInfo?.milk_production ?? null;
           if (milkPrice == null || !milkProduction) return null;
           // Pick the right daily cost source per mode. Evaluation uses
           // cost_analysis.total_diet_cost_as_fed; Recommendation uses
           // top-level total_diet_cost (which equals solution_summary's
           // daily_cost when present, but is the more reliable source
           // since some payloads omit solution_summary).
-          const dailyCost = isEval
-            ? evalReport?.cost_analysis?.total_diet_cost_as_fed ?? null
-            : recReport?.total_diet_cost ?? recReport?.solution_summary?.daily_cost ?? null;
+          const dailyCost =
+            serverMargin?.total_diet_cost_as_fed ??
+            (isEval
+              ? evalReport?.cost_analysis?.total_diet_cost_as_fed ?? null
+              : recReport?.total_diet_cost ?? recReport?.solution_summary?.daily_cost ?? null);
           if (dailyCost == null || dailyCost <= 0) return null;
-          const costPerLitre = dailyCost / milkProduction;
-          const margin = milkPrice - costPerLitre;
+          const costPerLitre = serverMargin?.cost_per_litre ?? dailyCost / milkProduction;
+          const margin = serverMargin?.margin_per_litre ?? milkPrice - costPerLitre;
           const isPositive = margin >= 0;
           // Color tokens chosen to match existing report banners
           // (dark_green_turquoise / carmine_pink theme).
@@ -772,50 +788,74 @@ export default function ReportPage() {
             so an evaluator that returned an empty breakdown doesn't
             leave an empty card on the page. */}
         {(() => {
-          // Build a uniform [{ feed_type, as_fed_kg }] list from
-          // whichever response branch is active.
-          let lines: { feed_type: string; as_fed: number }[] = [];
-          if (isEval && evalReport?.feed_breakdown) {
-            lines = evalReport.feed_breakdown
-              .map((b) => ({
-                feed_type: (b.feed_type ?? "").trim(),
-                as_fed: Number(b.quantity_as_fed_kg_per_day ?? 0),
-              }))
-              .filter((l) => l.as_fed > 0);
-          } else if (!isEval && recReport?.least_cost_diet) {
-            // Cross-ref by feed_name — case + whitespace tolerant.
-            const typeByName = new Map<string, string>();
-            for (const sel of feedSelections) {
-              if (sel.sub_category_name && sel.feed_type_name) {
-                typeByName.set(sel.sub_category_name.trim().toLowerCase(), sel.feed_type_name);
-              }
-            }
-            lines = recReport.least_cost_diet
-              .map((r) => ({
-                feed_type: typeByName.get((r.feed_name ?? "").trim().toLowerCase()) ?? "",
-                as_fed: Number(r.quantity_kg_per_day ?? 0),
-              }))
-              .filter((l) => l.as_fed > 0);
-          }
-          if (lines.length === 0) return null;
-          // Forage / Roughage → forage bucket; everything else → concentrate.
-          // Lines we can't classify (empty feed_type) fall into "other";
-          // we still count them in the total so percentages add to 100,
-          // but expose them as a tiny grey segment with its own label.
+          // Prefer the backend-computed ForageConcentrateRatio block
+          // when Maria ships it (see docs/Search_Implmentation.md §13.3).
+          // Falls through to client-side compute when absent. Same UI.
+          const serverRatio = (reportData as {
+            forage_concentrate_ratio?: {
+              forage_kg_as_fed?: number | null;
+              concentrate_kg_as_fed?: number | null;
+              other_kg_as_fed?: number | null;
+              forage_pct?: number | null;
+              concentrate_pct?: number | null;
+              other_pct?: number | null;
+              basis?: string | null;
+            };
+          } | null)?.forage_concentrate_ratio;
           let forageKg = 0;
           let concKg = 0;
           let otherKg = 0;
-          for (const l of lines) {
-            const t = l.feed_type.toLowerCase();
-            if (t === "forage" || t === "roughage") forageKg += l.as_fed;
-            else if (t === "" ) otherKg += l.as_fed;
-            else concKg += l.as_fed;
+          if (serverRatio) {
+            forageKg = Number(serverRatio.forage_kg_as_fed ?? 0);
+            concKg = Number(serverRatio.concentrate_kg_as_fed ?? 0);
+            otherKg = Number(serverRatio.other_kg_as_fed ?? 0);
+          } else {
+            // Build a uniform [{ feed_type, as_fed_kg }] list from
+            // whichever response branch is active.
+            let lines: { feed_type: string; as_fed: number }[] = [];
+            if (isEval && evalReport?.feed_breakdown) {
+              lines = evalReport.feed_breakdown
+                .map((b) => ({
+                  feed_type: (b.feed_type ?? "").trim(),
+                  as_fed: Number(b.quantity_as_fed_kg_per_day ?? 0),
+                }))
+                .filter((l) => l.as_fed > 0);
+            } else if (!isEval && recReport?.least_cost_diet) {
+              // Cross-ref by feed_name — case + whitespace tolerant.
+              // Prefer per-row feed_type when backend ships it (Y3 §13.2);
+              // fall back to the store lookup for older responses.
+              const typeByName = new Map<string, string>();
+              for (const sel of feedSelections) {
+                if (sel.sub_category_name && sel.feed_type_name) {
+                  typeByName.set(sel.sub_category_name.trim().toLowerCase(), sel.feed_type_name);
+                }
+              }
+              lines = recReport.least_cost_diet
+                .map((r) => ({
+                  feed_type:
+                    (r as CostEffectiveDiet & { feed_type?: string }).feed_type?.trim() ||
+                    typeByName.get((r.feed_name ?? "").trim().toLowerCase()) || "",
+                  as_fed: Number(r.quantity_kg_per_day ?? 0),
+                }))
+                .filter((l) => l.as_fed > 0);
+            }
+            if (lines.length === 0) return null;
+            // Forage / Roughage → forage bucket; everything else → concentrate.
+            // Lines we can't classify (empty feed_type) fall into "other";
+            // we still count them in the total so percentages add to 100,
+            // but expose them as a tiny grey segment with its own label.
+            for (const l of lines) {
+              const t = l.feed_type.toLowerCase();
+              if (t === "forage" || t === "roughage") forageKg += l.as_fed;
+              else if (t === "" ) otherKg += l.as_fed;
+              else concKg += l.as_fed;
+            }
           }
           const total = forageKg + concKg + otherKg;
           if (total <= 0) return null;
-          const fPct = (forageKg / total) * 100;
-          const cPct = (concKg / total) * 100;
-          const oPct = (otherKg / total) * 100;
+          const fPct = serverRatio?.forage_pct ?? (forageKg / total) * 100;
+          const cPct = serverRatio?.concentrate_pct ?? (concKg / total) * 100;
+          const oPct = serverRatio?.other_pct ?? (otherKg / total) * 100;
           // Color tokens — go_green family for Forage, vivid_gamboge
           // amber for Concentrate (matches the Diet Status badge palette
           // used elsewhere on the page).
