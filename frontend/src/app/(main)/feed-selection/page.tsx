@@ -698,7 +698,10 @@ export default function FeedSelectionPage() {
               }}
               aria-label="Scroll to selected card"
             >
-              ↓ JUMP TO CARD
+              {(() => {
+                const idx = items.findIndex((it) => it.id === activeRowId);
+                return idx >= 0 ? `↓ Jump to Feed ${idx + 1}` : "↓ Jump to card";
+              })()}
             </button>
           )}
         </div>
@@ -734,7 +737,7 @@ export default function FeedSelectionPage() {
             </svg>
           </div>
           <input
-            type="search"
+            type="text"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
             onFocus={() => searchQuery.trim() && setSearchOpen(true)}
