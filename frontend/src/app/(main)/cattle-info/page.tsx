@@ -234,13 +234,8 @@ export default function CattleInfoPage() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [loadingSimId, setLoadingSimId] = useState<string | null>(null);
-  // §1.2 Grazing info tooltip — supports both hover (desktop) and tap
-  // (mobile). `pinned` keeps it open after a click until clicked again;
-  // `hovered` shows it transiently on mouse-enter and hides on leave.
-  // The tooltip renders when either is true.
-  const [grazingTooltipPinned, setGrazingTooltipPinned] = useState(false);
-  const [grazingTooltipHovered, setGrazingTooltipHovered] = useState(false);
-  const showGrazingTooltip = grazingTooltipPinned || grazingTooltipHovered;
+  // §1.2 Grazing info tooltip — tap-only (mobile-first). Click toggles.
+  const [showGrazingTooltip, setShowGrazingTooltip] = useState(false);
 
   useEffect(() => {
     getCountries()
@@ -847,11 +842,7 @@ export default function CattleInfoPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setGrazingTooltipPinned((p) => !p)}
-                  onMouseEnter={() => setGrazingTooltipHovered(true)}
-                  onMouseLeave={() => setGrazingTooltipHovered(false)}
-                  onFocus={() => setGrazingTooltipHovered(true)}
-                  onBlur={() => setGrazingTooltipHovered(false)}
+                  onClick={() => setShowGrazingTooltip((p) => !p)}
                   aria-label="What does Active Grazing do?"
                   aria-expanded={showGrazingTooltip}
                   style={{
@@ -898,8 +889,6 @@ export default function CattleInfoPage() {
             {showGrazingTooltip && (
               <div
                 role="tooltip"
-                onMouseEnter={() => setGrazingTooltipHovered(true)}
-                onMouseLeave={() => setGrazingTooltipHovered(false)}
                 className="mt-2 px-4 py-3 flex gap-2.5"
                 style={{
                   backgroundColor: "#FFFFFF",
@@ -931,7 +920,7 @@ export default function CattleInfoPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => { setGrazingTooltipPinned(false); setGrazingTooltipHovered(false); }}
+                  onClick={() => setShowGrazingTooltip(false)}
                   aria-label="Close tooltip"
                   style={{
                     flexShrink: 0,
