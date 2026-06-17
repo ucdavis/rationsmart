@@ -724,23 +724,83 @@ export const updateCustomFeed = (body: {
 // GET /v1/feed-classification/structure (JWT-protected)
 export const getFeedClassification = () => api.get("/v1/feed-classification/structure");
 
-// Y3 §1.1.1 — feed search. Backend endpoint not yet live.
-// TODO(maria-y3): swap to real `api.get("/v1/animal/search-feeds", { params })`
-// once Maria ships the endpoint. Spec v4.0.0 does NOT include it yet.
-// Until then this stub returns [] so the search-bar UI compiles and renders
-// an empty results list.
+// Y3 §1.1.1 — feed search. Live backend endpoint per
+// docs/Search_Implmentation.md §9.1:
+//   GET /v1/animal/search-feeds?query=...&country_id=...&limit=20
+// JWT comes from the axios interceptor; no user_id query param.
+// Response is defensively parsed so the UI keeps working if the
+// backend shape drifts (per §6 of the spec, three wrappers accepted).
 export interface FeedSearchResult {
   feed_uuid: string;
   feed_name: string;
   feed_type: string;
   feed_category: string;
+  is_custom?: boolean;
 }
+
+// Internal shape — what a single row looks like before we normalize it.
+type RawFeed = {
+  feed_uuid?: string;
+  feed_id?: string;
+  id?: string;
+  feed_name?: string;
+  name?: string;
+  feed_type?: string;
+  type_name?: string;
+  feed_category?: string;
+  category_name?: string;
+  is_custom?: boolean;
+};
+
+function normalizeRow(r: RawFeed): FeedSearchResult | null {
+  const feed_uuid = r.feed_uuid ?? r.feed_id ?? r.id;
+  const feed_name = r.feed_name ?? r.name;
+  const feed_type = r.feed_type ?? r.type_name ?? "";
+  const feed_category = r.feed_category ?? r.category_name ?? "";
+  if (!feed_uuid || !feed_name) return null;
+  return {
+    feed_uuid,
+    feed_name,
+    feed_type,
+    feed_category,
+    is_custom: r.is_custom,
+  };
+}
+
 export const searchFeeds = async (
-  _query: string,
-  _country_id: string,
+  query: string,
+  country_id: string,
   _user_id: string
 ): Promise<{ data: FeedSearchResult[] }> => {
-  return Promise.resolve({ data: [] });
+  if (!query.trim() || !country_id) return { data: [] };
+  try {
+    const res = await api.get("/v1/animal/search-feeds", {
+      params: { query: query.trim(), country_id, limit: 20 },
+    });
+    const body = res.data as unknown;
+
+    // Accepted shapes (preferred → fallback):
+    //   { feeds: [...], total_count: N }
+    //   [...] bare array
+    //   { results: [...] }
+    //   { standard_feeds: [...], custom_feeds: [...] }  — concatenate
+    let raw: RawFeed[] = [];
+    if (Array.isArray(body)) {
+      raw = body as RawFeed[];
+    } else if (body && typeof body === "object") {
+      const o = body as { feeds?: RawFeed[]; results?: RawFeed[]; standard_feeds?: RawFeed[]; custom_feeds?: RawFeed[] };
+      if (Array.isArray(o.feeds)) raw = o.feeds;
+      else if (Array.isArray(o.results)) raw = o.results;
+      else if (Array.isArray(o.standard_feeds) || Array.isArray(o.custom_feeds)) {
+        raw = [...(o.standard_feeds ?? []), ...(o.custom_feeds ?? []).map((f) => ({ ...f, is_custom: true }))];
+      }
+    }
+    const normalized = raw.map(normalizeRow).filter((r): r is FeedSearchResult => r !== null);
+    return { data: normalized };
+  } catch (err) {
+    console.warn("[searchFeeds] request failed", err);
+    return { data: [] };
+  }
 };
 
 export default api;
