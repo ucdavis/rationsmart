@@ -97,11 +97,13 @@ function FieldBox({
   label,
   hasValue,
   disabled,
+  optional,
   children,
 }: {
   label: string;
   hasValue: boolean;
   disabled?: boolean;
+  optional?: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -134,7 +136,7 @@ function FieldBox({
         }}
       >
         {label}
-        <span style={{ color: "#FC2E20" }}>{" *"}</span>
+        {!optional && <span style={{ color: "#FC2E20" }}>{" *"}</span>}
       </span>
       {children}
     </div>
@@ -813,6 +815,7 @@ export default function FeedRow({
               label="Min (kg/day)"
               hasValue={item.min_kg_per_day != null}
               disabled={false}
+              optional
             >
               <input
                 type="number"
@@ -831,6 +834,7 @@ export default function FeedRow({
               label="Max (kg/day)"
               hasValue={item.max_kg_per_day != null}
               disabled={false}
+              optional
             >
               <input
                 type="number"

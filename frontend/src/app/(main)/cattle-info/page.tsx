@@ -234,8 +234,13 @@ export default function CattleInfoPage() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [loadingSimId, setLoadingSimId] = useState<string | null>(null);
-  // §1.2 Grazing info tooltip — tap-driven popover, no hover (mobile-first)
-  const [showGrazingTooltip, setShowGrazingTooltip] = useState(false);
+  // §1.2 Grazing info tooltip — supports both hover (desktop) and tap
+  // (mobile). `pinned` keeps it open after a click until clicked again;
+  // `hovered` shows it transiently on mouse-enter and hides on leave.
+  // The tooltip renders when either is true.
+  const [grazingTooltipPinned, setGrazingTooltipPinned] = useState(false);
+  const [grazingTooltipHovered, setGrazingTooltipHovered] = useState(false);
+  const showGrazingTooltip = grazingTooltipPinned || grazingTooltipHovered;
 
   useEffect(() => {
     getCountries()
@@ -842,30 +847,29 @@ export default function CattleInfoPage() {
                 </span>
                 <button
                   type="button"
-                  onClick={() => setShowGrazingTooltip((p) => !p)}
+                  onClick={() => setGrazingTooltipPinned((p) => !p)}
+                  onMouseEnter={() => setGrazingTooltipHovered(true)}
+                  onMouseLeave={() => setGrazingTooltipHovered(false)}
+                  onFocus={() => setGrazingTooltipHovered(true)}
+                  onBlur={() => setGrazingTooltipHovered(false)}
                   aria-label="What does Active Grazing do?"
                   aria-expanded={showGrazingTooltip}
                   style={{
-                    width: 20,
-                    height: 20,
-                    borderRadius: "50%",
-                    backgroundColor: showGrazingTooltip ? "#064E3B" : "rgba(5,188,109,0.15)",
-                    color: showGrazingTooltip ? "#FFFFFF" : "#064E3B",
+                    background: "none",
                     border: "none",
+                    padding: 0,
                     cursor: "pointer",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontFamily: "Nunito, sans-serif",
-                    fontSize: 13,
-                    fontWeight: 700,
-                    fontStyle: "italic",
-                    lineHeight: 1,
-                    padding: 0,
                     flexShrink: 0,
                   }}
                 >
-                  i
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <circle cx="12" cy="12" r="10" fill={showGrazingTooltip ? "#064E3B" : "#1CA069"} />
+                    <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
+                    <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
+                  </svg>
                 </button>
               </div>
               <label className="toggle-switch">
@@ -894,6 +898,8 @@ export default function CattleInfoPage() {
             {showGrazingTooltip && (
               <div
                 role="tooltip"
+                onMouseEnter={() => setGrazingTooltipHovered(true)}
+                onMouseLeave={() => setGrazingTooltipHovered(false)}
                 className="mt-2 px-4 py-3 flex gap-2.5"
                 style={{
                   backgroundColor: "#FFFFFF",
@@ -902,27 +908,18 @@ export default function CattleInfoPage() {
                   boxShadow: "0 4px 14px rgba(6,78,59,0.10)",
                 }}
               >
-                <span
-                  style={{
-                    flexShrink: 0,
-                    width: 18,
-                    height: 18,
-                    borderRadius: "50%",
-                    backgroundColor: "#064E3B",
-                    color: "#FFFFFF",
-                    fontFamily: "Nunito, sans-serif",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    fontStyle: "italic",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    marginTop: 2,
-                  }}
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  style={{ flexShrink: 0, marginTop: 2 }}
                   aria-hidden
                 >
-                  i
-                </span>
+                  <circle cx="12" cy="12" r="10" fill="#064E3B" />
+                  <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
+                  <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
+                </svg>
                 <p
                   className="text-sm"
                   style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", lineHeight: 1.5, margin: 0 }}
@@ -934,7 +931,7 @@ export default function CattleInfoPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => setShowGrazingTooltip(false)}
+                  onClick={() => { setGrazingTooltipPinned(false); setGrazingTooltipHovered(false); }}
                   aria-label="Close tooltip"
                   style={{
                     flexShrink: 0,
