@@ -686,15 +686,19 @@ export default function FeedSelectionPage() {
               }}
               style={{
                 fontFamily: "Nunito, sans-serif",
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 800,
                 color: "#064E3B",
                 backgroundColor: "#E4F7EF",
-                padding: "3px 10px",
+                padding: "7px 14px",
                 borderRadius: 60,
-                letterSpacing: 0.3,
-                border: "none",
+                letterSpacing: 0.2,
+                border: "1.5px solid #1CA069",
                 cursor: "pointer",
+                minHeight: 32,
+                display: "inline-flex",
+                alignItems: "center",
+                boxShadow: "0 2px 6px rgba(28,160,105,0.18)",
               }}
               aria-label="Scroll to selected card"
             >
