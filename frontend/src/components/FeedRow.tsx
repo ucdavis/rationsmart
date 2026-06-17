@@ -465,7 +465,7 @@ export default function FeedRow({
         setCategories(newCats);
         const matched = newCats.find((c) => c.name === item.category_name);
         if (!matched) {
-          onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
+          onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null, feed_code: null });
           setSubCategories([]);
         } else if (matched.id !== item.category_id) {
           onUpdate(item.id, { category_id: matched.id });
@@ -537,13 +537,19 @@ export default function FeedRow({
         } else if (
           match.feed_uuid !== item.feed_uuid ||
           match.feed_name !== item.sub_category_name ||
-          match.feed_code !== item.feed_code
+          // Only consider a feed_code DIFFERENCE worth updating when the
+          // cascade actually returned one. Otherwise the search-pick's
+          // valid code would get nulled out by a cascade refresh from
+          // an endpoint that hasn't shipped fd_code yet.
+          (match.feed_code != null && match.feed_code !== item.feed_code)
         ) {
           onUpdate(item.id, {
             sub_category_id: 1,
             sub_category_name: match.feed_name,
             feed_uuid: match.feed_uuid,
-            feed_code: match.feed_code,
+            // Preserve the existing feed_code when cascade has none.
+            // Search-pick's code stays alive across re-renders.
+            ...(match.feed_code != null && { feed_code: match.feed_code }),
           });
         }
       })
