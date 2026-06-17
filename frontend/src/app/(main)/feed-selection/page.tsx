@@ -670,7 +670,7 @@ export default function FeedSelectionPage() {
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
             onFocus={() => searchQuery.trim() && setSearchOpen(true)}
-            placeholder={activeRowId ? "Search feeds (target highlighted below)" : "Tap a card, then search (e.g. corn, silage)"}
+            placeholder={activeRowId ? "Search feeds (filling selected card)" : "Search feeds (e.g. corn, silage)"}
             className="flex-1 border-none focus:outline-none"
             style={{ backgroundColor: "transparent", color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
           />
@@ -686,6 +686,24 @@ export default function FeedSelectionPage() {
               </svg>
             </button>
           )}
+        </div>
+
+        {/* Tap-to-target hint — always visible under the search bar so
+            the user discovers the interaction. Flips to a confirmation
+            line once a card is selected. */}
+        <div
+          className="flex items-center gap-1.5 mt-2 ml-1"
+          style={{ fontFamily: "Nunito, sans-serif", fontSize: 12, color: activeRowId ? "#064E3B" : "#6D6D6D" }}
+        >
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+            <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          </svg>
+          <span>
+            {activeRowId
+              ? "Selected card will receive the next search result"
+              : "Tip — tap a feed card below to choose where the result will go"}
+          </span>
         </div>
 
         {searchOpen && searchQuery.trim() && (

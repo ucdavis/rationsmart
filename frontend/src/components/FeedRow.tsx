@@ -571,7 +571,7 @@ export default function FeedRow({
                 letterSpacing: 0.2,
               }}
             >
-              Search target
+              Selected
             </span>
           )}
         </div>
@@ -631,8 +631,10 @@ export default function FeedRow({
       {/* Row 2 — Feed Type as RADIO BUTTONS (full width). The backend
           currently returns only two types (Forage, Concentrate); radio
           is more discoverable than a dropdown for that. If a third type
-          ever ships, fall back to CustomSelect. */}
-      <div style={{ padding: "0 10px 10px" }}>
+          ever ships, fall back to CustomSelect. Padding-bottom is
+          bumped from 10px → 18px to give the next row (Feed Category +
+          Feed) breathing room (user feedback). */}
+      <div style={{ padding: "0 10px 18px" }}>
         <p
           className="text-xs font-bold uppercase mb-2 ml-1"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
