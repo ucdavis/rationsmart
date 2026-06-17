@@ -674,3 +674,190 @@ that slot, backend resolves whichever form it receives.
 - **Both null** (shouldn't happen) → the row fails the
   `!!item.feed_uuid` gate and never reaches the payload.
 
+---
+
+## 12. Y3 §1.3 — Milk Price input + cost-per-litre
+
+Add a "Milk Price" input on the Animal Inputs (Milk Production)
+section. The value drives a cost-per-litre figure on the report.
+Per-card UI change is shipped; the request schema and the report
+response both need backend work.
+
+### 12.1 Frontend status
+
+| Item | Status | Reference |
+|---|---|---|
+| "Milk Price ({currency}/L)" input under Milk Protein / Milk Fat | Shipped | `src/app/(main)/cattle-info/page.tsx:801-814` |
+| Hidden when animal category is non-lactating (whole section hides) | Shipped | `showMilkSection` derived from `animal_category` |
+| Optional — blank converts to null | Shipped | `cattle-info/page.tsx:585` |
+| Currency suffix label from `user.currency` (no Intl) | Shipped | line 803 |
+| Hydrates on edit + simulation history restore | Shipped | lines 220, 294 |
+| Sent in `toCattleInfoPayload()` as `cattle_info.milk_price` (number \| null) | Shipped | `api.ts:107, 145` |
+
+### 12.2 Backend — what the swagger shows today
+
+`CattleInfo` schema at the live `<DEV_BACKEND_IP>:8000/openapi.json` has:
+
+```
+body_weight, breed, lactating, milk_production, days_in_milk,
+parity, days_of_pregnancy, tp_milk, fat_milk, temperature,
+topography, distance, grazing, calving_interval, bw_gain, bc_score
+```
+
+**No `milk_price` field present.** Also no `animal_category`
+(separate Y3 §1.4 ask). The frontend is already sending the field
+on every payload, but it gets dropped by FastAPI's `model_extra =
+ignore` (or rejected if `extra = forbid`).
+
+### 12.3 Backend changes needed
+
+#### 12.3.1 `CattleInfo` schema — add `milk_price`
+
+```python
+class CattleInfo(BaseModel):
+    # ... existing fields ...
+    milk_price: float | None = Field(
+        default=None,
+        ge=0,
+        description="Price per litre of milk in local currency. "
+                    "Optional — null when farmer hasn't set one. "
+                    "Used by /v1/animal/diet-recommendation and "
+                    "/v1/animal/evaluate-diet to compute the "
+                    "milk-cost margin on the report."
+    )
+```
+
+Notes for Maria:
+- **Optional + nullable.** Blank input on the frontend → `null` in
+  the JSON. Backend should not 422 when the field is missing.
+- **Unit:** per **litre**, not per kg. The frontend label is
+  `"Milk Price (VND/L)"` etc. Confirm before the rename — if you
+  prefer per-kg, frontend can change the label in one edit.
+- **No persistence migration needed** if you don't want to store it
+  on the simulation. But see §12.3.3 — restore should round-trip
+  the value when present.
+
+#### 12.3.2 Final field name — please confirm
+
+Frontend currently uses `milk_price` (matches Android convention).
+If you prefer:
+
+| Candidate | Note |
+|---|---|
+| `milk_price` (recommended) | Matches Android, snake_case, plain |
+| `price_per_litre` | More descriptive but verbose |
+| `milk_unit_price` | Generic — leaves unit unstated |
+
+Whichever you pick, the frontend swap is a one-line rename in
+`src/lib/api.ts`. Until then we keep `milk_price`.
+
+#### 12.3.3 `SimulationFeedDetail` / `FetchSimulationDetailsResponse`
+
+When `milk_price` is persisted with the simulation, the history
+restore endpoint should echo it back. Currently
+`FetchSimulationDetailsResponse.cattle_info` is the same `CattleInfo`
+schema — adding the field there transparently fixes restore too.
+No extra schema work needed beyond §12.3.1.
+
+### 12.4 Example request payload (post-change)
+
+#### Lactating, milk price set
+
+```json
+{
+  "simulation_id": "demo-sim",
+  "user_id": "...",
+  "country_id": "...",
+  "cattle_info": {
+    "body_weight": 450,
+    "breed": "Cross Bred",
+    "lactating": true,
+    "milk_production": 18.5,
+    "days_in_milk": 120,
+    "parity": 2,
+    "days_of_pregnancy": 0,
+    "tp_milk": 3.2,
+    "fat_milk": 3.8,
+    "temperature": 26,
+    "topography": "Flat",
+    "distance": 0,
+    "grazing": false,
+    "calving_interval": 370,
+    "bw_gain": 0.3,
+    "bc_score": 3.0,
+    "milk_price": 12500
+  },
+  "feed_selection": [ "..." ],
+  "base_thresholds": { "..." }
+}
+```
+
+#### Lactating, milk price blank (omit OR send null)
+
+```json
+{
+  "cattle_info": {
+    "...": "...",
+    "milk_price": null
+  }
+}
+```
+
+#### Non-lactating animal (frontend hides the field)
+
+```json
+{
+  "cattle_info": {
+    "lactating": false,
+    "milk_production": 0,
+    "milk_price": null
+  }
+}
+```
+
+### 12.5 Y3 §2.1 follow-up — cost-per-litre on the report
+
+This is the consumer of `milk_price`. Currently blocked: the
+recommendation response doesn't carry a margin / cost-per-litre
+field. Two ways to ship it:
+
+**Option A — backend computes (preferred):**
+Add a `milk_cost_margin` block to the recommendation/evaluation
+response:
+
+```python
+class MilkCostMargin(BaseModel):
+    milk_price_per_litre: float | None
+    total_diet_cost_as_fed: float
+    daily_milk_production_l: float
+    cost_per_litre: float | None      # daily_diet_cost / daily_milk_l
+    margin_per_litre: float | None    # milk_price - cost_per_litre
+    currency: str
+```
+
+Send `null` for the derived fields when `milk_price` is missing.
+
+**Option B — frontend computes:**
+Frontend reads `report.solution_summary.total_diet_cost_as_fed` and
+`cattle_info.milk_production` from the recommendation response and
+divides client-side. No backend change. Less precise (doesn't see
+DMI conversions) but unblocks the UI immediately.
+
+Recommendation: ship **Option A** when you can; frontend will use
+Option B as a fallback if the new field is absent.
+
+### 12.6 Acceptance criteria (when both ends ship)
+
+1. Lactating animal + milk_price entered → payload carries
+   `cattle_info.milk_price` as a number; no 422 from backend.
+2. Lactating + milk_price blank → payload sends `null`; backend
+   accepts; response's milk-cost margin section shows `cost_per_litre`
+   but `margin_per_litre` = null.
+3. Non-lactating → frontend hides the field; payload sends
+   `milk_price: null`; response's milk-cost margin section is
+   suppressed entirely on the UI.
+4. Restoring an older simulation that pre-dates this field → frontend
+   hydrates `milk_price` from null without error.
+5. Restoring a simulation with milk_price = 12500 → form pre-fills,
+   margin card renders correctly.
+
