@@ -1072,3 +1072,227 @@ const ctx = reportData.report_context ?? buildReportContext(cattleInfo.animal_ca
    picks it up automatically with no code change (helper has the
    fallback wired).
 
+---
+
+## 15. Y3 §1.4 — Animal Category selector
+
+Exposes the animal's physiological state as a selectable field with
+four options. Drives §2.3 report gating and the milk-fields
+visibility on the Animal Inputs screen.
+
+### 15.1 The four options
+
+The Y3 spec uses plural display strings; the wire values stay
+singular so existing simulations don't break. Frontend renders the
+plural in the dropdown; the singular is what gets sent to / stored
+by the backend.
+
+| Display label (UI) | Wire value (payload / DB) |
+|---|---|
+| Lactating cows | `Lactating Cow` |
+| Dry cows | `Dry Cow` |
+| Heifers | `Heifer` |
+| Baby calves/heifers | `Baby Calf/Heifer` |
+
+If Maria prefers the plural form on the wire, the only change is the
+`ANIMAL_CATEGORIES` constant in `src/lib/api.ts` — display labels
+and wire values would re-align. Until she confirms, singular is the
+canonical wire form.
+
+### 15.2 Frontend status — shipped
+
+| Item | Status | Reference |
+|---|---|---|
+| Selector under Simulation Details (top of /cattle-info form) | Shipped | `cattle-info/page.tsx:652-662` |
+| Default selection on a new form | `Lactating Cow` | `cattle-info/page.tsx:113` |
+| Plural display labels (per spec wording) | Shipped | `api.ts` `ANIMAL_CATEGORY_LABELS` |
+| Hydration on edit + simulation restore | Shipped | lines 221, 295 |
+| Stored on `cattleInfo.animal_category` | Shipped | line 587 |
+| Sent in `toCattleInfoPayload()` as `cattle_info.animal_category` | Shipped | `api.ts:146` |
+| Drives `showMilkSection` form gate | Shipped | `cattle-info/page.tsx:498` |
+| Drives `buildReportContext` → `/report` sections | Shipped | `report/page.tsx` §2.3 |
+| Drives Calf Milk Feeding section on /report | Shipped | `report/page.tsx` §2.3 |
+
+### 15.3 Form gating — what hides when non-lactating
+
+When `animal_category !== "Lactating Cow"`:
+
+- Whole **Milk Production** section card hidden:
+  - Milk Production (L) input
+  - Milk Protein % / Milk Fat % dropdowns
+  - Milk Price input
+- Form validation no longer requires those three fields.
+
+When the user flips between categories, **field values persist in the
+form state** so accidental switches don't lose data. The wire-level
+sanitisation happens at payload-build time (§15.4) — what gets sent
+always matches the CURRENT category.
+
+### 15.4 Payload sanitisation — what `toCattleInfoPayload` zeros out for non-lactating
+
+Even if the user previously typed milk values, the payload helper
+zeroes them out when the current category isn't Lactating Cow:
+
+| Wire field | Non-lactating value |
+|---|---|
+| `lactating` | `false` |
+| `milk_production` | `0` |
+| `tp_milk` (protein) | `0` |
+| `fat_milk` | `0` |
+| `days_in_milk` | `0` |
+| `milk_price` | `null` |
+
+`animal_category` always carries the chosen value regardless of
+state. `days_of_pregnancy`, `parity`, `body_weight`, `bc_score`,
+`bw_gain`, grazing fields and temperature are all NOT category-gated
+— they apply to all animals.
+
+### 15.5 Backend — what the swagger shows today
+
+Swagger pull (same one referenced in §12.2): `CattleInfo` schema at
+`<DEV_BACKEND_IP>:8000/openapi.json` does **NOT** include
+`animal_category`. FastAPI silently drops the field unless Maria
+adds it.
+
+### 15.6 Backend ask — add `animal_category` to `CattleInfo`
+
+```python
+from typing import Literal
+
+AnimalCategory = Literal[
+    "Lactating Cow",
+    "Dry Cow",
+    "Heifer",
+    "Baby Calf/Heifer",
+]
+
+class CattleInfo(BaseModel):
+    # ... existing fields ...
+    animal_category: AnimalCategory | None = Field(
+        default=None,
+        description=(
+            "Physiological state of the animal. Drives lactating flag, "
+            "milk-related field requirements, and report section "
+            "visibility (see build_report_context in §14). Null treated "
+            "as 'Lactating Cow' for backward compatibility with older "
+            "simulations that pre-date this field."
+        ),
+    )
+```
+
+Notes:
+- **Nullable + default null.** Older saved simulations don't have
+  this field; backend should treat null as Lactating Cow (the only
+  state the pre-Y3 app supported).
+- **Wire values stay singular** unless Maria explicitly wants the
+  plural — see §15.1.
+- **No DB migration required for legacy rows.** Backfill with
+  `"Lactating Cow"` for any historical record where the field is
+  null and persistence is needed.
+
+### 15.7 Example payloads (post backend change)
+
+#### Lactating Cow
+
+```json
+{
+  "cattle_info": {
+    "body_weight": 450,
+    "breed": "Cross Bred",
+    "lactating": true,
+    "milk_production": 18.5,
+    "tp_milk": 3.2,
+    "fat_milk": 3.8,
+    "days_in_milk": 120,
+    "days_of_pregnancy": 0,
+    "parity": 2,
+    "temperature": 26,
+    "topography": "Flat",
+    "distance": 0,
+    "grazing": false,
+    "calving_interval": 370,
+    "bw_gain": 0.3,
+    "bc_score": 3.0,
+    "milk_price": 12500,
+    "animal_category": "Lactating Cow"
+  }
+}
+```
+
+#### Dry Cow (milk fields zeroed)
+
+```json
+{
+  "cattle_info": {
+    "body_weight": 480,
+    "breed": "Cross Bred",
+    "lactating": false,
+    "milk_production": 0,
+    "tp_milk": 0,
+    "fat_milk": 0,
+    "days_in_milk": 0,
+    "days_of_pregnancy": 200,
+    "parity": 3,
+    "temperature": 26,
+    "topography": "Flat",
+    "distance": 0,
+    "grazing": false,
+    "calving_interval": 370,
+    "bw_gain": 0.5,
+    "bc_score": 3.5,
+    "milk_price": null,
+    "animal_category": "Dry Cow"
+  }
+}
+```
+
+#### Baby Calf/Heifer
+
+```json
+{
+  "cattle_info": {
+    "body_weight": 80,
+    "breed": "Cross Bred",
+    "lactating": false,
+    "milk_production": 0,
+    "tp_milk": 0,
+    "fat_milk": 0,
+    "days_in_milk": 0,
+    "days_of_pregnancy": 0,
+    "parity": 0,
+    "temperature": 26,
+    "topography": "Flat",
+    "distance": 0,
+    "grazing": false,
+    "calving_interval": 370,
+    "bw_gain": 0.7,
+    "bc_score": 2.5,
+    "milk_price": null,
+    "animal_category": "Baby Calf/Heifer"
+  }
+}
+```
+
+### 15.8 Test scenarios — all paths covered
+
+| # | Action | Expected wire (`cattle_info`) | Expected /report |
+|---|---|---|---|
+| 1 | User picks Lactating cows, fills milk_production=20, milk_price=12000 → Generate | `animal_category="Lactating Cow"`, `lactating=true`, `milk_production=20`, `milk_price=12000` | Milk Cost Margin card visible, milk rows visible, no calf section |
+| 2 | User picks Dry cows on a fresh form → Generate | `animal_category="Dry Cow"`, `lactating=false`, all milk fields = 0/null | Milk Cost Margin hidden, milk rows hidden, no calf section |
+| 3 | User entered milk_production=20 as Lactating, switches to Heifers → Generate | `animal_category="Heifer"`, `lactating=false`, **milk_production=0 (stale value scrubbed)**, milk_price=null | Same as Dry Cow |
+| 4 | User picks Baby calves/heifers → Generate | `animal_category="Baby Calf/Heifer"`, `lactating=false` | Calf Milk Feeding card visible with 10%×body_weight default plan; no milk margin |
+| 5 | Reopen a saved Lactating Cow simulation that pre-dates this field (`animal_category` absent in response) | Form defaults to `Lactating Cow`; no error | Standard lactating layout |
+| 6 | Reopen a saved Dry Cow simulation | Form selector reads `Dry Cow`; milk section auto-hides | Non-lactating layout |
+| 7 | Backend ships `animal_category` validation → invalid value sent | Backend 422; frontend logs error; user sees snackbar | n/a |
+
+### 15.9 Acceptance criteria
+
+1. All four options visible in the selector with plural labels.
+2. Wire payload carries singular value for each selection.
+3. Non-lactating selections zero out milk fields on the wire even
+   if the form has stale entries.
+4. `lactating: true/false` flag derived from `animal_category`.
+5. Restoring an older simulation without `animal_category` does not
+   error — frontend defaults to "Lactating Cow".
+6. /report sections honour the helper (see §14.5).
+

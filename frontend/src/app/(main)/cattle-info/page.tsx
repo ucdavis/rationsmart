@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
-import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, isLactating } from "@/lib/api";
+import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating } from "@/lib/api";
 import type { AnimalCategory } from "@/lib/api";
 import {
   containsMultipleDecimalPoints,
@@ -657,7 +657,7 @@ export default function CattleInfoPage() {
             <SelectInput
               value={form.animal_category}
               onChange={(v) => set("animal_category")(v)}
-              options={ANIMAL_CATEGORIES.map((c) => ({ value: c, label: c }))}
+              options={ANIMAL_CATEGORIES.map((c) => ({ value: c, label: ANIMAL_CATEGORY_LABELS[c] }))}
               placeholder="Select category"
             />
           </div>

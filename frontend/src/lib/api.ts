@@ -43,6 +43,14 @@ export interface CattleInfo {
 
 export type AnimalCategory = "Lactating Cow" | "Dry Cow" | "Heifer" | "Baby Calf/Heifer";
 export const ANIMAL_CATEGORIES: AnimalCategory[] = ["Lactating Cow", "Dry Cow", "Heifer", "Baby Calf/Heifer"];
+// Display labels — plural per the Y3 §1.4 spec wording. Wire values
+// stay singular so saved simulations / backend stay backward-compatible.
+export const ANIMAL_CATEGORY_LABELS: Record<AnimalCategory, string> = {
+  "Lactating Cow": "Lactating cows",
+  "Dry Cow": "Dry cows",
+  "Heifer": "Heifers",
+  "Baby Calf/Heifer": "Baby calves/heifers",
+};
 export const isLactating = (cat: AnimalCategory): boolean => cat === "Lactating Cow";
 
 export interface FeedItem {
@@ -121,6 +129,17 @@ export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
   // instead of being hardcoded true. The Android app always sent `true`;
   // once Maria's backend honours `animal_category` we may remove the
   // legacy `lactating` field entirely.
+  //
+  // When the animal isn't a Lactating Cow we zero out the milk-side
+  // fields at payload time rather than relying on the form to clear
+  // them. This way:
+  //  - User can flip category back and forth without losing values
+  //    they previously typed (the data stays in cattleInfo).
+  //  - The wire payload always reflects the CURRENT category — no
+  //    stale milk_production / fat / protein bleeding through for a
+  //    dry cow.
+  //  - Backend sees consistent data: lactating=false → all milk-side
+  //    numerics are 0 and milk_price is null.
   const isLactating = ci.animal_category === "Lactating Cow";
   return {
     breed: ci.breed,
@@ -128,21 +147,21 @@ export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
     body_weight: ci.body_weight,
     calving_interval: 370,   // Android hardcodes 370
     bw_gain: ci.body_weight_gain,
-    days_in_milk: ci.days_in_milk,
+    days_in_milk: isLactating ? ci.days_in_milk : 0,
     days_of_pregnancy: ci.days_of_pregnancy,
     distance: ci.grazing ? (ci.distance ?? 0) : 0,
     grazing: ci.grazing,
     lactating: isLactating,
-    fat_milk: ci.milk_fat_percent,
-    milk_production: ci.milk_production,
-    tp_milk: ci.milk_protein_percent,
+    fat_milk: isLactating ? ci.milk_fat_percent : 0,
+    milk_production: isLactating ? ci.milk_production : 0,
+    tp_milk: isLactating ? ci.milk_protein_percent : 0,
     parity: ci.parity,
     temperature: ci.average_temperature,
     topography: ci.grazing ? (ci.topography ?? "Flat") : "Flat",
     // Y3 §1.3 / §1.4 — optional payload extras. null/undefined keys are
     // safely ignored by FastAPI; once Maria confirms canonical names just
     // rename these two keys here + in CattleInfoPayload.
-    milk_price: ci.milk_price ?? null,
+    milk_price: isLactating ? (ci.milk_price ?? null) : null,
     animal_category: ci.animal_category,
   };
 }
