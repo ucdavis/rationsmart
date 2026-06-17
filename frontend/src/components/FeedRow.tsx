@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { getFeedTypes, getFeedCategories, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
-import type { FeedItem } from "@/lib/api";
+import { useEffect, useRef, useState } from "react";
+import { getFeedTypes, getFeedCategories, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate, searchFeeds } from "@/lib/api";
+import type { FeedItem, FeedSearchResult } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
@@ -162,6 +162,61 @@ export default function FeedRow({
   const [loadingTypes, setLoadingTypes] = useState(true);
   const [loadingCats, setLoadingCats] = useState(false);
   const [loadingSubs, setLoadingSubs] = useState(false);
+
+  // Y3 §1.1.1 — per-row search bar state (moved from page-level to
+  // per-FeedRow). Each card owns its own search context. Tapping a
+  // result populates this row's feed_type / category / feed in a
+  // single onUpdate call; the cascade effects above auto-refresh
+  // dropdown options.
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<FeedSearchResult[]>([]);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Debounced search — 250 ms after last keystroke.
+  useEffect(() => {
+    if (!searchQuery.trim() || !user?.id || !user?.country_id) {
+      setSearchResults([]);
+      return;
+    }
+    setIsSearching(true);
+    const timer = setTimeout(() => {
+      searchFeeds(searchQuery.trim(), user.country_id, user.id)
+        .then((res) => { setSearchResults(res.data ?? []); })
+        .catch(() => setSearchResults([]))
+        .finally(() => setIsSearching(false));
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery, user?.id, user?.country_id]);
+
+  // Close result dropdown on outside click.
+  useEffect(() => {
+    if (!searchOpen) return;
+    const onDocClick = (e: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
+        setSearchOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [searchOpen]);
+
+  const applySearchResult = (result: FeedSearchResult) => {
+    // Write all 4 fields in a single update. The category + sub-cat
+    // cascade `useEffect`s will then refire and refresh the dropdown
+    // OPTIONS to match the picked feed — so opening either dropdown
+    // shows ALL valid items, with the picked one highlighted.
+    onUpdate(item.id, {
+      feed_type_name: result.feed_type,
+      category_name: result.feed_category,
+      sub_category_name: result.feed_name,
+      feed_uuid: result.feed_uuid,
+      sub_category_id: 1,
+    });
+    setSearchQuery("");
+    setSearchOpen(false);
+  };
 
   // Edit feed bottom sheet — matches Android DialogFeedDetails with isAdd=false.
   // On open, calls /check-insert-or-update with countryId + feed_uuid:
@@ -576,12 +631,104 @@ export default function FeedRow({
         </div>
       </div>
 
-      {/* Row 1: Feed Type (left) + Feed Category (right) */}
-      <div style={{ ...colGap, padding: "0 10px 10px" }}>
+      {/* Row 1 — Per-row search bar (Y3 §1.1.1). Type "corn" → see
+          matching feeds across all types/categories. Tap a result and
+          all four fields below auto-populate. */}
+      <div ref={searchContainerRef} style={{ padding: "0 10px 10px", position: "relative" }}>
+        <div
+          className="flex items-center gap-2 rounded-2xl px-3 py-2.5"
+          style={{ backgroundColor: "#F1F5F9", border: `1.5px solid ${searchOpen ? "#064E3B" : "#DCE0E4"}`, transition: "border-color 0.15s" }}
+        >
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+            <circle cx="7" cy="7" r="5" stroke="#6D6D6D" strokeWidth="1.5" />
+            <path d="M11 11l3 3" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" />
+          </svg>
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+            onFocus={() => searchQuery.trim() && setSearchOpen(true)}
+            placeholder="Search feeds (e.g. corn, silage)"
+            className="flex-1 border-none focus:outline-none"
+            style={{ backgroundColor: "transparent", color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+              aria-label="Clear search"
+              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#6D6D6D", flexShrink: 0 }}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {searchOpen && searchQuery.trim() && (
+          <div
+            style={{
+              position: "absolute",
+              top: "calc(100% - 2px)",
+              left: 10,
+              right: 10,
+              backgroundColor: "#FFFFFF",
+              borderRadius: 10,
+              boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+              maxHeight: 260,
+              overflowY: "auto",
+              zIndex: 50,
+            }}
+          >
+            {isSearching ? (
+              <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                Searching…
+              </div>
+            ) : searchResults.length === 0 ? (
+              <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                No matches yet. (Search backend coming soon.)
+              </div>
+            ) : (
+              searchResults.map((r, i) => (
+                <button
+                  key={`${r.feed_uuid}_${i}`}
+                  type="button"
+                  onClick={() => applySearchResult(r)}
+                  className="w-full text-left"
+                  style={{
+                    background: i % 2 === 1 ? "#E4F7EF" : "#FFFFFF",
+                    border: "none",
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                    display: "block",
+                    fontFamily: "Nunito, sans-serif",
+                  }}
+                >
+                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>{r.feed_name}</p>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>{r.feed_type} · {r.feed_category}</p>
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Row 2 — Feed Type as RADIO BUTTONS (full width). The backend
+          currently returns only two types (Forage, Concentrate); radio
+          is more discoverable than a dropdown for that. If a third type
+          ever ships, fall back to CustomSelect. */}
+      <div style={{ padding: "0 10px 10px" }}>
+        <p
+          className="text-xs font-bold uppercase mb-2 ml-1"
+          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+        >
+          Feed Type<span style={{ color: "#FC2E20" }}>{" *"}</span>
+        </p>
         {loadingTypes ? (
-          <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
-        ) : (
-          <FieldBox label="Feed Type" hasValue={!!item.feed_type_id} disabled={feedTypeLocked}>
+          <div className="shimmer" style={{ height: 40, borderRadius: 16 }} />
+        ) : feedTypes.length > 2 ? (
+          <FieldBox label="" hasValue={!!item.feed_type_id} disabled={feedTypeLocked}>
             <CustomSelect
               transparentTrigger
               value={item.feed_type_id != null ? String(item.feed_type_id) : ""}
@@ -594,7 +741,63 @@ export default function FeedRow({
               options={feedTypes.map<CustomSelectOption>((ft) => ({ value: String(ft.id), label: ft.name }))}
             />
           </FieldBox>
+        ) : (
+          <div className="flex gap-3">
+            {feedTypes.map((ft) => {
+              const selected = item.feed_type_name === ft.name;
+              return (
+                <button
+                  key={ft.id}
+                  type="button"
+                  onClick={() => {
+                    if (feedTypeLocked) return;
+                    onUpdate(item.id, { feed_type_id: ft.id, feed_type_name: ft.name });
+                  }}
+                  disabled={feedTypeLocked}
+                  className="flex-1 flex items-center gap-2 px-3 py-2.5"
+                  style={{
+                    background: selected ? "#F0FDF4" : "transparent",
+                    border: `1.5px solid ${selected ? "#064E3B" : "#DCE0E4"}`,
+                    borderRadius: 16,
+                    cursor: feedTypeLocked ? "not-allowed" : "pointer",
+                    opacity: feedTypeLocked && !selected ? 0.55 : 1,
+                    fontFamily: "Nunito, sans-serif",
+                  }}
+                >
+                  <span
+                    style={{
+                      width: 18,
+                      height: 18,
+                      borderRadius: "50%",
+                      border: `2px solid ${selected ? "#064E3B" : "#C9CBCC"}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {selected && (
+                      <span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "#064E3B" }} />
+                    )}
+                  </span>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: selected ? 700 : 400,
+                      color: selected ? "#064E3B" : "#231F20",
+                    }}
+                  >
+                    {ft.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         )}
+      </div>
+
+      {/* Row 3 — Feed Category + Feed (50/50) */}
+      <div style={{ ...colGap, padding: "0 10px 10px" }}>
         {loadingCats ? (
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
@@ -612,10 +815,6 @@ export default function FeedRow({
             />
           </FieldBox>
         )}
-      </div>
-
-      {/* Row 2: Feed Sub-category (left) + Price (right) */}
-      <div style={{ ...colGap, padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
         {loadingSubs ? (
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
@@ -637,57 +836,7 @@ export default function FeedRow({
             />
           </FieldBox>
         )}
-        <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid}>
-          <input
-            type="number"
-            inputMode="decimal"
-            min={0}
-            step={0.01}
-            disabled={!item.feed_uuid}
-            value={item.price_per_kg ?? ""}
-            onChange={(e) =>
-              onUpdate(item.id, { price_per_kg: e.target.value ? Number(e.target.value) : null })
-            }
-            style={{ ...innerInputStyle, cursor: !item.feed_uuid ? "not-allowed" : "text" }}
-          />
-        </FieldBox>
       </div>
-
-      {/* Row 3: Quantity (left) + Cost display (right) — evaluation mode only */}
-      {showQuantity && (
-        <div style={{ ...colGap, padding: "0 10px 16px" }}>
-          <FieldBox label="Quantity" hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg}>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step={0.1}
-              disabled={!item.price_per_kg}
-              value={item.quantity_kg ?? ""}
-              onChange={(e) =>
-                onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
-              }
-              style={{ ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
-            />
-          </FieldBox>
-          {/* Cost cell — Android shows the number plus the currency code
-              (e.g. "2,800 INR"); the prior glyph-prefix variant rendered as
-              "₹2800" / "PHP2800" which looked off. */}
-          <FieldBox label="Cost" hasValue={!!cost} disabled={!cost}>
-            <input
-              type="text"
-              readOnly
-              value={cost ? `${cost}${currencySymbol ? ` ${currencySymbol}` : ""}` : ""}
-              style={{
-                ...innerInputStyle,
-                color: cost ? "#064E3B" : "#9CA3AF",
-                fontWeight: cost ? 700 : 400,
-                cursor: "default",
-              }}
-            />
-          </FieldBox>
-        </div>
-      )}
 
       {/* Y3 §1.1.2 — "Set inclusion limits" toggle + optional Min/Max inputs.
           Disabled until a feed is actually selected (no point setting bounds
@@ -775,6 +924,59 @@ export default function FeedRow({
           </div>
         )}
       </div>
+
+      {/* Row 6 — Price (full width, always last among the basic fields).
+          Disabled until a feed is selected (no point pricing an empty
+          row). */}
+      <div style={{ padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
+        <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid}>
+          <input
+            type="number"
+            inputMode="decimal"
+            min={0}
+            step={0.01}
+            disabled={!item.feed_uuid}
+            value={item.price_per_kg ?? ""}
+            onChange={(e) =>
+              onUpdate(item.id, { price_per_kg: e.target.value ? Number(e.target.value) : null })
+            }
+            style={{ ...innerInputStyle, cursor: !item.feed_uuid ? "not-allowed" : "text" }}
+          />
+        </FieldBox>
+      </div>
+
+      {/* Row 7 — Quantity + Cost (eval mode only, 50/50) */}
+      {showQuantity && (
+        <div style={{ ...colGap, padding: "0 10px 16px" }}>
+          <FieldBox label="Quantity" hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg}>
+            <input
+              type="number"
+              inputMode="decimal"
+              min={0}
+              step={0.1}
+              disabled={!item.price_per_kg}
+              value={item.quantity_kg ?? ""}
+              onChange={(e) =>
+                onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
+              }
+              style={{ ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
+            />
+          </FieldBox>
+          <FieldBox label="Cost" hasValue={!!cost} disabled={!cost}>
+            <input
+              type="text"
+              readOnly
+              value={cost ? `${cost}${currencySymbol ? ` ${currencySymbol}` : ""}` : ""}
+              style={{
+                ...innerInputStyle,
+                color: cost ? "#064E3B" : "#9CA3AF",
+                fontWeight: cost ? 700 : 400,
+                cursor: "default",
+              }}
+            />
+          </FieldBox>
+        </div>
+      )}
 
       {/* Edit Feed bottom sheet — matches Android DialogFeedDetails (isAdd=false).
           On open, /check-insert-or-update determines isInsert:
