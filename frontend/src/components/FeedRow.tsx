@@ -631,10 +631,10 @@ export default function FeedRow({
       {/* Row 2 — Feed Type as RADIO BUTTONS (full width). The backend
           currently returns only two types (Forage, Concentrate); radio
           is more discoverable than a dropdown for that. If a third type
-          ever ships, fall back to CustomSelect. Padding-bottom is
-          bumped from 10px → 18px to give the next row (Feed Category +
-          Feed) breathing room (user feedback). */}
-      <div style={{ padding: "0 10px 18px" }}>
+          ever ships, fall back to CustomSelect. Padding-bottom 32px so
+          the next row (Feed Category + Feed) sits with clear breathing
+          room and the radio doesn't visually crowd the dropdowns. */}
+      <div style={{ padding: "0 10px 32px" }}>
         <p
           className="text-xs font-bold uppercase mb-2 ml-1"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}

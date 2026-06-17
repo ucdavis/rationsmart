@@ -651,53 +651,136 @@ export default function FeedSelectionPage() {
         ))}
       </div>
 
-      {/* Y3 §1.1.1 — single page-level search. Tapping any FeedRow
-          marks it as the search target (a "Search target" pill +
-          dark-green ring appear on the active card). Typing here +
-          picking a result populates that target. With no card
-          explicitly tapped, the first empty row is filled. */}
-      <div ref={searchContainerRef} className="px-3 pt-3" style={{ position: "relative" }}>
+      {/* Y3 §1.1.1 — single page-level search. The look is a premium
+          elevated card with a green icon-badge — bigger, more obviously
+          interactive than the previous flat pill. Tapping any FeedRow
+          marks it as the active target (dark-green ring + "Selected"
+          pill on the card); the badge + border flip to crayola_green
+          while a target is active so the user can see the link between
+          the bar and the highlighted card. */}
+      <div ref={searchContainerRef} className="px-3 pt-4 pb-1" style={{ position: "relative" }}>
+        {/* Tiny section header — pulls the search bar out of the noise
+            of the buttons above and gives it a clear identity. */}
+        <div className="flex items-center justify-between mb-2 px-1">
+          <span
+            style={{
+              fontFamily: "Nunito, sans-serif",
+              fontSize: 11,
+              fontWeight: 800,
+              color: "#064E3B",
+              letterSpacing: 0.6,
+              textTransform: "uppercase",
+            }}
+          >
+            Find Feeds
+          </span>
+          {activeRowId && (
+            <span
+              style={{
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 11,
+                fontWeight: 800,
+                color: "#064E3B",
+                backgroundColor: "#E4F7EF",
+                padding: "3px 10px",
+                borderRadius: 60,
+                letterSpacing: 0.3,
+              }}
+            >
+              ↓ TARGETING CARD
+            </span>
+          )}
+        </div>
+
         <div
-          className="flex items-center gap-2 rounded-2xl px-3 py-2.5"
-          style={{ backgroundColor: "#F1F5F9", border: `1.5px solid ${searchOpen ? "#064E3B" : "#DCE0E4"}`, transition: "border-color 0.15s" }}
+          className="flex items-center rounded-2xl"
+          style={{
+            backgroundColor: "#FFFFFF",
+            border: `1.5px solid ${searchOpen ? "#064E3B" : activeRowId ? "#1CA069" : "#DCE0E4"}`,
+            boxShadow: searchOpen
+              ? "0 6px 20px rgba(6,78,59,0.16), 0 2px 4px rgba(6,78,59,0.06)"
+              : "0 2px 8px rgba(0,0,0,0.05)",
+            transition: "border-color 0.18s ease, box-shadow 0.18s ease",
+            padding: 6,
+            gap: 10,
+          }}
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="7" cy="7" r="5" stroke="#6D6D6D" strokeWidth="1.5" />
-            <path d="M11 11l3 3" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" />
-          </svg>
+          {/* Icon badge — accent square that flips dark-green on focus.
+              Makes the search affordance obvious from across the page. */}
+          <div
+            className="flex items-center justify-center flex-shrink-0"
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 12,
+              backgroundColor: searchOpen ? "#064E3B" : activeRowId ? "#1CA069" : "#E4F7EF",
+              transition: "background-color 0.18s ease",
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"} strokeWidth="2.2" />
+              <path d="M16.5 16.5L21 21" stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"} strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+          </div>
           <input
             type="search"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
             onFocus={() => searchQuery.trim() && setSearchOpen(true)}
-            placeholder={activeRowId ? "Search feeds (filling selected card)" : "Search feeds (e.g. corn, silage)"}
+            placeholder={activeRowId ? "Search to fill the selected card…" : "Search feeds — corn, silage, soybean…"}
             className="flex-1 border-none focus:outline-none"
-            style={{ backgroundColor: "transparent", color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+            style={{
+              backgroundColor: "transparent",
+              color: "#231F20",
+              fontFamily: "Nunito, sans-serif",
+              fontSize: 15,
+              fontWeight: 500,
+              padding: "8px 0",
+              minWidth: 0,
+            }}
           />
           {searchQuery && (
             <button
               type="button"
               onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
               aria-label="Clear search"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: 4, color: "#6D6D6D", flexShrink: 0 }}
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 30,
+                height: 30,
+                background: "#F1F5F9",
+                border: "none",
+                borderRadius: 9,
+                cursor: "pointer",
+                color: "#6D6D6D",
+                marginRight: 4,
+              }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </button>
           )}
         </div>
 
-        {/* Tap-to-target hint — always visible under the search bar so
-            the user discovers the interaction. Flips to a confirmation
-            line once a card is selected. */}
+        {/* Tap-to-target hint — always visible. Flips to a green
+            confirmation line once a card is selected. */}
         <div
-          className="flex items-center gap-1.5 mt-2 ml-1"
-          style={{ fontFamily: "Nunito, sans-serif", fontSize: 12, color: activeRowId ? "#064E3B" : "#6D6D6D" }}
+          className="flex items-center gap-2 mt-2.5 ml-1"
+          style={{ fontFamily: "Nunito, sans-serif", fontSize: 12.5, color: activeRowId ? "#064E3B" : "#6D6D6D", fontWeight: activeRowId ? 700 : 500 }}
         >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-            <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
-            <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
+            {activeRowId ? (
+              <>
+                <circle cx="12" cy="12" r="10" fill="#1CA069" />
+                <path d="M8 12.5l2.5 2.5L16 9.5" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </>
+            ) : (
+              <>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
+                <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </>
+            )}
           </svg>
           <span>
             {activeRowId
@@ -710,15 +793,16 @@ export default function FeedSelectionPage() {
           <div
             style={{
               position: "absolute",
-              top: "calc(100% - 2px)",
+              top: "calc(100% + 6px)",
               left: 12,
               right: 12,
               backgroundColor: "#FFFFFF",
-              borderRadius: 10,
-              boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
+              borderRadius: 14,
+              boxShadow: "0 10px 32px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.06)",
               maxHeight: 320,
               overflowY: "auto",
               zIndex: 50,
+              border: "1px solid #E4F7EF",
             }}
           >
             {isSearching ? (
