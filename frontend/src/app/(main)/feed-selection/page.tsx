@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
@@ -211,6 +211,41 @@ export default function FeedSelectionPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
   const searchContainerRef = useRef<HTMLDivElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Set of row ids currently fetching their cascade (types / categories /
+  // sub-categories). Generate is blocked while non-empty so a user
+  // landing from simulation history can't submit before stored names
+  // have been validated against the live dropdown options.
+  const [loadingRows, setLoadingRows] = useState<Set<string>>(new Set());
+  const handleCascadeLoading = useCallback((rowId: string, loading: boolean) => {
+    setLoadingRows((prev) => {
+      const has = prev.has(rowId);
+      if (loading && !has) {
+        const next = new Set(prev);
+        next.add(rowId);
+        return next;
+      }
+      if (!loading && has) {
+        const next = new Set(prev);
+        next.delete(rowId);
+        return next;
+      }
+      return prev;
+    });
+  }, []);
+
+  // Per-card "Search to fill" shortcut: scroll the global search bar
+  // into view + focus its input. The caller (FeedRow) marks itself as
+  // the active target first, so the next picked result lands on that
+  // card. ScrollIntoView with block:"start" anchors the bar near the
+  // viewport top; tiny extra padding so it isn't clipped by the toolbar.
+  const handleJumpToSearch = useCallback(() => {
+    searchContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    // Focus after scroll so iOS Safari's virtual keyboard pops up at
+    // the bottom rather than mid-page.
+    setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 300);
+  }, []);
 
   // Debounced search — 250 ms after last keystroke.
   useEffect(() => {
@@ -454,6 +489,13 @@ export default function FeedSelectionPage() {
 
   const isValid = () => {
     if (!cattleInfo) return false;
+    // Block the Generate button while ANY row is still resolving its
+    // cascade fetches. This matters most for history-restored sessions:
+    // the FeedRow effects re-fetch type/category/feed options and need
+    // to validate stored names against the live response before the
+    // payload is safe to send. Sending mid-load could ship an obsolete
+    // feed_uuid the backend has since removed/renamed.
+    if (loadingRows.size > 0) return false;
     // Validate on the NAME fields, not the *_id fields. The id values are
     // looked up after the cascade dropdowns load, so a search-picked row
     // has names set immediately but ids only after a brief async fill.
@@ -768,6 +810,7 @@ export default function FeedSelectionPage() {
             </svg>
           </div>
           <input
+            ref={searchInputRef}
             type="text"
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
@@ -897,6 +940,8 @@ export default function FeedSelectionPage() {
                 currencySymbol={currencySymbol}
                 isActive={activeRowId === item.id}
                 onActivate={setActiveRowId}
+                onCascadeLoading={handleCascadeLoading}
+                onJumpToSearch={handleJumpToSearch}
                 onUpdate={updateItem}
                 onDelete={deleteItem}
               />
@@ -955,7 +1000,13 @@ export default function FeedSelectionPage() {
               UI lives in the GeneratingReportDialog overlay below, matching
               Android dialog_generating_report (a modal MaterialAlertDialog
               shown for the duration of the API call). */}
-          <span>{isEvaluation ? "Get Evaluation" : "Generate Recommendation"}</span>
+          <span>
+            {loadingRows.size > 0
+              ? "Loading feed data…"
+              : isEvaluation
+                ? "Get Evaluation"
+                : "Generate Recommendation"}
+          </span>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M4.5 9H13.5M10 5.5L13.5 9L10 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

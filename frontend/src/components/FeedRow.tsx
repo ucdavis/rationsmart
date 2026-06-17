@@ -85,6 +85,16 @@ interface FeedRowProps {
    *  activeRowId = item.id. Calling this is what makes the search
    *  bar's next result populate this row. */
   onActivate?: (id: string) => void;
+  /** Fired when ANY of this row's cascade fetches starts or finishes.
+   *  Parent aggregates across rows so the Generate button stays disabled
+   *  while history-restored data is still resolving — otherwise the
+   *  user could submit before stored names have been matched against
+   *  the freshly fetched type/category/feed options. */
+  onCascadeLoading?: (rowId: string, loading: boolean) => void;
+  /** Per-card shortcut: tap the search icon at the bottom of this row
+   *  → parent scrolls to the global search bar and focuses it, with
+   *  this row already marked as the active target. */
+  onJumpToSearch?: () => void;
   onUpdate: (id: string, updates: Partial<FeedItem>) => void;
   onDelete: (id: string) => void;
 }
@@ -162,6 +172,8 @@ export default function FeedRow({
   currencySymbol = "$",
   isActive = false,
   onActivate,
+  onCascadeLoading,
+  onJumpToSearch,
   onUpdate,
   onDelete,
 }: FeedRowProps) {
@@ -576,6 +588,26 @@ export default function FeedRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedTypes, item.feed_type_name, item.feed_type_id]);
 
+  // Bubble per-row cascade loading state up to the parent. The parent
+  // sums these across all rows so the Generate button can stay disabled
+  // until history-restored data is fully resolved against the latest
+  // dropdown options. Without this, a user landing from simulation
+  // history could hit Generate while a stored category was still being
+  // validated against the live category list, sending stale feed_uuid
+  // or partially-matched values.
+  useEffect(() => {
+    const loading = loadingTypes || loadingCats || loadingSubs;
+    onCascadeLoading?.(item.id, loading);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadingTypes, loadingCats, loadingSubs]);
+
+  // On unmount (row deletion), tell the parent this row is no longer
+  // loading so it doesn't get stuck in the loadingRows set forever.
+  useEffect(() => {
+    return () => onCascadeLoading?.(item.id, false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const cost = showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
     ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
     : null;
@@ -934,6 +966,46 @@ export default function FeedRow({
               }}
             />
           </FieldBox>
+        </div>
+      )}
+
+      {/* Per-card "search & fill" shortcut. Lives at the bottom-right
+          of every card. Tap → mark this card as the active search
+          target AND scroll/focus the global search bar at the top.
+          Subtle styling so it doesn't compete with Generate at the
+          bottom of the page, but visible enough to discover. */}
+      {onJumpToSearch && (
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "0 10px 12px" }}>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onActivate?.(item.id);
+              onJumpToSearch();
+            }}
+            aria-label={`Search to fill FEED ${index + 1}`}
+            title="Search to fill this card"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 60,
+              backgroundColor: "#E4F7EF",
+              color: "#064E3B",
+              border: "1.5px solid rgba(5,188,109,0.30)",
+              cursor: "pointer",
+              fontFamily: "Nunito, sans-serif",
+              fontSize: 12,
+              fontWeight: 700,
+            }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+              <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.2" />
+              <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <span>Search to fill</span>
+          </button>
         </div>
       )}
 

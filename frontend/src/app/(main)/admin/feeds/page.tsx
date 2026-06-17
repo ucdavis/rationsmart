@@ -193,9 +193,19 @@ export default function AdminFeedsPage() {
   const getName = (t: AdminFeedType) => t.type_name ?? t.name ?? "";
   const getCatName = (c: AdminFeedCategory) => c.category_name ?? c.name ?? "";
   const getFeedTypeName = (c: AdminFeedCategory) => {
-    if (!c.feed_type) return "";
+    // First try the embedded feed_type object on the category (older
+    // backend shape). Then fall back to resolving via feed_type_id
+    // against the separately-loaded feedTypes list — the v1 backend
+    // now omits the nested object on list-feed-categories, returning
+    // only feed_type_id, so without the fallback the Add-Feed
+    // category dropdown's filter would silently match nothing.
     if (typeof c.feed_type === "string") return c.feed_type;
-    return c.feed_type.type_name ?? "";
+    if (c.feed_type && c.feed_type.type_name) return c.feed_type.type_name;
+    if (c.feed_type_id) {
+      const t = feedTypes.find((ft) => ft.id === c.feed_type_id);
+      if (t) return t.type_name ?? t.name ?? "";
+    }
+    return "";
   };
 
   const loadAll = useCallback(() => {
