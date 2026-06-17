@@ -455,3 +455,170 @@ GET /v1/animal/feed-name?country_id=6c2a0573-1500-4603-8795-633ff80f1b00&feed_ty
   "custom_feeds": []
 }
 ```
+
+---
+
+## 10. Y3 §1.1.2 — Per-feed inclusion limits (Min/Max kg/day)
+
+Each feed card in Feed Selection should include optional minimum and
+maximum fields in kg/day, as-fed. A toggle controls whether these
+fields are active. When the toggle is off, the ingredient remains
+unconstrained and the optimizer runs normally. When it is on, any
+entered bounds should be passed to the optimizer.
+
+### 10.1 What's needed
+
+- Add a toggle labeled **"Set inclusion limits"** on each feed card,
+  default **off**.
+- When the toggle is **off**, hide the Min and Max fields and do not
+  pass bounds to the optimizer.
+- When the toggle is **on**, show **"Min (kg/day)"** and
+  **"Max (kg/day)"** input fields.
+- Both fields remain optional even when the toggle is on:
+  - blank Min → defaults to NA (no lower bound)
+  - blank Max → no upper bound
+- Only active bounds are passed to the optimizer.
+
+### 10.2 Reset behavior
+
+The toggle and any stored Min/Max values reset when the feed selected
+on the row changes. Specifically:
+
+- Toggle goes back to **off**
+- Min and Max are cleared
+
+This fires whenever `feed_uuid` becomes null on the row — which happens
+when the user changes Feed Type, Feed Category, or directly clears the
+Feed dropdown. Prevents stale bounds from a previous feed leaking into
+the next selection on the same card.
+
+The toggle is also disabled (greyed out, non-interactive) until a
+feed is actually picked on that row.
+
+### 10.3 Layout (FeedRow card)
+
+```
+┌─────────────────────────────────────────┐
+│ FEED 1                              ✎  │
+│                                         │
+│   Feed Type *                           │
+│   ( ● Forage )   ( ○ Concentrate )      │
+│                                         │
+│   Feed Category *                       │
+│   [Select   ⌄  ]                        │
+│                                         │
+│   Feed *                                │
+│   [Select   ⌄  ]                        │
+│                                         │
+│   Set inclusion limits         ⚫━━━━━  │  ← toggle ON
+│   ┌──────────────┐  ┌──────────────┐   │
+│   │ Min (kg/day) │  │ Max (kg/day) │   │   shown only
+│   │ NA           │  │ No upper bnd │   │   when toggle ON
+│   └──────────────┘  └──────────────┘   │
+│                                         │
+│   Price VND/KG *                        │
+│   [                                  ]  │
+└─────────────────────────────────────────┘
+```
+
+Only the switch itself is interactive — tapping the "Set inclusion
+limits" label area does NOT flip the toggle.
+
+### 10.4 API change — `POST /v1/animal/diet-recommendation`
+
+The `feed_selection[]` array gains two optional keys per entry.
+Backwards compatible: when omitted, behavior is unchanged.
+
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `min_kg_per_day` | number | no | Lower bound, as-fed kg/day. Omit when toggle is off OR when the Min field is blank with toggle on. |
+| `max_kg_per_day` | number | no | Upper bound, as-fed kg/day. Omit when toggle is off OR when the Max field is blank with toggle on. |
+
+**Field-name confirmation (pending):** these key names follow the
+internal Android draft. Maria — please confirm canonical names; the
+frontend will swap with a one-line rename if different.
+
+### 10.5 Example request payloads
+
+#### Toggle OFF — bounds omitted entirely
+
+```json
+{
+  "user_id": "…",
+  "country_id": "…",
+  "simulation_id": "demo-sim",
+  "cattle_info": { "...": "..." },
+  "base_thresholds": { "ash_max": 10, "ee_max": 7, "ndf_max": 45, "starch_max": 26 },
+  "feed_selection": [
+    {
+      "feed_id": "5f1e9a04-1500-4603-8795-633ff80f1b21",
+      "price_per_kg": 8500
+    }
+  ]
+}
+```
+
+#### Toggle ON, both bounds filled
+
+```json
+{
+  "feed_selection": [
+    {
+      "feed_id": "5f1e9a04-1500-4603-8795-633ff80f1b21",
+      "price_per_kg": 8500,
+      "min_kg_per_day": 2.0,
+      "max_kg_per_day": 6.5
+    }
+  ]
+}
+```
+
+#### Toggle ON, only Max filled (Min blank → no lower bound)
+
+```json
+{
+  "feed_selection": [
+    {
+      "feed_id": "5f1e9a04-1500-4603-8795-633ff80f1b21",
+      "price_per_kg": 8500,
+      "max_kg_per_day": 6.5
+    }
+  ]
+}
+```
+
+#### Toggle ON, only Min filled (Max blank → no upper bound)
+
+```json
+{
+  "feed_selection": [
+    {
+      "feed_id": "5f1e9a04-1500-4603-8795-633ff80f1b21",
+      "price_per_kg": 8500,
+      "min_kg_per_day": 2.0
+    }
+  ]
+}
+```
+
+### 10.6 Validation expectations
+
+- `min_kg_per_day >= 0` (frontend allows blank or any non-negative number)
+- `max_kg_per_day >= 0`
+- If both are present, optimizer should treat `min > max` as a
+  user-input error (frontend will eventually surface this; for now
+  the request is sent as-is and the backend may 422 it)
+- Backend should accept floats — typical values 0.1 – 30.0
+
+### 10.7 Frontend status
+
+| Item | Status |
+|---|---|
+| "Set inclusion limits" toggle on each card, default off | Shipped |
+| Min / Max fields shown only when toggle ON | Shipped |
+| Blank Min and blank Max both honored as "omit this bound" | Shipped |
+| Toggle gated on feed_uuid (greyed out until a feed is picked) | Shipped |
+| Toggle + Min/Max reset when feed_uuid clears | Shipped |
+| Only the switch element flips the toggle (not the row) | Shipped |
+| `min_kg_per_day` / `max_kg_per_day` in request payload | Shipped (pending key-name confirmation) |
+
