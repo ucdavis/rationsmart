@@ -751,7 +751,7 @@ export default function FeedRow({
         {loadingCats ? (
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
-          <FieldBox label="Feed Category" hasValue={!!item.category_id} disabled={!item.feed_type_id}>
+          <FieldBox label="Feed Category" hasValue={!!item.category_name} disabled={!item.feed_type_name}>
             <CustomSelect
               transparentTrigger
               value={item.category_id != null ? String(item.category_id) : ""}
@@ -759,8 +759,8 @@ export default function FeedRow({
                 const selected = categories.find((c) => c.id === Number(v));
                 onUpdate(item.id, { category_id: selected?.id ?? null, category_name: selected?.name ?? "" });
               }}
-              disabled={!item.feed_type_id}
-              placeholder={!item.feed_type_id ? "Select type first" : "Select"}
+              disabled={!item.feed_type_name}
+              placeholder={!item.feed_type_name ? "Select type first" : "Select"}
               options={categories.map<CustomSelectOption>((c) => ({ value: String(c.id), label: c.name }))}
             />
           </FieldBox>
@@ -768,7 +768,7 @@ export default function FeedRow({
         {loadingSubs ? (
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
-          <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_id}>
+          <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_name}>
             <CustomSelect
               transparentTrigger
               value={item.feed_uuid ?? ""}
@@ -780,8 +780,8 @@ export default function FeedRow({
                   feed_uuid: selected?.feed_uuid ?? null,
                 });
               }}
-              disabled={!item.category_id}
-              placeholder={!item.category_id ? "Select category" : "Select feed"}
+              disabled={!item.category_name}
+              placeholder={!item.category_name ? "Select category" : "Select feed"}
               options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.feed_name }))}
             />
           </FieldBox>

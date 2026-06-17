@@ -452,11 +452,16 @@ export default function FeedSelectionPage() {
 
   const isValid = () => {
     if (!cattleInfo) return false;
+    // Validate on the NAME fields, not the *_id fields. The id values are
+    // looked up after the cascade dropdowns load, so a search-picked row
+    // has names set immediately but ids only after a brief async fill.
+    // The payload itself only uses feed_uuid + price_per_kg, so the ids
+    // are purely UI-state — gating on names is the right semantic.
     return items.some(
       (item) =>
         item.feed_uuid !== null &&
-        item.feed_type_id !== null &&
-        item.category_id !== null &&
+        !!item.feed_type_name &&
+        !!item.category_name &&
         item.price_per_kg !== null &&
         (!isEvaluation || item.quantity_kg !== null)
     );
