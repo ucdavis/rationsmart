@@ -9,176 +9,94 @@
 
 ## 1. Background
 
-The Feed Selection screen currently exposes a **3-step cascade**:
+Feed Selection currently uses a 3-step cascade:
 
 ```
-Feed Type (dropdown) → Feed Category (dropdown) → Feed Name (dropdown)
+Feed Type (radio) → Feed Category (dropdown) → Feed (dropdown)
 ```
 
 Per Y3 §1.1.1, users should additionally be able to **type a free-text
 query** (e.g. "corn") and pick from a filtered list of feed ingredients.
-Both paths must coexist — search does NOT replace the cascade, it
-augments it.
 
-**Hard requirement from the user:** *"the flow which is present should
-NOT be disabled, it should work as it is. We are implementing a search
-functionality along with it."*
+Both paths must coexist — search does NOT replace the cascade.
 
 ---
 
-## 2. UI surface
-
-One search bar per `FeedRow` card (i.e. on every FEED 1 / FEED 2 / …
-card in feed-selection). Placement: between the card header (`FEED N`
-+ pencil + trash) and the existing Feed Type dropdown.
+## 2. New FeedRow layout
 
 ```
-┌──────────────────────────────────────────────┐
-│ FEED 1                              ✎  🗑    │
-│ ┌──────────────────────────────────────────┐ │
-│ │ 🔍 Search feeds (e.g. corn, silage)      │ │  ← NEW
-│ └──────────────────────────────────────────┘ │
-│   Feed Type *           Feed Category *     │
-│  ┌──────────────┐      ┌──────────────┐    │
-│  │ Forage     ⌄ │      │ Select       │    │
-│  └──────────────┘      └──────────────┘    │
-│   Feed *                 Price VND/KG *     │
-│  ┌──────────────┐      ┌──────────────┐    │
-│  │ Select feed⌄ │      │              │    │
-│  └──────────────┘      └──────────────┘    │
-│   Set inclusion limits                  ⚪ │
-└──────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ FEED 1                                   ✎   🗑     │
+│ ┌─────────────────────────────────────────────────┐ │
+│ │ 🔍  Search feeds (e.g. corn, silage)            │ │   ← row 1: search
+│ └─────────────────────────────────────────────────┘ │
+│                                                     │
+│  Feed Type *                                        │   ← row 2: type as radio
+│  ( ● Forage )   ( ○ Concentrate )                   │     (full width, 2 options)
+│                                                     │
+│  Feed Category *           Feed *                   │   ← row 3: category + feed
+│  ┌──────────────┐         ┌──────────────┐         │     (50 / 50)
+│  │ Select   ⌄  │         │ Select  ⌄   │         │
+│  └──────────────┘         └──────────────┘         │
+│                                                     │
+│  Set inclusion limits                       ⚪     │   ← row 4: toggle
+│                                                     │
+│  Price VND/KG *                                     │   ← row 5: price (full width)
+│  ┌─────────────────────────────────────────────┐   │
+│  │                                             │   │
+│  └─────────────────────────────────────────────┘   │
+│                                                     │
+│  ── only when "Set inclusion limits" is ON ──       │
+│  Min (kg/day)              Max (kg/day)             │
+│  ┌──────────────┐         ┌──────────────┐         │
+│  │ NA           │         │ No upper bnd │         │
+│  └──────────────┘         └──────────────┘         │
+└─────────────────────────────────────────────────────┘
 ```
 
-(Decision: per-row, not a single global search at the top — because the
-user tapping into a specific card is what triggers the search context.
-Stub already exists at the top of the page from an earlier commit; if
-that's preferred we keep it, but the per-row version is the active one.)
+Row order (top → bottom):
+
+1. Search bar
+2. Feed Type — radio (full width, currently 2 options: Forage,
+   Concentrate)
+3. Feed Category + Feed — single row, 50/50
+4. Set inclusion limits — toggle
+5. Min + Max — 50/50 (only when toggle is ON)
+6. Price — full width
+
+If backend ever adds a 3rd feed type, the layout will need to flip
+back to a dropdown.
 
 ---
 
-## 3. API contract — what we need from the backend
+## 3. UI behavior — 6 scenarios
 
-### 3.1 New endpoint: `GET /v1/animal/search-feeds`
+### A. Cascade-first (existing — must not regress)
 
-**Authentication:** `Authorization: Bearer <JWT>` (same as every other
-`/v1/animal/*` endpoint).
+1. Tap FEED 1 → row visible
+2. Pick Feed Type radio = "Forage"
+3. PWA calls `GET /v1/animal/unique-feed-category?country_id=&feed_type=Forage`
+4. Category dropdown populates
+5. Pick a category → PWA calls `GET /v1/animal/feed-name?country_id=&feed_type=&category=`
+6. Feed dropdown populates
+7. Pick a feed → row complete
 
-**Query parameters:**
+### B. Search-first (new)
 
-| Name | Type | Required | Description |
-|---|---|---|---|
-| `query` | string | yes | The user's search text. Case-insensitive substring match. |
-| `country_id` | string (UUID) | yes | Filter to feeds available for this country. JWT-derived user is also factored in (custom feeds owned by the user should appear). |
-| `limit` | integer | no (default 20) | Cap on result rows. |
-
-**Example request:**
-
-```
-GET /v1/animal/search-feeds?query=corn&country_id=6c2a0573-1500-4603-8795-633ff80f1b00&limit=20
-Authorization: Bearer eyJhbGc...
-```
-
-**Response (200):**
-
-```json
-{
-  "feeds": [
-    {
-      "feed_uuid": "abc-...",
-      "feed_name": "Whole corn silage, Dry Season",
-      "feed_type": "Forage",
-      "feed_category": "MAIZE FORAGE"
-    },
-    {
-      "feed_uuid": "def-...",
-      "feed_name": "Corn meal",
-      "feed_type": "Concentrate",
-      "feed_category": "CEREAL/CEREAL BY-PRODUCT"
-    }
-  ]
-}
-```
-
-The frontend parser is already defensive — it accepts these alternate
-shapes too (in priority order):
-
-- `{ "feeds": [...] }` (preferred)
-- `{ "standard_feeds": [...], "custom_feeds": [...] }` (merged)
-- Bare array `[ ... ]`
-- `{ "results": [...] }`
-
-So Maria can pick whichever shape fits her backend; PWA handles them all.
-
-**Per-item required fields:**
-
-- `feed_uuid` (also accepts `feed_id` / `id`)
-- `feed_name` (also accepts `fd_name` / `name`)
-- `feed_type` (string — must match what `/v1/animal/unique-feed-type/...`
-  returns, e.g. "Forage", "Concentrate")
-- `feed_category` (string — must match what
-  `/v1/animal/unique-feed-category` returns)
-
-**Per-item optional fields (nice-to-have):**
-
-- `is_custom` (bool) — render a small "Custom" pill in the search
-  result for user-owned feeds
-- `price_per_kg` (number) — if the backend has the user's last-used
-  price for this feed, return it so we can pre-fill
-
-**Empty-query behavior:**
-
-- If `query` is empty or only whitespace, return `[]` (don't return
-  every feed for the country — too heavy).
-
-**Match algorithm (suggested):**
-
-- Case-insensitive substring match on `feed_name`. So "corn" matches
-  "Whole corn silage, Dry Season" and "Corn meal".
-- Bonus: also match on `feed_category` so "silage" returns all silage
-  entries.
-- Bonus: support quoted phrases ("corn meal" matches that phrase only).
-
-**Error response (4xx/5xx):**
-
-Standard FastAPI `{detail: string | array}` shape. PWA already extracts
-this into a snackbar via the axios interceptor.
-
----
-
-## 4. UI behavior — full scenario walkthrough
-
-### 4.1 Scenario A: Cascade-first (existing behavior, must keep working)
-
-1. User taps FEED 1 card
-2. User opens Feed Type dropdown → picks "Forage"
-3. PWA fires `GET /v1/animal/unique-feed-category?country_id=&feed_type=Forage`
-4. Category dropdown populates with Forage's categories
-5. User opens Feed Category → picks "MAIZE FORAGE"
-6. PWA fires `GET /v1/animal/feed-name?country_id=&feed_type=Forage&category=MAIZE FORAGE`
-7. Feed dropdown populates with feeds in that combo
-8. User picks "Whole corn silage, Dry Season"
-9. Row is complete
-
-**Spec impact:** zero. This is the current cascade.
-
-### 4.2 Scenario B: Search-first (new)
-
-1. User taps FEED 1 card
-2. User types "corn" in search bar
-3. After a 250 ms debounce, PWA fires
-   `GET /v1/animal/search-feeds?query=corn&country_id=…`
-4. Results dropdown anchored below the search bar shows the matching
-   feeds with their type+category subtitle:
+1. Tap FEED 1 → row visible
+2. Type "corn" in search bar
+3. After 250 ms debounce: PWA calls
+   `GET /v1/animal/search-feeds?query=corn&country_id=&limit=20`
+4. Results appear below the search bar:
    ```
    Whole corn silage, Dry Season
    Forage · MAIZE FORAGE
-   ────────────────────────────
+   ───────────────────────────
    Corn meal
    Concentrate · CEREAL/CEREAL BY-PRODUCT
    ```
-5. User taps "Whole corn silage, Dry Season"
-6. **PWA writes ALL THREE values into the row's state in a single update:**
+5. Tap "Whole corn silage, Dry Season"
+6. PWA writes **all four values in one state update**:
    ```ts
    onUpdate(item.id, {
      feed_type_name: "Forage",
@@ -187,165 +105,250 @@ this into a snackbar via the axios interceptor.
      feed_uuid: "abc-...",
    });
    ```
-7. The existing cascade `useEffect`s re-run automatically:
-   - Categories effect fires (because `feed_type_name` changed):
-     fetches `/v1/animal/unique-feed-category?...feed_type=Forage`.
-     Result: dropdown OPTIONS list refreshes to all Forage categories.
-     The currently-selected `MAIZE FORAGE` survives the cascade-reset
-     check because it's in the new list (the keep-or-reset rule we
-     ship today already covers this).
-   - Sub-categories effect fires (because `category_name` changed):
-     fetches `/v1/animal/feed-name?country_id=&feed_type=Forage&category=MAIZE FORAGE`.
-     Result: feed dropdown OPTIONS list refreshes to all feeds in
-     that combination. Selected `Whole corn silage, Dry Season`
-     survives.
-8. Row is complete. **User can now open the Category dropdown and pick
-   a different category (still seeing all Forage categories), or open
-   the Feed dropdown and pick a different feed (still seeing all feeds
-   in the current combination).**
+7. Existing cascade `useEffect`s re-run automatically:
+   - Categories effect fires → fetches full category list for Forage
+   - Sub-categories effect fires → fetches full feed list for (Forage, MAIZE FORAGE)
+8. Result: all dropdowns + radio reflect the picked feed. Opening
+   any dropdown still shows ALL valid options — the picked value is
+   just one of many.
 
-**Critical guarantee:** the search-first path leaves the row in
-exactly the same state as if the user had walked the cascade manually
-— so subsequent edits work identically.
+### C. Mixed — cascade started, refined with search
 
-### 4.3 Scenario C: Mixed (start cascade, refine with search)
+1. Pick Feed Type = "Concentrate" via radio
+2. Type "corn" in search bar — search is **unscoped** by default,
+   returns matches from any type
+3. If picked feed belongs to a different type, the radio + dropdowns
+   switch to match the picked feed (overwriting the earlier choice)
 
-1. User picks Feed Type = "Concentrate" via the dropdown
-2. Category dropdown populates with Concentrate categories
-3. User types "corn" in search bar
-4. Search returns feeds matching "corn" — `Corn meal` (Concentrate /
-   CEREAL/CEREAL BY-PRODUCT), `Whole corn silage` (Forage / MAIZE
-   FORAGE), etc.
+If we ever need scoped search ("only show results in the currently-
+picked type"), add a `feed_type` query param to `/v1/animal/search-feeds`.
+Default is unscoped.
 
-**Decision:** the search bar is **NOT** scoped to the current type
-filter. It searches across the entire country's feed list. Picking a
-result that belongs to a different type will silently switch the type
-+ category dropdowns to match the picked feed. The earlier-picked
-type is overwritten. This matches the user's stated intent: search is
-a "shortcut to a feed" regardless of where the user is in the cascade.
+### D. Clear the search
 
-If we wanted the scoped variant ("only show results in the currently-
-picked type"), we'd add a `feed_type` query param to `search-feeds`.
-Default is unscoped — Maria can add scoping later if requested.
+- Tap X inside the search bar → query empties, results close
+- **Picked feed (if any) stays in place** — clearing search doesn't undo
 
-### 4.4 Scenario D: User clears the search
+### E. No matches
 
-- Clear (X) button inside the search bar empties the query
-- Results dropdown closes
-- **The picked feed (if any) stays in place** — clearing the search
-  text doesn't undo the row's filled values
-
-### 4.5 Scenario E: No matches
-
-- Search returns `[]`
-- Dropdown shows a "No matches" empty state
+- Search returns `[]` → "No matches" hint shown
 - Existing row state untouched
 
-### 4.6 Scenario F: Search backend not yet live
+### F. Search backend not live yet
 
-- `searchFeeds()` function is a stub returning `[]`
-- UI behaves as Scenario E (no matches)
-- Once Maria ships the endpoint, swap the stub for the real call
-- One-line change in `src/lib/api.ts` (function body):
-  ```ts
-  return api.get("/v1/animal/search-feeds", { params: { query, country_id, limit } });
-  ```
+- Frontend `searchFeeds()` is a stub returning `[]`
+- UI behaves like Scenario E
+- One-line swap when endpoint is live
 
 ---
 
-## 5. Backend implementation notes for Maria
+## 4. Pagination decision
 
-### 5.1 Indexing
+**No pagination on search-feeds.** Reasoning:
 
-The search query will be hot — typed by every user during feed
-selection. Suggest:
+- Mobile UX: infinite scroll inside a small popover anchored to the
+  search bar is awkward; "Page 2 / 3 / 4" buttons even worse
+- Search is meant for narrowing — if the user has too many matches,
+  they refine the query ("corn silage" instead of "corn")
+- Default `limit=20` covers the realistic "show me what matches"
+  use case
+- Response includes optional `total_count` so the UI can show
+  "Showing 20 of 47 — type more to narrow" if Maria provides it
 
-- A trigram index on `feed_name` (PostgreSQL `pg_trgm` extension)
-  for fast substring match
-- OR a simple `ILIKE '%query%'` if traffic is low — `EXPLAIN` should
-  confirm acceptable latency before adding the index
+**Pagination is added later if real usage shows users routinely hit
+the 20-row cap.** Telemetry hint for Maria: count `len(results)` per
+search query and log when it equals `limit`.
 
-### 5.2 Country / user scoping
-
-The search must return:
-- Standard feeds where `fd_country_id = :country_id` (or
-  `fd_country_name = :country_name` — whatever the canonical column is)
-- Plus custom feeds owned by the JWT-resolved user
-
-Mirror exactly what `/v1/animal/feed-name` already returns when filtered
-by country only.
-
-### 5.3 Ranking
-
-Stable order across queries matters for UX. Suggested ordering:
-
-1. Custom feeds owned by the user (top)
-2. Standard feeds with `feed_name` matching at start of string ("Corn
-   meal" before "Whole corn silage" for query "corn")
-3. Standard feeds with substring match elsewhere
-
-Ranking is a nice-to-have — alphabetical is fine for v1.
-
-### 5.4 Returning `feed_type` + `feed_category`
-
-The frontend needs the picked feed's type and category to populate the
-dropdowns. The feeds table likely has `fd_type` (string) and
-`fd_category` (string) columns already — return those as `feed_type`
-and `feed_category` per result row.
+The existing paginated endpoints (admin list-feeds, list-users, etc.)
+keep their `page` / `page_size` params — search-feeds is the special
+case because it's a UX-driven typeahead, not a list-everything view.
 
 ---
 
-## 6. Open questions for Maria
+## 5. Open questions for Maria
 
-1. **Endpoint path** — `GET /v1/animal/search-feeds` OK, or should it
-   live elsewhere? The frontend can wire to whatever you ship.
-2. **Result wrapper** — `{feeds: []}` preferred, but PWA accepts bare
-   array, `{results: []}`, `{standard_feeds, custom_feeds}` too. Pick
-   whichever fits your existing pattern.
-3. **Scoping by type / category** — should search-feeds accept an
-   optional `feed_type` filter? Currently the PWA passes only `query`
-   + `country_id`. If you add `feed_type`, frontend can opt-in.
-4. **Match algorithm** — case-insensitive substring on `feed_name`
-   only, or also on `feed_category`? Recommended: both.
-5. **Empty query behavior** — return `[]` or the first 20 feeds for
-   the country? Frontend assumes `[]` (no-op).
+1. Endpoint path — `GET /v1/animal/search-feeds` OK?
+2. Response wrapper — `{feeds: [...]}` preferred, but PWA parser
+   accepts bare array / `{results: []}` / `{standard_feeds, custom_feeds}`.
+3. Match algorithm — case-insensitive substring on `feed_name` only,
+   or also on `feed_category`? Recommended: both.
+4. Empty query behavior — `[]` (recommended) or first N feeds?
+5. `is_custom` field per row — useful for a "Custom" pill in the
+   results list. Nice-to-have.
+6. Optional `total_count` field for the "Showing 20 of 47" hint.
 
 ---
 
-## 7. Frontend status
+## 6. Frontend status
 
 | Item | Status |
 |---|---|
-| Search bar UI on FeedRow | Shipped as a stub on testing branch |
-| Debounced search (250 ms) | Shipped |
+| Search bar UI on FeedRow | Shipped (stub) |
+| 250 ms debounce | Shipped |
 | Result dropdown with type+category subtitle | Shipped |
-| Click-result → populate row state | Shipped — writes `feed_type_name`, `category_name`, `sub_category_name`, `feed_uuid` in one call; cascade effects refresh dropdowns automatically |
-| Defensive response parsing | Shipped — handles 4 shape variants per §3.1 |
-| Cascade race protection | Shipped — fast type-changes don't leave stale data in dropdowns |
-| Real backend call | **Blocked on Maria** — currently `searchFeeds()` returns `[]` |
+| Click-result → populate all 4 row fields in one update | Shipped |
+| Cascade refreshes dropdowns after search-pick | Shipped |
+| Defensive response parser (4 shape variants) | Shipped |
+| Race protection for rapid type changes | Shipped |
+| New FeedRow layout (radio, 50/50, toggle, price last) | **Pending — this commit** |
+| Real backend call | **Blocked on Maria** |
 
-When the backend endpoint is live, the one-line change is in
-`src/lib/api.ts`, function `searchFeeds`.
+One-line swap in `src/lib/api.ts` `searchFeeds()` body when endpoint is live.
 
 ---
 
-## 8. Acceptance criteria
+## 7. Acceptance criteria
 
-A test pass would walk all six scenarios in §4 against the live backend:
+1. ☐ Pure cascade — works as before
+2. ☐ Search-only — type "corn", pick result, all 4 fields populated
+3. ☐ After search-pick, open Category dropdown — shows ALL categories
+   for picked type, with picked one highlighted
+4. ☐ After search-pick, open Feed dropdown — shows ALL feeds in
+   (type, category), with picked one highlighted
+5. ☐ Change Category after search — Feed refreshes, picked feed
+   cleared if not in new combo
+6. ☐ Search across types — picking either type's feed populates
+   radio + dropdowns correctly
+7. ☐ Clear search — picked feed stays
+8. ☐ No-match query — empty state, no errors
+9. ☐ Network error — snackbar, dropdowns unaffected
+10. ☐ Rapid type changes — no stale data in dropdowns (race-protected)
 
-1. ☐ Pure cascade (no search) — works as before, no regression
-2. ☐ Search-only path — type "corn", pick a result, all three dropdowns
-   populated, row complete
-3. ☐ After search-pick, open the Category dropdown — shows ALL
-   categories of the picked feed type, with the picked one highlighted
-4. ☐ After search-pick, open the Feed dropdown — shows ALL feeds in
-   the (type, category) combination, with the picked one highlighted
-5. ☐ User changes Category dropdown after search — Feed dropdown
-   refreshes, picked feed cleared if not in new combo
-6. ☐ Search across different types (e.g. "corn" returns both Forage
-   and Concentrate feeds) — picking either populates correctly
-7. ☐ Empty / clear search — picked feed stays in place
-8. ☐ No-match query — empty-state shown, no errors
-9. ☐ Network error on search — snackbar shown, dropdowns unaffected
-10. ☐ Slow search (>500ms) — request cancellation if user keeps typing
-    (frontend already debounces 250ms; backend timeout up to 5s OK)
+---
+
+## 8. API contract — request + response examples
+
+### 8.1 `GET /v1/animal/search-feeds`
+
+**Headers**
+
+```
+Authorization: Bearer <jwt>
+Accept: application/json
+```
+
+**Request**
+
+```http
+GET /v1/animal/search-feeds?query=corn&country_id=6c2a0573-1500-4603-8795-633ff80f1b00&limit=20
+```
+
+| Param | Type | Required | Notes |
+|---|---|---|---|
+| `query` | string | yes | Case-insensitive substring; empty → `[]` |
+| `country_id` | string (UUID) | yes | Same UUID as `/v1/auth/countries` |
+| `limit` | integer | no | Default 20, max 100 |
+
+**Response 200**
+
+```json
+{
+  "feeds": [
+    {
+      "feed_uuid": "5f1e9a04-1500-4603-8795-633ff80f1b21",
+      "feed_name": "Whole corn silage, Dry Season",
+      "feed_type": "Forage",
+      "feed_category": "MAIZE FORAGE",
+      "is_custom": false
+    },
+    {
+      "feed_uuid": "7d3a4b88-1500-4603-8795-633ff80f1b22",
+      "feed_name": "Corn meal",
+      "feed_type": "Concentrate",
+      "feed_category": "CEREAL/CEREAL BY-PRODUCT",
+      "is_custom": false
+    },
+    {
+      "feed_uuid": "9c2b5d11-1500-4603-8795-633ff80f1b23",
+      "feed_name": "John-Corn (custom)",
+      "feed_type": "Concentrate",
+      "feed_category": "CEREAL/CEREAL BY-PRODUCT",
+      "is_custom": true
+    }
+  ],
+  "total_count": 3
+}
+```
+
+**Response 200 — empty query**
+
+```json
+{
+  "feeds": [],
+  "total_count": 0
+}
+```
+
+**Response 401 — missing or invalid JWT**
+
+```json
+{
+  "detail": "Invalid token"
+}
+```
+
+**Response 422 — missing required param**
+
+```json
+{
+  "detail": [
+    {
+      "loc": ["query", "country_id"],
+      "msg": "field required",
+      "type": "value_error.missing"
+    }
+  ]
+}
+```
+
+### 8.2 Existing endpoints used by the click-result flow
+
+After the user picks a search result, the existing cascade endpoints
+are called automatically to refresh dropdown options. Frontend already
+talks to these; no changes needed — included here for completeness.
+
+#### `GET /v1/animal/unique-feed-category`
+
+**Request**
+
+```http
+GET /v1/animal/unique-feed-category?country_id=6c2a0573-1500-4603-8795-633ff80f1b00&feed_type=Forage
+```
+
+**Response 200**
+
+```json
+{
+  "feed_categories": [
+    "GRASS/LEGUME FORAGE",
+    "MAIZE FORAGE",
+    "OTHER FORAGE"
+  ]
+}
+```
+
+#### `GET /v1/animal/feed-name`
+
+**Request**
+
+```http
+GET /v1/animal/feed-name?country_id=6c2a0573-1500-4603-8795-633ff80f1b00&feed_type=Forage&category=MAIZE FORAGE
+```
+
+**Response 200**
+
+```json
+{
+  "standard_feeds": [
+    {
+      "feed_uuid": "5f1e9a04-1500-4603-8795-633ff80f1b21",
+      "feed_name": "Whole corn silage, Dry Season"
+    },
+    {
+      "feed_uuid": "5f1e9a04-1500-4603-8795-633ff80f1b29",
+      "feed_name": "Whole corn silage, Wet Season"
+    }
+  ],
+  "custom_feeds": []
+}
+```
