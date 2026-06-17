@@ -526,6 +526,117 @@ export default function ReportPage() {
           </SCard>
         )}
 
+        {/* Y3 §2.1 — Milk Cost Margin card. Shows only when the user
+            entered a milk price on the Animal Inputs screen. Compares
+            the diet's cost-per-litre against that price and surfaces a
+            positive (green) or negative (red) margin per litre.
+            Computed client-side from existing response fields until
+            Maria ships a backend MilkCostMargin block on the response
+            (see docs/Search_Implmentation.md §12.5). */}
+        {(() => {
+          const milkPrice = cattleInfo?.milk_price ?? null;
+          const milkProduction = cattleInfo?.milk_production ?? null;
+          if (milkPrice == null || !milkProduction) return null;
+          // Pick the right daily cost source per mode. Evaluation uses
+          // cost_analysis.total_diet_cost_as_fed; Recommendation uses
+          // top-level total_diet_cost (which equals solution_summary's
+          // daily_cost when present, but is the more reliable source
+          // since some payloads omit solution_summary).
+          const dailyCost = isEval
+            ? evalReport?.cost_analysis?.total_diet_cost_as_fed ?? null
+            : recReport?.total_diet_cost ?? recReport?.solution_summary?.daily_cost ?? null;
+          if (dailyCost == null || dailyCost <= 0) return null;
+          const costPerLitre = dailyCost / milkProduction;
+          const margin = milkPrice - costPerLitre;
+          const isPositive = margin >= 0;
+          // Color tokens chosen to match existing report banners
+          // (dark_green_turquoise / carmine_pink theme).
+          const accent = isPositive ? "#10B981" : "#E44A4A";
+          const accentBg = isPositive ? "#F0FDF4" : "#FEC5BB";
+          const accentBorder = isPositive ? "rgba(5,188,109,0.20)" : "rgba(228,74,74,0.25)";
+          return (
+            <SCard
+              title="Milk Cost Margin"
+              icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 3v18M5 12h14" stroke={accent} strokeWidth="2" strokeLinecap="round" />
+                  <circle cx="12" cy="12" r="9" stroke={accent} strokeWidth="1.8" />
+                </svg>
+              }
+            >
+              {/* Two-column comparison */}
+              <div className="grid grid-cols-2 gap-3 mb-3">
+                <div
+                  className="rounded-xl p-3"
+                  style={{ backgroundColor: "#F8FAF9", border: "1px solid #E2E8F0" }}
+                >
+                  <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 11, letterSpacing: 0.3 }}>
+                    Diet Cost / L
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>
+                      {costPerLitre.toFixed(2)}
+                    </p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                      {currencySymbol}
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className="rounded-xl p-3"
+                  style={{ backgroundColor: "#F8FAF9", border: "1px solid #E2E8F0" }}
+                >
+                  <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 11, letterSpacing: 0.3 }}>
+                    Milk Price / L
+                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <p className="font-bold" style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}>
+                      {milkPrice.toFixed(2)}
+                    </p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                      {currencySymbol}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              {/* Big margin banner — sign-coloured */}
+              <div
+                className="rounded-xl p-3 flex items-center justify-between"
+                style={{ backgroundColor: accentBg, border: `1px solid ${accentBorder}` }}
+              >
+                <div>
+                  <p className="font-bold uppercase" style={{ color: accent, fontFamily: "Nunito, sans-serif", fontSize: 11, letterSpacing: 0.3 }}>
+                    {isPositive ? "Profit / Litre" : "Loss / Litre"}
+                  </p>
+                  <div className="flex items-baseline gap-1" style={{ marginTop: 2 }}>
+                    <p className="font-bold" style={{ color: accent, fontSize: 24, fontFamily: "Nunito, sans-serif" }}>
+                      {isPositive ? "+" : "−"}{Math.abs(margin).toFixed(2)}
+                    </p>
+                    <p className="font-bold" style={{ color: accent, fontSize: 13, fontFamily: "Nunito, sans-serif" }}>
+                      {currencySymbol}/L
+                    </p>
+                  </div>
+                </div>
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
+                  {isPositive ? (
+                    <path d="M7 14l5-5 5 5" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  ) : (
+                    <path d="M7 10l5 5 5-5" stroke={accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                  )}
+                </svg>
+              </div>
+              {/* Daily margin context line */}
+              <p className="mt-2 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
+                Across {milkProduction.toFixed(1)} L/day,
+                {isPositive ? " net profit" : " net loss"}{" "}
+                <span className="font-bold" style={{ color: accent }}>
+                  {(Math.abs(margin) * milkProduction).toFixed(2)} {currencySymbol}/day
+                </span>
+              </p>
+            </SCard>
+          );
+        })()}
+
         {/* ─── EVALUATION SECTIONS ─── */}
         {isEval && evalReport && (
           <>
