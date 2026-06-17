@@ -675,7 +675,15 @@ export default function FeedSelectionPage() {
             Find Feeds
           </span>
           {activeRowId && (
-            <span
+            <button
+              type="button"
+              onClick={() => {
+                // Smooth-scroll to the selected card so the user can see
+                // exactly which row they've targeted. block:"center" keeps
+                // it nicely framed inside the scrolling feed list.
+                const el = document.getElementById(`feed-card-${activeRowId}`);
+                if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
               style={{
                 fontFamily: "Nunito, sans-serif",
                 fontSize: 11,
@@ -685,10 +693,13 @@ export default function FeedSelectionPage() {
                 padding: "3px 10px",
                 borderRadius: 60,
                 letterSpacing: 0.3,
+                border: "none",
+                cursor: "pointer",
               }}
+              aria-label="Scroll to selected card"
             >
-              ↓ TARGETING CARD
-            </span>
+              ↓ JUMP TO CARD
+            </button>
           )}
         </div>
 
@@ -842,17 +853,20 @@ export default function FeedSelectionPage() {
       <div className="flex-1 overflow-y-auto px-3 pt-2" style={{ paddingBottom: 100 }}>
         <div className="space-y-3">
           {items.map((item, index) => (
-            <FeedRow
-              key={item.id}
-              item={item}
-              index={index}
-              showQuantity={isEvaluation}
-              currencySymbol={currencySymbol}
-              isActive={activeRowId === item.id}
-              onActivate={setActiveRowId}
-              onUpdate={updateItem}
-              onDelete={deleteItem}
-            />
+            // id="feed-card-<id>" is the scroll target for the
+            // "↓ JUMP TO CARD" pill in the search header.
+            <div key={item.id} id={`feed-card-${item.id}`} style={{ scrollMarginTop: 12 }}>
+              <FeedRow
+                item={item}
+                index={index}
+                showQuantity={isEvaluation}
+                currencySymbol={currencySymbol}
+                isActive={activeRowId === item.id}
+                onActivate={setActiveRowId}
+                onUpdate={updateItem}
+                onDelete={deleteItem}
+              />
+            </div>
           ))}
         </div>
 
