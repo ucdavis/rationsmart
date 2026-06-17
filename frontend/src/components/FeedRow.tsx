@@ -68,7 +68,7 @@ function fmtNum(v: unknown): string {
 
 interface FeedType { id: number; name: string; }
 interface FeedCategory { id: number; name: string; }
-interface FeedSubCategoryItem { feed_name: string; feed_uuid: string; }
+interface FeedSubCategoryItem { feed_name: string; feed_uuid: string; feed_code: string | null; }
 
 interface FeedRowProps {
   item: FeedItem;
@@ -295,6 +295,12 @@ export default function FeedRow({
         });
         const newName = (res.data?.feed_details?.feed_name as string) ?? `${editNamePrefix}${editFeedName.trim()}`;
         const newId = (res.data?.feed_details?.feed_id as string) ?? item.feed_uuid;
+        // Brand-new custom feeds may not have fd_code yet — backend assigns
+        // it on insert if the schema supports it. Accept both keys; null
+        // when neither is present (payload falls back to UUID).
+        const rawCode = (res.data?.feed_details as { fd_code?: string | number | null; feed_code?: string | number | null })?.fd_code
+          ?? (res.data?.feed_details as { feed_code?: string | number | null })?.feed_code;
+        const newCode = rawCode == null || rawCode === "" ? null : String(rawCode);
         // Android DialogFeedDetails repopulates the spinner after insert
         // so the new feed becomes the selected option. We mirror that
         // by appending the new entry to the local sub-category list
@@ -304,9 +310,9 @@ export default function FeedRow({
         setSubCategories((prev) =>
           prev.some((s) => s.feed_uuid === newId)
             ? prev
-            : [...prev, { feed_name: newName, feed_uuid: newId }]
+            : [...prev, { feed_name: newName, feed_uuid: newId!, feed_code: newCode }]
         );
-        onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId });
+        onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId, feed_code: newCode });
         showSnackbar("Custom feed saved", "success");
       } else {
         await updateCustomFeed({
@@ -499,10 +505,15 @@ export default function FeedRow({
             const o = it as {
               feed_id?: string; feed_uuid?: string; id?: string;
               fd_name?: string; feed_name?: string; name?: string;
+              fd_code?: string | number | null; feed_code?: string | number | null;
             };
             const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
             const name = o?.fd_name ?? o?.feed_name ?? o?.name;
-            return uuid && name ? { feed_name: name, feed_uuid: uuid } : null;
+            // fd_code may arrive as number or string; empty/null → null
+            // so the payload's `??` fallback still hits the UUID path.
+            const codeRaw = o?.fd_code ?? o?.feed_code;
+            const code = codeRaw == null || codeRaw === "" ? null : String(codeRaw);
+            return uuid && name ? { feed_name: name, feed_uuid: uuid, feed_code: code } : null;
           })
           .filter((s): s is FeedSubCategoryItem => s !== null);
         setSubCategories(list);
@@ -510,15 +521,17 @@ export default function FeedRow({
           (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
         );
         if (!match) {
-          onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
+          onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null, feed_code: null });
         } else if (
           match.feed_uuid !== item.feed_uuid ||
-          match.feed_name !== item.sub_category_name
+          match.feed_name !== item.sub_category_name ||
+          match.feed_code !== item.feed_code
         ) {
           onUpdate(item.id, {
             sub_category_id: 1,
             sub_category_name: match.feed_name,
             feed_uuid: match.feed_uuid,
+            feed_code: match.feed_code,
           });
         }
       })
@@ -778,6 +791,7 @@ export default function FeedRow({
                   sub_category_id: selected ? 1 : null,
                   sub_category_name: selected?.feed_name ?? "",
                   feed_uuid: selected?.feed_uuid ?? null,
+                  feed_code: selected?.feed_code ?? null,
                 });
               }}
               disabled={!item.category_name}
