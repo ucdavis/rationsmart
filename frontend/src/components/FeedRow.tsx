@@ -546,6 +546,23 @@ export default function FeedRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_uuid]);
 
+  // Backfill feed_type_id whenever the name is set but the id is null
+  // and the matching id is available in `feedTypes`. The types cascade
+  // above already backfills inside its .then(), but only once — if the
+  // user picks a search result AFTER that fetch has finished (the common
+  // case), feed_type_name is set programmatically and feed_type_id stays
+  // null. isValid() gates the Generate button on feed_type_id, so without
+  // this effect a search-filled row would never unlock the submit. Same
+  // effect also covers simulation-history restore and any future flow
+  // that updates feed_type_name without the matching id.
+  useEffect(() => {
+    if (item.feed_type_name && item.feed_type_id == null && feedTypes.length > 0) {
+      const match = feedTypes.find((t) => t.name === item.feed_type_name);
+      if (match) onUpdate(item.id, { feed_type_id: match.id });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedTypes, item.feed_type_name, item.feed_type_id]);
+
   const cost = showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
     ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
     : null;

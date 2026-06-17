@@ -244,11 +244,17 @@ export default function FeedSelectionPage() {
   //   2. The first row whose feed_uuid is still null (empty row)
   //   3. Row 0 as the final fallback
   const applySearchResult = (result: FeedSearchResult) => {
+    let landedIdx = -1;
+    let usedFallback = false;
     setItems((prev) => {
       let idx = -1;
       if (activeRowId) idx = prev.findIndex((r) => r.id === activeRowId);
-      if (idx === -1) idx = prev.findIndex((r) => !r.feed_uuid);
+      if (idx === -1) {
+        idx = prev.findIndex((r) => !r.feed_uuid);
+        usedFallback = true;
+      }
       if (idx === -1) idx = 0;
+      landedIdx = idx;
       const next = prev.map((row, i) =>
         i === idx
           ? {
@@ -270,6 +276,15 @@ export default function FeedSelectionPage() {
     setSearchQuery("");
     setSearchOpen(false);
     setActiveRowId(null);
+
+    // When the user did NOT tap a card before searching, the result
+    // lands silently in the first empty row — which can confuse users
+    // who don't realise where it went. Confirm the destination via
+    // snackbar. (When a card was tapped, the green ring already told
+    // them where it would land, so we skip the toast.)
+    if (usedFallback && landedIdx >= 0) {
+      showSnackbar(`Added to FEED ${landedIdx + 1}`, "success");
+    }
   };
 
   const openCustomFeedModal = async () => {
