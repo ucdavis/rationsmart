@@ -628,13 +628,11 @@ export default function FeedRow({
           Tapping anywhere on this card sets it as the activeRowId
           target — see onActivate on the wrapping div above. */}
 
-      {/* Row 2 — Feed Type as RADIO BUTTONS (full width). The backend
-          currently returns only two types (Forage, Concentrate); radio
-          is more discoverable than a dropdown for that. If a third type
-          ever ships, fall back to CustomSelect. Padding-bottom 32px so
-          the next row (Feed Category + Feed) sits with clear breathing
-          room and the radio doesn't visually crowd the dropdowns. */}
-      <div style={{ padding: "0 10px 32px" }}>
+      {/* Row 2 — Feed Type radio. Matches the visual language of the
+          Diet Recommendation / Diet Evaluation radios on the same page:
+          plain circle + label, no surrounding box. Two-column grid so
+          Forage and Concentrate line up vertically across cards. */}
+      <div style={{ padding: "0 10px 24px" }}>
         <p
           className="text-xs font-bold uppercase mb-2 ml-1"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
@@ -658,7 +656,7 @@ export default function FeedRow({
             />
           </FieldBox>
         ) : (
-          <div className="flex gap-3">
+          <div className="grid grid-cols-2 gap-3 ml-1">
             {feedTypes.map((ft) => {
               const selected = item.feed_type_name === ft.name;
               return (
@@ -670,22 +668,23 @@ export default function FeedRow({
                     onUpdate(item.id, { feed_type_id: ft.id, feed_type_name: ft.name });
                   }}
                   disabled={feedTypeLocked}
-                  className="flex-1 flex items-center gap-2 px-3 py-2.5"
+                  className="flex items-center gap-2"
                   style={{
-                    background: selected ? "#F0FDF4" : "transparent",
-                    border: `1.5px solid ${selected ? "#064E3B" : "#DCE0E4"}`,
-                    borderRadius: 16,
+                    background: "none",
+                    border: "none",
+                    padding: 0,
                     cursor: feedTypeLocked ? "not-allowed" : "pointer",
+                    justifyContent: "flex-start",
                     opacity: feedTypeLocked && !selected ? 0.55 : 1,
                     fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   <span
                     style={{
-                      width: 18,
-                      height: 18,
+                      width: 20,
+                      height: 20,
                       borderRadius: "50%",
-                      border: `2px solid ${selected ? "#064E3B" : "#C9CBCC"}`,
+                      border: `2px solid ${selected ? "#064E3B" : "#E2E8F0"}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -693,14 +692,15 @@ export default function FeedRow({
                     }}
                   >
                     {selected && (
-                      <span style={{ width: 9, height: 9, borderRadius: "50%", backgroundColor: "#064E3B" }} />
+                      <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#064E3B" }} />
                     )}
                   </span>
                   <span
                     style={{
                       fontSize: 14,
                       fontWeight: selected ? 700 : 400,
-                      color: selected ? "#064E3B" : "#231F20",
+                      color: selected ? "#064E3B" : "#6D6D6D",
+                      whiteSpace: "nowrap",
                     }}
                   >
                     {ft.name}
@@ -712,8 +712,11 @@ export default function FeedRow({
         )}
       </div>
 
-      {/* Row 3 — Feed Category + Feed (50/50) */}
-      <div style={{ ...colGap, padding: "0 10px 10px" }}>
+      {/* Row 3 — Feed Category + Feed, stacked full-width. The 50/50
+          grid clipped long feed names like "JAT - Mung bean haulm Dry
+          Season"; full-width rows let the label render fully and keep
+          the trigger taps comfortable on mobile. */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 10px 10px" }}>
         {loadingCats ? (
           <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
         ) : (
