@@ -745,7 +745,6 @@ export default function FeedSelectionPage() {
               item={item}
               index={index}
               showQuantity={isEvaluation}
-              feedTypeLocked={index === 0 && !isEvaluation}
               currencySymbol={currencySymbol}
               isActive={activeRowId === item.id}
               onActivate={setActiveRowId}

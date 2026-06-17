@@ -366,24 +366,27 @@ export default function FeedRow({
             : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
               ? (data as { unique_feed_types: unknown[] }).unique_feed_types
               : [];
-        const names: string[] = raw
+        const namesRaw: string[] = raw
           .map((it) => {
             if (typeof it === "string") return it;
             const o = it as { type_name?: string; name?: string };
             return o?.type_name ?? o?.name ?? "";
           })
           .filter((n) => n);
-        const types = names.map((n, i) => ({ id: i + 1, name: n }));
+        // Sort so Forage (and Roughage as a legacy alias) appears first
+        // in the radio. The backend's response order varied; this gives
+        // a stable, predictable UX. Other types keep their original order.
+        const namesOrdered = [
+          ...namesRaw.filter((n) => n === "Forage" || n === "Roughage"),
+          ...namesRaw.filter((n) => n !== "Forage" && n !== "Roughage"),
+        ];
+        const types = namesOrdered.map((n, i) => ({ id: i + 1, name: n }));
         setFeedTypes(types);
-        if (index === 0 && !item.feed_type_name) {
-          // v1 actual data still uses "Forage" (the spec description's
-          // mention of "Roughage" was just an example, not the canonical
-          // value). Prefer Forage → Roughage → first available type.
-          const def = types.find((t) => t.name === "Forage")
-            ?? types.find((t) => t.name === "Roughage")
-            ?? types[0];
-          if (def) onUpdate(item.id, { feed_type_id: def.id, feed_type_name: def.name });
-        } else if (item.feed_type_name) {
+        // Auto-default-to-Forage on FEED 1 removed by request — users
+        // can pick any type on any card. The "at least one Forage"
+        // requirement is enforced by the generate-time gate in
+        // /feed-selection/page.tsx instead.
+        if (item.feed_type_name) {
           const match = types.find((t) => t.name === item.feed_type_name);
           if (match && match.id !== item.feed_type_id) {
             onUpdate(item.id, { feed_type_id: match.id });
