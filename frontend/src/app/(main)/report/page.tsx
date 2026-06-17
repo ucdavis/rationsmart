@@ -214,7 +214,8 @@ function TotalCostFooter({ label, value }: { label: string; value: string }) {
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, cattleInfo, reportData, showSnackbar, setFeedSelectionType, setFeedSelections } = useStore((s) => ({
+  const { user, cattleInfo, reportData, feedSelections, showSnackbar, setFeedSelectionType, setFeedSelections } = useStore((s) => ({
+    feedSelections: s.feedSelections,
     user: s.user,
     cattleInfo: s.cattleInfo,
     reportData: s.reportData,
@@ -632,6 +633,150 @@ export default function ReportPage() {
                 <span className="font-bold" style={{ color: accent }}>
                   {(Math.abs(margin) * milkProduction).toFixed(2)} {currencySymbol}/day
                 </span>
+              </p>
+            </SCard>
+          );
+        })()}
+
+        {/* Y3 §2.2 — Forage : Concentrate ratio tile on a fresh matter
+            (as-fed) basis. Evaluation mode reads the feed_breakdown
+            rows (which carry feed_type directly). Recommendation mode
+            reads least_cost_diet rows (no feed_type field on the
+            response) and cross-references feed_name against the
+            store's feedSelections to recover each line's type. The
+            tile hides when there's no usable data (both totals zero)
+            so an evaluator that returned an empty breakdown doesn't
+            leave an empty card on the page. */}
+        {(() => {
+          // Build a uniform [{ feed_type, as_fed_kg }] list from
+          // whichever response branch is active.
+          let lines: { feed_type: string; as_fed: number }[] = [];
+          if (isEval && evalReport?.feed_breakdown) {
+            lines = evalReport.feed_breakdown
+              .map((b) => ({
+                feed_type: (b.feed_type ?? "").trim(),
+                as_fed: Number(b.quantity_as_fed_kg_per_day ?? 0),
+              }))
+              .filter((l) => l.as_fed > 0);
+          } else if (!isEval && recReport?.least_cost_diet) {
+            // Cross-ref by feed_name — case + whitespace tolerant.
+            const typeByName = new Map<string, string>();
+            for (const sel of feedSelections) {
+              if (sel.sub_category_name && sel.feed_type_name) {
+                typeByName.set(sel.sub_category_name.trim().toLowerCase(), sel.feed_type_name);
+              }
+            }
+            lines = recReport.least_cost_diet
+              .map((r) => ({
+                feed_type: typeByName.get((r.feed_name ?? "").trim().toLowerCase()) ?? "",
+                as_fed: Number(r.quantity_kg_per_day ?? 0),
+              }))
+              .filter((l) => l.as_fed > 0);
+          }
+          if (lines.length === 0) return null;
+          // Forage / Roughage → forage bucket; everything else → concentrate.
+          // Lines we can't classify (empty feed_type) fall into "other";
+          // we still count them in the total so percentages add to 100,
+          // but expose them as a tiny grey segment with its own label.
+          let forageKg = 0;
+          let concKg = 0;
+          let otherKg = 0;
+          for (const l of lines) {
+            const t = l.feed_type.toLowerCase();
+            if (t === "forage" || t === "roughage") forageKg += l.as_fed;
+            else if (t === "" ) otherKg += l.as_fed;
+            else concKg += l.as_fed;
+          }
+          const total = forageKg + concKg + otherKg;
+          if (total <= 0) return null;
+          const fPct = (forageKg / total) * 100;
+          const cPct = (concKg / total) * 100;
+          const oPct = (otherKg / total) * 100;
+          // Color tokens — go_green family for Forage, vivid_gamboge
+          // amber for Concentrate (matches the Diet Status badge palette
+          // used elsewhere on the page).
+          const forageColor = "#1CA069";
+          const concColor = "#FF9800";
+          const otherColor = "#C2C2C2";
+          return (
+            <SCard
+              title="Forage : Concentrate Ratio"
+              icon={
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                  <rect x="3" y="10" width="8" height="9" rx="1.5" stroke={forageColor} strokeWidth="1.8" />
+                  <rect x="13" y="6" width="8" height="13" rx="1.5" stroke={concColor} strokeWidth="1.8" />
+                </svg>
+              }
+            >
+              {/* Big numeric headline — "65 : 35" style */}
+              <div className="flex items-baseline justify-center gap-2" style={{ marginBottom: 12 }}>
+                <span className="font-bold" style={{ color: forageColor, fontSize: 32, fontFamily: "Nunito, sans-serif" }}>
+                  {Math.round(fPct)}
+                </span>
+                <span style={{ color: "#6D6D6D", fontSize: 22, fontFamily: "Nunito, sans-serif" }}>:</span>
+                <span className="font-bold" style={{ color: concColor, fontSize: 32, fontFamily: "Nunito, sans-serif" }}>
+                  {Math.round(cPct)}
+                </span>
+                {oPct > 0.5 && (
+                  <>
+                    <span style={{ color: "#6D6D6D", fontSize: 22, fontFamily: "Nunito, sans-serif" }}>:</span>
+                    <span className="font-bold" style={{ color: otherColor, fontSize: 32, fontFamily: "Nunito, sans-serif" }}>
+                      {Math.round(oPct)}
+                    </span>
+                  </>
+                )}
+              </div>
+              {/* Stacked horizontal bar showing the split visually */}
+              <div
+                className="flex w-full overflow-hidden"
+                style={{ height: 12, borderRadius: 6, marginBottom: 10, backgroundColor: "#F1F5F9" }}
+              >
+                {fPct > 0 && (
+                  <div style={{ width: `${fPct}%`, backgroundColor: forageColor }} />
+                )}
+                {cPct > 0 && (
+                  <div style={{ width: `${cPct}%`, backgroundColor: concColor }} />
+                )}
+                {oPct > 0 && (
+                  <div style={{ width: `${oPct}%`, backgroundColor: otherColor }} />
+                )}
+              </div>
+              {/* Legend rows — name, kg/day as-fed, % share */}
+              <div style={{ marginBottom: 6 }}>
+                <div className="flex items-center justify-between" style={{ fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: forageColor, display: "inline-block" }} />
+                    <span className="font-bold" style={{ color: "#231F20" }}>Forage</span>
+                  </div>
+                  <span style={{ color: "#6D6D6D" }}>
+                    {forageKg.toFixed(2)} kg/day · <span className="font-bold" style={{ color: forageColor }}>{fPct.toFixed(0)}%</span>
+                  </span>
+                </div>
+              </div>
+              <div style={{ marginBottom: oPct > 0 ? 6 : 0 }}>
+                <div className="flex items-center justify-between" style={{ fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: concColor, display: "inline-block" }} />
+                    <span className="font-bold" style={{ color: "#231F20" }}>Concentrate</span>
+                  </div>
+                  <span style={{ color: "#6D6D6D" }}>
+                    {concKg.toFixed(2)} kg/day · <span className="font-bold" style={{ color: concColor }}>{cPct.toFixed(0)}%</span>
+                  </span>
+                </div>
+              </div>
+              {oPct > 0 && (
+                <div className="flex items-center justify-between" style={{ fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+                  <div className="flex items-center gap-2">
+                    <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: otherColor, display: "inline-block" }} />
+                    <span className="font-bold" style={{ color: "#231F20" }}>Other</span>
+                  </div>
+                  <span style={{ color: "#6D6D6D" }}>
+                    {otherKg.toFixed(2)} kg/day · <span className="font-bold" style={{ color: "#6D6D6D" }}>{oPct.toFixed(0)}%</span>
+                  </span>
+                </div>
+              )}
+              <p className="mt-3 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 11, fontStyle: "italic" }}>
+                Fresh matter (as-fed) basis · total {total.toFixed(2)} kg/day
               </p>
             </SCard>
           );
