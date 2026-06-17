@@ -189,6 +189,41 @@ class FeedRepository:
         result = await self.db.execute(std.union(cust))
         return [r[0] for r in result.all() if r[0]]
 
+    async def search_feeds(
+        self,
+        query: str,
+        country_id: str,
+        user_id: str,
+        limit: int = 20,
+    ) -> Tuple[List[Feed], List[CustomFeed], int]:
+        """
+        Typeahead search on fd_name (case-insensitive substring) scoped to country + user.
+        Returns (std_feeds, custom_feeds, total_count) where total_count is pre-limit.
+        """
+        pattern = f"%{query}%"
+
+        sq = select(Feed).where(
+            Feed.fd_country_id == country_id,
+            Feed.fd_name.ilike(pattern),
+        )
+        cq = select(CustomFeed).where(
+            CustomFeed.fd_country_id == country_id,
+            CustomFeed.user_id == uuid.UUID(str(user_id)),
+            CustomFeed.fd_name.ilike(pattern),
+        )
+
+        std_count = (await self.db.execute(select(func.count()).select_from(sq.subquery()))).scalar_one()
+        cust_count = (await self.db.execute(select(func.count()).select_from(cq.subquery()))).scalar_one()
+
+        std_result = await self.db.execute(sq.order_by(Feed.fd_name.asc()).limit(limit))
+        cust_result = await self.db.execute(cq.order_by(CustomFeed.fd_name.asc()))
+
+        return (
+            std_result.scalars().all(),
+            cust_result.scalars().all(),
+            std_count + cust_count,
+        )
+
     async def get_feed_names(
         self,
         country_id: str,

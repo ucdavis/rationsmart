@@ -146,6 +146,62 @@ async def get_feed_details(
     }
 
 
+async def search_feeds(
+    db: AsyncSession,
+    query: str,
+    country_id: str,
+    user_id: str,
+    limit: int = 20,
+) -> Tuple[List[Dict[str, Any]], int]:
+    """
+    Typeahead feed search scoped to country + user's custom feeds.
+    Returns (feed_list, total_count).
+
+    Short queries (< 2 chars after stripping) return ([], 0) with no DB hit.
+    Ranking: custom feeds first, then prefix matches before mid-string, then alphabetical.
+    """
+    if len(query.strip()) < 2:
+        return [], 0
+
+    repo = FeedRepository(db)
+    std_feeds, custom_feeds, total_count = await repo.search_feeds(
+        query=query.strip(),
+        country_id=country_id,
+        user_id=user_id,
+        limit=limit,
+    )
+
+    q_lower = query.strip().lower()
+
+    def _rank(name: str, is_custom: bool) -> tuple:
+        # (custom_priority, prefix_priority, name)
+        # Lower tuple values sort first.
+        return (0 if is_custom else 1, 0 if name.lower().startswith(q_lower) else 1, name.lower())
+
+    results = []
+    for f in custom_feeds:
+        results.append({
+            "feed_uuid": str(f.id),
+            "feed_name": f.fd_name,
+            "feed_type": f.fd_type or "",
+            "feed_category": f.fd_category or "",
+            "fd_code": getattr(f, "fd_code", None),
+            "is_custom": True,
+        })
+    for f in std_feeds:
+        results.append({
+            "feed_uuid": str(f.id),
+            "feed_name": f.fd_name,
+            "feed_type": f.fd_type or "",
+            "feed_category": f.fd_category or "",
+            "fd_code": getattr(f, "fd_code", None),
+            "is_custom": False,
+        })
+
+    results.sort(key=lambda r: _rank(r["feed_name"], r["is_custom"]))
+    return results[:limit], total_count
+
+
 async def _build_feed_data_list(
     db: AsyncSession,
     feed_selection: List[Any],

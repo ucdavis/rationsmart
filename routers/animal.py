@@ -66,6 +66,34 @@ async def unique_feed_categories(
     return {"feed_categories": categories}
 
 
+@router.get("/search-feeds", summary="Typeahead search across feeds by name")
+async def search_feeds(
+    query: str,
+    country_id: str,
+    limit: int = 20,
+    current_user: UserInformationModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Search feeds by name (case-insensitive substring) for the given country.
+    Returns standard feeds available in the country plus the authenticated user's custom feeds.
+
+    **Requires:** Bearer JWT.
+
+    **Mandatory query parameters:** `query` (min 2 chars), `country_id` (UUID).
+
+    **Optional:** `limit` (default 20, max 100).
+
+    Results are ranked: custom feeds first, then prefix matches before mid-string matches, then alphabetical.
+    Queries shorter than 2 characters return `{feeds: [], total_count: 0}` with no DB hit.
+    """
+    clamped_limit = min(max(limit, 1), 100)
+    feeds, total_count = await diet_service.search_feeds(
+        db, query, country_id, str(current_user.id), clamped_limit
+    )
+    return {"feeds": feeds, "total_count": total_count}
+
+
 @router.get("/feed-name", summary="List feed names filtered by country, type, and category")
 async def feed_names(
     country_id: str,
