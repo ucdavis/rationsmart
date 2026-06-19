@@ -61,15 +61,7 @@ export interface FeedItem {
   category_name: string;
   sub_category_id: number | null;
   sub_category_name: string;
-  feed_uuid: string | null;    // UUID — primary key of the feed row
-  // Maria's human-readable feed code (fd_code in DB). Populated alongside
-  // feed_uuid when the response carries it. Backend will roll this out
-  // gradually — until every feed has an fd_code, this stays nullable.
-  // At payload-send time we prefer feed_code over feed_uuid:
-  //     feed_id = item.feed_code ?? item.feed_uuid
-  // (`?:` optional so persisted state from before this field existed
-  // hydrates cleanly without TS complaints.)
-  feed_code?: string | null;
+  feed_uuid: string | null;    // feed_id sent to the API (from FeedSubCategory.feed_uuid)
   price_per_kg: number | null;
   quantity_kg: number | null;
   // Y3 §1.1.2 — per-feed inclusion limits. Toggle controls visibility AND
@@ -770,7 +762,6 @@ export const getFeedClassification = () => api.get("/v1/feed-classification/stru
 // backend shape drifts (per §6 of the spec, three wrappers accepted).
 export interface FeedSearchResult {
   feed_uuid: string;
-  feed_code: string | null;  // Maria's fd_code — null until backend populates it
   feed_name: string;
   feed_type: string;
   feed_category: string;
@@ -778,15 +769,10 @@ export interface FeedSearchResult {
 }
 
 // Internal shape — what a single row looks like before we normalize it.
-// fd_code / feed_code both accepted (per the user-confirmed defensive
-// parsing rule — backend serializer may use either, our parser tolerates
-// both so a rename later doesn't break the UI).
 type RawFeed = {
   feed_uuid?: string;
   feed_id?: string;
   id?: string;
-  fd_code?: string | number | null;
-  feed_code?: string | number | null;
   feed_name?: string;
   name?: string;
   feed_type?: string;
@@ -801,15 +787,9 @@ function normalizeRow(r: RawFeed): FeedSearchResult | null {
   const feed_name = r.feed_name ?? r.name;
   const feed_type = r.feed_type ?? r.type_name ?? "";
   const feed_category = r.feed_category ?? r.category_name ?? "";
-  // fd_code may arrive as number or string from the DB (per swagger
-  // FeedDetailsResponse). Coerce to string and treat empty/null as
-  // unset so the payload's `??` fallback to UUID kicks in cleanly.
-  const codeRaw = r.fd_code ?? r.feed_code;
-  const feed_code = codeRaw == null || codeRaw === "" ? null : String(codeRaw);
   if (!feed_uuid || !feed_name) return null;
   return {
     feed_uuid,
-    feed_code,
     feed_name,
     feed_type,
     feed_category,

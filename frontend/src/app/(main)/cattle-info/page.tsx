@@ -307,11 +307,6 @@ export default function CattleInfoPage() {
           feed_category?: string;
           feed_name?: string;
           feed_id?: string;
-          // Per Maria's rollout: history entries may carry fd_code / feed_code
-          // alongside the UUID. We grab whichever is present and store it
-          // so payload sends prefer the code when re-generating.
-          fd_code?: string | number | null;
-          feed_code?: string | number | null;
           price_per_kg?: number | string | null;
           quantity_as_fed?: number | string | null;
           // Y3 §1.1.2 — backend may echo these on simulation restore.
@@ -321,8 +316,6 @@ export default function CattleInfoPage() {
         }, idx: number) => {
           const minVal = sel.min_kg_per_day != null && sel.min_kg_per_day !== "" ? Number(sel.min_kg_per_day) : null;
           const maxVal = sel.max_kg_per_day != null && sel.max_kg_per_day !== "" ? Number(sel.max_kg_per_day) : null;
-          const codeRaw = sel.fd_code ?? sel.feed_code;
-          const feedCode = codeRaw == null || codeRaw === "" ? null : String(codeRaw);
           return {
             id: `feed_restored_${idx}_${Date.now()}`,
             feed_type_id: sel.feed_type ? idx + 1 : null,
@@ -332,7 +325,6 @@ export default function CattleInfoPage() {
             sub_category_id: sel.feed_id ? 1 : null,
             sub_category_name: sel.feed_name ?? "",
             feed_uuid: sel.feed_id ?? null,
-            feed_code: feedCode,
             price_per_kg: sel.price_per_kg != null && sel.price_per_kg !== "" ? Number(sel.price_per_kg) : null,
             quantity_kg: sel.quantity_as_fed != null && sel.quantity_as_fed !== "" ? Number(sel.quantity_as_fed) : null,
             // Toggle defaults ON when either bound is present in the restored payload.

@@ -622,60 +622,6 @@ frontend will swap with a one-line rename if different.
 | Only the switch element flips the toggle (not the row) | Shipped |
 | `min_kg_per_day` / `max_kg_per_day` in request payload | Shipped (pending key-name confirmation) |
 
----
-
-## 11. feed_id payload rule — fd_code rollout
-
-Maria is migrating feed identification from the internal `feeds.id` UUID
-to a human-readable `feeds.fd_code` column. As of writing all `fd_code`
-values in the DB are null; backfill is in progress.
-
-### 11.1 Frontend rule
-
-The `feed_id` field on **both** outgoing payloads
-(`POST /v1/animal/diet-recommendation` and
-`POST /v1/animal/evaluate-diet`) is computed as:
-
-```
-feed_id = item.fd_code ?? item.feed_uuid
-```
-
-In words: if the feed row carries an `fd_code`, send that. Otherwise
-fall back to the UUID. Backend must accept either form on the same
-field name (`feed_id`). The UUID fallback is permanent — custom feeds
-or any row that never gets an `fd_code` will continue to send UUID.
-
-### 11.2 Frontend parser
-
-The PWA reads `fd_code` (or its `feed_code` alias — both accepted on
-input for safety) from these response endpoints:
-
-- `GET /v1/animal/search-feeds` — search results
-- `GET /v1/animal/feed-name` — Feed dropdown rows
-- `GET /v1/animal/simulations/{report_id}` — restored history rows
-- `POST /v1/animal/custom-feeds` — newly-inserted custom feed
-
-The code is stored on each `FeedItem` alongside the UUID; payload
-construction picks one at send time per §11.1.
-
-### 11.3 No payload field rename
-
-Maria confirmed via user that the wire field stays named `feed_id`.
-Only the *value* changes — frontend swaps which identifier sits in
-that slot, backend resolves whichever form it receives.
-
-### 11.4 Edge cases
-
-- **fd_code is a number in the DB** (`fd_code: numeric` per the
-  screenshot). Frontend coerces to string via `String(code)` so the
-  payload field stays consistently a string regardless of source.
-- **fd_code is null** on a row that the user is trying to send →
-  fallback to UUID. No user-visible error.
-- **Both null** (shouldn't happen) → the row fails the
-  `!!item.feed_uuid` gate and never reaches the payload.
-
----
-
 ## 12. Y3 §1.3 — Milk Price input + cost-per-litre
 
 Add a "Milk Price" input on the Animal Inputs (Milk Production)

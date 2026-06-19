@@ -21,7 +21,6 @@ const createFeedItem = (): FeedItem => ({
   sub_category_id: null,
   sub_category_name: "",
   feed_uuid: null,
-  feed_code: null,
   price_per_kg: null,
   quantity_kg: null,
   // Y3 §1.1.2 — toggle off by default; bounds blank.
@@ -299,7 +298,6 @@ export default function FeedSelectionPage() {
               category_name: result.feed_category,
               sub_category_name: result.feed_name,
               feed_uuid: result.feed_uuid,
-              feed_code: result.feed_code,
               sub_category_id: 1,
               // FeedRow's cascade `useEffect`s will repopulate the *_id
               // fields when the dropdown lists arrive — leaving them
@@ -562,10 +560,7 @@ export default function FeedSelectionPage() {
           simulation_id: simulationId,
           cattle_info: cattlePayload,
           feed_evaluation: validItems.map((item) => ({
-            // Per Maria's rollout: prefer fd_code, fall back to UUID for
-            // any feed that doesn't have a code populated yet. Backend
-            // resolves either form to the same internal feed record.
-            feed_id: item.feed_code ?? item.feed_uuid!,
+            feed_id: item.feed_uuid!,
             quantity_as_fed: item.quantity_kg ?? 0,
             price_per_kg: item.price_per_kg!,
           })),
@@ -584,9 +579,7 @@ export default function FeedSelectionPage() {
             // §2.4 reads these and overrides default constraints.
             // TODO(maria-y3): confirm canonical key names.
             const base: { feed_id: string; price_per_kg: number; min_kg_per_day?: number; max_kg_per_day?: number } = {
-              // Prefer fd_code (when Maria populates it), fall back to UUID.
-              // See identical logic in the evaluation branch above.
-              feed_id: item.feed_code ?? item.feed_uuid!,
+              feed_id: item.feed_uuid!,
               price_per_kg: item.price_per_kg!,
             };
             if (item.inclusion_limits_enabled) {
