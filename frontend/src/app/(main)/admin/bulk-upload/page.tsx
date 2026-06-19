@@ -138,50 +138,95 @@ export default function BulkUploadPage() {
       const res = kind === "standard"
         ? await exportAdminFeeds(user.id)
         : await exportCustomFeeds(user.id);
-      // Defensive key extraction — Android's ExportFeedResponse uses
-      // file_url / file_name / message / success / total_records. The
-      // PWA also accepts plain `url` and `record_count` aliases in
-      // case Maria ever renames. Logged so we can see exactly what
-      // came back when debugging.
-      console.log(`[export-${kind}] response:`, res.data);
-      const data = res.data as {
-        success?: boolean;
-        message?: string;
-        url?: string;
-        file_url?: string;
-        fileUrl?: string;
-        file_name?: string;
-        fileName?: string;
-        record_count?: number;
-        total_records?: number;
-      };
-      if (data?.success === false) {
-        setDownloadStatus("failed");
-        setDownloadMessage(data?.message ?? "Could not export feeds.");
-        return;
-      }
-      const url = data?.file_url ?? data?.url ?? data?.fileUrl;
-      const fileName =
-        data?.file_name ??
-        data?.fileName ??
-        (kind === "standard" ? "feeds_export.xlsx" : "custom_feeds_export.xlsx");
-      const recordCount = data?.record_count ?? data?.total_records;
-      if (url) {
-        triggerDownload(url, fileName);
+
+      // The v1 backend may return EITHER:
+      //   A) JSON { file_url, file_name, ... } — legacy Android shape.
+      //      The frontend opens the file_url to download.
+      //   B) The xlsx file BINARY directly with Content-Disposition:
+      //      attachment — likely on the v1 backend, since the swagger
+      //      response schema is empty for these endpoints.
+      // Both are requested as `responseType: "blob"` in api.ts, so
+      // res.data is a Blob in both cases. We sniff the Content-Type
+      // header to decide which branch to follow.
+      const ctRaw = (res.headers["content-type"] || res.headers["Content-Type"] || "") as string;
+      const contentType = ctRaw.toLowerCase();
+      const isJson = contentType.includes("application/json");
+      const fallbackName = kind === "standard" ? "feeds_export.xlsx" : "custom_feeds_export.xlsx";
+
+      if (isJson) {
+        // Response is JSON wrapped in a Blob — read the text and parse.
+        const text = await (res.data as Blob).text();
+        let parsed: {
+          success?: boolean;
+          message?: string;
+          url?: string;
+          file_url?: string;
+          fileUrl?: string;
+          file_name?: string;
+          fileName?: string;
+          record_count?: number;
+          total_records?: number;
+        } = {};
+        try {
+          parsed = JSON.parse(text);
+        } catch {
+          // Server returned text/json that isn't actually JSON — bail.
+          setDownloadStatus("failed");
+          setDownloadMessage("Backend returned an unparseable response.");
+          return;
+        }
+        console.log(`[export-${kind}] JSON response:`, parsed);
+        if (parsed?.success === false) {
+          setDownloadStatus("failed");
+          setDownloadMessage(parsed?.message ?? "Could not export feeds.");
+          return;
+        }
+        const url = parsed?.file_url ?? parsed?.url ?? parsed?.fileUrl;
+        const fileName = parsed?.file_name ?? parsed?.fileName ?? fallbackName;
+        const recordCount = parsed?.record_count ?? parsed?.total_records;
+        if (url) {
+          triggerDownload(url, fileName);
+        } else {
+          setDownloadStatus("failed");
+          setDownloadMessage("Export completed but the backend did not return a file URL. Contact admin.");
+          return;
+        }
+        setDownloadProgress(100);
+        setDownloadStatus("successful");
+        setDownloadMessage(
+          parsed?.message ??
+          (recordCount != null ? `Exported ${recordCount} record${recordCount === 1 ? "" : "s"}.` : "Feeds exported successfully.")
+        );
       } else {
-        // Success without a URL means the backend processed the export
-        // but didn't return a downloadable link — surface this clearly
-        // instead of pretending the download worked.
-        setDownloadStatus("failed");
-        setDownloadMessage("Export completed but the backend did not return a file URL. Contact admin.");
-        return;
+        // Response is the xlsx binary. Save it directly via a blob URL.
+        // Parse the filename out of Content-Disposition when the
+        // backend provides one (e.g. attachment; filename="feeds.xlsx").
+        const cdRaw = (res.headers["content-disposition"] || res.headers["Content-Disposition"] || "") as string;
+        const cdMatch = /filename\*?=(?:UTF-8'')?["']?([^;"'\r\n]+)["']?/i.exec(cdRaw);
+        const fileName = cdMatch?.[1] ? decodeURIComponent(cdMatch[1].trim()) : fallbackName;
+        const blob = res.data as Blob;
+        // Size sanity check — backend sometimes returns an empty 200
+        // when there are no rows. Surface that explicitly.
+        if (blob.size === 0) {
+          setDownloadStatus("failed");
+          setDownloadMessage("Backend returned an empty file.");
+          return;
+        }
+        console.log(`[export-${kind}] binary response — ${blob.size} bytes, type ${contentType}, name ${fileName}`);
+        const objUrl = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = objUrl;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        // Slight delay before revoking so the browser has time to
+        // start the download stream.
+        setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+        setDownloadProgress(100);
+        setDownloadStatus("successful");
+        setDownloadMessage(`Downloaded ${fileName} (${(blob.size / 1024).toFixed(1)} KB).`);
       }
-      setDownloadProgress(100);
-      setDownloadStatus("successful");
-      setDownloadMessage(
-        data?.message ??
-        (recordCount != null ? `Exported ${recordCount} record${recordCount === 1 ? "" : "s"}.` : "Feeds exported successfully.")
-      );
     } catch (err: unknown) {
       setDownloadStatus("failed");
       setDownloadMessage(err instanceof Error ? err.message : "Could not export feeds.");

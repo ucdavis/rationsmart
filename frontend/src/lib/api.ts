@@ -649,8 +649,13 @@ export const getAdminFeedbacks = (_admin_user_id: string, limit = 20, offset = 0
 export const getAdminFeedbackStats = (_admin_user_id: string) =>
   api.get("/v1/admin/user-feedback/stats");
 
+// GET /v1/admin/export-feeds — the v1 backend may return EITHER
+//   - JSON { file_url, file_name, success, message, total_records }  (legacy / S3-link style)
+//   - the xlsx file binary directly with Content-Disposition: attachment
+// We request as a blob so both work; the caller inspects the
+// response's content-type to decide which path to follow.
 export const exportAdminFeeds = (_admin_user_id: string) =>
-  api.get("/v1/admin/export-feeds");
+  api.get("/v1/admin/export-feeds", { responseType: "blob" });
 
 // POST /v1/admin/bulk-upload-feeds (multipart, JWT-derived admin).
 // CRITICAL: do NOT explicitly set the Content-Type header. When axios
@@ -724,7 +729,7 @@ export const deleteAdminFeedType = (type_id: string, _admin_user_id: string) =>
   api.delete(`/v1/admin/delete-feed-type/${type_id}`);
 
 export const exportCustomFeeds = (_admin_user_id: string) =>
-  api.get("/v1/admin/export-custom-feeds");
+  api.get("/v1/admin/export-custom-feeds", { responseType: "blob" });
 
 // ─── Custom Feed (user, JWT-protected) ──────────────────────────────────────
 // All three endpoints restructured:
