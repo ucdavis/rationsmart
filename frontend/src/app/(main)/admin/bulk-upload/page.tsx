@@ -89,21 +89,43 @@ export default function BulkUploadPage() {
 
   const handleDownloadTemplate = () => {
     setIsDownloadingTemplate(true);
-    const a = document.createElement("a");
-    a.href = TEMPLATE_URL;
-    a.download = "feeds_table_template.xlsx";
-    a.click();
+    // Template lives on S3 — cross-origin, so the `download` attribute
+    // is silently ignored. Use triggerDownload (defined below) which
+    // routes cross-origin URLs through window.open. S3 returns
+    // Content-Disposition: attachment for this object so the browser
+    // saves it instead of rendering.
+    triggerDownload(TEMPLATE_URL, "feeds_table_template.xlsx");
     setTimeout(() => {
       setIsDownloadingTemplate(false);
-      showSnackbar("Template downloaded", "success");
+      showSnackbar("Template opened in a new tab", "success");
     }, 500);
   };
 
   const triggerDownload = (url: string, filename: string) => {
+    // Cross-origin pitfall: when the URL points at a different origin
+    // (e.g. an S3 bucket), browsers SILENTLY IGNORE the `download`
+    // attribute as a security measure. The result is either a no-op or
+    // a same-tab navigation away from the page — which is exactly what
+    // the user reported ("downloading… export successful" but no file
+    // ever lands).
+    //
+    // Workaround: detect cross-origin URLs and open them in a new tab
+    // instead. S3 / the backend should be setting Content-Disposition:
+    // attachment on the file, which makes the browser save it on open.
+    // For same-origin URLs the original <a download> trick still works
+    // and lets us rename the file.
+    const isAbsolute = /^https?:\/\//i.test(url);
+    const isCrossOrigin = isAbsolute && !url.startsWith(window.location.origin);
+    if (isCrossOrigin) {
+      window.open(url, "_blank", "noopener,noreferrer");
+      return;
+    }
     const a = document.createElement("a");
     a.href = url;
     a.download = filename;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
   };
 
   const runExport = async (kind: ExportKind) => {
@@ -116,20 +138,49 @@ export default function BulkUploadPage() {
       const res = kind === "standard"
         ? await exportAdminFeeds(user.id)
         : await exportCustomFeeds(user.id);
-      const data = res.data as { success?: boolean; message?: string; url?: string; file_url?: string; file_name?: string; record_count?: number };
+      // Defensive key extraction — Android's ExportFeedResponse uses
+      // file_url / file_name / message / success / total_records. The
+      // PWA also accepts plain `url` and `record_count` aliases in
+      // case Maria ever renames. Logged so we can see exactly what
+      // came back when debugging.
+      console.log(`[export-${kind}] response:`, res.data);
+      const data = res.data as {
+        success?: boolean;
+        message?: string;
+        url?: string;
+        file_url?: string;
+        fileUrl?: string;
+        file_name?: string;
+        fileName?: string;
+        record_count?: number;
+        total_records?: number;
+      };
       if (data?.success === false) {
         setDownloadStatus("failed");
         setDownloadMessage(data?.message ?? "Could not export feeds.");
         return;
       }
-      const url = data?.url ?? data?.file_url;
-      const fileName = data?.file_name ?? (kind === "standard" ? "feeds_export.xlsx" : "custom_feeds_export.xlsx");
-      if (url) triggerDownload(url, fileName);
+      const url = data?.file_url ?? data?.url ?? data?.fileUrl;
+      const fileName =
+        data?.file_name ??
+        data?.fileName ??
+        (kind === "standard" ? "feeds_export.xlsx" : "custom_feeds_export.xlsx");
+      const recordCount = data?.record_count ?? data?.total_records;
+      if (url) {
+        triggerDownload(url, fileName);
+      } else {
+        // Success without a URL means the backend processed the export
+        // but didn't return a downloadable link — surface this clearly
+        // instead of pretending the download worked.
+        setDownloadStatus("failed");
+        setDownloadMessage("Export completed but the backend did not return a file URL. Contact admin.");
+        return;
+      }
       setDownloadProgress(100);
       setDownloadStatus("successful");
       setDownloadMessage(
         data?.message ??
-        (data?.record_count != null ? `Exported ${data.record_count} record${data.record_count === 1 ? "" : "s"}.` : "Feeds exported successfully.")
+        (recordCount != null ? `Exported ${recordCount} record${recordCount === 1 ? "" : "s"}.` : "Feeds exported successfully.")
       );
     } catch (err: unknown) {
       setDownloadStatus("failed");

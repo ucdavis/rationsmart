@@ -652,7 +652,14 @@ export const getAdminFeedbackStats = (_admin_user_id: string) =>
 export const exportAdminFeeds = (_admin_user_id: string) =>
   api.get("/v1/admin/export-feeds");
 
-// POST /v1/admin/bulk-upload-feeds (multipart, JWT-derived admin)
+// POST /v1/admin/bulk-upload-feeds (multipart, JWT-derived admin).
+// CRITICAL: do NOT explicitly set the Content-Type header. When axios
+// hands a FormData body to the XHR layer, the browser auto-generates
+// `multipart/form-data; boundary=----WebKitFormBoundary...` with the
+// correct boundary parameter. Setting "multipart/form-data" by hand
+// strips the boundary, so FastAPI can't parse the multipart and
+// rejects the upload (typically 400 / 422 "Body is invalid"). Letting
+// axios / the browser populate the header is what makes uploads work.
 export const bulkUploadFeeds = (
   _admin_user_id: string,
   file: File,
@@ -661,7 +668,6 @@ export const bulkUploadFeeds = (
   const form = new FormData();
   form.append("file", file);
   return api.post("/v1/admin/bulk-upload-feeds", form, {
-    headers: { "Content-Type": "multipart/form-data" },
     onUploadProgress: (evt) => {
       if (onProgress && evt.total) {
         onProgress(Math.round((evt.loaded * 100) / evt.total));
