@@ -41,6 +41,20 @@ from .rationsmart_warnings import pre_feasibility_warnings
 # Optimization BOUNDS
 ########################################################
 
+def _get_explicit_dm_bounds(f_nd, n):
+    # Reads per-ingredient DM kg/day bounds produced by _prepare_feed_bound_columns.
+    # Returns zero arrays when the keys are absent (no user bounds set).
+    min_dm = np.asarray(f_nd.get("Fd_MinDM", np.zeros(n)), dtype=float)
+    max_dm = np.asarray(f_nd.get("Fd_MaxDM", np.zeros(n)), dtype=float)
+    if min_dm.shape[0] != n:
+        min_dm = np.resize(min_dm, n)
+    if max_dm.shape[0] != n:
+        max_dm = np.resize(max_dm, n)
+    min_dm = np.nan_to_num(min_dm, nan=0.0)
+    max_dm = np.nan_to_num(max_dm, nan=0.0)
+    return min_dm, max_dm
+
+
 # Purpose: Compute decision variable bounds (xl/xu) including DMI and ingredient constraints.
 # Notes: Applies mineral/urea caps and category-based adjustments with safety checks.
 def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_thresholds=None):
@@ -54,7 +68,20 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
     # DMI bounds (last variable) in the array) fixed to target
     xl[-1] = trg
     xu[-1] = trg
-    
+
+    # Per-ingredient user bounds (from feed card toggle or Excel fd_min/fd_max columns).
+    # Step 2: DM kg/day → DM proportion (Step 1 was done in _prepare_feed_bound_columns).
+    explicit_min_dm, explicit_max_dm = _get_explicit_dm_bounds(f_nd, n)
+    explicit_min_mask = explicit_min_dm > 0
+    explicit_max_mask = explicit_max_dm > 0
+    if np.any(explicit_min_mask):
+        xl[:n] = np.maximum(xl[:n], explicit_min_dm / trg)
+    if np.any(explicit_max_mask):
+        xu[:n][explicit_max_mask] = np.minimum(
+            xu[:n][explicit_max_mask],
+            explicit_max_dm[explicit_max_mask] / trg,
+        )
+
     # Get constraint thresholds
     animal_state = animal_requirements.get("An_StatePhys", "Lactating Cow")
     try:
@@ -116,6 +143,11 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
     # Check total requirements
     total_xl = np.sum(xl[:n])
     if total_xl > 1.0:
+        if np.any(explicit_min_mask):
+            raise ValueError(
+                "Ingredient minimum bounds exceed target DMI; "
+                "reduce min_kg_asfed entries before optimizing."
+            )
         scale_factor = 0.95 / total_xl
         xl[:n] *= scale_factor
         logger.debug("Scaled bounds by %.3f", scale_factor)
@@ -128,25 +160,46 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
 # NSGA Helpers
 ########################################################
 
-# Purpose: Project a vector onto the simplex while enforcing non-negativity.
-# Notes: Returns a normalized vector with graceful fallback when sums collapse.
-def _project_to_simplex(v):
-    # Project to simplex to ensure the sum of the values is 1
-    v = np.maximum(v, 0.0)
-    if v.sum() == 0.0:
-        return np.full_like(v, 1.0 / len(v))
-    u = np.sort(v)[::-1]
-    cssv = np.cumsum(u)
-    rho = np.nonzero(u * (np.arange(1, len(v) + 1)) > (cssv - 1))[0][-1]
-    theta = (cssv[rho] - 1) / (rho + 1)
-    w = np.maximum(v - theta, 0.0)
+# Purpose: Project a vector onto the simplex while honouring per-ingredient box bounds.
+# Notes: Uses bisection on the Lagrange multiplier; correct when ingredients are tightly constrained.
+def _project_to_bounded_simplex(v, lower, upper, target_sum=1.0, tol=1e-10, max_iter=100):
+    v = np.asarray(v, dtype=float)
+    lower = np.asarray(lower, dtype=float)
+    upper = np.asarray(upper, dtype=float)
 
-    s = w.sum()
-    if s <= 0:
-        w = np.full_like(v, 1.0 / len(v))
-    else:
-        w = w / s
-    return w
+    if v.shape != lower.shape or v.shape != upper.shape:
+        raise ValueError("Bounded simplex projection requires matching shapes for v, lower, and upper.")
+
+    lower = np.clip(lower, 0.0, None)
+    upper = np.maximum(upper, lower)
+
+    lower_sum = float(np.sum(lower))
+    upper_sum = float(np.sum(upper))
+    if lower_sum - target_sum > tol or upper_sum + tol < target_sum:
+        raise ValueError("Infeasible bounded simplex projection: target sum is outside lower/upper bound totals.")
+
+    lo = float(np.min(v - upper))
+    hi = float(np.max(v - lower))
+
+    for _ in range(max_iter):
+        mid = 0.5 * (lo + hi)
+        projected = np.clip(v - mid, lower, upper)
+        current_sum = float(np.sum(projected))
+        if abs(current_sum - target_sum) <= tol:
+            break
+        if current_sum > target_sum:
+            lo = mid
+        else:
+            hi = mid
+
+    projected = np.clip(v - 0.5 * (lo + hi), lower, upper)
+    residual = target_sum - float(np.sum(projected))
+    if abs(residual) > 1e-8:
+        free = np.where((projected > lower + tol) & (projected < upper - tol))[0]
+        if free.size:
+            projected[free] += residual / free.size
+            projected = np.clip(projected, lower, upper)
+    return projected
 
 
 class SimplexPlusDmiRepair(Repair):
@@ -157,8 +210,8 @@ class SimplexPlusDmiRepair(Repair):
         self.xl = np.asarray(xl, dtype=float)
         self.xu = np.asarray(xu, dtype=float)
 
-    # Purpose: Fix candidate solutions by clipping DMI and re-normalizing proportions.
-    # Notes: Applies lower/upper bounds then renormalizes to keep sums consistent.
+    # Purpose: Fix candidate solutions by clipping DMI and projecting onto the bounded simplex.
+    # Notes: Keeps the sum at 1 while respecting ingredient lower/upper bounds.
     def _do(self, problem, X, **kwargs):
         Y = np.asarray(X, dtype=float).copy()
         n_var = Y.shape[1]
@@ -167,15 +220,11 @@ class SimplexPlusDmiRepair(Repair):
         # clamp t (DMI)
         Y[:, -1] = np.clip(Y[:, -1], self.xl[-1], self.xu[-1])
 
-        # Project to simplex and enforce bounds
+        # Project each candidate onto the bounded simplex.
         P = Y[:, :n]
         P[P < 0.0] = 0.0
-        
         for i in range(P.shape[0]):
-            P[i, :] = _project_to_simplex(P[i, :])     # Standard projection
-            P[i, :] = np.maximum(P[i, :], self.xl[:n]) # Lower bounds
-            P[i, :] = np.minimum(P[i, :], self.xu[:n]) # Upper bounds
-            P[i, :] = P[i, :] / P[i, :].sum()          # Renormalize to simplex
+            P[i, :] = _project_to_bounded_simplex(P[i, :], self.xl[:n], self.xu[:n])
         Y[:, :n] = P
         return Y
 
@@ -199,13 +248,9 @@ class SimplexPlusDmiSampling(Sampling):
         P = np.zeros((n_samples, n))
         
         for i in range(n_samples):
-            # Start with Dirichlet sampling
+            # Start with Dirichlet sampling then project onto the bounded simplex.
             sample = np.random.dirichlet(np.ones(n))
-            
-            # Enforce bounds and renormalize
-            sample = np.maximum(sample, self.xl[:n])  # Lower bounds
-            sample = np.minimum(sample, self.xu[:n])  # Upper bounds
-            sample = sample / sample.sum()           # Renormalize to simplex
+            sample = _project_to_bounded_simplex(sample, self.xl[:n], self.xu[:n])
             P[i, :] = sample
 
         # t uniform in interval

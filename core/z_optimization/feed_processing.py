@@ -21,13 +21,30 @@ FEED_COLUMN_MAPPING = {
     "fd_cost": "Fd_Cost", "price_per_kg": "Fd_Cost",
     "fd_dm": "Fd_DM", "fd_ash": "Fd_Ash", "fd_cp": "Fd_CP",
     "fd_npn_cp": "Fd_NPN_CP", "fd_ee": "Fd_EE", "fd_st": "Fd_St", "fd_ndf": "Fd_NDF",
-    "fd_adf": "Fd_ADF", "fd_lg": "Fd_Lg", "fd_ndin": "Fd_NDIN", "fd_adin": "Fd_ADIN", 
-    "fd_ca": "Fd_Ca", "fd_p": "Fd_P", "fd_country_name": "Fd_Country", 
+    "fd_adf": "Fd_ADF", "fd_lg": "Fd_Lg", "fd_ndin": "Fd_NDIN", "fd_adin": "Fd_ADIN",
+    "fd_ca": "Fd_Ca", "fd_p": "Fd_P", "fd_country_name": "Fd_Country",
     "fd_filler_role": "Fd_FillerRole",
     # New nutritional additions
-    "fd_nfe": "Fd_NFE", "fd_cf": "Fd_CF", 
-    "fd_hemicellulose": "Fd_Hemicellulose", "fd_cellulose": "Fd_Cellulose"
+    "fd_nfe": "Fd_NFE", "fd_cf": "Fd_CF",
+    "fd_hemicellulose": "Fd_Hemicellulose", "fd_cellulose": "Fd_Cellulose",
+    # Per-ingredient inclusion bounds (as-fed kg/day; from feed card toggle or Excel columns)
+    "fd_min": "Fd_Min", "fd_max": "Fd_Max",
 }
+
+
+def _prepare_feed_bound_columns(f: pd.DataFrame) -> pd.DataFrame:
+    # Reads Fd_Min / Fd_Max (as-fed kg/day) and converts to DM kg/day.
+    # Both source columns are optional: missing or NaN → 0.0 (no bound).
+    if "Fd_Min" not in f.columns:
+        f["Fd_Min"] = np.nan
+    if "Fd_Max" not in f.columns:
+        f["Fd_Max"] = np.nan
+    f["Fd_Min"] = pd.to_numeric(f["Fd_Min"], errors="coerce")
+    f["Fd_Max"] = pd.to_numeric(f["Fd_Max"], errors="coerce")
+    dm_fraction = pd.to_numeric(f["Fd_DM"], errors="coerce").fillna(0.0) / 100.0
+    f["Fd_MinDM"] = f["Fd_Min"].fillna(0.0) * dm_fraction   # Step 1: as-fed → DM kg/day
+    f["Fd_MaxDM"] = f["Fd_Max"].fillna(0.0) * dm_fraction
+    return f
 
 # Purpose: Load and normalize feed data from Excel for optimization inputs.
 # Notes: Renames columns, computes derived nutrition fields, and returns dict plus summary DataFrame.
@@ -72,6 +89,8 @@ def rsm_process_feed_library(feed_library_path, sheet_name="Fd_selected"):
     if "Fd_FillerRole" not in f.columns:
         f["Fd_FillerRole"] = ""
 
+    f = _prepare_feed_bound_columns(f)
+
     # Energy values according to NRC 2001
 
     # processing adjustment factor
@@ -97,7 +116,7 @@ def rsm_process_feed_library(feed_library_path, sheet_name="Fd_selected"):
     f["Fd_tdNFC"] = f["Fd_tdNFC"].apply(lambda x: 0 if pd.isna(x) or x < 0 else x)
 
     # Fd_tdCP
-    f["Fd_tdCP"] = np.nan 
+    f["Fd_tdCP"] = np.nan
     mask_forage = f["Fd_Type"] == "Forage"
     mask_conc = f["Fd_Type"] == "Concentrate"
     exp_val = lambda row: row["Fd_CP"] * np.exp(-1.2 * (row["Fd_ADFIP"] / row["Fd_CP"])) if row["Fd_CP"] != 0 else 0
@@ -120,7 +139,7 @@ def rsm_process_feed_library(feed_library_path, sheet_name="Fd_selected"):
     de_FA = 9.4
     loss_constant = 0.3
 
-    # Weiss et al., 2018.  
+    # Weiss et al., 2018.
     f["Fd_GE"] = (f["Fd_CP"] * de_CP/100) + (f["Fd_FA"] * de_FA/100) + (100 - f["Fd_CP"] - f["Fd_FA"] - f["Fd_Ash"]) * 0.042
     f["Fd_GE"] = f["Fd_GE"].apply(lambda x: 0 if pd.isna(x) or x < 0 else x)
 
@@ -313,6 +332,8 @@ def rsm_process_feed_dataframe(feed_data):
             raise KeyError(f"Required column 'Fd_Name' (or 'fd_name') missing from feed data. Available columns: {list(f.columns)}")
 
     f = f.dropna(subset=["Fd_Name"]) # Remove rows with NA values in the Fd_Name column
+
+    f = _prepare_feed_bound_columns(f)
 
     # Energy values according to NRC 2001
 

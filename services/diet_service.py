@@ -55,6 +55,8 @@ class FeedRecord:
     fd_p: float = 0.0
     price_per_kg: float = 0.0
     quantity_as_fed: Optional[float] = None
+    fd_min: Optional[float] = None   # as-fed min kg/day from feed card toggle (None = no bound)
+    fd_max: Optional[float] = None   # as-fed max kg/day from feed card toggle (None = no bound)
 
     @classmethod
     def from_orm(
@@ -64,6 +66,8 @@ class FeedRecord:
         country_name: str = "",
         price_per_kg: float = 0.0,
         quantity_as_fed: Optional[float] = None,
+        fd_min: Optional[float] = None,
+        fd_max: Optional[float] = None,
     ) -> "FeedRecord":
         return cls(
             feed_id=fid,
@@ -91,6 +95,8 @@ class FeedRecord:
             fd_p=float(feed.fd_p or 0),
             price_per_kg=price_per_kg,
             quantity_as_fed=quantity_as_fed,
+            fd_min=fd_min,
+            fd_max=fd_max,
         )
 
 
@@ -232,7 +238,12 @@ async def _build_feed_data_list(
             c = await user_repo.get_country_by_id(str(feed.fd_country_id))
             country_name = c.name if c else ""
 
-        rec = FeedRecord.from_orm(feed, fid, country_name, price_per_kg=item.price_per_kg)
+        rec = FeedRecord.from_orm(
+            feed, fid, country_name,
+            price_per_kg=item.price_per_kg,
+            fd_min=getattr(item, 'min_kg_asfed', None),
+            fd_max=getattr(item, 'max_kg_asfed', None),
+        )
         feed_data_list.append(dataclasses.asdict(rec))
     return feed_data_list, missing
 

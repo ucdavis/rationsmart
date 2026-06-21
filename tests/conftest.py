@@ -25,6 +25,7 @@ _REQUIRED_ENV = {
     "AWS_SECRET_ACCESS_KEY": "test",
     "AWS_REGION": "us-east-1",
     "AWS_S3_BUCKET": "test-bucket",
+    "API_BASE_URL": "http://localhost:8000",
 }
 
 for key, value in _REQUIRED_ENV.items():

@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "dev_docs/feed_search_implementation_plan.md",
+                "file": "dev_docs/feed_inclusion_limits_plan.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "feed_search_implementation_plan"
+              "title": "feed_inclusion_limits_plan"
             }
           }
         ]
@@ -185,7 +185,9 @@
   },
   "active": "d8fcece6b15570a9",
   "lastOpenFiles": [
-    "Untitled.canvas",
-    "dev_docs/feed_search_implementation_plan.md"
+    "dev_docs/implementation_plan.md",
+    "dev_docs/feed_inclusion_limits_plan.md",
+    "dev_docs/feed_search_implementation_plan.md",
+    "Untitled.canvas"
   ]
 }

@@ -60,6 +60,8 @@ class CattleInfo(BaseModel):
 class FeedWithPrice(BaseModel):
     feed_id: str = Field(..., description="Feed UUID")
     price_per_kg: float = Field(..., ge=0, description="Price per kg in local currency")
+    min_kg_asfed: Optional[float] = Field(None, ge=0, description="Min inclusion kg/day as-fed (None = no lower bound)")
+    max_kg_asfed: Optional[float] = Field(None, ge=0, description="Max inclusion kg/day as-fed (None = no upper bound)")
 
     @field_validator('price_per_kg', mode='before')
     @classmethod
@@ -74,6 +76,18 @@ class FeedWithPrice(BaseModel):
             return v
         except ValueError:
             raise ValueError('feed_id must be a valid UUID')
+
+    @field_validator('min_kg_asfed', 'max_kg_asfed', mode='before')
+    @classmethod
+    def round_bounds(cls, v):
+        if v is None:
+            return None
+        return round(float(v), 3)
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.min_kg_asfed is not None and self.max_kg_asfed is not None:
+            if self.min_kg_asfed > self.max_kg_asfed:
+                raise ValueError('min_kg_asfed must be ≤ max_kg_asfed')
 
 
 # ── Diet thresholds ──────────────────────────────────────────────────────────

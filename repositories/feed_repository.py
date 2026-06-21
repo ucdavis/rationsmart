@@ -73,6 +73,7 @@ class FeedRepository:
 
     async def create(self, data: Dict[str, Any], country_id: Optional[str] = None) -> Feed:
         feed = Feed(
+            id=data.get("id") or uuid.uuid4(),
             fd_code=data.get("fd_code"),
             fd_name=data["fd_name"],
             fd_category=data.get("fd_category"),

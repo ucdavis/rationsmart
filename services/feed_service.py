@@ -6,6 +6,7 @@ All DB access through FeedRepository. No FastAPI imports.
 """
 import io
 import logging
+import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -15,6 +16,17 @@ from repositories.feed_repository import FeedRepository
 from repositories.user_repository import UserRepository
 
 logger = logging.getLogger(__name__)
+
+# Fixed namespace for standard feeds sourced from the 3rd party feed library.
+# Never change this value — doing so would alter all derived UUIDs and break stored references.
+STANDARD_FEED_NAMESPACE = uuid.UUID("ae24b4d9-a4e1-4a7f-a083-ed6e9ae6006d")
+
+
+def stable_feed_uuid(fd_code: str) -> uuid.UUID:
+    """Derives a deterministic UUID from a 3rd party fd_code.
+    Same fd_code always produces the same UUID across DB refreshes."""
+    return uuid.uuid5(STANDARD_FEED_NAMESPACE, fd_code)
+
 
 # Columns required for bulk upload Excel files
 _REQUIRED_COLUMNS = {"fd_name", "fd_category", "fd_type", "fd_country_name"}
@@ -226,13 +238,18 @@ async def bulk_upload_feeds(
                 c = await user_repo.get_country_by_name(country_name)
                 country_id = str(c.id) if c else None
 
+            fd_code = str(row.get("fd_code", "") or "").strip()
+            if not fd_code:
+                failed.append({"row": row_num, "reason": "fd_code is missing — cannot generate stable feed ID"})
+                continue
+
             data: Dict[str, Any] = {
                 "fd_name": fd_name,
                 "fd_category": str(row.get("fd_category", "") or "").strip() or None,
                 "fd_type": str(row.get("fd_type", "") or "").strip() or None,
                 "fd_country_name": country_name or None,
                 "fd_country_cd": str(row.get("fd_country_cd", "") or "").strip() or None,
-                "fd_code": str(row.get("fd_code", "") or "").strip() or None,
+                "fd_code": fd_code,
             }
             for col in _NUMERIC_COLUMNS:
                 val = row.get(col)
@@ -244,6 +261,7 @@ async def bulk_upload_feeds(
                 updated += 1
                 existing += 1
             else:
+                data["id"] = stable_feed_uuid(fd_code)
                 await repo.create(data, country_id=country_id)
                 success_count += 1
 
