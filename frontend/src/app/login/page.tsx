@@ -98,6 +98,9 @@ export default function LoginPage() {
       // fetch profile + countries in parallel (non-critical)
       let is_admin = false;
       let currency = "";
+      // i18n V2: backend now returns user.preferred_language on the profile.
+      // Default to "en" until that endpoint actually ships it for all users.
+      let preferred_language = "en";
       try {
         const country = u.country;
         const countryId = String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? "");
@@ -105,7 +108,10 @@ export default function LoginPage() {
           getUserProfile(emailId),
           getCountries(),
         ]);
-        if (profileRes.status === "fulfilled") is_admin = profileRes.value.data?.is_admin ?? false;
+        if (profileRes.status === "fulfilled") {
+          is_admin = profileRes.value.data?.is_admin ?? false;
+          preferred_language = (profileRes.value.data as { preferred_language?: string })?.preferred_language ?? "en";
+        }
         if (countriesRes.status === "fulfilled") {
           const found = (countriesRes.value.data as Array<{id: string; currency?: string}>).find((c) => String(c.id) === countryId);
           currency = found?.currency ?? "";
@@ -136,6 +142,7 @@ export default function LoginPage() {
           typeof body.token === "string"
             ? body.token
             : (body.token?.access_token ?? null),
+        preferred_language,
       });
       const successMsg = body.message;
       if (successMsg) showSnackbar(successMsg, "success");

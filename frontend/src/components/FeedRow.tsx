@@ -68,7 +68,10 @@ function fmtNum(v: unknown): string {
 
 interface FeedType { id: number; name: string; }
 interface FeedCategory { id: number; name: string; }
-interface FeedSubCategoryItem { feed_name: string; feed_uuid: string; }
+// i18n V2 — display_name is the translated label shown to the user;
+// feed_name is the stable English identifier used for backend lookups
+// and comparison against the row's stored sub_category_name.
+interface FeedSubCategoryItem { feed_name: string; feed_uuid: string; display_name: string; }
 
 interface FeedRowProps {
   item: FeedItem;
@@ -316,7 +319,9 @@ export default function FeedRow({
         setSubCategories((prev) =>
           prev.some((s) => s.feed_uuid === newId)
             ? prev
-            : [...prev, { feed_name: newName, feed_uuid: newId! }]
+            // New custom feed — no server translation exists yet, so
+            // display_name is just the entered English name.
+            : [...prev, { feed_name: newName, feed_uuid: newId!, display_name: newName }]
         );
         onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId });
         showSnackbar("Custom feed saved", "success");
@@ -511,10 +516,14 @@ export default function FeedRow({
             const o = it as {
               feed_id?: string; feed_uuid?: string; id?: string;
               fd_name?: string; feed_name?: string; name?: string;
+              display_name?: string;
             };
             const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
             const name = o?.fd_name ?? o?.feed_name ?? o?.name;
-            return uuid && name ? { feed_name: name, feed_uuid: uuid } : null;
+            // i18n V2 — display_name falls back to English name when no
+            // translation exists, so we can render unconditionally.
+            const display = o?.display_name ?? name;
+            return uuid && name ? { feed_name: name, feed_uuid: uuid, display_name: display } : null;
           })
           .filter((s): s is FeedSubCategoryItem => s !== null);
         setSubCategories(list);
@@ -814,7 +823,7 @@ export default function FeedRow({
               }}
               disabled={!item.category_name}
               placeholder={!item.category_name ? "Select category" : "Select feed"}
-              options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.feed_name }))}
+              options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.display_name }))}
             />
           </FieldBox>
         )}

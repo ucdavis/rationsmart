@@ -1033,7 +1033,7 @@ export default function ReportPage() {
                     className="flex items-center py-2 px-1 border-b last:border-0"
                     style={{ borderColor: "#F1F5F9" }}
                   >
-                    <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.feed_name}</span>
+                    <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.display_name ?? row.feed_name}</span>
                     <span className="w-20 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.price_per_kg)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_as_fed_kg_per_day, 1)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.total_cost)}</span>
@@ -1283,7 +1283,7 @@ export default function ReportPage() {
                       borderBottom: "1px solid #F1F5F9",
                     }}
                   >
-                    <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{row.feed_name}</span>
+                    <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{row.display_name ?? row.feed_name}</span>
                     <span className="text-center" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.price_per_kg, 0)}</span>
                     <span className="text-center" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.quantity_kg_per_day, 2)}</span>
                     <span className="text-right font-bold" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.daily_cost, 0)}</span>

@@ -212,6 +212,12 @@ export interface FeedBreakdown {
   feed_id: string | null;
   feed_name: string | null;
   feed_type: string | null;
+  // i18n V2 — optional translated fields. The diet endpoints aren't
+  // listed in the i18n API doc as `?lang=` aware, but the consistent
+  // server-side pattern is to add display_* fields whenever a name/type
+  // is returned, so we accept them defensively and prefer them at render.
+  display_name?: string;
+  display_type?: string;
   price_per_kg: number | null;
   quantity_dm_kg_per_day: number | null;
   quantity_as_fed_kg_per_day: number | null;
@@ -285,10 +291,13 @@ export interface AdditionalInformation {
   warnings: string[] | null;
 }
 
+// i18n V2 — see FeedBreakdown comment; display_name is optional and
+// preferred at render time, with feed_name as the English fallback.
 export interface CostEffectiveDiet {
   currency: string;
   daily_cost: number | null;
   feed_name: string | null;
+  display_name?: string;
   price_per_kg: number | null;
   quantity_kg_per_day: number | null;
 }
@@ -331,7 +340,31 @@ export interface Country {
   code: string;
   country_code?: string;
   currency?: string;
+  // i18n V2: backend now returns the language codes active for this country.
+  // Always includes "en". The Profile language selector reads this list to
+  // know what to offer the user — and hides itself when only "en" is present.
+  supported_languages?: string[];
 }
+
+// ─── i18n V2 — language code → native-script display name ────────────────────
+// Hardcoded on the frontend per user preference (native script labels). When
+// the backend ships /v1/admin/languages with proper names, we can swap to that
+// as a source of truth; until then this map covers the rollout locales.
+export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
+  en: "English",
+  hi: "हिन्दी",
+  tl: "Tagalog",                  // Filipino
+  id: "Bahasa Indonesia",
+  th: "ไทย",
+  vi: "Tiếng Việt",
+  bn: "বাংলা",
+  ne: "नेपाली",
+  am: "አማርኛ",
+  om: "Afaan Oromoo",
+  sw: "Kiswahili",
+};
+export const labelForLanguage = (code: string): string =>
+  LANGUAGE_NATIVE_LABELS[code] ?? code.toUpperCase();
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 //
@@ -361,6 +394,16 @@ let tokenProvider: () => string | null = () => null;
 export const setTokenProvider = (fn: () => string | null) => {
   tokenProvider = fn;
 };
+
+// i18n V2: the store wires this to read user.preferred_language at call
+// time, so every API helper can append ?lang= without reaching into the
+// store. Falls back to "en" when no user is signed in.
+let langProvider: () => string = () => "en";
+export const setLangProvider = (fn: () => string) => {
+  langProvider = fn;
+};
+// Helper for endpoint helpers to spread the current ?lang= into their params.
+export const langParam = (): { lang: string } => ({ lang: langProvider() });
 
 // Build marker — visible in DevTools Console on first paint. Bump the
 // timestamp when pushing a diagnostic build so we can confirm the new
@@ -487,7 +530,7 @@ export const getUserProfile = (email_id: string) =>
   api.get(`/v1/auth/user/${encodeURIComponent(email_id)}`);
 
 // PUT /v1/auth/user/{email_id} — public — { name, country_id }
-export const updateUserProfile = (email_id: string, data: { name: string; country_id: string }) =>
+export const updateUserProfile = (email_id: string, data: { name: string; country_id: string; preferred_language?: string }) =>
   api.put(`/v1/auth/user/${encodeURIComponent(email_id)}`, data);
 
 // POST /v1/auth/user-delete-account — JWT auth; body { pin } (6-digit)
@@ -505,20 +548,27 @@ export const deleteAccount = (pin: string) =>
 //                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
 //     NOTE: query param renamed from feed_category to category.
 
+// i18n V2: append ?lang= so the backend returns translated display strings
+// for feed types / categories / feed names. ?lang= falls through to the
+// user's preferred_language server-side if omitted, but we always pass it
+// explicitly for determinism (per frontend-team convention).
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
 
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
+// i18n V2 — response now also carries display_name / display_type /
+// display_category translated into the requested lang. Identity fields
+// (id, fd_code, fd_name) remain stable English.
 export const getFeedSubCategories = (
   feed_type: string,
   feed_category: string,
   country_id: string,
   _user_id?: string
 ) =>
-  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category } });
+  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category, ...langParam() } });
 
 // ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────
 
@@ -762,9 +812,16 @@ export const getFeedClassification = () => api.get("/v1/feed-classification/stru
 // backend shape drifts (per §6 of the spec, three wrappers accepted).
 export interface FeedSearchResult {
   feed_uuid: string;
-  feed_name: string;
-  feed_type: string;
-  feed_category: string;
+  feed_name: string;          // English source — stable; used to talk to backend
+  feed_type: string;          // English source
+  feed_category: string;      // English source
+  // i18n V2 — translated strings for display only. Server falls back to the
+  // English source when no translation exists, so these are always populated.
+  // Renderers MUST use display_* fields; identifier comparisons MUST use
+  // feed_name / feed_type / feed_category.
+  display_name?: string;
+  display_type?: string;
+  display_category?: string;
   is_custom?: boolean;
 }
 
@@ -774,17 +831,21 @@ type RawFeed = {
   feed_id?: string;
   id?: string;
   feed_name?: string;
+  fd_name?: string;
   name?: string;
   feed_type?: string;
   type_name?: string;
   feed_category?: string;
   category_name?: string;
+  display_name?: string;
+  display_type?: string;
+  display_category?: string;
   is_custom?: boolean;
 };
 
 function normalizeRow(r: RawFeed): FeedSearchResult | null {
   const feed_uuid = r.feed_uuid ?? r.feed_id ?? r.id;
-  const feed_name = r.feed_name ?? r.name;
+  const feed_name = r.fd_name ?? r.feed_name ?? r.name;
   const feed_type = r.feed_type ?? r.type_name ?? "";
   const feed_category = r.feed_category ?? r.category_name ?? "";
   if (!feed_uuid || !feed_name) return null;
@@ -793,6 +854,11 @@ function normalizeRow(r: RawFeed): FeedSearchResult | null {
     feed_name,
     feed_type,
     feed_category,
+    // display_* always falls back to its English source so callers can use
+    // display_name unconditionally without an extra ?? in JSX.
+    display_name: r.display_name ?? feed_name,
+    display_type: r.display_type ?? feed_type,
+    display_category: r.display_category ?? feed_category,
     is_custom: r.is_custom,
   };
 }
@@ -805,7 +871,7 @@ export const searchFeeds = async (
   if (!query.trim() || !country_id) return { data: [] };
   try {
     const res = await api.get("/v1/animal/search-feeds", {
-      params: { query: query.trim(), country_id, limit: 20 },
+      params: { query: query.trim(), country_id, limit: 20, ...langParam() },
     });
     const body = res.data as unknown;
 

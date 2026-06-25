@@ -7,7 +7,7 @@ import type {
   RecommendationResponse,
   DietLimits,
 } from "./api";
-import { setTokenProvider } from "./api";
+import { setTokenProvider, setLangProvider } from "./api";
 
 export type { CattleInfo, FeedItem, DietLimits };
 
@@ -26,6 +26,10 @@ export interface User {
   // setTokenProvider() below wires the api.ts axios instance to read the
   // latest token on every request.
   token: string | null;
+  // i18n V2 (post_impl_multi_language): user's saved language preference.
+  // BCP 47 code; defaults to "en". Read at login; sent as ?lang= on every
+  // animal/* request. Updatable via PUT /v1/auth/user/{email_id}.
+  preferred_language: string;
 }
 
 interface SnackbarState {
@@ -140,3 +144,7 @@ export const useStore = create<AppState>()(
 // callback (not an import in api.ts) so we don't introduce a circular
 // dependency between api.ts and store.ts.
 setTokenProvider(() => useStore.getState().user?.token ?? null);
+// i18n V2 — wire the active language to api.ts so every feed-related
+// helper can spread ?lang= via langParam() without reaching into the store.
+// Resolves to "en" before login.
+setLangProvider(() => useStore.getState().user?.preferred_language ?? "en");

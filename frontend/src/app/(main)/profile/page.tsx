@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { updateUserProfile, deleteAccount, getCountries, resetPin, changePin } from "@/lib/api";
+import { updateUserProfile, deleteAccount, getCountries, resetPin, changePin, labelForLanguage } from "@/lib/api";
 import { isEmailAddressValid } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
@@ -51,19 +51,34 @@ export default function ProfilePage() {
   const [isChangingPin, setIsChangingPin] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string; currency?: string }>>([]);
+  const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string; currency?: string; supported_languages?: string[] }>>([]);
   const [selectedCountryId, setSelectedCountryId] = useState(user?.country_id ?? "");
+  // i18n V2: locally edited language preference. Saved on Update Profile.
+  // Falls back to "en" until the backend has populated the user's record.
+  const [selectedLang, setSelectedLang] = useState(user?.preferred_language ?? "en");
 
   useEffect(() => {
     getCountries()
       .then((res) => {
         const list = res.data ?? [];
-        setCountries(list.map((c) => ({ id: c.id, name: c.name, country_code: c.country_code ?? c.code, currency: c.currency ?? undefined })));
+        setCountries(list.map((c) => ({
+          id: c.id, name: c.name,
+          country_code: c.country_code ?? c.code,
+          currency: c.currency ?? undefined,
+          supported_languages: c.supported_languages,
+        })));
       })
       .catch(() => {
         // silently ignore — dropdown will just be empty
       });
   }, []);
+
+  // Compute the language options visible to this user based on the
+  // currently-selected country's supported_languages. If the country only
+  // supports English, the selector is hidden entirely (per i18n V2 spec).
+  const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
+  const supportedLangs = selectedCountry?.supported_languages ?? ["en"];
+  const showLangSelector = supportedLangs.length > 1;
 
   if (!user) return null;
 
@@ -74,8 +89,16 @@ export default function ProfilePage() {
     }
     setIsSaving(true);
     try {
-      await updateUserProfile(user.email, { name: name.trim(), country_id: String(selectedCountryId) });
-      const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
+      // i18n V2 — also save preferred_language. Only send the field when
+      // the user actually picked something other than English (avoid
+      // poking older backends that may 400 on the new field).
+      const payload: { name: string; country_id: string; preferred_language?: string } = {
+        name: name.trim(),
+        country_id: String(selectedCountryId),
+      };
+      if (showLangSelector) payload.preferred_language = selectedLang;
+      await updateUserProfile(user.email, payload);
+      const sel = countries.find((c) => String(c.id) === String(selectedCountryId));
       // Carry the selected country's currency through to the user too,
       // otherwise feed-selection / report keep showing the previous
       // country's code after a profile-side country change.
@@ -83,9 +106,10 @@ export default function ProfilePage() {
         ...user,
         name: name.trim(),
         country_id: String(selectedCountryId),
-        country: selectedCountry?.name ?? user.country,
-        country_code: selectedCountry?.country_code ?? user.country_code,
-        currency: selectedCountry?.currency ?? user.currency,
+        country: sel?.name ?? user.country,
+        country_code: sel?.country_code ?? user.country_code,
+        currency: sel?.currency ?? user.currency,
+        preferred_language: showLangSelector ? selectedLang : (user.preferred_language ?? "en"),
       });
       showSnackbar("Profile updated!", "success");
     } catch (err: unknown) {
@@ -187,7 +211,12 @@ export default function ProfilePage() {
 
   const canSave =
     name.trim() !== "" &&
-    (name.trim() !== user.name || String(selectedCountryId) !== String(user.country_id));
+    (
+      name.trim() !== user.name ||
+      String(selectedCountryId) !== String(user.country_id) ||
+      // i18n V2 — Save enables when language changed too.
+      (showLangSelector && selectedLang !== (user.preferred_language ?? "en"))
+    );
 
   return (
     <div
@@ -268,6 +297,38 @@ export default function ProfilePage() {
               </svg>
             </div>
           </div>
+
+          {/* i18n V2 — Language selector. Hidden when the country supports
+              only "en" (no choice to offer). Labels are native-script via
+              labelForLanguage() for instant recognisability to the
+              actual speaker (per i18n V2 spec). */}
+          {showLangSelector && (
+            <>
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
+              <div className="relative">
+                <select
+                  value={selectedLang}
+                  onChange={(e) => setSelectedLang(e.target.value)}
+                  className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
+                  style={{ ...inputStyle(), cursor: "pointer" }}
+                >
+                  {supportedLangs.map((code) => (
+                    <option key={code} value={code}>
+                      {labelForLanguage(code)}
+                    </option>
+                  ))}
+                </select>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
+              </div>
+            </>
+          )}
 
           {/* Save Changes */}
           <button

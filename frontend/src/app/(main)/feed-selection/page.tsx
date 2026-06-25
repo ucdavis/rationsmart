@@ -910,8 +910,9 @@ export default function FeedSelectionPage() {
                     fontFamily: "Nunito, sans-serif",
                   }}
                 >
-                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>{r.feed_name}</p>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>{r.feed_type} · {r.feed_category}</p>
+                  {/* i18n V2 — render display_* (translated, English fallback). */}
+                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>{r.display_name ?? r.feed_name}</p>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>{(r.display_type ?? r.feed_type)} · {(r.display_category ?? r.feed_category)}</p>
                 </button>
               ))
             )}
