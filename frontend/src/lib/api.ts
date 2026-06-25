@@ -804,6 +804,69 @@ export const updateCustomFeed = (body: {
 // GET /v1/feed-classification/structure (JWT-protected)
 export const getFeedClassification = () => api.get("/v1/feed-classification/structure");
 
+// ─── i18n V2 Phase 2: Admin Translation + Language endpoints ────────────────
+// Spec source: ~/Desktop/post_impl_multi_language/api_endpoints_for_frontend.md
+// (sections 3 and 4). All JWT-admin protected. Always operate on a country_id.
+
+// 3.1 — workbook download. Response is a binary xlsx; we ask axios for a Blob
+// so the caller can pipe through URL.createObjectURL() + <a download>.
+export const downloadTranslationWorkbook = (country_id: string) =>
+  api.get("/v1/admin/translations/workbook", {
+    params: { country_id },
+    responseType: "blob",
+  });
+
+// 3.2 — workbook upload. Content-Type is left to the browser so the
+// multipart boundary param is generated correctly (same pattern as
+// bulkUploadFeeds — see CLAUDE.md note on this).
+export const uploadTranslationWorkbook = (country_id: string, file: File) => {
+  const form = new FormData();
+  form.append("file", file);
+  return api.post("/v1/admin/translations/workbook", form, {
+    params: { country_id },
+  });
+};
+
+// 3.3 — coverage report for a country + language
+export const getTranslationCoverage = (country_id: string, lang: string) =>
+  api.get("/v1/admin/translations/coverage", { params: { country_id, lang } });
+
+// 3.4 — insert / update a single feed translation
+export const upsertFeedTranslation = (body: { feed_id: string; language: string; name: string }) =>
+  api.post("/v1/admin/translations", body);
+
+// 3.5 — list all translations across all languages for one feed
+export const listFeedTranslations = (feed_id: string) =>
+  api.get(`/v1/admin/translations/${feed_id}`);
+
+// 3.6 — delete a single feed×language translation
+export const deleteFeedTranslation = (feed_id: string, language: string) =>
+  api.delete(`/v1/admin/translations/${feed_id}/${language}`);
+
+// 4.1 — register a new language in the system
+export const createLanguage = (body: { code: string; name: string }) =>
+  api.post("/v1/admin/languages", body);
+
+// 4.2 — list all registered languages (system-wide)
+export const listLanguages = () =>
+  api.get("/v1/admin/languages");
+
+// 4.3 — update a language (name / is_active)
+export const patchLanguage = (code: string, body: { name?: string; is_active?: boolean }) =>
+  api.patch(`/v1/admin/languages/${code}`, body);
+
+// 4.4 — list countries with their assigned languages
+export const listCountriesWithLanguages = () =>
+  api.get("/v1/admin/countries");
+
+// 4.5 — assign a language to a country
+export const assignLanguageToCountry = (country_id: string, code: string) =>
+  api.post(`/v1/admin/countries/${country_id}/languages/${code}`);
+
+// 4.6 — unassign a language from a country
+export const unassignLanguageFromCountry = (country_id: string, code: string) =>
+  api.delete(`/v1/admin/countries/${country_id}/languages/${code}`);
+
 // Y3 §1.1.1 — feed search. Live backend endpoint per
 // docs/Search_Implmentation.md §9.1:
 //   GET /v1/animal/search-feeds?query=...&country_id=...&limit=20
