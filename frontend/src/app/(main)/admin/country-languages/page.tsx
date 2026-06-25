@@ -52,14 +52,56 @@ export default function AdminCountryLanguagesPage() {
 
   const reload = () => {
     setIsLoading(true);
-    Promise.all([listCountriesWithLanguages(), listLanguages()])
+    // Run both calls and report which one(s) failed instead of swallowing
+    // the error globally. allSettled so a missing endpoint on one side
+    // doesn't hide the working one.
+    Promise.allSettled([listCountriesWithLanguages(), listLanguages()])
       .then(([countriesRes, langRes]) => {
-        const c = countriesRes.data as { countries?: CountryRow[] };
-        setCountries(c?.countries ?? []);
-        const l = langRes.data as { languages?: SystemLanguage[] };
-        setAllLanguages(l?.languages ?? []);
+        if (countriesRes.status === "fulfilled") {
+          console.log("[admin/country-languages] /v1/admin/countries response:", {
+            status: countriesRes.value.status,
+            data: countriesRes.value.data,
+          });
+          const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
+          const list = Array.isArray(d) ? d : (d?.countries ?? []);
+          setCountries(list);
+        } else {
+          const ax = countriesRes.reason as { response?: { status?: number; data?: unknown }; message?: string };
+          console.error("[admin/country-languages] /v1/admin/countries failed:", {
+            status: ax?.response?.status,
+            data: ax?.response?.data,
+            message: ax?.message,
+          });
+          showSnackbar(
+            ax?.response?.status
+              ? `Could not load countries (HTTP ${ax.response.status})`
+              : "Could not load countries",
+            "error"
+          );
+        }
+        if (langRes.status === "fulfilled") {
+          console.log("[admin/country-languages] /v1/admin/languages response:", {
+            status: langRes.value.status,
+            data: langRes.value.data,
+          });
+          const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
+          const list = Array.isArray(d) ? d : (d?.languages ?? []);
+          setAllLanguages(list);
+        } else {
+          const ax = langRes.reason as { response?: { status?: number; data?: unknown }; message?: string };
+          console.error("[admin/country-languages] /v1/admin/languages failed:", {
+            status: ax?.response?.status,
+            data: ax?.response?.data,
+            message: ax?.message,
+          });
+          showSnackbar(
+            ax?.response?.status
+              ? `Could not load languages (HTTP ${ax.response.status})`
+              : "Could not load languages",
+            "error"
+          );
+        }
       })
-      .catch(() => showSnackbar("Could not load country / language data", "error"))
       .finally(() => setIsLoading(false));
   };
 

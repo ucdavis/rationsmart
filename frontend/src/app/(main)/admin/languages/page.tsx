@@ -41,10 +41,34 @@ export default function AdminLanguagesPage() {
     setIsLoading(true);
     listLanguages()
       .then((res) => {
-        const data = res.data as { languages?: LanguageRow[] };
-        setLanguages(data?.languages ?? []);
+        // Verbose logger so DevTools shows the exact backend shape.
+        // Backend may return either { languages: [...] } per the spec
+        // or a bare array — we accept both. Sample shape printed below.
+        console.log("[admin/languages] /v1/admin/languages response:", {
+          status: res.status,
+          data: res.data,
+          headers: res.headers,
+        });
+        const d = res.data as { languages?: LanguageRow[] } | LanguageRow[];
+        const list = Array.isArray(d) ? d : (d?.languages ?? []);
+        setLanguages(list);
       })
-      .catch(() => showSnackbar("Could not load languages", "error"))
+      .catch((err: unknown) => {
+        // Surface the real failure cause — DevTools + snackbar.
+        const ax = err as { response?: { status?: number; data?: unknown }; message?: string };
+        const status = ax?.response?.status;
+        console.error("[admin/languages] /v1/admin/languages failed:", {
+          status,
+          data: ax?.response?.data,
+          message: ax?.message,
+        });
+        showSnackbar(
+          status
+            ? `Could not load languages (HTTP ${status})`
+            : "Could not load languages",
+          "error"
+        );
+      })
       .finally(() => setIsLoading(false));
   };
 
