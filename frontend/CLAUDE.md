@@ -27,29 +27,60 @@ or Kotlin source first, then implement against it. Never guess.**
 
 ---
 
-## 2. Deployment topology — TESTING only (2026-06-16)
+## 2. Deployment topology — current state (refreshed 2026-06-25)
 
-**As of 2026-06-16 only the `rationsmart-testing` Vercel project exists.**
-The two earlier projects — `rationsmart-pwa` (dev → <DEV_BACKEND_IP> legacy)
-and `rationsmart-prod` (prod → <PROD_BACKEND_IP> legacy) — were deleted at
-the user's request. Their URLs (`rationsmart-pwa.vercel.app`,
-`rationsmart.vercel.app`) now return 404 and are released back into
-Vercel's namespace.
+**Two Vercel projects in play.** Auto-deploy is **disabled** — every
+release is manual (`vercel deploy --prod --yes` then `vercel alias set`).
 
-| Branch | URL | Backend | Project ID |
-|---|---|---|---|
-| `testing` | https://rationsmart-testing.vercel.app | `<DEV_BACKEND_IP>:8000` (v1 API, JWT, 6-digit PIN) | `<TESTING_PROJECT_ID>` |
+| Branch | URL | Backend | Project ID | API style |
+|---|---|---|---|---|
+| `testing` (current dev work) | https://rationsmart-testing.vercel.app | `<DEV_BACKEND_IP>:8000` | `<TESTING_PROJECT_ID>` | **v1** (JWT auth, 6-digit PIN, /v1/* paths) |
+| `main` (legacy prod) | https://rationsmart.vercel.app | `<PROD_BACKEND_IP>:8000` | `<PROD_PROJECT_ID>` | **legacy** (no /v1 prefix) |
 
-`main` and `refinements-y3` branches still exist in GitHub (the legacy
-code is preserved), but no Vercel project is currently linked to them
-and no URL serves them. The repo at `~/Desktop/RationSmart-PWA` is now
-linked to `rationsmart-testing` via `.vercel/project.json` — `vercel
-deploy ...` from this directory targets the testing project.
+The repo at `~/Desktop/RationSmart-PWA` is linked to `rationsmart-testing`
+via `.vercel/project.json`. To deploy `main` → prod, use a worktree on
+`main` (pattern in §13 — same approach we used on 2026-06-18 to restore
+the prod URL).
 
-Auto-deploy: every push to `testing` triggers GitHub Actions workflow
-`.github/workflows/deploy-testing.yml` which runs the Vercel CLI with
-`--prod` and aliases the new deployment to
-`rationsmart-testing.vercel.app`. ~90s end to end.
+### History to NOT re-litigate
+
+- 2026-06-16: the user deleted both legacy projects (`rationsmart-pwa` and
+  `rationsmart-prod`); released the URLs back to Vercel's pool.
+- 2026-06-18: the user asked to restore prod. A new `rationsmart-prod`
+  project was created from a worktree on `main`, env vars set to
+  `BACKEND_HOST=<PROD_BACKEND_IP>` / `BACKEND_PORT=8000`, deploy + alias to
+  `rationsmart.vercel.app`. SSO disabled via REST API patch.
+- 2026-06-17: GitHub Actions workflow `.github/workflows/deploy-testing.yml`
+  was disabled (`gh workflow disable`). The job is still present in the
+  repo but listed as `disabled_manually`. **DO NOT re-enable without the
+  user asking.** The user wants manual deploys after a string of silent
+  deploy failures.
+
+### How to ship a change to testing (the standard cycle)
+
+```bash
+git push origin testing                                      # source of truth only
+vercel deploy --prod --yes                                   # → rationsmart-testing-<hash>-<VERCEL_TEAM_SLUG>.vercel.app
+vercel alias set <new-url> rationsmart-testing.vercel.app    # promote to canonical
+```
+
+The CLI session is already authenticated (token at
+`~/Library/Application Support/com.vercel.cli/auth.json`). Never include
+`--yes` on commands that destroy state; only on `deploy`.
+
+### How to ship a change to prod (rare)
+
+```bash
+git worktree add --detach /tmp/rs-main main
+cd /tmp/rs-main && npm install
+vercel deploy --prod --yes
+vercel alias set <new-url> rationsmart.vercel.app
+cd - && git worktree remove /tmp/rs-main --force
+```
+
+The worktree pattern keeps the testing-branch checkout in this directory
+clean. The prod project's `.vercel/project.json` lives only inside the
+worktree, so `vercel` commands here never accidentally target prod.
 
 ### Status as of 2026-06-16
 
@@ -202,17 +233,22 @@ x-backend-host: <PROD_BACKEND_IP>:8000
 
 ## 3. Standing user instructions (non-negotiable)
 
-1. **Push + deploy on every code change.** After any modification:
+1. **Push + deploy on every code change — manual only.** After any
+   modification on the `testing` branch:
    ```
-   git push origin main      # auto-deploys BOTH projects via GitHub integration
-   vercel --prod --yes       # belt-and-braces for the dev project (this dir's link)
+   git push origin testing
+   vercel deploy --prod --yes
+   vercel alias set <new-url> rationsmart-testing.vercel.app
    ```
-   The `git push` is what actually deploys both projects. The `vercel --prod`
-   is a habit from the user's standing instruction "push code to github &
-   deploy on every change" and acts as an extra explicit Production deploy
-   on the dev project specifically (this repo's `.vercel/project.json`
-   points to `rationsmart-pwa`). If GitHub integration ever silently
-   detaches, the explicit deploy keeps the dev URL fresh.
+   Auto-deploy is DISABLED on purpose (see §10.16). The user wants to
+   see every alias swap explicitly because a string of silent GH-Actions
+   "successes" had failed to update the live URL during Y3 work. The new
+   deployment's hash URL is printed by `vercel deploy`; pipe through
+   `grep -oE 'rationsmart-testing-[a-z0-9]+-<VERCEL_TEAM_SLUG>\.vercel\.app'`
+   to capture it for the alias command.
+
+   For prod (rare — `main` branch): use the worktree pattern in §13.
+   See §2 for the deployment topology overview.
 2. **Android first, then mirror.** Read the corresponding Kotlin / XML before
    writing PWA code for any reported mismatch. Layout / behaviour comments
    throughout the codebase reference specific Android files (e.g.
@@ -939,6 +975,32 @@ doesn't bust the cache. Triage: DevTools → Application → Service Workers
 → Unregister → hard refresh. Worst case: Application → Storage → Clear
 site data (also logs the user out).
 
+### 10.15 fd_code rollout was reverted — DO NOT reintroduce
+On 2026-06-19 the user asked to revert a planned `feed_code` rollout
+that would have made the payload prefer `fd_code` over the UUID on
+`POST /v1/animal/diet-recommendation` and `/v1/animal/evaluate-diet`.
+The revert is in commit `689f6c9`. The wire payload now sends
+`feed_id: item.feed_uuid` everywhere — no `?? feed_code` fallback,
+no `feed_code` field on `FeedItem`. If a future session sees
+`fd_code` in the swagger or in admin/feeds and considers "wiring it
+through to the diet payload", **stop**. The user's reason: simulation
+history records pre-date `fd_code` (legacy backends never populated
+it). The admin/feeds page still SENDS `fd_code: ""` because the
+backend's `AdminFeedRequest` schema marks it as `required: true` —
+that's pre-existing infrastructure unrelated to the simulation flow
+and must stay. The doc at `docs/Search_Implmentation.md` had a §11
+about this rollout; it was removed in the revert.
+
+### 10.16 Auto-deploy stays OFF
+The GH-Actions workflow `.github/workflows/deploy-testing.yml`
+exists but is `disabled_manually`. Re-enabling it without the user's
+explicit ask will get pushed back. Reason: a string of silent
+"successful" deploys that didn't actually update the live alias
+during the early Y3 work — manual `vercel deploy --prod --yes` +
+`vercel alias set` is the trusted path. Standing instruction:
+deploy after every code change, but manually via the two CLI
+commands in §15.
+
 ---
 
 ## 11. State management (`src/lib/store.ts`)
@@ -1151,13 +1213,14 @@ Fix: `gh auth switch -h github.com -u Aiyappa-DigitalGreen`.
 ## 15. Quick reference — Vercel + git commands
 
 ```bash
-# Standard deploy cycle
+# Standard deploy cycle on the testing branch (current dev URL)
 git add <files>
 git commit -m "<message>"
-git push origin main          # auto-deploys both projects
-vercel --prod --yes           # belt-and-braces for the dev project
+git push origin testing                                          # source-of-truth only
+vercel deploy --prod --yes                                       # prints the new hash URL
+vercel alias set <new-url> rationsmart-testing.vercel.app        # promote to canonical
 
-# Inspect current project (this dir = rationsmart-pwa = dev)
+# Inspect current project (this dir = rationsmart-testing)
 vercel env ls
 vercel ls
 
@@ -1212,7 +1275,118 @@ When a new feature requirement arrives:
    toolbar (not via the shared component).
 8. **Test the SSR/hydration path** — hard-refresh the new route on the
    deployed dev URL. If anything's flickering or redirecting, see §10.1.
-9. **Push + deploy.** `git push origin main && vercel --prod --yes`.
+9. **Push + deploy.** Per §10.16 — manual only:
+   `git push origin testing` then `vercel deploy --prod --yes` then
+   `vercel alias set <new-url> rationsmart-testing.vercel.app`.
+
+---
+
+## 18. i18n V2 — backend feed-data translation (Phase 1 shipped 2026-06-25)
+
+Spec source: `~/Desktop/post_impl_multi_language/`
+  - `api_endpoints_for_frontend.md` — the API contract (load first)
+  - `technical_documentation.md` — backend invariants + DB schema
+  - `user_functional_guide.md` — end-user flow
+
+### 18.1 What's translated and what isn't
+
+**Translated** (server returns `display_*` fields on a per-language basis):
+feed names, feed types, feed categories.
+
+**NOT translated** (English everywhere — by design, per user functional
+guide): UI labels, button text, headings, advisory text, report
+headings, snackbars, validation messages. The separate xlsx at
+`docs/RationSmart_i18n_source.xlsx` is for a future UI-label
+translation effort and is unrelated to backend i18n V2.
+
+### 18.2 Five design invariants (from the backend doc)
+
+| # | Invariant | Frontend implication |
+|---|---|---|
+| I1 | English source columns are never overwritten | `fd_name`, `fd_type`, `fd_category` stay the identity fields the frontend uses for backend lookups + comparisons |
+| I2 | Localization happens at read-time only | Never store translated strings in a saved simulation / report — only display them |
+| I3 | `'en'` is the implicit baseline | Server's `display_*` always falls back to the English source; frontend can render `display_*` unconditionally |
+| I4 | Languages are DB data, not code | Don't hardcode the supported-languages list. Read `country.supported_languages` from `/v1/auth/countries` |
+| I5 | Translation work is country-scoped | Admin tooling (Phase 2) always filters by `country_id` |
+
+### 18.3 Phase 1 — frontend wiring (already shipped — commit `2f3eab5`)
+
+`src/lib/store.ts`:
+- `User.preferred_language: string` (defaults to `"en"`)
+- `setLangProvider(() => useStore.getState().user?.preferred_language ?? "en")`
+  wires the active locale into api.ts at module load.
+
+`src/lib/api.ts`:
+- `Country.supported_languages?: string[]` — read from `/v1/auth/countries`
+- `LANGUAGE_NATIVE_LABELS` — native-script display names map
+  (en/hi/tl/id/th/vi/bn/ne/am/om/sw)
+- `labelForLanguage(code)` — falls back to `code.toUpperCase()` for
+  unknown codes (so new backend-added languages don't break the UI)
+- `langProvider` + `langParam()` — every feed endpoint spreads
+  `...langParam()` into its `params` so `?lang=` is always sent
+- `getFeedTypes`, `getFeedCategories`, `getFeedSubCategories`,
+  `searchFeeds` — all send `?lang=`
+- `searchFeeds` parser exposes `display_name` / `display_type` /
+  `display_category` on each result (with English-source fallback
+  baked in, so renderers can use `display_*` unconditionally)
+- `FeedSearchResult`, `FeedSubCategoryItem`, `FeedBreakdown`,
+  `CostEffectiveDiet` all carry optional `display_*` fields
+- `updateUserProfile()` accepts optional `preferred_language`
+
+`src/app/login/page.tsx`:
+- Reads `preferred_language` from `getUserProfile` response → `setUser`
+
+`src/app/(main)/profile/page.tsx`:
+- New Language dropdown under Country, visible only when
+  `supported_languages.length > 1`
+- Native-script labels via `labelForLanguage()`
+- Save path sends `preferred_language` only when the selector is
+  visible (avoids poking older backends that 400 on the field)
+- `canSave` enables when language alone changed
+
+`src/components/FeedRow.tsx`:
+- Feed dropdown options use `display_name` (binding stays
+  `feed_uuid`)
+
+`src/app/(main)/feed-selection/page.tsx`:
+- Search-result rows render `display_name` + `display_type · display_category`
+
+`src/app/(main)/report/page.tsx`:
+- Feed Breakdown (eval) + Cost-Effective Diet (rec) prefer `display_name`
+
+### 18.4 Identity vs display invariant — CRITICAL
+
+When picking from search results or dropdowns, use the *English source*
+field (`feed_name`, `feed_type`, `feed_category`) for:
+- Comparisons (`feed_type === "Forage"`)
+- Storage on `cattleInfo.feedSelections[]` (Zustand state)
+- API payloads (`feed_selection[].feed_id = item.feed_uuid`)
+
+Use `display_name` / `display_type` / `display_category` ONLY for
+rendering. Future sessions: never store a `display_*` value as the
+identity field of a row — it will silently break comparisons (e.g. the
+Forage-required gate, the rec-mode F:C ratio cross-ref, the cascade
+match logic) when the user changes language.
+
+### 18.5 Phase 2 — admin tooling (NOT shipped yet)
+
+Three new admin screens are planned per the api doc:
+- **Admin > Translations** — workbook download/upload (endpoints
+  3.1–3.2), coverage report (3.3), per-feed editor (3.4–3.6)
+- **Admin > Languages** — registry, activate/deactivate (4.1–4.3)
+- **Admin > Country-Language matrix** — assign/unassign (4.4–4.6)
+
+If a future session is asked to ship i18n admin work, that's Phase 2.
+Don't conflate it with Phase 1 (already done).
+
+### 18.6 Quality bands for the docs/RationSmart_i18n_source.xlsx
+
+This 554-row spreadsheet contains *frontend UI labels* translated into
+9 locales (hi/tl/id/th/vi/bn/ne/am/om). It's a SEPARATE effort from
+backend i18n V2 — that document is about *feed data*. UI labels are not
+plumbed through any backend; the xlsx is a holding area for when (if)
+the frontend ever picks up its own UI translation layer. Don't try to
+make backend endpoints consume it.
 
 ---
 
