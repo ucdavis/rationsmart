@@ -103,20 +103,29 @@ class FeedRecord:
 # ── Feed lookup helpers ───────────────────────────────────────────────────────
 
 async def get_feed_details(
-    db: AsyncSession, feed_id: str, user_id: str
+    db: AsyncSession, feed_id: str, user_id: str, lang: str = "en"
 ) -> Optional[Dict[str, Any]]:
-    """
-    Look up a feed by ID from the standard or custom_feeds table.
-    Returns a dict with nutrient fields + country_name, or None if not found.
+    """Look up a feed by ID (standard or custom) with optional localized display fields.
+
+    Returns a dict with nutrient fields + display_name/display_type/display_category, or None.
     """
     repo = FeedRepository(db)
     user_repo = UserRepository(db)
 
-    feed: Optional[Feed | CustomFeed] = await repo.get_by_id(feed_id)
-    if feed is None:
+    # Try standard feed first (get_by_id_localized returns None if not found)
+    row = await repo.get_by_id_localized(feed_id, lang=lang)
+    if row is not None:
+        feed = row.Feed
+        display_name = row.display_name
+        display_type = row.display_type
+        display_category = row.display_category
+    else:
         feed = await repo.get_custom_by_id(feed_id, user_id)
-    if feed is None:
-        return None
+        if feed is None:
+            return None
+        display_name = feed.fd_name
+        display_type = feed.fd_type
+        display_category = feed.fd_category
 
     country_name = ""
     if feed.fd_country_id:
@@ -129,6 +138,9 @@ async def get_feed_details(
         "fd_name": feed.fd_name,
         "fd_type": feed.fd_type,
         "fd_category": feed.fd_category,
+        "display_name": display_name,
+        "display_type": display_type,
+        "display_category": display_category,
         "fd_country_name": feed.fd_country_name,
         "fd_country_cd": feed.fd_country_cd,
         "country_name": country_name,
@@ -158,30 +170,30 @@ async def search_feeds(
     country_id: str,
     user_id: str,
     limit: int = 20,
+    lang: str = "en",
 ) -> Tuple[List[Dict[str, Any]], int]:
-    """
-    Typeahead feed search scoped to country + user's custom feeds.
-    Returns (feed_list, total_count).
+    """Typeahead feed search scoped to country + user's custom feeds.
 
-    Short queries (< 2 chars after stripping) return ([], 0) with no DB hit.
-    Ranking: custom feeds first, then prefix matches before mid-string, then alphabetical.
+    Returns (feed_list, total_count).
+    Short queries (< 2 chars) return ([], 0) with no DB hit.
+    Ranking: custom feeds first, then prefix matches, then alphabetical.
+    feed_name / feed_type / feed_category are the localized display values (I2).
     """
     if len(query.strip()) < 2:
         return [], 0
 
     repo = FeedRepository(db)
-    std_feeds, custom_feeds, total_count = await repo.search_feeds(
+    std_rows, custom_feeds, total_count = await repo.search_feeds(
         query=query.strip(),
         country_id=country_id,
         user_id=user_id,
         limit=limit,
+        lang=lang,
     )
 
     q_lower = query.strip().lower()
 
     def _rank(name: str, is_custom: bool) -> tuple:
-        # (custom_priority, prefix_priority, name)
-        # Lower tuple values sort first.
         return (0 if is_custom else 1, 0 if name.lower().startswith(q_lower) else 1, name.lower())
 
     results = []
@@ -194,13 +206,13 @@ async def search_feeds(
             "fd_code": getattr(f, "fd_code", None),
             "is_custom": True,
         })
-    for f in std_feeds:
+    for row in std_rows:
         results.append({
-            "feed_uuid": str(f.id),
-            "feed_name": f.fd_name,
-            "feed_type": f.fd_type or "",
-            "feed_category": f.fd_category or "",
-            "fd_code": getattr(f, "fd_code", None),
+            "feed_uuid": str(row.Feed.id),
+            "feed_name": row.display_name,
+            "feed_type": row.display_type or "",
+            "feed_category": row.display_category or "",
+            "fd_code": row.Feed.fd_code,
             "is_custom": False,
         })
 
@@ -480,12 +492,16 @@ async def save_feed_analytics(db: AsyncSession, data: Dict[str, Any]) -> FeedAna
 
 # ── Custom feed operations ────────────────────────────────────────────────────
 
-async def get_unique_feed_types(db: AsyncSession, country_id: str, user_id: str) -> List[str]:
-    return await FeedRepository(db).get_unique_types(country_id, user_id)
+async def get_unique_feed_types(
+    db: AsyncSession, country_id: str, user_id: str, lang: str = "en"
+) -> List[str]:
+    return await FeedRepository(db).get_unique_types(country_id, user_id, lang=lang)
 
 
-async def get_unique_feed_categories(db: AsyncSession, country_id: str, user_id: str) -> List[str]:
-    return await FeedRepository(db).get_unique_categories(country_id, user_id)
+async def get_unique_feed_categories(
+    db: AsyncSession, country_id: str, user_id: str, lang: str = "en"
+) -> List[str]:
+    return await FeedRepository(db).get_unique_categories(country_id, user_id, lang=lang)
 
 
 async def get_feed_names(
@@ -494,8 +510,44 @@ async def get_feed_names(
     user_id: str,
     feed_type: Optional[str] = None,
     category: Optional[str] = None,
-) -> Tuple[List, List]:
-    return await FeedRepository(db).get_feed_names(country_id, user_id, feed_type, category)
+    lang: str = "en",
+) -> Tuple[List[Dict], List[Dict]]:
+    """Return (standard_feeds, custom_feeds) as dicts with localized display fields."""
+    std_rows, cust_rows = await FeedRepository(db).get_feed_names(
+        country_id, user_id, feed_type, category, lang=lang
+    )
+
+    std_feeds = [
+        {
+            "id": str(row.Feed.id),
+            "fd_code": row.Feed.fd_code,
+            "fd_name": row.Feed.fd_name,
+            "fd_type": row.Feed.fd_type,
+            "fd_category": row.Feed.fd_category,
+            "fd_country_id": str(row.Feed.fd_country_id) if row.Feed.fd_country_id else None,
+            "fd_country_name": row.Feed.fd_country_name,
+            "display_name": row.display_name,
+            "display_type": row.display_type,
+            "display_category": row.display_category,
+        }
+        for row in std_rows
+    ]
+    cust_feeds = [
+        {
+            "id": str(f.id),
+            "fd_code": getattr(f, "fd_code", None),
+            "fd_name": f.fd_name,
+            "fd_type": f.fd_type,
+            "fd_category": f.fd_category,
+            "fd_country_id": str(f.fd_country_id) if f.fd_country_id else None,
+            "fd_country_name": f.fd_country_name,
+            "display_name": f.fd_name,
+            "display_type": f.fd_type,
+            "display_category": f.fd_category,
+        }
+        for f in cust_rows
+    ]
+    return std_feeds, cust_feeds
 
 
 async def check_insert_or_update(

@@ -1,12 +1,14 @@
 import logging
+from collections import defaultdict
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.models import CountryLanguage, UserInformationModel
 from app.dependencies import get_current_user, get_db
-from app.db.models import UserInformationModel
 from app.schemas.auth import (
     AuthenticationResponse,
     ChangePinRequest,
@@ -34,13 +36,14 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Authentication"])
 
 
-def _country_schema(country) -> Country:
+def _country_schema(country, supported_languages: list = None) -> Country:
     return Country(
         id=str(country.id),
         name=country.name or "",
         country_code=country.country_code or "",
         currency=country.currency or "",
         is_active=country.is_active,
+        supported_languages=supported_languages or [],
         created_at=country.created_at,
         updated_at=country.updated_at,
     )
@@ -59,6 +62,7 @@ async def _user_response(user: UserInformationModel, db: AsyncSession) -> UserRe
         country_id=str(user.country_id) if user.country_id else None,
         country=country,
         is_admin=user.is_admin,
+        preferred_language=getattr(user, "preferred_language", None) or "en",
         created_at=user.created_at,
         updated_at=user.updated_at,
     )
@@ -150,10 +154,18 @@ async def get_countries(db: AsyncSession = Depends(get_db)):
     Return the full list of countries supported by RationSmart.
 
     Use the returned `id` (UUID) as `country_id` when registering a user or filtering feeds.
+    Each country includes `supported_languages` — the language codes available in that country.
     No authentication required.
     """
     countries = await UserRepository(db).get_all_countries()
-    return [_country_schema(c) for c in countries]
+
+    # Batch-load country↔language assignments to avoid N+1 queries
+    cl_rows = (await db.execute(select(CountryLanguage))).scalars().all()
+    lang_map = defaultdict(list)
+    for cl in cl_rows:
+        lang_map[str(cl.country_id)].append(cl.language_code)
+
+    return [_country_schema(c, lang_map.get(str(c.id), [])) for c in countries]
 
 
 @router.get("/user/{email_id}", response_model=UserResponse, summary="Get user profile by email")
@@ -174,14 +186,15 @@ async def get_user(email_id: str, db: AsyncSession = Depends(get_db)):
 @router.put("/user/{email_id}", response_model=UserResponse, summary="Update user profile")
 async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession = Depends(get_db)):
     """
-    Update the name and/or country of a registered user.
+    Update the name, country, and/or preferred language of a registered user.
 
     **Path parameter:** `email_id` — the user's email address.
 
-    **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries`).
+    **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries`),
+    `preferred_language` (BCP 47 code from `GET /v1/auth/countries`).
     Omit a field to leave it unchanged.
 
-    Returns `404` if the user is not found; `400` if `country_id` is invalid.
+    Returns `404` if the user is not found; `400` if `country_id` or `preferred_language` is invalid.
     """
     repo = UserRepository(db)
     user = await repo.get_by_email(email_id)
@@ -191,7 +204,18 @@ async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession =
     if body.country_id is not None and not await repo.get_country_by_id(body.country_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid country selected")
 
-    await repo.update_profile(user, name=body.name, country_id=body.country_id)
+    if body.preferred_language is not None:
+        from app.lang import get_active_languages
+        active = await get_active_languages(db)
+        if body.preferred_language not in active:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Language '{body.preferred_language}' is not available",
+            )
+
+    await repo.update_profile(
+        user, name=body.name, country_id=body.country_id, preferred_language=body.preferred_language
+    )
     await db.commit()
     return await _user_response(user, db)
 

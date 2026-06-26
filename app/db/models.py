@@ -49,6 +49,17 @@ class UserInformationModel(Base):
     email_verify_token = Column(String(64), nullable=True, index=True)
     email_verify_token_exp = Column(DateTime(timezone=True), nullable=True)
     requires_pin_reset = Column(Boolean, nullable=False, server_default=text("false"), default=False)
+    # ── i18n Phase 1: user language preference ─────────────────────────────────
+    # FK to languages.code; defaults to 'en' (the universal baseline, I3). The
+    # migration seeds the 'en' language row before adding this column so the
+    # NOT NULL DEFAULT 'en' backfill satisfies the FK.
+    preferred_language = Column(
+        String(10),
+        ForeignKey("languages.code", ondelete="RESTRICT"),
+        nullable=False,
+        server_default=text("'en'"),
+        default="en",
+    )
 
     __table_args__ = (
         CheckConstraint(
@@ -337,6 +348,91 @@ class FeedCountryPricing(Base):
     )
 
 
+# ── i18n Phase 1: multi-language support (V2 plan §4.2) ───────────────────────
+#
+# Invariants (V2 §2):
+#   I1 — English source columns (feeds.fd_name/fd_type/fd_category, taxonomy names)
+#        are never translated in place; they stay English forever.
+#   I3 — 'en' is the implicit baseline. There are NO 'en' rows in the translation
+#        tables (feed_translations / vocabulary_translations); a missing translation
+#        falls back to the English source via COALESCE at read time.
+#   I4 — Languages are data, not code: the supported set lives in `languages`.
+
+class Language(Base):
+    """System-wide registry of supported languages. Admin-managed at runtime (I4)."""
+    __tablename__ = "languages"
+
+    code = Column(String(10), primary_key=True)            # BCP 47: 'en','hi','vi','sw','am','kn'
+    name = Column(String(100), nullable=False)             # 'English', 'Hindi', ...
+    is_active = Column(Boolean, nullable=False, server_default=text("true"), default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CountryLanguage(Base):
+    """Junction: which languages are offered to a country's users.
+
+    Replaces V1's `country.supported_languages TEXT[]` with a real junction that
+    carries FK integrity. 'en' is seeded for every country and is non-removable.
+    """
+    __tablename__ = "country_languages"
+
+    country_id = Column(
+        UUID(as_uuid=True), ForeignKey("country.id", ondelete="CASCADE"),
+        primary_key=True, nullable=False,
+    )
+    language_code = Column(
+        String(10), ForeignKey("languages.code", ondelete="RESTRICT"),
+        primary_key=True, nullable=False,
+    )
+
+
+class FeedTranslation(Base):
+    """Feed NAME translations (high cardinality). Country is implied by feed_id —
+    a feed belongs to exactly one country (V2 §4.4)."""
+    __tablename__ = "feed_translations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"), default=uuid.uuid4)
+    feed_id = Column(UUID(as_uuid=True), ForeignKey("feeds.id", ondelete="CASCADE"), nullable=False)
+    language = Column(String(10), ForeignKey("languages.code", ondelete="RESTRICT"), nullable=False)
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("feed_id", "language", name="uq_feed_translations_feed_lang"),
+    )
+
+
+class VocabularyTranslation(Base):
+    """Feed TYPE + CATEGORY translations, unified into one low-cardinality table.
+
+    Country-scoped key (I5): two countries sharing a language never clobber each
+    other's vocabulary. Keys on the English `source_value` text (feeds store
+    fd_type/fd_category as denormalized text), not a taxonomy id (V2 §4.4).
+    """
+    __tablename__ = "vocabulary_translations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"), default=uuid.uuid4)
+    country_id = Column(UUID(as_uuid=True), ForeignKey("country.id", ondelete="CASCADE"), nullable=False)
+    kind = Column(String(20), nullable=False)              # 'feed_type' | 'feed_category'
+    source_value = Column(Text, nullable=False)            # English text, e.g. 'Forage'
+    language = Column(String(10), ForeignKey("languages.code", ondelete="RESTRICT"), nullable=False)
+    name = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint(
+            "country_id", "kind", "source_value", "language",
+            name="uq_vocabulary_translations_scope",
+        ),
+        CheckConstraint(
+            "kind IN ('feed_type', 'feed_category')",
+            name="ck_vocabulary_translations_kind",
+        ),
+    )
+
+
 __all__ = [
     "Base",
     "CountryModel",
@@ -354,4 +450,8 @@ __all__ = [
     "Breed",
     "FeedCountryAvailability",
     "FeedCountryPricing",
+    "Language",
+    "CountryLanguage",
+    "FeedTranslation",
+    "VocabularyTranslation",
 ]

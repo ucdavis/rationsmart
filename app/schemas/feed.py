@@ -85,6 +85,9 @@ class FeedDetailsResponse(BaseModel):
     fd_name: str
     fd_type: Optional[str] = None
     fd_category: Optional[str] = None
+    display_name: Optional[str] = None
+    display_type: Optional[str] = None
+    display_category: Optional[str] = None
     fd_country_id: Optional[str] = None
     fd_country_name: Optional[str] = None
     fd_country_cd: Optional[str] = None

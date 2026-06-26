@@ -55,3 +55,29 @@ async def invalidate_feeds_cache(country_id: Optional[str] = None) -> None:
         keys = await _redis.keys("feeds:*")
         if keys:
             await _redis.delete(*keys)
+
+
+# ── Language active-codes cache (i18n Phase 2) ────────────────────────────────
+
+_LANG_CACHE_KEY = "lang:active_codes"
+_LANG_CACHE_TTL = 300  # 5 minutes; invalidated by Phase 5 admin mutations
+
+
+async def get_lang_codes_from_cache() -> Optional[list]:
+    if not _redis:
+        return None
+    data = await _redis.get(_LANG_CACHE_KEY)
+    return json.loads(data) if data else None
+
+
+async def set_lang_codes_in_cache(codes: list[str]) -> None:
+    if not _redis:
+        return
+    await _redis.setex(_LANG_CACHE_KEY, _LANG_CACHE_TTL, json.dumps(sorted(codes)))
+
+
+async def invalidate_lang_cache() -> None:
+    """Called by Phase 5 admin endpoints after any mutation to `languages`."""
+    if not _redis:
+        return
+    await _redis.delete(_LANG_CACHE_KEY)

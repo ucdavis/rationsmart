@@ -34,10 +34,26 @@ from app.schemas.report import (
     AdminReportItem,
     AdminFeedbackResponse as _AdminFBResponse,
 )
+from app.schemas.language import (
+    CountryLanguageListResponse,
+    CountryWithLanguagesResponse,
+    LanguageCreateRequest,
+    LanguageListResponse,
+    LanguageResponse,
+    LanguageUpdateRequest,
+)
+from app.schemas.translation import (
+    FeedTranslationListResponse,
+    FeedTranslationRecord,
+    FeedTranslationUpsertRequest,
+    TranslationCoverageResponse,
+    WorkbookImportSummary,
+)
 from repositories.feed_repository import FeedRepository
+from repositories.language_repository import LanguageRepository
 from repositories.report_repository import ReportRepository
 from repositories.user_repository import UserRepository
-from services import feed_service, report_service
+from services import feed_service, report_service, translation_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
@@ -575,3 +591,395 @@ async def get_all_reports(
         reports=[AdminReportItem(**r) for r in reports],
         total_count=total, page=page, page_size=page_size, total_pages=total_pages,
     )
+
+
+# ── Translation workbook (i18n Phase 4) ──────────────────────────────────────
+
+@router.get("/translations/workbook", summary="Download translation workbook for a country (admin)")
+async def export_translation_workbook(
+    country_id: str = Query(..., description="Country UUID"),
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Export a 3-sheet Excel workbook pre-filled with existing translations for the given country.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Query parameter:** `country_id` — UUID of the country.
+
+    Sheets: **Feeds** (one row per feed, columns = language codes for this country),
+    **Feed Types**, **Feed Categories**. Cells are pre-filled with any translations
+    already in the DB. Empty cells = not yet translated. Use the returned file as
+    the import template for `POST /v1/admin/translations/workbook`.
+    """
+    file_bytes, filename = await translation_service.export_translation_workbook(db, country_id)
+    return StreamingResponse(
+        iter([file_bytes]),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post(
+    "/translations/workbook",
+    response_model=WorkbookImportSummary,
+    summary="Import translation workbook for a country (admin)",
+)
+async def import_translation_workbook(
+    country_id: str = Query(..., description="Country UUID — overrides any country info in the file"),
+    file: UploadFile = File(...),
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Upload a filled-in translation workbook and UPSERT translations for the given country.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Query parameter:** `country_id` — UUID of the country (always from the URL, never from the file).
+
+    **Mandatory form field:** `file` — the `.xlsx` workbook (use the export endpoint to get the template).
+
+    Empty cells are skipped. Returns a summary of inserted/updated/skipped counts and any warnings.
+    """
+    if not file.filename.endswith((".xlsx", ".xls")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an Excel file (.xlsx or .xls)",
+        )
+    content = await file.read()
+    result = await translation_service.import_translation_workbook(db, country_id, content)
+    if result["success"]:
+        await db.commit()
+    return WorkbookImportSummary(**result)
+
+
+# ── Single-feed translation CRUD ──────────────────────────────────────────────
+
+@router.post(
+    "/translations",
+    response_model=FeedTranslationRecord,
+    summary="Upsert a single feed translation (admin)",
+)
+async def upsert_feed_translation(
+    body: FeedTranslationUpsertRequest,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Create or update a translation for one feed name in one language.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Body:** `feed_id` (UUID), `language` (BCP 47 code), `name` (translated string).
+
+    Returns the persisted translation record with `action` set to `'inserted'` or `'updated'`.
+    """
+    result = await translation_service.upsert_feed_translation(
+        db, body.feed_id, body.language, body.name
+    )
+    await db.commit()
+    return FeedTranslationRecord(**result)
+
+
+@router.get(
+    "/translations/coverage",
+    response_model=TranslationCoverageResponse,
+    summary="Translation coverage summary for a country+language (admin)",
+)
+async def translation_coverage(
+    country_id: str = Query(..., description="Country UUID"),
+    lang: str = Query(..., description="BCP 47 language code, e.g. 'hi'"),
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return coverage counts (total vs translated vs missing) for feeds, feed types,
+    and feed categories for the given country and language.
+
+    **Requires:** Bearer JWT with admin privileges.
+    """
+    counts = await translation_service.get_translation_coverage(db, country_id, lang)
+    return TranslationCoverageResponse(
+        success=True,
+        country_id=country_id,
+        language=lang,
+        **counts,
+    )
+
+
+@router.get(
+    "/translations/{feed_id}",
+    response_model=FeedTranslationListResponse,
+    summary="Get all translations for a feed (admin)",
+)
+async def get_feed_translations(
+    feed_id: str,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return all language translations stored for a standard feed.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `feed_id` — UUID of the feed.
+    """
+    translations = await translation_service.get_feed_translations(db, feed_id)
+    return FeedTranslationListResponse(
+        success=True,
+        feed_id=feed_id,
+        translations=[FeedTranslationRecord(**t) for t in translations],
+    )
+
+
+@router.delete(
+    "/translations/{feed_id}/{language}",
+    summary="Delete a single feed translation (admin)",
+)
+async def delete_feed_translation(
+    feed_id: str,
+    language: str,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Remove the translation for a feed in a specific language.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameters:** `feed_id` (UUID), `language` (BCP 47 code, e.g. `'hi'`).
+
+    Returns `404` if no translation exists for this feed+language pair.
+    """
+    deleted = await translation_service.delete_feed_translation(db, feed_id, language)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No translation found for feed '{feed_id}' in language '{language}'",
+        )
+    await db.commit()
+    return {"success": True, "message": f"Translation for language '{language}' deleted"}
+
+
+# ── Language management (i18n Phase 5) ───────────────────────────────────────
+
+@router.post(
+    "/languages",
+    response_model=LanguageResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary="Add a new language (admin)",
+)
+async def create_language(
+    body: LanguageCreateRequest,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Register a new language in the system (I4: languages are data, not code).
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Body:** `code` (BCP 47, e.g. `'hi'`), `name` (display name, e.g. `'Hindi'`).
+
+    After creation, assign the language to countries via
+    `POST /v1/admin/countries/{country_id}/languages/{code}`, then run a translation
+    workbook export to start translating feeds. No deploy needed.
+
+    Returns `409` if the code is already registered.
+    """
+    repo = LanguageRepository(db)
+    if await repo.get_by_code(body.code):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Language '{body.code}' is already registered",
+        )
+    lang = await repo.create(body.code, body.name)
+    await db.commit()
+    from app.lang import invalidate_lang_cache
+    await invalidate_lang_cache()
+    return LanguageResponse(code=lang.code, name=lang.name, is_active=lang.is_active,
+                            created_at=lang.created_at)
+
+
+@router.get(
+    "/languages",
+    response_model=LanguageListResponse,
+    summary="List all languages (active and inactive) (admin)",
+)
+async def list_languages(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return all languages registered in the system, both active and inactive.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Use `is_active` to distinguish languages available to users from archived ones.
+    """
+    repo = LanguageRepository(db)
+    langs = await repo.get_all()
+    return LanguageListResponse(
+        success=True,
+        languages=[
+            LanguageResponse(code=l.code, name=l.name, is_active=l.is_active,
+                             created_at=l.created_at)
+            for l in langs
+        ],
+    )
+
+
+@router.patch(
+    "/languages/{code}",
+    response_model=LanguageResponse,
+    summary="Rename or toggle a language's active status (admin)",
+)
+async def update_language(
+    code: str,
+    body: LanguageUpdateRequest,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Update the display name and/or `is_active` flag of a language.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `code` — BCP 47 language code (e.g. `'hi'`).
+
+    **Optional body fields:** `name` (new display name), `is_active` (`false` to deactivate).
+    Deactivating a language prevents it from being resolved for users; existing translations
+    are retained. Reactivate by setting `is_active: true`.
+
+    Returns `404` if the language code does not exist.
+    Invalidates the language cache so the change takes effect immediately.
+    """
+    if body.name is None and body.is_active is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="At least one of 'name' or 'is_active' must be provided",
+        )
+    repo = LanguageRepository(db)
+    lang = await repo.update(code, name=body.name, is_active=body.is_active)
+    if lang is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Language '{code}' not found",
+        )
+    await db.commit()
+    from app.lang import invalidate_lang_cache
+    await invalidate_lang_cache()
+    return LanguageResponse(code=lang.code, name=lang.name, is_active=lang.is_active,
+                            created_at=lang.created_at)
+
+
+# ── Country↔language assignment (i18n Phase 5) ───────────────────────────────
+
+@router.get(
+    "/countries",
+    response_model=CountryLanguageListResponse,
+    summary="List all countries with their assigned languages (admin)",
+)
+async def list_countries_with_languages(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return all active countries together with their assigned language codes.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Use `POST /v1/admin/countries/{country_id}/languages/{code}` to add a language to a
+    country, and `DELETE` to remove one.
+    """
+    repo = LanguageRepository(db)
+    pairs = await repo.get_all_countries_with_languages()
+    return CountryLanguageListResponse(
+        success=True,
+        countries=[
+            CountryWithLanguagesResponse(
+                id=str(c.id),
+                name=c.name or "",
+                country_code=c.country_code or "",
+                currency=c.currency,
+                is_active=c.is_active,
+                languages=langs,
+            )
+            for c, langs in pairs
+        ],
+    )
+
+
+@router.post(
+    "/countries/{country_id}/languages/{code}",
+    status_code=status.HTTP_201_CREATED,
+    summary="Assign a language to a country (admin)",
+)
+async def assign_language_to_country(
+    country_id: str,
+    code: str,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Make a language available to users in a country.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameters:** `country_id` (UUID), `code` (BCP 47, must already exist in `languages`).
+
+    Returns `409` if already assigned. Returns `404` if the language or country is not found
+    (FK errors surface as `400` from the DB).
+    """
+    repo = LanguageRepository(db)
+    if not await repo.get_by_code(code):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Language '{code}' not found — register it first via POST /v1/admin/languages",
+        )
+    inserted = await repo.assign(country_id, code)
+    if not inserted:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Language '{code}' is already assigned to country '{country_id}'",
+        )
+    await db.commit()
+    return {"success": True, "message": f"Language '{code}' assigned to country '{country_id}'"}
+
+
+@router.delete(
+    "/countries/{country_id}/languages/{code}",
+    summary="Remove a language from a country (admin)",
+)
+async def unassign_language_from_country(
+    country_id: str,
+    code: str,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Remove a language assignment from a country.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameters:** `country_id` (UUID), `code` (BCP 47).
+
+    `'en'` cannot be unassigned from any country (it is the universal baseline per I3).
+    Returns `400` if `code == 'en'`, `404` if the assignment does not exist.
+    """
+    if code.lower() == "en":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="'en' (English) is the universal baseline and cannot be removed from any country",
+        )
+    repo = LanguageRepository(db)
+    deleted = await repo.unassign(country_id, code)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Language '{code}' is not assigned to country '{country_id}'",
+        )
+    await db.commit()
+    return {"success": True, "message": f"Language '{code}' removed from country '{country_id}'"}

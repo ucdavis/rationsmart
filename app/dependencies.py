@@ -2,7 +2,7 @@ import logging
 from typing import AsyncGenerator, Optional
 
 import jwt as _jwt
-from fastapi import Depends, HTTPException, Request, status
+from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -108,3 +108,57 @@ async def require_admin_user(
     if not current_user.is_admin:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin privileges required")
     return current_user
+
+
+async def get_optional_current_user(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
+    db: AsyncSession = Depends(get_db),
+) -> Optional[UserInformationModel]:
+    """Like get_current_user but returns None instead of raising 401.
+
+    Used by get_language so unauthenticated endpoints (e.g. feed listing) can
+    still resolve a language from ?lang= without requiring a Bearer token.
+    """
+    try:
+        return await get_current_user(request, credentials, db)
+    except HTTPException:
+        return None
+
+
+async def get_language(
+    lang: Optional[str] = Query(default=None, description="BCP 47 language code, e.g. 'hi', 'vi'"),
+    current_user: Optional[UserInformationModel] = Depends(get_optional_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> str:
+    """Resolve the effective language for a request (i18n V2 Phase 2).
+
+    Priority: ?lang= query param > user.preferred_language > 'en'.
+    Validates the candidate against the DB-backed, Redis-cached active-language
+    set so only real languages are accepted (I4). Falls back to 'en' (I3).
+
+    Inject with `lang: str = Depends(get_language)` on any feed-returning endpoint.
+    """
+    from app.lang import get_active_languages, resolve_language
+
+    user_pref = getattr(current_user, "preferred_language", None)
+    active = await get_active_languages(db)
+    return resolve_language(lang, user_pref, active)
+
+
+async def get_language_authenticated(
+    lang: Optional[str] = Query(default=None, description="BCP 47 language code, e.g. 'hi', 'vi'"),
+    current_user: UserInformationModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> str:
+    """Like get_language but requires authentication (uses get_current_user, not optional).
+
+    For endpoints that already require a Bearer JWT. FastAPI caches get_current_user per
+    request, so pairing this with Depends(get_current_user) in the same endpoint does not
+    result in two DB lookups.
+    """
+    from app.lang import get_active_languages, resolve_language
+
+    user_pref = getattr(current_user, "preferred_language", None)
+    active = await get_active_languages(db)
+    return resolve_language(lang, user_pref, active)

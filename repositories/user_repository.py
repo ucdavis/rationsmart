@@ -114,11 +114,14 @@ class UserRepository:
         user: UserInformationModel,
         name: Optional[str] = None,
         country_id: Optional[str] = None,
+        preferred_language: Optional[str] = None,
     ) -> UserInformationModel:
         if name is not None:
             user.name = name.strip()
         if country_id is not None:
             user.country_id = country_id
+        if preferred_language is not None:
+            user.preferred_language = preferred_language
         user.updated_at = datetime.utcnow()
         await self.db.flush()
         return user

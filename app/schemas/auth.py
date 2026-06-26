@@ -35,6 +35,7 @@ class Country(BaseModel):
     country_code: str = Field(..., max_length=3, description="ISO 3-letter country code")
     currency: Optional[str] = Field(None, max_length=10, description="Currency code")
     is_active: bool = Field(..., description="Active for registration")
+    supported_languages: List[str] = Field(default_factory=list, description="Language codes assigned to this country")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -93,6 +94,7 @@ class UserResponse(BaseModel):
     country_id: Optional[str] = None
     country: Optional[Country] = None
     is_admin: bool = False
+    preferred_language: str = Field(default="en", description="User's preferred language code (BCP 47)")
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -225,6 +227,7 @@ class UserInformation(BaseModel):
 class UserUpdateRequest(BaseModel):
     name: Optional[str] = Field(None, max_length=100)
     country_id: Optional[str] = None
+    preferred_language: Optional[str] = Field(None, max_length=10, description="BCP 47 language code, e.g. 'hi', 'vi'")
 
     @field_validator('name', mode='before')
     @classmethod

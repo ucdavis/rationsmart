@@ -1,8 +1,9 @@
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import func, select, union
+from sqlalchemy import and_, func, or_, select, union
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased
 
 from app.db.models import (
     CountryModel,
@@ -10,6 +11,8 @@ from app.db.models import (
     FeedCategory,
     Feed,
     FeedType,
+    FeedTranslation,
+    VocabularyTranslation,
 )
 
 
@@ -162,8 +165,10 @@ class FeedRepository:
 
     # ── Feed names / types / categories (for diet recommendation UI) ──────────
 
-    async def get_unique_types(self, country_id: str, user_id: str) -> List[str]:
-        """UNION of feed types from standard + custom feeds for a given country."""
+    async def get_unique_types(
+        self, country_id: str, user_id: str, lang: str = "en"
+    ) -> List[str]:
+        """UNION of feed types (standard + custom) for a country, with optional vocabulary translation."""
         std = select(Feed.fd_type).where(Feed.fd_country_id == country_id).distinct()
         cust = (
             select(CustomFeed.fd_type)
@@ -174,10 +179,27 @@ class FeedRepository:
             .distinct()
         )
         result = await self.db.execute(std.union(cust))
-        return [r[0] for r in result.all() if r[0]]
+        source_types = [r[0] for r in result.all() if r[0]]
 
-    async def get_unique_categories(self, country_id: str, user_id: str) -> List[str]:
-        """UNION of feed categories from standard + custom feeds."""
+        if lang == "en" or not source_types:
+            return source_types
+
+        trans = await self.db.execute(
+            select(VocabularyTranslation.source_value, VocabularyTranslation.name)
+            .where(
+                VocabularyTranslation.country_id == country_id,
+                VocabularyTranslation.kind == "feed_type",
+                VocabularyTranslation.language == lang,
+                VocabularyTranslation.source_value.in_(source_types),
+            )
+        )
+        trans_map = {r[0]: r[1] for r in trans.all()}
+        return [trans_map.get(t, t) for t in source_types]
+
+    async def get_unique_categories(
+        self, country_id: str, user_id: str, lang: str = "en"
+    ) -> List[str]:
+        """UNION of feed categories (standard + custom) for a country, with optional vocabulary translation."""
         std = select(Feed.fd_category).where(Feed.fd_country_id == country_id).distinct()
         cust = (
             select(CustomFeed.fd_category)
@@ -188,7 +210,49 @@ class FeedRepository:
             .distinct()
         )
         result = await self.db.execute(std.union(cust))
-        return [r[0] for r in result.all() if r[0]]
+        source_cats = [r[0] for r in result.all() if r[0]]
+
+        if lang == "en" or not source_cats:
+            return source_cats
+
+        trans = await self.db.execute(
+            select(VocabularyTranslation.source_value, VocabularyTranslation.name)
+            .where(
+                VocabularyTranslation.country_id == country_id,
+                VocabularyTranslation.kind == "feed_category",
+                VocabularyTranslation.language == lang,
+                VocabularyTranslation.source_value.in_(source_cats),
+            )
+        )
+        trans_map = {r[0]: r[1] for r in trans.all()}
+        return [trans_map.get(c, c) for c in source_cats]
+
+    def _localized_feed_select(self, lang: str):
+        """Return a base SELECT with LEFT JOINs for feed name + type + category translations."""
+        ft = aliased(FeedTranslation)
+        vt = aliased(VocabularyTranslation)
+        vc = aliased(VocabularyTranslation)
+        return (
+            select(
+                Feed,
+                func.coalesce(ft.name, Feed.fd_name).label("display_name"),
+                func.coalesce(vt.name, Feed.fd_type).label("display_type"),
+                func.coalesce(vc.name, Feed.fd_category).label("display_category"),
+            )
+            .outerjoin(ft, and_(ft.feed_id == Feed.id, ft.language == lang))
+            .outerjoin(vt, and_(
+                vt.country_id == Feed.fd_country_id,
+                vt.kind == "feed_type",
+                vt.source_value == Feed.fd_type,
+                vt.language == lang,
+            ))
+            .outerjoin(vc, and_(
+                vc.country_id == Feed.fd_country_id,
+                vc.kind == "feed_category",
+                vc.source_value == Feed.fd_category,
+                vc.language == lang,
+            ))
+        )
 
     async def search_feeds(
         self,
@@ -196,16 +260,23 @@ class FeedRepository:
         country_id: str,
         user_id: str,
         limit: int = 20,
-    ) -> Tuple[List[Feed], List[CustomFeed], int]:
-        """
-        Typeahead search on fd_name (case-insensitive substring) scoped to country + user.
-        Returns (std_feeds, custom_feeds, total_count) where total_count is pre-limit.
+        lang: str = "en",
+    ) -> Tuple[List, List, int]:
+        """Typeahead search on fd_name (and translated name) scoped to country + user.
+
+        Returns (std_rows, custom_feeds, total_count).
+        std_rows: Row(Feed, display_name, display_type, display_category)
+        custom_feeds: List[CustomFeed] (custom feeds are not translated — I5/out-of-scope)
         """
         pattern = f"%{query}%"
+        ft = aliased(FeedTranslation)
 
-        sq = select(Feed).where(
-            Feed.fd_country_id == country_id,
-            Feed.fd_name.ilike(pattern),
+        sq = (
+            self._localized_feed_select(lang)
+            .where(
+                Feed.fd_country_id == country_id,
+                or_(Feed.fd_name.ilike(pattern), ft.name.ilike(pattern)),
+            )
         )
         cq = select(CustomFeed).where(
             CustomFeed.fd_country_id == country_id,
@@ -220,7 +291,7 @@ class FeedRepository:
         cust_result = await self.db.execute(cq.order_by(CustomFeed.fd_name.asc()))
 
         return (
-            std_result.scalars().all(),
+            std_result.all(),
             cust_result.scalars().all(),
             std_count + cust_count,
         )
@@ -231,9 +302,14 @@ class FeedRepository:
         user_id: str,
         feed_type: Optional[str] = None,
         category: Optional[str] = None,
-    ) -> Tuple[List[Feed], List[CustomFeed]]:
-        """Returns (standard_feeds, custom_feeds) matching the given filters."""
-        sq = select(Feed).where(Feed.fd_country_id == country_id)
+        lang: str = "en",
+    ) -> Tuple[List, List]:
+        """Returns (std_rows, custom_feeds) matching the given filters.
+
+        std_rows: Row(Feed, display_name, display_type, display_category)
+        custom_feeds: List[CustomFeed]
+        """
+        sq = self._localized_feed_select(lang).where(Feed.fd_country_id == country_id)
         cq = select(CustomFeed).where(
             CustomFeed.fd_country_id == country_id,
             CustomFeed.user_id == uuid.UUID(str(user_id)),
@@ -247,7 +323,56 @@ class FeedRepository:
 
         std_result = await self.db.execute(sq)
         cust_result = await self.db.execute(cq)
-        return std_result.scalars().all(), cust_result.scalars().all()
+        return std_result.all(), cust_result.scalars().all()
+
+    async def get_by_id_localized(self, feed_id: str, lang: str = "en"):
+        """Fetch a standard feed by ID with COALESCE'd display name/type/category.
+
+        Returns Row(Feed, display_name, display_type, display_category) or None.
+        Returns None if feed_id is not a valid UUID or the feed doesn't exist.
+        """
+        try:
+            fid = uuid.UUID(str(feed_id))
+        except ValueError:
+            return None
+        result = await self.db.execute(
+            self._localized_feed_select(lang).where(Feed.id == fid)
+        )
+        return result.one_or_none()
+
+    async def get_all_localized(
+        self,
+        skip: int = 0,
+        limit: int = 20,
+        feed_type: Optional[str] = None,
+        feed_category: Optional[str] = None,
+        country_name: Optional[str] = None,
+        search: Optional[str] = None,
+        country_id: Optional[str] = None,
+        lang: str = "en",
+    ) -> Tuple[List, int]:
+        """Like get_all but joins translation tables and returns display_* labels.
+
+        Returns (rows, total) where each row is Row(Feed, display_name, display_type, display_category).
+        """
+        q = self._localized_feed_select(lang).order_by(Feed.fd_name.asc())
+        if feed_type:
+            q = q.where(Feed.fd_type == feed_type)
+        if feed_category:
+            q = q.where(Feed.fd_category == feed_category)
+        if country_name:
+            q = q.where(Feed.fd_country_name.ilike(f"%{country_name}%"))
+        if country_id:
+            q = q.where(Feed.fd_country_id == country_id)
+        if search:
+            q = q.where(Feed.fd_name.ilike(f"%{search}%"))
+
+        count_result = await self.db.execute(
+            select(func.count()).select_from(q.subquery())
+        )
+        total = count_result.scalar_one()
+        feeds_result = await self.db.execute(q.offset(skip).limit(limit))
+        return feeds_result.all(), total
 
     # ── Feed types ────────────────────────────────────────────────────────────
 

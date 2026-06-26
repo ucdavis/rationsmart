@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.limiter import limiter
 
-from app.dependencies import get_current_user, get_db
+from app.dependencies import get_current_user, get_db, get_language_authenticated
 from app.db.models import FeedAnalytics, UserInformationModel
 from app.schemas.animal import (
     DietEvaluationRequest,
@@ -36,6 +36,7 @@ async def unique_feed_types(
     country_id: str,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Return the distinct feed types (e.g. Roughage, Concentrate) that have feeds available for the given country,
@@ -45,7 +46,7 @@ async def unique_feed_types(
 
     **Path parameter:** `country_id` — UUID of the country (from `GET /v1/auth/countries`).
     """
-    types = await diet_service.get_unique_feed_types(db, country_id, str(current_user.id))
+    types = await diet_service.get_unique_feed_types(db, country_id, str(current_user.id), lang=lang)
     return {"feed_types": types}
 
 
@@ -54,6 +55,7 @@ async def unique_feed_categories(
     country_id: str,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Return the distinct feed categories available for the given country (standard + user's custom feeds).
@@ -62,7 +64,7 @@ async def unique_feed_categories(
 
     **Mandatory query parameter:** `country_id` — UUID of the target country.
     """
-    categories = await diet_service.get_unique_feed_categories(db, country_id, str(current_user.id))
+    categories = await diet_service.get_unique_feed_categories(db, country_id, str(current_user.id), lang=lang)
     return {"feed_categories": categories}
 
 
@@ -73,6 +75,7 @@ async def search_feeds(
     limit: int = 20,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Search feeds by name (case-insensitive substring) for the given country.
@@ -86,10 +89,11 @@ async def search_feeds(
 
     Results are ranked: custom feeds first, then prefix matches before mid-string matches, then alphabetical.
     Queries shorter than 2 characters return `{feeds: [], total_count: 0}` with no DB hit.
+    feed_name/feed_type/feed_category are localized when `?lang=` or preferred_language is set.
     """
     clamped_limit = min(max(limit, 1), 100)
     feeds, total_count = await diet_service.search_feeds(
-        db, query, country_id, str(current_user.id), clamped_limit
+        db, query, country_id, str(current_user.id), clamped_limit, lang=lang
     )
     return {"feeds": feeds, "total_count": total_count}
 
@@ -101,6 +105,7 @@ async def feed_names(
     category: str = None,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Return standard and custom feed names available to the authenticated user for a given country.
@@ -114,9 +119,10 @@ async def feed_names(
     - `category` — filter by feed category name (e.g. `Legume hay`).
 
     Response contains two lists: `standard_feeds` (global) and `custom_feeds` (user-created).
+    Each feed includes `display_name`/`display_type`/`display_category` with localized values.
     """
     std_feeds, cust_feeds = await diet_service.get_feed_names(
-        db, country_id, str(current_user.id), feed_type, category
+        db, country_id, str(current_user.id), feed_type, category, lang=lang
     )
     return {"standard_feeds": std_feeds, "custom_feeds": cust_feeds}
 
@@ -126,6 +132,7 @@ async def feed_details(
     feed_id: str,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Return the complete nutritional composition of a feed item (DM, CP, NDF, ADF, EE, Ash, Ca, P, ME, etc.).
@@ -135,8 +142,9 @@ async def feed_details(
     **Path parameter:** `feed_id` — UUID of the feed (standard or user's own custom feed).
 
     Returns `404` if the feed does not exist or does not belong to the user.
+    Includes `display_name`/`display_type`/`display_category` with localized values.
     """
-    data = await diet_service.get_feed_details(db, feed_id, str(current_user.id))
+    data = await diet_service.get_feed_details(db, feed_id, str(current_user.id), lang=lang)
     if not data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feed not found")
     return data
@@ -147,6 +155,7 @@ async def list_feeds(
     country_id: str = None,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Return a summary list of all standard feeds, with optional country filter.
@@ -155,14 +164,23 @@ async def list_feeds(
 
     **Optional query parameter:** `country_id` — UUID to scope feeds to a specific country.
 
-    Response fields per item: `id`, `fd_name`, `fd_type`, `fd_category`.
+    Response fields per item: `id`, `fd_name`, `fd_type`, `fd_category`, plus localized
+    `display_name`, `display_type`, `display_category`.
     For full nutritional data, call `GET /v1/animal/feed-details/{feed_id}`.
     """
-    feeds, total = await FeedRepository(db).get_all(country_id=country_id)
+    rows, total = await FeedRepository(db).get_all_localized(country_id=country_id, lang=lang)
     return {
         "feeds": [
-            {"id": str(f.id), "fd_name": f.fd_name, "fd_type": f.fd_type, "fd_category": f.fd_category}
-            for f in feeds
+            {
+                "id": str(row.Feed.id),
+                "fd_name": row.Feed.fd_name,
+                "fd_type": row.Feed.fd_type,
+                "fd_category": row.Feed.fd_category,
+                "display_name": row.display_name,
+                "display_type": row.display_type,
+                "display_category": row.display_category,
+            }
+            for row in rows
         ],
         "total": total,
     }
@@ -173,6 +191,7 @@ async def get_feed(
     feed_id: str,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Return the basic summary (id, name, type, category) for a single standard feed.
@@ -182,11 +201,21 @@ async def get_feed(
     **Path parameter:** `feed_id` — UUID of the feed.
 
     Returns `404` if the feed does not exist.
+    Includes `display_name`/`display_type`/`display_category` with localized values.
     """
-    feed = await FeedRepository(db).get_by_id(feed_id)
-    if not feed:
+    row = await FeedRepository(db).get_by_id_localized(feed_id, lang=lang)
+    if not row:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Feed not found")
-    return {"id": str(feed.id), "fd_name": feed.fd_name, "fd_type": feed.fd_type, "fd_category": feed.fd_category}
+    f = row.Feed
+    return {
+        "id": str(f.id),
+        "fd_name": f.fd_name,
+        "fd_type": f.fd_type,
+        "fd_category": f.fd_category,
+        "display_name": row.display_name,
+        "display_type": row.display_type,
+        "display_category": row.display_category,
+    }
 
 
 # ── Diet recommendation & evaluation ─────────────────────────────────────────
