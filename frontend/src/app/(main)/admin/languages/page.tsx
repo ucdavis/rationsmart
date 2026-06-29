@@ -52,7 +52,24 @@ interface CountryRow {
   name: string;
   country_code?: string;
   languages: string[];
+  // i18n V2: placeholder marker. When the backend's /v1/admin/countries
+  // doesn't include a country we know is in the rollout (e.g. Ethiopia
+  // before the backend team has seeded it), we render a placeholder
+  // card so the admin's mental model is complete. Placeholders cannot
+  // have languages assigned via the API — backend has no country_id
+  // for them — so all controls inside the card are disabled with an
+  // explanatory tooltip.
+  _isPlaceholder?: boolean;
 }
+
+// Rollout countries we expect to exist on the backend. If any of these
+// is missing from /v1/admin/countries we synthesize a placeholder so
+// the admin can SEE the gap (rather than wondering why Ethiopia isn't
+// listed). Backend team needs to seed these into the country table for
+// the toggles to actually work.
+const ROLLOUT_PLACEHOLDERS: Array<{ name: string; country_code: string }> = [
+  { name: "Ethiopia", country_code: "ETH" },
+];
 
 export default function AdminLanguageCatalogPage() {
   const router = useRouter();
@@ -122,7 +139,23 @@ export default function AdminLanguageCatalogPage() {
             data: countriesRes.value.data,
           });
           const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
-          setCountries(Array.isArray(d) ? d : d?.countries ?? []);
+          const fromApi = (Array.isArray(d) ? d : d?.countries ?? []) as CountryRow[];
+          // Merge in rollout placeholders for any country the backend
+          // hasn't seeded yet (e.g. Ethiopia). The placeholder is
+          // rendered as a card with disabled controls so the admin can
+          // SEE the country is expected but not yet set up.
+          const placeholders: CountryRow[] = ROLLOUT_PLACEHOLDERS
+            .filter((p) =>
+              !fromApi.some((c) => c.name.toLowerCase().includes(p.name.toLowerCase()))
+            )
+            .map((p) => ({
+              id: `__placeholder_${p.country_code}__`,
+              name: p.name,
+              country_code: p.country_code,
+              languages: [],
+              _isPlaceholder: true,
+            }));
+          setCountries([...fromApi, ...placeholders]);
         } else {
           const ax = countriesRes.reason as { response?: { status?: number; data?: unknown }; message?: string };
           console.error("[admin/languages] countries load failed:", {
@@ -284,8 +317,13 @@ export default function AdminLanguageCatalogPage() {
       // Step 2: pick the country row(s) that match. Prefer a regional
       // match when a cue is set AND there's a country whose name
       // contains both the hint and the cue. Otherwise fall back to all
-      // rows whose name contains the hint.
-      let candidates = countries.filter((c) => c.name.toLowerCase().includes(seed.countryHint));
+      // rows whose name contains the hint. Placeholder countries are
+      // excluded — backend has no real country_id for them, so any
+      // POST would 404. The seed summary reports them under
+      // skippedNoCountry so the admin sees the gap.
+      let candidates = countries.filter((c) =>
+        !c._isPlaceholder && c.name.toLowerCase().includes(seed.countryHint)
+      );
       if (seed.regionalCue) {
         const regional = candidates.filter((c) => c.name.toLowerCase().includes(seed.regionalCue!));
         if (regional.length > 0) candidates = regional;
@@ -619,11 +657,17 @@ export default function AdminLanguageCatalogPage() {
               // The non-English languages the country has assigned (for the
               // header summary). English is always-on by definition.
               const extraLangs = c.languages.filter((x) => x !== "en");
+              const isPlaceholder = !!c._isPlaceholder;
               return (
                 <div
                   key={c.id}
                   className="bg-white rounded-2xl overflow-hidden"
-                  style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+                  style={{
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                    // Placeholder cards get a dashed amber outline so the
+                    // "pending backend setup" state is obvious at a glance.
+                    border: isPlaceholder ? "1.5px dashed #FF9800" : "none",
+                  }}
                 >
                   {/* Country header — clickable to expand */}
                   <button
@@ -633,11 +677,25 @@ export default function AdminLanguageCatalogPage() {
                     aria-expanded={isOpen}
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                        {c.name}
-                      </p>
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                          {c.name}
+                        </p>
+                        {isPlaceholder && (
+                          // Visible-from-collapsed marker so the admin sees
+                          // it without expanding.
+                          <span
+                            className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                            style={{ backgroundColor: "#FFF3E0", color: "#FF7800", fontFamily: "Nunito, sans-serif" }}
+                          >
+                            Backend pending
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                        English{extraLangs.length > 0 && ` + ${extraLangs.length} more`}
+                        {isPlaceholder
+                          ? "Backend has not registered this country yet"
+                          : <>English{extraLangs.length > 0 && ` + ${extraLangs.length} more`}</>}
                       </p>
                     </div>
                     {/* Chevron rotates 180° when open */}
@@ -655,8 +713,22 @@ export default function AdminLanguageCatalogPage() {
                   {/* Expandable body — only ENABLED non-English languages
                       render here. English is hidden (always-on baseline).
                       To enable a NEW language for this country, tap the
-                      "+ Add Language" pill at the bottom of the body. */}
-                  {isOpen && (
+                      "+ Add Language" pill at the bottom of the body.
+                      Placeholder countries (Ethiopia before backend setup)
+                      render an explanatory empty state instead of the
+                      assign/toggle controls — backend has no country_id,
+                      so any POST would fail. */}
+                  {isOpen && (isPlaceholder ? (
+                    <div className="border-t px-4 py-4" style={{ borderColor: "#F1F5F9" }}>
+                      <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>
+                        <span className="font-bold" style={{ color: "#FF7800" }}>{c.name}</span> is in
+                        the rollout plan but has not been seeded into the backend
+                        country table yet. Ask the backend team to add it; this
+                        card will switch to live controls automatically once the
+                        country shows up in <span className="font-mono">/v1/admin/countries</span>.
+                      </p>
+                    </div>
+                  ) : (
                     <div className="border-t" style={{ borderColor: "#F1F5F9" }}>
                       {extraLangs.length === 0 ? (
                         <p className="text-xs italic px-4 py-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
@@ -665,34 +737,71 @@ export default function AdminLanguageCatalogPage() {
                       ) : (
                         extraLangs.map((code) => {
                           // Resolve catalog metadata for the row's display
-                          // name. If the catalog has no entry (race or
-                          // backend mismatch), the code itself is the
-                          // fallback label.
+                          // name AND active state. If the catalog row exists
+                          // but is_active=false, this is a STALE assignment —
+                          // the language was assigned to this country at
+                          // some point, then later deactivated globally. The
+                          // assignment still exists in the DB (per spec:
+                          // "Existing translations are preserved.") but the
+                          // language is no longer offered to users.
+                          //
+                          // We render stale rows with an INACTIVE chip and
+                          // amber border so the admin can see the
+                          // inconsistency and clean it up (toggle OFF to
+                          // unassign). Without this, a deactivated language
+                          // could silently linger in country.languages forever.
                           const catalog = allLanguages.find((l) => l.code === code);
                           const displayName = catalog?.name ?? code.toUpperCase();
+                          const isCatalogInactive = catalog ? !catalog.is_active : false;
                           const key = `${c.id}:${code}`;
                           const isPending = pendingKey.has(key);
                           return (
                             <div
                               key={code}
                               className="flex items-center justify-between px-4 py-3"
-                              style={{ borderTop: "1px solid #F8FAF9" }}
+                              style={{
+                                borderTop: "1px solid #F8FAF9",
+                                backgroundColor: isCatalogInactive ? "#FFF8E1" : "transparent",
+                              }}
                             >
                               <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline gap-2">
-                                  <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <p
+                                    className="font-bold"
+                                    style={{
+                                      color: isCatalogInactive ? "#6D6D6D" : "#231F20",
+                                      fontFamily: "Nunito, sans-serif",
+                                      fontSize: 14,
+                                      textDecoration: isCatalogInactive ? "line-through" : "none",
+                                    }}
+                                  >
                                     {displayName}
                                   </p>
                                   <span className="text-xs uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
                                     {code}
                                   </span>
+                                  {isCatalogInactive && (
+                                    <span
+                                      className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                                      style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
+                                      title="Language is deactivated globally — not shown to users despite this assignment. Toggle off to clean up."
+                                    >
+                                      Inactive
+                                    </span>
+                                  )}
                                 </div>
                                 {/* Native-script preview when known — same
                                     string the user will see in their Profile
-                                    dropdown. */}
-                                {labelForLanguage(code) !== code.toUpperCase() && (
+                                    dropdown. Skipped for inactive rows to
+                                    reduce visual noise. */}
+                                {!isCatalogInactive && labelForLanguage(code) !== code.toUpperCase() && (
                                   <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
                                     {labelForLanguage(code)}
+                                  </p>
+                                )}
+                                {isCatalogInactive && (
+                                  <p className="text-xs italic mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                                    Deactivated globally — not offered to users. Toggle off to remove this stale assignment.
                                   </p>
                                 )}
                               </div>
@@ -731,7 +840,7 @@ export default function AdminLanguageCatalogPage() {
                         </button>
                       </div>
                     </div>
-                  )}
+                  ))}
                 </div>
               );
             })}
