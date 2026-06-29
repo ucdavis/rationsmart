@@ -52,6 +52,15 @@ export default function ProfilePage() {
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string; currency?: string; supported_languages?: string[] }>>([]);
+  // Countries are fetched on mount. Until they arrive we can't decide
+  // whether to render the Language selector (we don't know the user's
+  // country's supported_languages). Previously the selector silently
+  // popped in 1-2s after page load — bad UX. Now we render a skeleton
+  // placeholder while loading IF we have a hint the user is on a
+  // multi-language country (preferred_language != en); when the
+  // countries call resolves we either replace with the real selector
+  // or remove the block.
+  const [countriesLoading, setCountriesLoading] = useState(true);
   const [selectedCountryId, setSelectedCountryId] = useState(user?.country_id ?? "");
   // i18n V2: locally edited language preference. Saved on Update Profile.
   // Falls back to "en" until the backend has populated the user's record.
@@ -70,7 +79,8 @@ export default function ProfilePage() {
       })
       .catch(() => {
         // silently ignore — dropdown will just be empty
-      });
+      })
+      .finally(() => setCountriesLoading(false));
   }, []);
 
   // Compute the language options visible to this user based on the
@@ -79,6 +89,10 @@ export default function ProfilePage() {
   const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
   const supportedLangs = selectedCountry?.supported_languages ?? ["en"];
   const showLangSelector = supportedLangs.length > 1;
+  // Show a skeleton placeholder during the countries fetch when we have
+  // reason to believe the user IS on a multi-language country (their
+  // preferred_language is non-English). Avoids the visible pop-in.
+  const showLangSkeleton = countriesLoading && (user?.preferred_language ?? "en") !== "en";
 
   if (!user) return null;
 
@@ -301,7 +315,32 @@ export default function ProfilePage() {
           {/* i18n V2 — Language selector. Hidden when the country supports
               only "en" (no choice to offer). Labels are native-script via
               labelForLanguage() for instant recognisability to the
-              actual speaker (per i18n V2 spec). */}
+              actual speaker (per i18n V2 spec).
+
+              During the initial countries fetch we render a shimmer
+              skeleton (when we have a hint the user is on a multi-lang
+              country) so the selector doesn't visibly pop in after the
+              network request resolves. */}
+          {showLangSkeleton && (
+            <>
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
+              <div
+                className="w-full rounded-2xl px-4 py-3.5"
+                style={{
+                  background:
+                    "linear-gradient(90deg, #F1F5F9 0%, #E8F0F5 50%, #F1F5F9 100%)",
+                  backgroundSize: "200% 100%",
+                  animation: "shimmer 1.2s linear infinite",
+                  height: 52,
+                  color: "transparent",
+                }}
+                aria-hidden
+              >
+                .
+              </div>
+              <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
+            </>
+          )}
           {showLangSelector && (
             <>
               <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
