@@ -66,6 +66,12 @@ export default function AdminLanguageCatalogPage() {
   // both ON and OFF requests. Keyed as "<country_id>:<code>".
   const [pendingKey, setPendingKey] = useState<Set<string>>(new Set());
 
+  // Add-language-to-country sheet (per-country picker). Distinct from
+  // the catalog-level "Add Language" sheet below.
+  const [assignSheetCountry, setAssignSheetCountry] = useState<CountryRow | null>(null);
+  const [selectedNewCode, setSelectedNewCode] = useState("");
+  const [isAssigning, setIsAssigning] = useState(false);
+
   // Add Language sheet (registers a row in the global catalog).
   const [showAdd, setShowAdd] = useState(false);
   const [newCode, setNewCode] = useState("");
@@ -123,10 +129,39 @@ export default function AdminLanguageCatalogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.is_admin]);
 
-  // Show every active non-English language in the toggle list — that's
-  // the set of options each country can opt into. We don't filter by
-  // already-assigned because the toggle itself reflects the state.
-  const assignableLanguages = allLanguages.filter((l) => l.is_active && l.code !== "en");
+  // Open the per-country assign sheet. Defaults to the first catalog
+  // language that's NOT already enabled for this country.
+  const openAssign = (c: CountryRow) => {
+    const available = allLanguages.filter(
+      (l) => l.is_active && l.code !== "en" && !c.languages.includes(l.code)
+    );
+    setSelectedNewCode(available[0]?.code ?? "");
+    setAssignSheetCountry(c);
+  };
+
+  const handleAssign = async () => {
+    if (!assignSheetCountry || !selectedNewCode) return;
+    setIsAssigning(true);
+    // Optimistic local add so the chip appears immediately.
+    const countryId = assignSheetCountry.id;
+    const code = selectedNewCode;
+    setCountries((prev) =>
+      prev.map((c) =>
+        c.id !== countryId ? c : { ...c, languages: [...c.languages, code] }
+      )
+    );
+    try {
+      await assignLanguageToCountry(countryId, code);
+      showSnackbar(`'${code}' enabled for ${assignSheetCountry.name}`, "success");
+      setAssignSheetCountry(null);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Could not enable language";
+      showSnackbar(msg, "error");
+      reload();
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   const toggleExpand = (countryId: string) => {
     setExpanded((prev) => {
@@ -137,40 +172,29 @@ export default function AdminLanguageCatalogPage() {
     });
   };
 
-  // Per-(country, lang) toggle. Optimistic update: flip the in-memory
-  // assignment first; on failure, snackbar + reload (server is source
-  // of truth, so reload restores correct state without us guessing).
-  const handleToggleAssignment = async (countryRow: CountryRow, code: string, currentlyOn: boolean) => {
+  // Toggle a language off for a country (removes the assignment). The
+  // new layout only renders rows for already-enabled languages, so the
+  // ONLY direction this handler ever goes is ON → OFF. Adding is handled
+  // by the per-country "+ Add Language" sheet (handleAssign above).
+  const handleUnassign = async (countryRow: CountryRow, code: string) => {
     const key = `${countryRow.id}:${code}`;
     if (pendingKey.has(key)) return;
     setPendingKey((prev) => new Set(prev).add(key));
 
-    // Optimistic local flip.
+    // Optimistic local remove so the chip disappears immediately.
     setCountries((prev) =>
       prev.map((c) =>
-        c.id !== countryRow.id
-          ? c
-          : {
-              ...c,
-              languages: currentlyOn
-                ? c.languages.filter((x) => x !== code)
-                : [...c.languages, code],
-            }
+        c.id !== countryRow.id ? c : { ...c, languages: c.languages.filter((x) => x !== code) }
       )
     );
 
     try {
-      if (currentlyOn) {
-        await unassignLanguageFromCountry(countryRow.id, code);
-        showSnackbar(`'${code}' removed from ${countryRow.name}`, "success");
-      } else {
-        await assignLanguageToCountry(countryRow.id, code);
-        showSnackbar(`'${code}' added to ${countryRow.name}`, "success");
-      }
+      await unassignLanguageFromCountry(countryRow.id, code);
+      showSnackbar(`'${code}' disabled for ${countryRow.name}`, "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Could not update assignment";
+      const msg = err instanceof Error ? err.message : "Could not disable language";
       showSnackbar(msg, "error");
-      // Rollback by reloading server state.
+      // Server is source of truth — reload to restore correct state.
       reload();
     } finally {
       setPendingKey((prev) => {
@@ -303,54 +327,60 @@ export default function AdminLanguageCatalogPage() {
                     </svg>
                   </button>
 
-                  {/* Expandable body — language toggle list. English is
-                      hidden entirely; backend treats it as the implicit
-                      baseline and refuses to toggle it. */}
+                  {/* Expandable body — only ENABLED non-English languages
+                      render here. English is hidden (always-on baseline).
+                      To enable a NEW language for this country, tap the
+                      "+ Add Language" pill at the bottom of the body. */}
                   {isOpen && (
                     <div className="border-t" style={{ borderColor: "#F1F5F9" }}>
-                      {assignableLanguages.length === 0 ? (
+                      {extraLangs.length === 0 ? (
                         <p className="text-xs italic px-4 py-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                          No additional languages in the catalog yet. Tap “Add Language” above to register one.
+                          Only English is enabled. Tap “+ Add Language” to enable another for this country.
                         </p>
                       ) : (
-                        assignableLanguages.map((lang) => {
-                          const isAssigned = c.languages.includes(lang.code);
-                          const key = `${c.id}:${lang.code}`;
+                        extraLangs.map((code) => {
+                          // Resolve catalog metadata for the row's display
+                          // name. If the catalog has no entry (race or
+                          // backend mismatch), the code itself is the
+                          // fallback label.
+                          const catalog = allLanguages.find((l) => l.code === code);
+                          const displayName = catalog?.name ?? code.toUpperCase();
+                          const key = `${c.id}:${code}`;
                           const isPending = pendingKey.has(key);
                           return (
                             <div
-                              key={lang.code}
+                              key={code}
                               className="flex items-center justify-between px-4 py-3"
                               style={{ borderTop: "1px solid #F8FAF9" }}
                             >
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-baseline gap-2">
                                   <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                                    {lang.name}
+                                    {displayName}
                                   </p>
                                   <span className="text-xs uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                                    {lang.code}
+                                    {code}
                                   </span>
                                 </div>
-                                {/* Native-script preview when known so the admin
-                                    sees exactly what the user will see in their
-                                    Profile dropdown. */}
-                                {labelForLanguage(lang.code) !== lang.code.toUpperCase() && (
+                                {/* Native-script preview when known — same
+                                    string the user will see in their Profile
+                                    dropdown. */}
+                                {labelForLanguage(code) !== code.toUpperCase() && (
                                   <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                                    {labelForLanguage(lang.code)}
+                                    {labelForLanguage(code)}
                                   </p>
                                 )}
                               </div>
                               <label
                                 className="toggle-switch"
-                                aria-label={isAssigned ? `Disable ${lang.code} for ${c.name}` : `Enable ${lang.code} for ${c.name}`}
+                                aria-label={`Disable ${code} for ${c.name}`}
                                 style={{ opacity: isPending ? 0.55 : 1, cursor: isPending ? "wait" : "pointer" }}
                               >
                                 <input
                                   type="checkbox"
-                                  checked={isAssigned}
+                                  checked
                                   disabled={isPending}
-                                  onChange={() => handleToggleAssignment(c, lang.code, isAssigned)}
+                                  onChange={() => handleUnassign(c, code)}
                                 />
                                 <span className="toggle-slider" />
                               </label>
@@ -358,6 +388,23 @@ export default function AdminLanguageCatalogPage() {
                           );
                         })
                       )}
+
+                      {/* "+ Add Language" pill — opens the per-country sheet
+                          listing catalog entries this country hasn't enabled
+                          yet. */}
+                      <div className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+                        <button
+                          onClick={() => openAssign(c)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                          style={{ backgroundColor: "#E4F7EF", color: "#064E3B", border: "1.5px solid rgba(5,188,109,0.30)", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                          aria-label={`Add a language to ${c.name}`}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                          </svg>
+                          Add Language
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
@@ -366,6 +413,83 @@ export default function AdminLanguageCatalogPage() {
           </div>
         )}
       </div>
+
+      {/* Per-country assign sheet — pick a catalog language not yet
+          enabled for this country and POST the assignment. Distinct
+          from the global-catalog Add Language sheet below. */}
+      {assignSheetCountry && (() => {
+        const available = allLanguages.filter(
+          (l) => l.is_active && l.code !== "en" && !assignSheetCountry.languages.includes(l.code)
+        );
+        return (
+          <div
+            className="fixed top-0 h-full z-50 flex flex-col justify-end"
+            style={{
+              left: "max(0px, calc((100vw - 480px) / 2))",
+              width: "min(100vw, 480px)",
+              backgroundColor: "rgba(0,0,0,0.45)",
+            }}
+            onClick={(e) => { if (e.target === e.currentTarget) setAssignSheetCountry(null); }}
+          >
+            <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
+              <div className="flex justify-center mb-3">
+                <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              </div>
+              <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>
+                Add Language
+              </h3>
+              <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                {assignSheetCountry.name}
+              </p>
+
+              {available.length === 0 ? (
+                <p className="text-sm text-center mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                  All catalog languages are already enabled for this country.
+                  To register a new one, use <span className="font-bold">+ Add Language</span> at the top of the screen.
+                </p>
+              ) : (
+                <>
+                  <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                    LANGUAGE
+                  </p>
+                  <select
+                    value={selectedNewCode}
+                    onChange={(e) => setSelectedNewCode(e.target.value)}
+                    className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"
+                    style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                  >
+                    {available.map((l) => (
+                      <option key={l.code} value={l.code}>
+                        {labelForLanguage(l.code) !== l.code.toUpperCase()
+                          ? `${labelForLanguage(l.code)} — ${l.name} (${l.code})`
+                          : `${l.name} (${l.code})`}
+                      </option>
+                    ))}
+                  </select>
+                </>
+              )}
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setAssignSheetCountry(null)}
+                  className="flex-1 py-3 rounded-xl font-bold"
+                  style={{ backgroundColor: "transparent", color: "#064E3B", border: "2px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAssign}
+                  disabled={available.length === 0 || isAssigning || !selectedNewCode}
+                  className="flex-1 py-3 rounded-xl font-bold"
+                  style={{ backgroundColor: available.length === 0 || isAssigning ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: available.length === 0 || isAssigning ? "not-allowed" : "pointer" }}
+                >
+                  {isAssigning ? "Adding…" : "Enable"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Add Language bottom sheet — registers a row in the global
           catalog. After insert it will appear (unassigned) under every
