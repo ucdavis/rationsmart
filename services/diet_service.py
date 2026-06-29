@@ -308,6 +308,7 @@ async def run_diet_recommendation(
         "calving_interval": cattle.calving_interval,
         "bw_gain": cattle.bw_gain,
         "bc_score": cattle.bc_score,
+        "milk_price": cattle.milk_price,
     }
 
     custom_thresholds = None
@@ -335,9 +336,13 @@ async def run_diet_recommendation(
     # 4 — Build API response
     # reporting.py uses dict-access; convert OptimizationResult to a compat dict.
     report_id = f"rec-{_uuid_mod.uuid4().hex[:8]}"
+    # Carry milk_price into post_results so the background HTML/PDF generator
+    # (which receives post_results, not cattle_info) can render the margin card.
+    post_results = result.post_results if isinstance(result.post_results, dict) else {}
+    post_results["milk_price"] = cattle.milk_price
     result_dict = {
         "status": result.status,
-        "post_results": result.post_results,
+        "post_results": post_results,
         "animal_requirements": result.animal_requirements,
         "simulation_id": request.simulation_id,
         "report_id": report_id,
@@ -440,6 +445,7 @@ async def run_diet_evaluation(
         "calving_interval": cattle.calving_interval,
         "bw_gain": cattle.bw_gain,
         "bc_score": cattle.bc_score,
+        "milk_price": cattle.milk_price,
     }
 
     country = await user_repo.get_country_by_id(request.country_id)
@@ -447,6 +453,11 @@ async def run_diet_evaluation(
 
     ingredient_amounts_af = [f["quantity_as_fed"] or 0.0 for f in feed_data_list]
     eval_result = evaluate_diet(animal_inputs, ingredient_amounts_af, feed_data_list=feed_data_list)
+    # Carry milk_price into post_results for the background HTML/PDF margin card.
+    if isinstance(eval_result, dict):
+        eval_post = eval_result.get("post_results")
+        if isinstance(eval_post, dict):
+            eval_post["milk_price"] = cattle.milk_price
     report_id = f"eval-{_uuid_mod.uuid4().hex[:8]}"
     response = build_evaluation_response(
         evaluation_results=eval_result,

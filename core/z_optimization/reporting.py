@@ -141,7 +141,25 @@ def build_diet_response(
     daily_cost = float(post_results.get('total_cost', 0.0))
     milk_prod = float(cattle_info.milk_production)
     cost_per_liter = round(daily_cost / milk_prod, 2) if milk_prod > 0 else 0.0
-    
+
+    # Milk price & profit margin overlay (optional input).
+    # margin_per_liter = milk_price - cost_per_liter
+    # daily_iofc (Income Over Feed Cost) = milk_price * milk_yield - daily_cost
+    milk_price = getattr(cattle_info, 'milk_price', None)
+    if milk_price is None:
+        milk_price = post_results.get('milk_price')
+    margin_summary = None
+    if milk_price is not None and milk_prod > 0:
+        milk_price = float(milk_price)
+        margin_per_liter = round(milk_price - cost_per_liter, 2)
+        daily_iofc = round(milk_price * milk_prod - daily_cost, 2)
+        margin_summary = {
+            'milk_price': round(milk_price, 2),
+            'margin_per_liter': margin_per_liter,
+            'daily_iofc': daily_iofc,
+            'is_positive': margin_per_liter >= 0,
+        }
+
     # Get dry matter intake
     dt_kg = post_results.get('Dt_kg', {})
     dry_matter_intake = 0.0
@@ -226,7 +244,8 @@ def build_diet_response(
             'currency': currency,
             'milk_production': animal_information.get('milk_production', '0 Liter'),
             'dry_matter_intake': format_value_with_unit(dry_matter_intake, 'kg/day') if dry_matter_intake > 0 else "0 kg/day",
-            'predicted_water_intake': format_value_with_unit(post_results.get('water_intake', 0.0), 'L/day') if post_results.get('water_intake', 0.0) > 0 else "0 L/day"
+            'predicted_water_intake': format_value_with_unit(post_results.get('water_intake', 0.0), 'L/day') if post_results.get('water_intake', 0.0) > 0 else "0 L/day",
+            'margin_summary': margin_summary
         },
         'animal_information': animal_information,
         'least_cost_diet': least_cost_diet,
@@ -311,10 +330,31 @@ def build_evaluation_response(
     }
 
     # 3. Cost Analysis
+    # Milk price & profit margin overlay (optional input). For evaluation, revenue
+    # uses the milk the diet actually supports (same denominator as feed_cost_per_kg_milk).
+    eval_daily_cost = float(milk_support.get("Diet_Cost_Total_AF", 0.0))
+    eval_cost_per_liter = float(milk_support.get("Feed_Cost_Per_L_Milk", 0.0))
+    eval_milk_supported = float(milk_support.get("Milk_Supported", 0.0))
+    milk_price = getattr(cattle_info, 'milk_price', None)
+    if milk_price is None:
+        milk_price = post_results.get('milk_price')
+    margin_summary = None
+    if milk_price is not None and eval_milk_supported > 0:
+        milk_price = float(milk_price)
+        margin_per_liter = round(milk_price - eval_cost_per_liter, 2)
+        daily_iofc = round(milk_price * eval_milk_supported - eval_daily_cost, 2)
+        margin_summary = {
+            'milk_price': round(milk_price, 2),
+            'margin_per_liter': margin_per_liter,
+            'daily_iofc': daily_iofc,
+            'is_positive': margin_per_liter >= 0,
+        }
+
     cost_analysis = {
         "total_diet_cost_as_fed": round(milk_support.get("Diet_Cost_Total_AF", 0.0), 2),
         "feed_cost_per_kg_milk": round(milk_support.get("Feed_Cost_Per_L_Milk", 0.0), 2),
         "currency": currency,
+        "margin_summary": margin_summary,
         "warnings": [],
         "recommendations": []
     }

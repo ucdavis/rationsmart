@@ -48,10 +48,18 @@ class CattleInfo(BaseModel):
     calving_interval: int = Field(..., description="Days")
     bw_gain: float = Field(0.2, description="Body weight gain kg/day")
     bc_score: float = Field(3.0, description="Body condition score 1–5")
+    milk_price: Optional[float] = Field(None, ge=0, description="Milk sale price per litre, local currency")
 
     @field_validator('body_weight', 'milk_production', 'tp_milk', 'fat_milk', 'temperature', 'distance', 'bw_gain', 'bc_score', mode='before')
     @classmethod
     def round_floats(cls, v):
+        return round(float(v), 2)
+
+    @field_validator('milk_price', mode='before')
+    @classmethod
+    def round_milk_price(cls, v):
+        if v is None:
+            return None
         return round(float(v), 2)
 
 

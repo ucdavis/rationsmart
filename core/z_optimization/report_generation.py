@@ -1191,6 +1191,33 @@ def rsm_generate_report_v2(
     from datetime import datetime as _dt
     report_date = _dt.now().strftime("%b %d, %Y %H:%M")
 
+    # Milk price & profit margin banner (optional). Uses the same yield denominator
+    # (milk_den) and daily_cost already computed for the Cost / Liter card.
+    # margin_per_liter = milk_price - cost_per_liter
+    # daily_iofc (Income Over Feed Cost) = milk_price * milk_yield - daily_cost
+    margin_banner_html = ""
+    milk_price = post_results.get('milk_price')
+    if milk_price is not None and milk_den and cost_per_liter is not None:
+        milk_price = float(milk_price)
+        margin_per_liter = milk_price - cost_per_liter
+        daily_iofc = milk_price * milk_den - daily_cost
+        margin_cls = "margin-positive" if margin_per_liter >= 0 else "margin-negative"
+        margin_sign = "+" if margin_per_liter >= 0 else "−"
+        abs_margin = abs(margin_per_liter)
+        abs_iofc = abs(daily_iofc)
+        margin_banner_html = (
+            f"<div class='margin-banner {margin_cls}'>"
+            f"<div class='margin-cell'><span class='margin-lab'>Milk Price / Liter</span>"
+            f"<span class='margin-val'>{currency_display}{milk_price:.2f}</span></div>"
+            f"<div class='margin-cell'><span class='margin-lab'>Cost / Liter</span>"
+            f"<span class='margin-val'>{currency_display}{cost_per_liter:.2f}</span></div>"
+            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Margin / Liter</span>"
+            f"<span class='margin-val'>{margin_sign}{currency_display}{abs_margin:.2f}</span></div>"
+            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Daily Income Over Feed Cost</span>"
+            f"<span class='margin-val'>{margin_sign}{currency_display}{abs_iofc:.2f}</span></div>"
+            f"</div>"
+        )
+
     m_prod, m_yield, m_int, m_ym, m_class = 0.0, 0.0, 0.0, 0.0, "Unknown"
     if not methane_report.empty and 'Metric' in methane_report.columns:
         m_map = {row['Metric']: row['Value'] for _, row in methane_report.iterrows()}
@@ -1290,6 +1317,14 @@ def rsm_generate_report_v2(
       .summary-icon { width: 28px; height: 28px; margin: 0 auto 4px auto; display: block; object-fit: contain; }
       .summary-val { font-size: 1.15rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
       .summary-lab { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .margin-banner { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid; -webkit-print-color-adjust: exact; }
+      .margin-banner.margin-positive { background: #f0fdf4; border-color: #86efac; }
+      .margin-banner.margin-negative { background: #fef2f2; border-color: #fca5a5; }
+      .margin-cell { flex: 1 1 0px; min-width: 0; text-align: center; }
+      .margin-lab { display: block; font-size: 0.62rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .margin-val { display: block; margin-top: 3px; font-size: 1.2rem; font-weight: 800; color: #334155; }
+      .margin-positive .margin-highlight .margin-val { color: #15803d; }
+      .margin-negative .margin-highlight .margin-val { color: #b91c1c; }
       .transposed-only { display: none !important; }
       .wide-only { display: block !important; }
       @media print {
@@ -1307,6 +1342,12 @@ def rsm_generate_report_v2(
         .metric-label { font-size: 8.3pt !important; font-weight: bold !important; white-space: nowrap !important; }
         .summary-grid { display: flex !important; flex-wrap: nowrap !important; justify-content: space-between !important; gap: 8px !important; margin-top: 5px !important; margin-bottom: 15px !important; }
         .summary-card { flex: 1 1 0px !important; min-width: 0 !important; padding: 8px 4px !important; background: #f0fdf4 !important; -webkit-print-color-adjust: exact; }
+        .margin-banner { display: flex !important; flex-wrap: nowrap !important; gap: 8px !important; margin-top: 8px !important; padding: 10px 12px !important; -webkit-print-color-adjust: exact; }
+        .margin-banner.margin-positive { background: #f0fdf4 !important; border-color: #86efac !important; }
+        .margin-banner.margin-negative { background: #fef2f2 !important; border-color: #fca5a5 !important; }
+        .margin-cell { flex: 1 1 0px !important; min-width: 0 !important; }
+        .margin-val { font-size: 1.0rem !important; }
+        .margin-lab { font-size: 6pt !important; }
         .summary-icon { width: 22px !important; height: 22px !important; margin-bottom: 2px !important; }
         .summary-val { font-size: 0.95rem !important; margin-top: 1px !important; }
         .summary-lab { font-size: 6pt !important; }
@@ -1363,7 +1404,9 @@ def rsm_generate_report_v2(
         f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
         f"    <div class='summary-card'><img src='{icon_cost_liter}' class='summary-icon'><span class='summary-lab'>Cost / Liter</span><span class='summary-val'>{f'{currency_display}{cost_per_liter:.2f}' if cost_per_liter is not None else '—'}</span></div>",
         f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
-        "</div></div>",
+        "</div>",
+        margin_banner_html,
+        "</div>",
         f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{'Diet' if evaluation_mode else 'Least Cost Diet'}</h2>",
         "<div class='table-container'>" + dt_results.to_html(index=False, classes='diet-table', escape=False) + "</div>",
         messages_html, "</div>",
