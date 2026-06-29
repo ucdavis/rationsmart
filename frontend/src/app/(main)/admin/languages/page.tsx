@@ -136,6 +136,15 @@ export default function AdminLanguageCatalogPage() {
   // doesn't fire two PATCH requests. Keyed by language code.
   const [reactivatingCode, setReactivatingCode] = useState<string | null>(null);
 
+  // Catalog collapse + filters. Catalog is collapsed by default so the
+  // country cards (the primary action area) stay reachable even with
+  // hundreds of catalog rows. When expanded, the inner list scrolls
+  // inside its own fixed-height container — never pushes the countries
+  // off the screen.
+  const [catalogExpanded, setCatalogExpanded] = useState(false);
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const [catalogFilter, setCatalogFilter] = useState<"all" | "inactive" | "orphan">("all");
+
   // Reactivate a globally-deactivated catalog language. Backend keeps
   // the row + its translations + existing per-country assignments
   // intact while is_active=false (per spec); flipping it back to true
@@ -619,23 +628,119 @@ export default function AdminLanguageCatalogPage() {
             User feedback: "why Amharic is missing" — previously a
             registered language with no country assignments was invisible
             in the UI. This section fixes that. */}
-        {allLanguages.length > 0 && (
-          <div className="bg-white rounded-2xl px-4 py-3.5 mb-2.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-            <p className="text-xs font-bold uppercase tracking-wide mb-2.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}>
-              Catalog · {allLanguages.length} language{allLanguages.length === 1 ? "" : "s"}
-            </p>
-            {[...allLanguages]
-              // Sort: English first (baseline), then active alphabetical,
-              // then inactive alphabetical — gives a stable, scannable
-              // order so the user always finds a known row in the same
-              // spot.
-              .sort((a, b) => {
-                if (a.code === "en") return -1;
-                if (b.code === "en") return 1;
-                if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
-                return a.name.localeCompare(b.name);
-              })
-              .map((lang) => {
+        {allLanguages.length > 0 && (() => {
+          // Pre-compute counts for the header pills + filtered list.
+          const inactiveCount = allLanguages.filter((l) => !l.is_active).length;
+          const orphanCount = allLanguages.filter(
+            (l) => l.is_active && l.code !== "en" && !countries.some((c) => c.languages.includes(l.code))
+          ).length;
+          const q = catalogQuery.trim().toLowerCase();
+          const sorted = [...allLanguages].sort((a, b) => {
+            if (a.code === "en") return -1;
+            if (b.code === "en") return 1;
+            if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+            return a.name.localeCompare(b.name);
+          });
+          const filtered = sorted.filter((lang) => {
+            if (catalogFilter === "inactive" && lang.is_active) return false;
+            if (catalogFilter === "orphan") {
+              if (!lang.is_active) return false;
+              if (lang.code === "en") return false;
+              if (countries.some((c) => c.languages.includes(lang.code))) return false;
+            }
+            if (q) {
+              const native = labelForLanguage(lang.code);
+              if (
+                !lang.name.toLowerCase().includes(q) &&
+                !lang.code.toLowerCase().includes(q) &&
+                !native.toLowerCase().includes(q)
+              ) return false;
+            }
+            return true;
+          });
+          return (
+          <div className="bg-white rounded-2xl mb-2.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+            {/* Catalog header strip — always visible. Acts as the click
+                target for expand/collapse. Shows compact counts so the
+                admin sees the catalog state without expanding. */}
+            <button
+              onClick={() => setCatalogExpanded((v) => !v)}
+              className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left"
+              style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", borderRadius: 16 }}
+            >
+              <div className="flex items-center gap-2 flex-wrap min-w-0">
+                <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}>
+                  Catalog · {allLanguages.length}
+                </span>
+                {inactiveCount > 0 && (
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
+                    {inactiveCount} inactive
+                  </span>
+                )}
+                {orphanCount > 0 && (
+                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FFF8E1", color: "#B26A00", fontFamily: "Nunito, sans-serif" }}>
+                    {orphanCount} unused
+                  </span>
+                )}
+              </div>
+              <svg
+                width="18" height="18" viewBox="0 0 24 24" fill="none"
+                style={{
+                  flexShrink: 0,
+                  transform: catalogExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                  transition: "transform 0.15s ease",
+                  color: "#6D6D6D",
+                }}
+              >
+                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+
+            {/* Expanded body — filter pills, search, then a scrolling
+                list capped at 320px so the country cards always stay in
+                view. The padding mirrors the country-card body. */}
+            {catalogExpanded && (
+              <div className="px-4 pb-3">
+                {/* Filter pills */}
+                <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                  {(["all", "inactive", "orphan"] as const).map((f) => {
+                    const active = catalogFilter === f;
+                    const label = f === "all" ? "All" : f === "inactive" ? "Inactive" : "Unused";
+                    return (
+                      <button
+                        key={f}
+                        onClick={() => setCatalogFilter(f)}
+                        className="text-xs font-bold px-2.5 py-1 rounded-full"
+                        style={{
+                          backgroundColor: active ? "#064E3B" : "transparent",
+                          color: active ? "#FFFFFF" : "#064E3B",
+                          border: active ? "1.5px solid #064E3B" : "1.5px solid #C2C2C2",
+                          fontFamily: "Nunito, sans-serif",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Search input */}
+                <input
+                  type="text"
+                  value={catalogQuery}
+                  onChange={(e) => setCatalogQuery(e.target.value)}
+                  placeholder="Search by name, code, or native script"
+                  className="w-full rounded-xl px-3 py-2 text-sm border-none focus:outline-none mb-2"
+                  style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                />
+                {/* Scrolling list — capped height so it never pushes the
+                    countries section off the screen. */}
+                <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                {filtered.length === 0 ? (
+                  <p className="text-sm text-center py-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                    No matches.
+                  </p>
+                ) : filtered.map((lang) => {
                 // English is the implicit baseline — every country has
                 // it, so we say "All countries" instead of listing them.
                 // For other languages, compute the assigned-to list from
@@ -712,8 +817,12 @@ export default function AdminLanguageCatalogPage() {
                   </div>
                 );
               })}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+          );
+        })()}
 
         {/* Countries section header — small label so the catalog/countries
             split is visually obvious. */}
