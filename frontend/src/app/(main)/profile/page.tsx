@@ -20,6 +20,34 @@ const labelStyle = {
   fontFamily: "Nunito, sans-serif",
 };
 
+// Disabled-looking field placeholder used while the initial /v1/auth/countries
+// fetch is in flight. Renders in the exact dimensions of the real input so
+// every editable field can show a uniform loading state, then the whole
+// form snaps to live state once data arrives.
+function LoadingPill({ text }: { text: string }) {
+  return (
+    <div
+      className="w-full rounded-2xl px-4 py-3.5 pr-10 flex items-center justify-between"
+      style={{
+        backgroundColor: "#F1F5F9",
+        color: "#6D6D6D",
+        fontFamily: "Nunito, sans-serif",
+        cursor: "wait",
+      }}
+      aria-busy
+    >
+      <span className="text-base">{text}</span>
+      <svg
+        width="18" height="18" viewBox="0 0 24 24" fill="none"
+        className="animate-spin"
+        style={{ color: "#1CA069", flexShrink: 0 }}
+      >
+        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="14 30" />
+      </svg>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { user, setUser, logout, showSnackbar } = useStore((s) => ({
@@ -89,15 +117,6 @@ export default function ProfilePage() {
   const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
   const supportedLangs = selectedCountry?.supported_languages ?? ["en"];
   const showLangSelector = supportedLangs.length > 1;
-  // Always show a skeleton placeholder while the countries fetch is in
-  // flight — we can't tell whether the user is on a multi-language
-  // country until the API resolves. Reserving the space prevents the
-  // selector from popping in late and shifting the layout. For en-only
-  // countries the skeleton briefly shows then quietly disappears once
-  // we know there's nothing to render, which is far less jarring than
-  // the previous behaviour where the selector appeared 1-2s after the
-  // page was already settled.
-  const showLangSkeleton = countriesLoading;
 
   if (!user) return null;
 
@@ -277,73 +296,59 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* Name (editable) */}
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name *</p>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-            style={inputStyle()}
-          />
-
-          {/* Country (editable dropdown) — appearance-none strips the
-              native chevron, so we overlay an Android-style ic_text_drop_down
-              caret on the right. */}
-          <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
-          <div className="relative">
-            <select
-              value={selectedCountryId}
-              onChange={(e) => setSelectedCountryId(e.target.value)}
-              className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
-              style={{ ...inputStyle(), cursor: "pointer" }}
-            >
-              {countries.length === 0 && (
-                <option value={user.country_id}>{user.country}</option>
-              )}
-              {countries.map((c) => (
-                <option key={c.id} value={String(c.id)}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-            <div
-              className="absolute pointer-events-none"
-              style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
-            >
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-
-          {/* i18n V2 — Language selector. Hidden when the country supports
-              only "en" (no choice to offer). Labels are native-script via
-              labelForLanguage() for instant recognisability to the
-              actual speaker (per i18n V2 spec).
-
-              During the initial countries fetch we render a shimmer
-              skeleton (when we have a hint the user is on a multi-lang
-              country) so the selector doesn't visibly pop in after the
-              network request resolves. */}
-          {showLangSkeleton && (
+          {/* Uniform loading: while countries are being fetched, every
+              editable field (Name, Country, Language) renders as a
+              loading pill. The whole form snaps to live state at once
+              when data arrives — no more "screen settled, then language
+              pops in" inconsistency. */}
+          {countriesLoading ? (
             <>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name *</p>
+              <LoadingPill text="Loading…" />
+
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
+              <LoadingPill text="Loading…" />
+
               <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
-              <div
-                className="w-full rounded-2xl px-4 py-3.5 pr-10 flex items-center justify-between"
-                style={{ ...inputStyle(), color: "#6D6D6D", cursor: "wait" }}
-                aria-busy
-              >
-                <span className="text-base" style={{ fontFamily: "Nunito, sans-serif" }}>
-                  Loading languages…
-                </span>
-                <svg
-                  width="18" height="18" viewBox="0 0 24 24" fill="none"
-                  className="animate-spin"
-                  style={{ color: "#1CA069", flexShrink: 0 }}
+              <LoadingPill text="Loading…" />
+            </>
+          ) : (
+            <>
+              {/* Name (editable) */}
+              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name *</p>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                style={inputStyle()}
+              />
+
+              {/* Country (editable dropdown) — appearance-none strips the
+                  native chevron, so we overlay an Android-style ic_text_drop_down
+                  caret on the right. */}
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
+              <div className="relative">
+                <select
+                  value={selectedCountryId}
+                  onChange={(e) => setSelectedCountryId(e.target.value)}
+                  className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
+                  style={{ ...inputStyle(), cursor: "pointer" }}
                 >
-                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="14 30" />
-                </svg>
+                  {countries.map((c) => (
+                    <option key={c.id} value={String(c.id)}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </div>
             </>
           )}
