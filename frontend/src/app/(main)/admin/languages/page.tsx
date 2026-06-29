@@ -72,6 +72,42 @@ const ROLLOUT_PLACEHOLDERS: Array<{ name: string; country_code: string }> = [
   { name: "Ethiopia", country_code: "ETH" },
 ];
 
+// 2026-06-29 — Regional language whitelist per rollout country. When the
+// admin taps "+ Add Language" inside a country card, we narrow the
+// dropdown to languages plausibly spoken in that region — so an India
+// admin sees Hindi/Bengali/Kannada/etc but NOT Vietnamese or Thai.
+//
+// Matching is name-based (case-insensitive substring on the country
+// name) — same approach as DEFAULT_SEEDS. Countries NOT in this map
+// fall through and show every active catalog language (graceful
+// fallback for any country the rollout adds later that we haven't
+// mapped yet).
+//
+// Source for region mappings: standard ISO 639-1 + Ethnologue. Kept
+// intentionally broad so admin can pick the right one for content, not
+// a strict "is this the official language" check.
+const REGIONAL_LANGUAGES: Record<string, string[]> = {
+  india: ["hi", "bn", "te", "ta", "mr", "gu", "kn", "ml", "pa", "or", "as", "ur"],
+  philippines: ["tl", "fil", "ceb", "ilo"],
+  indonesia: ["id", "jv", "su"],
+  thailand: ["th"],
+  vietnam: ["vi"],
+  bangladesh: ["bn"],
+  nepal: ["ne"],
+  ethiopia: ["am", "om", "ti", "so"],
+};
+
+// Look up the regional whitelist for a given country name (case-
+// insensitive substring match). Returns null when no entry matches —
+// callers should treat that as "no filter, show all".
+function regionalCodesForCountry(countryName: string): string[] | null {
+  const needle = countryName.toLowerCase();
+  for (const [hint, codes] of Object.entries(REGIONAL_LANGUAGES)) {
+    if (needle.includes(hint)) return codes;
+  }
+  return null;
+}
+
 export default function AdminLanguageCatalogPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
@@ -903,9 +939,15 @@ export default function AdminLanguageCatalogPage() {
           enabled for this country and POST the assignment. Distinct
           from the global-catalog Add Language sheet below. */}
       {assignSheetCountry && (() => {
-        const available = allLanguages.filter(
-          (l) => l.is_active && l.code !== "en" && !assignSheetCountry.languages.includes(l.code)
-        );
+        // Regional whitelist for this country — null means "no filter".
+        const regional = regionalCodesForCountry(assignSheetCountry.name);
+        const available = allLanguages.filter((l) => {
+          if (!l.is_active) return false;
+          if (l.code === "en") return false;
+          if (assignSheetCountry.languages.includes(l.code)) return false;
+          if (regional && !regional.includes(l.code)) return false;
+          return true;
+        });
         return (
           <div
             className="fixed top-0 h-full z-50 flex flex-col justify-end"
@@ -923,14 +965,22 @@ export default function AdminLanguageCatalogPage() {
               <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>
                 Add Language
               </h3>
-              <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              <p className="text-center text-sm mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
                 {assignSheetCountry.name}
               </p>
+              {regional && (
+                <p className="text-center text-xs mb-5" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontStyle: "italic" }}>
+                  Showing regional languages only
+                </p>
+              )}
+              {!regional && <div className="mb-5" />}
 
               {available.length === 0 ? (
                 <p className="text-sm text-center mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  All catalog languages are already enabled for this country.
-                  To register a new one, use <span className="font-bold">+ Add Language</span> at the top of the screen.
+                  {regional
+                    ? <>No regional language available to add. Either all are already enabled, or the missing ones are inactive in the catalog. Use <span className="font-bold">+ Add Language</span> at the top to register a new one.</>
+                    : <>All catalog languages are already enabled for this country. To register a new one, use <span className="font-bold">+ Add Language</span> at the top of the screen.</>
+                  }
                 </p>
               ) : (
                 <>
