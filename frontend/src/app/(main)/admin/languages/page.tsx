@@ -37,6 +37,7 @@ import {
   listLanguages,
   listCountriesWithLanguages,
   createLanguage,
+  patchLanguage,
   assignLanguageToCountry,
   unassignLanguageFromCountry,
   labelForLanguage,
@@ -94,6 +95,31 @@ export default function AdminLanguageCatalogPage() {
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+
+  // Per-code busy flag for the Reactivate button so a fast double-tap
+  // doesn't fire two PATCH requests. Keyed by language code.
+  const [reactivatingCode, setReactivatingCode] = useState<string | null>(null);
+
+  // Reactivate a globally-deactivated catalog language. Backend keeps
+  // the row + its translations + existing per-country assignments
+  // intact while is_active=false (per spec); flipping it back to true
+  // restores the language to the ?lang= resolution pool and makes it
+  // pickable in per-country Add Language dropdowns.
+  const handleReactivate = async (code: string) => {
+    if (reactivatingCode) return;
+    setReactivatingCode(code);
+    try {
+      await patchLanguage(code, { is_active: true });
+      showSnackbar(`'${code}' reactivated`, "success");
+      reload();
+    } catch (err: unknown) {
+      const ax = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+      const reason = ax?.response?.data?.detail ?? ax?.message ?? "Could not reactivate language";
+      showSnackbar(reason, "error");
+    } finally {
+      setReactivatingCode(null);
+    }
+  };
 
   // Seed Defaults — one-tap assignment of the canonical country→language
   // mapping for the rollout locales. Idempotent: skips assignments that
@@ -627,7 +653,32 @@ export default function AdminLanguageCatalogPage() {
                             : <>Enabled in: <span style={{ color: "#231F20" }}>{enabledIn.join(", ")}</span></>
                         }
                       </p>
+                      {inactive && (
+                        <p className="text-xs mt-1" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif", fontStyle: "italic" }}>
+                          Hidden from Add Language dropdown until reactivated.
+                        </p>
+                      )}
                     </div>
+                    {inactive && (
+                      <button
+                        onClick={() => handleReactivate(lang.code)}
+                        disabled={reactivatingCode === lang.code}
+                        className="flex-shrink-0 font-bold text-xs"
+                        style={{
+                          backgroundColor: reactivatingCode === lang.code ? "#D3D3D3" : "#064E3B",
+                          color: "#FFFFFF",
+                          borderRadius: 999,
+                          border: "none",
+                          padding: "6px 12px",
+                          cursor: reactivatingCode === lang.code ? "not-allowed" : "pointer",
+                          fontFamily: "Nunito, sans-serif",
+                          whiteSpace: "nowrap",
+                          opacity: reactivatingCode === lang.code ? 0.7 : 1,
+                        }}
+                      >
+                        {reactivatingCode === lang.code ? "..." : "Reactivate"}
+                      </button>
+                    )}
                   </div>
                 );
               })}
