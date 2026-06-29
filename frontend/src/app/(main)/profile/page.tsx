@@ -89,10 +89,15 @@ export default function ProfilePage() {
   const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
   const supportedLangs = selectedCountry?.supported_languages ?? ["en"];
   const showLangSelector = supportedLangs.length > 1;
-  // Show a skeleton placeholder during the countries fetch when we have
-  // reason to believe the user IS on a multi-language country (their
-  // preferred_language is non-English). Avoids the visible pop-in.
-  const showLangSkeleton = countriesLoading && (user?.preferred_language ?? "en") !== "en";
+  // Always show a skeleton placeholder while the countries fetch is in
+  // flight — we can't tell whether the user is on a multi-language
+  // country until the API resolves. Reserving the space prevents the
+  // selector from popping in late and shifting the layout. For en-only
+  // countries the skeleton briefly shows then quietly disappears once
+  // we know there's nothing to render, which is far less jarring than
+  // the previous behaviour where the selector appeared 1-2s after the
+  // page was already settled.
+  const showLangSkeleton = countriesLoading;
 
   if (!user) return null;
 
