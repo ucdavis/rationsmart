@@ -246,22 +246,51 @@ export default function AdminLanguageCatalogPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.is_admin]);
 
-  // Open the per-country assign sheet. Defaults to the first catalog
-  // language that's NOT already enabled for this country.
+  // Compute the languages available to add for a given country. Applies
+  // the SAME filter chain that the assign sheet uses below — active +
+  // not English + not already assigned + (if region map matches) only
+  // regional codes. CRITICAL: keep this in lockstep with the sheet
+  // body. A previous bug had openAssign skip the regional filter while
+  // the rendered <select> applied it, which left selectedNewCode set
+  // to a hidden option (Amharic) while the dropdown visually showed
+  // Hindi — pressing Enable then enabled Amharic in India. Don't
+  // re-introduce that divergence.
+  const computeAvailableForCountry = (c: CountryRow): SystemLanguage[] => {
+    const regional = regionalCodesForCountry(c.name);
+    return allLanguages.filter((l) => {
+      if (!l.is_active) return false;
+      if (l.code === "en") return false;
+      if (c.languages.includes(l.code)) return false;
+      if (regional && !regional.includes(l.code)) return false;
+      return true;
+    });
+  };
+
+  // Open the per-country assign sheet. Defaults to the first language
+  // that's actually visible in the rendered dropdown — see helper
+  // above for why this MUST match the sheet's filter.
   const openAssign = (c: CountryRow) => {
-    const available = allLanguages.filter(
-      (l) => l.is_active && l.code !== "en" && !c.languages.includes(l.code)
-    );
+    const available = computeAvailableForCountry(c);
     setSelectedNewCode(available[0]?.code ?? "");
     setAssignSheetCountry(c);
   };
 
   const handleAssign = async () => {
-    if (!assignSheetCountry || !selectedNewCode) return;
+    if (!assignSheetCountry) return;
+    // Always resolve the code from the CURRENTLY VISIBLE options, never
+    // from raw selectedNewCode. Defends against a stale selection (e.g.
+    // catalog reloaded behind us; user opened the sheet before a region
+    // filter applied) where the bound <select> value doesn't match
+    // what the user actually sees. The same fallback used by the render
+    // path ensures both stay in sync.
+    const available = computeAvailableForCountry(assignSheetCountry);
+    const code = available.some((l) => l.code === selectedNewCode)
+      ? selectedNewCode
+      : available[0]?.code;
+    if (!code) return;
+
     setIsAssigning(true);
-    // Optimistic local add so the chip appears immediately.
     const countryId = assignSheetCountry.id;
-    const code = selectedNewCode;
     setCountries((prev) =>
       prev.map((c) =>
         c.id !== countryId ? c : { ...c, languages: [...c.languages, code] }
@@ -1048,15 +1077,16 @@ export default function AdminLanguageCatalogPage() {
           enabled for this country and POST the assignment. Distinct
           from the global-catalog Add Language sheet below. */}
       {assignSheetCountry && (() => {
-        // Regional whitelist for this country — null means "no filter".
         const regional = regionalCodesForCountry(assignSheetCountry.name);
-        const available = allLanguages.filter((l) => {
-          if (!l.is_active) return false;
-          if (l.code === "en") return false;
-          if (assignSheetCountry.languages.includes(l.code)) return false;
-          if (regional && !regional.includes(l.code)) return false;
-          return true;
-        });
+        const available = computeAvailableForCountry(assignSheetCountry);
+        // If selectedNewCode is somehow not in the rendered options
+        // (e.g. catalog reloaded behind us and the language got
+        // deactivated, or another tab assigned it), fall back to the
+        // first visible option so Enable never sends a hidden code.
+        const effectiveCode =
+          available.some((l) => l.code === selectedNewCode)
+            ? selectedNewCode
+            : (available[0]?.code ?? "");
         return (
           <div
             className="fixed top-0 h-full z-50 flex flex-col justify-end"
@@ -1097,7 +1127,7 @@ export default function AdminLanguageCatalogPage() {
                     LANGUAGE
                   </p>
                   <select
-                    value={selectedNewCode}
+                    value={effectiveCode}
                     onChange={(e) => setSelectedNewCode(e.target.value)}
                     className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"
                     style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
