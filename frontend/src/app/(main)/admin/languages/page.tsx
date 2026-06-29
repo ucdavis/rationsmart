@@ -861,7 +861,7 @@ export default function AdminLanguageCatalogPage() {
             style={{
               left: "max(0px, calc((100vw - 480px) / 2))",
               width: "min(100vw, 480px)",
-              backgroundColor: "rgba(0,0,0,0.45)",
+              backgroundColor: "rgba(0,0,0,0.65)",
             }}
             onClick={(e) => { if (e.target === e.currentTarget) setAssignSheetCountry(null); }}
           >
@@ -934,7 +934,7 @@ export default function AdminLanguageCatalogPage() {
           style={{
             left: "max(0px, calc((100vw - 480px) / 2))",
             width: "min(100vw, 480px)",
-            backgroundColor: "rgba(0,0,0,0.45)",
+            backgroundColor: "rgba(0,0,0,0.65)",
           }}
           onClick={(e) => { if (e.target === e.currentTarget) setShowAdd(false); }}
         >
