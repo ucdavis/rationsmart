@@ -517,6 +517,93 @@ export default function AdminLanguageCatalogPage() {
       )}
 
       <div className="flex-1 overflow-y-auto pb-24 px-3 pt-2">
+        {/* ── CATALOG section ────────────────────────────────────────────
+            Lists every language returned by /v1/admin/languages, including
+            inactive ones (rendered greyed-out). Each row shows which
+            countries currently have it enabled, so admins can see the
+            full state at a glance without expanding every country card.
+            User feedback: "why Amharic is missing" — previously a
+            registered language with no country assignments was invisible
+            in the UI. This section fixes that. */}
+        {allLanguages.length > 0 && (
+          <div className="bg-white rounded-2xl px-4 py-3.5 mb-2.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
+            <p className="text-xs font-bold uppercase tracking-wide mb-2.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}>
+              Catalog · {allLanguages.length} language{allLanguages.length === 1 ? "" : "s"}
+            </p>
+            {[...allLanguages]
+              // Sort: English first (baseline), then active alphabetical,
+              // then inactive alphabetical — gives a stable, scannable
+              // order so the user always finds a known row in the same
+              // spot.
+              .sort((a, b) => {
+                if (a.code === "en") return -1;
+                if (b.code === "en") return 1;
+                if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((lang) => {
+                // English is the implicit baseline — every country has
+                // it, so we say "All countries" instead of listing them.
+                // For other languages, compute the assigned-to list from
+                // countries[]; show "Not enabled anywhere" when empty.
+                const enabledIn = lang.code === "en"
+                  ? "All countries"
+                  : countries
+                      .filter((c) => c.languages.includes(lang.code))
+                      .map((c) => c.name);
+                const isEmpty = Array.isArray(enabledIn) && enabledIn.length === 0;
+                const inactive = !lang.is_active;
+                return (
+                  <div
+                    key={lang.code}
+                    className="flex items-start justify-between gap-2 py-2"
+                    style={{ borderTop: "1px solid #F8FAF9", opacity: inactive ? 0.6 : 1 }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2 flex-wrap">
+                        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                          {lang.name}
+                        </p>
+                        <span className="text-xs uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                          {lang.code}
+                        </span>
+                        {labelForLanguage(lang.code) !== lang.code.toUpperCase() && (
+                          <span className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                            · {labelForLanguage(lang.code)}
+                          </span>
+                        )}
+                        {inactive && (
+                          <span
+                            className="text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wide"
+                            style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
+                          >
+                            Inactive
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                        {typeof enabledIn === "string"
+                          ? <>Enabled in: <span style={{ color: "#231F20" }}>{enabledIn}</span></>
+                          : isEmpty
+                            ? <span style={{ color: "#FF9800", fontStyle: "italic" }}>Not enabled in any country</span>
+                            : <>Enabled in: <span style={{ color: "#231F20" }}>{enabledIn.join(", ")}</span></>
+                        }
+                      </p>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+
+        {/* Countries section header — small label so the catalog/countries
+            split is visually obvious. */}
+        {countries.length > 0 && (
+          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-2 mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}>
+            Countries · {countries.length}
+          </p>
+        )}
+
         {isLoading ? (
           <div className="bg-white rounded-2xl px-4 py-6 text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
             Loading…

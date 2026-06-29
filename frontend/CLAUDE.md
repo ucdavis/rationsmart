@@ -1368,16 +1368,86 @@ identity field of a row — it will silently break comparisons (e.g. the
 Forage-required gate, the rec-mode F:C ratio cross-ref, the cascade
 match logic) when the user changes language.
 
-### 18.5 Phase 2 — admin tooling (NOT shipped yet)
+### 18.5 Phase 2 — admin tooling (shipped 2026-06-29)
 
-Three new admin screens are planned per the api doc:
-- **Admin > Translations** — workbook download/upload (endpoints
-  3.1–3.2), coverage report (3.3), per-feed editor (3.4–3.6)
-- **Admin > Languages** — registry, activate/deactivate (4.1–4.3)
-- **Admin > Country-Language matrix** — assign/unassign (4.4–4.6)
+**Two admin screens, not three** — the original three-screen design was
+collapsed into a unified "Language Catalog" page after user feedback.
+History:
+- commit `1caf450` (2026-06-25): shipped 3 separate screens —
+  `/admin/translations`, `/admin/languages`, `/admin/country-languages`.
+- commit `6d9a5b9` (2026-06-29): merged `/admin/languages` +
+  `/admin/country-languages` into one page. The country-languages
+  route now redirects to `/admin/languages`.
+- commit `d2d17cb` (2026-06-29): switched the merged page to
+  show ONLY enabled languages per country (was previously showing
+  every catalog language under every country with toggles, which
+  confused admins — "why does Vietnam need Hindi"). New flow: tap
+  "+ Add Language" inside a country card to enable a NEW one.
+- commit `f3322db` (2026-06-29): added a "Seed Defaults" button
+  to assign the canonical rollout locales in one tap.
+- commit `52dd9d4` (2026-06-29): verbose `[seed]` console logging
+  on the seed action.
 
-If a future session is asked to ship i18n admin work, that's Phase 2.
-Don't conflate it with Phase 1 (already done).
+Current screens and what they hit on the backend:
+
+**`/admin/translations`** — bulk workbook + coverage
+- Country picker shared at the top
+- Section 1: Download Template (3.1) + Upload Workbook (3.2) +
+  import-result panel (counts of inserted/updated/skipped/errors)
+- Section 2: Coverage check (3.3) — three progress bars (Feeds,
+  Feed Types, Categories) colour-coded green ≥80, amber ≥40, red <40
+- Per-feed editor (3.4-3.6) endpoints exist in api.ts but no UI
+  consumes them yet; intentional — the workbook path is primary
+
+**`/admin/languages`** — the unified catalog + country-availability screen
+- Top header: count, **Seed Defaults** button, **+ Add Language**
+  button, optional Seed-result panel
+- One expandable card per country, header shows
+  "English" or "English + N more" subtitle
+- Inside each country card: rows for ONLY the non-English languages
+  currently enabled. Toggle a row OFF → DELETE 4.6 unassigns.
+  English NEVER renders (backend rejects DELETE on `en`).
+- "+ Add Language" pill INSIDE each country card → opens a sheet
+  with catalog langs NOT yet enabled for that country → pick → POST 4.5
+- Top "+ Add Language" → opens the catalog-level sheet → POST 4.1
+
+**Seed Defaults flow (handleSeed in `/admin/languages/page.tsx`)**:
+- Canonical mapping hard-coded as `DEFAULT_SEEDS` constant:
+  India→hi, Philippines→tl, Indonesia→id, Thailand→th, Vietnam→vi,
+  Bangladesh→bn, Nepal→ne, Ethiopia→am, Ethiopia→om
+- Country matching is name-based case-insensitive substring; Ethiopia
+  uses a `regionalCue` ("amhar" / "oromia") to route languages to the
+  right row when backend has two regional entries
+- POSTs each assignment in sequence (4.5). Idempotent — skips
+  already-assigned pairs. Skips when language isn't in catalog yet
+  (admin must "+ Add Language" first, then re-tap Seed Defaults).
+- Result breakdown surfaced both in on-screen panel and console
+  `[seed]` log group
+
+**Routes (post-merge)**:
+- `/admin/translations` — translations screen
+- `/admin/languages` — unified catalog + country availability
+- `/admin/country-languages` — **redirects to /admin/languages**
+  (kept for back-compat with any bookmarks)
+- Admin landing has 2 i18n tiles: "Translations" and "Language Catalog"
+
+**api.ts helpers under "i18n V2 Phase 2":**
+- `downloadTranslationWorkbook(country_id)` — blob xlsx (3.1)
+- `uploadTranslationWorkbook(country_id, file)` — multipart (3.2)
+  · CRITICAL: no explicit Content-Type — same boundary-preservation
+    technique as bulkUploadFeeds
+- `getTranslationCoverage(country_id, lang)` (3.3)
+- `upsertFeedTranslation`, `listFeedTranslations`,
+  `deleteFeedTranslation` (3.4-3.6) — exported, unused in UI
+- `createLanguage({code, name})` (4.1)
+- `listLanguages()` (4.2)
+- `patchLanguage(code, {name?, is_active?})` (4.3) — exported, but
+  the global is_active toggle was DROPPED from the merged UI per the
+  user's "single concept = per-country" decision. The helper stays
+  available for future use.
+- `listCountriesWithLanguages()` (4.4)
+- `assignLanguageToCountry(country_id, code)` (4.5)
+- `unassignLanguageFromCountry(country_id, code)` (4.6)
 
 ### 18.6 Quality bands for the docs/RationSmart_i18n_source.xlsx
 
