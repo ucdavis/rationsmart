@@ -155,7 +155,8 @@ export default function AdminLanguageCatalogPage() {
     setReactivatingCode(code);
     try {
       await patchLanguage(code, { is_active: true });
-      showSnackbar(`'${code}' reactivated`, "success");
+      const name = allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
+      showSnackbar(`${name} reactivated`, "success");
       reload();
     } catch (err: unknown) {
       const ax = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
@@ -298,7 +299,8 @@ export default function AdminLanguageCatalogPage() {
     );
     try {
       await assignLanguageToCountry(countryId, code);
-      showSnackbar(`'${code}' enabled for ${assignSheetCountry.name}`, "success");
+      const name = allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
+      showSnackbar(`${name} enabled for ${assignSheetCountry.name}`, "success");
       setAssignSheetCountry(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not enable language";
@@ -336,7 +338,8 @@ export default function AdminLanguageCatalogPage() {
 
     try {
       await unassignLanguageFromCountry(countryRow.id, code);
-      showSnackbar(`'${code}' disabled for ${countryRow.name}`, "success");
+      const name = allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
+      showSnackbar(`${name} disabled for ${countryRow.name}`, "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not disable language";
       showSnackbar(msg, "error");
