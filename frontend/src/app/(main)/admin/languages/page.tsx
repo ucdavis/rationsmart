@@ -518,30 +518,24 @@ export default function AdminLanguageCatalogPage() {
         </div>
       </div>
 
-      {/* Toolbar row — count + Seed Defaults + Add Language */}
+      {/* Toolbar row — count + Add Language. The "Seed Defaults" button
+          was hidden 2026-06-29 per user request — the handler + state
+          stay in place for potential future use, but no UI surfaces it. */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1 gap-2">
-        <p className="text-sm flex-shrink-0" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-          {allLanguages.length} in catalog · {countries.length} countr{countries.length === 1 ? "y" : "ies"}
-        </p>
+        <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
+          <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            {allLanguages.length} in catalog · {countries.length} countr{countries.length === 1 ? "y" : "ies"}
+          </p>
+          {isLoading && (countries.length > 0 || allLanguages.length > 0) && (
+            <span className="inline-flex items-center gap-1 text-xs" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="animate-spin">
+                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="14 30" />
+              </svg>
+              Refreshing…
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-2 flex-shrink-0">
-          <button
-            onClick={handleSeed}
-            disabled={isSeeding || isLoading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm"
-            style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: isSeeding || isLoading ? "not-allowed" : "pointer", opacity: isSeeding || isLoading ? 0.55 : 1 }}
-            title="One-tap assign the rollout locales to their countries"
-          >
-            {isSeeding ? (
-              "Seeding…"
-            ) : (
-              <>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2v6M9 5l3-3 3 3M5 12l-2 9 9-3M19 12l2 9-9-3M12 8v10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-                Seed Defaults
-              </>
-            )}
-          </button>
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm"
@@ -729,7 +723,13 @@ export default function AdminLanguageCatalogPage() {
           </p>
         )}
 
-        {isLoading ? (
+        {/* Show the "Loading…" card ONLY when there's no data yet (true
+            initial mount). Subsequent reloads after a toggle/reactivate
+            keep the existing list visible — the "Refreshing…" pill near
+            the header is the only indicator. Previously the list was
+            replaced with "Loading…" on every reload which felt like the
+            page had gone blank. */}
+        {isLoading && countries.length === 0 ? (
           <div className="bg-white rounded-2xl px-4 py-6 text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
             Loading…
           </div>
