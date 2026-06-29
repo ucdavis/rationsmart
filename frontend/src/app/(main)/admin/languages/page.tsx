@@ -264,11 +264,19 @@ export default function AdminLanguageCatalogPage() {
     // surfaces in skippedNoLanguage instead of failing on POST.
     const catalogActive = new Set(allLanguages.filter((l) => l.is_active).map((l) => l.code));
 
+    // Verbose run banner — easy to find the start of a seed batch in the
+    // console when there are dozens of other [api ←] lines around it.
+    console.group("%c[seed] Seed Defaults — start", "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;");
+    console.log("[seed] catalog active codes:", Array.from(catalogActive));
+    console.log("[seed] countries known to UI:", countries.map((c) => ({ id: c.id, name: c.name, languages: c.languages })));
+    console.log("[seed] mapping plan:", DEFAULT_SEEDS);
+
     for (const seed of DEFAULT_SEEDS) {
       const tag = `${seed.countryHint}${seed.regionalCue ? ` (${seed.regionalCue})` : ""} → ${seed.langCode}`;
 
       // Step 1: is the language even in the catalog?
       if (!catalogActive.has(seed.langCode)) {
+        console.warn(`[seed] ${tag}  SKIP — language '${seed.langCode}' not in catalog`);
         skippedNoLanguage.push(`${seed.langDisplay} (${seed.langCode})`);
         continue;
       }
@@ -286,28 +294,54 @@ export default function AdminLanguageCatalogPage() {
       }
 
       if (candidates.length === 0) {
+        console.warn(`[seed] ${tag}  SKIP — country '${seed.countryHint}' not found in API response`);
         skippedNoCountry.push(`${seed.countryHint}${seed.regionalCue ? ` (${seed.regionalCue})` : ""}`);
         continue;
       }
+
+      console.log(`[seed] ${tag}  candidates:`, candidates.map((c) => c.name));
 
       // Step 3: POST the assignment for each matched country. Skip if
       // already assigned.
       for (const country of candidates) {
         if (country.languages.includes(seed.langCode)) {
+          console.log(`[seed] ${country.name} → ${seed.langCode}  SKIP — already assigned`);
           skippedExisting.push(`${country.name} → ${seed.langCode}`);
           continue;
         }
+        const url = `/v1/admin/countries/${country.id}/languages/${seed.langCode}`;
+        console.log(`[seed] ${country.name} → ${seed.langCode}  POST ${url}`);
         try {
-          await assignLanguageToCountry(country.id, seed.langCode);
+          const res = await assignLanguageToCountry(country.id, seed.langCode);
+          console.log(`[seed] ${country.name} → ${seed.langCode}  ✓ ${res.status}`, {
+            status: res.status,
+            data: res.data,
+            headers: res.headers,
+          });
           assigned.push(`${country.name} → ${seed.langCode}`);
         } catch (err: unknown) {
-          const ax = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
-          const reason = ax?.response?.data?.detail ?? ax?.message ?? "unknown error";
+          const ax = err as { response?: { status?: number; data?: { detail?: string } | unknown }; message?: string };
+          const reason = (ax?.response?.data as { detail?: string })?.detail ?? ax?.message ?? "unknown error";
+          console.error(`[seed] ${country.name} → ${seed.langCode}  ✗ ${ax?.response?.status ?? "ERR"}`, {
+            status: ax?.response?.status,
+            data: ax?.response?.data,
+            message: ax?.message,
+          });
           failed.push({ key: `${country.name} → ${seed.langCode}`, reason });
-          console.error(`[admin/languages] seed ${tag} failed:`, ax?.response?.data ?? ax?.message);
         }
       }
     }
+
+    // End-of-batch summary in the console — same numbers shown in the
+    // on-screen result panel, but compact and copy-pasteable.
+    console.log("[seed] summary:", {
+      assigned,
+      skippedExisting,
+      skippedNoLanguage,
+      skippedNoCountry,
+      failed,
+    });
+    console.groupEnd();
 
     setSeedSummary({ assigned, skippedExisting, skippedNoLanguage, skippedNoCountry, failed });
     setIsSeeding(false);
