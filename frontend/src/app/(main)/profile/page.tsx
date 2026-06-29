@@ -330,20 +330,21 @@ export default function ProfilePage() {
             <>
               <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
               <div
-                className="w-full rounded-2xl px-4 py-3.5"
-                style={{
-                  background:
-                    "linear-gradient(90deg, #F1F5F9 0%, #E8F0F5 50%, #F1F5F9 100%)",
-                  backgroundSize: "200% 100%",
-                  animation: "shimmer 1.2s linear infinite",
-                  height: 52,
-                  color: "transparent",
-                }}
-                aria-hidden
+                className="w-full rounded-2xl px-4 py-3.5 pr-10 flex items-center justify-between"
+                style={{ ...inputStyle(), color: "#6D6D6D", cursor: "wait" }}
+                aria-busy
               >
-                .
+                <span className="text-base" style={{ fontFamily: "Nunito, sans-serif" }}>
+                  Loading languages…
+                </span>
+                <svg
+                  width="18" height="18" viewBox="0 0 24 24" fill="none"
+                  className="animate-spin"
+                  style={{ color: "#1CA069", flexShrink: 0 }}
+                >
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="14 30" />
+                </svg>
               </div>
-              <style>{`@keyframes shimmer { 0% { background-position: 200% 0 } 100% { background-position: -200% 0 } }`}</style>
             </>
           )}
           {showLangSelector && (
