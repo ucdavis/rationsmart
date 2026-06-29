@@ -33,15 +33,19 @@ const adminCards: AdminCard[] = [
       <path d="M13 21l4-8 4 8M15 18h4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ) },
-  // Languages: registry — add a new lang code, deactivate, etc.
-  { title: "Languages", href: "/admin/languages", icon: (
+  // Language Catalog: registry — add a new lang code, deactivate, etc.
+  // Renamed from "Languages" → "Language Catalog" because the previous
+  // name made admins expect a user-facing language switcher.
+  { title: "Language\nCatalog", href: "/admin/languages", icon: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
       <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ) },
-  // Country-Language matrix: assign / unassign existing languages to countries.
-  { title: "Country\nLanguages", href: "/admin/country-languages", icon: (
+  // Country Availability: assign / unassign existing languages to countries.
+  // Renamed from "Country Languages" → "Country Availability" so the
+  // semantic distinction from Language Catalog is obvious at a glance.
+  { title: "Country\nAvailability", href: "/admin/country-languages", icon: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <rect x="3" y="5" width="18" height="14" rx="2" stroke="#064E3B" strokeWidth="1.8" />
       <path d="M3 10h18M9 5v14" stroke="#064E3B" strokeWidth="1.6" />

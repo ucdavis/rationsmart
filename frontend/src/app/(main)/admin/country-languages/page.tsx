@@ -153,7 +153,29 @@ export default function AdminCountryLanguagesPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
-      <Toolbar type="back" title="Country Languages" onBack={() => router.back()} />
+      <Toolbar type="back" title="Country Availability" onBack={() => router.back()} />
+
+      {/* Explainer — the second layer of the i18n system. Catalog (the
+          previous screen) registers a language globally; this screen
+          decides which countries that language is offered to. */}
+      <div className="mx-3 mt-3 px-3.5 py-3 rounded-2xl flex gap-2.5" style={{ backgroundColor: "#E3F2FD", border: "1px solid rgba(41,108,211,0.20)" }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+          <circle cx="12" cy="12" r="10" fill="#296CD3" />
+          <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
+          <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
+        </svg>
+        <div style={{ fontFamily: "Nunito, sans-serif" }}>
+          <p className="font-bold text-sm" style={{ color: "#1E40AF" }}>
+            Decide which languages each country offers
+          </p>
+          <p className="text-xs mt-0.5" style={{ color: "#1E40AF", lineHeight: 1.5 }}>
+            Languages must be added in <span className="font-bold">Language Catalog</span> first.
+            Assigning one to a country makes it selectable to that country&apos;s
+            users in their <span className="font-bold">Profile → Language</span>.
+            English is always available.
+          </p>
+        </div>
+      </div>
 
       <div className="flex-1 overflow-y-auto pb-20 px-3 pt-3">
         {isLoading ? (

@@ -118,11 +118,34 @@ export default function AdminLanguagesPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
-      <Toolbar type="back" title="Languages" onBack={() => router.back()} />
+      <Toolbar type="back" title="Language Catalog" onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-24">
+        {/* Explainer banner — clarifies what this screen does vs Profile.
+            Multiple admins reported expecting the toggles to switch their
+            OWN app language; that's actually the Profile screen. This is
+            the system-wide registry only. */}
+        <div className="mx-3 mt-3 px-3.5 py-3 rounded-2xl flex gap-2.5" style={{ backgroundColor: "#E3F2FD", border: "1px solid rgba(41,108,211,0.20)" }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+            <circle cx="12" cy="12" r="10" fill="#296CD3" />
+            <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
+            <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
+          </svg>
+          <div style={{ fontFamily: "Nunito, sans-serif" }}>
+            <p className="font-bold text-sm" style={{ color: "#1E40AF" }}>
+              System-wide language catalog
+            </p>
+            <p className="text-xs mt-0.5" style={{ color: "#1E40AF", lineHeight: 1.5 }}>
+              This is the master list of languages the platform knows about.
+              The toggle activates / deactivates a language across the whole
+              system. To switch <span className="font-bold">YOUR</span> app to a different language,
+              open <span className="font-bold">Profile → Language</span> instead.
+            </p>
+          </div>
+        </div>
+
         {/* Header — count + Add button */}
-        <div className="flex items-center justify-between px-4 pt-4">
+        <div className="flex items-center justify-between px-4 pt-3">
           <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
             {languages.length} language{languages.length === 1 ? "" : "s"} registered
           </p>
@@ -173,11 +196,39 @@ export default function AdminLanguagesPage() {
                       </p>
                     )}
                   </div>
-                  {/* English (en) cannot be deactivated server-side. Show the
-                      switch as locked. */}
+                  {/* English (en) cannot be deactivated server-side (backend
+                      returns 400 on PATCH and 400 on DELETE for "en"). To
+                      keep the row visually consistent with the others, we
+                      render a LOCKED toggle in the ON position — same
+                      track/knob graphic, but the input is disabled and a
+                      tiny lock icon overlays the knob so the locked state
+                      is unambiguous. */}
                   {row.code === "en" ? (
-                    <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ backgroundColor: "#F1F5F9", color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                      Always on
+                    <span
+                      className="toggle-switch"
+                      title="English cannot be deactivated"
+                      aria-label="English language is always active"
+                      style={{ position: "relative", opacity: 0.65, cursor: "not-allowed" }}
+                    >
+                      <input
+                        type="checkbox"
+                        checked
+                        disabled
+                        readOnly
+                      />
+                      <span className="toggle-slider" />
+                      {/* Padlock overlay on the knob — Material-style outline. */}
+                      <svg
+                        width="11"
+                        height="11"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }}
+                        aria-hidden
+                      >
+                        <rect x="5" y="11" width="14" height="9" rx="2" fill="#FFFFFF" />
+                        <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#FFFFFF" strokeWidth="2" />
+                      </svg>
                     </span>
                   ) : (
                     <label className="toggle-switch" aria-label={row.is_active ? "Deactivate language" : "Activate language"}>
