@@ -361,33 +361,40 @@ export default function ProfilePage() {
                   </svg>
                 </div>
               </div>
-            </>
-          )}
-          {showLangSelector && (
-            <>
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
-              <div className="relative">
-                <select
-                  value={selectedLang}
-                  onChange={(e) => setSelectedLang(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
-                  style={{ ...inputStyle(), cursor: "pointer" }}
-                >
-                  {supportedLangs.map((code) => (
-                    <option key={code} value={code}>
-                      {labelForLanguage(code)}
-                    </option>
-                  ))}
-                </select>
-                <div
-                  className="absolute pointer-events-none"
-                  style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </div>
-              </div>
+
+              {/* Language (editable dropdown) — always rendered once
+                  countries have loaded. English is forced into the list
+                  even when the country technically supports only English,
+                  so the user can always see + reconfirm their language.
+                  Rendered INSIDE the loaded branch so it never appears
+                  alongside the Language skeleton above. */}
+              {showLangSelector && (
+                <>
+                  <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
+                  <div className="relative">
+                    <select
+                      value={selectedLang}
+                      onChange={(e) => setSelectedLang(e.target.value)}
+                      className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
+                      style={{ ...inputStyle(), cursor: "pointer" }}
+                    >
+                      {supportedLangs.map((code) => (
+                        <option key={code} value={code}>
+                          {labelForLanguage(code)}
+                        </option>
+                      ))}
+                    </select>
+                    <div
+                      className="absolute pointer-events-none"
+                      style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
 
