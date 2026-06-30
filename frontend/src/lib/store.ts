@@ -38,7 +38,13 @@ export interface User {
   // backend). On every login the frontend hard-resets this to
   // registered_language so logout/login always returns the user to the
   // language they chose at registration.
-  registered_language: string;
+  //
+  // registered_language is OPTIONAL on the type because users who were
+  // logged in BEFORE this field was introduced have a persisted user
+  // blob in localStorage that doesn't contain it. They'll pick up the
+  // value the next time they log in. Until then, reads should fall back
+  // to preferred_language.
+  registered_language?: string;
   preferred_language: string;
 }
 
