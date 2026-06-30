@@ -9,6 +9,7 @@ import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from repositories.translation_repository import TranslationRepository
+from repositories.user_repository import UserRepository
 
 # Sheet names — must stay stable for round-trip import
 _SHEET_FEEDS = "Feeds"
@@ -18,12 +19,13 @@ _SHEET_CATS = "Feed Categories"
 # Metadata column names (not imported, just informational / lookup keys)
 _COL_FEED_ID = "feed_id"
 _COL_FD_CODE = "fd_code"
+_COL_COUNTRY_NAME = "country_name"
 _COL_EN_NAME = "english_name"
 _COL_TYPE_SRC = "english_value"
 _COL_CAT_SRC = "english_value"
 
-_FEEDS_META = {_COL_FEED_ID, _COL_FD_CODE, _COL_EN_NAME}
-_VOCAB_META = {_COL_TYPE_SRC}
+_FEEDS_META = {_COL_FEED_ID, _COL_FD_CODE, _COL_COUNTRY_NAME, _COL_EN_NAME}
+_VOCAB_META = {_COL_TYPE_SRC, _COL_COUNTRY_NAME}
 
 
 # ── Export ────────────────────────────────────────────────────────────────────
@@ -33,6 +35,9 @@ async def export_translation_workbook(
 ) -> tuple[bytes, str]:
     """Build a 3-sheet translation workbook for a country and return (bytes, filename)."""
     repo = TranslationRepository(db)
+
+    country = await UserRepository(db).get_country_by_id(country_id)
+    country_name = country.name if country else ""
 
     lang_codes = await repo.get_country_language_codes(country_id)
     feeds = await repo.get_country_feeds(country_id)
@@ -49,6 +54,7 @@ async def export_translation_workbook(
         row: dict = {
             _COL_FEED_ID: fid,
             _COL_FD_CODE: f.fd_code or "",
+            _COL_COUNTRY_NAME: country_name,
             _COL_EN_NAME: f.fd_name or "",
         }
         for lc in lang_codes:
@@ -58,7 +64,7 @@ async def export_translation_workbook(
     # Feed Types sheet
     types_rows = []
     for src in types:
-        row = {_COL_TYPE_SRC: src}
+        row = {_COL_COUNTRY_NAME: country_name, _COL_TYPE_SRC: src}
         for lc in lang_codes:
             row[lc] = type_trans_map.get(src, {}).get(lc, "")
         types_rows.append(row)
@@ -66,7 +72,7 @@ async def export_translation_workbook(
     # Feed Categories sheet
     cats_rows = []
     for src in cats:
-        row = {_COL_CAT_SRC: src}
+        row = {_COL_COUNTRY_NAME: country_name, _COL_CAT_SRC: src}
         for lc in lang_codes:
             row[lc] = cat_trans_map.get(src, {}).get(lc, "")
         cats_rows.append(row)
