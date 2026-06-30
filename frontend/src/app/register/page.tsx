@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { register as registerApi, getCountries } from "@/lib/api";
+import { register as registerApi, getCountries, labelForLanguage } from "@/lib/api";
 import { isEmailAddressValid, cleanNameInput } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
@@ -17,6 +17,8 @@ interface Country {
   code?: string;
   country_code?: string;
   currency?: string;
+  // i18n V2 — backend ships the BCP 47 codes the country has labels for.
+  supported_languages?: string[];
 }
 
 export default function RegisterPage() {
@@ -27,12 +29,31 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [countryId, setCountryId] = useState("");
+  // i18n V2 — language chosen at registration. Defaults to "en". Becomes
+  // the user's registered_language on the backend; the baseline restored
+  // on every subsequent login. Selecting another language is optional.
+  const [language, setLanguage] = useState("en");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
   const [countries, setCountries] = useState<Country[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const confirmPinRef = useRef<HTMLDivElement>(null);
+
+  // Resolve the language options for the currently-picked country.
+  // English is ALWAYS in the list (default, can't be removed). Other
+  // entries come from the country's supported_languages — minus "en" so
+  // we don't render it twice.
+  const selectedCountry = countries.find((c) => String(c.id) === countryId);
+  const countryLangs = selectedCountry?.supported_languages ?? [];
+  const languageOptions = ["en", ...countryLangs.filter((c) => c !== "en")];
+
+  // If the user picked a country that no longer supports the previously-
+  // selected language, snap back to English so we never submit an option
+  // that isn't visible in the dropdown.
+  useEffect(() => {
+    if (!languageOptions.includes(language)) setLanguage("en");
+  }, [countryId, language, languageOptions]);
 
   useEffect(() => {
     getCountries()
@@ -78,6 +99,10 @@ export default function RegisterPage() {
         email_id: email.trim(),
         pin,
         country_id: countryId,
+        // Send the chosen language so the backend can store it as
+        // registered_language. Older backends that don't know this
+        // field will ignore it; the field is optional in the schema.
+        language,
       });
       // v1 register response has NO token (POST /v1/auth/register returns
       // AuthenticationResponse with user but no JWT). If we set the user
@@ -223,6 +248,42 @@ export default function RegisterPage() {
             </svg>
           </div>
         </div>
+
+        {/* Language — optional. English is the default and is ALWAYS in
+            the list (the user can never remove or disable it). Other
+            choices come from the selected country's supported_languages.
+            The chosen value becomes the user's registered_language on
+            the backend and is the baseline restored at every login. */}
+        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
+          Language
+        </p>
+        <div className="px-3 relative">
+          <select
+            value={language}
+            onChange={(e) => setLanguage(e.target.value)}
+            disabled={loadingCountries}
+            className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none pr-10"
+            style={{
+              ...inputStyle,
+              color: "#231F20",
+              opacity: loadingCountries ? 0.6 : 1,
+            }}
+          >
+            {languageOptions.map((code) => (
+              <option key={code} value={code}>
+                {labelForLanguage(code)}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M4 6L8 10L12 6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+        </div>
+        <p className="text-xs mt-1 ml-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontStyle: "italic" }}>
+          English is the default. You can change this anytime in Profile.
+        </p>
 
         {/* PIN — disabled until country + email + name are valid */}
         <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>

@@ -7,6 +7,12 @@ export interface RegisterData {
   email_id: string;
   pin: string;
   country_id: string;
+  // i18n V2 — language chosen at registration time. BCP 47 code.
+  // Optional from the client's perspective (English is the default), but
+  // backend MUST store it as `registered_language` so it can be the
+  // baseline restored on every subsequent login. Profile changes are
+  // session-only and do NOT update this value.
+  language?: string;
 }
 
 // Internal store model — human-readable field names (not the raw API names)
@@ -530,7 +536,11 @@ export const getUserProfile = (email_id: string) =>
   api.get(`/v1/auth/user/${encodeURIComponent(email_id)}`);
 
 // PUT /v1/auth/user/{email_id} — public — { name, country_id }
-export const updateUserProfile = (email_id: string, data: { name: string; country_id: string; preferred_language?: string }) =>
+// NOTE — intentionally does NOT accept preferred_language. Language is set
+// once at registration (registered_language on the user record) and is the
+// source of truth restored on every login. Profile-side language changes
+// are session-only (local state only) and never reach the backend.
+export const updateUserProfile = (email_id: string, data: { name: string; country_id: string }) =>
   api.put(`/v1/auth/user/${encodeURIComponent(email_id)}`, data);
 
 // POST /v1/auth/user-delete-account — JWT auth; body { pin } (6-digit)

@@ -98,9 +98,15 @@ export default function LoginPage() {
       // fetch profile + countries in parallel (non-critical)
       let is_admin = false;
       let currency = "";
-      // i18n V2: backend now returns user.preferred_language on the profile.
-      // Default to "en" until that endpoint actually ships it for all users.
-      let preferred_language = "en";
+      // i18n V2 — the backend's `registered_language` is the source of
+      // truth for what language this user signed up in. Login HARD-RESETS
+      // the current preferred_language back to that value, so any change
+      // the user made through the Profile dropdown in a previous session
+      // is discarded at logout/login. This is the contract requested:
+      // profile changes are session-only; the registered language wins on
+      // every login. If the backend doesn't ship registered_language yet
+      // we fall back to preferred_language, then "en".
+      let registered_language = "en";
       try {
         const country = u.country;
         const countryId = String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? "");
@@ -109,8 +115,9 @@ export default function LoginPage() {
           getCountries(),
         ]);
         if (profileRes.status === "fulfilled") {
-          is_admin = profileRes.value.data?.is_admin ?? false;
-          preferred_language = (profileRes.value.data as { preferred_language?: string })?.preferred_language ?? "en";
+          const d = profileRes.value.data as { is_admin?: boolean; registered_language?: string; preferred_language?: string };
+          is_admin = d?.is_admin ?? false;
+          registered_language = d?.registered_language ?? d?.preferred_language ?? "en";
         }
         if (countriesRes.status === "fulfilled") {
           const found = (countriesRes.value.data as Array<{id: string; currency?: string}>).find((c) => String(c.id) === countryId);
@@ -142,7 +149,12 @@ export default function LoginPage() {
           typeof body.token === "string"
             ? body.token
             : (body.token?.access_token ?? null),
-        preferred_language,
+        // Both fields start equal at login. The Profile dropdown may
+        // later mutate preferred_language locally for the duration of
+        // this session, but registered_language stays put — on next
+        // login it's the value that wins again.
+        registered_language,
+        preferred_language: registered_language,
       });
       const successMsg = body.message;
       if (successMsg) showSnackbar(successMsg, "success");

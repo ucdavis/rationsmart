@@ -26,9 +26,19 @@ export interface User {
   // setTokenProvider() below wires the api.ts axios instance to read the
   // latest token on every request.
   token: string | null;
-  // i18n V2 (post_impl_multi_language): user's saved language preference.
-  // BCP 47 code; defaults to "en". Read at login; sent as ?lang= on every
-  // animal/* request. Updatable via PUT /v1/auth/user/{email_id}.
+  // i18n V2 — language fields. Two separate concepts; do not conflate.
+  //
+  // registered_language — set ONCE at registration and stored on the
+  // backend's user record. Never updated after register. Acts as the
+  // baseline that every fresh login restores. Source of truth.
+  //
+  // preferred_language — the CURRENTLY EFFECTIVE language for this
+  // session. Read as ?lang= on every animal/* request and used for label
+  // lookup. Mutated by the Profile dropdown (session-only, never sent to
+  // backend). On every login the frontend hard-resets this to
+  // registered_language so logout/login always returns the user to the
+  // language they chose at registration.
+  registered_language: string;
   preferred_language: string;
 }
 

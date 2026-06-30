@@ -115,8 +115,15 @@ export default function ProfilePage() {
   // currently-selected country's supported_languages. If the country only
   // supports English, the selector is hidden entirely (per i18n V2 spec).
   const selectedCountry = countries.find((c) => String(c.id) === String(selectedCountryId));
-  const supportedLangs = selectedCountry?.supported_languages ?? ["en"];
-  const showLangSelector = supportedLangs.length > 1;
+  // Language picker — English is ALWAYS in the list (never disabled,
+  // never removed) regardless of what the country supports. Additional
+  // entries come from the country's supported_languages. The dropdown
+  // is therefore ALWAYS visible — even for English-only countries the
+  // user sees "English" as the single, locked-but-selectable option,
+  // confirming what language they're on.
+  const countrySupported = selectedCountry?.supported_languages ?? [];
+  const supportedLangs = ["en", ...countrySupported.filter((c) => c !== "en")];
+  const showLangSelector = true;
 
   if (!user) return null;
 
@@ -127,15 +134,16 @@ export default function ProfilePage() {
     }
     setIsSaving(true);
     try {
-      // i18n V2 — also save preferred_language. Only send the field when
-      // the user actually picked something other than English (avoid
-      // poking older backends that may 400 on the new field).
-      const payload: { name: string; country_id: string; preferred_language?: string } = {
+      // i18n V2 — language is intentionally NOT in the API payload.
+      // The Profile dropdown mutates preferred_language as a SESSION
+      // OVERRIDE only. registered_language on the backend is the
+      // baseline that wins on every fresh login, so the user's
+      // registration-time choice is restored at logout/login regardless
+      // of any in-session experimentation here.
+      await updateUserProfile(user.email, {
         name: name.trim(),
         country_id: String(selectedCountryId),
-      };
-      if (showLangSelector) payload.preferred_language = selectedLang;
-      await updateUserProfile(user.email, payload);
+      });
       const sel = countries.find((c) => String(c.id) === String(selectedCountryId));
       // Carry the selected country's currency through to the user too,
       // otherwise feed-selection / report keep showing the previous
@@ -147,7 +155,10 @@ export default function ProfilePage() {
         country: sel?.name ?? user.country,
         country_code: sel?.country_code ?? user.country_code,
         currency: sel?.currency ?? user.currency,
-        preferred_language: showLangSelector ? selectedLang : (user.preferred_language ?? "en"),
+        // registered_language is immutable from this screen — don't
+        // overwrite it. preferred_language IS the session override
+        // and gets the dropdown's current value.
+        preferred_language: selectedLang,
       });
       showSnackbar("Profile updated!", "success");
     } catch (err: unknown) {
