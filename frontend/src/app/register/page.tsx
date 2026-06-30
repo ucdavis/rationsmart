@@ -281,9 +281,6 @@ export default function RegisterPage() {
             </svg>
           </div>
         </div>
-        <p className="text-xs mt-1 ml-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontStyle: "italic" }}>
-          English is the default. You can change this anytime in Profile.
-        </p>
 
         {/* PIN — disabled until country + email + name are valid */}
         <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
