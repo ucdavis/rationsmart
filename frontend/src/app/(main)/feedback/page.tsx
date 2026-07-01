@@ -6,6 +6,7 @@ import { submitFeedback, getMyFeedback } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
 import { useRouter } from "next/navigation";
 import { IcStar } from "@/components/Icons";
+import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
 
 interface FeedbackItem {
   id: number;
@@ -84,6 +85,8 @@ export default function FeedbackPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [history, setHistory] = useState<FeedbackItem[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  // Selected card details for the popup. Null = closed.
+  const [openDetails, setOpenDetails] = useState<FeedbackDetails | null>(null);
 
   const loadHistory = () => {
     if (!user) return;
@@ -294,8 +297,29 @@ export default function FeedbackPage() {
             history.map((item) => (
               <div
                 key={item.id}
+                role="button"
+                tabIndex={0}
+                onClick={() =>
+                  setOpenDetails({
+                    rating: item.overall_rating ?? 0,
+                    category: item.feedback_type ?? "General",
+                    createdAt: item.created_at,
+                    text: item.text_feedback ?? "",
+                  })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpenDetails({
+                      rating: item.overall_rating ?? 0,
+                      category: item.feedback_type ?? "General",
+                      createdAt: item.created_at,
+                      text: item.text_feedback ?? "",
+                    });
+                  }
+                }}
                 className="rounded-2xl bg-white mb-2.5 px-3 pt-5 pb-5"
-                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", cursor: "pointer" }}
               >
                 {/* Row 1: Stars (left) + Date (right) */}
                 <div className="flex items-center justify-between mb-3">
@@ -334,6 +358,8 @@ export default function FeedbackPage() {
           )}
         </div>
       </div>
+
+      <FeedbackDetailsSheet details={openDetails} onClose={() => setOpenDetails(null)} />
     </div>
   );
 }

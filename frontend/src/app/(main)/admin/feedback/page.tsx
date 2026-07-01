@@ -7,6 +7,7 @@ import { getAdminFeedbacks, getAdminFeedbackStats } from "@/lib/api";
 import { toFeedReportDisplayDate } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import { IcStar } from "@/components/Icons";
+import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
 
 interface AdminFeedback {
   id: number;
@@ -99,6 +100,8 @@ export default function AdminFeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<AdminFeedback[]>([]);
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // Selected card details for the popup. Null = closed.
+  const [openDetails, setOpenDetails] = useState<FeedbackDetails | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -161,8 +164,29 @@ export default function AdminFeedbackPage() {
             return (
               <div
                 key={fb.id}
+                role="button"
+                tabIndex={0}
+                onClick={() =>
+                  setOpenDetails({
+                    rating: fb.overall_rating ?? 0,
+                    category,
+                    createdAt: fb.created_at,
+                    text: fb.text_feedback ?? "",
+                  })
+                }
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setOpenDetails({
+                      rating: fb.overall_rating ?? 0,
+                      category,
+                      createdAt: fb.created_at,
+                      text: fb.text_feedback ?? "",
+                    });
+                  }
+                }}
                 className="mx-3 my-2 bg-white"
-                style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", paddingBottom: 12 }}
+                style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", paddingBottom: 12, cursor: "pointer" }}
               >
                 {/* Top row: icon pill + name/email LEFT | category badge + stars RIGHT */}
                 <div className="flex items-start justify-between" style={{ padding: "12px 12px 0" }}>
@@ -215,6 +239,8 @@ export default function AdminFeedbackPage() {
           })
         )}
       </div>
+
+      <FeedbackDetailsSheet details={openDetails} onClose={() => setOpenDetails(null)} />
     </div>
   );
 }
