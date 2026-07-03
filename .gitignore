@@ -50,6 +50,8 @@ temp_work/
 results/
 tests/
 docs/
+scripts/
+
 
 
 # Deployment helpers — contain live credentials and server details
