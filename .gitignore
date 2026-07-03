@@ -49,6 +49,7 @@ logs/
 temp_work/
 results/
 tests/
+docs/
 
 
 # Deployment helpers — contain live credentials and server details
