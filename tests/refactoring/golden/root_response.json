@@ -1,9 +1,0 @@
-{
-  "status": 200,
-  "body": {
-    "message": "Feed Formulation Backend v3.0",
-    "status": "running",
-    "authentication": "email + PIN",
-    "docs": "/docs"
-  }
-}
