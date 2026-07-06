@@ -134,15 +134,16 @@ export default function ProfilePage() {
     }
     setIsSaving(true);
     try {
-      // i18n V2 — language is intentionally NOT in the API payload.
-      // The Profile dropdown mutates preferred_language as a SESSION
-      // OVERRIDE only. registered_language on the backend is the
-      // baseline that wins on every fresh login, so the user's
-      // registration-time choice is restored at logout/login regardless
-      // of any in-session experimentation here.
+      // i18n V2 — language IS included in the API payload. When the user
+      // picks a new language from the Profile dropdown we PATCH it on the
+      // backend so the change persists across logout/login. Older backends
+      // that don't yet know the field will silently ignore it; the local
+      // store update below still reflects the choice for the current
+      // session either way.
       await updateUserProfile(user.email, {
         name: name.trim(),
         country_id: String(selectedCountryId),
+        preferred_language: selectedLang,
       });
       const sel = countries.find((c) => String(c.id) === String(selectedCountryId));
       // Carry the selected country's currency through to the user too,
@@ -155,9 +156,6 @@ export default function ProfilePage() {
         country: sel?.name ?? user.country,
         country_code: sel?.country_code ?? user.country_code,
         currency: sel?.currency ?? user.currency,
-        // registered_language is immutable from this screen — don't
-        // overwrite it. preferred_language IS the session override
-        // and gets the dropdown's current value.
         preferred_language: selectedLang,
       });
       showSnackbar("Profile updated!", "success");

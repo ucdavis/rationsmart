@@ -98,15 +98,12 @@ export default function LoginPage() {
       // fetch profile + countries in parallel (non-critical)
       let is_admin = false;
       let currency = "";
-      // i18n V2 — the backend's `registered_language` is the source of
-      // truth for what language this user signed up in. Login HARD-RESETS
-      // the current preferred_language back to that value, so any change
-      // the user made through the Profile dropdown in a previous session
-      // is discarded at logout/login. This is the contract requested:
-      // profile changes are session-only; the registered language wins on
-      // every login. If the backend doesn't ship registered_language yet
-      // we fall back to preferred_language, then "en".
-      let registered_language = "en";
+      // i18n V2 — read whatever the backend has as the user's current
+      // language. Profile-side changes persist to the backend, so this
+      // is the user's LATEST chosen language, not a registration-time
+      // baseline. Falls back to registered_language (for backends that
+      // still expose it) then "en" for older API versions.
+      let preferred_language = "en";
       try {
         const country = u.country;
         const countryId = String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? "");
@@ -115,9 +112,9 @@ export default function LoginPage() {
           getCountries(),
         ]);
         if (profileRes.status === "fulfilled") {
-          const d = profileRes.value.data as { is_admin?: boolean; registered_language?: string; preferred_language?: string };
+          const d = profileRes.value.data as { is_admin?: boolean; preferred_language?: string; registered_language?: string };
           is_admin = d?.is_admin ?? false;
-          registered_language = d?.registered_language ?? d?.preferred_language ?? "en";
+          preferred_language = d?.preferred_language ?? d?.registered_language ?? "en";
         }
         if (countriesRes.status === "fulfilled") {
           const found = (countriesRes.value.data as Array<{id: string; currency?: string}>).find((c) => String(c.id) === countryId);
@@ -149,12 +146,12 @@ export default function LoginPage() {
           typeof body.token === "string"
             ? body.token
             : (body.token?.access_token ?? null),
-        // Both fields start equal at login. The Profile dropdown may
-        // later mutate preferred_language locally for the duration of
-        // this session, but registered_language stays put — on next
-        // login it's the value that wins again.
-        registered_language,
-        preferred_language: registered_language,
+        // Single source of truth: preferred_language read from the
+        // backend. registered_language is kept on the model as an
+        // optional legacy field, populated to the same value for
+        // backwards compatibility with any code that still reads it.
+        registered_language: preferred_language,
+        preferred_language,
       });
       const successMsg = body.message;
       if (successMsg) showSnackbar(successMsg, "success");

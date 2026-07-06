@@ -535,13 +535,16 @@ export const getCountries = () => api.get<Country[]>("/v1/auth/countries");
 export const getUserProfile = (email_id: string) =>
   api.get(`/v1/auth/user/${encodeURIComponent(email_id)}`);
 
-// PUT /v1/auth/user/{email_id} — public — { name, country_id }
-// NOTE — intentionally does NOT accept preferred_language. Language is set
-// once at registration (registered_language on the user record) and is the
-// source of truth restored on every login. Profile-side language changes
-// are session-only (local state only) and never reach the backend.
-export const updateUserProfile = (email_id: string, data: { name: string; country_id: string }) =>
-  api.put(`/v1/auth/user/${encodeURIComponent(email_id)}`, data);
+// PUT /v1/auth/user/{email_id} — public — { name, country_id, preferred_language? }
+// preferred_language is optional; when the user changes their language from
+// the Profile screen we include it here so the choice PERSISTS across
+// sessions. The backend updates the user record's language; the next login
+// reads that value straight back. There is no separate "registered
+// language" baseline — one field, one source of truth.
+export const updateUserProfile = (
+  email_id: string,
+  data: { name: string; country_id: string; preferred_language?: string }
+) => api.put(`/v1/auth/user/${encodeURIComponent(email_id)}`, data);
 
 // POST /v1/auth/user-delete-account — JWT auth; body { pin } (6-digit)
 // user identity comes from the JWT, no more user_id query param.
