@@ -238,7 +238,7 @@ function TotalCostFooter({ label, value }: { label: string; value: string }) {
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, cattleInfo, reportData, feedSelections, showSnackbar, setFeedSelectionType, setFeedSelections } = useStore((s) => ({
+  const { user, cattleInfo, reportData, feedSelections, showSnackbar, setFeedSelectionType, setFeedSelections, setCattleInfo } = useStore((s) => ({
     feedSelections: s.feedSelections,
     user: s.user,
     cattleInfo: s.cattleInfo,
@@ -246,10 +246,30 @@ export default function ReportPage() {
     showSnackbar: s.showSnackbar,
     setFeedSelectionType: s.setFeedSelectionType,
     setFeedSelections: s.setFeedSelections,
+    setCattleInfo: s.setCattleInfo,
   }));
 
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+
+  // i18n V2 — fallback lookup so the report body shows translated feed
+  // names even if the backend diet endpoints aren't yet returning
+  // display_name on FeedBreakdown / CostEffectiveDiet rows. Each entry
+  // in feedSelections was populated at pick-time via a ?lang= aware
+  // dropdown / search call, so its display_name (or sub_category_name)
+  // is already in the user's chosen language. Priority in JSX:
+  //   backend row.display_name  →  this map  →  English row.feed_name.
+  const feedNameByUuid: Record<string, string> = {};
+  for (const s of feedSelections) {
+    if (s.feed_uuid) {
+      feedNameByUuid[s.feed_uuid] = s.display_name ?? s.sub_category_name;
+    }
+  }
+  const displayFeedName = (row: { feed_id?: string | null; feed_name?: string | null; display_name?: string | null }) =>
+    row.display_name
+      ?? (row.feed_id ? feedNameByUuid[row.feed_id] : undefined)
+      ?? row.feed_name
+      ?? "";
 
   // §2.3 — gate report sections by animal state. When backend ships a
   // server-built report_context, prefer that; otherwise compute locally
@@ -1033,7 +1053,7 @@ export default function ReportPage() {
                     className="flex items-center py-2 px-1 border-b last:border-0"
                     style={{ borderColor: "#F1F5F9" }}
                   >
-                    <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{row.display_name ?? row.feed_name}</span>
+                    <span className="flex-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{displayFeedName(row)}</span>
                     <span className="w-20 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.price_per_kg)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.quantity_as_fed_kg_per_day, 1)}</span>
                     <span className="w-16 text-right text-sm font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{fmt(row.total_cost)}</span>
@@ -1283,7 +1303,7 @@ export default function ReportPage() {
                       borderBottom: "1px solid #F1F5F9",
                     }}
                   >
-                    <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{row.display_name ?? row.feed_name}</span>
+                    <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{displayFeedName(row)}</span>
                     <span className="text-center" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.price_per_kg, 0)}</span>
                     <span className="text-center" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.quantity_kg_per_day, 2)}</span>
                     <span className="text-right font-bold" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{fmt(row.daily_cost, 0)}</span>
@@ -1572,8 +1592,12 @@ export default function ReportPage() {
             onClick={() => {
               // Match Android btnNewCase: clears feed selections + report
               // so the next pass starts from a clean Cattle Info step.
+              // i18n V2 — also nulls cattleInfo so any per-simulation
+              // language override from the previous run does not leak
+              // into the next one.
               setFeedSelections([]);
               setFeedSelectionType("recommendation");
+              setCattleInfo(null);
               router.push("/cattle-info");
             }}
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"

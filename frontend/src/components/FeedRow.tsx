@@ -323,7 +323,7 @@ export default function FeedRow({
             // display_name is just the entered English name.
             : [...prev, { feed_name: newName, feed_uuid: newId!, display_name: newName }]
         );
-        onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId });
+        onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId, display_name: newName });
         showSnackbar("Custom feed saved", "success");
       } else {
         await updateCustomFeed({
@@ -540,6 +540,11 @@ export default function FeedRow({
             sub_category_id: 1,
             sub_category_name: match.feed_name,
             feed_uuid: match.feed_uuid,
+            // i18n V2 — persist the translated display name captured at
+            // pick time. The report screen uses this as a fallback for
+            // FeedBreakdown / CostEffectiveDiet cells when the backend's
+            // diet endpoints don't yet return display_name themselves.
+            display_name: match.display_name,
           });
         }
       })
@@ -819,6 +824,10 @@ export default function FeedRow({
                   sub_category_id: selected ? 1 : null,
                   sub_category_name: selected?.feed_name ?? "",
                   feed_uuid: selected?.feed_uuid ?? null,
+                  // i18n V2 — capture the translated name at pick time
+                  // so /report can fall back to it if the backend's diet
+                  // endpoints don't yet ship display_name on their rows.
+                  display_name: selected?.display_name ?? null,
                 });
               }}
               disabled={!item.category_name}

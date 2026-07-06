@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
-import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating } from "@/lib/api";
+import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating, labelForLanguage } from "@/lib/api";
 import type { AnimalCategory } from "@/lib/api";
 import {
   containsMultipleDecimalPoints,
@@ -40,6 +40,9 @@ interface Country {
   code?: string;
   country_code?: string;
   currency?: string;
+  // i18n V2 — BCP 47 codes the country has translations for. Drives the
+  // Language dropdown options on this screen.
+  supported_languages?: string[];
 }
 
 interface FormState {
@@ -65,6 +68,12 @@ interface FormState {
   // Y3 §1.4 — drives form gating (hides Milk Production for non-lactating)
   // and report-side §2.3 section visibility.
   animal_category: AnimalCategory;
+  // i18n V2 — per-simulation language override. null means "use the
+  // user's profile language" (langProvider falls back). Selecting a
+  // value here changes ?lang= for feed dropdowns / search / diet
+  // endpoints for the duration of this simulation only. Never touches
+  // the user's profile record.
+  simulation_language: string | null;
 }
 
 interface HistoryItem {
@@ -111,6 +120,8 @@ const EMPTY_FORM: FormState = {
   // Y3 §1.4 — default preserves existing behaviour (PWA was implicitly
   // lactating-cow-only before this change).
   animal_category: "Lactating Cow",
+  // i18n V2 — null so langProvider falls back to profile default.
+  simulation_language: null,
 };
 
 const inputStyle = {
@@ -219,6 +230,10 @@ export default function CattleInfoPage() {
         // record is in storage (i.e. saved before these fields existed).
         milk_price: cattleInfo.milk_price != null ? String(cattleInfo.milk_price) : "",
         animal_category: cattleInfo.animal_category ?? "Lactating Cow",
+        // i18n V2 — restore any per-simulation language previously chosen
+        // for this run. Null on a pre-feature cattleInfo record; the
+        // Language dropdown will show English selected in that case.
+        simulation_language: cattleInfo.simulation_language ?? null,
       };
     }
     return {
@@ -293,6 +308,11 @@ export default function CattleInfoPage() {
         // TODO(maria-y3): confirm response keys for milk_price + animal_category.
         milk_price: ci?.milk_price != null ? String(ci.milk_price) : prev.milk_price,
         animal_category: (ci?.animal_category as AnimalCategory | undefined) ?? prev.animal_category,
+        // i18n V2 — hydrate simulation_language from the simulation
+        // record. Backend must return this on GET /v1/animal/simulations
+        // for restore to work; until then the field is null and the
+        // frontend falls back to profile language.
+        simulation_language: (data?.simulation_language as string | null | undefined) ?? null,
       }));
 
       // Populate Feed Selection from the simulation — matches Android
@@ -577,6 +597,11 @@ export default function CattleInfoPage() {
       milk_price: form.milk_price ? Number(form.milk_price) : null,
       // Y3 §1.4
       animal_category: form.animal_category,
+      // i18n V2 — per-simulation language override. Empty string is
+      // treated as "use profile" (null); langProvider() falls back.
+      simulation_language: form.simulation_language && form.simulation_language !== ""
+        ? form.simulation_language
+        : null,
     });
     router.push("/feed-selection");
   };
@@ -586,6 +611,9 @@ export default function CattleInfoPage() {
       ...EMPTY_FORM,
       country_id: String(user?.country_id ?? ""),
       country_name: user?.country ?? "",
+      // EMPTY_FORM.simulation_language is already null; being explicit
+      // here so a future edit of EMPTY_FORM can't silently break Reset.
+      simulation_language: null,
     });
     setErrors({});
     // Clear any feed selections that were restored from a simulation —
@@ -635,11 +663,80 @@ export default function CattleInfoPage() {
               value={form.country_id}
               onChange={(v) => {
                 const found = countries.find((c) => String(c.id) === v);
-                setForm((p) => ({ ...p, country_id: v, country_name: found?.name ?? "" }));
+                // i18n V2 — snap simulation_language back to null when
+                // the newly-picked country doesn't support the currently
+                // chosen language (or when we can't verify because the
+                // country has no supported_languages field). Keeps us
+                // from submitting ?lang= for a code the backend won't
+                // translate for this country.
+                const supported = [
+                  "en",
+                  ...(found?.supported_languages ?? []).filter((c) => c !== "en"),
+                ];
+                setForm((p) => ({
+                  ...p,
+                  country_id: v,
+                  country_name: found?.name ?? "",
+                  simulation_language:
+                    p.simulation_language && supported.includes(p.simulation_language)
+                      ? p.simulation_language
+                      : null,
+                }));
               }}
               options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
               placeholder="Select country"
             />
+
+            {/* i18n V2 — Per-simulation Language dropdown. English is
+                ALWAYS in the list (default when the field is null),
+                other options come from the selected country's
+                supported_languages. Change here overrides ?lang= for
+                every /v1/animal/* call for the duration of this
+                simulation only; profile language stays put. */}
+            {(() => {
+              const selectedCountry = countries.find(
+                (c) => String(c.id) === form.country_id
+              );
+              const countryLangs = selectedCountry?.supported_languages ?? [];
+              const languageOptions = [
+                "en",
+                ...countryLangs.filter((c) => c !== "en"),
+              ];
+              const currentLang = form.simulation_language ?? "en";
+              return (
+                <>
+                  <FieldLabel>Language</FieldLabel>
+                  <SelectInput
+                    value={currentLang}
+                    onChange={(v) =>
+                      setForm((p) => ({
+                        ...p,
+                        // Store null when the user picks English so the
+                        // langProvider chain naturally falls through to
+                        // profile default (avoids pinning ?lang=en when
+                        // the user hasn't actively overridden).
+                        simulation_language: v === "en" ? null : v,
+                      }))
+                    }
+                    options={languageOptions.map((code) => ({
+                      value: code,
+                      label: labelForLanguage(code),
+                    }))}
+                    placeholder="Select language"
+                  />
+                  <p
+                    className="text-xs mt-1 ml-1"
+                    style={{
+                      color: "#6D6D6D",
+                      fontFamily: "Nunito, sans-serif",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    For this simulation only. Your default is set in Profile.
+                  </p>
+                </>
+              );
+            })()}
 
             {/* Y3 §1.4 — Animal Category selector. Sits in Simulation
                 Details (top of the form) because the choice gates

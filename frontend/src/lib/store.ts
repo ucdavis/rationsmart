@@ -67,7 +67,10 @@ interface AppState {
   setUser: (user: User) => void;
   setToken: (token: string | null) => void;
   logout: () => void;
-  setCattleInfo: (info: CattleInfo) => void;
+  // Accepts null so callers like the report page "New Case" button can
+  // fully wipe the previous simulation (including simulation_language)
+  // and land on Cattle Info in a clean state.
+  setCattleInfo: (info: CattleInfo | null) => void;
   setFeedSelectionType: (type: "recommendation" | "evaluation") => void;
   setFeedSelections: (items: FeedItem[]) => void;
   setReportData: (data: EvaluationResponse | RecommendationResponse) => void;
@@ -162,5 +165,15 @@ export const useStore = create<AppState>()(
 setTokenProvider(() => useStore.getState().user?.token ?? null);
 // i18n V2 — wire the active language to api.ts so every feed-related
 // helper can spread ?lang= via langParam() without reaching into the store.
-// Resolves to "en" before login.
-setLangProvider(() => useStore.getState().user?.preferred_language ?? "en");
+// Priority (top wins):
+//   1. cattleInfo.simulation_language   ← per-simulation override
+//   2. user.preferred_language          ← profile default
+//   3. "en"                             ← pre-login / brand-new user
+setLangProvider(() => {
+  const s = useStore.getState();
+  return (
+    s.cattleInfo?.simulation_language ??
+    s.user?.preferred_language ??
+    "en"
+  );
+});

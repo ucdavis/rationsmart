@@ -299,6 +299,10 @@ export default function FeedSelectionPage() {
               sub_category_name: result.feed_name,
               feed_uuid: result.feed_uuid,
               sub_category_id: 1,
+              // i18n V2 — capture the translated name for the /report
+              // fallback. searchFeeds always populates display_name
+              // (falls back to English source if no translation exists).
+              display_name: result.display_name ?? result.feed_name,
               // FeedRow's cascade `useEffect`s will repopulate the *_id
               // fields when the dropdown lists arrive — leaving them
               // null here would clear them prematurely.

@@ -45,6 +45,13 @@ export interface CattleInfo {
   // TODO(maria): confirm field name (animal_category vs state_phys) and
   // exact string values when the backend contract lands.
   animal_category: AnimalCategory;
+  // i18n V2 — per-simulation language override. null means "use the
+  // user's profile language". When set, langProvider() returns this
+  // for every /v1/animal/* call, so feed dropdowns / search / diet
+  // endpoints operate in the override language for the duration of
+  // this simulation. Cleared on New Simulation + Reset; hydrated on
+  // load-from-history when the backend eventually returns it.
+  simulation_language: string | null;
 }
 
 export type AnimalCategory = "Lactating Cow" | "Dry Cow" | "Heifer" | "Baby Calf/Heifer";
@@ -68,6 +75,12 @@ export interface FeedItem {
   sub_category_id: number | null;
   sub_category_name: string;
   feed_uuid: string | null;    // feed_id sent to the API (from FeedSubCategory.feed_uuid)
+  // i18n V2 — translated display name captured at pick time. Used as a
+  // client-side fallback when the backend's diet endpoints don't yet
+  // return display_name on FeedBreakdown / CostEffectiveDiet rows.
+  // Optional; null on legacy or restored simulations where the picker
+  // wasn't the source.
+  display_name?: string | null;
   price_per_kg: number | null;
   quantity_kg: number | null;
   // Y3 §1.1.2 — per-feed inclusion limits. Toggle controls visibility AND
