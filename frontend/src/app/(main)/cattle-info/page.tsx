@@ -692,8 +692,13 @@ export default function CattleInfoPage() {
                 other options come from the selected country's
                 supported_languages. Change here overrides ?lang= for
                 every /v1/animal/* call for the duration of this
-                simulation only; profile language stays put. */}
-            {(() => {
+                simulation only; profile language stays put.
+
+                Rendered ONLY after the countries fetch resolves —
+                otherwise selectedCountry would be undefined and the
+                dropdown would default to English with no other options,
+                which is misleading before the user's country is known. */}
+            {countries.length > 0 && (() => {
               const selectedCountry = countries.find(
                 (c) => String(c.id) === form.country_id
               );
@@ -702,12 +707,16 @@ export default function CattleInfoPage() {
                 "en",
                 ...countryLangs.filter((c) => c !== "en"),
               ];
-              const currentLang = form.simulation_language ?? "en";
+              // Default to the user's profile language if no override
+              // is set. Falls back to English only if the user has no
+              // profile language either.
+              const currentLang =
+                form.simulation_language ?? user?.preferred_language ?? "en";
               return (
                 <>
                   <FieldLabel>Language</FieldLabel>
                   <SelectInput
-                    value={currentLang}
+                    value={languageOptions.includes(currentLang) ? currentLang : "en"}
                     onChange={(v) =>
                       setForm((p) => ({
                         ...p,
@@ -724,16 +733,6 @@ export default function CattleInfoPage() {
                     }))}
                     placeholder="Select language"
                   />
-                  <p
-                    className="text-xs mt-1 ml-1"
-                    style={{
-                      color: "#6D6D6D",
-                      fontFamily: "Nunito, sans-serif",
-                      fontStyle: "italic",
-                    }}
-                  >
-                    For this simulation only. Your default is set in Profile.
-                  </p>
                 </>
               );
             })()}
