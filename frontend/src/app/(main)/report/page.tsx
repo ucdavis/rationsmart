@@ -1591,13 +1591,18 @@ export default function ReportPage() {
           <button
             onClick={() => {
               // Match Android btnNewCase: clears feed selections + report
-              // so the next pass starts from a clean Cattle Info step.
-              // i18n V2 — also nulls cattleInfo so any per-simulation
-              // language override from the previous run does not leak
-              // into the next one.
+              // so the next pass starts from a fresh Feed Selection step,
+              // BUT preserves the just-completed simulation's cattle info
+              // (breed, weight, DIM, country, etc.) so the user can
+              // tweak-and-re-run without retyping every field.
+              // i18n V2 — reset only the per-simulation language
+              // override so the previous run's language doesn't leak
+              // into the next one; every other cattleInfo field stays.
               setFeedSelections([]);
               setFeedSelectionType("recommendation");
-              setCattleInfo(null);
+              if (cattleInfo) {
+                setCattleInfo({ ...cattleInfo, simulation_language: null });
+              }
               router.push("/cattle-info");
             }}
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
