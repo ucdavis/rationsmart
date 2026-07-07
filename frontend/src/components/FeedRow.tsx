@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFeedTypes, getFeedCategories, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
+import { getFeedTypes, getFeedTypesLocalized, getFeedCategories, getFeedCategoriesLocalized, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
 import type { FeedItem } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
@@ -66,8 +66,14 @@ function fmtNum(v: unknown): string {
   return String(parseFloat(n.toFixed(4)));
 }
 
-interface FeedType { id: number; name: string; }
-interface FeedCategory { id: number; name: string; }
+// i18n V2 — `name` is the English identity string (used for
+// downstream API calls and comparison against item.feed_type_name /
+// item.category_name); `display` is the localized label shown in the
+// dropdown. Populated via dual-fetch (see getFeedTypesLocalized /
+// getFeedCategoriesLocalized). When response arrays don't align (rare),
+// display falls back to name.
+interface FeedType { id: number; name: string; display: string; }
+interface FeedCategory { id: number; name: string; display: string; }
 // i18n V2 — display_name is the translated label shown to the user;
 // feed_name is the stable English identifier used for backend lookups
 // and comparison against the row's stored sub_category_name.
@@ -367,44 +373,54 @@ export default function FeedRow({
     // in flight, the previous fetch's .then must NOT overwrite the new
     // fetch's result. Cleanup runs before re-fire.
     let cancelled = false;
-    getFeedTypes(user.country_id, user.id)
-      .then((res) => {
+    // Response-shape helpers reused across both parallel fetches.
+    const extractNames = (data: unknown): string[] => {
+      const raw: unknown[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
+          ? (data as { feed_types: unknown[] }).feed_types
+          : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
+            ? (data as { unique_feed_types: unknown[] }).unique_feed_types
+            : [];
+      return raw
+        .map((it) => {
+          if (typeof it === "string") return it;
+          const o = it as { type_name?: string; name?: string; display_name?: string; display_type?: string };
+          // For the localized fetch, prefer display_type / display_name
+          // when present (backend-newer shape). For the English fetch
+          // we're only interested in the identity so any of these works.
+          return o?.display_type ?? o?.display_name ?? o?.type_name ?? o?.name ?? "";
+        })
+        .filter((n) => n);
+    };
+
+    // i18n V2 dual fetch: `getFeedTypes` is pinned to ?lang=en to
+    // guarantee we have the English identity strings for downstream
+    // /v1/animal/feed-name lookups; `getFeedTypesLocalized` uses the
+    // current language for the dropdown label. Response order must
+    // match — backend orders identically regardless of language.
+    Promise.all([
+      getFeedTypes(user.country_id, user.id),
+      getFeedTypesLocalized(user.country_id),
+    ])
+      .then(([enRes, locRes]) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
-        // v1 /v1/animal/unique-feed-type/{country_id} returns the distinct
-        // type *names* — per the swagger description "e.g. Roughage,
-        // Concentrate". Shape could be a bare string[] OR an array of
-        // FeedTypeResponse objects ({type_name, ...}) OR wrapped in
-        // {feed_types: [...]} (admin endpoint uses that wrapper). Be
-        // defensive: extract whichever shape comes back.
-        const data = res.data as unknown;
-        const raw: unknown[] = Array.isArray(data)
-          ? data
-          : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
-            ? (data as { feed_types: unknown[] }).feed_types
-            : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
-              ? (data as { unique_feed_types: unknown[] }).unique_feed_types
-              : [];
-        const namesRaw: string[] = raw
-          .map((it) => {
-            if (typeof it === "string") return it;
-            const o = it as { type_name?: string; name?: string };
-            return o?.type_name ?? o?.name ?? "";
-          })
-          .filter((n) => n);
+        console.log("[feed-cascade] /v1/animal/unique-feed-type (dual) response:", {
+          en: enRes.data,
+          loc: locRes.data,
+        });
+        const enNames = extractNames(enRes.data);
+        const locNames = extractNames(locRes.data);
         // Sort so Forage (and Roughage as a legacy alias) appears first
-        // in the radio. The backend's response order varied; this gives
-        // a stable, predictable UX. Other types keep their original order.
-        const namesOrdered = [
-          ...namesRaw.filter((n) => n === "Forage" || n === "Roughage"),
-          ...namesRaw.filter((n) => n !== "Forage" && n !== "Roughage"),
+        // in the radio. Preserve the localized labels via a paired
+        // index map so the sort survives the dual-fetch zip.
+        const paired = enNames.map((n, i) => ({ name: n, display: locNames[i] ?? n }));
+        const sorted = [
+          ...paired.filter((p) => p.name === "Forage" || p.name === "Roughage"),
+          ...paired.filter((p) => p.name !== "Forage" && p.name !== "Roughage"),
         ];
-        const types = namesOrdered.map((n, i) => ({ id: i + 1, name: n }));
+        const types = sorted.map((p, i) => ({ id: i + 1, name: p.name, display: p.display }));
         setFeedTypes(types);
-        // Auto-default-to-Forage on FEED 1 removed by request — users
-        // can pick any type on any card. The "at least one Forage"
-        // requirement is enforced by the generate-time gate in
-        // /feed-selection/page.tsx instead.
         if (item.feed_type_name) {
           const match = types.find((t) => t.name === item.feed_type_name);
           if (match && match.id !== item.feed_type_id) {
@@ -433,34 +449,45 @@ export default function FeedRow({
     // this, rapidly switching feed type can leave categories from the
     // previous type stuck in the dropdown (the slower request wins).
     let cancelled = false;
-    getFeedCategories(item.feed_type_name, user.country_id, user.id)
-      .then((res) => {
+    const extractCatNames = (data: unknown): string[] => {
+      const raw: unknown[] = Array.isArray(data)
+        ? data
+        : Array.isArray((data as { categories?: unknown[] })?.categories)
+          ? (data as { categories: unknown[] }).categories
+          : Array.isArray((data as { unique_feed_categories?: unknown[] })?.unique_feed_categories)
+            ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
+            : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
+              ? (data as { feed_categories: unknown[] }).feed_categories
+              : [];
+      return raw
+        .map((it) => {
+          if (typeof it === "string") return it;
+          const o = it as { category_name?: string; name?: string; display_name?: string; display_category?: string };
+          return o?.display_category ?? o?.display_name ?? o?.category_name ?? o?.name ?? "";
+        })
+        .filter((n) => n);
+    };
+
+    // i18n V2 dual fetch — see the types cascade above for the pattern.
+    // English identity + localized labels; downstream feed-name calls
+    // always get the English strings.
+    Promise.all([
+      getFeedCategories(item.feed_type_name, user.country_id, user.id),
+      getFeedCategoriesLocalized(item.feed_type_name, user.country_id),
+    ])
+      .then(([enRes, locRes]) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
-        // v1 /v1/animal/unique-feed-category returns "distinct feed
-        // categories available for the given country" — bare array of
-        // names OR FeedCategoryResponse objects OR a wrapper. Extract
-        // whichever shape comes back. The v1 endpoint takes only
-        // country_id as a required param; type-side filtering happens
-        // client-side via the sub-category cascade below.
-        const data = res.data as unknown;
-        const raw: unknown[] = Array.isArray(data)
-          ? data
-          : Array.isArray((data as { categories?: unknown[] })?.categories)
-            ? (data as { categories: unknown[] }).categories
-            : Array.isArray((data as { unique_feed_categories?: unknown[] })?.unique_feed_categories)
-              ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
-              : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
-                ? (data as { feed_categories: unknown[] }).feed_categories
-                : [];
-        const names: string[] = raw
-          .map((it) => {
-            if (typeof it === "string") return it;
-            const o = it as { category_name?: string; name?: string };
-            return o?.category_name ?? o?.name ?? "";
-          })
-          .filter((n) => n);
-        const newCats = names.map((n, i) => ({ id: i + 1, name: n }));
+        console.log("[feed-cascade] /v1/animal/unique-feed-category (dual) response:", {
+          en: enRes.data,
+          loc: locRes.data,
+        });
+        const enNames = extractCatNames(enRes.data);
+        const locNames = extractCatNames(locRes.data);
+        const newCats = enNames.map((n, i) => ({
+          id: i + 1,
+          name: n,
+          display: locNames[i] ?? n,
+        }));
         setCategories(newCats);
         // Try exact match first, then a whitespace/case-insensitive
         // fallback so a stray trailing space or capitalisation difference
@@ -745,7 +772,7 @@ export default function FeedRow({
               }}
               disabled={feedTypeLocked}
               placeholder="Select type"
-              options={feedTypes.map<CustomSelectOption>((ft) => ({ value: String(ft.id), label: ft.name }))}
+              options={feedTypes.map<CustomSelectOption>((ft) => ({ value: String(ft.id), label: ft.display }))}
             />
           </FieldBox>
         ) : (
@@ -796,7 +823,7 @@ export default function FeedRow({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {ft.name}
+                    {ft.display}
                   </span>
                 </button>
               );
@@ -823,7 +850,7 @@ export default function FeedRow({
               }}
               disabled={!item.feed_type_name}
               placeholder={!item.feed_type_name ? "Select type first" : "Select"}
-              options={categories.map<CustomSelectOption>((c) => ({ value: String(c.id), label: c.name }))}
+              options={categories.map<CustomSelectOption>((c) => ({ value: String(c.id), label: c.display }))}
             />
           </FieldBox>
         )}

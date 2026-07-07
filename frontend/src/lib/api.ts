@@ -574,21 +574,30 @@ export const deleteAccount = (pin: string) =>
 //                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
 //     NOTE: query param renamed from feed_category to category.
 
-// i18n V2 — DO NOT send ?lang= to unique-feed-type or unique-feed-category.
-// These endpoints return a bare list of names with NO display_* separation,
-// so if the backend honours ?lang= and translates the response, the frontend
-// stores the translated string as the row's IDENTITY (feed_type_name /
-// category_name) and then sends it back as the identity parameter to
-// /v1/animal/feed-name — which expects English source strings. That
-// mismatch used to cause the "feed dropdown stays empty after picking a
-// category" bug in any non-English language. Feed names themselves still
-// translate correctly because /v1/animal/feed-name returns a proper
-// display_name separately from the English feed_name.
+// i18n V2 — dual-fetch strategy for unique-feed-type and
+// unique-feed-category:
+//   1. FIRST call goes with `?lang=en`  → English identity list. Stored
+//      as the row's feed_type_name / category_name so downstream
+//      /v1/animal/feed-name lookups always use the English source
+//      strings the backend expects.
+//   2. SECOND call goes with the ACTIVE language (langParam) → localized
+//      display list. Used only for the dropdown labels.
+// Both calls hit the same backend endpoint; the caller (FeedRow) zips
+// the two by index. When backend eventually adds display_* fields on
+// these endpoints, we can collapse this back to a single call and read
+// name/display from each row instead. Feed_name endpoint already
+// provides that separation and is unchanged.
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { lang: "en" } });
+
+export const getFeedTypesLocalized = (country_id: string) =>
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, lang: "en" } });
+
+export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
 
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
 // i18n V2 — response now also carries display_name / display_type /
