@@ -1590,19 +1590,16 @@ export default function ReportPage() {
         <div className="flex gap-3">
           <button
             onClick={() => {
-              // Match Android btnNewCase: clears feed selections + report
-              // so the next pass starts from a fresh Feed Selection step,
-              // BUT preserves the just-completed simulation's cattle info
-              // (breed, weight, DIM, country, etc.) so the user can
-              // tweak-and-re-run without retyping every field.
-              // i18n V2 — reset only the per-simulation language
-              // override so the previous run's language doesn't leak
-              // into the next one; every other cattleInfo field stays.
-              setFeedSelections([]);
-              setFeedSelectionType("recommendation");
-              if (cattleInfo) {
-                setCattleInfo({ ...cattleInfo, simulation_language: null });
-              }
+              // New Case = "make a small tweak and run again" rather
+              // than "start from scratch". Everything the user typed
+              // stays populated: cattle info + feed selections + the
+              // recommendation/evaluation toggle + the per-simulation
+              // language override. Only the just-generated report goes
+              // (it will be overwritten anyway when the user re-runs).
+              //
+              // Users who want a truly clean slate use the Reset button
+              // on Cattle Info instead — that wipes the form + feeds
+              // back to defaults.
               router.push("/cattle-info");
             }}
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
