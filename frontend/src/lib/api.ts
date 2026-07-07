@@ -574,15 +574,21 @@ export const deleteAccount = (pin: string) =>
 //                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
 //     NOTE: query param renamed from feed_category to category.
 
-// i18n V2: append ?lang= so the backend returns translated display strings
-// for feed types / categories / feed names. ?lang= falls through to the
-// user's preferred_language server-side if omitted, but we always pass it
-// explicitly for determinism (per frontend-team convention).
+// i18n V2 — DO NOT send ?lang= to unique-feed-type or unique-feed-category.
+// These endpoints return a bare list of names with NO display_* separation,
+// so if the backend honours ?lang= and translates the response, the frontend
+// stores the translated string as the row's IDENTITY (feed_type_name /
+// category_name) and then sends it back as the identity parameter to
+// /v1/animal/feed-name — which expects English source strings. That
+// mismatch used to cause the "feed dropdown stays empty after picking a
+// category" bug in any non-English language. Feed names themselves still
+// translate correctly because /v1/animal/feed-name returns a proper
+// display_name separately from the English feed_name.
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
 
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
 // i18n V2 — response now also carries display_name / display_type /
