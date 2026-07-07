@@ -394,32 +394,22 @@ export default function FeedRow({
         .filter((n) => n);
     };
 
-    // i18n V2 dual fetch: `getFeedTypes` is pinned to ?lang=en to
-    // guarantee we have the English identity strings for downstream
-    // /v1/animal/feed-name lookups; `getFeedTypesLocalized` uses the
-    // current language for the dropdown label. Response order must
-    // match — backend orders identically regardless of language.
-    Promise.all([
-      getFeedTypes(user.country_id, user.id),
-      getFeedTypesLocalized(user.country_id),
-    ])
-      .then(([enRes, locRes]) => {
+    // Single fetch (no ?lang=). Backend returns English identity names;
+    // display column mirrors name until backend ships display_type on
+    // this endpoint. A previous dual-fetch attempt broke when the
+    // backend rejected the pinned ?lang=en request, taking the whole
+    // cascade down via Promise.all — do not restore that pattern
+    // without also using Promise.allSettled.
+    getFeedTypes(user.country_id, user.id)
+      .then((res) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/unique-feed-type (dual) response:", {
-          en: enRes.data,
-          loc: locRes.data,
-        });
-        const enNames = extractNames(enRes.data);
-        const locNames = extractNames(locRes.data);
-        // Sort so Forage (and Roughage as a legacy alias) appears first
-        // in the radio. Preserve the localized labels via a paired
-        // index map so the sort survives the dual-fetch zip.
-        const paired = enNames.map((n, i) => ({ name: n, display: locNames[i] ?? n }));
+        console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
+        const names = extractNames(res.data);
         const sorted = [
-          ...paired.filter((p) => p.name === "Forage" || p.name === "Roughage"),
-          ...paired.filter((p) => p.name !== "Forage" && p.name !== "Roughage"),
+          ...names.filter((n) => n === "Forage" || n === "Roughage"),
+          ...names.filter((n) => n !== "Forage" && n !== "Roughage"),
         ];
-        const types = sorted.map((p, i) => ({ id: i + 1, name: p.name, display: p.display }));
+        const types = sorted.map((n, i) => ({ id: i + 1, name: n, display: n }));
         setFeedTypes(types);
         if (item.feed_type_name) {
           const match = types.find((t) => t.name === item.feed_type_name);
@@ -468,25 +458,17 @@ export default function FeedRow({
         .filter((n) => n);
     };
 
-    // i18n V2 dual fetch — see the types cascade above for the pattern.
-    // English identity + localized labels; downstream feed-name calls
-    // always get the English strings.
-    Promise.all([
-      getFeedCategories(item.feed_type_name, user.country_id, user.id),
-      getFeedCategoriesLocalized(item.feed_type_name, user.country_id),
-    ])
-      .then(([enRes, locRes]) => {
+    // Single fetch (no ?lang=). Same rationale as the types cascade
+    // — pinning ?lang= on this endpoint broke the whole flow.
+    getFeedCategories(item.feed_type_name, user.country_id, user.id)
+      .then((res) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/unique-feed-category (dual) response:", {
-          en: enRes.data,
-          loc: locRes.data,
-        });
-        const enNames = extractCatNames(enRes.data);
-        const locNames = extractCatNames(locRes.data);
-        const newCats = enNames.map((n, i) => ({
+        console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
+        const names = extractCatNames(res.data);
+        const newCats = names.map((n, i) => ({
           id: i + 1,
           name: n,
-          display: locNames[i] ?? n,
+          display: n,
         }));
         setCategories(newCats);
         // Try exact match first, then a whitespace/case-insensitive

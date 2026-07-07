@@ -574,30 +574,27 @@ export const deleteAccount = (pin: string) =>
 //                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
 //     NOTE: query param renamed from feed_category to category.
 
-// i18n V2 — dual-fetch strategy for unique-feed-type and
-// unique-feed-category:
-//   1. FIRST call goes with `?lang=en`  → English identity list. Stored
-//      as the row's feed_type_name / category_name so downstream
-//      /v1/animal/feed-name lookups always use the English source
-//      strings the backend expects.
-//   2. SECOND call goes with the ACTIVE language (langParam) → localized
-//      display list. Used only for the dropdown labels.
-// Both calls hit the same backend endpoint; the caller (FeedRow) zips
-// the two by index. When backend eventually adds display_* fields on
-// these endpoints, we can collapse this back to a single call and read
-// name/display from each row instead. Feed_name endpoint already
-// provides that separation and is unchanged.
+// i18n V2 — unique-feed-type and unique-feed-category are identity
+// endpoints that return a bare list of names. DO NOT send ?lang= to
+// them; a previous experiment (dual fetch, one call pinned to
+// ?lang=en) caused these endpoints to 400 on the backend, which then
+// broke the entire cascade via Promise.all → no dropdowns loaded at
+// all. Backend returns English source identifiers here; the tradeoff
+// is that dropdown labels stay in English until backend adds proper
+// display_* fields. Feed names themselves still translate correctly
+// via /v1/animal/feed-name (that endpoint has display_name).
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { lang: "en" } });
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
 
-export const getFeedTypesLocalized = (country_id: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
+// Kept as an alias so FeedRow's dual-fetch import site doesn't break
+// until we've cleaned up the caller. Both point at the same endpoint.
+export const getFeedTypesLocalized = getFeedTypes;
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, lang: "en" } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
 
 export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
+  getFeedCategories(feed_type, country_id);
 
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
 // i18n V2 — response now also carries display_name / display_type /
