@@ -462,10 +462,26 @@ export default function FeedRow({
           .filter((n) => n);
         const newCats = names.map((n, i) => ({ id: i + 1, name: n }));
         setCategories(newCats);
-        const matched = newCats.find((c) => c.name === item.category_name);
+        // Try exact match first, then a whitespace/case-insensitive
+        // fallback so a stray trailing space or capitalisation difference
+        // between /search-feeds and /unique-feed-category doesn't nuke
+        // the row on remount.
+        const norm = (s: string) => (s ?? "").trim().toLowerCase();
+        const matched =
+          newCats.find((c) => c.name === item.category_name) ??
+          newCats.find((c) => norm(c.name) === norm(item.category_name));
         if (!matched) {
-          onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
-          setSubCategories([]);
+          // Only wipe when the row has NO feed_uuid to lean on. Once the
+          // user has actively picked a feed (feed_uuid set), that pick
+          // is the source of truth — treat a name mismatch here as a
+          // list-caching quirk, not a reason to discard their selection.
+          // Fixes: nav Cattle Info → back → forward would empty Feed 1
+          // even though feedSelections had the row cached in the store,
+          // because a name-only cascade mismatch cleared everything.
+          if (!item.feed_uuid) {
+            onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
+            setSubCategories([]);
+          }
         } else if (matched.id !== item.category_id) {
           onUpdate(item.id, { category_id: matched.id });
         }
