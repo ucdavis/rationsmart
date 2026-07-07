@@ -622,7 +622,19 @@ export default function CattleInfoPage() {
     router.push("/feed-selection");
   };
 
+  // The reset itself finishes in microseconds; the user was reporting
+  // they couldn't tell whether the button had done anything. This state
+  // drives a short visual pulse — spinner + label change on the button
+  // + a success snackbar after — so the reset is clearly acknowledged.
+  const [isResetting, setIsResetting] = useState(false);
+
   const handleReset = () => {
+    if (isResetting) return;
+    setIsResetting(true);
+    // Fire the state resets immediately so the UI reflects the wipe
+    // instantly (form fields go back to defaults, selection lists
+    // empty). The spinner just holds visible for a moment so the user
+    // gets clear feedback that Reset ran.
     setForm({
       ...EMPTY_FORM,
       country_id: String(user?.country_id ?? ""),
@@ -638,6 +650,13 @@ export default function CattleInfoPage() {
     // feedSelectionType to the default "recommendation" too.
     setFeedSelections([]);
     setFeedSelectionType("recommendation");
+    // 500ms is the sweet spot per Nielsen — long enough for the eye to
+    // register the transition, short enough that the button doesn't
+    // feel unresponsive.
+    setTimeout(() => {
+      setIsResetting(false);
+      showSnackbar("Form reset", "success");
+    }, 500);
   };
 
   return (
@@ -1143,18 +1162,45 @@ export default function CattleInfoPage() {
       >
         <button
           onClick={handleReset}
-          className="py-3.5 rounded-2xl font-bold text-base"
+          disabled={isResetting}
+          className="py-3.5 rounded-2xl font-bold text-base inline-flex items-center justify-center gap-2"
           style={{
             border: "2px solid #064E3B",
-            color: "#064E3B",
-            background: "white",
-            paddingLeft: 40,
-            paddingRight: 40,
+            color: isResetting ? "#6D6D6D" : "#064E3B",
+            background: isResetting ? "#F1F5F9" : "white",
+            paddingLeft: isResetting ? 24 : 40,
+            paddingRight: isResetting ? 24 : 40,
             fontFamily: "Nunito, sans-serif",
-            cursor: "pointer",
+            cursor: isResetting ? "wait" : "pointer",
+            transition: "background 0.15s, color 0.15s",
           }}
+          aria-busy={isResetting}
         >
-          Reset
+          {isResetting ? (
+            <>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                className="animate-spin"
+                aria-hidden
+              >
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  stroke="#064E3B"
+                  strokeWidth="2.4"
+                  strokeLinecap="round"
+                  strokeDasharray="14 30"
+                />
+              </svg>
+              Resetting…
+            </>
+          ) : (
+            "Reset"
+          )}
         </button>
 
         <button
