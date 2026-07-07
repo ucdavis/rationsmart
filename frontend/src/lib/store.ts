@@ -7,7 +7,7 @@ import type {
   RecommendationResponse,
   DietLimits,
 } from "./api";
-import { setTokenProvider, setLangProvider } from "./api";
+import { setTokenProvider, setLangProvider, setUnauthorizedHandler } from "./api";
 
 export type { CattleInfo, FeedItem, DietLimits };
 
@@ -176,4 +176,27 @@ setLangProvider(() => {
     s.user?.preferred_language ??
     "en"
   );
+});
+
+// v1: when ANY authenticated call comes back 401 (Token expired /
+// invalid), wipe the session + redirect to /login. Guarded so many
+// in-flight requests don't stack repeated redirects.
+let redirectingOn401 = false;
+setUnauthorizedHandler(() => {
+  if (redirectingOn401) return;
+  redirectingOn401 = true;
+  try {
+    // Reuse the store's logout to clear ALL session state, including
+    // cattleInfo / feedSelections / reportData / dietLimits.
+    useStore.getState().logout();
+    // Also surface a snackbar so the user sees WHY they got bounced.
+    useStore.getState().showSnackbar("Session expired — please log in again", "info");
+  } catch {
+    // best-effort — never let cleanup errors block the redirect
+  }
+  if (typeof window !== "undefined") {
+    // Full navigation (not router.push) because we're outside the React
+    // tree here and the current route may be an auth-gated one.
+    window.location.href = "/login";
+  }
 });

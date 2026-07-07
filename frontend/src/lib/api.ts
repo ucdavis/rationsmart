@@ -478,11 +478,33 @@ api.interceptors.response.use(
   }
 );
 
-// Response error interceptor — safely extract message from FastAPI errors
+// Auth-expired handler — the store registers a callback that clears
+// state and redirects to /login. Wired via setUnauthorizedHandler()
+// to avoid a circular import between api.ts and store.ts.
+let unauthorizedHandler: (() => void) | null = null;
+export const setUnauthorizedHandler = (fn: () => void) => {
+  unauthorizedHandler = fn;
+};
+
+// Response error interceptor — safely extract message from FastAPI errors.
+// Also intercepts 401 (typically "Token expired") and kicks the user back
+// to /login so they don't get stranded on a screen whose data will never
+// load. Without this handler the user sees empty dropdowns forever and
+// has no clue their session died.
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error?.response?.status;
     const detail = error?.response?.data?.detail;
+
+    // 401 → session invalid. Fire the handler once, then let the
+    // rejected promise flow through so call sites can still their own
+    // fallback UI if they want. Guard with a module-level flag so
+    // multiple in-flight requests don't stack duplicate redirects.
+    if (status === 401 && unauthorizedHandler) {
+      unauthorizedHandler();
+    }
+
     let message: string;
     if (typeof detail === "string") {
       message = detail;
