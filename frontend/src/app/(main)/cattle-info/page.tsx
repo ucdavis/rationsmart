@@ -308,11 +308,27 @@ export default function CattleInfoPage() {
         // TODO(maria-y3): confirm response keys for milk_price + animal_category.
         milk_price: ci?.milk_price != null ? String(ci.milk_price) : prev.milk_price,
         animal_category: (ci?.animal_category as AnimalCategory | undefined) ?? prev.animal_category,
-        // i18n V2 — hydrate simulation_language from the simulation
-        // record. Backend must return this on GET /v1/animal/simulations
-        // for restore to work; until then the field is null and the
-        // frontend falls back to profile language.
-        simulation_language: (data?.simulation_language as string | null | undefined) ?? null,
+        // i18n V2 — hydrate simulation_language from the restored
+        // simulation. Priority chain:
+        //   1. backend response's simulation_language (once shipped)
+        //   2. current form's simulation_language (session continuity —
+        //      if the user just came from the same country's run, keep
+        //      the override they picked)
+        //   3. first non-English supported_language on the restored
+        //      country (best-effort guess for what the sim was likely
+        //      run in — better than showing the user's profile default,
+        //      which would be misleading for someone else's sim)
+        //   4. null (falls back to profile via langProvider)
+        // This gets the "restored sim shows its language, not profile"
+        // behaviour EVEN before backend adds simulation_language on the
+        // response.
+        simulation_language: (() => {
+          const fromBackend = data?.simulation_language as string | null | undefined;
+          if (fromBackend) return fromBackend;
+          if (prev.simulation_language) return prev.simulation_language;
+          const primaryCountryLang = matchedCountry?.supported_languages?.find((c) => c !== "en");
+          return primaryCountryLang ?? null;
+        })(),
       }));
 
       // Populate Feed Selection from the simulation — matches Android

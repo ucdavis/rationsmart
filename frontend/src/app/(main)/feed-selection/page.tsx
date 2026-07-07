@@ -177,6 +177,32 @@ export default function FeedSelectionPage() {
     while (stored.length < 3) stored.push(createFeedItem());
     return stored;
   });
+
+  // Defensive resync — when the user navigates back to /cattle-info and
+  // returns to /feed-selection (which unmounts + remounts this
+  // component), the useState initializer above reads feedSelections
+  // once from the Zustand snapshot. If Zustand hadn't fully hydrated at
+  // that instant (persist hydration race — see CLAUDE.md §10.1), items
+  // could pick up an empty array and the user would see their previous
+  // feed selections disappear. This effect catches that on the next
+  // paint by re-taking feedSelections whenever it has entries that
+  // items doesn't reflect. Runs on mount + on feedSelections change.
+  useEffect(() => {
+    // Only resync when the store has entries that meaningfully differ
+    // from what items currently reflects. We ignore length differences
+    // caused by the local 3-row padding (empty rows) — if every stored
+    // item is already represented in items by feed_uuid, do nothing.
+    if (feedSelections.length === 0) return;
+    const itemsUuids = new Set(items.map((i) => i.feed_uuid).filter(Boolean));
+    const storedUuids = feedSelections.map((s) => s.feed_uuid).filter(Boolean);
+    const missing = storedUuids.some((u) => !itemsUuids.has(u));
+    if (missing) {
+      const padded = [...feedSelections];
+      while (padded.length < 3) padded.push(createFeedItem());
+      setItems(padded);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [feedSelections]);
   const [isLoading, setIsLoading] = useState(false);
   const [showLimitsModal, setShowLimitsModal] = useState(false);
   const [limits, setLimits] = useState<Partial<DietLimits>>(dietLimits);
