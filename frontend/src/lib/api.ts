@@ -606,18 +606,27 @@ export const deleteAccount = (pin: string) =>
 // fields on these endpoints before we can restore translated labels.
 // Feed names themselves still translate via /v1/animal/feed-name
 // (that endpoint separately returns display_name).
-// i18n V2 — send ?lang= on both endpoints so the response carries
-// display_type / display_category translated into the active locale.
-// The identity fields (type_name / category_name) remain the stable
-// English strings we use for storage + downstream API calls. FeedRow's
-// extractor separates the two: `name` = identity, `display` = label.
+// i18n V2 — DO NOT send ?lang= on unique-feed-type / unique-feed-category.
+// Verified 2026-07-08:
+//   - Both endpoints return BARE translated strings when ?lang= is set,
+//     with NO separate identity/display split.
+//   - Storing that translated string as the row's identity breaks the
+//     downstream /v1/animal/feed-name filter, which only accepts the
+//     ENGLISH source string as feed_type / category (returns empty on
+//     the Hindi identity).
+// Trade-off: Feed Type + Feed Category labels stay English regardless
+// of active locale. The Feed name itself still translates via
+// /v1/animal/feed-name which provides a separate display_name.
+// Restoring localized labels here requires backend to add display_type
+// and display_category fields on the two endpoints below (same pattern
+// already used by /v1/animal/feed-name). See docs/SESSION_HANDOFF.md.
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
+  api.get(`/v1/animal/unique-feed-type/${country_id}`);
 
 export const getFeedTypesLocalized = getFeedTypes;
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
 
 export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
   getFeedCategories(feed_type, country_id);
