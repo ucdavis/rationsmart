@@ -9,6 +9,7 @@ import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import CustomSelect from "@/components/CustomSelect";
 import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds } from "@/lib/api";
 import type { FeedItem, DietLimits, FeedSearchResult } from "@/lib/api";
+import { isForageType } from "@/lib/feed-type-aliases";
 import { IcAddFeed } from "@/components/Icons";
 
 let idCounter = 0;
@@ -572,10 +573,11 @@ export default function FeedSelectionPage() {
     }
     // Y3 — block generate when no Forage feed is selected. Apply to both
     // recommendation AND evaluation modes per the user's spec. A "Forage"
-    // means at least one row with feed_type_name === "Forage" AND a
-    // populated feed_uuid (i.e. actually picked, not just typed).
+    // means at least one row whose feed_type_name resolves to Forage
+    // (English identity OR any localized alias — see feed-type-aliases.ts)
+    // AND has a populated feed_uuid (actually picked, not just typed).
     const hasForage = items.some(
-      (item) => item.feed_type_name === "Forage" && item.feed_uuid !== null
+      (item) => isForageType(item.feed_type_name) && item.feed_uuid !== null
     );
     if (!hasForage) {
       setShowNoForageDialog(true);

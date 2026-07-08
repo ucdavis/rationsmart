@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getFeedTypes, getFeedTypesLocalized, getFeedCategories, getFeedCategoriesLocalized, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
 import type { FeedItem } from "@/lib/api";
+import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
@@ -407,9 +408,12 @@ export default function FeedRow({
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
         const opts = extractOptions(res.data);
+        // Forage / Roughage always first, regardless of active language.
+        // The alias helpers accept the translated identity strings the
+        // backend returns when ?lang= is set (e.g. "चारा" ↔ "Forage").
         const sorted = [
-          ...opts.filter((o) => o.name === "Forage" || o.name === "Roughage"),
-          ...opts.filter((o) => o.name !== "Forage" && o.name !== "Roughage"),
+          ...opts.filter((o) => isForageType(o.name) || isRoughageType(o.name)),
+          ...opts.filter((o) => !isForageType(o.name) && !isRoughageType(o.name)),
         ];
         const types = sorted.map((o, i) => ({ id: i + 1, name: o.name, display: o.display }));
         // If the row's stored feed_type isn't in the fetched list
