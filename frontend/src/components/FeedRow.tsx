@@ -556,7 +556,16 @@ export default function FeedRow({
           (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
         );
         if (!match) {
-          onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
+          // Only wipe when the row has NO feed_uuid to lean on. When
+          // feed_uuid IS set, the user actively picked this feed at
+          // some point — treat a missing entry in the current cascade
+          // response as a lang / translation gap on the backend side,
+          // not a signal to discard the user's selection. This is what
+          // was making feed rows disappear after a language change on
+          // Cattle Info followed by nav forward.
+          if (!item.feed_uuid) {
+            onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
+          }
         } else if (
           match.feed_uuid !== item.feed_uuid ||
           match.feed_name !== item.sub_category_name
