@@ -173,13 +173,6 @@ export default function FeedSelectionPage() {
   }
 
   const [items, setItems] = useState<FeedItem[]>(() => {
-    if (typeof window !== "undefined") {
-      console.log("[feed-selection useState init] feedSelections from store:",
-        JSON.stringify(feedSelections.map((s) => ({
-          fu: s.feed_uuid, ft: s.feed_type_name, cn: s.category_name,
-        }))),
-        "length:", feedSelections.length);
-    }
     const stored = feedSelections.length > 0 ? [...feedSelections] : [];
     while (stored.length < 3) stored.push(createFeedItem());
     return stored;

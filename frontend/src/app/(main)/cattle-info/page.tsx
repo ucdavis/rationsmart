@@ -611,15 +611,6 @@ export default function CattleInfoPage() {
 
   const handleContinue = () => {
     if (!requiredFilled) return;
-    if (typeof window !== "undefined") {
-      const fs = useStore.getState().feedSelections;
-      console.log("[cattle-info handleContinue] feedSelections BEFORE nav:",
-        JSON.stringify(fs.map((s) => ({
-          fu: s.feed_uuid, ft: s.feed_type_name, cn: s.category_name,
-        }))),
-        "length:", fs.length,
-        "simulation_language:", form.simulation_language);
-    }
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
     // Sync the user's active currency / country code with the country
     // they just picked. Without this, feed-selection / report would

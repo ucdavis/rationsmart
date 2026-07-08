@@ -373,8 +373,13 @@ export default function FeedRow({
     // in flight, the previous fetch's .then must NOT overwrite the new
     // fetch's result. Cleanup runs before re-fire.
     let cancelled = false;
-    // Response-shape helpers reused across both parallel fetches.
-    const extractNames = (data: unknown): string[] => {
+    // Response-shape helper. Returns identity + display for each option.
+    // Backend shapes handled:
+    //   1. Array of strings                     → identity == display (no translation)
+    //   2. Array of {type_name, display_type}   → identity = type_name, display = display_type
+    //   3. Array of {name, display_name}        → identity = name, display = display_name
+    // Falls back to identity when display isn't present.
+    const extractOptions = (data: unknown): { name: string; display: string }[] => {
       const raw: unknown[] = Array.isArray(data)
         ? data
         : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
@@ -384,32 +389,29 @@ export default function FeedRow({
             : [];
       return raw
         .map((it) => {
-          if (typeof it === "string") return it;
+          if (typeof it === "string") return { name: it, display: it };
           const o = it as { type_name?: string; name?: string; display_name?: string; display_type?: string };
-          // For the localized fetch, prefer display_type / display_name
-          // when present (backend-newer shape). For the English fetch
-          // we're only interested in the identity so any of these works.
-          return o?.display_type ?? o?.display_name ?? o?.type_name ?? o?.name ?? "";
+          const name = o?.type_name ?? o?.name ?? "";
+          const display = o?.display_type ?? o?.display_name ?? name;
+          return { name, display };
         })
-        .filter((n) => n);
+        .filter((o) => o.name);
     };
 
-    // Single fetch (no ?lang=). Backend returns English identity names;
-    // display column mirrors name until backend ships display_type on
-    // this endpoint. A previous dual-fetch attempt broke when the
-    // backend rejected the pinned ?lang=en request, taking the whole
-    // cascade down via Promise.all — do not restore that pattern
-    // without also using Promise.allSettled.
+    // i18n V2 — single fetch with ?lang=. Backend returns objects with
+    // both identity (type_name) and localized (display_type) fields.
+    // We keep the English identity for storage / downstream API calls
+    // and use display_type only for the visible label.
     getFeedTypes(user.country_id, user.id)
       .then((res) => {
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
-        const names = extractNames(res.data);
+        const opts = extractOptions(res.data);
         const sorted = [
-          ...names.filter((n) => n === "Forage" || n === "Roughage"),
-          ...names.filter((n) => n !== "Forage" && n !== "Roughage"),
+          ...opts.filter((o) => o.name === "Forage" || o.name === "Roughage"),
+          ...opts.filter((o) => o.name !== "Forage" && o.name !== "Roughage"),
         ];
-        const types = sorted.map((n, i) => ({ id: i + 1, name: n, display: n }));
+        const types = sorted.map((o, i) => ({ id: i + 1, name: o.name, display: o.display }));
         // If the row's stored feed_type isn't in the fetched list
         // (e.g. country changed and the previous country's type isn't
         // valid here), inject a synthetic entry so the radio/dropdown
@@ -451,7 +453,11 @@ export default function FeedRow({
     // this, rapidly switching feed type can leave categories from the
     // previous type stuck in the dropdown (the slower request wins).
     let cancelled = false;
-    const extractCatNames = (data: unknown): string[] => {
+    // Same shape rules as the types extractor above. Backend now
+    // returns objects with both category_name (identity) and
+    // display_category (localized label). Falls back to bare-string
+    // rows for backwards compat.
+    const extractCatOptions = (data: unknown): { name: string; display: string }[] => {
       const raw: unknown[] = Array.isArray(data)
         ? data
         : Array.isArray((data as { categories?: unknown[] })?.categories)
@@ -463,24 +469,27 @@ export default function FeedRow({
               : [];
       return raw
         .map((it) => {
-          if (typeof it === "string") return it;
+          if (typeof it === "string") return { name: it, display: it };
           const o = it as { category_name?: string; name?: string; display_name?: string; display_category?: string };
-          return o?.display_category ?? o?.display_name ?? o?.category_name ?? o?.name ?? "";
+          const name = o?.category_name ?? o?.name ?? "";
+          const display = o?.display_category ?? o?.display_name ?? name;
+          return { name, display };
         })
-        .filter((n) => n);
+        .filter((o) => o.name);
     };
 
-    // Single fetch (no ?lang=). Same rationale as the types cascade
-    // — pinning ?lang= on this endpoint broke the whole flow.
+    // i18n V2 — single fetch with ?lang= (see api.ts getFeedCategories).
+    // Response provides both category_name (identity for comparison /
+    // downstream calls) and display_category (visible label).
     getFeedCategories(item.feed_type_name, user.country_id, user.id)
       .then((res) => {
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
-        const names = extractCatNames(res.data);
-        const newCats = names.map((n, i) => ({
+        const opts = extractCatOptions(res.data);
+        const newCats = opts.map((o, i) => ({
           id: i + 1,
-          name: n,
-          display: n,
+          name: o.name,
+          display: o.display,
         }));
         // Try exact match first, then a whitespace/case-insensitive
         // fallback so a stray trailing space or capitalisation difference

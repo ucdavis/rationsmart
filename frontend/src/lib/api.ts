@@ -606,13 +606,18 @@ export const deleteAccount = (pin: string) =>
 // fields on these endpoints before we can restore translated labels.
 // Feed names themselves still translate via /v1/animal/feed-name
 // (that endpoint separately returns display_name).
+// i18n V2 — send ?lang= on both endpoints so the response carries
+// display_type / display_category translated into the active locale.
+// The identity fields (type_name / category_name) remain the stable
+// English strings we use for storage + downstream API calls. FeedRow's
+// extractor separates the two: `name` = identity, `display` = label.
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
+  api.get(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
 
 export const getFeedTypesLocalized = getFeedTypes;
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
 
 export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
   getFeedCategories(feed_type, country_id);
