@@ -422,15 +422,15 @@ export default function FeedRow({
           ...opts.filter((o) => isForageType(o.name) || isRoughageType(o.name)),
           ...opts.filter((o) => !isForageType(o.name) && !isRoughageType(o.name)),
         ];
-        // i18n V2 — display comes from the shared taxonomyLabels dict
-        // fetched by the parent from /v1/animal/feed-name (which does
-        // ship translated fields). Falls through to o.display / o.name
-        // when no mapping exists (e.g. English mode, or a type absent
-        // from the country's feed catalog).
+        // English identity in `display` is fine as a fallback — the
+        // parent-provided taxonomyLabels dict is applied at render time
+        // below (radios / category dropdown), so localization stays
+        // reactive when the dict arrives after the cascade has already
+        // populated the state.
         const types = sorted.map((o, i) => ({
           id: i + 1,
           name: o.name,
-          display: taxonomyLabels?.types?.[o.name] ?? o.display,
+          display: o.display,
         }));
         // Stale-identity remap. If the row was persisted while an
         // earlier build was sending ?lang= to unique-feed-type, the
@@ -517,11 +517,13 @@ export default function FeedRow({
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
         const opts = extractCatOptions(res.data);
-        // i18n V2 — same dict-lookup pattern as feed types above.
+        // Display is applied at render time from taxonomyLabels (same
+        // reason as feed types above — the dict fetch can complete
+        // after this cascade does).
         const newCats = opts.map((o, i) => ({
           id: i + 1,
           name: o.name,
-          display: taxonomyLabels?.categories?.[o.name] ?? o.display,
+          display: o.display,
         }));
         // Try exact match first, then a whitespace/case-insensitive
         // fallback so a stray trailing space or capitalisation difference
@@ -896,7 +898,7 @@ export default function FeedRow({
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {ft.display}
+                    {taxonomyLabels?.types?.[ft.name] ?? ft.display}
                   </span>
                 </button>
               );
@@ -934,7 +936,10 @@ export default function FeedRow({
               }}
               disabled={!item.feed_type_name}
               placeholder={!item.feed_type_name ? "Select type first" : "Select"}
-              options={categories.map<CustomSelectOption>((c) => ({ value: String(c.id), label: c.display }))}
+              options={categories.map<CustomSelectOption>((c) => ({
+                value: String(c.id),
+                label: taxonomyLabels?.categories?.[c.name] ?? c.display,
+              }))}
             />
           </FieldBox>
         )}
