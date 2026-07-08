@@ -64,13 +64,16 @@ beforeEach(() => {
 // <p> in the JSX (see cattle-info/page.tsx SelectInput). FieldLabel strips
 // the trailing " *" into a separate <span>, so the label <p>'s own text node
 // is the label text minus " *" — that's what we query on.
-function dropdownWrapper(labelText: string): HTMLElement {
-  const label = screen.getByText(labelText);
+async function dropdownWrapper(labelText: string): Promise<HTMLElement> {
+  // Country/Language render behind a loading skeleton until getCountries
+  // resolves (see FieldSkeleton in cattle-info/page.tsx) — findByText
+  // waits for that swap instead of assuming the label is already mounted.
+  const label = await screen.findByText(labelText);
   return label.nextElementSibling as HTMLElement;
 }
 
-function openDropdown(labelText: string): HTMLElement {
-  const wrapper = dropdownWrapper(labelText);
+async function openDropdown(labelText: string): Promise<HTMLElement> {
+  const wrapper = await dropdownWrapper(labelText);
   const trigger = within(wrapper).getAllByRole("button")[0];
   fireEvent.click(trigger);
   return wrapper;
@@ -87,14 +90,14 @@ async function chooseOption(wrapper: HTMLElement, optionLabel: string) {
 }
 
 async function selectCountry(name: string) {
-  const wrapper = openDropdown("Country");
+  const wrapper = await openDropdown("Country");
   await chooseOption(wrapper, name);
 }
 
 async function selectMilkFields(protein = "3.0", fat = "4.0") {
-  const proteinWrapper = openDropdown("Milk Protein %");
+  const proteinWrapper = await openDropdown("Milk Protein %");
   await chooseOption(proteinWrapper, protein);
-  const fatWrapper = openDropdown("Milk Fat %");
+  const fatWrapper = await openDropdown("Milk Fat %");
   await chooseOption(fatWrapper, fat);
 }
 
@@ -285,13 +288,14 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
   });
 });
 
-describe("Cattle Info — Language field loading UX", () => {
-  // The Language field only makes sense once we know the selected
-  // country's supported_languages, so it can't render until getCountries
-  // resolves. Previously it simply didn't exist in the DOM until then,
-  // popping into the layout right after Country loaded. A shimmer
-  // skeleton now reserves its place for a smoother transition.
-  it("shows a loading skeleton in place of the Language field while countries are still fetching, then swaps to the real dropdown", async () => {
+describe("Cattle Info — Country + Language field loading UX", () => {
+  // Country and Language both depend on the same getCountries() call.
+  // Originally only Language got a loading skeleton, which made Country
+  // look instantly "ready" (an empty-but-interactive pill) right next to
+  // a lone shimmering Language field while the rest of the form (no
+  // async dependency) had already rendered — a jarring, half-loaded
+  // look. Both fields now share one skeleton and resolve together.
+  it("skeletons BOTH Country and Language together while countries are fetching, then swaps both in together", async () => {
     let resolveCountries!: (v: { data: typeof countries }) => void;
     getCountries.mockReturnValueOnce(
       new Promise((resolve) => { resolveCountries = resolve; })
@@ -299,13 +303,16 @@ describe("Cattle Info — Language field loading UX", () => {
     useStore.setState({ user: seedUser({ country_id: "1" }) });
     const { container } = render(<CattleInfoPage />);
 
-    // Still loading — no "Language" label yet, but a shimmer placeholder
-    // is present reserving its spot.
+    // Still loading — neither label is mounted yet, but the shared
+    // skeleton (two shimmer bars per field) reserves both fields' spots.
+    expect(screen.queryByText("Country")).not.toBeInTheDocument();
     expect(screen.queryByText("Language")).not.toBeInTheDocument();
-    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(0);
+    expect(container.querySelectorAll(".shimmer").length).toBe(4);
 
     resolveCountries({ data: countries });
+    await screen.findByText("Country");
     await screen.findByText("Language");
+    expect(container.querySelectorAll(".shimmer").length).toBe(0);
   });
 });
 
@@ -326,7 +333,7 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
 
     await fillBaselineRequired("India");
 
-    const langWrapper = openDropdown("Language");
+    const langWrapper = await openDropdown("Language");
     await chooseOption(langWrapper, "English");
 
     const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });

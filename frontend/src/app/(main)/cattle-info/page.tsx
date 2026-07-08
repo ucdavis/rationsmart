@@ -144,6 +144,21 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <p className={cls} style={style}>{children}</p>;
 }
 
+// Matches a FieldLabel + SelectInput's footprint exactly, so a field
+// swapping from this to its real content causes no layout shift. Country
+// and Language both depend on the same getCountries() call — showing
+// this for BOTH while it's in flight (rather than only on Language)
+// keeps them visually in sync instead of Country looking instantly
+// "ready" next to a lone shimmering Language field.
+function FieldSkeleton() {
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
+      <div className="shimmer rounded-2xl" style={{ height: 48 }} />
+    </div>
+  );
+}
+
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
@@ -736,34 +751,50 @@ export default function CattleInfoPage() {
               style={inputStyle}
             />
 
-            <FieldLabel>Country *</FieldLabel>
-            <SelectInput
-              value={form.country_id}
-              onChange={(v) => {
-                const found = countries.find((c) => String(c.id) === v);
-                // i18n V2 — snap simulation_language back to null when
-                // the newly-picked country doesn't support the currently
-                // chosen language (or when we can't verify because the
-                // country has no supported_languages field). Keeps us
-                // from submitting ?lang= for a code the backend won't
-                // translate for this country.
-                const supported = [
-                  "en",
-                  ...(found?.supported_languages ?? []).filter((c) => c !== "en"),
-                ];
-                setForm((p) => ({
-                  ...p,
-                  country_id: v,
-                  country_name: found?.name ?? "",
-                  simulation_language:
-                    p.simulation_language && supported.includes(p.simulation_language)
-                      ? p.simulation_language
-                      : null,
-                }));
-              }}
-              options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
-              placeholder="Select country"
-            />
+            {/* UX: Country and Language both depend on the same
+                getCountries() call. Only skeletoning Language made
+                Country look instantly "ready" (empty-but-interactive
+                pill) right next to a lone shimmering Language field,
+                while the rest of the form (which has no async
+                dependency) had already rendered — a jarring, half-loaded
+                look. Skeleton BOTH together so they load and resolve as
+                one visual unit, matching the shimmer treatment used
+                elsewhere for async-dependent fields (FeedRow's
+                loadingCats/loadingSubs, reports/page.tsx SkeletonCard). */}
+            {loadingCountries ? (
+              <FieldSkeleton />
+            ) : (
+              <>
+                <FieldLabel>Country *</FieldLabel>
+                <SelectInput
+                  value={form.country_id}
+                  onChange={(v) => {
+                    const found = countries.find((c) => String(c.id) === v);
+                    // i18n V2 — snap simulation_language back to null when
+                    // the newly-picked country doesn't support the currently
+                    // chosen language (or when we can't verify because the
+                    // country has no supported_languages field). Keeps us
+                    // from submitting ?lang= for a code the backend won't
+                    // translate for this country.
+                    const supported = [
+                      "en",
+                      ...(found?.supported_languages ?? []).filter((c) => c !== "en"),
+                    ];
+                    setForm((p) => ({
+                      ...p,
+                      country_id: v,
+                      country_name: found?.name ?? "",
+                      simulation_language:
+                        p.simulation_language && supported.includes(p.simulation_language)
+                          ? p.simulation_language
+                          : null,
+                    }));
+                  }}
+                  options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
+                  placeholder="Select country"
+                />
+              </>
+            )}
 
             {/* i18n V2 — Per-simulation Language dropdown. English is
                 ALWAYS in the list (default when the field is null),
@@ -776,18 +807,10 @@ export default function CattleInfoPage() {
                 otherwise selectedCountry would be undefined and the
                 dropdown would default to English with no other options,
                 which is misleading before the user's country is known.
-
-                UX: while countries are still loading, a shimmer
-                placeholder reserves this field's exact space (label bar
-                + pill) so it doesn't pop into the layout out of nowhere
-                right after Country resolves — same shimmer treatment
-                used elsewhere for async-dependent fields (see FeedRow's
-                loadingCats/loadingSubs, reports/page.tsx SkeletonCard). */}
+                Shows its own skeleton alongside Country's while loading
+                so both fields load/resolve together as one visual unit. */}
             {loadingCountries ? (
-              <div style={{ marginTop: 12 }}>
-                <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
-                <div className="shimmer rounded-2xl" style={{ height: 48 }} />
-              </div>
+              <FieldSkeleton />
             ) : countries.length > 0 && (() => {
               const selectedCountry = countries.find(
                 (c) => String(c.id) === form.country_id
