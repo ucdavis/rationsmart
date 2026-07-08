@@ -813,7 +813,24 @@ export default function FeedRow({
                   type="button"
                   onClick={() => {
                     if (feedTypeLocked) return;
-                    onUpdate(item.id, { feed_type_id: ft.id, feed_type_name: ft.name });
+                    if (ft.name === item.feed_type_name) return;
+                    // User is actively switching Feed Type — the old
+                    // category / feed no longer apply, so wipe them
+                    // here explicitly. Relying on the categories
+                    // cascade to notice a mismatch would leave stale
+                    // values on screen because that cascade's guard
+                    // preserves data when feed_uuid is still set
+                    // (needed for nav / lang-change round-trips).
+                    onUpdate(item.id, {
+                      feed_type_id: ft.id,
+                      feed_type_name: ft.name,
+                      category_id: null,
+                      category_name: "",
+                      sub_category_id: null,
+                      sub_category_name: "",
+                      feed_uuid: null,
+                      display_name: null,
+                    });
                   }}
                   disabled={feedTypeLocked}
                   className="flex items-center gap-2"
@@ -874,7 +891,18 @@ export default function FeedRow({
               value={item.category_id != null ? String(item.category_id) : ""}
               onChange={(v) => {
                 const selected = categories.find((c) => c.id === Number(v));
-                onUpdate(item.id, { category_id: selected?.id ?? null, category_name: selected?.name ?? "" });
+                if (selected?.name === item.category_name) return;
+                // User is actively switching Category — wipe the
+                // picked feed since it belonged to the old category.
+                // Same rationale as the Feed Type onChange above.
+                onUpdate(item.id, {
+                  category_id: selected?.id ?? null,
+                  category_name: selected?.name ?? "",
+                  sub_category_id: null,
+                  sub_category_name: "",
+                  feed_uuid: null,
+                  display_name: null,
+                });
               }}
               disabled={!item.feed_type_name}
               placeholder={!item.feed_type_name ? "Select type first" : "Select"}
