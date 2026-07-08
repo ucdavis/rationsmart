@@ -124,6 +124,11 @@ describe("Cattle Info — field validation handlers", () => {
   it("handleBodyWeight: flags out-of-range (350-720) but keeps the typed value, clears the error back in range", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
     const bwInput = inputAfterLabel("Body Weight (BW; kg)");
     expect(bwInput.value).toBe("500"); // EMPTY_FORM default
 
@@ -139,6 +144,11 @@ describe("Cattle Info — field validation handlers", () => {
   it("handleMilkProduction: flags out-of-range (1-59)", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
     const mpInput = inputAfterLabel("Milk Production (L)");
 
     fireEvent.change(mpInput, { target: { value: "70" } });
@@ -153,6 +163,11 @@ describe("Cattle Info — field validation handlers", () => {
   it("handleBCS: flags out-of-range (1-5) with the exact Android-ported message", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
     const bcsInput = inputAfterLabel("Body Condition Score");
 
     fireEvent.change(bcsInput, { target: { value: "6" } });
@@ -168,6 +183,11 @@ describe("Cattle Info — field validation handlers", () => {
     // sync restores the DOM to the last committed value ("3.0").
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
     const bcsInput = inputAfterLabel("Body Condition Score");
     expect(bcsInput.value).toBe("3.0");
 
@@ -178,6 +198,11 @@ describe("Cattle Info — field validation handlers", () => {
   it("handleBWGain: a leading-dot edit is rejected the same way", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
     const gainInput = inputAfterLabel("BW Gain (kg/day)");
     expect(gainInput.value).toBe("0.2");
 
@@ -193,6 +218,11 @@ describe("Cattle Info — Active Grazing toggle", () => {
   it("reveals Distance Walked + Topography when turned ON, hides them when turned OFF", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     expect(screen.queryByText("Distance Walked (km)")).toBeNull();
     expect(screen.queryByText("Topography")).toBeNull();
@@ -215,12 +245,22 @@ describe("Cattle Info — requiredFilled gate (Continue to Feed)", () => {
   it("is disabled on the initial empty form (Simulation Name blank)", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
     expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
   });
 
   it("stays disabled when grazing is ON but Distance Walked is empty", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("India");
     fireEvent.click(screen.getByRole("checkbox")); // grazing ON, distance cleared
@@ -231,6 +271,11 @@ describe("Cattle Info — requiredFilled gate (Continue to Feed)", () => {
   it("enables once every currently-relevant required field (incl. Distance Walked) is filled", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("India");
     fireEvent.click(screen.getByRole("checkbox")); // grazing ON
@@ -243,6 +288,11 @@ describe("Cattle Info — requiredFilled gate (Continue to Feed)", () => {
   it("enables with only the baseline fields when grazing stays OFF (distance/topography not required)", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("India");
 
@@ -257,6 +307,11 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
       user: seedUser({ country_id: "1", country: "India", country_code: "IN", currency: "INR" }),
     });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("Vietnam");
 
@@ -277,6 +332,11 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
     const originalUser = seedUser({ country_id: "1", country: "India", country_code: "IN", currency: "INR" });
     useStore.setState({ user: originalUser });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("India");
     const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
@@ -288,14 +348,14 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
   });
 });
 
-describe("Cattle Info — Country + Language field loading UX", () => {
-  // Country and Language both depend on the same getCountries() call.
-  // Originally only Language got a loading skeleton, which made Country
-  // look instantly "ready" (an empty-but-interactive pill) right next to
-  // a lone shimmering Language field while the rest of the form (no
-  // async dependency) had already rendered — a jarring, half-loaded
-  // look. Both fields now share one skeleton and resolve together.
-  it("skeletons BOTH Country and Language together while countries are fetching, then swaps both in together", async () => {
+describe("Cattle Info — whole-page loading skeleton", () => {
+  // Every field ultimately depends on the same getCountries() call
+  // resolving before the form is fully meaningful. Originally only
+  // Country+Language got a loading treatment while every other section
+  // rendered instantly with EMPTY_FORM defaults — a jarring mix of
+  // "ready" and "loading" on the same screen. The whole form (all 5
+  // SectionCards) now skeletons and resolves together as one unit.
+  it("skeletons the entire form while countries are fetching, then swaps the whole page in together", async () => {
     let resolveCountries!: (v: { data: typeof countries }) => void;
     getCountries.mockReturnValueOnce(
       new Promise((resolve) => { resolveCountries = resolve; })
@@ -303,15 +363,20 @@ describe("Cattle Info — Country + Language field loading UX", () => {
     useStore.setState({ user: seedUser({ country_id: "1" }) });
     const { container } = render(<CattleInfoPage />);
 
-    // Still loading — neither label is mounted yet, but the shared
-    // skeleton (two shimmer bars per field) reserves both fields' spots.
+    // Still loading — no real form content is mounted (Simulation
+    // history button only exists in the real Simulation Details card),
+    // but the whole-page skeleton fills every section with shimmer.
+    expect(screen.queryByRole("button", { name: "Simulation history" })).not.toBeInTheDocument();
     expect(screen.queryByText("Country")).not.toBeInTheDocument();
     expect(screen.queryByText("Language")).not.toBeInTheDocument();
-    expect(container.querySelectorAll(".shimmer").length).toBe(4);
+    expect(screen.queryByText("Breed Selection")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(20);
 
     resolveCountries({ data: countries });
-    await screen.findByText("Country");
+    await screen.findByRole("button", { name: "Simulation history" });
+    expect(screen.getByText("Country")).toBeInTheDocument();
     await screen.findByText("Language");
+    expect(screen.getByText("Breed Selection")).toBeInTheDocument();
     expect(container.querySelectorAll(".shimmer").length).toBe(0);
   });
 });
@@ -330,6 +395,11 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "hi" }) });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("India");
 
@@ -348,6 +418,11 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "hi" }) });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     await fillBaselineRequired("India");
     // Deliberately do NOT touch the Language dropdown.
@@ -407,6 +482,11 @@ describe("Cattle Info — handleReset", () => {
       feedSelections: [priorFeedItem],
     });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     const nameInput = screen.getByRole("textbox") as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: "Something typed" } });
@@ -433,6 +513,11 @@ describe("Cattle Info — Simulation History", () => {
     });
     useStore.setState({ user: seedUser() });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
     await waitFor(() => expect(getUserReports).toHaveBeenCalledWith("u-1"));
@@ -472,6 +557,11 @@ describe("Cattle Info — Simulation History", () => {
     });
     useStore.setState({ user: seedUser() });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
     const row = await screen.findByText("SIM-1");
@@ -524,6 +614,11 @@ describe("Cattle Info — Simulation History", () => {
     });
     useStore.setState({ user: seedUser() });
     render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await screen.findByRole("button", { name: "Simulation history" });
 
     fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
     const row = await screen.findByText("SIM-2");

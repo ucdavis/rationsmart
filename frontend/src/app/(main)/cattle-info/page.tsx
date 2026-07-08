@@ -144,17 +144,89 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <p className={cls} style={style}>{children}</p>;
 }
 
-// Matches a FieldLabel + SelectInput's footprint exactly, so a field
-// swapping from this to its real content causes no layout shift. Country
-// and Language both depend on the same getCountries() call — showing
-// this for BOTH while it's in flight (rather than only on Language)
-// keeps them visually in sync instead of Country looking instantly
-// "ready" next to a lone shimmering Language field.
-function FieldSkeleton() {
+// Matches a FieldLabel + input/SelectInput's footprint exactly, so a
+// field swapping from this to its real content causes no layout shift.
+function FieldSkeleton({ toggle = false }: { toggle?: boolean } = {}) {
   return (
     <div style={{ marginTop: 12 }}>
       <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
-      <div className="shimmer rounded-2xl" style={{ height: 48 }} />
+      {toggle ? (
+        <div className="shimmer" style={{ width: 50, height: 28, borderRadius: 14 }} />
+      ) : (
+        <div className="shimmer rounded-2xl" style={{ height: 48 }} />
+      )}
+    </div>
+  );
+}
+
+// Same field footprint, side-by-side (mirrors the real form's
+// `grid grid-cols-2 gap-3` field pairs — Body Weight/BW Gain,
+// BCS/Days in Milk, Days of Pregnancy/Parity, Milk Protein/Fat %).
+function FieldSkeletonPair() {
+  return (
+    <div className="grid grid-cols-2 gap-3" style={{ marginTop: 12 }}>
+      <div>
+        <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
+        <div className="shimmer rounded-2xl" style={{ height: 48 }} />
+      </div>
+      <div>
+        <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
+        <div className="shimmer rounded-2xl" style={{ height: 48 }} />
+      </div>
+    </div>
+  );
+}
+
+// Whole-page loading state. Every field on this page depends, directly
+// or indirectly, on the same getCountries() call finishing before the
+// form is fully meaningful (Country needs the list; Language needs the
+// selected country's supported_languages; downstream sections read
+// user/country context too). Previously only Country+Language got a
+// loading treatment while the rest of the form rendered instantly with
+// EMPTY_FORM defaults — a jarring mix of "ready" and "loading" on the
+// same screen. Skeletoning every section together makes the whole page
+// load and resolve as one coherent unit instead. Section icons/titles
+// are static (no async dependency) so they render for real immediately;
+// only the field content underneath is shimmered.
+function CattleInfoSkeleton() {
+  return (
+    <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }} aria-busy="true" aria-label="Loading cattle info form">
+      <SectionCard iconSvg={<IcSimulationDetails size={22} color="#064E3B" />} title="Simulation Details">
+        <div className="px-3">
+          <FieldSkeleton />
+          <FieldSkeleton />
+          <FieldSkeleton />
+        </div>
+      </SectionCard>
+
+      <SectionCard iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />} title="Animal Characteristics">
+        <div className="px-3">
+          <FieldSkeleton />
+          <FieldSkeletonPair />
+          <FieldSkeletonPair />
+        </div>
+      </SectionCard>
+
+      <SectionCard iconSvg={<IcReproductiveData size={22} color="#064E3B" />} title="Reproductive Data">
+        <div className="px-3">
+          <FieldSkeletonPair />
+        </div>
+      </SectionCard>
+
+      <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title="Milk Production">
+        <div className="px-3">
+          <FieldSkeleton />
+          <FieldSkeletonPair />
+          <FieldSkeleton />
+        </div>
+      </SectionCard>
+
+      <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title="Environment">
+        <div className="px-3">
+          <FieldSkeleton />
+          <FieldSkeleton toggle />
+        </div>
+      </SectionCard>
     </div>
   );
 }
@@ -724,6 +796,7 @@ export default function CattleInfoPage() {
     >
       <Toolbar type="home" title="Cattle Info" onMenuOpen={openDrawer} showForward={!!reportData} onForward={() => router.push("/report")} />
 
+      {loadingCountries ? <CattleInfoSkeleton /> : (
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
         {/* Section 1: Simulation Details */}
         <SectionCard
@@ -751,50 +824,38 @@ export default function CattleInfoPage() {
               style={inputStyle}
             />
 
-            {/* UX: Country and Language both depend on the same
-                getCountries() call. Only skeletoning Language made
-                Country look instantly "ready" (empty-but-interactive
-                pill) right next to a lone shimmering Language field,
-                while the rest of the form (which has no async
-                dependency) had already rendered — a jarring, half-loaded
-                look. Skeleton BOTH together so they load and resolve as
-                one visual unit, matching the shimmer treatment used
-                elsewhere for async-dependent fields (FeedRow's
-                loadingCats/loadingSubs, reports/page.tsx SkeletonCard). */}
-            {loadingCountries ? (
-              <FieldSkeleton />
-            ) : (
-              <>
-                <FieldLabel>Country *</FieldLabel>
-                <SelectInput
-                  value={form.country_id}
-                  onChange={(v) => {
-                    const found = countries.find((c) => String(c.id) === v);
-                    // i18n V2 — snap simulation_language back to null when
-                    // the newly-picked country doesn't support the currently
-                    // chosen language (or when we can't verify because the
-                    // country has no supported_languages field). Keeps us
-                    // from submitting ?lang= for a code the backend won't
-                    // translate for this country.
-                    const supported = [
-                      "en",
-                      ...(found?.supported_languages ?? []).filter((c) => c !== "en"),
-                    ];
-                    setForm((p) => ({
-                      ...p,
-                      country_id: v,
-                      country_name: found?.name ?? "",
-                      simulation_language:
-                        p.simulation_language && supported.includes(p.simulation_language)
-                          ? p.simulation_language
-                          : null,
-                    }));
-                  }}
-                  options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
-                  placeholder="Select country"
-                />
-              </>
-            )}
+            {/* Country/Language's per-field loading skeleton was folded
+                into the whole-page CattleInfoSkeleton below (rendered
+                while loadingCountries is true) — by the time this branch
+                is reached, countries has already resolved. */}
+            <FieldLabel>Country *</FieldLabel>
+            <SelectInput
+              value={form.country_id}
+              onChange={(v) => {
+                const found = countries.find((c) => String(c.id) === v);
+                // i18n V2 — snap simulation_language back to null when
+                // the newly-picked country doesn't support the currently
+                // chosen language (or when we can't verify because the
+                // country has no supported_languages field). Keeps us
+                // from submitting ?lang= for a code the backend won't
+                // translate for this country.
+                const supported = [
+                  "en",
+                  ...(found?.supported_languages ?? []).filter((c) => c !== "en"),
+                ];
+                setForm((p) => ({
+                  ...p,
+                  country_id: v,
+                  country_name: found?.name ?? "",
+                  simulation_language:
+                    p.simulation_language && supported.includes(p.simulation_language)
+                      ? p.simulation_language
+                      : null,
+                }));
+              }}
+              options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
+              placeholder="Select country"
+            />
 
             {/* i18n V2 — Per-simulation Language dropdown. English is
                 ALWAYS in the list (default when the field is null),
@@ -807,11 +868,10 @@ export default function CattleInfoPage() {
                 otherwise selectedCountry would be undefined and the
                 dropdown would default to English with no other options,
                 which is misleading before the user's country is known.
-                Shows its own skeleton alongside Country's while loading
-                so both fields load/resolve together as one visual unit. */}
-            {loadingCountries ? (
-              <FieldSkeleton />
-            ) : countries.length > 0 && (() => {
+                (The loading state itself is handled by the whole-page
+                CattleInfoSkeleton, so by the time this renders,
+                countries has already resolved.) */}
+            {countries.length > 0 && (() => {
               const selectedCountry = countries.find(
                 (c) => String(c.id) === form.country_id
               );
@@ -1233,6 +1293,7 @@ export default function CattleInfoPage() {
           </div>
         </SectionCard>
       </div>
+      )}
 
       {/* Fixed bottom buttons */}
       <div
