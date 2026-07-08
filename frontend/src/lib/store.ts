@@ -120,7 +120,29 @@ export const useStore = create<AppState>()(
 
       setFeedSelectionType: (type) => set({ feedSelectionType: type }),
 
-      setFeedSelections: (items) => set({ feedSelections: items }),
+      setFeedSelections: (items) => {
+        // Diagnostic — trace who wipes feedSelections. User has been
+        // reporting rows disappearing after nav + language change.
+        // Fires when the incoming list is empty, OR when every row is
+        // effectively blank (no feed_uuid / feed_type_name / category_name).
+        if (typeof window !== "undefined") {
+          const empty = items.length === 0;
+          const allBlank = !empty && items.every(
+            (r) => !r.feed_uuid && !r.feed_type_name && !r.category_name
+          );
+          if (empty || allBlank) {
+            console.warn(
+              `[store] setFeedSelections(${empty ? "[]" : "all-blank"}) — items:`,
+              JSON.stringify(items.map((i) => ({
+                fu: i.feed_uuid, ft: i.feed_type_name, cn: i.category_name,
+              }))),
+              "\nstack:",
+              new Error().stack?.split("\n").slice(1, 10).join("\n")
+            );
+          }
+        }
+        set({ feedSelections: items });
+      },
 
       setReportData: (data) => set({ reportData: data }),
 
