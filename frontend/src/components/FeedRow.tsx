@@ -394,7 +394,14 @@ export default function FeedRow({
           ? (data as { feed_types: unknown[] }).feed_types
           : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
             ? (data as { unique_feed_types: unknown[] }).unique_feed_types
-            : [];
+            // Some responses come back as a single bare object instead of
+            // a 1-item array when there's exactly one result (a common
+            // REST quirk) — wrap it rather than silently showing an empty
+            // dropdown for an option that genuinely exists.
+            : data && typeof data === "object" && !Array.isArray(data) &&
+                (("type_name" in data) || ("name" in data))
+              ? [data]
+              : [];
       return raw
         .map((it) => {
           if (typeof it === "string") return { name: it, display: it };
@@ -414,53 +421,62 @@ export default function FeedRow({
       .then((res) => {
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
-        const opts = extractOptions(res.data);
-        // Forage / Roughage always first, regardless of active language.
-        // The alias helpers accept the translated identity strings the
-        // backend returns when ?lang= is set (e.g. "चारा" ↔ "Forage").
-        const sorted = [
-          ...opts.filter((o) => isForageType(o.name) || isRoughageType(o.name)),
-          ...opts.filter((o) => !isForageType(o.name) && !isRoughageType(o.name)),
-        ];
-        // English identity in `display` is fine as a fallback — the
-        // parent-provided taxonomyLabels dict is applied at render time
-        // below (radios / category dropdown), so localization stays
-        // reactive when the dict arrives after the cascade has already
-        // populated the state.
-        const types = sorted.map((o, i) => ({
-          id: i + 1,
-          name: o.name,
-          display: o.display,
-        }));
-        // Stale-identity remap. If the row was persisted while an
-        // earlier build was sending ?lang= to unique-feed-type, the
-        // stored feed_type_name is a translated string like "चारा".
-        // Match it against the known-alias sets and rewrite state to
-        // the English identity we now fetch. Prevents a phantom
-        // "extra radio" from being synthetically inserted below.
-        if (item.feed_type_name && !types.find((t) => t.name === item.feed_type_name)) {
-          if (isForageType(item.feed_type_name) && types.find((t) => t.name === "Forage")) {
-            onUpdate(item.id, { feed_type_name: "Forage" });
-          } else if (isRoughageType(item.feed_type_name) && types.find((t) => t.name === "Roughage")) {
-            onUpdate(item.id, { feed_type_name: "Roughage" });
-          } else {
-            // Genuinely-unknown stored value (e.g. country changed and
-            // the previous country's type isn't valid here). Inject a
-            // synthetic entry so the row still renders its stored
-            // label instead of falling to an empty selection.
-            types.unshift({
-              id: item.feed_type_id ?? -1,
-              name: item.feed_type_name,
-              display: item.feed_type_name,
-            });
+        // The fetch itself already succeeded by this point — anything
+        // that throws below is a parsing/shape problem, not a load
+        // failure, so it must NOT surface the misleading "Could not load
+        // feed types" toast (that's reserved for the .catch() below,
+        // which only fires on an actual failed request).
+        try {
+          const opts = extractOptions(res.data);
+          // Forage / Roughage always first, regardless of active language.
+          // The alias helpers accept the translated identity strings the
+          // backend returns when ?lang= is set (e.g. "चारा" ↔ "Forage").
+          const sorted = [
+            ...opts.filter((o) => isForageType(o.name) || isRoughageType(o.name)),
+            ...opts.filter((o) => !isForageType(o.name) && !isRoughageType(o.name)),
+          ];
+          // English identity in `display` is fine as a fallback — the
+          // parent-provided taxonomyLabels dict is applied at render time
+          // below (radios / category dropdown), so localization stays
+          // reactive when the dict arrives after the cascade has already
+          // populated the state.
+          const types = sorted.map((o, i) => ({
+            id: i + 1,
+            name: o.name,
+            display: o.display,
+          }));
+          // Stale-identity remap. If the row was persisted while an
+          // earlier build was sending ?lang= to unique-feed-type, the
+          // stored feed_type_name is a translated string like "चारा".
+          // Match it against the known-alias sets and rewrite state to
+          // the English identity we now fetch. Prevents a phantom
+          // "extra radio" from being synthetically inserted below.
+          if (item.feed_type_name && !types.find((t) => t.name === item.feed_type_name)) {
+            if (isForageType(item.feed_type_name) && types.find((t) => t.name === "Forage")) {
+              onUpdate(item.id, { feed_type_name: "Forage" });
+            } else if (isRoughageType(item.feed_type_name) && types.find((t) => t.name === "Roughage")) {
+              onUpdate(item.id, { feed_type_name: "Roughage" });
+            } else {
+              // Genuinely-unknown stored value (e.g. country changed and
+              // the previous country's type isn't valid here). Inject a
+              // synthetic entry so the row still renders its stored
+              // label instead of falling to an empty selection.
+              types.unshift({
+                id: item.feed_type_id ?? -1,
+                name: item.feed_type_name,
+                display: item.feed_type_name,
+              });
+            }
           }
-        }
-        setFeedTypes(types);
-        if (item.feed_type_name) {
-          const match = types.find((t) => t.name === item.feed_type_name);
-          if (match && match.id !== item.feed_type_id) {
-            onUpdate(item.id, { feed_type_id: match.id });
+          setFeedTypes(types);
+          if (item.feed_type_name) {
+            const match = types.find((t) => t.name === item.feed_type_name);
+            if (match && match.id !== item.feed_type_id) {
+              onUpdate(item.id, { feed_type_id: match.id });
+            }
           }
+        } catch (parseErr) {
+          console.error("[feed-cascade] feed types response parsing failed (request itself succeeded):", parseErr, res.data);
         }
       })
       .catch((err) => {
@@ -497,7 +513,14 @@ export default function FeedRow({
             ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
             : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
               ? (data as { feed_categories: unknown[] }).feed_categories
-              : [];
+              // Some categories come back as a single bare object instead
+              // of a 1-item array when there's exactly one result for that
+              // feed type — wrap it instead of rendering an empty dropdown
+              // for a category that genuinely exists.
+              : data && typeof data === "object" && !Array.isArray(data) &&
+                  (("category_name" in data) || ("name" in data))
+                ? [data]
+                : [];
       return raw
         .map((it) => {
           if (typeof it === "string") return { name: it, display: it };
@@ -516,51 +539,60 @@ export default function FeedRow({
       .then((res) => {
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
-        const opts = extractCatOptions(res.data);
-        // Display is applied at render time from taxonomyLabels (same
-        // reason as feed types above — the dict fetch can complete
-        // after this cascade does).
-        const newCats = opts.map((o, i) => ({
-          id: i + 1,
-          name: o.name,
-          display: o.display,
-        }));
-        // Try exact match first, then a whitespace/case-insensitive
-        // fallback so a stray trailing space or capitalisation difference
-        // between /search-feeds and /unique-feed-category doesn't nuke
-        // the row on remount.
-        const norm = (s: string) => (s ?? "").trim().toLowerCase();
-        const matched =
-          newCats.find((c) => c.name === item.category_name) ??
-          newCats.find((c) => norm(c.name) === norm(item.category_name));
-        // If the row's stored category isn't in the fetched list but
-        // the row has been actively used (feed_uuid picked earlier),
-        // inject a synthetic entry so the CustomSelect dropdown still
-        // renders the correct label. Without this the Category
-        // dropdown appears blank after a nav-back-and-forward even
-        // though item.category_name is intact in state.
-        if (!matched && item.category_name && (item.feed_uuid || item.category_id != null)) {
-          newCats.unshift({
-            id: item.category_id ?? -1,
-            name: item.category_name,
-            display: item.category_name,
-          });
-        }
-        setCategories(newCats);
-        if (!matched) {
-          // Only wipe when the row has NO feed_uuid to lean on. Once the
-          // user has actively picked a feed (feed_uuid set), that pick
-          // is the source of truth — treat a name mismatch here as a
-          // list-caching quirk, not a reason to discard their selection.
-          // Fixes: nav Cattle Info → back → forward would empty Feed 1
-          // even though feedSelections had the row cached in the store,
-          // because a name-only cascade mismatch cleared everything.
-          if (!item.feed_uuid) {
-            onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
-            setSubCategories([]);
+        // The fetch itself already succeeded here — anything that throws
+        // below is a parsing/shape problem, not a load failure, so it
+        // must NOT surface the misleading "Could not load categories"
+        // toast (reserved for the .catch() below on an actual failed
+        // request).
+        try {
+          const opts = extractCatOptions(res.data);
+          // Display is applied at render time from taxonomyLabels (same
+          // reason as feed types above — the dict fetch can complete
+          // after this cascade does).
+          const newCats = opts.map((o, i) => ({
+            id: i + 1,
+            name: o.name,
+            display: o.display,
+          }));
+          // Try exact match first, then a whitespace/case-insensitive
+          // fallback so a stray trailing space or capitalisation difference
+          // between /search-feeds and /unique-feed-category doesn't nuke
+          // the row on remount.
+          const norm = (s: string) => (s ?? "").trim().toLowerCase();
+          const matched =
+            newCats.find((c) => c.name === item.category_name) ??
+            newCats.find((c) => norm(c.name) === norm(item.category_name));
+          // If the row's stored category isn't in the fetched list but
+          // the row has been actively used (feed_uuid picked earlier),
+          // inject a synthetic entry so the CustomSelect dropdown still
+          // renders the correct label. Without this the Category
+          // dropdown appears blank after a nav-back-and-forward even
+          // though item.category_name is intact in state.
+          if (!matched && item.category_name && (item.feed_uuid || item.category_id != null)) {
+            newCats.unshift({
+              id: item.category_id ?? -1,
+              name: item.category_name,
+              display: item.category_name,
+            });
           }
-        } else if (matched.id !== item.category_id) {
-          onUpdate(item.id, { category_id: matched.id });
+          setCategories(newCats);
+          if (!matched) {
+            // Only wipe when the row has NO feed_uuid to lean on. Once the
+            // user has actively picked a feed (feed_uuid set), that pick
+            // is the source of truth — treat a name mismatch here as a
+            // list-caching quirk, not a reason to discard their selection.
+            // Fixes: nav Cattle Info → back → forward would empty Feed 1
+            // even though feedSelections had the row cached in the store,
+            // because a name-only cascade mismatch cleared everything.
+            if (!item.feed_uuid) {
+              onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
+              setSubCategories([]);
+            }
+          } else if (matched.id !== item.category_id) {
+            onUpdate(item.id, { category_id: matched.id });
+          }
+        } catch (parseErr) {
+          console.error("[feed-cascade] feed categories response parsing failed (request itself succeeded):", parseErr, res.data);
         }
       })
       .catch((err) => {
@@ -584,83 +616,99 @@ export default function FeedRow({
       .then((res) => {
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/feed-name response:", res.data);
-        // v1 /v1/animal/feed-name response (per swagger description):
-        //   { standard_feeds: [...], custom_feeds: [...] }
-        // Each item is a FeedDetailsResponse: { feed_id, fd_name, fd_type,
-        // fd_category, ... } — i.e. the UUID is `feed_id` (was `feed_uuid`
-        // on legacy) and the display name is `fd_name` (was `feed_name`).
-        // Defensive: also accept legacy bare array / sub_categories /
-        // feeds wrappers and the older feed_uuid / feed_name keys, so a
-        // shape regression doesn't break the dropdown.
-        const data = res.data as unknown;
-        const standardFeeds = (data as { standard_feeds?: unknown[] })?.standard_feeds;
-        const customFeeds = (data as { custom_feeds?: unknown[] })?.custom_feeds;
-        const raw: unknown[] = (Array.isArray(standardFeeds) || Array.isArray(customFeeds))
-          ? [...(Array.isArray(standardFeeds) ? standardFeeds : []), ...(Array.isArray(customFeeds) ? customFeeds : [])]
-          : Array.isArray(data)
-            ? data
-            : Array.isArray((data as { sub_categories?: unknown[] })?.sub_categories)
-              ? (data as { sub_categories: unknown[] }).sub_categories
-              : Array.isArray((data as { feeds?: unknown[] })?.feeds)
-                ? (data as { feeds: unknown[] }).feeds
-                : [];
-        const list: FeedSubCategoryItem[] = raw
-          .map((it) => {
-            const o = it as {
-              feed_id?: string; feed_uuid?: string; id?: string;
-              fd_name?: string; feed_name?: string; name?: string;
-              display_name?: string;
-            };
-            const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
-            const name = o?.fd_name ?? o?.feed_name ?? o?.name;
-            // i18n V2 — display_name falls back to English name when no
-            // translation exists, so we can render unconditionally.
-            const display = o?.display_name ?? name;
-            return uuid && name ? { feed_name: name, feed_uuid: uuid, display_name: display } : null;
-          })
-          .filter((s): s is FeedSubCategoryItem => s !== null);
-        const match = list.find(
-          (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
-        );
-        // If the row has a picked feed_uuid but it's not in the new
-        // list (e.g. missing Hindi translation on backend), inject a
-        // synthetic entry using the stored data so the dropdown can
-        // STILL render the correct label. Without this the Feed
-        // dropdown would visually go blank even though the state is
-        // intact — the user perceives it as "everything reset".
-        if (!match && item.feed_uuid && item.sub_category_name) {
-          list.unshift({
-            feed_uuid: item.feed_uuid,
-            feed_name: item.sub_category_name,
-            display_name: item.display_name ?? item.sub_category_name,
-          });
-        }
-        setSubCategories(list);
-        if (!match) {
-          // Only wipe when the row has NO feed_uuid to lean on. When
-          // feed_uuid IS set, the user actively picked this feed at
-          // some point — treat a missing entry in the current cascade
-          // response as a lang / translation gap on the backend side,
-          // not a signal to discard the user's selection. Combined with
-          // the synthetic-entry injection above, the dropdown keeps
-          // rendering the correct label.
-          if (!item.feed_uuid) {
-            onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
+        // The fetch itself already succeeded here — anything that throws
+        // below is a parsing/shape problem, not a load failure, so it
+        // must NOT surface the misleading "Could not load sub-categories"
+        // toast (reserved for the .catch() below on an actual failed
+        // request).
+        try {
+          // v1 /v1/animal/feed-name response (per swagger description):
+          //   { standard_feeds: [...], custom_feeds: [...] }
+          // Each item is a FeedDetailsResponse: { feed_id, fd_name, fd_type,
+          // fd_category, ... } — i.e. the UUID is `feed_id` (was `feed_uuid`
+          // on legacy) and the display name is `fd_name` (was `feed_name`).
+          // Defensive: also accept legacy bare array / sub_categories /
+          // feeds wrappers and the older feed_uuid / feed_name keys, so a
+          // shape regression doesn't break the dropdown.
+          const data = res.data as unknown;
+          const standardFeeds = (data as { standard_feeds?: unknown[] })?.standard_feeds;
+          const customFeeds = (data as { custom_feeds?: unknown[] })?.custom_feeds;
+          const raw: unknown[] = (Array.isArray(standardFeeds) || Array.isArray(customFeeds))
+            ? [...(Array.isArray(standardFeeds) ? standardFeeds : []), ...(Array.isArray(customFeeds) ? customFeeds : [])]
+            : Array.isArray(data)
+              ? data
+              : Array.isArray((data as { sub_categories?: unknown[] })?.sub_categories)
+                ? (data as { sub_categories: unknown[] }).sub_categories
+                : Array.isArray((data as { feeds?: unknown[] })?.feeds)
+                  ? (data as { feeds: unknown[] }).feeds
+                  // A single matching feed can come back as a bare object
+                  // instead of a 1-item array — wrap it instead of
+                  // rendering an empty Feed dropdown for a feed that
+                  // genuinely exists.
+                  : data && typeof data === "object" && !Array.isArray(data) &&
+                      (("feed_id" in data) || ("fd_name" in data))
+                    ? [data]
+                    : [];
+          const list: FeedSubCategoryItem[] = raw
+            .map((it) => {
+              const o = it as {
+                feed_id?: string; feed_uuid?: string; id?: string;
+                fd_name?: string; feed_name?: string; name?: string;
+                display_name?: string;
+              };
+              const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
+              const name = o?.fd_name ?? o?.feed_name ?? o?.name;
+              // i18n V2 — display_name falls back to English name when no
+              // translation exists, so we can render unconditionally.
+              const display = o?.display_name ?? name;
+              return uuid && name ? { feed_name: name, feed_uuid: uuid, display_name: display } : null;
+            })
+            .filter((s): s is FeedSubCategoryItem => s !== null);
+          const match = list.find(
+            (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
+          );
+          // If the row has a picked feed_uuid but it's not in the new
+          // list (e.g. missing Hindi translation on backend), inject a
+          // synthetic entry using the stored data so the dropdown can
+          // STILL render the correct label. Without this the Feed
+          // dropdown would visually go blank even though the state is
+          // intact — the user perceives it as "everything reset".
+          if (!match && item.feed_uuid && item.sub_category_name) {
+            list.unshift({
+              feed_uuid: item.feed_uuid,
+              feed_name: item.sub_category_name,
+              display_name: item.display_name ?? item.sub_category_name,
+            });
           }
-        } else if (
-          match.feed_uuid !== item.feed_uuid ||
-          match.feed_name !== item.sub_category_name
-        ) {
-          onUpdate(item.id, {
-            sub_category_id: 1,
-            sub_category_name: match.feed_name,
-            feed_uuid: match.feed_uuid,
-            // i18n V2 — persist the translated display name captured at
-            // pick time. The report screen uses this as a fallback for
-            // FeedBreakdown / CostEffectiveDiet cells when the backend's
-            // diet endpoints don't yet return display_name themselves.
-            display_name: match.display_name,
-          });
+          setSubCategories(list);
+          if (!match) {
+            // Only wipe when the row has NO feed_uuid to lean on. When
+            // feed_uuid IS set, the user actively picked this feed at
+            // some point — treat a missing entry in the current cascade
+            // response as a lang / translation gap on the backend side,
+            // not a signal to discard the user's selection. Combined with
+            // the synthetic-entry injection above, the dropdown keeps
+            // rendering the correct label.
+            if (!item.feed_uuid) {
+              onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
+            }
+          } else if (
+            match.feed_uuid !== item.feed_uuid ||
+            match.feed_name !== item.sub_category_name
+          ) {
+            onUpdate(item.id, {
+              sub_category_id: 1,
+              sub_category_name: match.feed_name,
+              feed_uuid: match.feed_uuid,
+              // i18n V2 — persist the translated display name captured at
+              // pick time. The report screen uses this as a fallback for
+              // FeedBreakdown / CostEffectiveDiet cells when the backend's
+              // diet endpoints don't yet return display_name themselves.
+              display_name: match.display_name,
+            });
+          }
+        } catch (parseErr) {
+          console.error("[feed-cascade] sub-categories response parsing failed (request itself succeeded):", parseErr, res.data);
         }
       })
       .catch((err) => {

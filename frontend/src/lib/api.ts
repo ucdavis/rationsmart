@@ -709,23 +709,48 @@ export interface FeedReportListResponse {
   success: boolean | null;
 }
 
-export const getSavedReports = async (_user_id?: string) => {
+function extractReportsList(data: unknown): FeedReport[] {
+  return Array.isArray(data)
+    ? (data as FeedReport[])
+    : Array.isArray((data as { reports?: FeedReport[] })?.reports)
+      ? (data as { reports: FeedReport[] }).reports
+      : Array.isArray((data as { items?: FeedReport[] })?.items)
+        ? (data as { items: FeedReport[] }).items
+        : [];
+}
+
+async function fetchReportsFrom(path: string): Promise<FeedReport[]> {
   try {
-    const res = await api.get("/v1/animal/reports");
-    const data = res.data as unknown;
-    const reports: FeedReport[] = Array.isArray(data)
-      ? (data as FeedReport[])
-      : Array.isArray((data as { reports?: FeedReport[] })?.reports)
-        ? (data as { reports: FeedReport[] }).reports
-        : Array.isArray((data as { items?: FeedReport[] })?.items)
-          ? (data as { items: FeedReport[] }).items
-          : [];
-    return { data: { reports, success: true, message: null } as FeedReportListResponse };
+    const res = await api.get(path);
+    return extractReportsList(res.data);
   } catch (err) {
-    // Fall back to the legacy /user-reports endpoint
-    console.warn("[getSavedReports] /v1/animal/reports failed, falling back to /v1/animal/user-reports", err);
-    return api.get<FeedReportListResponse>("/v1/animal/user-reports");
+    console.warn(`[getSavedReports] ${path} failed`, err);
+    return [];
   }
+}
+
+// Both endpoints have independently been observed in production to be
+// missing entries the other one has — /v1/animal/reports has shown up
+// success:true but without the just-saved report, while
+// /v1/animal/user-reports had it (and vice versa on other accounts).
+// The original single-endpoint-with-catch-fallback here only helped when
+// the primary call actually threw (404/5xx) — a same-shape response that
+// merely omits the newest report never triggered it. Always fetch both
+// and merge, deduped by report_id (falling back to simulation_id for
+// rows the backend returns without an id), so neither endpoint's gaps
+// can hide a saved report from the Feed Reports screen.
+export const getSavedReports = async (_user_id?: string) => {
+  const [primary, fallback] = await Promise.all([
+    fetchReportsFrom("/v1/animal/reports"),
+    fetchReportsFrom("/v1/animal/user-reports"),
+  ]);
+
+  const merged = new Map<string, FeedReport>();
+  [...primary, ...fallback].forEach((r, i) => {
+    merged.set(r.report_id ?? r.simulation_id ?? `__idx_${i}`, r);
+  });
+
+  return { data: { reports: Array.from(merged.values()), success: true, message: null } as FeedReportListResponse };
 };
 
 // GET /v1/animal/simulations — simulation history (was POST /fetch-all-simulations)
