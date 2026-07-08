@@ -166,6 +166,8 @@ async def list_feeds(
     feed_category: Optional[str] = Query(None),
     country_name: Optional[str] = Query(None),
     search: Optional[str] = Query(None),
+    feed_type_id: Optional[str] = Query(None),
+    feed_category_id: Optional[str] = Query(None),
     admin_user: UserInformationModel = Depends(require_admin_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -178,6 +180,8 @@ async def list_feeds(
     - `page` (default 1), `page_size` (default 20, max 100).
     - `feed_type` — filter by feed type name.
     - `feed_category` — filter by category name.
+    - `feed_type_id` — filter by feed type UUID (preferred; wins over `feed_type`).
+    - `feed_category_id` — filter by feed category UUID (preferred; wins over `feed_category`).
     - `country_name` — filter by country name.
     - `search` — substring search on feed name.
     """
@@ -186,6 +190,7 @@ async def list_feeds(
         db, skip=skip, limit=page_size,
         feed_type=feed_type, feed_category=feed_category,
         country_name=country_name, search=search,
+        feed_type_id=feed_type_id, feed_category_id=feed_category_id,
     )
     total_pages = math.ceil(total / page_size) if total else 1
     feed_items = [_feed_detail(f) for f in feeds]

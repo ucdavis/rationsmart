@@ -260,6 +260,8 @@ async def list_feeds(
     feed_category: Optional[str] = None,
     country_name: Optional[str] = None,
     search: Optional[str] = None,
+    feed_type_id: Optional[str] = None,
+    feed_category_id: Optional[str] = None,
 ) -> Tuple[List[Any], int]:
     repo = FeedRepository(db)
     return await repo.get_all(
@@ -269,6 +271,8 @@ async def list_feeds(
         feed_category=feed_category,
         country_name=country_name,
         search=search,
+        feed_type_id=feed_type_id,
+        feed_category_id=feed_category_id,
     )
 
 

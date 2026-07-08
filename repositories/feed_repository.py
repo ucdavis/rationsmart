@@ -1,7 +1,7 @@
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, func, or_, select, union
+from sqlalchemy import and_, false, func, or_, select, union
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -14,6 +14,16 @@ from app.db.models import (
     FeedTranslation,
     VocabularyTranslation,
 )
+
+
+def _uuid_or_none(value: Any) -> Optional[uuid.UUID]:
+    """Coerce a value to UUID, returning None for empty/invalid input."""
+    if not value:
+        return None
+    try:
+        return uuid.UUID(str(value))
+    except (ValueError, TypeError, AttributeError):
+        return None
 
 
 class FeedRepository:
@@ -49,11 +59,20 @@ class FeedRepository:
         country_name: Optional[str] = None,
         search: Optional[str] = None,
         country_id: Optional[str] = None,
+        feed_type_id: Optional[str] = None,
+        feed_category_id: Optional[str] = None,
     ) -> Tuple[List[Feed], int]:
         q = select(Feed).order_by(Feed.fd_name.asc())
-        if feed_type:
+        # Taxonomy filter: FK id wins over the legacy string param (T4).
+        if feed_type_id:
+            tid = _uuid_or_none(feed_type_id)
+            q = q.where(Feed.fd_type_id == tid) if tid else q.where(false())
+        elif feed_type:
             q = q.where(Feed.fd_type == feed_type)
-        if feed_category:
+        if feed_category_id:
+            cid = _uuid_or_none(feed_category_id)
+            q = q.where(Feed.fd_category_id == cid) if cid else q.where(false())
+        elif feed_category:
             q = q.where(Feed.fd_category == feed_category)
         if country_name:
             q = q.where(Feed.fd_country_name.ilike(f"%{country_name}%"))
@@ -303,6 +322,29 @@ class FeedRepository:
             std_count + cust_count,
         )
 
+    async def resolve_taxonomy_names(
+        self, type_id: Optional[str] = None, category_id: Optional[str] = None
+    ) -> Tuple[Optional[str], Optional[str]]:
+        """Resolve taxonomy IDs to their canonical English names.
+
+        Transitional bridge (Ticket A): custom_feeds have no FK columns yet, so
+        an id-based filter on them is applied by resolving id → English name and
+        matching the denormalized text. Removed in Ticket B. Returns (None, None)
+        for missing/invalid ids.
+        """
+        type_name = category_name = None
+        tid = _uuid_or_none(type_id)
+        cid = _uuid_or_none(category_id)
+        if tid:
+            r = await self.db.execute(select(FeedType.type_name).where(FeedType.id == tid))
+            type_name = r.scalar_one_or_none()
+        if cid:
+            r = await self.db.execute(
+                select(FeedCategory.category_name).where(FeedCategory.id == cid)
+            )
+            category_name = r.scalar_one_or_none()
+        return type_name, category_name
+
     async def get_feed_names(
         self,
         country_id: str,
@@ -310,21 +352,44 @@ class FeedRepository:
         feed_type: Optional[str] = None,
         category: Optional[str] = None,
         lang: str = "en",
+        feed_type_id: Optional[str] = None,
+        feed_category_id: Optional[str] = None,
     ) -> Tuple[List, List]:
         """Returns (std_rows, custom_feeds) matching the given filters.
 
         std_rows: Row(Feed, display_name, display_type, display_category)
         custom_feeds: List[CustomFeed]
+
+        Taxonomy filter: a FK id (feed_type_id/feed_category_id) wins over the
+        legacy string param (T4). Standard feeds filter by FK; custom feeds have
+        no FK yet, so an id is resolved to its English name and matched on text.
         """
         sq = self._localized_feed_select(lang).where(Feed.fd_country_id == country_id)
         cq = select(CustomFeed).where(
             CustomFeed.fd_country_id == country_id,
             CustomFeed.user_id == uuid.UUID(str(user_id)),
         )
-        if feed_type:
+
+        # Resolve ids → names once for the custom-feed text bridge.
+        res_type_name = res_cat_name = None
+        if feed_type_id or feed_category_id:
+            res_type_name, res_cat_name = await self.resolve_taxonomy_names(
+                feed_type_id, feed_category_id
+            )
+
+        if feed_type_id:
+            tid = _uuid_or_none(feed_type_id)
+            sq = sq.where(Feed.fd_type_id == tid) if tid else sq.where(false())
+            cq = cq.where(CustomFeed.fd_type == res_type_name) if res_type_name else cq.where(false())
+        elif feed_type:
             sq = sq.where(Feed.fd_type == feed_type)
             cq = cq.where(CustomFeed.fd_type == feed_type)
-        if category:
+
+        if feed_category_id:
+            cid = _uuid_or_none(feed_category_id)
+            sq = sq.where(Feed.fd_category_id == cid) if cid else sq.where(false())
+            cq = cq.where(CustomFeed.fd_category == res_cat_name) if res_cat_name else cq.where(false())
+        elif category:
             sq = sq.where(Feed.fd_category == category)
             cq = cq.where(CustomFeed.fd_category == category)
 
@@ -357,15 +422,24 @@ class FeedRepository:
         search: Optional[str] = None,
         country_id: Optional[str] = None,
         lang: str = "en",
+        feed_type_id: Optional[str] = None,
+        feed_category_id: Optional[str] = None,
     ) -> Tuple[List, int]:
         """Like get_all but joins translation tables and returns display_* labels.
 
         Returns (rows, total) where each row is Row(Feed, display_name, display_type, display_category).
+        Taxonomy filter: FK id wins over the legacy string param (T4).
         """
         q = self._localized_feed_select(lang).order_by(Feed.fd_name.asc())
-        if feed_type:
+        if feed_type_id:
+            tid = _uuid_or_none(feed_type_id)
+            q = q.where(Feed.fd_type_id == tid) if tid else q.where(false())
+        elif feed_type:
             q = q.where(Feed.fd_type == feed_type)
-        if feed_category:
+        if feed_category_id:
+            cid = _uuid_or_none(feed_category_id)
+            q = q.where(Feed.fd_category_id == cid) if cid else q.where(false())
+        elif feed_category:
             q = q.where(Feed.fd_category == feed_category)
         if country_name:
             q = q.where(Feed.fd_country_name.ilike(f"%{country_name}%"))

@@ -149,8 +149,18 @@ async def get_structure(db: AsyncSession = Depends(get_db)):
 
     No authentication required.
 
-    Response shape: `{ "feed_classification": [ { "type": "...", "categories": ["...", "..."] }, ... ] }`.
-    Useful for populating UI dropdowns in a single call.
+    Response shape (additive — string keys preserved for backward compatibility):
+    ```
+    { "feed_classification": [
+        { "id": "<type-uuid>", "type": "...", "type_en": "...",
+          "categories": ["...", "..."],
+          "category_details": [
+            { "id": "<cat-uuid>", "feed_type_id": "<type-uuid>", "name": "...", "name_en": "..." }
+          ] } ] }
+    ```
+    `id`/`type_en`/`category_details` let the Front End key on stable UUIDs (recommended)
+    while `type`/`categories` remain for existing clients. Useful for populating UI dropdowns
+    in a single call.
     """
     ft_result = await db.execute(
         select(FeedType)
@@ -168,7 +178,18 @@ async def get_structure(db: AsyncSession = Depends(get_db)):
         )
         cats = cat_result.scalars().all()
         structure.append({
+            "id": str(ft.id),
             "type": ft.type_name or "",
+            "type_en": ft.type_name or "",
             "categories": [c.category_name or "" for c in cats],
+            "category_details": [
+                {
+                    "id": str(c.id),
+                    "feed_type_id": str(c.feed_type_id),
+                    "name": c.category_name or "",
+                    "name_en": c.category_name or "",
+                }
+                for c in cats
+            ],
         })
     return {"feed_classification": structure}

@@ -522,10 +522,13 @@ async def get_feed_names(
     feed_type: Optional[str] = None,
     category: Optional[str] = None,
     lang: str = "en",
+    feed_type_id: Optional[str] = None,
+    feed_category_id: Optional[str] = None,
 ) -> Tuple[List[Dict], List[Dict]]:
     """Return (standard_feeds, custom_feeds) as dicts with localized display fields."""
     std_rows, cust_rows = await FeedRepository(db).get_feed_names(
-        country_id, user_id, feed_type, category, lang=lang
+        country_id, user_id, feed_type, category, lang=lang,
+        feed_type_id=feed_type_id, feed_category_id=feed_category_id,
     )
 
     std_feeds = [

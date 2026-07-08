@@ -103,6 +103,8 @@ async def feed_names(
     country_id: str,
     feed_type: str = None,
     category: str = None,
+    feed_type_id: str = None,
+    feed_category_id: str = None,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     lang: str = Depends(get_language_authenticated),
@@ -117,12 +119,15 @@ async def feed_names(
     **Optional query parameters:**
     - `feed_type` — filter by feed type name (e.g. `Roughage`).
     - `category` — filter by feed category name (e.g. `Legume hay`).
+    - `feed_type_id` — filter by feed type UUID (preferred; wins over `feed_type`).
+    - `feed_category_id` — filter by feed category UUID (preferred; wins over `category`).
 
     Response contains two lists: `standard_feeds` (global) and `custom_feeds` (user-created).
     Each feed includes `display_name`/`display_type`/`display_category` with localized values.
     """
     std_feeds, cust_feeds = await diet_service.get_feed_names(
-        db, country_id, str(current_user.id), feed_type, category, lang=lang
+        db, country_id, str(current_user.id), feed_type, category, lang=lang,
+        feed_type_id=feed_type_id, feed_category_id=feed_category_id,
     )
     return {"standard_feeds": std_feeds, "custom_feeds": cust_feeds}
 
@@ -153,6 +158,8 @@ async def feed_details(
 @router.get("/feeds", summary="List all feeds (optionally filtered by country)")
 async def list_feeds(
     country_id: str = None,
+    feed_type_id: str = None,
+    feed_category_id: str = None,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     lang: str = Depends(get_language_authenticated),
@@ -162,13 +169,19 @@ async def list_feeds(
 
     **Requires:** Bearer JWT.
 
-    **Optional query parameter:** `country_id` — UUID to scope feeds to a specific country.
+    **Optional query parameters:**
+    - `country_id` — UUID to scope feeds to a specific country.
+    - `feed_type_id` — filter by feed type UUID.
+    - `feed_category_id` — filter by feed category UUID.
 
     Response fields per item: `id`, `fd_name`, `fd_type`, `fd_category`, plus localized
     `display_name`, `display_type`, `display_category`.
     For full nutritional data, call `GET /v1/animal/feed-details/{feed_id}`.
     """
-    rows, total = await FeedRepository(db).get_all_localized(country_id=country_id, lang=lang)
+    rows, total = await FeedRepository(db).get_all_localized(
+        country_id=country_id, lang=lang,
+        feed_type_id=feed_type_id, feed_category_id=feed_category_id,
+    )
     return {
         "feeds": [
             {
