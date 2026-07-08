@@ -416,17 +416,28 @@ export default function FeedRow({
           ...opts.filter((o) => !isForageType(o.name) && !isRoughageType(o.name)),
         ];
         const types = sorted.map((o, i) => ({ id: i + 1, name: o.name, display: o.display }));
-        // If the row's stored feed_type isn't in the fetched list
-        // (e.g. country changed and the previous country's type isn't
-        // valid here), inject a synthetic entry so the radio/dropdown
-        // can still render the stored label without the user seeing
-        // an empty selection.
+        // Stale-identity remap. If the row was persisted while an
+        // earlier build was sending ?lang= to unique-feed-type, the
+        // stored feed_type_name is a translated string like "चारा".
+        // Match it against the known-alias sets and rewrite state to
+        // the English identity we now fetch. Prevents a phantom
+        // "extra radio" from being synthetically inserted below.
         if (item.feed_type_name && !types.find((t) => t.name === item.feed_type_name)) {
-          types.unshift({
-            id: item.feed_type_id ?? -1,
-            name: item.feed_type_name,
-            display: item.feed_type_name,
-          });
+          if (isForageType(item.feed_type_name) && types.find((t) => t.name === "Forage")) {
+            onUpdate(item.id, { feed_type_name: "Forage" });
+          } else if (isRoughageType(item.feed_type_name) && types.find((t) => t.name === "Roughage")) {
+            onUpdate(item.id, { feed_type_name: "Roughage" });
+          } else {
+            // Genuinely-unknown stored value (e.g. country changed and
+            // the previous country's type isn't valid here). Inject a
+            // synthetic entry so the row still renders its stored
+            // label instead of falling to an empty selection.
+            types.unshift({
+              id: item.feed_type_id ?? -1,
+              name: item.feed_type_name,
+              display: item.feed_type_name,
+            });
+          }
         }
         setFeedTypes(types);
         if (item.feed_type_name) {
