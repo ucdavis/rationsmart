@@ -799,20 +799,6 @@ export default function FeedRow({
         </p>
         {loadingTypes ? (
           <div className="shimmer" style={{ height: 40, borderRadius: 16 }} />
-        ) : feedTypes.length > 2 ? (
-          <FieldBox label="" hasValue={!!item.feed_type_id} disabled={feedTypeLocked}>
-            <CustomSelect
-              transparentTrigger
-              value={item.feed_type_id != null ? String(item.feed_type_id) : ""}
-              onChange={(v) => {
-                const selected = feedTypes.find((f) => f.id === Number(v));
-                onUpdate(item.id, { feed_type_id: selected?.id ?? null, feed_type_name: selected?.name ?? "" });
-              }}
-              disabled={feedTypeLocked}
-              placeholder="Select type"
-              options={feedTypes.map<CustomSelectOption>((ft) => ({ value: String(ft.id), label: ft.display }))}
-            />
-          </FieldBox>
         ) : (
           <div className="grid grid-cols-2 gap-3 ml-1">
             {feedTypes.map((ft) => {
