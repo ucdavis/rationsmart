@@ -189,6 +189,25 @@ const innerInputStyle = {
   outline: "none",
 };
 
+// Same pattern as cattle-info's loadingFieldProps: while the row's own
+// cascade (loadingTypes/Cats/Subs) is in flight, Price/Quantity/Cost/
+// Min-Max would otherwise show a restored row's REAL values immediately
+// (they're only gated on item.feed_uuid, not on the cascade), which is
+// the same "some fields ready, some loading" mix that was fixed on
+// cattle-info and the Type/Category/Feed fields above. Spread onto a
+// native <input> alongside its normal style: `{...cascadeLoadingProps(rowLoading, style)}`.
+function cascadeLoadingProps(
+  loading: boolean,
+  style: React.CSSProperties
+): { style: React.CSSProperties; disabled?: boolean; tabIndex?: number } {
+  if (!loading) return { style };
+  return {
+    style: { ...style, color: "transparent", caretColor: "transparent" },
+    disabled: true,
+    tabIndex: -1,
+  };
+}
+
 export default function FeedRow({
   item,
   index,
@@ -785,6 +804,16 @@ export default function FeedRow({
     ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
     : null;
 
+  // While this row's own cascade is in flight, treat the WHOLE row as
+  // loading — not just Type/Category/Feed. A restored row (simulation
+  // history) can already have real Price/Quantity/inclusion-limits
+  // values while the cascade is still re-verifying them against fresh
+  // options, and those fields are only gated on item.feed_uuid — so
+  // without this they'd show real content immediately next to
+  // shimmering siblings, the same "mixed ready/loading" look already
+  // fixed for Type/Category/Feed and for cattle-info.
+  const rowLoading = loadingTypes || loadingCats || loadingSubs;
+
   const colGap = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } as const;
 
   return (
@@ -826,16 +855,20 @@ export default function FeedRow({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {/* Edit button — green/active once feed is selected (matches Android
-              where cv_edit uses go_green_15 bg + dark_aquamarine_green icon). */}
+              where cv_edit uses go_green_15 bg + dark_aquamarine_green icon).
+              Also muted while rowLoading — a restored row can already have
+              feed_uuid set while its cascade is still re-verifying, and
+              the edit modal reads category_name/etc. that may still settle. */}
           <button
             onClick={openEditModal}
-            disabled={!canEdit}
+            disabled={!canEdit || rowLoading}
+            className={rowLoading ? "shimmer" : undefined}
             style={{
-              backgroundColor: canEdit ? "rgba(5,188,109,0.15)" : "#D3D3D3",
+              backgroundColor: rowLoading ? undefined : canEdit ? "rgba(5,188,109,0.15)" : "#D3D3D3",
               borderRadius: 10,
               padding: 8,
               border: "none",
-              cursor: canEdit ? "pointer" : "default",
+              cursor: canEdit && !rowLoading ? "pointer" : "default",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -843,7 +876,7 @@ export default function FeedRow({
             }}
             aria-label="Edit feed nutritional values"
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ opacity: rowLoading ? 0 : 1 }}>
               <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke={canEdit ? "#064E3B" : "#6D6D6D"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
@@ -1057,7 +1090,7 @@ export default function FeedRow({
       <div style={{ padding: "0 10px 14px" }}>
         <div
           className="w-full flex items-center justify-between"
-          style={{ padding: "8px 4px", opacity: item.feed_uuid ? 1 : 0.55 }}
+          style={{ padding: "8px 4px", opacity: item.feed_uuid && !rowLoading ? 1 : 0.55 }}
         >
           <span
             className="font-bold"
@@ -1068,18 +1101,18 @@ export default function FeedRow({
           <label
             className="toggle-switch"
             onClick={(e) => e.stopPropagation()}
-            style={{ cursor: item.feed_uuid ? "pointer" : "not-allowed" }}
+            style={{ cursor: item.feed_uuid && !rowLoading ? "pointer" : "not-allowed" }}
           >
             <input
               type="checkbox"
               checked={item.inclusion_limits_enabled}
               onChange={() => {
-                if (!item.feed_uuid) return;
+                if (!item.feed_uuid || rowLoading) return;
                 onUpdate(item.id, { inclusion_limits_enabled: !item.inclusion_limits_enabled });
               }}
-              disabled={!item.feed_uuid}
+              disabled={!item.feed_uuid || rowLoading}
             />
-            <span className="toggle-slider" />
+            <span className={`toggle-slider${rowLoading ? " shimmer" : ""}`} />
           </label>
         </div>
 
@@ -1089,6 +1122,7 @@ export default function FeedRow({
               label="Min (kg/day)"
               hasValue={item.min_kg_per_day != null}
               disabled={false}
+              loading={rowLoading}
               optional
             >
               <input
@@ -1101,11 +1135,12 @@ export default function FeedRow({
                 onChange={(e) =>
                   onUpdate(item.id, { min_kg_per_day: e.target.value ? Number(e.target.value) : null })
                 }
-                style={innerInputStyle}
+                {...cascadeLoadingProps(rowLoading, innerInputStyle)}
               />
             </FieldBox>
             <FieldBox
               label="Max (kg/day)"
+              loading={rowLoading}
               hasValue={item.max_kg_per_day != null}
               disabled={false}
               optional
@@ -1120,7 +1155,7 @@ export default function FeedRow({
                 onChange={(e) =>
                   onUpdate(item.id, { max_kg_per_day: e.target.value ? Number(e.target.value) : null })
                 }
-                style={innerInputStyle}
+                {...cascadeLoadingProps(rowLoading, innerInputStyle)}
               />
             </FieldBox>
           </div>
@@ -1129,20 +1164,21 @@ export default function FeedRow({
 
       {/* Row 6 — Price (full width, always last among the basic fields).
           Disabled until a feed is selected (no point pricing an empty
-          row). */}
+          row) — or while rowLoading, since a restored row can already
+          have a real price while its cascade is still re-verifying. */}
       <div style={{ padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
-        <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid}>
+        <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid} loading={rowLoading}>
           <input
             type="number"
             inputMode="decimal"
             min={0}
             step={0.01}
-            disabled={!item.feed_uuid}
+            disabled={!item.feed_uuid || rowLoading}
             value={item.price_per_kg ?? ""}
             onChange={(e) =>
               onUpdate(item.id, { price_per_kg: e.target.value ? Number(e.target.value) : null })
             }
-            style={{ ...innerInputStyle, cursor: !item.feed_uuid ? "not-allowed" : "text" }}
+            {...cascadeLoadingProps(rowLoading, { ...innerInputStyle, cursor: !item.feed_uuid ? "not-allowed" : "text" })}
           />
         </FieldBox>
       </div>
@@ -1150,28 +1186,28 @@ export default function FeedRow({
       {/* Row 7 — Quantity + Cost (eval mode only, 50/50) */}
       {showQuantity && (
         <div style={{ ...colGap, padding: "0 10px 16px" }}>
-          <FieldBox label="Quantity" hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg}>
+          <FieldBox label="Quantity" hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg} loading={rowLoading}>
             <input
               type="number"
               inputMode="decimal"
               min={0}
               step={0.1}
-              disabled={!item.price_per_kg}
+              disabled={!item.price_per_kg || rowLoading}
               value={item.quantity_kg ?? ""}
               onChange={(e) =>
                 onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
               }
-              style={{ ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" }}
+              {...cascadeLoadingProps(rowLoading, { ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" })}
             />
           </FieldBox>
-          <FieldBox label="Cost" hasValue={!!cost} disabled={!cost}>
+          <FieldBox label="Cost" hasValue={!!cost} disabled={!cost} loading={rowLoading}>
             <input
               type="text"
               readOnly
               value={cost ? `${cost}${currencySymbol ? ` ${currencySymbol}` : ""}` : ""}
               style={{
                 ...innerInputStyle,
-                color: cost ? "#064E3B" : "#9CA3AF",
+                color: rowLoading ? "transparent" : cost ? "#064E3B" : "#9CA3AF",
                 fontWeight: cost ? 700 : 400,
                 cursor: "default",
               }}

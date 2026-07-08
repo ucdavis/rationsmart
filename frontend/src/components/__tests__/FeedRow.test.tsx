@@ -397,6 +397,9 @@ describe("edit dialog — feed name prefix logic", () => {
     const { container } = render(
       <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
     );
+    // Edit is disabled while the row's own cascade is still resolving
+    // (rowLoading) — wait for it to settle before interacting.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled());
     fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
     await screen.findByText("Edit Nutritional Information");
 
@@ -413,6 +416,7 @@ describe("edit dialog — feed name prefix logic", () => {
     const { container } = render(
       <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
     );
+    await waitFor(() => expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled());
     fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
     await screen.findByText("Edit Nutritional Information");
 
@@ -442,6 +446,7 @@ describe("edit dialog — nutrient field layout by category", () => {
       const { container } = render(
         <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
       );
+      await waitFor(() => expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled());
       fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
       await screen.findByText("Edit Nutritional Information");
 
@@ -622,5 +627,60 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
     await screen.findByText("Feed Category");
     fireEvent.click(screen.getByRole("button", { name: "Select" }));
     expect(await screen.findByText("Green Fodder")).toBeInTheDocument();
+  });
+
+  // Regression coverage: Price/Quantity/Cost/inclusion-limits/Edit are
+  // only gated on item.feed_uuid, not on the cascade — so a RESTORED
+  // row (simulation history) that already has real values in all of
+  // these would show them immediately while Type/Category/Feed were
+  // still shimmering next to them. rowLoading now covers the whole row.
+  it("a restored row with real Price/Quantity/inclusion-limits values shimmers ALL of them while its cascade re-verifies, not just Type/Category/Feed", async () => {
+    let resolveSubs!: (v: { data: { standard_feeds: unknown[]; custom_feeds: unknown[] } }) => void;
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage"] });
+    getFeedCategories.mockResolvedValueOnce({ data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }] });
+    getFeedSubCategories.mockReturnValueOnce(new Promise((resolve) => { resolveSubs = resolve; }));
+
+    const restoredItem = makeItem({
+      feed_type_name: "Forage",
+      category_id: 1,
+      category_name: "Green Fodder",
+      feed_uuid: "restored-uuid",
+      sub_category_name: "Restored Feed",
+      price_per_kg: 12.5,
+      quantity_kg: 3,
+      inclusion_limits_enabled: true,
+      min_kg_per_day: 1,
+      max_kg_per_day: 5,
+    });
+    const { container } = render(
+      <FeedRow item={restoredItem} index={1} showQuantity onUpdate={vi.fn()} onDelete={vi.fn()} />
+    );
+    await waitFor(() => expect(getFeedSubCategories).toHaveBeenCalled());
+
+    // While the sub-categories cascade is still in flight: Price,
+    // Quantity, Cost, Min/Max, the inclusion-limits toggle, and the
+    // Edit button are all disabled/shimmering — not showing their real
+    // restored values as if the row were fully settled.
+    const priceInput = screen.getByDisplayValue("12.5") as HTMLInputElement;
+    expect(priceInput).toBeDisabled();
+    const quantityInput = screen.getByDisplayValue("3") as HTMLInputElement;
+    expect(quantityInput).toBeDisabled();
+    const minInput = screen.getByDisplayValue("1") as HTMLInputElement;
+    expect(minInput).toBeDisabled();
+    const maxInput = screen.getByDisplayValue("5") as HTMLInputElement;
+    expect(maxInput).toBeDisabled();
+    const inclusionCheckbox = container.querySelector('input[type="checkbox"]') as HTMLInputElement;
+    expect(inclusionCheckbox).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).toBeDisabled();
+    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(3);
+
+    resolveSubs({ data: { standard_feeds: [{ feed_id: "restored-uuid", fd_name: "Restored Feed" }], custom_feeds: [] } });
+
+    await waitFor(() => expect(priceInput).not.toBeDisabled());
+    expect(quantityInput).not.toBeDisabled();
+    expect(minInput).not.toBeDisabled();
+    expect(maxInput).not.toBeDisabled();
+    expect(inclusionCheckbox).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled();
   });
 });
