@@ -124,46 +124,55 @@ function FieldBox({
   hasValue,
   disabled,
   optional,
+  loading = false,
   children,
 }: {
   label: string;
   hasValue: boolean;
   disabled?: boolean;
   optional?: boolean;
+  // Same box (dimensions, border-radius, label cutout) shimmers in
+  // place instead of being swapped for separate skeleton markup — see
+  // the cattle-info page's identical pattern for the rationale.
+  loading?: boolean;
   children: React.ReactNode;
 }) {
   return (
     <div
+      className={loading ? "shimmer" : undefined}
       style={{
-        backgroundColor: "#FFFFFF",
+        backgroundColor: loading ? undefined : "#FFFFFF",
         borderRadius: 16,
-        border: `1.5px solid ${hasValue ? "#064E3B" : "#DCE0E4"}`,
+        border: loading ? "1.5px solid transparent" : `1.5px solid ${hasValue ? "#064E3B" : "#DCE0E4"}`,
         padding: "16px 12px 12px",
         position: "relative",
-        opacity: disabled ? 0.55 : 1,
-        cursor: disabled ? "not-allowed" : "auto",
+        opacity: disabled && !loading ? 0.55 : 1,
+        cursor: disabled || loading ? "not-allowed" : "auto",
         minHeight: 60,
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
       }}
     >
-      {/* Label cutout on the border */}
-      <span
-        style={{
-          position: "absolute",
-          top: -8,
-          left: 12,
-          backgroundColor: "#FFFFFF",
-          padding: "0 6px",
-          color: hasValue ? "#064E3B" : "#6D6D6D",
-          fontFamily: "Nunito, sans-serif",
-          fontSize: 12,
-        }}
-      >
-        {label}
-        {!optional && <span style={{ color: "#FC2E20" }}>{" *"}</span>}
-      </span>
+      {/* Label cutout on the border — hidden while loading since the
+          shimmering box has no fixed background for it to blend into. */}
+      {!loading && (
+        <span
+          style={{
+            position: "absolute",
+            top: -8,
+            left: 12,
+            backgroundColor: "#FFFFFF",
+            padding: "0 6px",
+            color: hasValue ? "#064E3B" : "#6D6D6D",
+            fontFamily: "Nunito, sans-serif",
+            fontSize: 12,
+          }}
+        >
+          {label}
+          {!optional && <span style={{ color: "#FC2E20" }}>{" *"}</span>}
+        </span>
+      )}
       {children}
     </div>
   );
@@ -880,7 +889,27 @@ export default function FeedRow({
           Feed Type<span style={{ color: "#FC2E20" }}>{" *"}</span>
         </p>
         {loadingTypes ? (
-          <div className="shimmer" style={{ height: 40, borderRadius: 16 }} />
+          // Same 2-column radio grid as the real content below (feed
+          // types are always exactly Forage/Concentrate in practice —
+          // see CLAUDE.md §6), just non-interactive with a shimmering
+          // label bar instead of real text, so there's no layout shift
+          // once feedTypes populates.
+          <div className="grid grid-cols-2 gap-3 ml-1">
+            {[0, 1].map((i) => (
+              <div key={i} className="flex items-center gap-2">
+                <span
+                  style={{
+                    width: 20,
+                    height: 20,
+                    borderRadius: "50%",
+                    border: "2px solid #E2E8F0",
+                    flexShrink: 0,
+                  }}
+                />
+                <span className="shimmer rounded" style={{ width: 70, height: 12, borderRadius: 4 }} />
+              </div>
+            ))}
+          </div>
         ) : (
           <div className="grid grid-cols-2 gap-3 ml-1">
             {feedTypes.map((ft) => {
@@ -960,62 +989,60 @@ export default function FeedRow({
           Season"; full-width rows let the label render fully and keep
           the trigger taps comfortable on mobile. */}
       <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "0 10px 10px" }}>
-        {loadingCats ? (
-          <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
-        ) : (
-          <FieldBox label="Feed Category" hasValue={!!item.category_name} disabled={!item.feed_type_name}>
-            <CustomSelect
-              transparentTrigger
-              value={item.category_id != null ? String(item.category_id) : ""}
-              onChange={(v) => {
-                const selected = categories.find((c) => c.id === Number(v));
-                if (selected?.name === item.category_name) return;
-                // User is actively switching Category — wipe the
-                // picked feed since it belonged to the old category.
-                // Same rationale as the Feed Type onChange above.
-                onUpdate(item.id, {
-                  category_id: selected?.id ?? null,
-                  category_name: selected?.name ?? "",
-                  sub_category_id: null,
-                  sub_category_name: "",
-                  feed_uuid: null,
-                  display_name: null,
-                });
-              }}
-              disabled={!item.feed_type_name}
-              placeholder={!item.feed_type_name ? "Select type first" : "Select"}
-              options={categories.map<CustomSelectOption>((c) => ({
-                value: String(c.id),
-                label: taxonomyLabels?.categories?.[c.name] ?? c.display,
-              }))}
-            />
-          </FieldBox>
-        )}
-        {loadingSubs ? (
-          <div className="shimmer" style={{ height: 60, borderRadius: 16 }} />
-        ) : (
-          <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_name}>
-            <CustomSelect
-              transparentTrigger
-              value={item.feed_uuid ?? ""}
-              onChange={(v) => {
-                const selected = subCategories.find((s) => s.feed_uuid === v);
-                onUpdate(item.id, {
-                  sub_category_id: selected ? 1 : null,
-                  sub_category_name: selected?.feed_name ?? "",
-                  feed_uuid: selected?.feed_uuid ?? null,
-                  // i18n V2 — capture the translated name at pick time
-                  // so /report can fall back to it if the backend's diet
-                  // endpoints don't yet ship display_name on their rows.
-                  display_name: selected?.display_name ?? null,
-                });
-              }}
-              disabled={!item.category_name}
-              placeholder={!item.category_name ? "Select category" : "Select feed"}
-              options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.display_name }))}
-            />
-          </FieldBox>
-        )}
+        {/* Same FieldBox + CustomSelect always renders — loadingCats
+            shimmers it in place (via FieldBox's + CustomSelect's own
+            `loading` props) instead of swapping in a bare placeholder
+            div, so there's no layout drift once the fetch resolves. */}
+        <FieldBox label="Feed Category" hasValue={!!item.category_name} disabled={!item.feed_type_name} loading={loadingCats}>
+          <CustomSelect
+            transparentTrigger
+            value={item.category_id != null ? String(item.category_id) : ""}
+            onChange={(v) => {
+              const selected = categories.find((c) => c.id === Number(v));
+              if (selected?.name === item.category_name) return;
+              // User is actively switching Category — wipe the
+              // picked feed since it belonged to the old category.
+              // Same rationale as the Feed Type onChange above.
+              onUpdate(item.id, {
+                category_id: selected?.id ?? null,
+                category_name: selected?.name ?? "",
+                sub_category_id: null,
+                sub_category_name: "",
+                feed_uuid: null,
+                display_name: null,
+              });
+            }}
+            disabled={!item.feed_type_name}
+            loading={loadingCats}
+            placeholder={!item.feed_type_name ? "Select type first" : "Select"}
+            options={categories.map<CustomSelectOption>((c) => ({
+              value: String(c.id),
+              label: taxonomyLabels?.categories?.[c.name] ?? c.display,
+            }))}
+          />
+        </FieldBox>
+        <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_name} loading={loadingSubs}>
+          <CustomSelect
+            transparentTrigger
+            value={item.feed_uuid ?? ""}
+            onChange={(v) => {
+              const selected = subCategories.find((s) => s.feed_uuid === v);
+              onUpdate(item.id, {
+                sub_category_id: selected ? 1 : null,
+                sub_category_name: selected?.feed_name ?? "",
+                feed_uuid: selected?.feed_uuid ?? null,
+                // i18n V2 — capture the translated name at pick time
+                // so /report can fall back to it if the backend's diet
+                // endpoints don't yet ship display_name on their rows.
+                display_name: selected?.display_name ?? null,
+              });
+            }}
+            disabled={!item.category_name}
+            loading={loadingSubs}
+            placeholder={!item.category_name ? "Select category" : "Select feed"}
+            options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.display_name }))}
+          />
+        </FieldBox>
       </div>
 
       {/* Y3 §1.1.2 — "Set inclusion limits" toggle + optional Min/Max inputs.

@@ -572,3 +572,55 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
     });
   });
 });
+
+// --- 12. Loading shimmer on the real elements, not a separate skeleton ----
+// Matches the cattle-info page's pattern: while a cascade is in flight,
+// the SAME field markup (radio grid / FieldBox+CustomSelect) renders,
+// just shimmering and non-interactive, instead of being swapped for a
+// bare placeholder div — so there's no layout drift once data arrives.
+describe("loading shimmer uses the real elements (not a separate skeleton div)", () => {
+  it("Feed Type: shows a 2-radio shimmer placeholder (same grid) while loadingTypes, then the real Forage/Concentrate radios", async () => {
+    let resolveTypes!: (v: { data: string[] }) => void;
+    getFeedTypes.mockReturnValueOnce(new Promise((resolve) => { resolveTypes = resolve; }));
+    const { container } = render(
+      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+    );
+
+    expect(screen.queryByText("Forage")).not.toBeInTheDocument();
+    const grid = container.querySelector(".grid.grid-cols-2.gap-3.ml-1");
+    expect(grid).not.toBeNull();
+    expect(grid!.querySelectorAll(".shimmer").length).toBe(2);
+
+    resolveTypes({ data: ["Forage", "Concentrate"] });
+    await screen.findByText("Forage");
+    expect(screen.getByText("Concentrate")).toBeInTheDocument();
+    expect(container.querySelectorAll(".grid.grid-cols-2.gap-3.ml-1 .shimmer").length).toBe(0);
+  });
+
+  it("Feed Category: shimmers the same FieldBox+CustomSelect in place while loadingCats, then shows the real dropdown", async () => {
+    let resolveCats!: (v: { data: { category_name: string; display_category: string }[] }) => void;
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage"] });
+    getFeedCategories.mockReturnValueOnce(new Promise((resolve) => { resolveCats = resolve; }));
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_name: "Forage" })}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    await waitFor(() => expect(getFeedCategories).toHaveBeenCalled());
+
+    // Label cutout is hidden while shimmering (see FieldBox), but the
+    // trigger button (real CustomSelect) is present, disabled.
+    const triggers = screen.getAllByRole("button").filter((b) => b.className.includes("w-full flex items-center justify-between"));
+    expect(triggers.length).toBeGreaterThan(0);
+    triggers.forEach((t) => expect(t).toBeDisabled());
+
+    resolveCats({ data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }] });
+    await screen.findByText("Feed Category");
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    expect(await screen.findByText("Green Fodder")).toBeInTheDocument();
+  });
+});
