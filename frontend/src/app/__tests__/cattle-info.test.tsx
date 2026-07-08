@@ -285,6 +285,30 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
   });
 });
 
+describe("Cattle Info — Language field loading UX", () => {
+  // The Language field only makes sense once we know the selected
+  // country's supported_languages, so it can't render until getCountries
+  // resolves. Previously it simply didn't exist in the DOM until then,
+  // popping into the layout right after Country loaded. A shimmer
+  // skeleton now reserves its place for a smoother transition.
+  it("shows a loading skeleton in place of the Language field while countries are still fetching, then swaps to the real dropdown", async () => {
+    let resolveCountries!: (v: { data: typeof countries }) => void;
+    getCountries.mockReturnValueOnce(
+      new Promise((resolve) => { resolveCountries = resolve; })
+    );
+    useStore.setState({ user: seedUser({ country_id: "1" }) });
+    const { container } = render(<CattleInfoPage />);
+
+    // Still loading — no "Language" label yet, but a shimmer placeholder
+    // is present reserving its spot.
+    expect(screen.queryByText("Language")).not.toBeInTheDocument();
+    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(0);
+
+    resolveCountries({ data: countries });
+    await screen.findByText("Language");
+  });
+});
+
 describe("Cattle Info — Language dropdown explicit English selection", () => {
   // Regression coverage: explicitly picking "English" for a specific
   // simulation used to be stored as `simulation_language: null` (meant

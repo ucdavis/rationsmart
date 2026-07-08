@@ -246,6 +246,9 @@ export default function CattleInfoPage() {
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [countries, setCountries] = useState<Country[]>([]);
+  // Drives the Language field's loading skeleton below — see the fetch
+  // effect and the render block for why this exists.
+  const [loadingCountries, setLoadingCountries] = useState(true);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -259,7 +262,8 @@ export default function CattleInfoPage() {
         const data = res.data;
         setCountries(Array.isArray(data) ? data : []);
       })
-      .catch(() => showSnackbar("Could not load countries", "error"));
+      .catch(() => showSnackbar("Could not load countries", "error"))
+      .finally(() => setLoadingCountries(false));
   }, [showSnackbar]);
 
   useEffect(() => {
@@ -771,8 +775,20 @@ export default function CattleInfoPage() {
                 Rendered ONLY after the countries fetch resolves —
                 otherwise selectedCountry would be undefined and the
                 dropdown would default to English with no other options,
-                which is misleading before the user's country is known. */}
-            {countries.length > 0 && (() => {
+                which is misleading before the user's country is known.
+
+                UX: while countries are still loading, a shimmer
+                placeholder reserves this field's exact space (label bar
+                + pill) so it doesn't pop into the layout out of nowhere
+                right after Country resolves — same shimmer treatment
+                used elsewhere for async-dependent fields (see FeedRow's
+                loadingCats/loadingSubs, reports/page.tsx SkeletonCard). */}
+            {loadingCountries ? (
+              <div style={{ marginTop: 12 }}>
+                <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
+                <div className="shimmer rounded-2xl" style={{ height: 48 }} />
+              </div>
+            ) : countries.length > 0 && (() => {
               const selectedCountry = countries.find(
                 (c) => String(c.id) === form.country_id
               );
