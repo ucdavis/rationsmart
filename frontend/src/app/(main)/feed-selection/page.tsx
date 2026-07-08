@@ -590,7 +590,17 @@ export default function FeedSelectionPage() {
             (!isEvaluation || item.quantity_kg !== null)
           )
       )
-      .map((item) => item.feed_type_name || item.sub_category_name || `Feed ${items.indexOf(item) + 1}`);
+      .map((item) => {
+        // Show the localized Feed Type label when we have a dict entry
+        // (state stores English identity, but users see Hindi on screen).
+        // Falls back to sub_category_name (which is already display-agnostic
+        // — carries English but the row's Feed dropdown labels come from a
+        // different endpoint that translates in place) then to "Feed N".
+        const localizedType = item.feed_type_name
+          ? taxonomyLabels.types[item.feed_type_name] ?? item.feed_type_name
+          : "";
+        return localizedType || item.sub_category_name || `Feed ${items.indexOf(item) + 1}`;
+      });
     if (incomplete.length > 0) {
       setIncompleteFeedNames(incomplete);
       setShowIncompleteFeedsDialog(true);
