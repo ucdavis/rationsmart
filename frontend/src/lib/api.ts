@@ -596,27 +596,23 @@ export const deleteAccount = (pin: string) =>
 //                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
 //     NOTE: query param renamed from feed_category to category.
 
-// i18n V2 — send ?lang= consistently to all feed-taxonomy endpoints.
-// Backend translates unique-feed-type + unique-feed-category responses
-// when ?lang= is set, and the downstream /v1/animal/feed-name endpoint
-// also receives the same ?lang= (via langParam) so its filter treats
-// the translated feed_type / category params correctly. Keeping this
-// consistent is what makes non-English dropdowns work end-to-end.
-//
-// Do NOT split into an "English identity" and "localized display" pair
-// pinning ?lang=en on one leg — an earlier experiment doing that
-// (Promise.all dual fetch) broke the whole cascade because the ?lang=en
-// leg failed on the backend. If we ever want a strict identity/display
-// split, wait until backend adds display_* fields on these endpoints
-// (same pattern used by /v1/animal/feed-name).
+// i18n V2 — identity-only. No ?lang= sent to unique-feed-type /
+// unique-feed-category. Sending ?lang= makes backend translate the
+// response, but the downstream /v1/animal/feed-name endpoint then
+// receives a translated identity string as feed_type / category —
+// which it doesn't recognise → feed dropdown returns empty.
+// Choosing "loads correctly in every language" over "labels are
+// translated". Backend needs to add display_type / display_category
+// fields on these endpoints before we can restore translated labels.
+// Feed names themselves still translate via /v1/animal/feed-name
+// (that endpoint separately returns display_name).
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`, { params: { ...langParam() } });
+  api.get<string[]>(`/v1/animal/unique-feed-type/${country_id}`);
 
-// Aliases retained so FeedRow's older import sites don't break.
 export const getFeedTypesLocalized = getFeedTypes;
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, ...langParam() } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
 
 export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
   getFeedCategories(feed_type, country_id);

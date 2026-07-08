@@ -188,19 +188,33 @@ export default function FeedSelectionPage() {
   // paint by re-taking feedSelections whenever it has entries that
   // items doesn't reflect. Runs on mount + on feedSelections change.
   useEffect(() => {
-    // Only resync when the store has entries that meaningfully differ
-    // from what items currently reflects. We ignore length differences
-    // caused by the local 3-row padding (empty rows) — if every stored
-    // item is already represented in items by feed_uuid, do nothing.
+    // Resync local items whenever the store's feedSelections has data
+    // that isn't reflected locally. Compares by feed_uuid first (final
+    // selection), then by feed_type_name / category_name (partial state
+    // — user picked a type + category but not the specific feed yet).
+    // Without the partial-state check, partial data was silently lost on
+    // navigate-away-and-back.
     if (feedSelections.length === 0) return;
-    const itemsUuids = new Set(items.map((i) => i.feed_uuid).filter(Boolean));
-    const storedUuids = feedSelections.map((s) => s.feed_uuid).filter(Boolean);
-    const missing = storedUuids.some((u) => !itemsUuids.has(u));
-    if (missing) {
-      const padded = [...feedSelections];
-      while (padded.length < 3) padded.push(createFeedItem());
-      setItems(padded);
-    }
+    const itemsFingerprint = items.map((i) =>
+      `${i.feed_uuid ?? ""}|${i.feed_type_name ?? ""}|${i.category_name ?? ""}`
+    ).sort().join("\n");
+    const storedFingerprint = feedSelections.map((s) =>
+      `${s.feed_uuid ?? ""}|${s.feed_type_name ?? ""}|${s.category_name ?? ""}`
+    ).sort().join("\n");
+    // Only take from store when it has strictly more information than
+    // items does — a stored entry whose fingerprint is non-empty AND
+    // isn't already in the local items set. Empty (all-blank) rows
+    // never trigger a resync.
+    const storedHasNonEmpty = feedSelections.some(
+      (s) => s.feed_uuid || s.feed_type_name || s.category_name
+    );
+    if (!storedHasNonEmpty) return;
+    if (itemsFingerprint === storedFingerprint) return;
+
+    // Store diverges from items and has real data — pull from store.
+    const padded = [...feedSelections];
+    while (padded.length < 3) padded.push(createFeedItem());
+    setItems(padded);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [feedSelections]);
   const [isLoading, setIsLoading] = useState(false);

@@ -195,7 +195,7 @@ function SelectInput({
 export default function CattleInfoPage() {
   const router = useRouter();
   const { openDrawer } = useDrawer();
-  const { cattleInfo, setCattleInfo, user, setUser, showSnackbar, reportData, setFeedSelections, setFeedSelectionType } = useStore((s) => ({
+  const { cattleInfo, setCattleInfo, user, setUser, showSnackbar, reportData, setReportData, setFeedSelections, setFeedSelectionType } = useStore((s) => ({
     setFeedSelections: s.setFeedSelections,
     setFeedSelectionType: s.setFeedSelectionType,
     cattleInfo: s.cattleInfo,
@@ -204,6 +204,7 @@ export default function CattleInfoPage() {
     setUser: s.setUser,
     showSnackbar: s.showSnackbar,
     reportData: s.reportData,
+    setReportData: s.setReportData,
   }));
 
   const [form, setForm] = useState<FormState>(() => {
@@ -382,6 +383,40 @@ export default function CattleInfoPage() {
         // Empty simulation — reset so we don't carry over a previous case.
         setFeedSelections([]);
       }
+
+      // Scenario 4 — push the restored values to the store's cattleInfo
+      // so BOTH screens see the restore. Without this, langProvider
+      // reads the previous simulation's simulation_language when the
+      // user navigates to /feed-selection, and any component reading
+      // cattleInfo directly (e.g. report page context) sees stale data.
+      const restoredSimulationLanguage = (() => {
+        const fromBackend = data?.simulation_language as string | null | undefined;
+        if (fromBackend) return fromBackend;
+        const primaryCountryLang = matchedCountry?.supported_languages?.find((c) => c !== "en");
+        return primaryCountryLang ?? null;
+      })();
+      setCattleInfo({
+        simulation_name: data?.simulation_id ?? "",
+        country: matchedCountry?.name ?? countryName ?? "",
+        country_id: matchedCountry ? String(matchedCountry.id) : "",
+        breed: ci?.breed ?? "",
+        body_weight: ci?.body_weight != null ? Number(ci.body_weight) : 0,
+        body_weight_gain: ci?.bw_gain != null ? Number(ci.bw_gain) : 0,
+        body_condition_score: ci?.bc_score != null ? Number(ci.bc_score) : 0,
+        days_in_milk: ci?.days_in_milk != null ? Number(ci.days_in_milk) : 0,
+        days_of_pregnancy: ci?.days_of_pregnancy != null ? Number(ci.days_of_pregnancy) : 0,
+        parity: ci?.parity != null ? Number(ci.parity) : 1,
+        milk_production: ci?.milk_production != null ? Number(ci.milk_production) : 0,
+        milk_protein_percent: ci?.tp_milk != null ? Number(ci.tp_milk) : 0,
+        milk_fat_percent: ci?.fat_milk != null ? Number(ci.fat_milk) : 0,
+        average_temperature: ci?.temperature != null ? Number(ci.temperature) : 25,
+        grazing: ci?.grazing ?? false,
+        distance: ci?.distance != null ? Number(ci.distance) : 0,
+        topography: ci?.topography ?? "Flat",
+        milk_price: ci?.milk_price != null ? Number(ci.milk_price) : null,
+        animal_category: (ci?.animal_category as AnimalCategory | undefined) ?? "Lactating Cow",
+        simulation_language: restoredSimulationLanguage,
+      });
 
       setErrors({});
       showSnackbar("Simulation loaded successfully", "success");
@@ -644,12 +679,16 @@ export default function CattleInfoPage() {
       simulation_language: null,
     });
     setErrors({});
-    // Clear any feed selections that were restored from a simulation —
-    // otherwise tapping Continue after Reset would land the user on
-    // Feed Selection with stale rows still populated. Reset
-    // feedSelectionType to the default "recommendation" too.
+    // Scenario 3 — Reset must clear BOTH screens' data. Beyond the
+    // form / feed selections, we also null out cattleInfo in the store
+    // so navigating away and back doesn't re-hydrate the previous
+    // simulation's values into the form on mount. reportData is nulled
+    // too so the forward arrow (which is gated on !!reportData) hides
+    // and any stale report is gone.
     setFeedSelections([]);
     setFeedSelectionType("recommendation");
+    setCattleInfo(null);
+    setReportData(null as never);
     // 500ms is the sweet spot per Nielsen — long enough for the eye to
     // register the transition, short enough that the button doesn't
     // feel unresponsive.
