@@ -10,6 +10,7 @@ import dataclasses
 import logging
 import uuid as _uuid_mod
 from concurrent.futures import ProcessPoolExecutor
+from functools import partial
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -323,14 +324,20 @@ async def run_diet_recommendation(
             }.items() if v is not None
         }
 
-    # 3 — Run optimizer in process pool
+    # 3 — Run optimizer in process pool.
+    # NOTE: bind with functools.partial so custom_thresholds reaches its real
+    # keyword parameter. Passing it positionally lands it in z_optimization_main's
+    # `simulation_id` slot, leaving custom_thresholds=None and silently ignoring
+    # client-supplied nutrient thresholds (see PR #0 / plan §5).
     loop = asyncio.get_event_loop()
     result = await loop.run_in_executor(
         pool,
-        z_optimization_main,
-        animal_inputs,
-        feed_data_list,
-        custom_thresholds,
+        partial(
+            z_optimization_main,
+            animal_inputs,
+            feed_data_list,
+            custom_thresholds=custom_thresholds,
+        ),
     )
 
     # 4 — Build API response
