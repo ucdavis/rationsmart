@@ -643,6 +643,37 @@ export const getFeedSubCategories = (
 ) =>
   api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category, ...langParam() } });
 
+// i18n V2 — client-side translation dictionary for Feed Type + Category
+// labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
+// only return the identity string, so we can't localize their labels
+// directly. But `/v1/animal/feed-name?country_id=X&lang=hi` (no
+// feed_type/category filter) returns EVERY feed in the country, and
+// each item carries both English (`fd_type`, `fd_category`) and localized
+// (`display_type`, `display_category`) fields. One call gives us a full
+// translation map for both dimensions. Cached per (country_id, lang).
+export type FeedTaxonomyLabels = {
+  types: Record<string, string>;      // English identity → localized label
+  categories: Record<string, string>; // English identity → localized label
+};
+
+export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedTaxonomyLabels> {
+  const res = await api.get("/v1/animal/feed-name", {
+    params: { country_id, ...langParam() },
+  });
+  const feeds = (res.data as {
+    standard_feeds?: { fd_type?: string; display_type?: string; fd_category?: string; display_category?: string }[];
+    custom_feeds?: { fd_type?: string; display_type?: string; fd_category?: string; display_category?: string }[];
+  }) ?? {};
+  const merged = [...(feeds.standard_feeds ?? []), ...(feeds.custom_feeds ?? [])];
+  const types: Record<string, string> = {};
+  const categories: Record<string, string> = {};
+  for (const f of merged) {
+    if (f.fd_type && f.display_type) types[f.fd_type] = f.display_type;
+    if (f.fd_category && f.display_category) categories[f.fd_category] = f.display_category;
+  }
+  return { types, categories };
+}
+
 // ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────
 
 export const evaluateDiet = (data: EvaluationRequest) =>

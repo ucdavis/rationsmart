@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getFeedTypes, getFeedTypesLocalized, getFeedCategories, getFeedCategoriesLocalized, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
-import type { FeedItem } from "@/lib/api";
+import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
@@ -107,6 +107,12 @@ interface FeedRowProps {
   onJumpToSearch?: () => void;
   onUpdate: (id: string, updates: Partial<FeedItem>) => void;
   onDelete: (id: string) => void;
+  /** i18n V2 — English-identity → localized-display maps for Feed Type
+   *  and Feed Category. Parent fetches once via fetchFeedTaxonomyLabels
+   *  and passes the shared dict here so every row uses the same labels
+   *  without each row re-hitting the API. `display` falls back to the
+   *  English identity when a mapping is missing. */
+  taxonomyLabels?: FeedTaxonomyLabels;
 }
 
 // Android Material OutlinedBox style:
@@ -186,6 +192,7 @@ export default function FeedRow({
   onJumpToSearch,
   onUpdate,
   onDelete,
+  taxonomyLabels,
 }: FeedRowProps) {
   const user = useStore((s) => s.user);
   const showSnackbar = useStore((s) => s.showSnackbar);
@@ -415,7 +422,16 @@ export default function FeedRow({
           ...opts.filter((o) => isForageType(o.name) || isRoughageType(o.name)),
           ...opts.filter((o) => !isForageType(o.name) && !isRoughageType(o.name)),
         ];
-        const types = sorted.map((o, i) => ({ id: i + 1, name: o.name, display: o.display }));
+        // i18n V2 — display comes from the shared taxonomyLabels dict
+        // fetched by the parent from /v1/animal/feed-name (which does
+        // ship translated fields). Falls through to o.display / o.name
+        // when no mapping exists (e.g. English mode, or a type absent
+        // from the country's feed catalog).
+        const types = sorted.map((o, i) => ({
+          id: i + 1,
+          name: o.name,
+          display: taxonomyLabels?.types?.[o.name] ?? o.display,
+        }));
         // Stale-identity remap. If the row was persisted while an
         // earlier build was sending ?lang= to unique-feed-type, the
         // stored feed_type_name is a translated string like "चारा".
@@ -501,10 +517,11 @@ export default function FeedRow({
         if (cancelled) return;
         console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
         const opts = extractCatOptions(res.data);
+        // i18n V2 — same dict-lookup pattern as feed types above.
         const newCats = opts.map((o, i) => ({
           id: i + 1,
           name: o.name,
-          display: o.display,
+          display: taxonomyLabels?.categories?.[o.name] ?? o.display,
         }));
         // Try exact match first, then a whitespace/case-insensitive
         // fallback so a stray trailing space or capitalisation difference

@@ -7,8 +7,8 @@ import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import CustomSelect from "@/components/CustomSelect";
-import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds } from "@/lib/api";
-import type { FeedItem, DietLimits, FeedSearchResult } from "@/lib/api";
+import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds, fetchFeedTaxonomyLabels } from "@/lib/api";
+import type { FeedItem, DietLimits, FeedSearchResult, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
 import { IcAddFeed } from "@/components/Icons";
 
@@ -178,6 +178,31 @@ export default function FeedSelectionPage() {
     while (stored.length < 3) stored.push(createFeedItem());
     return stored;
   });
+
+  // i18n V2 — translation dictionary for Feed Type + Feed Category
+  // labels. Backend `/v1/animal/unique-feed-*` endpoints only return
+  // English identity strings (no display fields), so we call
+  // `/v1/animal/feed-name?country_id=…&lang=<active>` once here — that
+  // endpoint returns every feed in the country, and each item carries
+  // English identity + localized display for both type and category.
+  // One request builds a full dict FeedRow uses to render Hindi labels
+  // while keeping English identity in state.
+  //
+  // Re-runs when country or active language changes. The Zustand values
+  // that langProvider reads are `preferred_language` (profile-scoped)
+  // and `cattleInfo.simulation_language` (per-run override), so we
+  // depend on both here.
+  const [taxonomyLabels, setTaxonomyLabels] = useState<FeedTaxonomyLabels>({ types: {}, categories: {} });
+  const simulationLanguage = cattleInfo?.simulation_language ?? null;
+  const preferredLanguage = user?.preferred_language ?? null;
+  useEffect(() => {
+    if (!user?.country_id) return;
+    let cancelled = false;
+    fetchFeedTaxonomyLabels(user.country_id)
+      .then((labels) => { if (!cancelled) setTaxonomyLabels(labels); })
+      .catch(() => { /* silent — labels just fall back to English identity */ });
+    return () => { cancelled = true; };
+  }, [user?.country_id, simulationLanguage, preferredLanguage]);
 
   // Defensive resync — when the user navigates back to /cattle-info and
   // returns to /feed-selection (which unmounts + remounts this
@@ -984,6 +1009,7 @@ export default function FeedSelectionPage() {
                 onJumpToSearch={handleJumpToSearch}
                 onUpdate={updateItem}
                 onDelete={deleteItem}
+                taxonomyLabels={taxonomyLabels}
               />
             </div>
           ))}
