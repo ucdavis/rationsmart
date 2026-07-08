@@ -455,6 +455,105 @@ class FeedRepository:
         feeds_result = await self.db.execute(q.offset(skip).limit(limit))
         return feeds_result.all(), total
 
+    # ── Localized taxonomy (feed types / categories) ──────────────────────────
+
+    def _localized_type_select(self, lang: str, country_id: Optional[str]):
+        """SELECT FeedType + display_name. Joins vocabulary_translations only when
+        a non-English lang and a country_id are supplied (else display_name == type_name)."""
+        cid = _uuid_or_none(country_id)
+        if lang == "en" or cid is None:
+            return select(FeedType, FeedType.type_name.label("display_name"))
+        vt = aliased(VocabularyTranslation)
+        return (
+            select(FeedType, func.coalesce(vt.name, FeedType.type_name).label("display_name"))
+            .outerjoin(vt, and_(
+                vt.country_id == cid,
+                vt.kind == "feed_type",
+                vt.source_value == FeedType.type_name,
+                vt.language == lang,
+            ))
+        )
+
+    def _localized_category_select(self, lang: str, country_id: Optional[str]):
+        """SELECT FeedCategory + display_name, analogous to _localized_type_select."""
+        cid = _uuid_or_none(country_id)
+        if lang == "en" or cid is None:
+            return select(FeedCategory, FeedCategory.category_name.label("display_name"))
+        vc = aliased(VocabularyTranslation)
+        return (
+            select(FeedCategory, func.coalesce(vc.name, FeedCategory.category_name).label("display_name"))
+            .outerjoin(vc, and_(
+                vc.country_id == cid,
+                vc.kind == "feed_category",
+                vc.source_value == FeedCategory.category_name,
+                vc.language == lang,
+            ))
+        )
+
+    async def get_feed_types_localized(self, lang: str = "en", country_id: Optional[str] = None):
+        """Active feed types as Row(FeedType, display_name), ordered."""
+        q = (
+            self._localized_type_select(lang, country_id)
+            .where(FeedType.is_active == True)  # noqa: E712
+            .order_by(FeedType.sort_order, FeedType.type_name)
+        )
+        return (await self.db.execute(q)).all()
+
+    async def get_feed_type_by_id_localized(
+        self, type_id: str, lang: str = "en", country_id: Optional[str] = None
+    ):
+        """Single active feed type as Row(FeedType, display_name) or None (invalid/absent id)."""
+        tid = _uuid_or_none(type_id)
+        if tid is None:
+            return None
+        q = self._localized_type_select(lang, country_id).where(
+            FeedType.id == tid, FeedType.is_active == True  # noqa: E712
+        )
+        return (await self.db.execute(q)).one_or_none()
+
+    async def get_categories_localized(
+        self, type_id: str, lang: str = "en", country_id: Optional[str] = None
+    ):
+        """Active categories under a feed type as Row(FeedCategory, display_name), ordered."""
+        tid = _uuid_or_none(type_id)
+        if tid is None:
+            return []
+        q = (
+            self._localized_category_select(lang, country_id)
+            .where(FeedCategory.feed_type_id == tid, FeedCategory.is_active == True)  # noqa: E712
+            .order_by(FeedCategory.sort_order, FeedCategory.category_name)
+        )
+        return (await self.db.execute(q)).all()
+
+    async def get_category_by_id_localized(
+        self, category_id: str, lang: str = "en", country_id: Optional[str] = None
+    ):
+        """Single active category as Row(FeedCategory, display_name) or None."""
+        cid = _uuid_or_none(category_id)
+        if cid is None:
+            return None
+        q = self._localized_category_select(lang, country_id).where(
+            FeedCategory.id == cid, FeedCategory.is_active == True  # noqa: E712
+        )
+        return (await self.db.execute(q)).one_or_none()
+
+    async def get_categories_grouped_localized(
+        self, lang: str = "en", country_id: Optional[str] = None
+    ) -> Dict[Any, List]:
+        """All active categories as {feed_type_id: [Row(FeedCategory, display_name), ...]}.
+
+        One query (no N+1); used to assemble the /structure tree in memory.
+        """
+        q = (
+            self._localized_category_select(lang, country_id)
+            .where(FeedCategory.is_active == True)  # noqa: E712
+            .order_by(FeedCategory.sort_order, FeedCategory.category_name)
+        )
+        grouped: Dict[Any, List] = {}
+        for row in (await self.db.execute(q)).all():
+            grouped.setdefault(row.FeedCategory.feed_type_id, []).append(row)
+        return grouped
+
     # ── Feed types ────────────────────────────────────────────────────────────
 
     async def get_feed_type_by_id(self, type_id: str) -> Optional[FeedType]:

@@ -29,6 +29,9 @@ class FeedTypeResponse(FeedTypeBase):
     is_active: bool
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    # Localized display name (COALESCE(vocabulary_translations, type_name)).
+    # Equals type_name for lang='en' or when no country_id is supplied.
+    display_name: Optional[str] = None
 
 
 # ── Feed categories ──────────────────────────────────────────────────────────
@@ -59,6 +62,9 @@ class FeedCategoryResponse(FeedCategoryBase):
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     feed_type: Optional[FeedTypeResponse] = None
+    # Localized display name (COALESCE(vocabulary_translations, category_name)).
+    # Equals category_name for lang='en' or when no country_id is supplied.
+    display_name: Optional[str] = None
 
 
 # ── Feed classification structure ────────────────────────────────────────────
