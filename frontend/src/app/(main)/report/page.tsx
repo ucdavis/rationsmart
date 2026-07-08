@@ -389,21 +389,27 @@ export default function ReportPage() {
         report?: { bucket_url?: string | null };
         pdf_url?: string | null;
       };
-      if (body?.success === false || body?.error_message) {
+      // Per the v1 swagger (SaveReportResponse), `success` and
+      // `error_message` are independent fields — a save can succeed
+      // (report persisted, `success: true`) while `error_message`
+      // separately describes a secondary problem, most commonly that
+      // POST /v1/animal/reports/pdf is marked "not yet implemented" in
+      // the backend spec so no bucket_url could be generated. Treating
+      // ANY error_message as a hard failure (the previous behavior)
+      // wrongly told the user the save itself failed — and bailed out
+      // before ever surfacing the saved report — when the record had
+      // actually been persisted and would show up on the Feed Reports
+      // screen. Only `success === false` is a real save failure now.
+      if (body?.success === false) {
         showSnackbar(body?.error_message ?? body?.message ?? "Save returned an error", "error");
         return;
       }
       const url = body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url ?? null;
       setPdfUrl(url);
-      // v1 quirk (2026-06-16): save-report often returns success=true
-      // with bucket_url=null because /v1/animal/reports/pdf is marked
-      // "not yet implemented" in the backend spec. The record gets
-      // saved but the PDF link doesn't exist, so the View-PDF button
-      // wouldn't work. Give the user a more honest message so they
-      // don't expect a clickable PDF that will never appear.
       if (!url) {
         showSnackbar(
-          (body?.message ?? "Report saved") + " (PDF generation pending — backend feature still being built)",
+          (body?.error_message ?? body?.message ?? "Report saved") +
+            " (PDF generation pending — backend feature still being built, but it's saved and will appear in Feed Reports)",
           "info"
         );
       } else {

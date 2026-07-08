@@ -794,11 +794,22 @@ export default function CattleInfoPage() {
                     onChange={(v) =>
                       setForm((p) => ({
                         ...p,
-                        // Store null when the user picks English so the
-                        // langProvider chain naturally falls through to
-                        // profile default (avoids pinning ?lang=en when
-                        // the user hasn't actively overridden).
-                        simulation_language: v === "en" ? null : v,
+                        // Store the picked language verbatim — including
+                        // "en". Collapsing an explicit English pick to
+                        // null used to mean "no override, inherit
+                        // profile" — indistinguishable from never having
+                        // touched this dropdown. For a user whose PROFILE
+                        // language is non-English (e.g. Hindi), explicitly
+                        // choosing English for THIS simulation was
+                        // silently discarded: on restore (Simulation
+                        // History), simulation_language came back empty
+                        // and the fallback chain resolved to the
+                        // country's primary non-English language instead
+                        // of the English the user actually picked. Only
+                        // an untouched dropdown (EMPTY_FORM / Reset) is
+                        // null now; any explicit choice — English
+                        // included — sticks.
+                        simulation_language: v,
                       }))
                     }
                     options={languageOptions.map((code) => ({
