@@ -554,6 +554,54 @@ class FeedRepository:
             grouped.setdefault(row.FeedCategory.feed_type_id, []).append(row)
         return grouped
 
+    # ── Translation maps (for diet result localization — Group 2) ─────────────
+
+    async def get_name_translation_map(
+        self, feed_ids: List[str], lang: str = "en"
+    ) -> Dict[str, str]:
+        """Return {feed_id: translated_name} from feed_translations for the given feeds.
+
+        Empty dict when lang='en' or no valid ids. Custom feeds have no rows and are
+        simply absent from the map (they display in their entered language).
+        """
+        if lang == "en" or not feed_ids:
+            return {}
+        uids = [u for u in (_uuid_or_none(f) for f in feed_ids) if u is not None]
+        if not uids:
+            return {}
+        res = await self.db.execute(
+            select(FeedTranslation.feed_id, FeedTranslation.name).where(
+                FeedTranslation.feed_id.in_(uids),
+                FeedTranslation.language == lang,
+            )
+        )
+        return {str(r[0]): r[1] for r in res.all()}
+
+    async def get_vocabulary_translation_map(
+        self,
+        country_id: Optional[str],
+        kind: str,
+        lang: str = "en",
+        source_values: Optional[List[str]] = None,
+    ) -> Dict[str, str]:
+        """Return {source_value: translated} from vocabulary_translations (country-scoped).
+
+        Empty dict when lang='en', no country_id, or no source_values. Used to localize
+        feed_type/feed_category strings shown in diet results (Group 2).
+        """
+        cid = _uuid_or_none(country_id)
+        if lang == "en" or cid is None or not source_values:
+            return {}
+        res = await self.db.execute(
+            select(VocabularyTranslation.source_value, VocabularyTranslation.name).where(
+                VocabularyTranslation.country_id == cid,
+                VocabularyTranslation.kind == kind,
+                VocabularyTranslation.language == lang,
+                VocabularyTranslation.source_value.in_(list(source_values)),
+            )
+        )
+        return {r[0]: r[1] for r in res.all()}
+
     # ── Feed types ────────────────────────────────────────────────────────────
 
     async def get_feed_type_by_id(self, type_id: str) -> Optional[FeedType]:

@@ -268,6 +268,7 @@ async def run_diet_recommendation(
     pool: ProcessPoolExecutor,
     request: Any,
     user_id: str,
+    lang: str = "en",
 ) -> Dict[str, Any]:
     """
     Full diet recommendation pipeline:
@@ -366,6 +367,19 @@ async def run_diet_recommendation(
     except Exception:
         pass
 
+    # Localize feed names at response-build time (main process — the pool worker
+    # has no DB session). {english_fd_name: translated_name} from feed_translations.
+    name_map: Dict[str, str] = {}
+    if lang != "en":
+        id_name_map = await FeedRepository(db).get_name_translation_map(
+            [f["feed_id"] for f in feed_data_list], lang
+        )
+        name_map = {
+            f["fd_name"]: id_name_map[f["feed_id"]]
+            for f in feed_data_list
+            if f["feed_id"] in id_name_map
+        }
+
     response = build_diet_response(
         optimization_results=result_dict,
         cattle_info=request.cattle_info,
@@ -373,6 +387,7 @@ async def run_diet_recommendation(
         report_id=report_id,
         user_name="",
         currency=currency,
+        name_map=name_map,
     )
 
     # 5 — Persist report record (no PDF yet — Task 2.8 adds that)
@@ -408,6 +423,7 @@ async def run_diet_evaluation(
     db: AsyncSession,
     request: Any,
     user_id: str,
+    lang: str = "en",
 ) -> Dict[str, Any]:
     """
     Evaluate a user-supplied diet against calculated animal requirements.
@@ -465,6 +481,26 @@ async def run_diet_evaluation(
         eval_post = eval_result.get("post_results")
         if isinstance(eval_post, dict):
             eval_post["milk_price"] = cattle.milk_price
+    # Localize feed names (feed_translations) and feed types (vocabulary_translations,
+    # country-scoped) at response-build time. Display layer only — the engine's
+    # internal English names stay English.
+    name_map: Dict[str, str] = {}
+    type_map: Dict[str, str] = {}
+    if lang != "en":
+        repo = FeedRepository(db)
+        id_name_map = await repo.get_name_translation_map(
+            [f["feed_id"] for f in feed_data_list], lang
+        )
+        name_map = {
+            f["fd_name"]: id_name_map[f["feed_id"]]
+            for f in feed_data_list
+            if f["feed_id"] in id_name_map
+        }
+        type_map = await repo.get_vocabulary_translation_map(
+            request.country_id, "feed_type", lang,
+            [f["fd_type"] for f in feed_data_list if f.get("fd_type")],
+        )
+
     report_id = f"eval-{_uuid_mod.uuid4().hex[:8]}"
     response = build_evaluation_response(
         evaluation_results=eval_result,
@@ -475,6 +511,8 @@ async def run_diet_evaluation(
         country_name=country_name,
         feed_evaluation=request.feed_evaluation,
         feeds=feed_data_list,
+        name_map=name_map,
+        type_map=type_map,
     )
 
     report_repo = ReportRepository(db)

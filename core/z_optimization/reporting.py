@@ -18,12 +18,19 @@ def build_diet_response(
     simulation_id: str,
     report_id: str,
     user_name: str,
-    currency: str = "$"
+    currency: str = "$",
+    name_map: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
-    SINGLE SOURCE OF TRUTH: Builds the formatted JSON response for both 
+    SINGLE SOURCE OF TRUTH: Builds the formatted JSON response for both
     the API response and the background PDF report.
+
+    name_map: optional {english_feed_name: translated_name}. When provided, each
+    diet row gains a localized `display_name` (additive — English `feed_name` is
+    preserved). Applied at the display layer only; the optimizer's English names
+    are untouched.
     """
+    name_map = name_map or {}
     post_results = optimization_results.get('post_results', {})
     
     # Get derived grazing status from engine results
@@ -64,8 +71,10 @@ def build_diet_response(
         if quantity_kg_day > 0:
             feed_cost = feed.get('Total_Cost', 0.0)
             total_diet_cost += feed_cost
+            ingredient = feed.get('Ingredient') if feed.get('Ingredient') is not None else ""
             least_cost_diet.append({
-                'feed_name': feed.get('Ingredient') if feed.get('Ingredient') is not None else "",
+                'feed_name': ingredient,
+                'display_name': name_map.get(ingredient, ingredient),
                 'quantity_kg_per_day': round(quantity_kg_day, 2),
                 'price_per_kg': round(feed.get('Cost_per_kg', 0.0), 2),
                 'daily_cost': round(feed_cost, 2)
@@ -271,12 +280,21 @@ def build_evaluation_response(
     currency: str,
     country_name: str,
     feed_evaluation: List[Any],
-    feeds: List[Any]
+    feeds: List[Any],
+    name_map: Optional[Dict[str, str]] = None,
+    type_map: Optional[Dict[str, str]] = None,
 ) -> Dict[str, Any]:
     """
-    SINGLE SOURCE OF TRUTH: Builds the formatted JSON response for both 
+    SINGLE SOURCE OF TRUTH: Builds the formatted JSON response for both
     the API response and the background PDF report for diet evaluation.
+
+    name_map / type_map: optional {english: translated} for feed names and feed
+    types. When provided, each feed_breakdown row gains localized display_name /
+    display_type (additive — English feed_name/feed_type preserved). Display layer
+    only; the engine's internal English names are untouched.
     """
+    name_map = name_map or {}
+    type_map = type_map or {}
     milk_support = evaluation_results.get("milk_support", {})
     post_results = evaluation_results.get("post_results", {})
     ingredient_amounts_dm = evaluation_results.get("ingredient_amounts_dm", [])
@@ -453,11 +471,15 @@ def build_evaluation_response(
         # Find index in engine results
         try:
             idx = engine_feed_names.index(_fname(feed_obj))
-            
+
+            fname = _fname(feed_obj)
+            ftype = f_nd["Fd_Type"][idx] if f_nd["Fd_Type"][idx] is not None else ""
             feed_breakdown.append({
                 "feed_id": feed_id,
-                "feed_name": _fname(feed_obj),
-                "feed_type": f_nd["Fd_Type"][idx] if f_nd["Fd_Type"][idx] is not None else "",
+                "feed_name": fname,
+                "display_name": name_map.get(fname, fname),
+                "feed_type": ftype,
+                "display_type": type_map.get(ftype, ftype),
                 "quantity_as_fed_kg_per_day": round(float(ingredient_amounts_af[idx]), 2),
                 "quantity_dm_kg_per_day": round(float(ingredient_amounts_dm[idx]), 2),
                 "price_per_kg": round(float(f_nd["Fd_Cost"][idx]), 2),

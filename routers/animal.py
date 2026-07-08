@@ -240,6 +240,7 @@ async def diet_recommendation(
     request_body: DietRecommendationRequest,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Run the multi-objective NSGA-III genetic algorithm to compute the least-cost, nutritionally adequate diet for a dairy cattle herd.
@@ -261,7 +262,7 @@ async def diet_recommendation(
     pool = request.app.state.optimization_pool
     try:
         result = await diet_service.run_diet_recommendation(
-            db, pool, request_body, str(current_user.id)
+            db, pool, request_body, str(current_user.id), lang=lang
         )
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
@@ -273,6 +274,7 @@ async def evaluate_diet(
     body: DietEvaluationRequest,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
+    lang: str = Depends(get_language_authenticated),
 ):
     """
     Assess a user-defined feed ration against dairy cattle nutrient requirements and return a detailed gap analysis.
@@ -288,7 +290,7 @@ async def evaluate_diet(
     Returns `400` for invalid or missing feed data.
     """
     try:
-        result = await diet_service.run_diet_evaluation(db, body, str(current_user.id))
+        result = await diet_service.run_diet_evaluation(db, body, str(current_user.id), lang=lang)
     except ValueError as exc:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     await db.commit()
