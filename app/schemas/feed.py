@@ -154,7 +154,8 @@ class AdminFeedCategoryResponse(BaseModel):
 
 
 class AdminFeedRequest(BaseModel):
-    fd_code: str
+    # fd_code is NOT accepted from the client — the server generates it for add-feed and never
+    # changes it on update. An extra fd_code in the request body is ignored by Pydantic.
     fd_name: str
     fd_category: str
     fd_type: str

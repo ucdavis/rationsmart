@@ -36,6 +36,10 @@ class FeedRepository:
         )
         return result.scalars().first()
 
+    async def get_by_code(self, fd_code: str) -> Optional[Feed]:
+        result = await self.db.execute(select(Feed).where(Feed.fd_code == fd_code))
+        return result.scalars().first()
+
     async def get_all(
         self,
         skip: int = 0,
@@ -84,6 +88,8 @@ class FeedRepository:
             fd_country_name=data.get("fd_country_name"),
             fd_country_cd=data.get("fd_country_cd"),
             fd_country_id=country_id,
+            fd_type_id=data.get("fd_type_id"),
+            fd_category_id=data.get("fd_category_id"),
             fd_dm=data.get("fd_dm"),
             fd_ash=data.get("fd_ash"),
             fd_cp=data.get("fd_cp"),
@@ -115,6 +121,7 @@ class FeedRepository:
             "fd_dm", "fd_ash", "fd_cp", "fd_npn_cp", "fd_ee", "fd_cf", "fd_nfe",
             "fd_st", "fd_ndf", "fd_hemicellulose", "fd_adf", "fd_cellulose", "fd_lg",
             "fd_ndin", "fd_adin", "fd_ca", "fd_p", "fd_season", "fd_orginin", "fd_ipb_local_lab",
+            "fd_type_id", "fd_category_id",
         ]
         for field in nutrient_fields:
             if field in data:
@@ -476,6 +483,35 @@ class FeedRepository:
             select(func.count(Feed.id)).where(Feed.fd_category == category_name)
         )
         return result.scalar_one()
+
+    # ── Taxonomy validation maps (for bulk upload) ────────────────────────────
+
+    async def get_active_taxonomy_maps(
+        self,
+    ) -> Tuple[Dict[str, FeedType], Dict[Tuple[Any, str], FeedCategory]]:
+        """Load active feed types + categories once for in-memory validation.
+
+        Returns:
+          type_by_name: { lower(type_name): FeedType } — active types.
+          cat_by_type_and_name: { (feed_type_id, lower(category_name)): FeedCategory } —
+              active categories, keyed by their parent type so category↔type membership
+              can be checked in one lookup.
+        """
+        types_result = await self.db.execute(
+            select(FeedType).where(FeedType.is_active == True)  # noqa: E712
+        )
+        type_by_name = {
+            t.type_name.strip().lower(): t for t in types_result.scalars().all()
+        }
+
+        cats_result = await self.db.execute(
+            select(FeedCategory).where(FeedCategory.is_active == True)  # noqa: E712
+        )
+        cat_by_type_and_name = {
+            (c.feed_type_id, c.category_name.strip().lower()): c
+            for c in cats_result.scalars().all()
+        }
+        return type_by_name, cat_by_type_and_name
 
     # ── Country helper ────────────────────────────────────────────────────────
 

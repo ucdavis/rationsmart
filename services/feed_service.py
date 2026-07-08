@@ -6,6 +6,9 @@ All DB access through FeedRepository. No FastAPI imports.
 """
 import io
 import logging
+import re
+import secrets
+import string
 import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
@@ -28,6 +31,31 @@ def stable_feed_uuid(fd_code: str) -> uuid.UUID:
     return uuid.uuid5(STANDARD_FEED_NAMESPACE, fd_code)
 
 
+# Alphabet for the random suffix of RationSmart-generated feed codes (uppercase + digits).
+_CODE_SUFFIX_ALPHABET = string.ascii_uppercase + string.digits
+
+
+def generate_feed_code(fd_name: str) -> str:
+    """Generate a RationSmart-origin feed code: 'RS' + up to 6 name letters + 4 random chars.
+
+    Example: 'Alfalfa Hay' -> 'RSALFALF7K2Q'. The 'RS' prefix distinguishes feeds created
+    inside RationSmart (via add-feed) from the 3rd-party bulk-imported library. Not guaranteed
+    unique on its own — use make_unique_feed_code to check against the DB.
+    """
+    letters = re.sub(r"[^A-Za-z]", "", fd_name or "").upper()[:6]
+    suffix = "".join(secrets.choice(_CODE_SUFFIX_ALPHABET) for _ in range(4))
+    return f"RS{letters}{suffix}"
+
+
+async def make_unique_feed_code(repo, fd_name: str, max_attempts: int = 25) -> str:
+    """Generate an fd_code not already present in `feeds`. Retries the random suffix on collision."""
+    for _ in range(max_attempts):
+        code = generate_feed_code(fd_name)
+        if not await repo.get_by_code(code):
+            return code
+    raise RuntimeError("Could not generate a unique fd_code after multiple attempts")
+
+
 # Columns required for bulk upload Excel files
 _REQUIRED_COLUMNS = {"fd_name", "fd_category", "fd_type", "fd_country_name"}
 _NUMERIC_COLUMNS = {
@@ -35,6 +63,41 @@ _NUMERIC_COLUMNS = {
     "fd_st", "fd_ndf", "fd_hemicellulose", "fd_adf", "fd_cellulose", "fd_lg",
     "fd_ndin", "fd_adin", "fd_ca", "fd_p",
 }
+
+
+def resolve_taxonomy(type_by_name, cat_by_type_and_name, type_cell, cat_cell):
+    """Validate + canonicalize a (fd_type, fd_category) pair against the active taxonomy.
+
+    Shared by bulk upload and single-feed add/update. `type_cell`/`cat_cell` must already be
+    trimmed strings ("" if blank — callers handle source-specific blank/NaN normalization).
+    Rules: case-insensitive match; the category must exist AND belong to the matched type
+    (stronger check); reject blanks.
+
+    Returns (ok, reason, canonical_type, canonical_cat, fd_type_id, fd_category_id).
+    On failure `ok` is False, `reason` is set, and the remaining fields are None.
+    """
+    if not type_cell:
+        return False, "fd_type is empty", None, None, None, None
+    if not cat_cell:
+        return False, "fd_category is empty", None, None, None, None
+
+    matched_type = type_by_name.get(type_cell.lower())
+    if matched_type is None:
+        return False, f"fd_type '{type_cell}' does not match any active feed type", None, None, None, None
+
+    matched_category = cat_by_type_and_name.get((matched_type.id, cat_cell.lower()))
+    if matched_category is None:
+        return (
+            False,
+            f"fd_category '{cat_cell}' is not a valid active category under feed type '{matched_type.type_name}'",
+            None, None, None, None,
+        )
+
+    return (
+        True, None,
+        matched_type.type_name, matched_category.category_name,
+        matched_type.id, matched_category.id,
+    )
 
 
 # ── Feed type / category CRUD ─────────────────────────────────────────────────
@@ -99,12 +162,30 @@ async def delete_feed_category(
 async def create_feed(
     db: AsyncSession, data: Dict[str, Any]
 ) -> Tuple[bool, str, Optional[Any]]:
-    """Create a new standard feed. Caller must commit."""
+    """Create a new standard feed. Caller must commit.
+
+    Validates fd_type/fd_category against the active taxonomy (canonicalizing text and
+    populating both FKs), and generates a RationSmart-origin fd_code + stable id.
+    """
     repo = FeedRepository(db)
     user_repo = UserRepository(db)
 
     if await repo.get_by_name(data["fd_name"]):
         return False, f"Feed '{data['fd_name']}' already exists", None
+
+    # Taxonomy validation + canonicalization (same rules as bulk upload).
+    type_by_name, cat_by_type_and_name = await repo.get_active_taxonomy_maps()
+    type_cell = (data.get("fd_type") or "").strip()
+    cat_cell = (data.get("fd_category") or "").strip()
+    ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
+        type_by_name, cat_by_type_and_name, type_cell, cat_cell
+    )
+    if not ok:
+        return False, reason, None
+    data["fd_type"] = canon_type
+    data["fd_category"] = canon_cat
+    data["fd_type_id"] = type_id
+    data["fd_category_id"] = cat_id
 
     country_id = None
     if data.get("fd_country_name"):
@@ -113,6 +194,11 @@ async def create_feed(
             return False, f"Country '{data['fd_country_name']}' not found", None
         country_id = str(country.id)
 
+    # fd_code is generated inside RationSmart (admin never supplies it); id derives from it.
+    fd_code = await make_unique_feed_code(repo, data["fd_name"])
+    data["fd_code"] = fd_code
+    data["id"] = stable_feed_uuid(fd_code)
+
     feed = await repo.create(data, country_id=country_id)
     return True, "Feed created successfully", feed
 
@@ -120,7 +206,12 @@ async def create_feed(
 async def update_feed(
     db: AsyncSession, feed_id: str, data: Dict[str, Any]
 ) -> Tuple[bool, str, Optional[Any]]:
-    """Update an existing feed. Caller must commit."""
+    """Update an existing feed. Caller must commit.
+
+    If fd_type and/or fd_category are supplied, the *effective* pair (supplied value else the
+    feed's current value) is validated against the active taxonomy — so the category-belongs-to-
+    type rule always holds — then canonicalized and both FKs refreshed. fd_code/id never change.
+    """
     repo = FeedRepository(db)
     feed = await repo.get_by_id(feed_id)
     if not feed:
@@ -130,6 +221,22 @@ async def update_feed(
         dup = await repo.get_by_name(data["fd_name"])
         if dup and str(dup.id) != feed_id:
             return False, f"Another feed named '{data['fd_name']}' already exists", None
+
+    # Re-validate taxonomy only when type or category is being changed. Fill the missing side
+    # from the existing row so the (type, category) membership check is always evaluated.
+    if "fd_type" in data or "fd_category" in data:
+        type_by_name, cat_by_type_and_name = await repo.get_active_taxonomy_maps()
+        type_cell = (data.get("fd_type", feed.fd_type) or "").strip()
+        cat_cell = (data.get("fd_category", feed.fd_category) or "").strip()
+        ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
+            type_by_name, cat_by_type_and_name, type_cell, cat_cell
+        )
+        if not ok:
+            return False, reason, None
+        data["fd_type"] = canon_type
+        data["fd_category"] = canon_cat
+        data["fd_type_id"] = type_id
+        data["fd_category_id"] = cat_id
 
     updated = await repo.update(feed, data)
     return True, "Feed updated successfully", updated
@@ -212,10 +319,15 @@ async def bulk_upload_feeds(
     success_count = updated = existing = 0
     failed: List[Dict] = []
 
+    # Load the active taxonomy once — fd_type/fd_category are validated against these
+    # (case-insensitive, trimmed) and rows are canonicalized to the master spelling.
+    type_by_name, cat_by_type_and_name = await repo.get_active_taxonomy_maps()
+
     for idx, row in df.iterrows():
         row_num = int(idx) + 2  # Excel is 1-indexed; header is row 1
         try:
-            fd_name = str(row.get("fd_name", "")).strip()
+            raw_name = row.get("fd_name")
+            fd_name = "" if pd.isna(raw_name) else str(raw_name).strip()
             if not fd_name:
                 failed.append({"row": row_num, "reason": "fd_name is empty"})
                 continue
@@ -243,10 +355,27 @@ async def bulk_upload_feeds(
                 failed.append({"row": row_num, "reason": "fd_code is missing — cannot generate stable feed ID"})
                 continue
 
+            # ── Taxonomy validation (fd_type + fd_category) ─────────────────────
+            # Empty Excel cells arrive as NaN (float); pd.isna guards against
+            # str(NaN) -> "nan" slipping past the blank check in resolve_taxonomy.
+            raw_type = row.get("fd_type")
+            raw_cat = row.get("fd_category")
+            type_cell = "" if pd.isna(raw_type) else str(raw_type).strip()
+            cat_cell = "" if pd.isna(raw_cat) else str(raw_cat).strip()
+
+            ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
+                type_by_name, cat_by_type_and_name, type_cell, cat_cell
+            )
+            if not ok:
+                failed.append({"row": row_num, "reason": reason})
+                continue
+
             data: Dict[str, Any] = {
                 "fd_name": fd_name,
-                "fd_category": str(row.get("fd_category", "") or "").strip() or None,
-                "fd_type": str(row.get("fd_type", "") or "").strip() or None,
+                "fd_category": canon_cat,  # canonical master spelling
+                "fd_type": canon_type,     # canonical master spelling
+                "fd_category_id": cat_id,
+                "fd_type_id": type_id,
                 "fd_country_name": country_name or None,
                 "fd_country_cd": str(row.get("fd_country_cd", "") or "").strip() or None,
                 "fd_code": fd_code,

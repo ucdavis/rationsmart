@@ -132,6 +132,7 @@ class Feed(Base):
     created_at = Column(DateTime, server_default=func.current_timestamp())
     updated_at = Column(DateTime, server_default=func.current_timestamp())
     fd_category_id = Column(UUID(as_uuid=True), ForeignKey("feed_categories.id"), nullable=True)
+    fd_type_id = Column(UUID(as_uuid=True), ForeignKey("feed_types.id"), nullable=True)
     # Note: DB has two FK constraints for created_by (feeds_created_by_fkey + fk_feeds_created_by) — a duplication
     # artefact from manual ALTER TABLE. Only one is declared here; Alembic will detect the extra as noise.
     created_by = Column(UUID(as_uuid=True), ForeignKey("user_information.id", ondelete="SET NULL"), nullable=True)
