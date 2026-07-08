@@ -410,6 +410,18 @@ export default function FeedRow({
           ...names.filter((n) => n !== "Forage" && n !== "Roughage"),
         ];
         const types = sorted.map((n, i) => ({ id: i + 1, name: n, display: n }));
+        // If the row's stored feed_type isn't in the fetched list
+        // (e.g. country changed and the previous country's type isn't
+        // valid here), inject a synthetic entry so the radio/dropdown
+        // can still render the stored label without the user seeing
+        // an empty selection.
+        if (item.feed_type_name && !types.find((t) => t.name === item.feed_type_name)) {
+          types.unshift({
+            id: item.feed_type_id ?? -1,
+            name: item.feed_type_name,
+            display: item.feed_type_name,
+          });
+        }
         setFeedTypes(types);
         if (item.feed_type_name) {
           const match = types.find((t) => t.name === item.feed_type_name);
@@ -470,7 +482,6 @@ export default function FeedRow({
           name: n,
           display: n,
         }));
-        setCategories(newCats);
         // Try exact match first, then a whitespace/case-insensitive
         // fallback so a stray trailing space or capitalisation difference
         // between /search-feeds and /unique-feed-category doesn't nuke
@@ -479,6 +490,20 @@ export default function FeedRow({
         const matched =
           newCats.find((c) => c.name === item.category_name) ??
           newCats.find((c) => norm(c.name) === norm(item.category_name));
+        // If the row's stored category isn't in the fetched list but
+        // the row has been actively used (feed_uuid picked earlier),
+        // inject a synthetic entry so the CustomSelect dropdown still
+        // renders the correct label. Without this the Category
+        // dropdown appears blank after a nav-back-and-forward even
+        // though item.category_name is intact in state.
+        if (!matched && item.category_name && (item.feed_uuid || item.category_id != null)) {
+          newCats.unshift({
+            id: item.category_id ?? -1,
+            name: item.category_name,
+            display: item.category_name,
+          });
+        }
+        setCategories(newCats);
         if (!matched) {
           // Only wipe when the row has NO feed_uuid to lean on. Once the
           // user has actively picked a feed (feed_uuid set), that pick
@@ -551,18 +576,31 @@ export default function FeedRow({
             return uuid && name ? { feed_name: name, feed_uuid: uuid, display_name: display } : null;
           })
           .filter((s): s is FeedSubCategoryItem => s !== null);
-        setSubCategories(list);
         const match = list.find(
           (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
         );
+        // If the row has a picked feed_uuid but it's not in the new
+        // list (e.g. missing Hindi translation on backend), inject a
+        // synthetic entry using the stored data so the dropdown can
+        // STILL render the correct label. Without this the Feed
+        // dropdown would visually go blank even though the state is
+        // intact — the user perceives it as "everything reset".
+        if (!match && item.feed_uuid && item.sub_category_name) {
+          list.unshift({
+            feed_uuid: item.feed_uuid,
+            feed_name: item.sub_category_name,
+            display_name: item.display_name ?? item.sub_category_name,
+          });
+        }
+        setSubCategories(list);
         if (!match) {
           // Only wipe when the row has NO feed_uuid to lean on. When
           // feed_uuid IS set, the user actively picked this feed at
           // some point — treat a missing entry in the current cascade
           // response as a lang / translation gap on the backend side,
-          // not a signal to discard the user's selection. This is what
-          // was making feed rows disappear after a language change on
-          // Cattle Info followed by nav forward.
+          // not a signal to discard the user's selection. Combined with
+          // the synthetic-entry injection above, the dropdown keeps
+          // rendering the correct label.
           if (!item.feed_uuid) {
             onUpdate(item.id, { sub_category_id: null, sub_category_name: "", feed_uuid: null });
           }
