@@ -56,6 +56,26 @@ async def make_unique_feed_code(repo, fd_name: str, max_attempts: int = 25) -> s
     raise RuntimeError("Could not generate a unique fd_code after multiple attempts")
 
 
+def generate_custom_feed_code(fd_name: str) -> str:
+    """Generate a custom-feed code: 'CF' + up to 6 name letters + 4 random chars.
+
+    The 'CF' prefix marks user-created custom feeds (custom_feeds table), distinct from
+    the standard-feed 'RS' prefix. Not guaranteed unique — use make_unique_custom_feed_code.
+    """
+    letters = re.sub(r"[^A-Za-z]", "", fd_name or "").upper()[:6]
+    suffix = "".join(secrets.choice(_CODE_SUFFIX_ALPHABET) for _ in range(4))
+    return f"CF{letters}{suffix}"
+
+
+async def make_unique_custom_feed_code(repo, fd_name: str, max_attempts: int = 25) -> str:
+    """Generate an fd_code not already present in `custom_feeds`. Retries the suffix on collision."""
+    for _ in range(max_attempts):
+        code = generate_custom_feed_code(fd_name)
+        if not await repo.get_custom_by_code(code):
+            return code
+    raise RuntimeError("Could not generate a unique custom fd_code after multiple attempts")
+
+
 # Columns required for bulk upload Excel files
 _REQUIRED_COLUMNS = {"fd_name", "fd_category", "fd_type", "fd_country_name"}
 _NUMERIC_COLUMNS = {

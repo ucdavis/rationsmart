@@ -619,21 +619,102 @@ async def check_insert_or_update(
     return "insert", None
 
 
-async def insert_custom_feed(db: AsyncSession, data: Dict[str, Any]) -> CustomFeed:
-    """Create a new custom feed. Caller must commit."""
-    from app.models import generate_next_custom_feed_code  # legacy helper still in old models
+class CustomFeedTaxonomyError(ValueError):
+    """Raised when a custom-feed request carries an invalid taxonomy selection.
 
-    if "fd_code" not in data:
-        data["fd_code"] = generate_next_custom_feed_code(db)
-    return await FeedRepository(db).create_custom_feed(data)
+    The router maps this to HTTP 400.
+    """
+
+
+async def _resolve_custom_feed_taxonomy(
+    repo: FeedRepository, data: Dict[str, Any], *, require: bool
+) -> None:
+    """Validate + canonicalize a custom-feed request's taxonomy in place (Ticket B).
+
+    ID-first with a text fallback (matches the standard-feed path):
+      * If ``feed_type_id``/``feed_category_id`` are present → validate by ID (id wins).
+        Both are required together; a lone id or a mixed id+text request is rejected.
+      * Else if ``fd_type``/``fd_category`` text is present → canonicalize by text.
+    Either path writes BOTH the FK columns (fd_type_id/fd_category_id) and the resolved
+    canonical English text (fd_type/fd_category) — T1. The request-only ``feed_*_id``
+    keys are popped so they never reach ``CustomFeed(**data)``.
+
+    ``require=True`` (create) errors when no taxonomy is supplied; ``require=False``
+    (partial update) leaves the row untouched when none is supplied.
+
+    Raises CustomFeedTaxonomyError on any invalid selection.
+    """
+    type_id = data.pop("feed_type_id", None)
+    category_id = data.pop("feed_category_id", None)
+    has_ids = bool(type_id) or bool(category_id)
+    has_text = bool((data.get("fd_type") or "").strip()) or bool((data.get("fd_category") or "").strip())
+
+    if has_ids:
+        ok, reason, canon_type, canon_cat, tid, cid = await repo.resolve_taxonomy_by_ids(
+            type_id, category_id
+        )
+        if not ok:
+            raise CustomFeedTaxonomyError(reason)
+        data["fd_type"] = canon_type
+        data["fd_category"] = canon_cat
+        data["fd_type_id"] = tid
+        data["fd_category_id"] = cid
+        return
+
+    if has_text:
+        from services.feed_service import resolve_taxonomy
+
+        type_by_name, cat_by_type_and_name = await repo.get_active_taxonomy_maps()
+        ok, reason, canon_type, canon_cat, tid, cid = resolve_taxonomy(
+            type_by_name,
+            cat_by_type_and_name,
+            (data.get("fd_type") or "").strip(),
+            (data.get("fd_category") or "").strip(),
+        )
+        if not ok:
+            raise CustomFeedTaxonomyError(reason)
+        data["fd_type"] = canon_type
+        data["fd_category"] = canon_cat
+        data["fd_type_id"] = tid
+        data["fd_category_id"] = cid
+        return
+
+    if require:
+        raise CustomFeedTaxonomyError(
+            "feed_type_id + feed_category_id (or fd_type + fd_category) are required"
+        )
+
+
+async def insert_custom_feed(db: AsyncSession, data: Dict[str, Any]) -> CustomFeed:
+    """Create a new custom feed. Caller must commit.
+
+    Validates the taxonomy selection against the active taxonomy and writes both the
+    FK columns and the resolved English text (Ticket B). Raises CustomFeedTaxonomyError
+    (→ HTTP 400) on an invalid selection.
+    """
+    repo = FeedRepository(db)
+    await _resolve_custom_feed_taxonomy(repo, data, require=True)
+    if not data.get("fd_code"):
+        # Replaces the defunct app.models.generate_next_custom_feed_code (module removed).
+        from services.feed_service import make_unique_custom_feed_code
+
+        data["fd_code"] = await make_unique_custom_feed_code(repo, data.get("fd_name", ""))
+    return await repo.create_custom_feed(data)
 
 
 async def update_custom_feed(
     db: AsyncSession, feed_id: str, user_id: str, data: Dict[str, Any]
 ) -> Tuple[bool, Optional[CustomFeed]]:
-    """Update an existing custom feed. Caller must commit."""
-    feed = await FeedRepository(db).get_custom_by_id(feed_id, user_id)
+    """Update an existing custom feed. Caller must commit.
+
+    Re-validates + canonicalizes taxonomy only when the request supplies it (partial
+    update); a request that omits type/category leaves the existing values untouched.
+    Raises CustomFeedTaxonomyError (→ HTTP 400) on an invalid selection.
+    """
+    repo = FeedRepository(db)
+    feed = await repo.get_custom_by_id(feed_id, user_id)
     if not feed:
         return False, None
-    updated = await FeedRepository(db).update_custom_feed(feed, data)
+    await _resolve_custom_feed_taxonomy(repo, data, require=False)
+    updated = await repo.update_custom_feed(feed, data)
     return True, updated

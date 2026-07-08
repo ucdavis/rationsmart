@@ -354,12 +354,21 @@ async def insert_custom_feed(
 
     **Requires:** Bearer JWT.
 
-    **Mandatory body fields:** `fd_name` (string), `fd_type` (string), `fd_category` (string), `fd_country_name` (string), and at least the core nutritional values (`fd_dm`, `fd_cp`, `fd_ndf`, `fd_adf`).
+    **Mandatory body fields:** `fd_name` (string), `fd_country_name` (string), a taxonomy
+    selection, and at least the core nutritional values (`fd_dm`, `fd_cp`, `fd_ndf`, `fd_adf`).
+
+    **Taxonomy selection (preferred):** `feed_type_id` + `feed_category_id` (UUIDs from the
+    feed-classification dropdowns). Legacy text (`fd_type` + `fd_category`) is still accepted
+    and canonicalized. The selection is validated against the active taxonomy; the server
+    persists both the FK ids and the canonical English text. An invalid selection returns `400`.
 
     Returns the new feed's `feed_id` and `fd_name` on success.
     """
     body["user_id"] = str(current_user.id)
-    feed = await diet_service.insert_custom_feed(db, body)
+    try:
+        feed = await diet_service.insert_custom_feed(db, body)
+    except diet_service.CustomFeedTaxonomyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     await db.commit()
     return {"success": True, "feed_id": str(feed.id), "fd_name": feed.fd_name}
 
@@ -378,11 +387,18 @@ async def update_custom_feed(
 
     **Mandatory query parameter:** `feed_id` — UUID of the custom feed to update.
 
-    **Body:** Any subset of the feed fields to update (partial update supported).
+    **Body:** Any subset of the feed fields to update (partial update supported). If a
+    taxonomy selection is supplied (`feed_type_id` + `feed_category_id`, preferred, or legacy
+    `fd_type` + `fd_category` text) it is re-validated and both the FK ids and canonical text
+    are rewritten; omit it to leave the existing type/category untouched.
 
-    Returns `404` if the feed does not exist or belongs to another user.
+    Returns `404` if the feed does not exist or belongs to another user, `400` on an invalid
+    taxonomy selection.
     """
-    success, feed = await diet_service.update_custom_feed(db, feed_id, str(current_user.id), body)
+    try:
+        success, feed = await diet_service.update_custom_feed(db, feed_id, str(current_user.id), body)
+    except diet_service.CustomFeedTaxonomyError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Custom feed not found")
     await db.commit()

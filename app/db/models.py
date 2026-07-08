@@ -150,6 +150,9 @@ class CustomFeed(Base):
     fd_country_name = Column(String(100), nullable=True)
     fd_country_cd = Column(String(10), nullable=True)
     fd_name = Column(String(100), nullable=False)
+    # T1 (taxonomy-ID contract): fd_category / fd_type are the denormalized English
+    # text columns the optimizer keys on (concentrate/forage masks) and the vocabulary
+    # translation join uses. NEVER drop them — the fd_*_id FKs below are ADDITIVE ONLY.
     fd_category = Column(String(50), nullable=True)
     fd_type = Column(String(50), nullable=True)
     fd_dm = Column(Numeric(10, 2), nullable=True)
@@ -177,6 +180,10 @@ class CustomFeed(Base):
     fd_season = Column(Text, nullable=True)
     baseline_price = Column(Numeric(10, 2), nullable=True)
     baseline_currency = Column(String(3), nullable=True)
+    # Additive taxonomy FKs (Ticket B) — mirror feeds.fd_type_id / fd_category_id.
+    # Nullable; populated by the custom-feed create/update path. See T1 note above.
+    fd_category_id = Column(UUID(as_uuid=True), ForeignKey("feed_categories.id"), nullable=True)
+    fd_type_id = Column(UUID(as_uuid=True), ForeignKey("feed_types.id"), nullable=True)
 
 
 class FeedAnalytics(Base):

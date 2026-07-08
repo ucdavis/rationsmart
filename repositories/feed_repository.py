@@ -165,6 +165,12 @@ class FeedRepository:
         result = await self.db.execute(q)
         return result.scalars().first()
 
+    async def get_custom_by_code(self, fd_code: str) -> Optional[CustomFeed]:
+        result = await self.db.execute(
+            select(CustomFeed).where(CustomFeed.fd_code == fd_code)
+        )
+        return result.scalars().first()
+
     async def get_custom_by_ids(self, ids: List[str]) -> List[CustomFeed]:
         uids = [uuid.UUID(str(i)) for i in ids]
         result = await self.db.execute(
@@ -322,28 +328,49 @@ class FeedRepository:
             std_count + cust_count,
         )
 
-    async def resolve_taxonomy_names(
+    async def resolve_taxonomy_by_ids(
         self, type_id: Optional[str] = None, category_id: Optional[str] = None
-    ) -> Tuple[Optional[str], Optional[str]]:
-        """Resolve taxonomy IDs to their canonical English names.
+    ) -> Tuple[bool, Optional[str], Optional[str], Optional[str], Optional[uuid.UUID], Optional[uuid.UUID]]:
+        """Validate + canonicalize a (feed_type_id, feed_category_id) pair against the
+        active taxonomy — the ID-keyed counterpart to services.feed_service.resolve_taxonomy.
 
-        Transitional bridge (Ticket A): custom_feeds have no FK columns yet, so
-        an id-based filter on them is applied by resolving id → English name and
-        matching the denormalized text. Removed in Ticket B. Returns (None, None)
-        for missing/invalid ids.
+        Both ids are required and must be active; the category must belong to the type.
+        Used by the custom-feed create/update write path (Ticket B) to write both the
+        FK columns and the resolved English text (T1).
+
+        Returns (ok, reason, type_name, cat_name, type_id, cat_id). On failure `ok` is
+        False, `reason` is set, and the remaining fields are None.
         """
-        type_name = category_name = None
         tid = _uuid_or_none(type_id)
         cid = _uuid_or_none(category_id)
-        if tid:
-            r = await self.db.execute(select(FeedType.type_name).where(FeedType.id == tid))
-            type_name = r.scalar_one_or_none()
-        if cid:
-            r = await self.db.execute(
-                select(FeedCategory.category_name).where(FeedCategory.id == cid)
+        if tid is None:
+            return False, "feed_type_id is empty or not a valid UUID", None, None, None, None
+        if cid is None:
+            return False, "feed_category_id is empty or not a valid UUID", None, None, None, None
+
+        r = await self.db.execute(
+            select(FeedType).where(FeedType.id == tid, FeedType.is_active == True)  # noqa: E712
+        )
+        ftype = r.scalars().first()
+        if ftype is None:
+            return False, f"feed_type_id '{type_id}' does not match any active feed type", None, None, None, None
+
+        r = await self.db.execute(
+            select(FeedCategory).where(
+                FeedCategory.id == cid,
+                FeedCategory.feed_type_id == tid,
+                FeedCategory.is_active == True,  # noqa: E712
             )
-            category_name = r.scalar_one_or_none()
-        return type_name, category_name
+        )
+        fcat = r.scalars().first()
+        if fcat is None:
+            return (
+                False,
+                f"feed_category_id '{category_id}' is not a valid active category under feed type '{ftype.type_name}'",
+                None, None, None, None,
+            )
+
+        return True, None, ftype.type_name, fcat.category_name, ftype.id, fcat.id
 
     async def get_feed_names(
         self,
@@ -361,8 +388,8 @@ class FeedRepository:
         custom_feeds: List[CustomFeed]
 
         Taxonomy filter: a FK id (feed_type_id/feed_category_id) wins over the
-        legacy string param (T4). Standard feeds filter by FK; custom feeds have
-        no FK yet, so an id is resolved to its English name and matched on text.
+        legacy string param (T4). Standard AND custom feeds both filter by FK on an
+        identical code path (Ticket B — the Phase-1 id→name bridge is gone).
         """
         sq = self._localized_feed_select(lang).where(Feed.fd_country_id == country_id)
         cq = select(CustomFeed).where(
@@ -370,25 +397,26 @@ class FeedRepository:
             CustomFeed.user_id == uuid.UUID(str(user_id)),
         )
 
-        # Resolve ids → names once for the custom-feed text bridge.
-        res_type_name = res_cat_name = None
-        if feed_type_id or feed_category_id:
-            res_type_name, res_cat_name = await self.resolve_taxonomy_names(
-                feed_type_id, feed_category_id
-            )
-
         if feed_type_id:
             tid = _uuid_or_none(feed_type_id)
-            sq = sq.where(Feed.fd_type_id == tid) if tid else sq.where(false())
-            cq = cq.where(CustomFeed.fd_type == res_type_name) if res_type_name else cq.where(false())
+            if tid:
+                sq = sq.where(Feed.fd_type_id == tid)
+                cq = cq.where(CustomFeed.fd_type_id == tid)
+            else:
+                sq = sq.where(false())
+                cq = cq.where(false())
         elif feed_type:
             sq = sq.where(Feed.fd_type == feed_type)
             cq = cq.where(CustomFeed.fd_type == feed_type)
 
         if feed_category_id:
             cid = _uuid_or_none(feed_category_id)
-            sq = sq.where(Feed.fd_category_id == cid) if cid else sq.where(false())
-            cq = cq.where(CustomFeed.fd_category == res_cat_name) if res_cat_name else cq.where(false())
+            if cid:
+                sq = sq.where(Feed.fd_category_id == cid)
+                cq = cq.where(CustomFeed.fd_category_id == cid)
+            else:
+                sq = sq.where(false())
+                cq = cq.where(false())
         elif category:
             sq = sq.where(Feed.fd_category == category)
             cq = cq.where(CustomFeed.fd_category == category)
