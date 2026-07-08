@@ -348,14 +348,20 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
   });
 });
 
-describe("Cattle Info — whole-page loading skeleton", () => {
+describe("Cattle Info — whole-page loading shimmer (real elements, not a separate skeleton layout)", () => {
   // Every field ultimately depends on the same getCountries() call
   // resolving before the form is fully meaningful. Originally only
   // Country+Language got a loading treatment while every other section
   // rendered instantly with EMPTY_FORM defaults — a jarring mix of
-  // "ready" and "loading" on the same screen. The whole form (all 5
-  // SectionCards) now skeletons and resolves together as one unit.
-  it("skeletons the entire form while countries are fetching, then swaps the whole page in together", async () => {
+  // "ready" and "loading" on the same screen. Then a hand-built parallel
+  // skeleton tree replaced the whole form during load — but an
+  // approximated skeleton risks drifting from the real field layout.
+  // The real form (same SectionCards, same FieldLabels, same
+  // input/SelectInput/toggle elements) now ALWAYS renders; only each
+  // field's own appearance (shimmer background, hidden value, disabled)
+  // changes while loading, so there is zero layout difference between
+  // the loading and loaded states — it's literally the same DOM.
+  it("shimmers every real field in place while countries are fetching, then the same elements become interactive", async () => {
     let resolveCountries!: (v: { data: typeof countries }) => void;
     getCountries.mockReturnValueOnce(
       new Promise((resolve) => { resolveCountries = resolve; })
@@ -363,21 +369,37 @@ describe("Cattle Info — whole-page loading skeleton", () => {
     useStore.setState({ user: seedUser({ country_id: "1" }) });
     const { container } = render(<CattleInfoPage />);
 
-    // Still loading — no real form content is mounted (Simulation
-    // history button only exists in the real Simulation Details card),
-    // but the whole-page skeleton fills every section with shimmer.
-    expect(screen.queryByRole("button", { name: "Simulation history" })).not.toBeInTheDocument();
-    expect(screen.queryByText("Country")).not.toBeInTheDocument();
-    expect(screen.queryByText("Language")).not.toBeInTheDocument();
-    expect(screen.queryByText("Breed Selection")).not.toBeInTheDocument();
-    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(20);
+    // The real form is mounted immediately — same labels, same
+    // Simulation History button, same section structure.
+    expect(screen.getByRole("button", { name: "Simulation history" })).toBeInTheDocument();
+    expect(screen.getByText("Country")).toBeInTheDocument();
+    expect(screen.getByText("Breed Selection")).toBeInTheDocument();
+
+    // But the actual fields are shimmering + non-interactive: the
+    // Simulation Name input is disabled with the shimmer class...
+    const simNameInput = screen.getByText("Simulation Name").nextElementSibling as HTMLInputElement;
+    expect(simNameInput).toBeDisabled();
+    expect(simNameInput.className).toContain("shimmer");
+    // ...the Country dropdown trigger is disabled...
+    const countryWrapper = screen.getByText("Country").nextElementSibling as HTMLElement;
+    expect(countryWrapper.className).toContain("shimmer");
+    expect(within(countryWrapper).getByRole("button")).toBeDisabled();
+    // ...and the grazing toggle switch is shimmering too.
+    const toggleSlider = container.querySelector(".toggle-slider");
+    expect(toggleSlider?.className).toContain("shimmer");
+    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(10);
 
     resolveCountries({ data: countries });
-    await screen.findByRole("button", { name: "Simulation history" });
-    expect(screen.getByText("Country")).toBeInTheDocument();
-    await screen.findByText("Language");
-    expect(screen.getByText("Breed Selection")).toBeInTheDocument();
+
+    // Once resolved, the SAME elements become fully interactive.
+    await waitFor(() => expect(simNameInput).not.toBeDisabled());
+    expect(simNameInput.className).not.toContain("shimmer");
+    await waitFor(() => expect(within(countryWrapper).getByRole("button")).not.toBeDisabled());
+    expect(countryWrapper.className).not.toContain("shimmer");
     expect(container.querySelectorAll(".shimmer").length).toBe(0);
+
+    await fillBaselineRequired("India");
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).not.toBeDisabled();
   });
 });
 

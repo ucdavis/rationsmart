@@ -144,91 +144,27 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
   return <p className={cls} style={style}>{children}</p>;
 }
 
-// Matches a FieldLabel + input/SelectInput's footprint exactly, so a
-// field swapping from this to its real content causes no layout shift.
-function FieldSkeleton({ toggle = false }: { toggle?: boolean } = {}) {
-  return (
-    <div style={{ marginTop: 12 }}>
-      <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
-      {toggle ? (
-        <div className="shimmer" style={{ width: 50, height: 28, borderRadius: 14 }} />
-      ) : (
-        <div className="shimmer rounded-2xl" style={{ height: 48 }} />
-      )}
-    </div>
-  );
-}
-
-// Same field footprint, side-by-side (mirrors the real form's
-// `grid grid-cols-2 gap-3` field pairs — Body Weight/BW Gain,
-// BCS/Days in Milk, Days of Pregnancy/Parity, Milk Protein/Fat %).
-function FieldSkeletonPair() {
-  return (
-    <div className="grid grid-cols-2 gap-3" style={{ marginTop: 12 }}>
-      <div>
-        <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
-        <div className="shimmer rounded-2xl" style={{ height: 48 }} />
-      </div>
-      <div>
-        <div className="shimmer rounded" style={{ width: 70, height: 10, marginBottom: 8, borderRadius: 4 }} />
-        <div className="shimmer rounded-2xl" style={{ height: 48 }} />
-      </div>
-    </div>
-  );
-}
-
-// Whole-page loading state. Every field on this page depends, directly
-// or indirectly, on the same getCountries() call finishing before the
-// form is fully meaningful (Country needs the list; Language needs the
-// selected country's supported_languages; downstream sections read
-// user/country context too). Previously only Country+Language got a
-// loading treatment while the rest of the form rendered instantly with
-// EMPTY_FORM defaults — a jarring mix of "ready" and "loading" on the
-// same screen. Skeletoning every section together makes the whole page
-// load and resolve as one coherent unit instead. Section icons/titles
-// are static (no async dependency) so they render for real immediately;
-// only the field content underneath is shimmered.
-function CattleInfoSkeleton() {
-  return (
-    <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }} aria-busy="true" aria-label="Loading cattle info form">
-      <SectionCard iconSvg={<IcSimulationDetails size={22} color="#064E3B" />} title="Simulation Details">
-        <div className="px-3">
-          <FieldSkeleton />
-          <FieldSkeleton />
-          <FieldSkeleton />
-        </div>
-      </SectionCard>
-
-      <SectionCard iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />} title="Animal Characteristics">
-        <div className="px-3">
-          <FieldSkeleton />
-          <FieldSkeletonPair />
-          <FieldSkeletonPair />
-        </div>
-      </SectionCard>
-
-      <SectionCard iconSvg={<IcReproductiveData size={22} color="#064E3B" />} title="Reproductive Data">
-        <div className="px-3">
-          <FieldSkeletonPair />
-        </div>
-      </SectionCard>
-
-      <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title="Milk Production">
-        <div className="px-3">
-          <FieldSkeleton />
-          <FieldSkeletonPair />
-          <FieldSkeleton />
-        </div>
-      </SectionCard>
-
-      <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title="Environment">
-        <div className="px-3">
-          <FieldSkeleton />
-          <FieldSkeleton toggle />
-        </div>
-      </SectionCard>
-    </div>
-  );
+// UX: shimmer the REAL form fields in place while getCountries is in
+// flight, rather than swapping in a separately-built skeleton tree. A
+// hand-approximated skeleton can drift from the actual field layout
+// (spacing, conditional error rows, section field counts) and causes a
+// layout jump the moment it's replaced. Reusing the real elements
+// guarantees byte-identical layout before/after — only the appearance
+// (shimmer background, hidden value, disabled) changes.
+// Spread onto a native <input>/<textarea> alongside its normal
+// className/style: `{...loadingFieldProps(loadingCountries, className, style)}`.
+function loadingFieldProps(
+  loading: boolean,
+  className: string,
+  style: React.CSSProperties
+): { className: string; style: React.CSSProperties; disabled: boolean; tabIndex?: number } {
+  if (!loading) return { className, style, disabled: false };
+  return {
+    className: `${className} shimmer`,
+    style: { ...style, color: "transparent", caretColor: "transparent" },
+    disabled: true,
+    tabIndex: -1,
+  };
 }
 
 function FieldError({ message }: { message?: string }) {
@@ -249,23 +185,27 @@ function SelectInput({
   options,
   placeholder,
   disabled = false,
+  loading = false,
 }: {
   value: string;
   onChange: (v: string) => void;
   options: { value: string; label: string }[];
   placeholder?: string;
   disabled?: boolean;
+  loading?: boolean;
 }) {
   // Outer gray-pill keeps the rounded chrome consistent with other fields;
   // CustomSelect renders its own zebra-striped popup matching Android's
   // DropDownListAdapter (mint/white alternating rows).
+  // `loading`: same outer box (className unchanged apart from appending
+  // "shimmer", which only touches background/animation) with the SAME
+  // CustomSelect underneath — text hidden, interaction disabled — rather
+  // than swapping in different markup, so there's no layout drift
+  // between the loading and loaded states.
   return (
     <div
-      className="rounded-2xl px-4 py-3"
-      style={{
-        ...inputStyle,
-        opacity: disabled ? 0.55 : 1,
-      }}
+      className={`rounded-2xl px-4 py-3${loading ? " shimmer" : ""}`}
+      style={loading ? undefined : { ...inputStyle, opacity: disabled ? 0.55 : 1 }}
     >
       <CustomSelect
         transparentTrigger
@@ -274,6 +214,7 @@ function SelectInput({
         options={options}
         placeholder={placeholder ?? "Select"}
         disabled={disabled}
+        loading={loading}
       />
     </div>
   );
@@ -796,7 +737,6 @@ export default function CattleInfoPage() {
     >
       <Toolbar type="home" title="Cattle Info" onMenuOpen={openDrawer} showForward={!!reportData} onForward={() => router.push("/report")} />
 
-      {loadingCountries ? <CattleInfoSkeleton /> : (
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
         {/* Section 1: Simulation Details */}
         <SectionCard
@@ -820,14 +760,18 @@ export default function CattleInfoPage() {
               type="text"
               value={form.simulation_name}
               onChange={(e) => set("simulation_name")(e.target.value)}
-              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={inputStyle}
+              {...loadingFieldProps(
+                loadingCountries,
+                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                inputStyle
+              )}
             />
 
-            {/* Country/Language's per-field loading skeleton was folded
-                into the whole-page CattleInfoSkeleton below (rendered
-                while loadingCountries is true) — by the time this branch
-                is reached, countries has already resolved. */}
+            {/* Country/Language shimmer via SelectInput's `loading` prop
+                (§ loadingFieldProps comment above) — the SAME dropdown
+                markup renders throughout, just non-interactive with
+                hidden text while getCountries is in flight, so there's
+                no layout drift between loading and loaded. */}
             <FieldLabel>Country *</FieldLabel>
             <SelectInput
               value={form.country_id}
@@ -855,6 +799,7 @@ export default function CattleInfoPage() {
               }}
               options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
               placeholder="Select country"
+              loading={loadingCountries}
             />
 
             {/* i18n V2 — Per-simulation Language dropdown. English is
@@ -864,14 +809,17 @@ export default function CattleInfoPage() {
                 every /v1/animal/* call for the duration of this
                 simulation only; profile language stays put.
 
-                Rendered ONLY after the countries fetch resolves —
-                otherwise selectedCountry would be undefined and the
-                dropdown would default to English with no other options,
-                which is misleading before the user's country is known.
-                (The loading state itself is handled by the whole-page
-                CattleInfoSkeleton, so by the time this renders,
-                countries has already resolved.) */}
-            {countries.length > 0 && (() => {
+                Needs the countries fetch resolved to know the selected
+                country's supported_languages — while loadingCountries,
+                render the SAME field shimmered (empty options, loading
+                prop) rather than hiding it outright, so it appears in
+                the same place at the same time as every other field. */}
+            {loadingCountries ? (
+              <>
+                <FieldLabel>Language</FieldLabel>
+                <SelectInput value="" onChange={() => {}} options={[]} placeholder="Select" loading />
+              </>
+            ) : countries.length > 0 && (() => {
               const selectedCountry = countries.find(
                 (c) => String(c.id) === form.country_id
               );
@@ -931,6 +879,7 @@ export default function CattleInfoPage() {
               onChange={(v) => set("animal_category")(v)}
               options={ANIMAL_CATEGORIES.map((c) => ({ value: c, label: ANIMAL_CATEGORY_LABELS[c] }))}
               placeholder="Select category"
+              loading={loadingCountries}
             />
           </div>
         </SectionCard>
@@ -944,6 +893,7 @@ export default function CattleInfoPage() {
               onChange={set("breed")}
               options={BREEDS.map((b) => ({ value: b, label: b }))}
               placeholder="Select breed"
+              loading={loadingCountries}
             />
 
             <div className="grid grid-cols-2 gap-3 mt-1">
@@ -954,8 +904,11 @@ export default function CattleInfoPage() {
                   inputMode="decimal"
                   value={form.body_weight}
                   onChange={(e) => handleBodyWeight(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={{ ...inputStyle, borderColor: errors.body_weight ? "#E44A4A" : undefined }}
+                  {...loadingFieldProps(
+                    loadingCountries,
+                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                    { ...inputStyle, borderColor: errors.body_weight ? "#E44A4A" : undefined }
+                  )}
                 />
                 <FieldError message={errors.body_weight} />
               </div>
@@ -966,8 +919,11 @@ export default function CattleInfoPage() {
                   inputMode="decimal"
                   value={form.body_weight_gain}
                   onChange={(e) => handleBWGain(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={inputStyle}
+                  {...loadingFieldProps(
+                    loadingCountries,
+                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                    inputStyle
+                  )}
                 />
                 <FieldError message={errors.body_weight_gain} />
               </div>
@@ -981,8 +937,11 @@ export default function CattleInfoPage() {
                   inputMode="decimal"
                   value={form.body_condition_score}
                   onChange={(e) => handleBCS(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={inputStyle}
+                  {...loadingFieldProps(
+                    loadingCountries,
+                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                    inputStyle
+                  )}
                 />
                 <FieldError message={errors.body_condition_score} />
               </div>
@@ -993,8 +952,11 @@ export default function CattleInfoPage() {
                   inputMode="numeric"
                   value={form.days_in_milk}
                   onChange={(e) => handleDaysInMilk(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={inputStyle}
+                  {...loadingFieldProps(
+                    loadingCountries,
+                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                    inputStyle
+                  )}
                 />
                 <FieldError message={errors.days_in_milk} />
               </div>
@@ -1013,8 +975,11 @@ export default function CattleInfoPage() {
                   inputMode="numeric"
                   value={form.days_of_pregnancy}
                   onChange={(e) => handleDaysOfPregnancy(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={inputStyle}
+                  {...loadingFieldProps(
+                    loadingCountries,
+                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                    inputStyle
+                  )}
                 />
                 <FieldError message={errors.days_of_pregnancy} />
               </div>
@@ -1025,6 +990,7 @@ export default function CattleInfoPage() {
                   onChange={set("parity")}
                   options={PARITIES.map((p) => ({ value: p, label: p }))}
                   placeholder="Select"
+                  loading={loadingCountries}
                 />
               </div>
             </div>
@@ -1044,8 +1010,11 @@ export default function CattleInfoPage() {
               inputMode="decimal"
               value={form.milk_production}
               onChange={(e) => handleMilkProduction(e.target.value)}
-              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={inputStyle}
+              {...loadingFieldProps(
+                loadingCountries,
+                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                inputStyle
+              )}
             />
             <FieldError message={errors.milk_production} />
 
@@ -1057,6 +1026,7 @@ export default function CattleInfoPage() {
                   onChange={set("milk_protein_percent")}
                   options={MILK_PROTEIN_OPTIONS.map((v) => ({ value: v, label: v }))}
                   placeholder="Select"
+                  loading={loadingCountries}
                 />
               </div>
               <div>
@@ -1066,6 +1036,7 @@ export default function CattleInfoPage() {
                   onChange={set("milk_fat_percent")}
                   options={MILK_FAT_OPTIONS.map((v) => ({ value: v, label: v }))}
                   placeholder="Select"
+                  loading={loadingCountries}
                 />
               </div>
             </div>
@@ -1081,8 +1052,11 @@ export default function CattleInfoPage() {
               value={form.milk_price}
               onChange={(e) => set("milk_price")(e.target.value)}
               placeholder="Optional"
-              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={inputStyle}
+              {...loadingFieldProps(
+                loadingCountries,
+                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                inputStyle
+              )}
             />
           </div>
         </SectionCard>
@@ -1097,8 +1071,11 @@ export default function CattleInfoPage() {
               inputMode="decimal"
               value={form.average_temperature}
               onChange={(e) => handleAvgTemp(e.target.value)}
-              className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={inputStyle}
+              {...loadingFieldProps(
+                loadingCountries,
+                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                inputStyle
+              )}
             />
 
             {/* Active Grazing toggle — Android cv_active_grazing marginTop offset_10 (10dp).
@@ -1147,6 +1124,7 @@ export default function CattleInfoPage() {
                 <input
                   type="checkbox"
                   checked={form.grazing}
+                  disabled={loadingCountries}
                   onChange={(e) => {
                     const checked = e.target.checked;
                     // Always clear distance_walked when the toggle changes
@@ -1160,7 +1138,7 @@ export default function CattleInfoPage() {
                     }));
                   }}
                 />
-                <span className="toggle-slider" />
+                <span className={`toggle-slider${loadingCountries ? " shimmer" : ""}`} />
               </label>
             </div>
 
@@ -1285,15 +1263,17 @@ export default function CattleInfoPage() {
                   inputMode="decimal"
                   value={form.distance_walked}
                   onChange={(e) => handleDistanceWalked(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                  style={inputStyle}
+                  {...loadingFieldProps(
+                    loadingCountries,
+                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                    inputStyle
+                  )}
                 />
               </>
             )}
           </div>
         </SectionCard>
       </div>
-      )}
 
       {/* Fixed bottom buttons */}
       <div

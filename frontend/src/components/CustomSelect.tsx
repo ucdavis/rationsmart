@@ -26,6 +26,13 @@ interface CustomSelectProps {
   /** Renders the trigger as transparent text (used inside FieldBox where
    * the parent supplies the outlined-box chrome). Default false. */
   transparentTrigger?: boolean;
+  /** Opt-in loading state: same trigger markup renders (no layout
+   * change), but its label text goes transparent, the chevron hides,
+   * and it's non-interactive — for callers who want to shimmer their
+   * own wrapper (e.g. an outer pill background) around the SAME
+   * element rather than swapping in separate skeleton markup. Default
+   * false — existing callers are unaffected. */
+  loading?: boolean;
 }
 
 export default function CustomSelect({
@@ -38,6 +45,7 @@ export default function CustomSelect({
   style,
   showChevron = true,
   transparentTrigger = false,
+  loading = false,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -87,17 +95,18 @@ export default function CustomSelect({
       <button
         ref={triggerRef}
         type="button"
-        onClick={() => !disabled && setOpen((p) => !p)}
-        disabled={disabled}
+        onClick={() => !disabled && !loading && setOpen((p) => !p)}
+        disabled={disabled || loading}
+        tabIndex={loading ? -1 : undefined}
         className="w-full flex items-center justify-between"
         style={{
           background: transparentTrigger ? "transparent" : undefined,
           border: "none",
           padding: 0,
-          color: value ? "#231F20" : "#9CA3AF",
+          color: loading ? "transparent" : value ? "#231F20" : "#9CA3AF",
           fontFamily: "Nunito, sans-serif",
           fontSize: 14,
-          cursor: disabled ? "not-allowed" : "pointer",
+          cursor: loading ? "default" : disabled ? "not-allowed" : "pointer",
           width: "100%",
           textAlign: "left",
         }}
@@ -105,7 +114,7 @@ export default function CustomSelect({
         <span className="truncate" style={{ flex: 1, minWidth: 0, paddingRight: showChevron ? 8 : 0 }}>
           {displayLabel}
         </span>
-        {showChevron && (
+        {showChevron && !loading && (
           <svg
             width="14"
             height="14"

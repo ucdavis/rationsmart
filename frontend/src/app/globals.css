@@ -185,3 +185,14 @@ select option:checked {
 
 .toggle-switch input:checked + .toggle-slider { background: #1CA069; }
 .toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+/* Loading state for a toggle switch — same exact markup/dimensions as
+   the real switch (see cattle-info's grazing toggle), just shimmering
+   in place instead of showing its real on/off state. Declared after
+   .toggle-slider so it wins the background at equal specificity. */
+.toggle-slider.shimmer {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E4E9F0 50%, #F1F5F9 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+}
+.toggle-slider.shimmer::before { opacity: 0; }
