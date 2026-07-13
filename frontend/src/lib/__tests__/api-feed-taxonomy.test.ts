@@ -74,12 +74,12 @@ describe("getFeedCategories", () => {
 });
 
 describe("getFeedSubCategories", () => {
-  it("GETs /v1/animal/feed-name with feed_category renamed to `category`, no lang (identity must stay complete)", async () => {
+  it("GETs /v1/animal/feed-name with feed_category renamed to `category`, FORCED lang=en regardless of active locale (identity must stay complete)", async () => {
     setLangProvider(() => "vi");
     mockApi.get.mockResolvedValueOnce({ data: [{ feed_name: "Maize", feed_uuid: "u1" }] });
     await getFeedSubCategories("Concentrate", "Grain", "7", "unused-user-id");
     expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/feed-name", {
-      params: { country_id: "7", feed_type: "Concentrate", category: "Grain" },
+      params: { country_id: "7", feed_type: "Concentrate", category: "Grain", lang: "en" },
     });
   });
 });

@@ -632,26 +632,27 @@ export const getFeedCategoriesLocalized = (feed_type: string, country_id: string
   getFeedCategories(feed_type, country_id);
 
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
-// i18n V2 — DO NOT send ?lang= here, same rationale as unique-feed-type /
-// unique-feed-category above. Verified 2026-07-13: for languages whose
-// per-feed translation coverage is incomplete (see the admin Coverage
-// bars — Feed Types/Categories are commonly 100%, individual Feed names
-// often aren't), passing ?lang= to this name+category-filtered query
+// i18n V2 — force lang=en here instead of the active locale (rather than
+// omitting the param). Verified 2026-07-13: for languages whose per-feed
+// translation coverage is incomplete (see the admin Coverage bars — Feed
+// Types/Categories are commonly 100%, individual Feed names often
+// aren't), passing the ACTIVE lang to this name+category-filtered query
 // comes back empty for any feed lacking a translation row, even though
 // the feed exists and has full English data — the dropdown renders with
-// zero options ("just the arrows, nothing loads"). Fetching identity
-// only here (always complete, English) and overlaying the localized
-// label separately via `taxonomyLabels.feeds` (see fetchFeedTaxonomyLabels
-// below, sourced from the SAME endpoint's unfiltered country-wide call,
-// which already tolerates missing translations by falling back to the
-// English name) gives us "always loads" + "translated when available".
+// zero options ("just the arrows, nothing loads"). lang=en is the one
+// value confirmed (via a live network capture) to always return the
+// complete standard_feeds/custom_feeds list; identity is fetched with it
+// and the localized label is overlaid separately via `taxonomyLabels.feeds`
+// (see fetchFeedTaxonomyLabels below, sourced from the SAME endpoint's
+// unfiltered country-wide call, which already falls back to English when
+// a translation is missing).
 export const getFeedSubCategories = (
   feed_type: string,
   feed_category: string,
   country_id: string,
   _user_id?: string
 ) =>
-  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category } });
+  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category, lang: "en" } });
 
 // i18n V2 — client-side translation dictionary for Feed Type + Category
 // labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
