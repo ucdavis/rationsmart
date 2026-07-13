@@ -740,3 +740,102 @@ describe("UI-label i18n — simulation_language override", () => {
     await screen.findByText("समावेशन सीमाएं सेट करें"); // "Set inclusion limits"
   });
 });
+
+// --- stale non-English identity (historical ?lang= bug) --------------
+// A row saved while an earlier build briefly sent ?lang= to
+// unique-feed-type/unique-feed-category has the TRANSLATED string baked
+// in as feed_type_name/category_name instead of the English identity.
+// getFeedTypes/getFeedCategories are English-only now, so that value
+// never matches — these tests lock in "clear and let the user re-pick"
+// (not "render the foreign-script string forever") for any language,
+// not just the one static Forage/Roughage alias table covers.
+describe("stale non-ASCII feed_type_name / category_name self-heal", () => {
+  it("clears a corrupted Hindi feed_type_name that isn't a Forage/Roughage alias (e.g. stale 'Concentrate')", async () => {
+    const onUpdate = vi.fn();
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_id: 2, feed_type_name: "सांद्र आहार (दाना)", category_name: "Grain" })}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />
+    );
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith(
+        "row-1",
+        expect.objectContaining({ feed_type_name: "", category_name: "", feed_uuid: null })
+      );
+    });
+  });
+
+  it("still recognises a stale Hindi Forage value via the static alias table (does not clear it)", async () => {
+    const onUpdate = vi.fn();
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_name: "चारा" })}
+        index={0}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />
+    );
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith("row-1", { feed_type_name: "Forage" });
+    });
+    expect(onUpdate).not.toHaveBeenCalledWith("row-1", expect.objectContaining({ feed_type_name: "" }));
+  });
+
+  it("clears a corrupted non-ASCII category_name that doesn't match the freshly fetched English categories", async () => {
+    const onUpdate = vi.fn();
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
+    getFeedCategories.mockResolvedValueOnce({ data: ["Grain", "By-Product/Other"] });
+    render(
+      <FeedRow
+        item={makeItem({
+          feed_type_name: "Concentrate",
+          category_id: 3,
+          category_name: "घास/फलीदार (दलहनी) चारा",
+          feed_uuid: "uuid-stale",
+        })}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />
+    );
+    await waitFor(() => {
+      expect(onUpdate).toHaveBeenCalledWith(
+        "row-1",
+        expect.objectContaining({ category_name: "", sub_category_name: "", feed_uuid: null })
+      );
+    });
+  });
+
+  it("leaves a legitimate ASCII category unmatched-but-preserved (still injects verbatim, not cleared)", async () => {
+    const onUpdate = vi.fn();
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
+    getFeedCategories.mockResolvedValueOnce({ data: ["Grain"] });
+    render(
+      <FeedRow
+        item={makeItem({
+          feed_type_name: "Concentrate",
+          category_id: 9,
+          category_name: "Legacy Category",
+          feed_uuid: "uuid-legacy",
+        })}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />
+    );
+    await screen.findByText("Legacy Category");
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ category_name: "" })
+    );
+  });
+});

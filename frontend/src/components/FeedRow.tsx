@@ -491,6 +491,31 @@ export default function FeedRow({
               onUpdate(item.id, { feed_type_name: "Forage" });
             } else if (isRoughageType(item.feed_type_name) && types.find((t) => t.name === "Roughage")) {
               onUpdate(item.id, { feed_type_name: "Roughage" });
+            } else if (/[^\x00-\x7F]/.test(item.feed_type_name)) {
+              // Non-ASCII stored identity that isn't a known Forage/Roughage
+              // alias — this endpoint is English-only now (see getFeedTypes
+              // above), so any non-Latin string here can only be a
+              // translated value baked in as identity by the historical
+              // ?lang= bug, for a type we don't have a static alias for
+              // (only Forage/Roughage are aliased — see
+              // feed-type-aliases.ts). Reverse-looking-up against
+              // taxonomyLabels only works when the CURRENT active language
+              // happens to match the corruption's language, which usually
+              // isn't true (e.g. row corrupted in Hindi, user now on
+              // English) — so injecting it verbatim would permanently show
+              // foreign-script text in the radio group no matter what
+              // language is picked. Clear the row's feed selection instead;
+              // the freshly-fetched (English) options are still valid to
+              // re-pick from.
+              onUpdate(item.id, {
+                feed_type_id: null,
+                feed_type_name: "",
+                category_id: null,
+                category_name: "",
+                sub_category_id: null,
+                sub_category_name: "",
+                feed_uuid: null,
+              });
             } else {
               // Genuinely-unknown stored value (e.g. country changed and
               // the previous country's type isn't valid here). Inject a
@@ -621,13 +646,31 @@ export default function FeedRow({
           const matched =
             newCats.find((c) => c.name === item.category_name) ??
             newCats.find((c) => norm(c.name) === norm(item.category_name));
-          // If the row's stored category isn't in the fetched list but
-          // the row has been actively used (feed_uuid picked earlier),
-          // inject a synthetic entry so the CustomSelect dropdown still
-          // renders the correct label. Without this the Category
-          // dropdown appears blank after a nav-back-and-forward even
-          // though item.category_name is intact in state.
-          if (!matched && item.category_name && (item.feed_uuid || item.category_id != null)) {
+          // Non-ASCII stored category that doesn't match any freshly
+          // fetched (English-only, see getFeedCategories) name — same
+          // rationale as the feed-type stale-identity clear above. There's
+          // no static alias table for categories (the vocabulary is much
+          // larger than Forage/Roughage), so a foreign-script value here
+          // can only be recovered if taxonomyLabels happens to already be
+          // in the SAME language as the corruption (see the category
+          // self-heal effect below this cascade) — otherwise it would
+          // render as permanent foreign-script text. Clear rather than
+          // inject verbatim.
+          if (!matched && item.category_name && /[^\x00-\x7F]/.test(item.category_name)) {
+            onUpdate(item.id, {
+              category_id: null,
+              category_name: "",
+              sub_category_id: null,
+              sub_category_name: "",
+              feed_uuid: null,
+            });
+          } else if (!matched && item.category_name && (item.feed_uuid || item.category_id != null)) {
+            // If the row's stored category isn't in the fetched list but
+            // the row has been actively used (feed_uuid picked earlier),
+            // inject a synthetic entry so the CustomSelect dropdown still
+            // renders the correct label. Without this the Category
+            // dropdown appears blank after a nav-back-and-forward even
+            // though item.category_name is intact in state.
             newCats.unshift({
               id: item.category_id ?? -1,
               name: item.category_name,
