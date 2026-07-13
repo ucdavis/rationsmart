@@ -35,8 +35,15 @@ const seedUser = (over: Partial<User> = {}): User => ({
   pin: "123456",
   is_admin: false,
   token: "jwt",
-  registered_language: "hi",
-  preferred_language: "hi",
+  // Default is "en" (matches the seedUser convention in i18n-ui.test.ts /
+  // help.test.tsx) — UI-label translation (src/lib/i18n-ui.ts) lazy-loads
+  // and caches each language's dictionary at module scope for the whole
+  // test file's lifetime. Defaulting to "hi" here would warm the Hindi
+  // cache on the very first render and silently flip every later test's
+  // English text assertions (e.g. getByRole(/Update Profile/)) to Hindi.
+  // Tests that need Hindi pass `{ preferred_language: "hi" }` explicitly.
+  registered_language: "en",
+  preferred_language: "en",
   ...over,
 });
 
@@ -199,5 +206,65 @@ describe("Profile — Update Profile disabled by default", () => {
     // canSave requires non-empty name
     const update = screen.getByRole("button", { name: /Update Profile/ });
     expect(update).toBeDisabled();
+  });
+});
+
+// UI-label translation (src/lib/i18n-ui.ts) — SEPARATE from the feed-data
+// i18n V2 system exercised above (Country/Language dropdown options).
+// useT() resolves off the SAVED user.preferred_language in the store, not
+// the pending/unsaved `selectedLang` dropdown state — see profile/page.tsx
+// handleSave. The "hi" dictionary lazy-loads via dynamic import(), so
+// these tests use findBy* to wait for it rather than assuming it's warm.
+describe("Profile — UI-label translation", () => {
+  it("translates the toolbar title, a field label, and the Update Profile button when user.preferred_language is 'hi'", async () => {
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    await renderReady();
+
+    await screen.findByText("आपकी प्रोफ़ाइल"); // Your Profile (toolbar title)
+    expect(screen.getByText("नाम *")).toBeInTheDocument(); // Name *
+    expect(screen.getByRole("button", { name: /प्रोफ़ाइल अपडेट करें/ })).toBeInTheDocument(); // Update Profile
+    expect(screen.queryByText("Your Profile")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Update Profile/ })).not.toBeInTheDocument();
+  });
+
+  it("picking a new Language in the dropdown does NOT retranslate the page before Save is clicked", async () => {
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    await renderReady();
+    // Wait for the Hindi dictionary to finish loading and render.
+    await screen.findByRole("button", { name: /प्रोफ़ाइल अपडेट करें/ });
+
+    // Pick a different (unsaved) language from the dropdown — combos[1]
+    // is the Language select (combos[0] is Country).
+    const combos = screen.getAllByRole("combobox");
+    fireEvent.change(combos[1], { target: { value: "en" } });
+
+    // Nothing has been saved yet — the store's preferred_language is
+    // still "hi", so useT() must keep rendering Hindi labels.
+    expect(screen.getByRole("button", { name: /प्रोफ़ाइल अपडेट करें/ })).toBeInTheDocument();
+    expect(screen.getByText("आपकी प्रोफ़ाइल")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Update Profile/ })).not.toBeInTheDocument();
+  });
+
+  it("labels flip to the newly picked language only after Save succeeds", async () => {
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    await renderReady();
+    await screen.findByRole("button", { name: /प्रोफ़ाइल अपडेट करें/ });
+    updateUserProfile.mockResolvedValueOnce({ data: {} });
+
+    // Change name (so canSave is true) and pick English in the Language
+    // dropdown, then Save.
+    const nameInput = screen.getAllByRole("textbox")[0] as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "New Name" } });
+    const combos = screen.getAllByRole("combobox");
+    fireEvent.change(combos[1], { target: { value: "en" } });
+
+    const update = screen.getByRole("button", { name: /प्रोफ़ाइल अपडेट करें/ });
+    fireEvent.click(update);
+    await waitFor(() => expect(updateUserProfile).toHaveBeenCalledOnce());
+
+    // Store now reflects "en" -> labels render in English post-save.
+    expect(useStore.getState().user?.preferred_language).toBe("en");
+    await screen.findByText("Your Profile");
+    expect(screen.getByRole("button", { name: /^Update Profile/ })).toBeInTheDocument();
   });
 });

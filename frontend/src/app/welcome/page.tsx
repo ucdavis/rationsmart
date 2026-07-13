@@ -5,9 +5,11 @@ import { useRouter } from "next/navigation";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import { IcArrowRight } from "@/components/Icons";
+import { useT } from "@/lib/i18n-ui";
 
 export default function WelcomePage() {
   const router = useRouter();
+  const t = useT();
 
   return (
     <div
@@ -40,7 +42,7 @@ export default function WelcomePage() {
           className="text-xl font-bold leading-snug"
           style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
         >
-          {"Smart feeding.\nMaximum yield.\nMinimal cost."}
+          {t("Smart feeding.\nMaximum yield.\nMinimal cost.")}
         </p>
       </div>
 
@@ -58,7 +60,7 @@ export default function WelcomePage() {
             boxShadow: "0 4px 14px rgba(6,78,59,0.28)",
           }}
         >
-          <span>Continue</span>
+          <span>{t("Continue")}</span>
           {/* Android ic_arrow_right drawable — chevron only, no stem */}
           <IcArrowRight size={20} color="#FFFFFF" />
         </button>

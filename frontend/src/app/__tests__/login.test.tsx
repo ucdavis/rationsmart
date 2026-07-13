@@ -53,6 +53,36 @@ describe("Login — layout", () => {
   });
 });
 
+describe("Login — UI-label translation (src/lib/i18n-ui.ts)", () => {
+  // Edge case noted in the i18n-ui rollout: a user can land back on /login
+  // (e.g. after being logged out mid-flow) while the store still has a
+  // stale user with preferred_language set — useT() reads it the same way
+  // regardless of auth state. Dictionary lazy-loads via dynamic import(),
+  // so the assertions wait for it.
+  it("translates Email Address / Enter PIN / Proceed when preferred_language is 'hi'", async () => {
+    useStore.setState({
+      user: {
+        id: "u-1",
+        name: "Aiyappa",
+        email: "aiyappa@dg.org",
+        country: "India",
+        country_id: "1",
+        country_code: "IN",
+        currency: "INR",
+        pin: "123456",
+        is_admin: false,
+        token: "jwt",
+        registered_language: "en",
+        preferred_language: "hi",
+      } as never,
+    });
+    render(<LoginPage />);
+    await screen.findByText("ईमेल पता");
+    expect(screen.getByText("PIN दर्ज करें")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "आगे बढ़ें" })).toBeInTheDocument();
+  });
+});
+
 describe("Login — successful path", () => {
   it("prefers preferred_language from getUserProfile (the persisted choice)", async () => {
     login.mockResolvedValueOnce({

@@ -9,11 +9,13 @@ import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
+import { useT } from "@/lib/i18n-ui";
 
 export default function LoginPage() {
   const router = useRouter();
   const { setUser, logout } = useStore((s) => ({ setUser: s.setUser, logout: s.logout }));
   const showSnackbar = useStore((s) => s.showSnackbar);
+  const t = useT();
 
   const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
@@ -45,8 +47,8 @@ export default function LoginPage() {
       const message = err instanceof Error && err.message && err.message !== "Network Error"
         ? err.message
         : err instanceof Error && err.message === "Network Error"
-          ? "Please make sure you're device has internet connectivity."
-          : "Unexpected error: failed to generate PIN. Please, try again!";
+          ? t("Please make sure you're device has internet connectivity.")
+          : t("Unexpected error: failed to generate PIN. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsSendingReset(false);
@@ -161,8 +163,8 @@ export default function LoginPage() {
       const message = err instanceof Error && err.message && err.message !== "Network Error"
         ? err.message
         : err instanceof Error && err.message === "Network Error"
-          ? "Please make sure you're device has internet connectivity."
-          : "Unexpected error: failed to login. Please, try again!";
+          ? t("Please make sure you're device has internet connectivity.")
+          : t("Unexpected error: failed to login. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -186,7 +188,7 @@ export default function LoginPage() {
           className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          Email Address<RequiredAsterisk />
+          {t("Email Address")}<RequiredAsterisk />
         </p>
         <div className="px-3">
           <input
@@ -209,7 +211,7 @@ export default function LoginPage() {
           className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          Enter PIN
+          {t("Enter PIN")}
         </p>
         <PinInput value={pin} onChange={setPin} />
 
@@ -233,7 +235,7 @@ export default function LoginPage() {
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
               </svg>
             ) : (
-              "Proceed"
+              t("Proceed")
             )}
           </button>
         </div>
@@ -245,7 +247,7 @@ export default function LoginPage() {
             className="font-bold"
             style={{ fontSize: 20, color: "#231F20", fontFamily: "Nunito, sans-serif" }}
           >
-            OR
+            {t("OR")}
           </span>
           <div style={{ flex: 1, height: 2, backgroundColor: "#E2E8F0" }} />
         </div>
@@ -257,8 +259,8 @@ export default function LoginPage() {
             className="text-base"
             style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
           >
-            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>New User? </span>
-            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>Register here</span>
+            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{t("New User? ")}</span>
+            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>{t("Register here")}</span>
           </button>
         </div>
 
@@ -269,8 +271,8 @@ export default function LoginPage() {
             className="text-base"
             style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
           >
-            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Forgot PIN? </span>
-            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>Tap here</span>
+            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{t("Forgot PIN? ")}</span>
+            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>{t("Tap here")}</span>
           </button>
         </div>
       </div>
@@ -313,14 +315,14 @@ export default function LoginPage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Reset Your PIN
+              {t("Reset Your PIN")}
             </p>
             {/* Subtitle */}
             <p
               className="text-center mt-1 px-3"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
             >
-              Enter your registered email to receive a reset link
+              {t("Enter your registered email to receive a reset link")}
             </p>
 
             {/* Email label */}
@@ -328,7 +330,7 @@ export default function LoginPage() {
               className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              Email Address<RequiredAsterisk />
+              {t("Email Address")}<RequiredAsterisk />
             </p>
             <div className="px-3">
               <input
@@ -343,7 +345,7 @@ export default function LoginPage() {
                   color: "#231F20",
                   fontFamily: "Nunito, sans-serif",
                 }}
-                aria-label="Email address"
+                aria-label={t("Email address")}
               />
             </div>
 
@@ -368,7 +370,7 @@ export default function LoginPage() {
                   </svg>
                 ) : (
                   <>
-                    Proceed
+                    {t("Proceed")}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                       <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>

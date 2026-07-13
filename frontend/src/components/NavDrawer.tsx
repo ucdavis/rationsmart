@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n-ui";
 import PoweredBy from "./PoweredBy";
 import {
   IcClose,
@@ -51,6 +52,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
   const user = useStore((s) => s.user);
   const logout = useStore((s) => s.logout);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const t = useT();
 
   const handleNavigate = (href: string) => {
     onClose();
@@ -110,7 +112,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             onClick={onClose}
             className="flex items-center justify-center rounded-full flex-shrink-0"
             style={{ width: 36, height: 36, backgroundColor: "#F0FDF4" }}
-            aria-label="Close drawer"
+            aria-label={t("Close drawer")}
           >
             <IcClose size={18} color="#064E3B" />
           </button>
@@ -131,7 +133,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               className="font-bold truncate"
               style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
             >
-              {user?.name || "User"}
+              {user?.name || t("User")}
             </p>
             <p
               className="text-sm truncate"
@@ -163,7 +165,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   className="text-base truncate"
                   style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </span>
                 {item.badge && (
                   // Matches Android tv_item_status: nunito_regular (not bold),
@@ -180,7 +182,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                       flexShrink: 0,
                     }}
                   >
-                    {item.badge}
+                    {t(item.badge)}
                   </span>
                 )}
               </div>
@@ -200,7 +202,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               className="text-base"
               style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
             >
-              Logout
+              {t("Logout")}
             </span>
           </button>
         </div>
@@ -244,13 +246,13 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               className="text-center font-bold mb-2 mx-4"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Are you sure you want to logout?
+              {t("Are you sure you want to logout?")}
             </h3>
             <p
               className="text-center text-sm mb-5 mx-4"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              You can always log back in to access you feed simulations.
+              {t("You can always log back in to access you feed simulations.")}
             </p>
             <div className="flex flex-col gap-2.5">
               <button
@@ -258,14 +260,14 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                 className="w-full py-3 rounded-full font-bold"
                 style={{ backgroundColor: "#064E3B", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
-                Yes, Logout
+                {t("Yes, Logout")}
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
                 className="w-full py-3 rounded-full font-bold"
                 style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
               >
-                No
+                {t("No")}
               </button>
             </div>
           </div>

@@ -7,6 +7,7 @@ import Toolbar from "@/components/Toolbar";
 import { useRouter } from "next/navigation";
 import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
+import { useT } from "@/lib/i18n-ui";
 
 interface FeedbackItem {
   id: number;
@@ -30,6 +31,7 @@ function StarRating({
   size?: number;
 }) {
   const [hovered, setHovered] = useState(0);
+  const t = useT();
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (
@@ -41,7 +43,7 @@ function StarRating({
           onMouseEnter={() => !readOnly && setHovered(star)}
           onMouseLeave={() => !readOnly && setHovered(0)}
           style={{ background: "none", border: "none", cursor: readOnly ? "default" : "pointer", padding: 2 }}
-          aria-label={`${star} star`}
+          aria-label={t("${N} star").replace("${N}", String(star))}
         >
           <IcStar
             size={size}
@@ -74,6 +76,7 @@ const categoryBadgeStyle = (cat: string): React.CSSProperties => {
 
 export default function FeedbackPage() {
   const router = useRouter();
+  const t = useT();
   const { user, showSnackbar } = useStore((s) => ({
     user: s.user,
     showSnackbar: s.showSnackbar,
@@ -100,7 +103,7 @@ export default function FeedbackPage() {
         const data = res.data;
         setHistory(Array.isArray(data) ? data : data?.feedbacks ?? []);
       })
-      .catch(() => showSnackbar("Could not load feedback history", "error"))
+      .catch(() => showSnackbar(t("Could not load feedback history"), "error"))
       .finally(() => setLoadingHistory(false));
   };
 
@@ -116,13 +119,13 @@ export default function FeedbackPage() {
       if (text.trim()) payload.text_feedback = text.trim();
       if (rating > 0) payload.overall_rating = rating;
       await submitFeedback(user.id, payload);
-      showSnackbar("Thank you for your feedback!", "success");
+      showSnackbar(t("Thank you for your feedback!"), "success");
       setText("");
       setRating(0);
       setCategory("General");
       loadHistory();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Submission failed";
+      const message = err instanceof Error ? err.message : t("Submission failed");
       showSnackbar(message, "error");
     } finally {
       setIsSubmitting(false);
@@ -136,7 +139,7 @@ export default function FeedbackPage() {
       className="flex flex-col min-h-screen"
       style={{ backgroundColor: "#F8FAF9" }}
     >
-      <Toolbar type="back" title="Feedback" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feedback")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Rating title */}
@@ -144,7 +147,7 @@ export default function FeedbackPage() {
           className="text-center font-bold mt-5"
           style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
         >
-          Rate The App
+          {t("Rate The App")}
         </p>
 
         {/* Stars */}
@@ -157,7 +160,7 @@ export default function FeedbackPage() {
           className="font-bold mt-5 ml-3"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
         >
-          Feedback Category
+          {t("Feedback Category")}
         </p>
 
         {/* Category radio buttons */}
@@ -176,7 +179,7 @@ export default function FeedbackPage() {
                 onChange={() => setCategory(c)}
                 style={{ accentColor: "#064E3B", width: 18, height: 18, cursor: "pointer" }}
               />
-              <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{c}</span>
+              <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{t(c)}</span>
             </label>
           ))}
         </div>
@@ -188,7 +191,7 @@ export default function FeedbackPage() {
             value={text}
             onChange={(e) => setText(e.target.value)}
             maxLength={1000}
-            placeholder="Tell us how we can improve..."
+            placeholder={t("Tell us how we can improve...")}
             className="w-full px-3 py-3 text-base focus:outline-none resize-none"
             style={{
               backgroundColor: "#F1F5F9",
@@ -228,11 +231,11 @@ export default function FeedbackPage() {
                 <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                 </svg>
-                Submitting...
+                {t("Submitting...")}
               </>
             ) : (
               <>
-                Submit Feedback
+                {t("Submit Feedback")}
                 {/* ic_submit_feedback — Material Symbols "send" (paper plane),
                     iconGravity=textEnd. Single filled path tinted with
                     currentColor so it matches the button's text color. */}
@@ -251,7 +254,7 @@ export default function FeedbackPage() {
               className="font-bold"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
             >
-              Your Feedbacks
+              {t("Your Feedbacks")}
             </p>
             <span
               style={{
@@ -266,7 +269,7 @@ export default function FeedbackPage() {
                 borderRadius: 50,
               }}
             >
-              {history.length} TOTAL
+              {t("${count} TOTAL").replace("${count}", String(history.length))}
             </span>
           </div>
 
@@ -290,7 +293,7 @@ export default function FeedbackPage() {
               style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
             >
               <p className="text-sm" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
-                No feedback submitted yet
+                {t("No feedback submitted yet")}
               </p>
             </div>
           ) : (

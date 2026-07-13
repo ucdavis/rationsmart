@@ -10,6 +10,7 @@ import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
+import { useT } from "@/lib/i18n-ui";
 
 interface Country {
   id: string | number;
@@ -25,6 +26,7 @@ export default function RegisterPage() {
   const router = useRouter();
   // setUser/logout removed in v1 — register no longer auto-signs-in.
   const showSnackbar = useStore((s) => s.showSnackbar);
+  const t = useT();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -62,7 +64,7 @@ export default function RegisterPage() {
         const list: Country[] = Array.isArray(data) ? data : [];
         setCountries(list);
       })
-      .catch(() => showSnackbar("Could not load countries", "error"))
+      .catch(() => showSnackbar(t("Could not load countries"), "error"))
       .finally(() => setLoadingCountries(false));
   }, [showSnackbar]);
 
@@ -89,7 +91,7 @@ export default function RegisterPage() {
   const handleProceed = async () => {
     if (!isReady || isLoading) return;
     if (pin !== confirmPin) {
-      showSnackbar("Please make sure you have entered correct PINS.", "error");
+      showSnackbar(t("Please make sure you have entered correct PINS."), "error");
       return;
     }
     setIsLoading(true);
@@ -124,8 +126,8 @@ export default function RegisterPage() {
       const message = err instanceof Error && err.message && err.message !== "Network Error"
         ? err.message
         : err instanceof Error && err.message === "Network Error"
-          ? "Please make sure you're device has internet connectivity."
-          : "Unexpected error: failed to register. Please, try again!";
+          ? t("Please make sure you're device has internet connectivity.")
+          : t("Unexpected error: failed to register. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -162,7 +164,7 @@ export default function RegisterPage() {
           onClick={() => router.back()}
           className="flex items-center justify-center rounded-xl bg-white"
           style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
-          aria-label="Back"
+          aria-label={t("Back")}
         >
           <IcBack size={20} color="#064E3B" />
         </button>
@@ -177,7 +179,7 @@ export default function RegisterPage() {
             letterSpacing: 0,
           }}
         >
-          Create Account
+          {t("Create Account")}
         </h1>
         <div style={{ width: 40 }} />
       </div>
@@ -191,7 +193,7 @@ export default function RegisterPage() {
 
         {/* Name */}
         <p className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5" style={labelStyle}>
-          Name<RequiredAsterisk />
+          {t("Name")}<RequiredAsterisk />
         </p>
         <div className="px-3">
           <input
@@ -205,7 +207,7 @@ export default function RegisterPage() {
 
         {/* Email */}
         <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
-          Email Address<RequiredAsterisk />
+          {t("Email Address")}<RequiredAsterisk />
         </p>
         <div className="px-3">
           <input
@@ -221,7 +223,7 @@ export default function RegisterPage() {
 
         {/* Country */}
         <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
-          Country<RequiredAsterisk />
+          {t("Country")}<RequiredAsterisk />
         </p>
         <div className="px-3 relative">
           <select
@@ -235,7 +237,7 @@ export default function RegisterPage() {
               opacity: loadingCountries ? 0.6 : 1,
             }}
           >
-            <option value="">{loadingCountries ? "Loading countries..." : "Select"}</option>
+            <option value="">{loadingCountries ? t("Loading countries...") : t("Select")}</option>
             {countries.map((c) => (
               <option key={String(c.id)} value={String(c.id)}>
                 {c.name}
@@ -255,7 +257,7 @@ export default function RegisterPage() {
             The chosen value becomes the user's registered_language on
             the backend and is the baseline restored at every login. */}
         <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
-          Language
+          {t("Language")}
         </p>
         <div className="px-3 relative">
           <select
@@ -284,7 +286,7 @@ export default function RegisterPage() {
 
         {/* PIN — disabled until country + email + name are valid */}
         <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
-          Enter PIN
+          {t("Enter PIN")}
         </p>
         <PinInput
           value={pin}
@@ -301,7 +303,7 @@ export default function RegisterPage() {
         {/* Confirm PIN — disabled until PIN is complete */}
         <div ref={confirmPinRef}>
           <p className="text-xs uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
-            Confirm PIN
+            {t("Confirm PIN")}
           </p>
           <PinInput
             value={confirmPin}
@@ -315,7 +317,7 @@ export default function RegisterPage() {
             className="text-xs font-bold text-center mt-2"
             style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
           >
-            PINs do not match
+            {t("PINs do not match")}
           </p>
         )}
       </div>
@@ -340,7 +342,7 @@ export default function RegisterPage() {
               <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
             </svg>
           ) : (
-            "Proceed"
+            t("Proceed")
           )}
         </button>
       </div>

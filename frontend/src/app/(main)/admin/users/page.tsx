@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { getAdminUsers, toggleUserStatus } from "@/lib/api";
 import { formatTotalUsers } from "@/lib/validators";
+import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 
 interface AdminUser {
@@ -33,6 +34,7 @@ function SkeletonCard() {
 export default function AdminUsersPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
+  const t = useT();
 
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -68,7 +70,7 @@ export default function AdminUsersPage() {
       setUsers(all);
       setTotal(totalCount);
     } catch {
-      showSnackbar("Could not load users", "error");
+      showSnackbar(t("Could not load users"), "error");
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +86,7 @@ export default function AdminUsersPage() {
       setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, is_active: !u.is_active } : x));
       showSnackbar(`User ${!u.is_active ? "activated" : "deactivated"}`, "success");
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Toggle failed";
+      const msg = err instanceof Error ? err.message : t("Toggle failed");
       showSnackbar(msg, "error");
     } finally {
       setTogglingId(null);
@@ -99,7 +101,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-      <Toolbar type="back" title="User Management" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("User Management")} onBack={() => router.back()} />
 
       {/* Stats card — TOTAL USERS uppercase, matches Android cv_aggregated_view */}
       <div
@@ -107,7 +109,7 @@ export default function AdminUsersPage() {
         style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
       >
         <div>
-          <p className="uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Total Users</p>
+          <p className="uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>{t("Total Users")}</p>
           <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
             {formatTotalUsers(total)}
           </p>
@@ -129,7 +131,7 @@ export default function AdminUsersPage() {
         className="font-bold ml-3 mt-4"
         style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
       >
-        Users
+        {t("Users")}
       </p>
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
@@ -142,7 +144,7 @@ export default function AdminUsersPage() {
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center px-6">
             <p className="text-base font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-              No users found
+              {t("No users found")}
             </p>
           </div>
         ) : (
@@ -177,7 +179,7 @@ export default function AdminUsersPage() {
                     )}
                   </div>
                   <span className="font-bold uppercase" style={{ color: "#064E3B", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
-                    {u.is_admin ? "ADMIN" : "USER"}
+                    {u.is_admin ? t("ADMIN") : t("USER")}
                   </span>
                 </div>
                 {/* Status badge — Android bg_active_gradient / bg_inactive_gradient:
@@ -199,7 +201,7 @@ export default function AdminUsersPage() {
                     fontFamily: "Nunito, sans-serif",
                   }}
                 >
-                  {togglingId === u.id ? "..." : u.is_active ? "ACTIVE" : "INACTIVE"}
+                  {togglingId === u.id ? "..." : u.is_active ? t("ACTIVE") : t("INACTIVE")}
                 </button>
               </div>
               {/* Name — starts after the 44px avatar pill (12 card pad + 44 avatar + 12 gap = 68) */}
@@ -307,7 +309,7 @@ export default function AdminUsersPage() {
                   fontFamily: "Nunito, sans-serif",
                 }}
               >
-                {selectedUser.is_active ? "ACTIVE ACCOUNT" : "INACTIVE ACCOUNT"}
+                {selectedUser.is_active ? t("ACTIVE ACCOUNT") : t("INACTIVE ACCOUNT")}
               </span>
             </div>
 
@@ -336,7 +338,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                    Email Address
+                    {t("Email Address")}
                   </p>
                   <p
                     className="font-bold truncate"
@@ -364,7 +366,7 @@ export default function AdminUsersPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                    Country
+                    {t("Country")}
                   </p>
                   <p
                     className="font-bold"
@@ -393,17 +395,17 @@ export default function AdminUsersPage() {
                   className="font-bold"
                   style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
                 >
-                  Account Activation
+                  {t("Account Activation")}
                 </p>
                 <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 2 }}>
-                  Set user status
+                  {t("Set user status")}
                 </p>
               </div>
               {/* Material-style switch */}
               <button
                 onClick={() => { handleToggle(selectedUser); setSelectedUser(null); }}
                 disabled={togglingId === selectedUser.id}
-                aria-label={selectedUser.is_active ? "Deactivate user" : "Activate user"}
+                aria-label={selectedUser.is_active ? t("Deactivate user") : t("Activate user")}
                 style={{
                   width: 52,
                   height: 32,
@@ -453,7 +455,7 @@ export default function AdminUsersPage() {
                 fontSize: 16,
               }}
             >
-              Save
+              {t("Save")}
             </button>
             <button
               onClick={() => setSelectedUser(null)}
@@ -472,7 +474,7 @@ export default function AdminUsersPage() {
                 fontSize: 16,
               }}
             >
-              Cancel
+              {t("Cancel")}
             </button>
           </div>
         </div>

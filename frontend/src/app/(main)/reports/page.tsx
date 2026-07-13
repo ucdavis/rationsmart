@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { getSavedReports } from "@/lib/api";
 import type { FeedReport } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
+import { useT } from "@/lib/i18n-ui";
 
 function SkeletonCard() {
   return (
@@ -36,6 +37,7 @@ function formatDate(raw: string | null): string {
 
 export default function ReportsPage() {
   const router = useRouter();
+  const t = useT();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
   const [reports, setReports] = useState<FeedReport[]>([]);
@@ -61,7 +63,7 @@ export default function ReportsPage() {
       })
       .catch((err) => {
         console.error("[reports] fetch failed:", err?.message, err?.response?.data);
-        showSnackbar("Could not load reports", "error");
+        showSnackbar(t("Could not load reports"), "error");
       })
       .finally(() => setIsLoading(false));
   }, [user, showSnackbar]);
@@ -75,7 +77,7 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
-      <Toolbar type="back" title="Feed Reports" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feed Reports")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {isLoading ? (
@@ -92,16 +94,16 @@ export default function ReportsPage() {
                 <path d="M11 12H25M11 17H22M11 22H17" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </div>
-            <p className="text-lg font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>No saved reports</p>
+            <p className="text-lg font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{t("No saved reports")}</p>
             <p className="text-sm mb-8" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Generate a ration report and tap &quot;Save Report&quot; to see it here
+              {t('Generate a ration report and tap "Save Report" to see it here')}
             </p>
             <button
               onClick={() => router.push("/cattle-info")}
               className="px-8 py-4 rounded-xl font-bold text-base text-white"
               style={{ backgroundColor: "#064E3B", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
             >
-              Create Report
+              {t("Create Report")}
             </button>
           </div>
         ) : (
@@ -144,7 +146,7 @@ export default function ReportsPage() {
                           fontSize: 12,                  // font_12 (matches Android)
                         }}
                       >
-                        View Report
+                        {t("View Report")}
                         <svg width="20" height="20" viewBox="0 0 20 20" fill="#064E3B">
                           <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
                         </svg>
@@ -167,7 +169,7 @@ export default function ReportsPage() {
                           fontSize: 12,
                         }}
                       >
-                        PDF Pending
+                        {t("PDF Pending")}
                       </span>
                     )}
                   </div>
@@ -175,10 +177,10 @@ export default function ReportsPage() {
                   {/* SIMULATION ID — always visible (Android keeps tv_title_simulation_id
                       and tv_simulation_id visible at all times). */}
                   <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 20, marginLeft: 10 }}>
-                    Simulation ID
+                    {t("Simulation ID")}
                   </p>
                   <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "4px 10px 0 10px" }}>
-                    {report.simulation_id || "N/A"}
+                    {report.simulation_id || t("N/A")}
                   </p>
 
                   {/* Expanded: Report ID + Report Type side by side, then DATE */}
@@ -186,17 +188,17 @@ export default function ReportsPage() {
                     <div style={{ padding: "0 10px" }}>
                       <div className="grid grid-cols-2 gap-x-3" style={{ marginTop: 10 }}>
                         <div>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Report ID</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_id || "N/A"}</p>
+                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>{t("Report ID")}</p>
+                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_id || t("N/A")}</p>
                         </div>
                         <div>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>Report Type</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_type || "N/A"}</p>
+                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>{t("Report Type")}</p>
+                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_type || t("N/A")}</p>
                         </div>
                       </div>
-                      <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>Date</p>
+                      <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>{t("Date")}</p>
                       <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>
-                        {report.report_created_date ? formatDate(report.report_created_date) : "N/A"}
+                        {report.report_created_date ? formatDate(report.report_created_date) : t("N/A")}
                       </p>
                     </div>
                   )}
@@ -215,7 +217,7 @@ export default function ReportsPage() {
                       cursor: "pointer",
                       padding: "6px 0",
                     }}
-                    aria-label={isExpanded ? "Collapse" : "Expand"}
+                    aria-label={isExpanded ? t("Collapse") : t("Expand")}
                   >
                     <svg
                       width="24"

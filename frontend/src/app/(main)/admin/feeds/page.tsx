@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n-ui";
 import {
   getAdminFeedTypes,
   getAdminFeedCategories,
@@ -154,6 +155,7 @@ const emptyFeedForm = {
 export default function AdminFeedsPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
+  const t = useT();
 
   const [tab, setTab] = useState<TabType>("feeds");
   // Android-style nav: landing view shows 3 cards; sub-views show one section
@@ -224,7 +226,7 @@ export default function AdminFeedsPage() {
         setFeeds(Array.isArray(fd) ? fd : fd?.feeds ?? fd?.items ?? []);
         setCountries(Array.isArray(countriesRes.data) ? countriesRes.data : []);
       })
-      .catch(() => showSnackbar("Could not load feed data", "error"))
+      .catch(() => showSnackbar(t("Could not load feed data"), "error"))
       .finally(() => setIsLoading(false));
   }, [user?.id, showSnackbar]);
 
@@ -280,7 +282,7 @@ export default function AdminFeedsPage() {
 
   const handleSaveFeed = async () => {
     if (!user?.id || !feedForm.fd_name.trim() || !feedForm.fd_type || !feedForm.fd_country_name) {
-      showSnackbar("Name, Type and Country are required", "error");
+      showSnackbar(t("Name, Type and Country are required"), "error");
       return;
     }
     setIsSavingFeed(true);
@@ -320,15 +322,15 @@ export default function AdminFeedsPage() {
     try {
       if (editingFeed?.feed_id) {
         await updateAdminFeed(editingFeed.feed_id, user.id, body);
-        showSnackbar("Feed updated successfully", "success");
+        showSnackbar(t("Feed updated successfully"), "success");
       } else {
         await addAdminFeed(user.id, body);
-        showSnackbar("Feed added successfully", "success");
+        showSnackbar(t("Feed added successfully"), "success");
       }
       setShowFeedModal(false);
       loadAll();
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Save failed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Save failed"), "error");
     } finally {
       setIsSavingFeed(false);
     }
@@ -339,11 +341,11 @@ export default function AdminFeedsPage() {
     setDeletingFeedId(feed.feed_id);
     try {
       await deleteAdminFeed(feed.feed_id, user.id);
-      showSnackbar("Feed deleted", "success");
+      showSnackbar(t("Feed deleted"), "success");
       setConfirmDeleteFeed(null);
       loadAll();
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Delete failed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Delete failed"), "error");
     } finally {
       setDeletingFeedId(null);
     }
@@ -353,7 +355,7 @@ export default function AdminFeedsPage() {
 
   const handleSaveCategory = async () => {
     if (!user?.id || !newCatName.trim() || !newCatTypeId) {
-      showSnackbar("Category name and type are required", "error");
+      showSnackbar(t("Category name and type are required"), "error");
       return;
     }
     setIsSavingCat(true);
@@ -364,14 +366,14 @@ export default function AdminFeedsPage() {
         feed_type_id: newCatTypeId,
         sort_order: feedCategories.length + 1,
       });
-      showSnackbar("Category added successfully", "success");
+      showSnackbar(t("Category added successfully"), "success");
       setShowCatModal(false);
       setNewCatName("");
       setNewCatTypeId("");
       setNewCatDescription("");
       loadAll();
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Save failed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Save failed"), "error");
     } finally {
       setIsSavingCat(false);
     }
@@ -382,11 +384,11 @@ export default function AdminFeedsPage() {
     setDeletingCatId(cat.id);
     try {
       await deleteAdminFeedCategory(cat.id, user.id);
-      showSnackbar("Category deleted", "success");
+      showSnackbar(t("Category deleted"), "success");
       setConfirmDeleteCat(null);
       loadAll();
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Delete failed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Delete failed"), "error");
     } finally {
       setDeletingCatId(null);
     }
@@ -396,7 +398,7 @@ export default function AdminFeedsPage() {
 
   const handleSaveType = async () => {
     if (!user?.id || !newTypeName.trim()) {
-      showSnackbar("Type name is required", "error");
+      showSnackbar(t("Type name is required"), "error");
       return;
     }
     setIsSavingType(true);
@@ -406,13 +408,13 @@ export default function AdminFeedsPage() {
         description: newTypeDescription.trim(),
         sort_order: feedTypes.length + 1,
       });
-      showSnackbar("Feed type added successfully", "success");
+      showSnackbar(t("Feed type added successfully"), "success");
       setShowTypeModal(false);
       setNewTypeName("");
       setNewTypeDescription("");
       loadAll();
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Save failed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Save failed"), "error");
     } finally {
       setIsSavingType(false);
     }
@@ -423,11 +425,11 @@ export default function AdminFeedsPage() {
     setDeletingTypeId(type.id);
     try {
       await deleteAdminFeedType(type.id, user.id);
-      showSnackbar("Feed type deleted", "success");
+      showSnackbar(t("Feed type deleted"), "success");
       setConfirmDeleteType(null);
       loadAll();
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Delete failed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Delete failed"), "error");
     } finally {
       setDeletingTypeId(null);
     }
@@ -454,17 +456,17 @@ export default function AdminFeedsPage() {
     setSection(s);
   };
 
-  const sectionTitle = section === "types" ? "Feed Type" : section === "categories" ? "Feed Category" : section === "feeds" ? "Feed" : "Feed Management";
+  const sectionTitle = section === "types" ? t("Feed Type") : section === "categories" ? t("Feed Category") : section === "feeds" ? t("Feed") : t("Feed Management");
 
   // ─── LANDING: 3 nav cards ──────────────────────────────────────────────────
   if (section === "landing") {
     return (
       <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-        <Toolbar type="back" title="Feed Management" onBack={() => router.back()} />
+        <Toolbar type="back" title={t("Feed Management")} onBack={() => router.back()} />
 
         <div className="ml-3 mt-5">
-          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Administration</p>
-          <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20, fontWeight: 700 }}>Configure Resources</p>
+          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{t("Administration")}</p>
+          <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20, fontWeight: 700 }}>{t("Configure Resources")}</p>
         </div>
 
         <div className="px-3 mt-5 space-y-3">
@@ -501,7 +503,7 @@ export default function AdminFeedsPage() {
                 className="font-bold"
                 style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16, paddingLeft: 8 }}
               >
-                {c.label}
+                {t(c.label)}
               </span>
               <span
                 className="flex items-center justify-center"
@@ -527,7 +529,7 @@ export default function AdminFeedsPage() {
         className="font-bold uppercase tracking-wide mt-5 ml-3 mb-2"
         style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
       >
-        Management
+        {t("Management")}
       </p>
 
       {/* ── FEEDS TAB ── (matches Android fragment_feed.xml: search-by-name only,
@@ -552,7 +554,7 @@ export default function AdminFeedsPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by feed name"
+                placeholder={t("Search by feed name")}
                 className="flex-1 bg-transparent border-none focus:outline-none ml-2"
                 style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
               />
@@ -565,7 +567,7 @@ export default function AdminFeedsPage() {
             ) : filteredFeeds.length === 0 ? (
               <div className="flex items-center justify-center py-16">
                 <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
-                  {searchQuery ? "No feeds match your search" : "No feeds found"}
+                  {searchQuery ? t("No feeds match your search") : t("No feeds found")}
                 </p>
               </div>
             ) : (
@@ -578,13 +580,13 @@ export default function AdminFeedsPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0" style={{ marginRight: 10 }}>
                       <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>
-                        {f.fd_name || "N/A"}
+                        {f.fd_name || t("N/A")}
                       </p>
                       <p className="uppercase" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 10 }}>
-                        {f.fd_category || "N/A"}
+                        {f.fd_category || t("N/A")}
                       </p>
                       <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 10 }}>
-                        {f.fd_type || "N/A"}
+                        {f.fd_type || t("N/A")}
                       </p>
                     </div>
                     <div className="flex gap-2 flex-shrink-0">
@@ -594,7 +596,7 @@ export default function AdminFeedsPage() {
                         onClick={() => openEditFeed(f)}
                         className="flex items-center justify-center"
                         style={{ borderRadius: 60, backgroundColor: "rgba(5,188,109,0.15)", padding: 10, border: "none", cursor: "pointer" }}
-                        aria-label="Edit feed"
+                        aria-label={t("Edit feed")}
                       >
                         <svg width="20" height="20" viewBox="0 0 960 960" fill="#064E3B">
                           <path d="M216,744h51l375,-375 -51,-51 -375,375v51ZM180.18,816q-15.18,0 -25.68,-10.3 -10.5,-10.29 -10.5,-25.52v-86.85q0,-14.33 5,-27.33 5,-13 16,-24l477,-477q11,-11 23.84,-16 12.83,-5 27,-5 14.16,0 27.16,5t24,16l51,51q11,11 16,24t5,26.54q0,14.45 -5.02,27.54T795,318L318,795q-11,11 -23.95,16t-27.24,5h-86.63ZM744,267l-51,-51 51,51ZM616.05,343.95L591,318l51,51 -25.95,-25.05Z" />
@@ -607,7 +609,7 @@ export default function AdminFeedsPage() {
                         disabled={deletingFeedId === f.feed_id}
                         className="flex items-center justify-center"
                         style={{ borderRadius: 60, backgroundColor: "rgba(228,74,74,0.2)", padding: 10, border: "none", cursor: "pointer" }}
-                        aria-label="Delete feed"
+                        aria-label={t("Delete feed")}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
                           <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
@@ -624,7 +626,7 @@ export default function AdminFeedsPage() {
               bg, white +, 56dp, bottom-right inside the centered column). */}
           <button
             onClick={openAddFeed}
-            aria-label="Add feed"
+            aria-label={t("Add feed")}
             style={{
               position: "fixed",
               bottom: 20,
@@ -658,7 +660,7 @@ export default function AdminFeedsPage() {
             {isLoading ? [0,1,2].map((i) => <SkeletonCard key={i} />) : (
               feedTypes.length === 0 ? (
                 <div className="flex items-center justify-center py-16">
-                  <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No feed types found</p>
+                  <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>{t("No feed types found")}</p>
                 </div>
               ) : feedTypes.map((ft) => {
                 // Active by default — Android adapter shows ACTIVE badge unless
@@ -668,7 +670,7 @@ export default function AdminFeedsPage() {
                   <div key={ft.id} className="mx-3 my-2 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                        <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getName(ft) || "N/A"}</p>
+                        <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getName(ft) || t("N/A")}</p>
                         <span
                           className="font-bold uppercase flex-shrink-0"
                           style={{
@@ -681,7 +683,7 @@ export default function AdminFeedsPage() {
                             borderRadius: 10,
                           }}
                         >
-                          {isActive ? "ACTIVE" : "INACTIVE"}
+                          {isActive ? t("ACTIVE") : t("INACTIVE")}
                         </span>
                       </div>
                       {/* Delete — Android ic_delete inside circular pill
@@ -691,7 +693,7 @@ export default function AdminFeedsPage() {
                         disabled={deletingTypeId === ft.id}
                         className="flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, padding: 10, cursor: "pointer" }}
-                        aria-label="Delete type"
+                        aria-label={t("Delete type")}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
                           <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
@@ -699,7 +701,7 @@ export default function AdminFeedsPage() {
                       </button>
                     </div>
                     <p className="mt-2" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                      {ft.description || "N/A"}
+                      {ft.description || t("N/A")}
                     </p>
                   </div>
                 );
@@ -710,7 +712,7 @@ export default function AdminFeedsPage() {
           {/* FAB — btn_add_feed_type */}
           <button
             onClick={() => setShowTypeModal(true)}
-            aria-label="Add feed type"
+            aria-label={t("Add feed type")}
             style={{
               position: "fixed",
               bottom: 20,
@@ -744,14 +746,14 @@ export default function AdminFeedsPage() {
             {isLoading ? [0,1,2].map((i) => <SkeletonCard key={i} />) : (
               feedCategories.length === 0 ? (
                 <div className="flex items-center justify-center py-16">
-                  <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No categories found</p>
+                  <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>{t("No categories found")}</p>
                 </div>
               ) : feedCategories.map((fc) => {
                 const isActive = fc.is_active !== false;
                 return (
                   <div key={fc.id} className="mx-3 my-2 rounded-2xl bg-white p-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
                     <div className="flex items-start justify-between gap-3">
-                      <p className="font-bold flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getCatName(fc) || "N/A"}</p>
+                      <p className="font-bold flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{getCatName(fc) || t("N/A")}</p>
                       <span
                         className="font-bold uppercase flex-shrink-0"
                         style={{
@@ -765,18 +767,18 @@ export default function AdminFeedsPage() {
                           marginTop: 4,
                         }}
                       >
-                        {isActive ? "ACTIVE" : "INACTIVE"}
+                        {isActive ? t("ACTIVE") : t("INACTIVE")}
                       </span>
                     </div>
                     <p
                       className="uppercase mt-2"
                       style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
                     >
-                      {getFeedTypeName(fc) || "N/A"}
+                      {getFeedTypeName(fc) || t("N/A")}
                     </p>
                     <div className="flex items-end justify-between gap-3 mt-2">
                       <p className="flex-1 min-w-0" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                        {fc.description || "N/A"}
+                        {fc.description || t("N/A")}
                       </p>
                       {/* Delete — Android ic_delete inside circular pill */}
                       <button
@@ -784,7 +786,7 @@ export default function AdminFeedsPage() {
                         disabled={deletingCatId === fc.id}
                         className="flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: "rgba(228,74,74,0.2)", border: "none", borderRadius: 60, padding: 10, cursor: "pointer" }}
-                        aria-label="Delete category"
+                        aria-label={t("Delete category")}
                       >
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
                           <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
@@ -800,7 +802,7 @@ export default function AdminFeedsPage() {
           {/* FAB — btn_add_feed_category */}
           <button
             onClick={() => setShowCatModal(true)}
-            aria-label="Add feed category"
+            aria-label={t("Add feed category")}
             style={{
               position: "fixed",
               bottom: 20,
@@ -844,7 +846,7 @@ export default function AdminFeedsPage() {
                 <h3
                   style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, fontWeight: 400 }}
                 >
-                  Edit Feed
+                  {t("Edit Feed")}
                 </h3>
                 <button onClick={() => setShowFeedModal(false)} style={{ background: "none", border: "none", cursor: "pointer" }}>
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
@@ -856,12 +858,12 @@ export default function AdminFeedsPage() {
                   className="text-center font-bold"
                   style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
                 >
-                  Add Feed
+                  {t("Add Feed")}
                 </h3>
                 <button
                   onClick={() => setShowFeedModal(false)}
                   style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
-                  aria-label="Close"
+                  aria-label={t("Close")}
                 >
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
                 </button>
@@ -891,10 +893,10 @@ export default function AdminFeedsPage() {
                   {/* COUNTRY * */}
                   <div>
                     <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                      COUNTRY<span style={{ color: "#FC2E20" }}> *</span>
+                      {t("Country")}<span style={{ color: "#FC2E20" }}> *</span>
                     </p>
                     {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_country_name || "N/A"}</div>
+                      <div style={inputStyle(true)}>{feedForm.fd_country_name || t("N/A")}</div>
                     ) : (
                       <div className="relative">
                         <select
@@ -906,7 +908,7 @@ export default function AdminFeedsPage() {
                           className="appearance-none focus:outline-none pr-8"
                           style={{ ...inputStyle(false), color: feedForm.fd_country_name ? "#231F20" : "#999" }}
                         >
-                          <option value="">Select country...</option>
+                          <option value="">{t("Select country")}</option>
                           {countries.map((c) => <option key={String(c.id)} value={c.name}>{c.name}</option>)}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -919,10 +921,10 @@ export default function AdminFeedsPage() {
                   {/* FEED TYPE * — disabled until country selected (Add only) */}
                   <div>
                     <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                      FEED TYPE<span style={{ color: "#FC2E20" }}> *</span>
+                      {t("Feed Type")}<span style={{ color: "#FC2E20" }}> *</span>
                     </p>
                     {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_type || "N/A"}</div>
+                      <div style={inputStyle(true)}>{feedForm.fd_type || t("N/A")}</div>
                     ) : (
                       <div className="relative">
                         <select
@@ -932,7 +934,7 @@ export default function AdminFeedsPage() {
                           className="appearance-none focus:outline-none pr-8"
                           style={{ ...inputStyle(!feedForm.fd_country_name), color: feedForm.fd_type ? "#231F20" : "#999" }}
                         >
-                          <option value="">{!feedForm.fd_country_name ? "Select country first" : "Select type..."}</option>
+                          <option value="">{!feedForm.fd_country_name ? t("Select country first") : t("Select type")}</option>
                           {feedTypes.map((ft) => <option key={ft.id} value={getName(ft)}>{getName(ft)}</option>)}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -945,10 +947,10 @@ export default function AdminFeedsPage() {
                   {/* FEED CATEGORY * — disabled until type selected (Add only) */}
                   <div>
                     <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                      FEED CATEGORY<span style={{ color: "#FC2E20" }}> *</span>
+                      {t("Feed Category")}<span style={{ color: "#FC2E20" }}> *</span>
                     </p>
                     {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_category || "N/A"}</div>
+                      <div style={inputStyle(true)}>{feedForm.fd_category || t("N/A")}</div>
                     ) : (
                       <div className="relative">
                         <select
@@ -958,7 +960,7 @@ export default function AdminFeedsPage() {
                           className="appearance-none focus:outline-none pr-8"
                           style={{ ...inputStyle(!feedForm.fd_type), color: feedForm.fd_category ? "#231F20" : "#999" }}
                         >
-                          <option value="">{!feedForm.fd_type ? "Select type first" : "Select category..."}</option>
+                          <option value="">{!feedForm.fd_type ? t("Select type first") : t("Select category")}</option>
                           {feedCategories
                             .filter((fc) => !feedForm.fd_type || getFeedTypeName(fc) === feedForm.fd_type)
                             .map((fc) => <option key={fc.id} value={getCatName(fc)}>{getCatName(fc)}</option>)}
@@ -973,17 +975,17 @@ export default function AdminFeedsPage() {
                   {/* FEED NAME * — disabled until category selected (Add only) */}
                   <div>
                     <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                      FEED NAME<span style={{ color: "#FC2E20" }}> *</span>
+                      {t("Feed Name")}<span style={{ color: "#FC2E20" }}> *</span>
                     </p>
                     {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_name || "N/A"}</div>
+                      <div style={inputStyle(true)}>{feedForm.fd_name || t("N/A")}</div>
                     ) : (
                       <input
                         type="text"
                         value={feedForm.fd_name}
                         disabled={!feedForm.fd_category}
                         onChange={(e) => setFeedForm((p) => ({ ...p, fd_name: e.target.value }))}
-                        placeholder={!feedForm.fd_category ? "Select category first" : "e.g. Maize Silage"}
+                        placeholder={!feedForm.fd_category ? t("Select category first") : t("e.g. Maize Silage")}
                         className="focus:outline-none"
                         style={inputStyle(!feedForm.fd_category)}
                       />
@@ -994,25 +996,25 @@ export default function AdminFeedsPage() {
             })()}
 
             {/* Nutrient fields — 17 fields matching Android layout_nutrient_info.xml */}
-            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Nutrient Composition (%)</p>
+            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{t("Nutrient Composition (%)")}</p>
             <div className="grid grid-cols-2 gap-3">
-              <NutrientInput label="Dry Matter (DM)" value={feedForm.fd_dm} onChange={(v) => setFeedForm((p) => ({ ...p, fd_dm: v }))} />
-              <NutrientInput label="Ash" value={feedForm.fd_ash} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ash: v }))} />
-              <NutrientInput label="Cellulose" value={feedForm.fd_cellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
-              <NutrientInput label="Crude Fiber (CF)" value={feedForm.fd_cf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cf: v }))} />
-              <NutrientInput label="Crude Protein (CP)" value={feedForm.fd_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cp: v }))} />
-              <NutrientInput label="Ether Extract (EE)" value={feedForm.fd_ee} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ee: v }))} />
-              <NutrientInput label="Hemicellulose" value={feedForm.fd_hemicellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
-              <NutrientInput label="Starch (ST)" value={feedForm.fd_st} onChange={(v) => setFeedForm((p) => ({ ...p, fd_st: v }))} />
-              <NutrientInput label="NDF" value={feedForm.fd_ndf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndf: v }))} />
-              <NutrientInput label="ADF" value={feedForm.fd_adf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_adf: v }))} />
-              <NutrientInput label="Lignin" value={feedForm.fd_lg} onChange={(v) => setFeedForm((p) => ({ ...p, fd_lg: v }))} />
-              <NutrientInput label="NDIN" value={feedForm.fd_ndin} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndin: v }))} />
-              <NutrientInput label="NFE" value={feedForm.fd_nfe} onChange={(v) => setFeedForm((p) => ({ ...p, fd_nfe: v }))} />
-              <NutrientInput label="NPN CP" value={feedForm.fd_npn_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
-              <NutrientInput label="ADIN" value={feedForm.fd_adin} onChange={(v) => setFeedForm((p) => ({ ...p, fd_adin: v }))} />
-              <NutrientInput label="Calcium (Ca)" value={feedForm.fd_ca} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ca: v }))} />
-              <NutrientInput label="Phosphorus (P)" value={feedForm.fd_p} onChange={(v) => setFeedForm((p) => ({ ...p, fd_p: v }))} />
+              <NutrientInput label={t("Dry Matter (DM)")} value={feedForm.fd_dm} onChange={(v) => setFeedForm((p) => ({ ...p, fd_dm: v }))} />
+              <NutrientInput label={t("Ash")} value={feedForm.fd_ash} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ash: v }))} />
+              <NutrientInput label={t("Cellulose")} value={feedForm.fd_cellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cellulose: v }))} />
+              <NutrientInput label={t("Crude Fiber (CF)")} value={feedForm.fd_cf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cf: v }))} />
+              <NutrientInput label={t("Crude Protein (CP)")} value={feedForm.fd_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_cp: v }))} />
+              <NutrientInput label={t("Ether Extract (EE)")} value={feedForm.fd_ee} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ee: v }))} />
+              <NutrientInput label={t("Hemicellulose")} value={feedForm.fd_hemicellulose} onChange={(v) => setFeedForm((p) => ({ ...p, fd_hemicellulose: v }))} />
+              <NutrientInput label={t("Starch (ST)")} value={feedForm.fd_st} onChange={(v) => setFeedForm((p) => ({ ...p, fd_st: v }))} />
+              <NutrientInput label={t("NDF")} value={feedForm.fd_ndf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndf: v }))} />
+              <NutrientInput label={t("ADF")} value={feedForm.fd_adf} onChange={(v) => setFeedForm((p) => ({ ...p, fd_adf: v }))} />
+              <NutrientInput label={t("Lignin")} value={feedForm.fd_lg} onChange={(v) => setFeedForm((p) => ({ ...p, fd_lg: v }))} />
+              <NutrientInput label={t("NDIN")} value={feedForm.fd_ndin} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndin: v }))} />
+              <NutrientInput label={t("NFE")} value={feedForm.fd_nfe} onChange={(v) => setFeedForm((p) => ({ ...p, fd_nfe: v }))} />
+              <NutrientInput label={t("NPN CP")} value={feedForm.fd_npn_cp} onChange={(v) => setFeedForm((p) => ({ ...p, fd_npn_cp: v }))} />
+              <NutrientInput label={t("ADIN")} value={feedForm.fd_adin} onChange={(v) => setFeedForm((p) => ({ ...p, fd_adin: v }))} />
+              <NutrientInput label={t("Calcium (Ca)")} value={feedForm.fd_ca} onChange={(v) => setFeedForm((p) => ({ ...p, fd_ca: v }))} />
+              <NutrientInput label={t("Phosphorus (P)")} value={feedForm.fd_p} onChange={(v) => setFeedForm((p) => ({ ...p, fd_p: v }))} />
             </div>
 
             <button
@@ -1029,7 +1031,7 @@ export default function AdminFeedsPage() {
             >
               {isSavingFeed ? (
                 <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" /></svg>
-              ) : "Submit"}
+              ) : t("Submit")}
             </button>
           </div>
         </div>
@@ -1044,7 +1046,7 @@ export default function AdminFeedsPage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, marginBottom: 20 }}
             >
-              Add Feed Type
+              {t("Add Feed Type")}
             </h3>
 
             {/* FEED TYPE * label + input */}
@@ -1052,13 +1054,13 @@ export default function AdminFeedsPage() {
               className="font-bold uppercase mb-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
             >
-              FEED TYPE<span style={{ color: "#FC2E20" }}> *</span>
+              {t("Feed Type")}<span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <input
               type="text"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
-              placeholder="e.g. Forage"
+              placeholder={t("e.g. Forage")}
               className="w-full focus:outline-none mb-3"
               style={{
                 backgroundColor: "#F1F5F9",
@@ -1076,13 +1078,13 @@ export default function AdminFeedsPage() {
               className="font-bold uppercase mb-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
             >
-              Description
+              {t("Description")}
             </p>
             <textarea
               value={newTypeDescription}
               onChange={(e) => setNewTypeDescription(e.target.value)}
               maxLength={100}
-              placeholder="Short description"
+              placeholder={t("Short description")}
               className="w-full focus:outline-none mb-5"
               style={{
                 backgroundColor: "#F1F5F9",
@@ -1119,7 +1121,7 @@ export default function AdminFeedsPage() {
                 <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                 </svg>
-              ) : "Submit"}
+              ) : t("Submit")}
             </button>
 
             {/* Cancel link — small text-only secondary action */}
@@ -1135,7 +1137,7 @@ export default function AdminFeedsPage() {
                 cursor: "pointer",
               }}
             >
-              Cancel
+              {t("Cancel")}
             </button>
           </div>
         </div>
@@ -1149,7 +1151,7 @@ export default function AdminFeedsPage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, marginBottom: 20 }}
             >
-              Add Feed Category
+              {t("Add Feed Category")}
             </h3>
 
             {/* FEED TYPE * dropdown (required) */}
@@ -1157,7 +1159,7 @@ export default function AdminFeedsPage() {
               className="font-bold uppercase mb-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
             >
-              FEED TYPE<span style={{ color: "#FC2E20" }}> *</span>
+              {t("Feed Type")}<span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <div className="relative mb-3">
               <select
@@ -1174,7 +1176,7 @@ export default function AdminFeedsPage() {
                   border: "none",
                 }}
               >
-                <option value="">Select type...</option>
+                <option value="">{t("Select type")}</option>
                 {feedTypes.map((ft) => <option key={ft.id} value={ft.id}>{getName(ft)}</option>)}
               </select>
               <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -1188,14 +1190,14 @@ export default function AdminFeedsPage() {
               className="font-bold uppercase mb-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
             >
-              FEED CATEGORY<span style={{ color: "#FC2E20" }}> *</span>
+              {t("Feed Category")}<span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <input
               type="text"
               value={newCatName}
               disabled={!newCatTypeId}
               onChange={(e) => setNewCatName(e.target.value)}
-              placeholder={!newCatTypeId ? "Select feed type first" : "e.g. Cereal Grains"}
+              placeholder={!newCatTypeId ? t("Select feed type first") : t("e.g. Cereal Grains")}
               className="w-full focus:outline-none mb-3"
               style={{
                 backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
@@ -1214,14 +1216,14 @@ export default function AdminFeedsPage() {
               className="font-bold uppercase mb-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
             >
-              Description
+              {t("Description")}
             </p>
             <textarea
               value={newCatDescription}
               disabled={!newCatTypeId}
               onChange={(e) => setNewCatDescription(e.target.value)}
               maxLength={100}
-              placeholder={!newCatTypeId ? "Select feed type first" : "Short description"}
+              placeholder={!newCatTypeId ? t("Select feed type first") : t("Short description")}
               className="w-full focus:outline-none mb-5"
               style={{
                 backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
@@ -1257,7 +1259,7 @@ export default function AdminFeedsPage() {
                 <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                 </svg>
-              ) : "Submit"}
+              ) : t("Submit")}
             </button>
 
             <button
@@ -1265,7 +1267,7 @@ export default function AdminFeedsPage() {
               className="w-full mt-3"
               style={{ background: "none", border: "none", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, cursor: "pointer" }}
             >
-              Cancel
+              {t("Cancel")}
             </button>
           </div>
         </div>
@@ -1283,18 +1285,18 @@ export default function AdminFeedsPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-center font-bold mb-4 px-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Are you sure you want to delete feed?</h3>
+            <h3 className="text-center font-bold mb-4 px-3" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{t("Are you sure you want to delete feed?")}</h3>
             <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              &quot;{confirmDeleteFeed.fd_name}&quot; will be permanently deleted. This action cannot be undone.
+              {t('"${fd_name}" will be permanently deleted. This action cannot be undone.').replace("${fd_name}", confirmDeleteFeed.fd_name ?? "")}
             </p>
             <div className="flex gap-2 px-3">
               <button onClick={() => setConfirmDeleteFeed(null)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#064E3B" strokeWidth="2" strokeLinecap="round"/></svg>
-                No
+                {t("No")}
               </button>
               <button onClick={() => handleDeleteFeed(confirmDeleteFeed)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                {deletingFeedId === confirmDeleteFeed.feed_id ? "Deleting..." : "Yes"}
+                {deletingFeedId === confirmDeleteFeed.feed_id ? t("Deleting...") : t("Yes")}
               </button>
             </div>
           </div>
@@ -1313,18 +1315,18 @@ export default function AdminFeedsPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Are you sure you want to delete type?</h3>
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{t("Are you sure you want to delete type?")}</h3>
             <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              &quot;{getName(confirmDeleteType)}&quot; will be permanently deleted. This action cannot be undone.
+              {t('"${name}" will be permanently deleted. This action cannot be undone.').replace("${name}", getName(confirmDeleteType))}
             </p>
             <div className="flex gap-2 px-3">
               <button onClick={() => setConfirmDeleteType(null)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#064E3B" strokeWidth="2" strokeLinecap="round"/></svg>
-                No
+                {t("No")}
               </button>
               <button onClick={() => handleDeleteType(confirmDeleteType)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                {deletingTypeId === confirmDeleteType.id ? "Deleting..." : "Yes"}
+                {deletingTypeId === confirmDeleteType.id ? t("Deleting...") : t("Yes")}
               </button>
             </div>
           </div>
@@ -1343,18 +1345,18 @@ export default function AdminFeedsPage() {
                 </svg>
               </div>
             </div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Are you sure you want to delete category?</h3>
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{t("Are you sure you want to delete category?")}</h3>
             <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              &quot;{getCatName(confirmDeleteCat)}&quot; will be permanently deleted. This action cannot be undone.
+              {t('"${name}" will be permanently deleted. This action cannot be undone.').replace("${name}", getCatName(confirmDeleteCat))}
             </p>
             <div className="flex gap-2 px-3">
               <button onClick={() => setConfirmDeleteCat(null)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="#064E3B" strokeWidth="2" strokeLinecap="round"/></svg>
-                No
+                {t("No")}
               </button>
               <button onClick={() => handleDeleteCategory(confirmDeleteCat)} className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5" style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}>
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                {deletingCatId === confirmDeleteCat.id ? "Deleting..." : "Yes"}
+                {deletingCatId === confirmDeleteCat.id ? t("Deleting...") : t("Yes")}
               </button>
             </div>
           </div>

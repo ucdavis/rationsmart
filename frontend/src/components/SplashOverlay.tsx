@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n-ui";
 
 // Pre-hydration splash overlay. SSR renders it so the user sees
 // branded RationSmart content the moment the HTML reaches the browser
@@ -23,6 +24,7 @@ const SPLASH_DURATION_MS = 2000;
 export default function SplashOverlay() {
   const pathname = usePathname();
   const [visible, setVisible] = useState(true);
+  const t = useT();
 
   useEffect(() => {
     if (pathname !== "/") {
@@ -78,12 +80,12 @@ export default function SplashOverlay() {
             fontFamily: "Nunito, sans-serif",
           }}
         >
-          RationSmart
+          {t("RationSmart")}
         </p>
       </div>
       <div style={{ textAlign: "center" }}>
         <p style={{ color: "#6D6D6D", fontSize: 14, margin: 0, fontFamily: "Nunito, sans-serif" }}>
-          POWERED BY
+          {t("POWERED BY")}
         </p>
         <p
           style={{
@@ -93,7 +95,7 @@ export default function SplashOverlay() {
             fontFamily: "Nunito, sans-serif",
           }}
         >
-          DigitalGreen
+          {t("DigitalGreen")}
         </p>
       </div>
     </div>

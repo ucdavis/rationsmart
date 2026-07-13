@@ -8,6 +8,7 @@ import { isEmailAddressValid } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
+import { useT } from "@/lib/i18n-ui";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
@@ -50,6 +51,7 @@ function LoadingPill({ text }: { text: string }) {
 
 export default function ProfilePage() {
   const router = useRouter();
+  const t = useT();
   const { user, setUser, logout, showSnackbar } = useStore((s) => ({
     user: s.user,
     setUser: s.setUser,
@@ -270,7 +272,7 @@ export default function ProfilePage() {
       className="flex flex-col min-h-screen"
       style={{ backgroundColor: "#F8FAF9" }}
     >
-      <Toolbar type="back" title="Your Profile" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Your Profile")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Profile card */}
@@ -312,19 +314,19 @@ export default function ProfilePage() {
               pops in" inconsistency. */}
           {countriesLoading ? (
             <>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name *</p>
-              <LoadingPill text="Loading…" />
+              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>{t("Name *")}</p>
+              <LoadingPill text={t("Loading…")} />
 
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
-              <LoadingPill text="Loading…" />
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Country *")}</p>
+              <LoadingPill text={t("Loading…")} />
 
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
-              <LoadingPill text="Loading…" />
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Language")}</p>
+              <LoadingPill text={t("Loading…")} />
             </>
           ) : (
             <>
               {/* Name (editable) */}
-              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>Name *</p>
+              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>{t("Name *")}</p>
               <input
                 type="text"
                 value={name}
@@ -336,7 +338,7 @@ export default function ProfilePage() {
               {/* Country (editable dropdown) — appearance-none strips the
                   native chevron, so we overlay an Android-style ic_text_drop_down
                   caret on the right. */}
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Country *</p>
+              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Country *")}</p>
               <div className="relative">
                 <select
                   value={selectedCountryId}
@@ -368,7 +370,7 @@ export default function ProfilePage() {
                   alongside the Language skeleton above. */}
               {showLangSelector && (
                 <>
-                  <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>Language</p>
+                  <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Language")}</p>
                   <div className="relative">
                     <select
                       value={selectedLang}
@@ -415,11 +417,11 @@ export default function ProfilePage() {
                 <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                 </svg>
-                Saving...
+                {t("Saving...")}
               </>
             ) : (
               <>
-                Update Profile
+                {t("Update Profile")}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                   <path d="M4 12a8 8 0 0 1 13.659-5.667" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   <path d="M20 12a8 8 0 0 1-13.659 5.667" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
@@ -453,7 +455,7 @@ export default function ProfilePage() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#E44A4A">
               <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
             </svg>
-            Delete
+            {t("Delete")}
           </button>
 
           <button
@@ -473,7 +475,7 @@ export default function ProfilePage() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="#296CD3">
               <path d="M13.26,3C8.17,2.86 4,6.94 4,12H2.21c-0.45,0 -0.67,0.54 -0.35,0.85l2.79,2.79c0.2,0.2 0.51,0.2 0.71,0l2.8,-2.79C8.46,12.54 8.24,12 7.79,12H6c0,-3.89 3.2,-7.06 7.1,-7c3.71,0.05 6.84,3.18 6.9,6.9c0.06,3.91 -3.1,7.1 -7,7.1c-1.59,0 -3.05,-0.53 -4.23,-1.43c-0.4,-0.3 -0.96,-0.27 -1.31,0.09l0,0c-0.43,0.43 -0.39,1.14 0.09,1.5C9.06,20.31 10.95,21 13,21c5.06,0 9.14,-4.17 9,-9.25C21.87,7.05 17.95,3.13 13.26,3zM15,11v-1c0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2v1c-0.55,0 -1,0.45 -1,1v3c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-3C16,11.45 15.55,11 15,11zM14,11h-2v-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1V11z" />
             </svg>
-            Reset PIN
+            {t("Reset PIN")}
           </button>
         </div>
 
@@ -498,7 +500,7 @@ export default function ProfilePage() {
               <rect x="5" y="11" width="14" height="9" rx="2" stroke="#064E3B" strokeWidth="2" />
               <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
             </svg>
-            Change PIN
+            {t("Change PIN")}
           </button>
         </div>
 
@@ -541,13 +543,13 @@ export default function ProfilePage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Reset Your PIN
+              {t("Reset Your PIN")}
             </p>
             <p
               className="text-center mt-1 px-3"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
             >
-              Enter your registered email to receive a reset link
+              {t("Enter your registered email to receive a reset link")}
             </p>
 
             {/* Email label + input */}
@@ -555,7 +557,7 @@ export default function ProfilePage() {
               className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              Email Address <span style={{ color: "#FC2E20" }}>*</span>
+              {t("Email Address")} <span style={{ color: "#FC2E20" }}>*</span>
             </p>
             <div className="px-3">
               <input
@@ -595,7 +597,7 @@ export default function ProfilePage() {
                   </svg>
                 ) : (
                   <>
-                    Proceed
+                    {t("Proceed")}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                       <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -646,7 +648,7 @@ export default function ProfilePage() {
               className="text-center font-bold mb-2 mx-3"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, whiteSpace: "pre-line" }}
             >
-              {"Are you sure you want\nto delete your account?"}
+              {t("Are you sure you want\nto delete your account?")}
             </h3>
 
             {/* Description — Android string @delete_account_message */}
@@ -654,7 +656,7 @@ export default function ProfilePage() {
               className="text-center text-sm mb-5 mx-3"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
             >
-              {"This action is permanent. Your account\nand data will be deleted\npermanently."}
+              {t("This action is permanent. Your account\nand data will be deleted\npermanently.")}
             </p>
 
             <div className="flex gap-3">
@@ -667,7 +669,7 @@ export default function ProfilePage() {
                 <svg width="18" height="18" viewBox="0 0 960 960" fill="#064E3B">
                   <path d="m480,536 l116,116q11,11 28,11t28,-11q11,-11 11,-28t-11,-28L536,480l116,-116q11,-11 11,-28t-11,-28q-11,-11 -28,-11t-28,11L480,424 364,308q-11,-11 -28,-11t-28,11q-11,11 -11,28t11,28l116,116 -116,116q-11,11 -11,28t11,28q11,11 28,11t28,-11l116,-116ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
                 </svg>
-                No
+                {t("No")}
               </button>
 
               {/* YES — filled carmine_pink button with ic_delete_account
@@ -680,7 +682,7 @@ export default function ProfilePage() {
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
                   <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
                 </svg>
-                Yes
+                {t("Yes")}
               </button>
             </div>
           </div>
@@ -715,7 +717,7 @@ export default function ProfilePage() {
               className="text-center font-bold mb-5"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Submit PIN
+              {t("Submit PIN")}
             </h3>
             <PinInput value={deletePin} onChange={setDeletePin} />
             <div className="mt-5">
@@ -736,7 +738,7 @@ export default function ProfilePage() {
                   <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                   </svg>
-                ) : "Submit"}
+                ) : t("Submit")}
               </button>
             </div>
 
@@ -784,22 +786,22 @@ export default function ProfilePage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Change Your PIN
+              {t("Change Your PIN")}
             </p>
             <p
               className="text-center mt-1 mb-4 px-4"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
             >
-              Enter your current PIN and choose a new 6-digit PIN.
+              {t("Enter your current PIN and choose a new 6-digit PIN.")}
             </p>
 
             <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Current PIN
+              {t("Current PIN")}
             </p>
             <PinInput value={currentPin} onChange={setCurrentPin} length={6} disabled={isChangingPin} />
 
             <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              New 6-digit PIN
+              {t("New 6-digit PIN")}
             </p>
             <PinInput
               value={newPin}
@@ -809,7 +811,7 @@ export default function ProfilePage() {
             />
 
             <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Confirm New PIN
+              {t("Confirm New PIN")}
             </p>
             <PinInput
               value={confirmNewPin}
@@ -823,7 +825,7 @@ export default function ProfilePage() {
                 className="text-xs font-bold text-center mt-2"
                 style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
               >
-                New PINs do not match
+                {t("New PINs do not match")}
               </p>
             )}
 
@@ -844,7 +846,7 @@ export default function ProfilePage() {
                   <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                   </svg>
-                ) : "Update PIN"}
+                ) : t("Update PIN")}
               </button>
             </div>
 

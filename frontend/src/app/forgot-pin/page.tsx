@@ -9,10 +9,12 @@ import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
+import { useT } from "@/lib/i18n-ui";
 
 export default function ForgotPinPage() {
   const router = useRouter();
   const showSnackbar = useStore((s) => s.showSnackbar);
+  const t = useT();
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -32,8 +34,8 @@ export default function ForgotPinPage() {
       const message = err instanceof Error && err.message && err.message !== "Network Error"
         ? err.message
         : err instanceof Error && err.message === "Network Error"
-          ? "Please make sure you're device has internet connectivity."
-          : "Unexpected error: failed to generate PIN. Please, try again!";
+          ? t("Please make sure you're device has internet connectivity.")
+          : t("Unexpected error: failed to generate PIN. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -59,7 +61,7 @@ export default function ForgotPinPage() {
           onClick={() => router.back()}
           className="flex items-center justify-center rounded-xl bg-white"
           style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
-          aria-label="Back"
+          aria-label={t("Back")}
         >
           <IcBack size={20} color="#064E3B" />
         </button>
@@ -74,7 +76,7 @@ export default function ForgotPinPage() {
             letterSpacing: 0,
           }}
         >
-          Reset PIN
+          {t("Reset PIN")}
         </h1>
         <div style={{ width: 40 }} />
       </div>
@@ -105,20 +107,20 @@ export default function ForgotPinPage() {
               className="text-xl font-bold mb-2"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
             >
-              Check Your Email
+              {t("Check Your Email")}
             </h2>
             <p
               className="text-sm mb-8"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
             >
-              We&apos;ve sent PIN reset instructions to your email address. Please check your inbox.
+              {t("We've sent PIN reset instructions to your email address. Please check your inbox.")}
             </p>
             <button
               onClick={() => router.push("/login")}
               className="px-8 py-4 rounded-full font-bold text-base text-white"
               style={{ backgroundColor: "#064E3B", fontFamily: "Nunito, sans-serif", border: "none", cursor: "pointer" }}
             >
-              Back to Login
+              {t("Back to Login")}
             </button>
           </div>
         ) : (
@@ -128,19 +130,19 @@ export default function ForgotPinPage() {
               className="text-center font-bold mt-5"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Reset Your PIN
+              {t("Reset Your PIN")}
             </p>
             <p
               className="text-center text-sm mt-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              Enter your registered email to receive a reset link
+              {t("Enter your registered email to receive a reset link")}
             </p>
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              Email Address<RequiredAsterisk />
+              {t("Email Address")}<RequiredAsterisk />
             </p>
             <input
               type="email"
@@ -173,11 +175,11 @@ export default function ForgotPinPage() {
                   <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                   </svg>
-                  <span>Sending...</span>
+                  <span>{t("Sending...")}</span>
                 </>
               ) : (
                 <>
-                  Proceed
+                  {t("Proceed")}
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                     <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>

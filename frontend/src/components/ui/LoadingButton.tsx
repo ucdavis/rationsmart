@@ -1,5 +1,7 @@
 "use client";
 
+import { useT } from "@/lib/i18n-ui";
+
 // Legacy component — kept for compatibility.
 // Prefer inline button patterns using the color system from DESIGN_RULES.
 interface LoadingButtonProps {
@@ -15,7 +17,7 @@ interface LoadingButtonProps {
 
 export default function LoadingButton({
   label,
-  loadingLabel = "Loading...",
+  loadingLabel,
   isLoading = false,
   onClick,
   disabled = false,
@@ -23,6 +25,8 @@ export default function LoadingButton({
   variant = "primary",
   type = "button",
 }: LoadingButtonProps) {
+  const t = useT();
+  const effectiveLoadingLabel = loadingLabel ?? t("Loading...");
   const bgColor =
     variant === "primary"
       ? disabled || isLoading ? "#D3D3D3" : "#064E3B"
@@ -85,7 +89,7 @@ export default function LoadingButton({
           />
         </svg>
       )}
-      {isLoading ? loadingLabel : label}
+      {isLoading ? effectiveLoadingLabel : label}
     </button>
   );
 }

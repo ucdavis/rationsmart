@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { getAdminReports } from "@/lib/api";
 import { toAdminReportDisplayDate } from "@/lib/validators";
+import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
@@ -31,6 +32,7 @@ export default function AdminReportsPage() {
     user: s.user,
     showSnackbar: s.showSnackbar,
   }));
+  const t = useT();
 
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -43,7 +45,7 @@ export default function AdminReportsPage() {
         const data = res.data;
         setReports(Array.isArray(data) ? data : data?.reports ?? data?.items ?? []);
       })
-      .catch(() => showSnackbar("Could not load reports", "error"))
+      .catch(() => showSnackbar(t("Could not load reports"), "error"))
       .finally(() => setIsLoading(false));
   }, [user?.id]);
 
@@ -55,7 +57,7 @@ export default function AdminReportsPage() {
   const viewReport = (r: AdminReport) => {
     const url = r.bucket_url || r.report_url;
     if (!url) {
-      showSnackbar("Report URL not available", "error");
+      showSnackbar(t("Report URL not available"), "error");
       return;
     }
     window.open(url, "_blank", "noopener,noreferrer");
@@ -63,7 +65,7 @@ export default function AdminReportsPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-      <Toolbar type="back" title="Feed Reports" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feed Reports")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {isLoading ? (
@@ -78,7 +80,7 @@ export default function AdminReportsPage() {
           ))
         ) : reports.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center px-6">
-            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No reports found</p>
+            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>{t("No reports found")}</p>
           </div>
         ) : (
           reports.map((r, idx) => {
@@ -91,6 +93,10 @@ export default function AdminReportsPage() {
               (r.optimization_status?.toLowerCase().includes("evaluat") ?? false)
                 ? "Evaluation" : "Recommendation"
             );
+            // reportType doubles as the theme-comparison key below (and can
+            // come straight from backend data via r.report_type) — only the
+            // rendered "Report Type" value further down is passed through
+            // t() for display.
             const themed = reportType === "Evaluation"
               ? { bg: "rgba(255,159,28,0.15)", text: "#FF9F1C" }       // vivid_gamboge_15 / vivid_gamboge
               : reportType === "Recommendation"
@@ -120,7 +126,7 @@ export default function AdminReportsPage() {
                       className="font-bold truncate flex-1 min-w-0"
                       style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
                     >
-                      {r.user_name || r.user_email || "N/A"}
+                      {r.user_name || r.user_email || t("N/A")}
                     </p>
                   </div>
                   {/* cv_view_report: themed bg, "View Report" + ic_view_report drawableEnd */}
@@ -140,7 +146,7 @@ export default function AdminReportsPage() {
                       marginLeft: 8,
                     }}
                   >
-                    View Report
+                    {t("View Report")}
                     {/* ic_view_report — circle with right-arrow inside */}
                     <svg width="20" height="20" viewBox="0 0 20 20" fill={themed.text}>
                       <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
@@ -153,22 +159,22 @@ export default function AdminReportsPage() {
                     values are bold, raisin_black) */}
                 <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Simulation ID</p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>{t("Simulation ID")}</p>
                     <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
-                      {r.simulation_id || r.simulation_name || "N/A"}
+                      {r.simulation_id || r.simulation_name || t("N/A")}
                     </p>
                   </div>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Report Type</p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>{t("Report Type")}</p>
                     <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
-                      {reportType || "N/A"}
+                      {t(reportType) || t("N/A")}
                     </p>
                   </div>
                 </div>
 
                 {/* Date */}
                 <div style={{ padding: "10px 10px 0" }}>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>Date</p>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>{t("Date")}</p>
                   <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
                     {toAdminReportDisplayDate(r.created_at)}
                   </p>

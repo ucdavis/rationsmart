@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { getAdminFeedbacks, getAdminFeedbackStats } from "@/lib/api";
 import { toFeedReportDisplayDate } from "@/lib/validators";
+import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
@@ -96,6 +97,7 @@ function StarRow({ rating }: { rating: number }) {
 export default function AdminFeedbackPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
+  const t = useT();
 
   const [feedbacks, setFeedbacks] = useState<AdminFeedback[]>([]);
   const [stats, setStats] = useState<FeedbackStats | null>(null);
@@ -115,26 +117,26 @@ export default function AdminFeedbackPage() {
         setFeedbacks(Array.isArray(data) ? data : data?.feedbacks ?? []);
         setStats(statsRes.data ?? null);
       })
-      .catch(() => showSnackbar("Could not load feedback", "error"))
+      .catch(() => showSnackbar(t("Could not load feedback"), "error"))
       .finally(() => setIsLoading(false));
   }, [user?.id]);
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-      <Toolbar type="back" title="Feedback Management" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feedback Management")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {/* Stats cards */}
         {stats && (
           <>
-            <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "14px 10px 0" }}>Aggregated Insights</p>
+            <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "14px 10px 0" }}>{t("Aggregated Insights")}</p>
             <div className="flex gap-3 mx-2.5 mt-4 mb-2">
               <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-                <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Total Feedbacks</p>
+                <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{t("Total Feedbacks")}</p>
                 <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{stats.total_feedbacks ?? feedbacks.length}</p>
               </div>
               <div className="flex-1 bg-white p-2.5" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-                <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Overall Rating</p>
+                <p className="font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{t("Overall Rating")}</p>
                 {/* Match Android tv_overall_rating: 2 decimal places (e.g. 3.83, 3.95).
                     The previous .toFixed(1) was rounding 3.95 to "4.0". */}
                 <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28 }}>{(stats.overall_rating ?? stats.average_rating)?.toFixed(2) ?? "—"}</p>
@@ -143,7 +145,7 @@ export default function AdminFeedbackPage() {
           </>
         )}
 
-        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "10px 12px 4px" }}>Feedbacks</p>
+        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "10px 12px 4px" }}>{t("Feedbacks")}</p>
 
         {isLoading ? (
           [0,1,2].map((i) => (
@@ -155,11 +157,14 @@ export default function AdminFeedbackPage() {
           ))
         ) : feedbacks.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center px-6">
-            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>No feedbacks found</p>
+            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>{t("No feedbacks found")}</p>
           </div>
         ) : (
           feedbacks.map((fb) => {
             const category = fb.feedback_type ?? "General";
+            // categoryStyle() switches on the raw English category value
+            // (identity/comparison use) — only the rendered badge text
+            // below is passed through t() for display.
             const cs = categoryStyle(category);
             return (
               <div
@@ -203,10 +208,10 @@ export default function AdminFeedbackPage() {
                         unconditionally via toStringOrNA(). */}
                     <div className="min-w-0">
                       <p className="font-bold truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                        {fb.user_name || "N/A"}
+                        {fb.user_name || t("N/A")}
                       </p>
                       <p className="truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                        {fb.user_email || "N/A"}
+                        {fb.user_email || t("N/A")}
                       </p>
                     </div>
                   </div>
@@ -215,7 +220,7 @@ export default function AdminFeedbackPage() {
                       className="text-xs font-bold uppercase"
                       style={{ backgroundColor: cs.badgeBg, color: cs.badgeText, fontFamily: "Nunito, sans-serif", padding: "2px 10px", borderRadius: 50 }}
                     >
-                      {category}
+                      {t(category)}
                     </span>
                     <div className="mt-1">
                       <StarRow rating={fb.overall_rating ?? 0} />
@@ -228,7 +233,7 @@ export default function AdminFeedbackPage() {
                   className="text-sm"
                   style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", margin: "14px 12px 0", display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical", overflow: "hidden" } as React.CSSProperties}
                 >
-                  {fb.text_feedback || "Feedback not provided!"}
+                  {fb.text_feedback || t("Feedback not provided!")}
                 </p>
                 {/* Date */}
                 <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, margin: "10px 12px 0" }}>

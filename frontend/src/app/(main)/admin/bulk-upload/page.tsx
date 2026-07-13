@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
+import { useT } from "@/lib/i18n-ui";
+
+// Fills `${key}` placeholder tokens in a translated template. Only used
+// for the two messages on this page whose dictionary entries carry
+// literal placeholder tokens matching the English source exactly (e.g.
+// hi.json: "Exported ${count} record${s}.", "Downloaded ${fileName}
+// (${size} KB)."). Never used on backend-supplied messages — those are
+// shown verbatim and never passed through t() at all.
+function fillTemplate(template: string, vars: Record<string, string>): string {
+  return Object.entries(vars).reduce((acc, [key, value]) => acc.split(`\${${key}}`).join(value), template);
+}
 
 // Section header — Android shows a vertical pin (size_6 × size_30,
 // bg_vertical_pin = dark_aquamarine_green) + bold sentence-case title
@@ -30,6 +41,7 @@ type ExportKind = "standard" | "custom";
 export default function BulkUploadPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
+  const t = useT();
 
   const fileRef = useRef<HTMLInputElement>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -69,18 +81,18 @@ export default function BulkUploadPage() {
   const handleConfirmUpload = async () => {
     if (!selectedFile || !user?.id) return;
     setUploadStatus("uploading");
-    setUploadMessage("Your feeds are being uploaded.");
+    setUploadMessage(t("Your feeds are being uploaded."));
     setUploadProgress(0);
     try {
       const res = await bulkUploadFeeds(user.id, selectedFile, (pct) => setUploadProgress(pct));
       setUploadProgress(100);
       setUploadStatus("successful");
-      setUploadMessage(res.data?.message ?? "Feeds uploaded successfully.");
+      setUploadMessage(res.data?.message ?? t("Feeds uploaded successfully."));
       setSelectedFile(null);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err: unknown) {
       setUploadStatus("failed");
-      setUploadMessage(err instanceof Error ? err.message : "Could not upload feeds.");
+      setUploadMessage(err instanceof Error ? err.message : t("Could not upload feeds."));
     }
   };
 
@@ -97,7 +109,7 @@ export default function BulkUploadPage() {
     triggerDownload(TEMPLATE_URL, "feeds_table_template.xlsx");
     setTimeout(() => {
       setIsDownloadingTemplate(false);
-      showSnackbar("Template opened in a new tab", "success");
+      showSnackbar(t("Template opened in a new tab"), "success");
     }, 500);
   };
 
@@ -132,7 +144,7 @@ export default function BulkUploadPage() {
     if (!user?.id) return;
     setDownloadKind(kind);
     setDownloadStatus("downloading");
-    setDownloadMessage("Your feeds are being downloaded.");
+    setDownloadMessage(t("Your feeds are being downloaded."));
     setDownloadProgress(0);
     try {
       const res = kind === "standard"
@@ -172,13 +184,13 @@ export default function BulkUploadPage() {
         } catch {
           // Server returned text/json that isn't actually JSON — bail.
           setDownloadStatus("failed");
-          setDownloadMessage("Backend returned an unparseable response.");
+          setDownloadMessage(t("Backend returned an unparseable response."));
           return;
         }
         console.log(`[export-${kind}] JSON response:`, parsed);
         if (parsed?.success === false) {
           setDownloadStatus("failed");
-          setDownloadMessage(parsed?.message ?? "Could not export feeds.");
+          setDownloadMessage(parsed?.message ?? t("Could not export feeds."));
           return;
         }
         const url = parsed?.file_url ?? parsed?.url ?? parsed?.fileUrl;
@@ -188,14 +200,16 @@ export default function BulkUploadPage() {
           triggerDownload(url, fileName);
         } else {
           setDownloadStatus("failed");
-          setDownloadMessage("Export completed but the backend did not return a file URL. Contact admin.");
+          setDownloadMessage(t("Export completed but the backend did not return a file URL. Contact admin."));
           return;
         }
         setDownloadProgress(100);
         setDownloadStatus("successful");
         setDownloadMessage(
           parsed?.message ??
-          (recordCount != null ? `Exported ${recordCount} record${recordCount === 1 ? "" : "s"}.` : "Feeds exported successfully.")
+          (recordCount != null
+            ? fillTemplate(t("Exported ${count} record${s}."), { count: String(recordCount), s: recordCount === 1 ? "" : "s" })
+            : t("Feeds exported successfully."))
         );
       } else {
         // Response is the xlsx binary. Save it directly via a blob URL.
@@ -209,7 +223,7 @@ export default function BulkUploadPage() {
         // when there are no rows. Surface that explicitly.
         if (blob.size === 0) {
           setDownloadStatus("failed");
-          setDownloadMessage("Backend returned an empty file.");
+          setDownloadMessage(t("Backend returned an empty file."));
           return;
         }
         console.log(`[export-${kind}] binary response — ${blob.size} bytes, type ${contentType}, name ${fileName}`);
@@ -225,11 +239,13 @@ export default function BulkUploadPage() {
         setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
         setDownloadProgress(100);
         setDownloadStatus("successful");
-        setDownloadMessage(`Downloaded ${fileName} (${(blob.size / 1024).toFixed(1)} KB).`);
+        setDownloadMessage(
+          fillTemplate(t("Downloaded ${fileName} (${size} KB)."), { fileName, size: (blob.size / 1024).toFixed(1) })
+        );
       }
     } catch (err: unknown) {
       setDownloadStatus("failed");
-      setDownloadMessage(err instanceof Error ? err.message : "Could not export feeds.");
+      setDownloadMessage(err instanceof Error ? err.message : t("Could not export feeds."));
     }
   };
 
@@ -240,11 +256,11 @@ export default function BulkUploadPage() {
   const uploadBanner = (() => {
     switch (uploadStatus) {
       case "uploading":
-        return { title: "Uploading", bg: "#E3F2FD", stroke: "rgba(41,108,211,0.25)", iconBg: "#007BFF", titleColor: "#1E40AF", msgColor: "#2563EB", progressColor: "#296CD3", trackColor: "rgba(41,108,211,0.15)" };
+        return { title: t("Uploading"), bg: "#E3F2FD", stroke: "rgba(41,108,211,0.25)", iconBg: "#007BFF", titleColor: "#1E40AF", msgColor: "#2563EB", progressColor: "#296CD3", trackColor: "rgba(41,108,211,0.15)" };
       case "successful":
-        return { title: "Upload Successful", bg: "#F0FDF4", stroke: "rgba(5,188,109,0.25)", iconBg: "#1CA069", titleColor: "#064E3B", msgColor: "#064E3B", progressColor: "#064E3B", trackColor: "rgba(5,188,109,0.15)" };
+        return { title: t("Upload Successful"), bg: "#F0FDF4", stroke: "rgba(5,188,109,0.25)", iconBg: "#1CA069", titleColor: "#064E3B", msgColor: "#064E3B", progressColor: "#064E3B", trackColor: "rgba(5,188,109,0.15)" };
       case "failed":
-        return { title: "Upload Failed", bg: "rgba(228,74,74,0.10)", stroke: "rgba(228,74,74,0.25)", iconBg: "#FC2E20", titleColor: "#E44A4A", msgColor: "#E44A4A", progressColor: "#FC2E20", trackColor: "rgba(228,74,74,0.15)" };
+        return { title: t("Upload Failed"), bg: "rgba(228,74,74,0.10)", stroke: "rgba(228,74,74,0.25)", iconBg: "#FC2E20", titleColor: "#E44A4A", msgColor: "#E44A4A", progressColor: "#FC2E20", trackColor: "rgba(228,74,74,0.15)" };
       default:
         return null;
     }
@@ -256,7 +272,7 @@ export default function BulkUploadPage() {
     if (downloadStatus === "downloading" || downloadStatus === "successful") {
       if (downloadKind === "standard") {
         return {
-          title: downloadStatus === "downloading" ? "Downloading" : "Export Successful",
+          title: downloadStatus === "downloading" ? t("Downloading") : t("Export Successful"),
           bg: "#F0FDF4",
           stroke: "rgba(5,188,109,0.25)",
           iconBg: "#1CA069",
@@ -267,7 +283,7 @@ export default function BulkUploadPage() {
         };
       }
       return {
-        title: downloadStatus === "downloading" ? "Downloading" : "Export Successful",
+        title: downloadStatus === "downloading" ? t("Downloading") : t("Export Successful"),
         bg: "rgba(255,152,0,0.10)",
         stroke: "rgba(255,152,0,0.30)",
         iconBg: "#FF6D00",
@@ -279,7 +295,7 @@ export default function BulkUploadPage() {
     }
     // failed
     return {
-      title: "Export Failed",
+      title: t("Export Failed"),
       bg: "rgba(228,74,74,0.10)",
       stroke: "rgba(228,74,74,0.25)",
       iconBg: "#FC2E20",
@@ -318,17 +334,17 @@ export default function BulkUploadPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
-      <Toolbar type="back" title="Feed Management" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feed Management")} onBack={() => router.back()} />
 
       {/* Page header — matches Android tv_title_data_sync / tv_title_feed_export_upload */}
       <div className="ml-3 mt-5">
-        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>Data Sync</p>
-        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>Feed Export & Upload</p>
+        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{t("Data Sync")}</p>
+        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}>{t("Feed Export & Upload")}</p>
       </div>
 
       <div className="flex-1 overflow-y-auto pb-28">
         {/* ── UPLOAD ── */}
-        <SectionHeader>Upload</SectionHeader>
+        <SectionHeader>{t("Upload")}</SectionHeader>
         <div className="mx-3 mt-3 bg-white rounded-2xl px-5 pt-5 pb-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
           {/* Dashed picker — Android bg_upload_feeds (dashed azure border on
               azure_15 bg with ic_upload in azure pill). */}
@@ -354,11 +370,11 @@ export default function BulkUploadPage() {
             </span>
             {/* "UPLOAD FEEDS" (ultramarine, bold, font_16) */}
             <p className="font-bold mt-4" style={{ color: "#1E40AF", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-              UPLOAD FEEDS
+              {t("UPLOAD FEEDS")}
             </p>
             {/* "Tap to browse CSV or Excel" (mirror_blue, regular, font_12) */}
             <p style={{ color: "#2563EB", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>
-              Tap to browse CSV or Excel
+              {t("Tap to browse CSV or Excel")}
             </p>
           </button>
           <input
@@ -404,7 +420,7 @@ export default function BulkUploadPage() {
                 onClick={handleCancelFile}
                 className="flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: "rgba(228,74,74,0.20)", borderRadius: 60, padding: 6, border: "none", cursor: "pointer" }}
-                aria-label="Cancel file"
+                aria-label={t("Cancel file")}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path d="M6 6l12 12M18 6L6 18" stroke="#FC2E20" strokeWidth="2.4" strokeLinecap="round" />
@@ -415,7 +431,7 @@ export default function BulkUploadPage() {
                 onClick={handleConfirmUpload}
                 className="flex items-center justify-center flex-shrink-0"
                 style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 60, padding: 6, border: "none", cursor: "pointer" }}
-                aria-label="Confirm upload"
+                aria-label={t("Confirm upload")}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path d="M5 12l5 5L20 7" stroke="#064E3B" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
@@ -474,12 +490,12 @@ export default function BulkUploadPage() {
             className="mt-5 text-center italic"
             style={{ color: "#999999", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
           >
-            * Only files stored on your device are supported.
+            {t("* Only files stored on your device are supported.")}
           </p>
         </div>
 
         {/* ── DOWNLOAD ── */}
-        <SectionHeader>Download</SectionHeader>
+        <SectionHeader>{t("Download")}</SectionHeader>
         <div className="mx-3 mt-3 bg-white rounded-2xl px-5 pt-5 pb-5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
           <div className="grid grid-cols-2 gap-3">
             {/* STANDARD — honeydew bg, go_green_15 stroke, dark_green_turquoise icon */}
@@ -504,10 +520,10 @@ export default function BulkUploadPage() {
                 </svg>
               </span>
               <p className="font-bold mt-4" style={{ color: "#069460", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                STANDARD
+                {t("STANDARD")}
               </p>
               <p className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                Feeds
+                {t("Feeds")}
               </p>
             </button>
 
@@ -534,10 +550,10 @@ export default function BulkUploadPage() {
                 </svg>
               </span>
               <p className="font-bold mt-4" style={{ color: "#E65100", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                FILTERED
+                {t("FILTERED")}
               </p>
               <p className="font-bold" style={{ color: "#3E2723", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                Custom Feeds
+                {t("Custom Feeds")}
               </p>
             </button>
           </div>
@@ -616,7 +632,7 @@ export default function BulkUploadPage() {
             boxShadow: "0 4px 14px rgba(6,78,59,0.28)",
           }}
         >
-          {isDownloadingTemplate ? "Downloading..." : "Download Template"}
+          {isDownloadingTemplate ? t("Downloading...") : t("Download Template")}
           <span
             className="flex items-center justify-center"
             style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: "#FFFFFF" }}

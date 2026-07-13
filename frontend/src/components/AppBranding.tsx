@@ -1,8 +1,10 @@
 "use client";
 
 import Image from "next/image";
+import { useT } from "@/lib/i18n-ui";
 
 export default function AppBranding() {
+  const t = useT();
   return (
     <div className="flex flex-col items-center">
       {/* Circular logo card */}
@@ -25,7 +27,7 @@ export default function AppBranding() {
         className="mt-3 text-xl font-bold"
         style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
       >
-        RationSmart
+        {t("RationSmart")}
       </p>
     </div>
   );

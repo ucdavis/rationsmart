@@ -24,11 +24,13 @@ import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
+import { useT } from "@/lib/i18n-ui";
 
 function VerifyEmailInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const showSnackbar = useStore((s) => s.showSnackbar);
+  const t = useT();
 
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [isResending, setIsResending] = useState(false);
@@ -41,11 +43,11 @@ function VerifyEmailInner() {
     try {
       const res = await resendVerification(email.trim());
       const msg = (res.data as { message?: string })?.message;
-      showSnackbar(msg ?? "Verification email resent — check your inbox", "success");
+      showSnackbar(msg ?? t("Verification email resent — check your inbox"), "success");
     } catch (err: unknown) {
       const message = err instanceof Error && err.message
         ? err.message
-        : "Could not resend the verification email. Please try again.";
+        : t("Could not resend the verification email. Please try again.");
       showSnackbar(message, "error");
     } finally {
       setIsResending(false);
@@ -63,7 +65,7 @@ function VerifyEmailInner() {
           onClick={() => router.replace("/register")}
           className="flex items-center justify-center rounded-xl bg-white"
           style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
-          aria-label="Back"
+          aria-label={t("Back")}
         >
           <IcBack size={20} color="#064E3B" />
         </button>
@@ -71,7 +73,7 @@ function VerifyEmailInner() {
           className="flex-1 text-center"
           style={{ color: "#042F23", fontFamily: "Nunito, sans-serif", fontSize: 16, fontWeight: 700, margin: 0 }}
         >
-          Verify Email
+          {t("Verify Email")}
         </h1>
         <div style={{ width: 40 }} />
       </div>
@@ -102,14 +104,13 @@ function VerifyEmailInner() {
           className="text-center font-bold mt-5"
           style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 22 }}
         >
-          Check Your Email
+          {t("Check Your Email")}
         </h2>
         <p
           className="text-center text-sm mt-2 px-4"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
         >
-          We&apos;ve sent a verification link to your email address. Tap the link to activate your
-          account, then sign in.
+          {t("We've sent a verification link to your email address. Tap the link to activate your\n          account, then sign in.")}
         </p>
 
         {/* Email field — pre-filled, editable so user can correct typos */}
@@ -117,7 +118,7 @@ function VerifyEmailInner() {
           className="text-xs font-bold uppercase tracking-wide mt-6 mb-1.5 ml-1"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          Email Address<RequiredAsterisk />
+          {t("Email Address")}<RequiredAsterisk />
         </p>
         <input
           type="email"
@@ -146,10 +147,10 @@ function VerifyEmailInner() {
               <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
               </svg>
-              Resending...
+              {t("Resending...")}
             </>
           ) : (
-            "Resend Verification Email"
+            t("Resend Verification Email")
           )}
         </button>
 
@@ -164,7 +165,7 @@ function VerifyEmailInner() {
             cursor: "pointer",
           }}
         >
-          Continue to Login
+          {t("Continue to Login")}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>

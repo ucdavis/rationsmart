@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import {
   IcFeedManagement,
@@ -18,7 +19,9 @@ interface AdminCard {
   icon: React.ReactNode;
 }
 
-// Titles use \n to render on 2 lines (matches Android string resources)
+// Titles use \n to render on 2 lines (matches Android string resources).
+// English source strings stay as the identity/lookup key (see i18n-ui.ts)
+// — card.title is passed through t() at render time, not translated here.
 const adminCards: AdminCard[] = [
   { title: "User\nManagement", href: "/admin/users", icon: <IcUserManagement size={28} color="#064E3B" /> },
   { title: "Feed\nManagement", href: "/admin/feeds", icon: <IcFeedManagement size={28} color="#064E3B" /> },
@@ -47,6 +50,7 @@ const adminCards: AdminCard[] = [
 export default function AdminPage() {
   const router = useRouter();
   const user = useStore((s) => s.user);
+  const t = useT();
 
   useEffect(() => {
     if (user && !user.is_admin) {
@@ -60,7 +64,7 @@ export default function AdminPage() {
         className="flex flex-col items-center justify-center min-h-screen px-6 text-center"
         style={{ backgroundColor: "#FFFFFF" }}
       >
-        <Toolbar type="back" title="Admin" onBack={() => router.back()} />
+        <Toolbar type="back" title={t("Admin")} onBack={() => router.back()} />
         <div
           className="flex items-center justify-center rounded-full mb-5 mt-10"
           style={{ width: 80, height: 80, backgroundColor: "rgba(228,74,74,0.2)" }}
@@ -71,10 +75,10 @@ export default function AdminPage() {
           </svg>
         </div>
         <p className="text-xl font-bold mb-2" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
-          Access Denied
+          {t("Access Denied")}
         </p>
         <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-          You do not have admin permissions to view this page.
+          {t("You do not have admin permissions to view this page.")}
         </p>
       </div>
     );
@@ -85,7 +89,7 @@ export default function AdminPage() {
       className="flex flex-col min-h-screen"
       style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
     >
-      <Toolbar type="back" title="Admin" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Admin")} onBack={() => router.back()} />
 
       {/* WELCOME / name greeting */}
       <div className="px-3 mt-5">
@@ -93,7 +97,7 @@ export default function AdminPage() {
           className="text-xs"
           style={{ color: "#1B5E20", fontFamily: "Nunito, sans-serif", letterSpacing: "0.05em" }}
         >
-          WELCOME
+          {t("WELCOME")}
         </p>
         <p
           className="font-bold"
@@ -132,7 +136,7 @@ export default function AdminPage() {
                 className="text-base font-bold text-left"
                 style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line", lineHeight: 1.25 }}
               >
-                {card.title}
+                {t(card.title)}
               </p>
             </button>
           ))}
