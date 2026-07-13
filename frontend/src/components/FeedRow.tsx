@@ -523,6 +523,30 @@ export default function FeedRow({
     return () => { cancelled = true; };
   }, [user?.country_id, showSnackbar]);
 
+  // Self-heal — an earlier i18n build briefly sent ?lang= to
+  // unique-feed-type, which stored the TRANSLATED string (e.g. "चारा")
+  // as feed_type_name instead of the English identity (see the long
+  // comment on getFeedTypes in api.ts). Rows saved during that window
+  // are stuck: the type list above is always English now, never
+  // matches, and the fallback path re-injects the stored translated
+  // string as a synthetic option every render — the radio group shows
+  // Hindi forever, independent of the active language, and survives
+  // hard refresh because it's baked into persisted feedSelections.
+  // Once taxonomyLabels (English → active-language dict) arrives,
+  // reverse-look-up the stored value against it and rewrite feed_type_name
+  // to the recovered English identity. Runs whenever the fetched types
+  // list or the label dict changes, so it fires as soon as both are
+  // available regardless of which resolved first.
+  useEffect(() => {
+    if (!item.feed_type_name || !taxonomyLabels?.types) return;
+    if (feedTypes.some((ft) => ft.name === item.feed_type_name)) return;
+    const englishKey = Object.entries(taxonomyLabels.types).find(([, v]) => v === item.feed_type_name)?.[0];
+    if (englishKey && feedTypes.some((ft) => ft.name === englishKey)) {
+      onUpdate(item.id, { feed_type_name: englishKey });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.feed_type_name, feedTypes, taxonomyLabels]);
+
   // Categories cascade. We defer the reset until AFTER fetching the new
   // list and only clear category_name/sub_category if the stored values
   // are not in the freshly loaded options — that way simulation-history
@@ -639,6 +663,21 @@ export default function FeedRow({
     return () => { cancelled = true; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_type_name, user?.country_id, user?.id]);
+
+  // Self-heal for category_name — same rationale as the feed_type_name
+  // self-heal effect above. A row saved while unique-feed-category was
+  // briefly sending ?lang= has a translated string baked in as its
+  // "identity"; recover the English key via taxonomyLabels once it's
+  // available.
+  useEffect(() => {
+    if (!item.category_name || !taxonomyLabels?.categories) return;
+    if (categories.some((c) => c.name === item.category_name)) return;
+    const englishKey = Object.entries(taxonomyLabels.categories).find(([, v]) => v === item.category_name)?.[0];
+    if (englishKey && categories.some((c) => c.name === englishKey)) {
+      onUpdate(item.id, { category_name: englishKey });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.category_name, categories, taxonomyLabels]);
 
   // Sub-categories cascade. Same pattern — only reset feed_uuid if the
   // previously stored uuid isn't present in the freshly loaded list.
@@ -1074,13 +1113,20 @@ export default function FeedRow({
                 // i18n V2 — capture the translated name at pick time
                 // so /report can fall back to it if the backend's diet
                 // endpoints don't yet ship display_name on their rows.
-                display_name: selected?.display_name ?? null,
+                // getFeedSubCategories no longer sends ?lang= (see api.ts),
+                // so selected.display_name is English-only — overlay the
+                // taxonomyLabels translation (falls back to English when
+                // this specific feed has no translation row yet).
+                display_name: (selected && (taxonomyLabels?.feeds?.[selected.feed_uuid] ?? selected.display_name)) ?? null,
               });
             }}
             disabled={!item.category_name}
             loading={loadingSubs}
             placeholder={!item.category_name ? t("Select category") : t("Select feed")}
-            options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.display_name }))}
+            options={subCategories.map<CustomSelectOption>((s) => ({
+              value: s.feed_uuid,
+              label: taxonomyLabels?.feeds?.[s.feed_uuid] ?? s.display_name,
+            }))}
           />
         </FieldBox>
       </div>

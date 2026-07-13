@@ -632,16 +632,26 @@ export const getFeedCategoriesLocalized = (feed_type: string, country_id: string
   getFeedCategories(feed_type, country_id);
 
 // Returns List<FeedSubCategory> with {feed_name, feed_uuid, feed_category, feed_type, feed_cd}
-// i18n V2 — response now also carries display_name / display_type /
-// display_category translated into the requested lang. Identity fields
-// (id, fd_code, fd_name) remain stable English.
+// i18n V2 — DO NOT send ?lang= here, same rationale as unique-feed-type /
+// unique-feed-category above. Verified 2026-07-13: for languages whose
+// per-feed translation coverage is incomplete (see the admin Coverage
+// bars — Feed Types/Categories are commonly 100%, individual Feed names
+// often aren't), passing ?lang= to this name+category-filtered query
+// comes back empty for any feed lacking a translation row, even though
+// the feed exists and has full English data — the dropdown renders with
+// zero options ("just the arrows, nothing loads"). Fetching identity
+// only here (always complete, English) and overlaying the localized
+// label separately via `taxonomyLabels.feeds` (see fetchFeedTaxonomyLabels
+// below, sourced from the SAME endpoint's unfiltered country-wide call,
+// which already tolerates missing translations by falling back to the
+// English name) gives us "always loads" + "translated when available".
 export const getFeedSubCategories = (
   feed_type: string,
   feed_category: string,
   country_id: string,
   _user_id?: string
 ) =>
-  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category, ...langParam() } });
+  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category } });
 
 // i18n V2 — client-side translation dictionary for Feed Type + Category
 // labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
@@ -650,10 +660,13 @@ export const getFeedSubCategories = (
 // feed_type/category filter) returns EVERY feed in the country, and
 // each item carries both English (`fd_type`, `fd_category`) and localized
 // (`display_type`, `display_category`) fields. One call gives us a full
-// translation map for both dimensions. Cached per (country_id, lang).
+// translation map for both dimensions, PLUS a per-feed id → display_name
+// map (`feeds`) that getFeedSubCategories' now-English-only fetch overlays
+// onto its (always-complete) identity list. Cached per (country_id, lang).
 export type FeedTaxonomyLabels = {
   types: Record<string, string>;      // English identity → localized label
   categories: Record<string, string>; // English identity → localized label
+  feeds: Record<string, string>;      // feed id/uuid → localized display_name
 };
 
 export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedTaxonomyLabels> {
@@ -661,17 +674,20 @@ export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedT
     params: { country_id, ...langParam() },
   });
   const feeds = (res.data as {
-    standard_feeds?: { fd_type?: string; display_type?: string; fd_category?: string; display_category?: string }[];
-    custom_feeds?: { fd_type?: string; display_type?: string; fd_category?: string; display_category?: string }[];
+    standard_feeds?: { id?: string; feed_id?: string; fd_type?: string; display_type?: string; fd_category?: string; display_category?: string; display_name?: string }[];
+    custom_feeds?: { id?: string; feed_id?: string; fd_type?: string; display_type?: string; fd_category?: string; display_category?: string; display_name?: string }[];
   }) ?? {};
   const merged = [...(feeds.standard_feeds ?? []), ...(feeds.custom_feeds ?? [])];
   const types: Record<string, string> = {};
   const categories: Record<string, string> = {};
+  const feedNames: Record<string, string> = {};
   for (const f of merged) {
     if (f.fd_type && f.display_type) types[f.fd_type] = f.display_type;
     if (f.fd_category && f.display_category) categories[f.fd_category] = f.display_category;
+    const uuid = f.id ?? f.feed_id;
+    if (uuid && f.display_name) feedNames[uuid] = f.display_name;
   }
-  return { types, categories };
+  return { types, categories, feeds: feedNames };
 }
 
 // ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────

@@ -200,7 +200,7 @@ export default function FeedSelectionPage() {
   // that langProvider reads are `preferred_language` (profile-scoped)
   // and `cattleInfo.simulation_language` (per-run override), so we
   // depend on both here.
-  const [taxonomyLabels, setTaxonomyLabels] = useState<FeedTaxonomyLabels>({ types: {}, categories: {} });
+  const [taxonomyLabels, setTaxonomyLabels] = useState<FeedTaxonomyLabels>({ types: {}, categories: {}, feeds: {} });
   const simulationLanguage = cattleInfo?.simulation_language ?? null;
   const preferredLanguage = user?.preferred_language ?? null;
   useEffect(() => {
