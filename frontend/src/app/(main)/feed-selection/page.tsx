@@ -206,8 +206,19 @@ export default function FeedSelectionPage() {
   useEffect(() => {
     if (!user?.country_id) return;
     let cancelled = false;
+    console.log("[feed-cascade] fetchFeedTaxonomyLabels firing with:", {
+      country_id: user.country_id,
+      "cattleInfo.simulation_language": simulationLanguage,
+      "user.preferred_language": preferredLanguage,
+      resolvedLang: simulationLanguage ?? preferredLanguage ?? "en",
+    });
     fetchFeedTaxonomyLabels(user.country_id)
-      .then((labels) => { if (!cancelled) setTaxonomyLabels(labels); })
+      .then((labels) => {
+        if (!cancelled) {
+          console.log("[feed-cascade] taxonomyLabels resolved:", labels);
+          setTaxonomyLabels(labels);
+        }
+      })
       .catch(() => { /* silent — labels just fall back to English identity */ });
     return () => { cancelled = true; };
   }, [user?.country_id, simulationLanguage, preferredLanguage]);

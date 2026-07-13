@@ -740,11 +740,21 @@ export default function CattleInfoPage() {
       // ends up requesting a language the selected country doesn't
       // support (see effectiveSimulationLanguage above for the full
       // explanation of the bug this prevents).
-      simulation_language: form.simulation_language && form.simulation_language !== ""
-        ? form.simulation_language
-        : (!languageOptionsForCountry || languageOptionsForCountry.includes(user?.preferred_language ?? "en")
-            ? null
-            : effectiveSimulationLanguage),
+      simulation_language: (() => {
+        const resolved = form.simulation_language && form.simulation_language !== ""
+          ? form.simulation_language
+          : (!languageOptionsForCountry || languageOptionsForCountry.includes(user?.preferred_language ?? "en")
+              ? null
+              : effectiveSimulationLanguage);
+        console.log("[cattle-info save] simulation_language resolution:", {
+          "form.simulation_language": form.simulation_language,
+          "user.preferred_language": user?.preferred_language,
+          languageOptionsForCountry,
+          effectiveSimulationLanguage,
+          resolved,
+        });
+        return resolved;
+      })(),
     });
     router.push("/feed-selection");
   };
