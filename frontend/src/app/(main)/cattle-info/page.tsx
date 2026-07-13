@@ -273,21 +273,57 @@ export default function CattleInfoPage() {
     };
   });
 
-  // UI-label i18n — this screen (and feed-selection/report) uses its OWN
-  // per-simulation language selection (the Language dropdown below,
-  // `form.simulation_language`), not the profile-wide `user.preferred_language`
-  // every other screen defaults to. Passing the form's LIVE pending value
-  // (not the committed cattleInfo.simulation_language store value) makes
-  // every t()-wrapped label on this page re-translate the instant the user
-  // picks a different language from the dropdown, before Continue is
-  // clicked. See the doc comment on useT() in src/lib/i18n-ui.ts.
-  const t = useT(form.simulation_language || user?.preferred_language || "en");
-
   const [errors, setErrors] = useState<FieldErrors>({});
   const [countries, setCountries] = useState<Country[]>([]);
   // Drives the Language field's loading skeleton below — see the fetch
   // effect and the render block for why this exists.
   const [loadingCountries, setLoadingCountries] = useState(true);
+
+  // Single source of truth for "what language is this simulation
+  // actually in right now" — used for the Language dropdown's displayed
+  // value, the UI-label t() below, AND what gets saved on Continue.
+  // Bug this fixes: the dropdown used to compute its OWN local fallback
+  // (falling back to "en" in its `value` prop when the profile language
+  // isn't in this country's supported_languages) WITHOUT writing that
+  // fallback back into form.simulation_language. So a user whose
+  // profile is Hindi, viewing a country that doesn't support Hindi,
+  // would see the dropdown visually show "English" — while
+  // form.simulation_language silently stayed null, handleContinue saved
+  // null ("follow profile"), and feed-selection/report then resolved
+  // that null straight to the Hindi profile language, showing Hindi
+  // data right after a screen that visually said English. Computing
+  // this ONCE and reusing it everywhere keeps the displayed value, the
+  // live-translated labels, and the saved value always in agreement.
+  const selectedCountryForLang = countries.find((c) => String(c.id) === form.country_id);
+  // null = "no country matched at all yet" (countries hasn't loaded, or
+  // form.country_id doesn't match anything) — stay PERMISSIVE in that
+  // case (don't restrict), since we have no evidence the profile
+  // language is actually invalid. Once a country IS matched, a MISSING
+  // supported_languages field means "English only" (matching the same
+  // `?? []` convention already used by the Country dropdown's onChange
+  // handler below) — deliberately NOT treated as "unknown", since by
+  // then we do have a real answer, just an English-only one. Without
+  // the "no country matched at all" distinction, a fresh mount with no
+  // country picked yet would wrongly force English before the user's
+  // real profile language ever gets a chance to show.
+  const languageOptionsForCountry = selectedCountryForLang
+    ? ["en", ...(selectedCountryForLang.supported_languages ?? []).filter((c) => c !== "en")]
+    : null;
+  const rawSimulationLanguage = form.simulation_language || user?.preferred_language || "en";
+  const effectiveSimulationLanguage = languageOptionsForCountry
+    ? (languageOptionsForCountry.includes(rawSimulationLanguage) ? rawSimulationLanguage : "en")
+    : rawSimulationLanguage;
+
+  // UI-label i18n — this screen (and feed-selection/report) uses its OWN
+  // per-simulation language selection (the Language dropdown below,
+  // `form.simulation_language`), not the profile-wide `user.preferred_language`
+  // every other screen defaults to. Using effectiveSimulationLanguage
+  // (not the raw form value) makes every t()-wrapped label on this page
+  // re-translate the instant the user picks a different language from
+  // the dropdown, before Continue is clicked — AND stays correct when
+  // the profile language isn't valid for the selected country. See the
+  // doc comment on useT() in src/lib/i18n-ui.ts.
+  const t = useT(effectiveSimulationLanguage);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
@@ -692,11 +728,23 @@ export default function CattleInfoPage() {
       milk_price: form.milk_price ? Number(form.milk_price) : null,
       // Y3 §1.4
       animal_category: form.animal_category,
-      // i18n V2 — per-simulation language override. Empty string is
-      // treated as "use profile" (null); langProvider() falls back.
+      // i18n V2 — per-simulation language override. An explicit pick
+      // (form.simulation_language set) is always valid for this country
+      // since the dropdown only ever offers valid options — save it
+      // verbatim. When untouched (null/""), save null ONLY if the
+      // profile language is actually valid for this country (or we
+      // don't know the country's supported_languages at all — stay
+      // permissive), preserving "dynamically follow future profile
+      // changes" for the common case; otherwise pin the resolved
+      // fallback ("en") explicitly so this simulation never silently
+      // ends up requesting a language the selected country doesn't
+      // support (see effectiveSimulationLanguage above for the full
+      // explanation of the bug this prevents).
       simulation_language: form.simulation_language && form.simulation_language !== ""
         ? form.simulation_language
-        : null,
+        : (!languageOptionsForCountry || languageOptionsForCountry.includes(user?.preferred_language ?? "en")
+            ? null
+            : effectiveSimulationLanguage),
     });
     router.push("/feed-selection");
   };
@@ -832,24 +880,11 @@ export default function CattleInfoPage() {
                 <SelectInput value="" onChange={() => {}} options={[]} placeholder={t("Select")} loading />
               </>
             ) : countries.length > 0 && (() => {
-              const selectedCountry = countries.find(
-                (c) => String(c.id) === form.country_id
-              );
-              const countryLangs = selectedCountry?.supported_languages ?? [];
-              const languageOptions = [
-                "en",
-                ...countryLangs.filter((c) => c !== "en"),
-              ];
-              // Default to the user's profile language if no override
-              // is set. Falls back to English only if the user has no
-              // profile language either.
-              const currentLang =
-                form.simulation_language ?? user?.preferred_language ?? "en";
               return (
                 <>
                   <FieldLabel>{t("Language")}</FieldLabel>
                   <SelectInput
-                    value={languageOptions.includes(currentLang) ? currentLang : "en"}
+                    value={effectiveSimulationLanguage}
                     onChange={(v) =>
                       setForm((p) => ({
                         ...p,
@@ -871,7 +906,7 @@ export default function CattleInfoPage() {
                         simulation_language: v,
                       }))
                     }
-                    options={languageOptions.map((code) => ({
+                    options={(languageOptionsForCountry ?? ["en"]).map((code) => ({
                       value: code,
                       label: labelForLanguage(code),
                     }))}

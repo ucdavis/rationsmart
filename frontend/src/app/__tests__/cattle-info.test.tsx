@@ -446,8 +446,15 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
     expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
   });
 
-  it("an untouched Language dropdown still persists null (inherit profile default)", async () => {
-    getCountries.mockResolvedValueOnce({ data: countries });
+  it("an untouched Language dropdown persists null (inherit profile default) when the profile language IS valid for the selected country", async () => {
+    // "sw" has no UI-label dictionary (see i18n-ui.ts's rollout set), so
+    // giving India "sw" support here keeps the page rendered in English
+    // (compatible with the shared fillBaselineRequired/selectMilkFields
+    // helpers, which look up English label text) while still exercising
+    // the "profile language IS valid for this country" branch.
+    getCountries.mockResolvedValueOnce({
+      data: [{ ...countries[0], supported_languages: ["en", "sw"] }, countries[1]],
+    });
     useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
     render(<CattleInfoPage />);
     // The whole form now renders behind a loading skeleton until
@@ -464,6 +471,32 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
     fireEvent.click(continueBtn);
 
     expect(useStore.getState().cattleInfo?.simulation_language).toBeNull();
+  });
+
+  // Regression coverage for a real reported bug: profile=Hindi, cattle-info's
+  // Language dropdown visually showed "English" (since India's fixture here
+  // doesn't list "sw" as supported), but the OLD code saved `null` regardless
+  // — which downstream (feed-selection/report) resolves straight back to the
+  // profile's "sw", NOT the "English" the dropdown had just displayed. Only
+  // an explicit save of the resolved fallback ("en") keeps what's saved in
+  // agreement with what was shown.
+  it("an untouched Language dropdown pins the resolved fallback when the profile language is NOT valid for the selected country", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    await fillBaselineRequired("India");
+    // Deliberately do NOT touch the Language dropdown — "sw" isn't in
+    // India's supported_languages, so the dropdown itself should already
+    // be displaying "English" as a fallback.
+    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
   });
 });
 
@@ -765,5 +798,35 @@ describe("Cattle Info — UI-label i18n (own simulation_language, not just profi
     await screen.findByRole("button", { name: "Simulation history" });
     expect(screen.getByText("Cattle Info")).toBeInTheDocument();
     expect(screen.getByText("Simulation Details")).toBeInTheDocument();
+  });
+
+  // Regression test for the exact reported bug: profile=Hindi, a country
+  // that doesn't support Hindi selected on cattle-info (so the Language
+  // dropdown visually falls back to showing "English"), yet the OLD code
+  // still saved cattleInfo.simulation_language as null — which
+  // feed-selection/report resolve straight back to the Hindi PROFILE
+  // language, showing Hindi feed data right after a screen that visually
+  // said English. What's SAVED must always agree with what's DISPLAYED.
+  it("saves 'en' (matching the dropdown's displayed fallback) when profile=Hindi but the selected country doesn't support Hindi — not null, which would silently resolve back to Hindi downstream", async () => {
+    // Vietnam's fixture entry has no supported_languages at all (treated
+    // as "only English"), so Hindi is never valid for it.
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "2", preferred_language: "hi" }) });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    await fillBaselineRequired("Vietnam");
+    // The dropdown must be showing English — this is the "cattle info
+    // language is english" half of the bug report.
+    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "हिन्दी" })).not.toBeInTheDocument();
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    // What gets saved (and what feed-selection/report will resolve
+    // their language from) must match what the dropdown displayed.
+    expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
   });
 });
