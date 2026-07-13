@@ -732,6 +732,16 @@ export default function FeedSelectionPage() {
     >
       <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
 
+      {/* TEMPORARY diagnostic — Hindi-feed-data investigation. Shows the
+          exact values driving langProvider()/langParam() without needing
+          DevTools open. Remove once the feed-data language bug is
+          confirmed fixed. */}
+      <div style={{ background: "#FFF3CD", border: "1px solid #FFB300", margin: "8px 12px", padding: "8px 12px", borderRadius: 8, fontSize: 12, fontFamily: "monospace", color: "#231F20" }}>
+        DEBUG — cattleInfo.simulation_language: <b>{JSON.stringify(cattleInfo?.simulation_language ?? null)}</b>
+        {" · "}user.preferred_language: <b>{JSON.stringify(user?.preferred_language ?? null)}</b>
+        {" · "}resolved lang sent to feed-name API: <b>{JSON.stringify(simulationLanguage ?? preferredLanguage ?? "en")}</b>
+      </div>
+
       {/* Custom buttons row */}
       <div className="flex gap-3 px-4 pt-4">
         <button
