@@ -112,10 +112,20 @@ export function getUiLabel(source: string, lang: string): string {
  * store value. Every other screen calls `useT()` with no argument.
  */
 export function useT(langOverride?: string): (source: string) => string {
-  // user.preferred_language when signed in; otherwise fall back to the
-  // last language this device was known to use (survives logout) before
-  // finally defaulting to "en" — see lastUiLanguage in store.ts.
-  const userLang = useStore((s) => s.user?.preferred_language ?? s.lastUiLanguage ?? "en");
+  // Bug fixed 2026-07-13: this used to be a single chain —
+  // `s.user?.preferred_language ?? s.lastUiLanguage ?? "en"` — which
+  // ALSO fell through to lastUiLanguage whenever a SIGNED-IN user's
+  // preferred_language was falsy (empty/null/undefined), not just when
+  // user itself was null. lastUiLanguage is a device-level value that
+  // persists independently across sessions/accounts, so a user who once
+  // used Hindi on this device would see every other screen render in
+  // Hindi even with an English (or unset) profile language — while the
+  // Profile page's own local `user?.preferred_language ?? "en"` fallback
+  // masked the same falsy value as "English", making it look correct
+  // there. lastUiLanguage must ONLY apply post-logout (user === null);
+  // a signed-in user's own falsy preference should resolve straight to
+  // "en", never borrow the device's last-used language.
+  const userLang = useStore((s) => (s.user ? (s.user.preferred_language || "en") : (s.lastUiLanguage ?? "en")));
   const lang = langOverride ?? userLang;
   const [, setLoadedTick] = useState(0);
 

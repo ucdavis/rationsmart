@@ -20,7 +20,7 @@ const seedUser = (over: Partial<User> = {}): User => ({
 });
 
 beforeEach(() => {
-  useStore.setState({ user: null });
+  useStore.setState({ user: null, lastUiLanguage: "en" });
 });
 
 // Each language's dictionary is lazy-loaded via dynamic import() and
@@ -126,5 +126,35 @@ describe("useT — langOverride parameter", () => {
     lang = "hi";
     rerender();
     await waitFor(() => expect(result.current("Continue")).toBe("जारी रखें"));
+  });
+});
+
+// Bug fixed 2026-07-13 — a signed-in user whose preferred_language is
+// falsy must resolve to English, never leak the device's stale
+// lastUiLanguage from a previous session/account. lastUiLanguage should
+// ONLY apply when there is no signed-in user at all (post-logout).
+describe("useT — lastUiLanguage must not leak while a user is signed in", () => {
+  it("resolves to English for a signed-in user with an empty preferred_language, even when lastUiLanguage is Hindi from an earlier session", () => {
+    useStore.setState({
+      user: seedUser({ preferred_language: "" }),
+      lastUiLanguage: "hi",
+    });
+    const { result } = renderHook(() => useT());
+    expect(result.current("Continue")).toBe("Continue");
+  });
+
+  it("still uses lastUiLanguage when there is genuinely no signed-in user (post-logout)", async () => {
+    useStore.setState({ user: null, lastUiLanguage: "hi" });
+    const { result } = renderHook(() => useT());
+    await waitFor(() => expect(result.current("Continue")).toBe("जारी रखें"));
+  });
+
+  it("prefers the signed-in user's own preferred_language over lastUiLanguage even when they differ", async () => {
+    useStore.setState({
+      user: seedUser({ preferred_language: "vi" }),
+      lastUiLanguage: "hi",
+    });
+    const { result } = renderHook(() => useT());
+    await waitFor(() => expect(result.current("Continue")).toBe("Tiếp tục"));
   });
 });
