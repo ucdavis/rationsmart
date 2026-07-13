@@ -42,11 +42,11 @@ beforeEach(() => {
 // ─── Feed taxonomy ──────────────────────────────────────────────────────────
 
 describe("getFeedTypes", () => {
-  it("GETs /v1/animal/unique-feed-type/{country_id} with no query params, no user_id, no lang", async () => {
+  it("GETs /v1/animal/unique-feed-type/{country_id} with lang FORCED to en, no user_id, regardless of active locale", async () => {
+    setLangProvider(() => "hi");
     mockApi.get.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
     await getFeedTypes("7", "unused-user-id");
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-type/7");
-    expect(mockApi.get.mock.calls[0]).toHaveLength(1);
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-type/7", { params: { lang: "en" } });
   });
 
   it("getFeedTypesLocalized is the same function reference (simple alias)", () => {
@@ -55,12 +55,12 @@ describe("getFeedTypes", () => {
 });
 
 describe("getFeedCategories", () => {
-  it("GETs /v1/animal/unique-feed-category with {country_id, feed_type} and deliberately omits lang", async () => {
+  it("GETs /v1/animal/unique-feed-category with {country_id, feed_type}, lang FORCED to en regardless of active locale", async () => {
     setLangProvider(() => "hi");
     mockApi.get.mockResolvedValueOnce({ data: ["Grain"] });
     await getFeedCategories("Concentrate", "7");
     expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-category", {
-      params: { country_id: "7", feed_type: "Concentrate" },
+      params: { country_id: "7", feed_type: "Concentrate", lang: "en" },
     });
   });
 
@@ -68,7 +68,7 @@ describe("getFeedCategories", () => {
     mockApi.get.mockResolvedValueOnce({ data: [] });
     await getFeedCategoriesLocalized("Concentrate", "7");
     expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-category", {
-      params: { country_id: "7", feed_type: "Concentrate" },
+      params: { country_id: "7", feed_type: "Concentrate", lang: "en" },
     });
   });
 });

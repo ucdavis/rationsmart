@@ -596,37 +596,40 @@ export const deleteAccount = (pin: string) =>
 //                                              →  /v1/animal/feed-name?country_id=&feed_type=&category=
 //     NOTE: query param renamed from feed_category to category.
 
-// i18n V2 — identity-only. No ?lang= sent to unique-feed-type /
-// unique-feed-category. Sending ?lang= makes backend translate the
-// response, but the downstream /v1/animal/feed-name endpoint then
-// receives a translated identity string as feed_type / category —
-// which it doesn't recognise → feed dropdown returns empty.
-// Choosing "loads correctly in every language" over "labels are
-// translated". Backend needs to add display_type / display_category
-// fields on these endpoints before we can restore translated labels.
-// Feed names themselves still translate via /v1/animal/feed-name
-// (that endpoint separately returns display_name).
-// i18n V2 — DO NOT send ?lang= on unique-feed-type / unique-feed-category.
-// Verified 2026-07-08:
-//   - Both endpoints return BARE translated strings when ?lang= is set,
-//     with NO separate identity/display split.
-//   - Storing that translated string as the row's identity breaks the
-//     downstream /v1/animal/feed-name filter, which only accepts the
-//     ENGLISH source string as feed_type / category (returns empty on
-//     the Hindi identity).
-// Trade-off: Feed Type + Feed Category labels stay English regardless
-// of active locale. The Feed name itself still translates via
-// /v1/animal/feed-name which provides a separate display_name.
-// Restoring localized labels here requires backend to add display_type
-// and display_category fields on the two endpoints below (same pattern
-// already used by /v1/animal/feed-name). See docs/SESSION_HANDOFF.md.
+// i18n V2 — identity-only: FORCE lang=en on unique-feed-type /
+// unique-feed-category, never the active locale, and never omitted.
+//
+// Verified 2026-07-08: passing the ACTIVE (non-English) lang makes both
+// endpoints return BARE translated strings with no separate identity/
+// display split — storing that as the row's identity breaks the
+// downstream /v1/animal/feed-name filter, which only accepts the
+// ENGLISH source string as feed_type / category (returns empty on a
+// Hindi identity).
+//
+// Verified 2026-07-13 (live network capture): omitting ?lang= entirely
+// is NOT the same as requesting English — these endpoints fall back to
+// the AUTHENTICATED USER'S ACCOUNT-level preferred_language server-side
+// when no lang param is given at all, regardless of any per-simulation
+// override the frontend is tracking. A user whose profile is Hindi got
+// `{"feed_types":["सांद्र आहार (दाना)","चारा"]}` back with zero lang
+// param sent, even though the active simulation language was English.
+// Explicitly requesting lang=en sidesteps both problems at once: English
+// is the baseline lang everywhere else in this API, so it returns a bare
+// array of plain English strings — usable directly as identity, exactly
+// like the un-translated response used to look, and never influenced by
+// the account's own language setting.
+// Feed Type + Feed Category labels stay English regardless of active
+// locale; the Feed name itself still translates via /v1/animal/feed-name
+// (that endpoint separately returns display_name and DOES honor an
+// explicit non-English lang — see getFeedSubCategories/
+// fetchFeedTaxonomyLabels below).
 export const getFeedTypes = (country_id: string, _user_id?: string) =>
-  api.get(`/v1/animal/unique-feed-type/${country_id}`);
+  api.get(`/v1/animal/unique-feed-type/${country_id}`, { params: { lang: "en" } });
 
 export const getFeedTypesLocalized = getFeedTypes;
 
 export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type } });
+  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, lang: "en" } });
 
 export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
   getFeedCategories(feed_type, country_id);
