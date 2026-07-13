@@ -2,7 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import Toolbar from "@/components/Toolbar";
+import { useT } from "@/lib/i18n-ui";
 
+// English source strings stay as the identity/lookup key (see i18n-ui.ts)
+// — item.title is passed through t() at render time, not translated here.
 const items = [
   {
     title: "User Manual",
@@ -20,13 +23,14 @@ const items = [
 
 export default function HelpAndSupportPage() {
   const router = useRouter();
+  const t = useT();
 
   return (
     <div
       className="flex flex-col min-h-screen"
       style={{ backgroundColor: "#F8FAF9" }}
     >
-      <Toolbar type="back" title="Help & Support" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Help & Support")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto px-3 pt-5 pb-8">
         {/* Single card containing all items separated by dividers */}
@@ -54,7 +58,7 @@ export default function HelpAndSupportPage() {
                     color: "#231F20",
                   }}
                 >
-                  {item.title}
+                  {t(item.title)}
                 </span>
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path d="M7.5 4.5H4a1 1 0 0 0-1 1v8.5a1 1 0 0 0 1 1h8.5a1 1 0 0 0 1-1V10" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" />
