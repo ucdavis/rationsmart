@@ -101,3 +101,30 @@ describe("getUiLabel — pure lookup against the in-memory cache", () => {
     expect(getUiLabel("Continue", "om")).toBe("Continue");
   });
 });
+
+// langOverride — used by cattle-info/feed-selection/report, which
+// resolve language from cattleInfo.simulation_language rather than
+// user.preferred_language (see the doc comment on useT for why).
+describe("useT — langOverride parameter", () => {
+  it("ignores user.preferred_language entirely when an override is passed", async () => {
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    const { result } = renderHook(() => useT("vi"));
+    await waitFor(() => expect(result.current("Continue")).toBe("Tiếp tục"));
+  });
+
+  it("falls back to the user's preferred_language when no override is passed (unchanged default behavior)", async () => {
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    const { result } = renderHook(() => useT());
+    await waitFor(() => expect(result.current("Continue")).toBe("जारी रखें"));
+  });
+
+  it("reacts live to a changing override without needing the store to change", async () => {
+    let lang = "en";
+    const { result, rerender } = renderHook(() => useT(lang));
+    expect(result.current("Continue")).toBe("Continue");
+
+    lang = "hi";
+    rerender();
+    await waitFor(() => expect(result.current("Continue")).toBe("जारी रखें"));
+  });
+});

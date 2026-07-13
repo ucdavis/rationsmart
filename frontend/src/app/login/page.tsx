@@ -345,7 +345,7 @@ export default function LoginPage() {
                   color: "#231F20",
                   fontFamily: "Nunito, sans-serif",
                 }}
-                aria-label={t("Email address")}
+                aria-label={t("Email Address")}
               />
             </div>
 

@@ -45,7 +45,7 @@ beforeEach(() => {
   setNewPin.mockReset();
   // Standard entry: reached from /login with requires_pin_reset=true.
   searchParamsState.value = "email=legacy%40dg.org&old_pin=1234";
-  useStore.setState({ snackbar: null, user: null } as never);
+  useStore.setState({ snackbar: null, user: null, lastUiLanguage: "en" } as never);
 });
 
 // PinInput renders type="password" boxes. With the default query string

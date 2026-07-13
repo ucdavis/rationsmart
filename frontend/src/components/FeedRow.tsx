@@ -8,6 +8,7 @@ import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
+import { useT } from "@/lib/i18n-ui";
 
 // Match Android DialogFeedDetails: layout chosen by feedCategory.
 type NutrientLayout = "additive" | "mineral" | "general";
@@ -223,7 +224,13 @@ export default function FeedRow({
   taxonomyLabels,
 }: FeedRowProps) {
   const user = useStore((s) => s.user);
+  const cattleInfo = useStore((s) => s.cattleInfo);
   const showSnackbar = useStore((s) => s.showSnackbar);
+
+  // UI-label i18n — same per-simulation resolution as feed-selection/page.tsx
+  // (the parent screen). Reads the COMMITTED store value, not a live form
+  // pending value — see src/lib/i18n-ui.ts's doc comment on `langOverride`.
+  const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
 
   const [feedTypes, setFeedTypes] = useState<FeedType[]>([]);
   const [categories, setCategories] = useState<FeedCategory[]>([]);
@@ -309,7 +316,7 @@ export default function FeedRow({
         setEditFeedName(fullName);
       }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Could not load feed details";
+      const msg = err instanceof Error ? err.message : t("Could not load feed details");
       showSnackbar(msg, "error");
       setShowEditModal(false);
     } finally {
@@ -366,7 +373,7 @@ export default function FeedRow({
             : [...prev, { feed_name: newName, feed_uuid: newId!, display_name: newName }]
         );
         onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId, display_name: newName });
-        showSnackbar("Custom feed saved", "success");
+        showSnackbar(t("Custom feed saved"), "success");
       } else {
         await updateCustomFeed({
           country_id: user.country_id,
@@ -386,11 +393,11 @@ export default function FeedRow({
           );
           onUpdate(item.id, { sub_category_name: updatedName });
         }
-        showSnackbar("Nutritional values updated", "success");
+        showSnackbar(t("Nutritional values updated"), "success");
       }
       setShowEditModal(false);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Update failed";
+      const msg = err instanceof Error ? err.message : t("Update failed");
       showSnackbar(msg, "error");
     } finally {
       setIsSavingEdit(false);
@@ -510,7 +517,7 @@ export default function FeedRow({
       .catch((err) => {
         if (cancelled) return;
         console.error("[feed-cascade] feed types fetch failed:", err?.message, err?.response?.data);
-        if (!item.feed_type_name) showSnackbar("Could not load feed types", "error");
+        if (!item.feed_type_name) showSnackbar(t("Could not load feed types"), "error");
       })
       .finally(() => { if (!cancelled) setLoadingTypes(false); });
     return () => { cancelled = true; };
@@ -626,7 +633,7 @@ export default function FeedRow({
       .catch((err) => {
         if (cancelled) return;
         console.error("[feed-cascade] feed categories fetch failed:", err?.message, err?.response?.data);
-        if (!item.category_name) showSnackbar("Could not load categories", "error");
+        if (!item.category_name) showSnackbar(t("Could not load categories"), "error");
       })
       .finally(() => { if (!cancelled) setLoadingCats(false); });
     return () => { cancelled = true; };
@@ -744,7 +751,7 @@ export default function FeedRow({
         console.error("[feed-cascade] sub-categories fetch failed:", err?.message, err?.response?.data);
         // If the row already has a restored sub_category_name / feed_uuid,
         // the visible state is intact — suppress the toast.
-        if (!item.sub_category_name && !item.feed_uuid) showSnackbar("Could not load sub-categories", "error");
+        if (!item.sub_category_name && !item.feed_uuid) showSnackbar(t("Could not load sub-categories"), "error");
       })
       .finally(() => { if (!cancelled) setLoadingSubs(false); });
     return () => { cancelled = true; };
@@ -834,7 +841,7 @@ export default function FeedRow({
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 10px 8px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700, fontSize: 16 }}>
-            FEED {index + 1}
+            {t("FEED ${N}").replace("${N}", String(index + 1))}
           </span>
           {isActive && (
             <span
@@ -849,7 +856,7 @@ export default function FeedRow({
                 letterSpacing: 0.2,
               }}
             >
-              Selected
+              {t("Selected")}
             </span>
           )}
         </div>
@@ -874,7 +881,7 @@ export default function FeedRow({
               justifyContent: "center",
               flexShrink: 0,
             }}
-            aria-label="Edit feed nutritional values"
+            aria-label={t("Edit feed nutritional values")}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ opacity: rowLoading ? 0 : 1 }}>
               <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke={canEdit ? "#064E3B" : "#6D6D6D"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
@@ -898,7 +905,7 @@ export default function FeedRow({
                 justifyContent: "center",
                 flexShrink: 0,
               }}
-              aria-label="Remove feed"
+              aria-label={t("Remove feed")}
             >
               <IcDelete size={16} color="#FC2E20" />
             </button>
@@ -919,7 +926,7 @@ export default function FeedRow({
           className="text-xs font-bold uppercase mb-2 ml-1"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          Feed Type<span style={{ color: "#FC2E20" }}>{" *"}</span>
+          {t("Feed Type")}<span style={{ color: "#FC2E20" }}>{" *"}</span>
         </p>
         {loadingTypes ? (
           // Same 2-column radio grid as the real content below (feed
@@ -1026,7 +1033,7 @@ export default function FeedRow({
             shimmers it in place (via FieldBox's + CustomSelect's own
             `loading` props) instead of swapping in a bare placeholder
             div, so there's no layout drift once the fetch resolves. */}
-        <FieldBox label="Feed Category" hasValue={!!item.category_name} disabled={!item.feed_type_name} loading={loadingCats}>
+        <FieldBox label={t("Feed Category")} hasValue={!!item.category_name} disabled={!item.feed_type_name} loading={loadingCats}>
           <CustomSelect
             transparentTrigger
             value={item.category_id != null ? String(item.category_id) : ""}
@@ -1047,14 +1054,14 @@ export default function FeedRow({
             }}
             disabled={!item.feed_type_name}
             loading={loadingCats}
-            placeholder={!item.feed_type_name ? "Select type first" : "Select"}
+            placeholder={!item.feed_type_name ? t("Select type first") : t("Select")}
             options={categories.map<CustomSelectOption>((c) => ({
               value: String(c.id),
               label: taxonomyLabels?.categories?.[c.name] ?? c.display,
             }))}
           />
         </FieldBox>
-        <FieldBox label="Feed" hasValue={!!item.feed_uuid} disabled={!item.category_name} loading={loadingSubs}>
+        <FieldBox label={t("Feed")} hasValue={!!item.feed_uuid} disabled={!item.category_name} loading={loadingSubs}>
           <CustomSelect
             transparentTrigger
             value={item.feed_uuid ?? ""}
@@ -1072,7 +1079,7 @@ export default function FeedRow({
             }}
             disabled={!item.category_name}
             loading={loadingSubs}
-            placeholder={!item.category_name ? "Select category" : "Select feed"}
+            placeholder={!item.category_name ? t("Select category") : t("Select feed")}
             options={subCategories.map<CustomSelectOption>((s) => ({ value: s.feed_uuid, label: s.display_name }))}
           />
         </FieldBox>
@@ -1096,7 +1103,7 @@ export default function FeedRow({
             className="font-bold"
             style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
           >
-            Set inclusion limits
+            {t("Set inclusion limits")}
           </span>
           <label
             className="toggle-switch"
@@ -1119,7 +1126,7 @@ export default function FeedRow({
         {item.inclusion_limits_enabled && (
           <div style={{ ...colGap, marginTop: 8 }}>
             <FieldBox
-              label="Min (kg/day)"
+              label={t("Min (kg/day)")}
               hasValue={item.min_kg_per_day != null}
               disabled={false}
               loading={rowLoading}
@@ -1130,7 +1137,7 @@ export default function FeedRow({
                 inputMode="decimal"
                 min={0}
                 step={0.01}
-                placeholder="NA"
+                placeholder={t("NA")}
                 value={item.min_kg_per_day ?? ""}
                 onChange={(e) =>
                   onUpdate(item.id, { min_kg_per_day: e.target.value ? Number(e.target.value) : null })
@@ -1139,7 +1146,7 @@ export default function FeedRow({
               />
             </FieldBox>
             <FieldBox
-              label="Max (kg/day)"
+              label={t("Max (kg/day)")}
               loading={rowLoading}
               hasValue={item.max_kg_per_day != null}
               disabled={false}
@@ -1150,7 +1157,7 @@ export default function FeedRow({
                 inputMode="decimal"
                 min={0}
                 step={0.01}
-                placeholder="No upper bound"
+                placeholder={t("No upper bound")}
                 value={item.max_kg_per_day ?? ""}
                 onChange={(e) =>
                   onUpdate(item.id, { max_kg_per_day: e.target.value ? Number(e.target.value) : null })
@@ -1167,7 +1174,7 @@ export default function FeedRow({
           row) — or while rowLoading, since a restored row can already
           have a real price while its cascade is still re-verifying. */}
       <div style={{ padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
-        <FieldBox label={`Price ${currencySymbol}/KG`} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid} loading={rowLoading}>
+        <FieldBox label={t("Price ${currencySymbol}/KG").replace("${currencySymbol}", currencySymbol)} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid} loading={rowLoading}>
           <input
             type="number"
             inputMode="decimal"
@@ -1186,7 +1193,7 @@ export default function FeedRow({
       {/* Row 7 — Quantity + Cost (eval mode only, 50/50) */}
       {showQuantity && (
         <div style={{ ...colGap, padding: "0 10px 16px" }}>
-          <FieldBox label="Quantity" hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg} loading={rowLoading}>
+          <FieldBox label={t("Quantity")} hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg} loading={rowLoading}>
             <input
               type="number"
               inputMode="decimal"
@@ -1200,7 +1207,7 @@ export default function FeedRow({
               {...cascadeLoadingProps(rowLoading, { ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" })}
             />
           </FieldBox>
-          <FieldBox label="Cost" hasValue={!!cost} disabled={!cost} loading={rowLoading}>
+          <FieldBox label={t("Cost")} hasValue={!!cost} disabled={!cost} loading={rowLoading}>
             <input
               type="text"
               readOnly
@@ -1230,8 +1237,8 @@ export default function FeedRow({
               onActivate?.(item.id);
               onJumpToSearch();
             }}
-            aria-label={`Search to fill FEED ${index + 1}`}
-            title="Search to fill this card"
+            aria-label={t("Search to fill FEED ${N}").replace("${N}", String(index + 1))}
+            title={t("Search to fill this card")}
             style={{
               display: "flex",
               alignItems: "center",
@@ -1251,7 +1258,7 @@ export default function FeedRow({
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.2" />
               <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
             </svg>
-            <span>Search to fill</span>
+            <span>{t("Search to fill")}</span>
           </button>
         </div>
       )}
@@ -1267,7 +1274,7 @@ export default function FeedRow({
           layout === "additive" ? NUTRIENT_FIELDS_ADDITIVE :
           layout === "mineral" ? NUTRIENT_FIELDS_MINERAL :
           NUTRIENT_FIELDS_GENERAL;
-        const title = editIsInsert ? "Add Custom Feed" : "Edit Nutritional Information";
+        const title = editIsInsert ? t("Add Custom Feed") : t("Edit Nutritional Information");
         const submitReady = !isSavingEdit && !isLoadingEdit && editFeedName.trim() !== "";
         return (
         <div
@@ -1299,7 +1306,7 @@ export default function FeedRow({
               <button
                 onClick={() => !isSavingEdit && setShowEditModal(false)}
                 style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
-                aria-label="Close"
+                aria-label={t("Close")}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" />
@@ -1325,7 +1332,7 @@ export default function FeedRow({
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
               <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                Feed Details
+                {t("Feed Details")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
@@ -1337,9 +1344,12 @@ export default function FeedRow({
 
             {editFeedDetailsExpanded && (
               <>
-                {/* Feed Type — read-only */}
+                {/* Feed Type — read-only. Only the LABEL above is UI chrome
+                    (translated); the value itself is the feed-identity
+                    string, which has its own separate taxonomyLabels/display
+                    system — left untouched here per that system's ownership. */}
                 <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  Feed Type
+                  {t("Feed Type")}
                 </p>
                 <div
                   className="rounded-xl px-4 py-3 text-sm mb-3"
@@ -1348,9 +1358,9 @@ export default function FeedRow({
                   {item.feed_type_name || "—"}
                 </div>
 
-                {/* Feed Category — read-only */}
+                {/* Feed Category — read-only (see note above) */}
                 <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  Feed Category
+                  {t("Feed Category")}
                 </p>
                 <div
                   className="rounded-xl px-4 py-3 text-sm mb-3"
@@ -1362,7 +1372,7 @@ export default function FeedRow({
                 {/* Feed Name — prefix + editable suffix (or fully disabled when
                     isInsert=false and the original name already contains "-"). */}
                 <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  Feed Name<span style={{ color: "#FC2E20" }}> *</span>
+                  {t("Feed Name")}<span style={{ color: "#FC2E20" }}> *</span>
                 </p>
                 <div
                   className="flex items-center rounded-xl mb-4"
@@ -1401,7 +1411,7 @@ export default function FeedRow({
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
               <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                Nutritional Information
+                {t("Nutritional Information")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
@@ -1414,12 +1424,12 @@ export default function FeedRow({
             {editNutritionalInfoExpanded && (
               <>
                 <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  Nutrient Composition (%)
+                  {t("Nutrient Composition (%)")}
                 </p>
                 <div className="grid grid-cols-2 gap-3 mb-5">
                   {fields.map((f) => (
                     <div key={f.key}>
-                      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{f.label}</p>
+                      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{t(f.label)}</p>
                       <input
                         type="number"
                         inputMode="decimal"
@@ -1451,7 +1461,7 @@ export default function FeedRow({
                 <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                 </svg>
-              ) : "Submit"}
+              ) : t("Submit")}
             </button>
             </>
             )}

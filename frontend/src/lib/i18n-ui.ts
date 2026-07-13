@@ -93,15 +93,30 @@ export function getUiLabel(source: string, lang: string): string {
 
 /**
  * Component hook — returns a `t(source)` function bound to the user's
- * current preferred_language. Triggers the lazy per-language import on
- * first use of a non-English language (cached for the rest of the
- * session) and re-renders the caller once it resolves. Falls back to
- * "en" (English source unchanged) when there's no signed-in user yet
- * (pre-login screens), matching every other i18n V2 fallback chain —
- * pre-login screens have no user.preferred_language to read.
+ * current preferred_language by default. Triggers the lazy per-language
+ * import on first use of a non-English language (cached for the rest of
+ * the session) and re-renders the caller once it resolves. Falls back
+ * to "en" (English source unchanged) when there's no signed-in user yet
+ * (pre-login screens), matching every other i18n V2 fallback chain.
+ *
+ * `langOverride` — pass an explicit language code to resolve against
+ * INSTEAD of user.preferred_language. This exists for the
+ * cattle-info → feed-selection → report flow, which — per explicit
+ * product decision — uses its OWN per-simulation language selection
+ * (cattleInfo.simulation_language), not the profile-wide preference,
+ * mirroring the exact priority chain store.ts's langProvider already
+ * uses for feed-data i18n (simulation_language ?? preferred_language ??
+ * "en"). cattle-info's own screen additionally needs this to react
+ * LIVE to the language dropdown before the user clicks Continue — pass
+ * the form's local pending selection there instead of the committed
+ * store value. Every other screen calls `useT()` with no argument.
  */
-export function useT(): (source: string) => string {
-  const lang = useStore((s) => s.user?.preferred_language ?? "en");
+export function useT(langOverride?: string): (source: string) => string {
+  // user.preferred_language when signed in; otherwise fall back to the
+  // last language this device was known to use (survives logout) before
+  // finally defaulting to "en" — see lastUiLanguage in store.ts.
+  const userLang = useStore((s) => s.user?.preferred_language ?? s.lastUiLanguage ?? "en");
+  const lang = langOverride ?? userLang;
   const [, setLoadedTick] = useState(0);
 
   useEffect(() => {

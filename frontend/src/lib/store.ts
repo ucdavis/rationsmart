@@ -62,6 +62,13 @@ interface AppState {
   reportData: EvaluationResponse | RecommendationResponse | null;
   dietLimits: Partial<DietLimits>;
   snackbar: SnackbarState | null;
+  // UI-label i18n — mirrors the most recent user.preferred_language so
+  // pre-login screens (Welcome/Login/Register/Forgot PIN/etc.) can still
+  // render in the right language after logout, when `user` is null and
+  // there's nothing else to read a language from. Set alongside setUser,
+  // deliberately NOT cleared by logout() — this is a device-level "last
+  // language used" memory, not tied to any one account's session.
+  lastUiLanguage: string;
 
   // Actions
   setUser: (user: User) => void;
@@ -89,12 +96,13 @@ export const useStore = create<AppState>()(
       reportData: null,
       dietLimits: {},
       snackbar: null,
+      lastUiLanguage: "en",
 
       setUser: (user) => {
         if (typeof window !== "undefined") {
           localStorage.setItem("user_id", String(user.id));
         }
-        set({ user });
+        set({ user, lastUiLanguage: user.preferred_language || "en" });
       },
 
       setToken: (token: string | null) =>
@@ -166,6 +174,7 @@ export const useStore = create<AppState>()(
         cattleInfo: state.cattleInfo,
         feedSelections: state.feedSelections,
         dietLimits: state.dietLimits,
+        lastUiLanguage: state.lastUiLanguage,
       }),
       // NOTE: skipHydration was enabled here in an earlier commit to
       // silence React #418/#423 hydration mismatches caused by persist

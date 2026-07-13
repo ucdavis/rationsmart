@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
 import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating, labelForLanguage } from "@/lib/api";
 import type { AnimalCategory } from "@/lib/api";
+import { useT } from "@/lib/i18n-ui";
 import {
   containsMultipleDecimalPoints,
   getDecimalPointIndex,
@@ -272,6 +273,16 @@ export default function CattleInfoPage() {
     };
   });
 
+  // UI-label i18n — this screen (and feed-selection/report) uses its OWN
+  // per-simulation language selection (the Language dropdown below,
+  // `form.simulation_language`), not the profile-wide `user.preferred_language`
+  // every other screen defaults to. Passing the form's LIVE pending value
+  // (not the committed cattleInfo.simulation_language store value) makes
+  // every t()-wrapped label on this page re-translate the instant the user
+  // picks a different language from the dropdown, before Continue is
+  // clicked. See the doc comment on useT() in src/lib/i18n-ui.ts.
+  const t = useT(form.simulation_language || user?.preferred_language || "en");
+
   const [errors, setErrors] = useState<FieldErrors>({});
   const [countries, setCountries] = useState<Country[]>([]);
   // Drives the Language field's loading skeleton below — see the fetch
@@ -290,8 +301,9 @@ export default function CattleInfoPage() {
         const data = res.data;
         setCountries(Array.isArray(data) ? data : []);
       })
-      .catch(() => showSnackbar("Could not load countries", "error"))
+      .catch(() => showSnackbar(t("Could not load countries"), "error"))
       .finally(() => setLoadingCountries(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showSnackbar]);
 
   useEffect(() => {
@@ -303,7 +315,7 @@ export default function CattleInfoPage() {
         // API returns { simulations: [...], success: bool }
         setHistoryList(Array.isArray(data) ? data : data?.simulations ?? []);
       })
-      .catch(() => showSnackbar("Could not load history", "error"))
+      .catch(() => showSnackbar(t("Could not load history"), "error"))
       .finally(() => setIsLoadingHistory(false));
   }, [showHistoryModal, user, showSnackbar]);
 
@@ -451,10 +463,10 @@ export default function CattleInfoPage() {
       });
 
       setErrors({});
-      showSnackbar("Simulation loaded successfully", "success");
+      showSnackbar(t("Simulation loaded successfully"), "success");
       setShowHistoryModal(false);
     } catch {
-      showSnackbar("Could not load simulation details", "error");
+      showSnackbar(t("Could not load simulation details"), "error");
     } finally {
       setLoadingSimId(null);
     }
@@ -477,7 +489,7 @@ export default function CattleInfoPage() {
     }
     const val = parseFloat(input);
     if (!isNaN(val) && !scoreIsInRange(val)) {
-      setError("body_condition_score", "Value Range 1-5");
+      setError("body_condition_score", t("Value Range 1-5"));
     } else {
       setError("body_condition_score", undefined);
     }
@@ -494,7 +506,7 @@ export default function CattleInfoPage() {
     }
     const val = parseFloat(input);
     if (!isNaN(val) && !bodyWeightIsInRange(val)) {
-      setError("body_weight", "Value Range 350-720");
+      setError("body_weight", t("Value Range 350-720"));
     } else {
       setError("body_weight", undefined);
     }
@@ -512,7 +524,7 @@ export default function CattleInfoPage() {
     }
     const val = parseFloat(input);
     if (!isNaN(val) && !bodyWeightGainIsInRange(val)) {
-      setError("body_weight_gain", "Value Range 0-1.8");
+      setError("body_weight_gain", t("Value Range 0-1.8"));
     } else {
       setError("body_weight_gain", undefined);
     }
@@ -524,7 +536,7 @@ export default function CattleInfoPage() {
     if (!input) { set("days_in_milk")(""); setError("days_in_milk", undefined); return; }
     const val = parseInt(input);
     if (!isNaN(val) && !daysInMilkIsInRange(val)) {
-      setError("days_in_milk", "Value Range 0-400");
+      setError("days_in_milk", t("Value Range 0-400"));
     } else {
       setError("days_in_milk", undefined);
     }
@@ -536,7 +548,7 @@ export default function CattleInfoPage() {
     if (!input) { set("days_of_pregnancy")(""); setError("days_of_pregnancy", undefined); return; }
     const val = parseInt(input);
     if (!isNaN(val) && !daysOfPregnancyIsInRange(val)) {
-      setError("days_of_pregnancy", "Value Range 0-280");
+      setError("days_of_pregnancy", t("Value Range 0-280"));
     } else {
       setError("days_of_pregnancy", undefined);
     }
@@ -553,7 +565,7 @@ export default function CattleInfoPage() {
     }
     const val = parseFloat(input);
     if (!isNaN(val) && !milkProductionIsInRange(val)) {
-      setError("milk_production", "Value Range 1-59");
+      setError("milk_production", t("Value Range 1-59"));
     } else {
       setError("milk_production", undefined);
     }
@@ -726,7 +738,7 @@ export default function CattleInfoPage() {
     // feel unresponsive.
     setTimeout(() => {
       setIsResetting(false);
-      showSnackbar("Form reset", "success");
+      showSnackbar(t("Form reset"), "success");
     }, 500);
   };
 
@@ -735,19 +747,19 @@ export default function CattleInfoPage() {
       className="flex flex-col min-h-screen"
       style={{ backgroundColor: "#F8FAF9" }}
     >
-      <Toolbar type="home" title="Cattle Info" onMenuOpen={openDrawer} showForward={!!reportData} onForward={() => router.push("/report")} />
+      <Toolbar type="home" title={t("Cattle Info")} onMenuOpen={openDrawer} showForward={!!reportData} onForward={() => router.push("/report")} />
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
         {/* Section 1: Simulation Details */}
         <SectionCard
           iconSvg={<IcSimulationDetails size={22} color="#064E3B" />}
-          title="Simulation Details"
+          title={t("Simulation Details")}
           topRightContent={
             <button
               onClick={() => setShowHistoryModal(true)}
               className="flex items-center justify-center rounded-xl border-none p-0"
               style={{ width: 36, height: 36, backgroundColor: "#E4F7EF", cursor: "pointer" }}
-              aria-label="Simulation history"
+              aria-label={t("Simulation history")}
             >
               {/* Android ic_simulation_history — filled icon, regular weight (no stroke). */}
               <IcSimulationHistory size={20} color="#064E3B" />
@@ -755,7 +767,7 @@ export default function CattleInfoPage() {
           }
         >
           <div className="px-3">
-            <FieldLabel>Simulation Name *</FieldLabel>
+            <FieldLabel>{t("Simulation Name *")}</FieldLabel>
             <input
               type="text"
               value={form.simulation_name}
@@ -772,7 +784,7 @@ export default function CattleInfoPage() {
                 markup renders throughout, just non-interactive with
                 hidden text while getCountries is in flight, so there's
                 no layout drift between loading and loaded. */}
-            <FieldLabel>Country *</FieldLabel>
+            <FieldLabel>{t("Country *")}</FieldLabel>
             <SelectInput
               value={form.country_id}
               onChange={(v) => {
@@ -798,7 +810,7 @@ export default function CattleInfoPage() {
                 }));
               }}
               options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
-              placeholder="Select country"
+              placeholder={t("Select country")}
               loading={loadingCountries}
             />
 
@@ -816,8 +828,8 @@ export default function CattleInfoPage() {
                 the same place at the same time as every other field. */}
             {loadingCountries ? (
               <>
-                <FieldLabel>Language</FieldLabel>
-                <SelectInput value="" onChange={() => {}} options={[]} placeholder="Select" loading />
+                <FieldLabel>{t("Language")}</FieldLabel>
+                <SelectInput value="" onChange={() => {}} options={[]} placeholder={t("Select")} loading />
               </>
             ) : countries.length > 0 && (() => {
               const selectedCountry = countries.find(
@@ -835,7 +847,7 @@ export default function CattleInfoPage() {
                 form.simulation_language ?? user?.preferred_language ?? "en";
               return (
                 <>
-                  <FieldLabel>Language</FieldLabel>
+                  <FieldLabel>{t("Language")}</FieldLabel>
                   <SelectInput
                     value={languageOptions.includes(currentLang) ? currentLang : "en"}
                     onChange={(v) =>
@@ -863,7 +875,7 @@ export default function CattleInfoPage() {
                       value: code,
                       label: labelForLanguage(code),
                     }))}
-                    placeholder="Select language"
+                    placeholder={t("Select language")}
                   />
                 </>
               );
@@ -873,32 +885,32 @@ export default function CattleInfoPage() {
                 Details (top of the form) because the choice gates
                 downstream sections (Milk Production hidden for
                 non-lactating) and §2.3 report sections. */}
-            <FieldLabel>Animal Category *</FieldLabel>
+            <FieldLabel>{t("Animal Category *")}</FieldLabel>
             <SelectInput
               value={form.animal_category}
               onChange={(v) => set("animal_category")(v)}
               options={ANIMAL_CATEGORIES.map((c) => ({ value: c, label: ANIMAL_CATEGORY_LABELS[c] }))}
-              placeholder="Select category"
+              placeholder={t("Select category")}
               loading={loadingCountries}
             />
           </div>
         </SectionCard>
 
         {/* Section 2: Animal Characteristics */}
-        <SectionCard iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />} title="Animal Characteristics">
+        <SectionCard iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />} title={t("Animal Characteristics")}>
           <div className="px-3">
-            <FieldLabel>Breed Selection *</FieldLabel>
+            <FieldLabel>{t("Breed Selection *")}</FieldLabel>
             <SelectInput
               value={form.breed}
               onChange={set("breed")}
               options={BREEDS.map((b) => ({ value: b, label: b }))}
-              placeholder="Select breed"
+              placeholder={t("Select breed")}
               loading={loadingCountries}
             />
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Body Weight (BW; kg) *</FieldLabel>
+                <FieldLabel>{t("Body Weight (BW; kg) *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -913,7 +925,7 @@ export default function CattleInfoPage() {
                 <FieldError message={errors.body_weight} />
               </div>
               <div>
-                <FieldLabel>BW Gain (kg/day) *</FieldLabel>
+                <FieldLabel>{t("BW Gain (kg/day) *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -931,7 +943,7 @@ export default function CattleInfoPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Body Condition Score *</FieldLabel>
+                <FieldLabel>{t("Body Condition Score *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -946,7 +958,7 @@ export default function CattleInfoPage() {
                 <FieldError message={errors.body_condition_score} />
               </div>
               <div>
-                <FieldLabel>Days in Milk *</FieldLabel>
+                <FieldLabel>{t("Days in Milk *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -965,11 +977,11 @@ export default function CattleInfoPage() {
         </SectionCard>
 
         {/* Section 3: Reproductive Data */}
-        <SectionCard iconSvg={<IcReproductiveData size={22} color="#064E3B" />} title="Reproductive Data">
+        <SectionCard iconSvg={<IcReproductiveData size={22} color="#064E3B" />} title={t("Reproductive Data")}>
           <div className="px-3">
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Days of Pregnancy *</FieldLabel>
+                <FieldLabel>{t("Days of Pregnancy *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="numeric"
@@ -984,12 +996,12 @@ export default function CattleInfoPage() {
                 <FieldError message={errors.days_of_pregnancy} />
               </div>
               <div>
-                <FieldLabel>Parity *</FieldLabel>
+                <FieldLabel>{t("Parity *")}</FieldLabel>
                 <SelectInput
                   value={form.parity}
                   onChange={set("parity")}
                   options={PARITIES.map((p) => ({ value: p, label: p }))}
-                  placeholder="Select"
+                  placeholder={t("Select")}
                   loading={loadingCountries}
                 />
               </div>
@@ -1002,9 +1014,9 @@ export default function CattleInfoPage() {
             apply. The form's required-field gating (`milkFieldsValid`)
             skips this section when hidden. */}
         {showMilkSection && (
-        <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title="Milk Production">
+        <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title={t("Milk Production")}>
           <div className="px-3">
-            <FieldLabel>Milk Production (L) *</FieldLabel>
+            <FieldLabel>{t("Milk Production (L) *")}</FieldLabel>
             <input
               type="number"
               inputMode="decimal"
@@ -1020,30 +1032,40 @@ export default function CattleInfoPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
-                <FieldLabel>Milk Protein % *</FieldLabel>
+                <FieldLabel>{t("Milk Protein % *")}</FieldLabel>
                 <SelectInput
                   value={form.milk_protein_percent}
                   onChange={set("milk_protein_percent")}
                   options={MILK_PROTEIN_OPTIONS.map((v) => ({ value: v, label: v }))}
-                  placeholder="Select"
+                  placeholder={t("Select")}
                   loading={loadingCountries}
                 />
               </div>
               <div>
-                <FieldLabel>Milk Fat % *</FieldLabel>
+                <FieldLabel>{t("Milk Fat % *")}</FieldLabel>
                 <SelectInput
                   value={form.milk_fat_percent}
                   onChange={set("milk_fat_percent")}
                   options={MILK_FAT_OPTIONS.map((v) => ({ value: v, label: v }))}
-                  placeholder="Select"
+                  placeholder={t("Select")}
                   loading={loadingCountries}
                 />
               </div>
             </div>
 
             {/* Y3 §1.3 — Milk Price input. Optional. Currency suffix comes
-                from the user's selected country. Used by §2.1 margin card. */}
-            <FieldLabel>Milk Price ({user?.currency || "currency"}/L)</FieldLabel>
+                from the user's selected country. Used by §2.1 margin card.
+                Translated as a composed string — the dictionary stores the
+                key with a literal "${user.currency}" placeholder (same
+                pattern as the "${N} star" / "${count} TOTAL" keys used
+                elsewhere), so we translate first and then substitute the
+                real currency code into the translated string. */}
+            <FieldLabel>
+              {t("Milk Price (${user.currency}/L)").replace(
+                "${user.currency}",
+                user?.currency || "currency"
+              )}
+            </FieldLabel>
             <input
               type="number"
               inputMode="decimal"
@@ -1051,7 +1073,7 @@ export default function CattleInfoPage() {
               step={0.01}
               value={form.milk_price}
               onChange={(e) => set("milk_price")(e.target.value)}
-              placeholder="Optional"
+              placeholder={t("Optional")}
               {...loadingFieldProps(
                 loadingCountries,
                 "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
@@ -1063,9 +1085,9 @@ export default function CattleInfoPage() {
         )}
 
         {/* Section 5: Environment */}
-        <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title="Environment">
+        <SectionCard iconSvg={<IcEnvironment size={22} color="#064E3B" />} title={t("Environment")}>
           <div className="px-3">
-            <FieldLabel>Avg Temperature (°C) *</FieldLabel>
+            <FieldLabel>{t("Avg Temperature (°C) *")}</FieldLabel>
             <input
               type="number"
               inputMode="decimal"
@@ -1095,12 +1117,12 @@ export default function CattleInfoPage() {
                   className="text-base font-bold"
                   style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
                 >
-                  Active Grazing
+                  {t("Active Grazing")}
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowGrazingTooltip((p) => !p)}
-                  aria-label="What does Active Grazing do?"
+                  aria-label={t("What does Active Grazing do?")}
                   aria-expanded={showGrazingTooltip}
                   style={{
                     background: "none",
@@ -1171,15 +1193,14 @@ export default function CattleInfoPage() {
                   className="text-sm"
                   style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", lineHeight: 1.5, margin: 0 }}
                 >
-                  Grazing activity increases energy requirements. If enabled,
-                  RationSmart adds an extra energy allowance based on
-                  topography and distance walked. Leave this off for housed
-                  animals.
+                  {t(
+                    "Grazing activity increases energy requirements. If enabled, RationSmart adds an extra energy allowance based on topography and distance walked. Leave this off for housed animals."
+                  )}
                 </p>
                 <button
                   type="button"
                   onClick={() => setShowGrazingTooltip(false)}
-                  aria-label="Close tooltip"
+                  aria-label={t("Close tooltip")}
                   style={{
                     flexShrink: 0,
                     width: 22,
@@ -1210,7 +1231,11 @@ export default function CattleInfoPage() {
                     className="text-xs font-bold uppercase tracking-wide"
                     style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
                   >
-                    Topography<span style={{ color: "#FC2E20" }}>{" *"}</span>
+                    {(() => {
+                      const label = t("Topography *");
+                      return label.endsWith(" *") ? label.slice(0, -2) : label;
+                    })()}
+                    <span style={{ color: "#FC2E20" }}>{" *"}</span>
                   </span>
                   {(["Flat", "Hilly"] as const).map((opt) => (
                     <button
@@ -1251,13 +1276,13 @@ export default function CattleInfoPage() {
                           color: form.topography === opt ? "#064E3B" : "#6D6D6D",
                         }}
                       >
-                        {opt}
+                        {t(opt)}
                       </span>
                     </button>
                   ))}
                 </div>
 
-                <FieldLabel>Distance Walked (km) *</FieldLabel>
+                <FieldLabel>{t("Distance Walked (km) *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
@@ -1326,10 +1351,10 @@ export default function CattleInfoPage() {
                   strokeDasharray="14 30"
                 />
               </svg>
-              Resetting…
+              {t("Resetting…")}
             </>
           ) : (
-            "Reset"
+            t("Reset")
           )}
         </button>
 
@@ -1346,7 +1371,7 @@ export default function CattleInfoPage() {
             transition: "background-color 0.2s, color 0.2s",
           }}
         >
-          Continue to Feed
+          {t("Continue to Feed")}
         </button>
       </div>
 
@@ -1377,7 +1402,7 @@ export default function CattleInfoPage() {
               className="text-center font-bold px-3 mb-3"
               style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
             >
-              Simulation History
+              {t("Simulation History")}
             </p>
 
             {/* Content */}
@@ -1398,14 +1423,14 @@ export default function CattleInfoPage() {
                 className="text-sm text-center py-8"
                 style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
               >
-                No saved simulations found
+                {t("No saved simulations found")}
               </p>
             ) : (
               <div className="pb-3">
                 {historyList.map((item, idx) => {
                   const rowId = item.report_id ?? item.simulation_id ?? String(idx);
                   const isRowLoading = loadingSimId === rowId;
-                  const displayName = item.simulation_id ?? "Simulation";
+                  const displayName = item.simulation_id ?? t("Simulation");
                   const countryName = item.country_name ?? item.country ?? "";
                   const createdAt = item.created_at
                     ? new Date(item.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
@@ -1437,7 +1462,7 @@ export default function CattleInfoPage() {
                               <path d="M4 5h6M4 7h5M4 9h3.5" stroke="#6D6D6D" strokeWidth="1.2" strokeLinecap="round" />
                             </svg>
                             <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                              ID: {rowId}
+                              {t("ID: ")}{rowId}
                             </span>
                           </div>
                           {countryName && (
@@ -1446,7 +1471,7 @@ export default function CattleInfoPage() {
                                 <path d="M7 1.5A3.5 3.5 0 0 0 3.5 5c0 2.625 3.5 7 3.5 7S10.5 7.625 10.5 5A3.5 3.5 0 0 0 7 1.5zm0 4.75A1.25 1.25 0 1 1 7 4a1.25 1.25 0 0 1 0 2.25z" fill="#6D6D6D" />
                               </svg>
                               <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                                Country: {countryName}
+                                {t("Country: ")}{countryName}
                               </span>
                             </div>
                           )}
@@ -1457,7 +1482,7 @@ export default function CattleInfoPage() {
                                 <path d="M4.5 1.5v2M9.5 1.5v2M1.5 5.5h11" stroke="#6D6D6D" strokeWidth="1.2" strokeLinecap="round" />
                               </svg>
                               <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                                Created on: {createdAt}
+                                {t("Created on: ")}{createdAt}
                               </span>
                             </div>
                           )}

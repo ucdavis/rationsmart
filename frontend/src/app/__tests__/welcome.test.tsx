@@ -28,7 +28,7 @@ const seedUser = (over: Partial<User> = {}): User => ({
 
 beforeEach(() => {
   push.mockClear();
-  useStore.setState({ user: null });
+  useStore.setState({ user: null, lastUiLanguage: "en" });
 });
 
 describe("Welcome page", () => {

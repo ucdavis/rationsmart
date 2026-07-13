@@ -572,7 +572,7 @@ export default function ProfilePage() {
                   color: "#231F20",
                   fontFamily: "Nunito, sans-serif",
                 }}
-                aria-label="Email address"
+                aria-label={t("Email address")}
               />
             </div>
 

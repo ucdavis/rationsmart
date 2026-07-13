@@ -407,15 +407,25 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
   // Regression coverage: explicitly picking "English" for a specific
   // simulation used to be stored as `simulation_language: null` (meant
   // to signal "no override, inherit profile"). For a user whose PROFILE
-  // language is non-English (Hindi here), that made an explicit English
-  // pick indistinguishable from "never touched the dropdown" — so
-  // restoring the simulation later fell through to a country-language
-  // guess (Hindi for India) instead of honoring the English the user
-  // actually chose. The fix stores whatever the user picks verbatim,
-  // including "en".
+  // language is non-English, that made an explicit English pick
+  // indistinguishable from "never touched the dropdown" — so restoring
+  // the simulation later fell through to a country-language guess
+  // instead of honoring the English the user actually chose. The fix
+  // stores whatever the user picks verbatim, including "en".
+  //
+  // Seeded as "sw" (Swahili), not "hi": since the cattle-info UI-label
+  // i18n rollout (src/lib/i18n-ui.ts), the page's own labels now render
+  // live in whatever language `form.simulation_language || user.
+  // preferred_language` resolves to. "sw" is a real feed-data language
+  // (see LANGUAGE_NATIVE_LABELS in api.ts) but deliberately has NO UI
+  // dictionary bundle (UI_LANG_CODES in i18n-ui.ts excludes it — the
+  // source spreadsheet never had a Swahili column), so it exercises the
+  // exact same "profile default isn't English" scenario this test needs
+  // without flipping the rendered labels this test queries by English
+  // text into another language.
   it("storing English explicitly persists 'en' (not null) through handleContinue", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
-    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "hi" }) });
+    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
     render(<CattleInfoPage />);
     // The whole form now renders behind a loading skeleton until
     // getCountries resolves (see CattleInfoSkeleton) — wait for a
@@ -438,7 +448,7 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
 
   it("an untouched Language dropdown still persists null (inherit profile default)", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
-    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "hi" }) });
+    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
     render(<CattleInfoPage />);
     // The whole form now renders behind a loading skeleton until
     // getCountries resolves (see CattleInfoSkeleton) — wait for a
@@ -548,7 +558,18 @@ describe("Cattle Info — Simulation History", () => {
   });
 
   it("loadSimulation → getSimulationDetails populates the form and sets feedSelectionType to EVALUATION when quantity_as_fed is present", async () => {
-    getCountries.mockResolvedValueOnce({ data: countries });
+    // Local country fixture (India with NO non-English supported_languages)
+    // rather than the shared `countries` const: loadSimulation's i18n V2
+    // restore logic (§ "hydrate simulation_language" comment in the page)
+    // best-effort-guesses the country's first non-English supported
+    // language for a restored sim with no simulation_language on the
+    // response. The shared `countries` fixture's India entry supports
+    // "hi", which would flip this test's own cattle-info UI labels
+    // (queried below by their English text via inputAfterLabel) into
+    // Hindi — a real, intentional side effect of the cattle-info UI-label
+    // i18n rollout, but irrelevant to what this test actually verifies
+    // (feed-selection restoration), so it's isolated here.
+    getCountries.mockResolvedValueOnce({ data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }] });
     getUserReports.mockResolvedValueOnce({
       data: { simulations: [{ report_id: "R-1", simulation_id: "SIM-1", country_name: "India" }] },
     });
@@ -649,5 +670,100 @@ describe("Cattle Info — Simulation History", () => {
     await waitFor(() => expect(getSimulationDetails).toHaveBeenCalledWith("R-2", "u-1"));
     await waitFor(() => expect(useStore.getState().feedSelections).toHaveLength(1));
     expect(useStore.getState().feedSelectionType).toBe("recommendation");
+  });
+});
+
+// UI-label i18n (src/lib/i18n-ui.ts) — cattle-info is the one screen that
+// resolves its display language from its OWN per-simulation selection
+// (`form.simulation_language`, seeded from `cattleInfo.simulation_language`
+// on mount) rather than the profile-wide `user.preferred_language` every
+// other screen defaults to. `useT(langOverride)` is called on this page as
+// `useT(form.simulation_language || user?.preferred_language || "en")` —
+// see the doc comment on useT() in i18n-ui.ts for why.
+describe("Cattle Info — UI-label i18n (own simulation_language, not just profile)", () => {
+  it("falls back to user.preferred_language when no cattleInfo is stored yet (no simulation_language to inherit)", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    render(<CattleInfoPage />);
+    // The "hi" dictionary lazy-loads via dynamic import() — findBy waits
+    // for it to resolve rather than assuming it's already in the cache.
+    await screen.findByText("मवेशी जानकारी"); // Cattle Info (toolbar title)
+    expect(screen.getByText("सिमुलेशन विवरण")).toBeInTheDocument(); // Simulation Details
+    expect(screen.getByText("पशु विशेषताएं")).toBeInTheDocument(); // Animal Characteristics
+    expect(screen.getByText("चारा पर जारी रखें")).toBeInTheDocument(); // Continue to Feed
+    expect(screen.queryByText("Cattle Info")).not.toBeInTheDocument();
+  });
+
+  it("prefers the restored cattleInfo.simulation_language over user.preferred_language on initial mount", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({
+      user: seedUser({ preferred_language: "en" }),
+      cattleInfo: {
+        simulation_name: "Old Sim",
+        country: "India",
+        country_id: "1",
+        breed: "Holstein",
+        body_weight: 500,
+        body_weight_gain: 0.2,
+        body_condition_score: 3,
+        parity: 1,
+        days_in_milk: 100,
+        days_of_pregnancy: 40,
+        milk_production: 15,
+        milk_protein_percent: 3,
+        milk_fat_percent: 4,
+        average_temperature: 25,
+        grazing: false,
+        distance: 0,
+        topography: "Flat",
+        milk_price: null,
+        animal_category: "Lactating Cow",
+        // The stored simulation's own language — this, not the profile's
+        // "en", is what should drive the form's labels on mount.
+        simulation_language: "hi",
+      } as CattleInfo,
+    });
+    render(<CattleInfoPage />);
+    await screen.findByText("मवेशी जानकारी"); // Cattle Info
+    expect(screen.getByText("सिमुलेशन विवरण")).toBeInTheDocument(); // Simulation Details
+  });
+
+  it("reacts LIVE to a Language dropdown pick — before Continue is clicked, other static labels on the page re-translate immediately", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ preferred_language: "en" }) });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    // Still English before any interaction.
+    expect(screen.getByText("Animal Characteristics")).toBeInTheDocument();
+
+    // Country must be picked first — the Language dropdown's own options
+    // (native-script labels) come from the selected country's
+    // supported_languages, per the existing i18n V2 Phase 1 wiring.
+    await selectCountry("India");
+
+    const langWrapper = await openDropdown("Language");
+    await chooseOption(langWrapper, "हिन्दी"); // native-script label for "hi"
+
+    // The user has NOT clicked Continue to Feed. A completely different
+    // section heading elsewhere on the page must already be translated —
+    // this is the whole point of passing the form's live pending
+    // simulation_language as useT's langOverride instead of the committed
+    // store value.
+    await screen.findByText("पशु विशेषताएं"); // Animal Characteristics
+    expect(screen.queryByText("Animal Characteristics")).not.toBeInTheDocument();
+
+    // And the committed store value hasn't changed yet — proving this is
+    // driven by the form's local pending state, not cattleInfo.
+    expect(useStore.getState().cattleInfo).toBeNull();
+  });
+
+  it("falls back to English when the stored simulation_language has no UI dictionary (e.g. 'sw', a feed-data-only rollout language)", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({ user: seedUser({ preferred_language: "sw" }) });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+    expect(screen.getByText("Cattle Info")).toBeInTheDocument();
+    expect(screen.getByText("Simulation Details")).toBeInTheDocument();
   });
 });

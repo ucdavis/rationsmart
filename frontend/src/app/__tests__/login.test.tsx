@@ -29,7 +29,7 @@ beforeEach(() => {
   getUserProfile.mockReset();
   getCountries.mockReset();
   resetPin.mockReset();
-  useStore.setState({ user: null } as never);
+  useStore.setState({ user: null, lastUiLanguage: "en" } as never);
 });
 
 async function fillForm(email = "aiyappa@dg.org", pin = "123456") {
@@ -76,6 +76,20 @@ describe("Login — UI-label translation (src/lib/i18n-ui.ts)", () => {
         preferred_language: "hi",
       } as never,
     });
+    render(<LoginPage />);
+    await screen.findByText("ईमेल पता");
+    expect(screen.getByText("PIN दर्ज करें")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "आगे बढ़ें" })).toBeInTheDocument();
+  });
+
+  // The actual bug report this covers: logging out used to reset the
+  // whole auth flow back to English, because useT() had nothing to read
+  // once `user` went null. lastUiLanguage (store.ts) is set alongside
+  // every setUser() call and deliberately survives logout() — Login
+  // (and every other pre-login screen) should render in whatever
+  // language was last used on this device, with NO user signed in.
+  it("renders in Hindi post-logout — no user, only lastUiLanguage set", async () => {
+    useStore.setState({ user: null, lastUiLanguage: "hi" } as never);
     render(<LoginPage />);
     await screen.findByText("ईमेल पता");
     expect(screen.getByText("PIN दर्ज करें")).toBeInTheDocument();

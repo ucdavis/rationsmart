@@ -684,3 +684,59 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
     expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled();
   });
 });
+
+// --- UI-label i18n — per-simulation language override -------------------
+//
+// FeedRow resolves display language from cattleInfo.simulation_language
+// (COMMITTED store value) ahead of user.preferred_language — the exact
+// same priority chain feed-data i18n's langProvider already uses (see
+// src/lib/store.ts). This is distinct from cattle-info/page.tsx, which
+// resolves against a live form-pending value instead.
+describe("UI-label i18n — simulation_language override", () => {
+  it("renders literal UI chrome (FEED N header, Feed Type label) in Hindi when cattleInfo.simulation_language is 'hi', even though user.preferred_language stays 'en'", async () => {
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
+    useStore.setState({
+      cattleInfo: { simulation_language: "hi" } as never,
+      user: seedUser({ preferred_language: "en" }),
+    });
+    render(
+      <FeedRow item={makeItem()} index={0} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+    );
+    // "FEED ${N}" -> "FEED 1" is a literal-placeholder key with no Hindi
+    // digit substitution — the dictionary keeps "FEED" as-is per the
+    // sheet (loanword), so we assert on a translated label instead that
+    // has an unambiguous Hindi rendering.
+    await screen.findByText("चारा प्रकार"); // "Feed Type"
+    expect(screen.queryByText("Feed Type")).not.toBeInTheDocument();
+  });
+
+  it("falls back to user.preferred_language when cattleInfo has no simulation_language override", async () => {
+    getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
+    useStore.setState({
+      cattleInfo: { simulation_language: null } as never,
+      user: seedUser({ preferred_language: "hi" }),
+    });
+    render(
+      <FeedRow item={makeItem()} index={0} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+    );
+    await screen.findByText("चारा प्रकार"); // "Feed Type"
+  });
+
+  it("the inclusion-limits toggle label translates to Hindi", async () => {
+    getFeedTypes.mockResolvedValueOnce({ data: [] });
+    useStore.setState({
+      cattleInfo: { simulation_language: "hi" } as never,
+      user: seedUser({ preferred_language: "en" }),
+    });
+    render(
+      <FeedRow
+        item={makeItem({ feed_uuid: "uuid-1" })}
+        index={0}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    await screen.findByText("समावेशन सीमाएं सेट करें"); // "Set inclusion limits"
+  });
+});

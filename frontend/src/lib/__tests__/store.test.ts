@@ -28,6 +28,7 @@ beforeEach(() => {
     reportData: null,
     dietLimits: {},
     snackbar: null,
+    lastUiLanguage: "en",
   });
 });
 
@@ -41,6 +42,7 @@ describe("store initial state", () => {
     expect(s.reportData).toBeNull();
     expect(s.dietLimits).toEqual({});
     expect(s.snackbar).toBeNull();
+    expect(s.lastUiLanguage).toBe("en");
   });
 });
 
@@ -54,6 +56,18 @@ describe("setUser", () => {
   it("side-effects: writes user_id to localStorage", () => {
     useStore.getState().setUser(makeUser({ id: "abc-123" }));
     expect(window.localStorage.getItem("user_id")).toBe("abc-123");
+  });
+
+  // lastUiLanguage mirrors the signed-in user's preferred_language — see
+  // the "survives logout" test below for why this field exists at all.
+  it("mirrors preferred_language onto lastUiLanguage", () => {
+    useStore.getState().setUser(makeUser({ preferred_language: "vi" }));
+    expect(useStore.getState().lastUiLanguage).toBe("vi");
+  });
+
+  it("falls back to 'en' for lastUiLanguage when preferred_language is falsy", () => {
+    useStore.getState().setUser(makeUser({ preferred_language: "" as never }));
+    expect(useStore.getState().lastUiLanguage).toBe("en");
   });
 });
 
@@ -101,6 +115,21 @@ describe("logout", () => {
     window.localStorage.setItem("user_id", "u-1");
     useStore.getState().logout();
     expect(window.localStorage.getItem("user_id")).toBeNull();
+  });
+
+  // The whole point of lastUiLanguage: pre-login screens (Welcome/Login/
+  // Register/etc.) need SOMETHING to read a language from once `user` is
+  // null post-logout. Deliberately NOT cleared by logout() — user
+  // reported the auth flow reverting to English every time they logged
+  // out, because useT() previously had nothing to fall back to but "en".
+  it("does NOT clear lastUiLanguage — the auth flow must stay in the last-used language after logout", () => {
+    useStore.getState().setUser(makeUser({ preferred_language: "hi" }));
+    expect(useStore.getState().lastUiLanguage).toBe("hi");
+
+    useStore.getState().logout();
+
+    expect(useStore.getState().user).toBeNull();
+    expect(useStore.getState().lastUiLanguage).toBe("hi");
   });
 });
 

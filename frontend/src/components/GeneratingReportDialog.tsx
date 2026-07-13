@@ -1,11 +1,23 @@
 "use client";
 
+import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n-ui";
+
 // Mirrors Android dialog_generating_report.xml — a centred, non-cancellable
 // dialog with a green-tinted ic_generating_report icon, "Generating your
 // report" title, and a circular indeterminate progress indicator. Shown
 // while feedVM.feedRecommendationReport / feedEvaluationReport is in
 // flight after the user taps Generate / Get Evaluation on Feed Selection.
+//
+// UI-label i18n — rendered from within /feed-selection, so it resolves
+// language the same way that screen and FeedRow do: the per-simulation
+// override (cattleInfo.simulation_language) ahead of the profile-wide
+// preferred_language. See src/lib/i18n-ui.ts's doc comment on `langOverride`.
 export default function GeneratingReportDialog() {
+  const user = useStore((s) => s.user);
+  const cattleInfo = useStore((s) => s.cattleInfo);
+  const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
+
   return (
     <div
       className="fixed top-0 h-full z-[110] flex items-center justify-center px-6"
@@ -41,7 +53,7 @@ export default function GeneratingReportDialog() {
           className="font-bold mt-5 text-center"
           style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
         >
-          Generating your report
+          {t("Generating your report")}
         </p>
 
         {/* Indeterminate circular progress — dark_aquamarine_green stroke

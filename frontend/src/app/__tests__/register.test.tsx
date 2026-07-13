@@ -35,6 +35,7 @@ beforeEach(() => {
   getCountries.mockReset();
   useStore.setState({
     user: null,
+    lastUiLanguage: "en",
     cattleInfo: null,
     feedSelectionType: "recommendation",
     feedSelections: [],

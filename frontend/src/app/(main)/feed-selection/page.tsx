@@ -11,6 +11,7 @@ import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCus
 import type { FeedItem, DietLimits, FeedSearchResult, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
 import { IcAddFeed } from "@/components/Icons";
+import { useT } from "@/lib/i18n-ui";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -157,6 +158,13 @@ export default function FeedSelectionPage() {
   // Use the user's currency CODE directly (PHP / INR / VND / …) so the
   // Price field label reads e.g. "Price PHP/KG", matching Android.
   const currencySymbol = user?.currency ?? "";
+
+  // UI-label i18n — this screen (and FeedRow) resolve language from the
+  // PER-SIMULATION override (cattleInfo.simulation_language), not the
+  // profile-wide user.preferred_language, matching the exact priority
+  // chain the feed-data i18n langProvider already uses in store.ts.
+  // See src/lib/i18n-ui.ts's doc comment on the `langOverride` param.
+  const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
 
   // Diagnostic — feed-selection nothing-loads investigation. Prints the
   // user fields the cascade depends on. If country_id is missing/empty
@@ -388,7 +396,7 @@ export default function FeedSelectionPage() {
     // snackbar. (When a card was tapped, the green ring already told
     // them where it would land, so we skip the toast.)
     if (usedFallback && landedIdx >= 0) {
-      showSnackbar(`Added to FEED ${landedIdx + 1}`, "success");
+      showSnackbar(t("Added to FEED ${N}").replace("${N}", String(landedIdx + 1)), "success");
     }
   };
 
@@ -397,7 +405,7 @@ export default function FeedSelectionPage() {
     setCustomFeedTypes([]);
     setCustomFeedCategories([]);
     if (!user?.country_id || !user?.id) {
-      showSnackbar("Country info missing. Please update your profile.", "error");
+      showSnackbar(t("Country info missing. Please update your profile."), "error");
       return;
     }
     setShowCustomFeedModal(true);
@@ -422,7 +430,7 @@ export default function FeedSelectionPage() {
       }).filter((n) => n);
       setCustomFeedTypes(names);
     } catch {
-      showSnackbar("Could not load feed types", "error");
+      showSnackbar(t("Could not load feed types"), "error");
     } finally {
       setLoadingCustomTypes(false);
     }
@@ -452,7 +460,7 @@ export default function FeedSelectionPage() {
       }).filter((n) => n);
       setCustomFeedCategories(names);
     } catch {
-      showSnackbar("Could not load categories", "error");
+      showSnackbar(t("Could not load categories"), "error");
     } finally {
       setLoadingCustomCats(false);
     }
@@ -461,7 +469,7 @@ export default function FeedSelectionPage() {
   const handleSaveCustomFeed = async () => {
     if (!user?.id || !user?.country_id) return;
     if (!customFeedForm.feed_name.trim() || !customFeedForm.feed_type) {
-      showSnackbar("Feed name and type are required", "error");
+      showSnackbar(t("Feed name and type are required"), "error");
       return;
     }
     setIsSavingCustom(true);
@@ -511,7 +519,7 @@ export default function FeedSelectionPage() {
           feed_insert: false,
           feed_details: feedDetails,
         });
-        showSnackbar("Custom feed updated!", "success");
+        showSnackbar(t("Custom feed updated!"), "success");
       } else {
         await insertCustomFeed({
           country_id: user.country_id,
@@ -519,11 +527,11 @@ export default function FeedSelectionPage() {
           feed_insert: true,
           feed_details: feedDetails,
         });
-        showSnackbar("Custom feed saved! It will appear in the feed list.", "success");
+        showSnackbar(t("Custom feed saved! It will appear in the feed list."), "success");
       }
       setShowCustomFeedModal(false);
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Failed to save custom feed", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Failed to save custom feed"), "error");
     } finally {
       setIsSavingCustom(false);
     }
@@ -547,7 +555,7 @@ export default function FeedSelectionPage() {
 
   const deleteItem = (id: string) => {
     if (items.length === 1) {
-      showSnackbar("At least one feed item is required", "info");
+      showSnackbar(t("At least one feed item is required"), "info");
       return;
     }
     const updated = items.filter((item) => item.id !== id);
@@ -599,7 +607,7 @@ export default function FeedSelectionPage() {
         const localizedType = item.feed_type_name
           ? taxonomyLabels.types[item.feed_type_name] ?? item.feed_type_name
           : "";
-        return localizedType || item.sub_category_name || `Feed ${items.indexOf(item) + 1}`;
+        return localizedType || item.sub_category_name || t("Feed ${N}").replace("${N}", String(items.indexOf(item) + 1));
       });
     if (incomplete.length > 0) {
       setIncompleteFeedNames(incomplete);
@@ -677,7 +685,7 @@ export default function FeedSelectionPage() {
       setDietLimits(limits);
       router.push("/report");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to generate report";
+      const message = err instanceof Error ? err.message : t("Failed to generate report");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -711,7 +719,7 @@ export default function FeedSelectionPage() {
       className="flex flex-col min-h-screen"
       style={{ backgroundColor: "#F8FAF9" }}
     >
-      <Toolbar type="back" title="Feed Selection" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
 
       {/* Custom buttons row */}
       <div className="flex gap-3 px-4 pt-4">
@@ -726,7 +734,7 @@ export default function FeedSelectionPage() {
             border: `2px solid ${isEvaluation ? "#D3D3D3" : "#064E3B"}`,
           }}
         >
-          Custom Diet Limits
+          {t("Custom Diet Limits")}
         </button>
         <button
           onClick={openCustomFeedModal}
@@ -738,7 +746,7 @@ export default function FeedSelectionPage() {
             border: "none",
           }}
         >
-          Custom Feed
+          {t("Custom Feed")}
         </button>
       </div>
 
@@ -788,7 +796,7 @@ export default function FeedSelectionPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              {mode === "recommendation" ? "Diet Recommendation" : "Diet Evaluation"}
+              {mode === "recommendation" ? t("Diet Recommendation") : t("Diet Evaluation")}
             </span>
           </button>
         ))}
@@ -815,7 +823,7 @@ export default function FeedSelectionPage() {
               textTransform: "uppercase",
             }}
           >
-            Find Feeds
+            {t("Find Feeds")}
           </span>
           {activeRowId && (
             <button
@@ -843,11 +851,11 @@ export default function FeedSelectionPage() {
                 alignItems: "center",
                 boxShadow: "0 2px 6px rgba(28,160,105,0.18)",
               }}
-              aria-label="Scroll to selected card"
+              aria-label={t("Scroll to selected card")}
             >
               {(() => {
                 const idx = items.findIndex((it) => it.id === activeRowId);
-                return idx >= 0 ? `↓ Jump to Feed ${idx + 1}` : "↓ Jump to card";
+                return idx >= 0 ? t("↓ Jump to Feed ${N}").replace("${N}", String(idx + 1)) : t("↓ Jump to card");
               })()}
             </button>
           )}
@@ -889,7 +897,7 @@ export default function FeedSelectionPage() {
             value={searchQuery}
             onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
             onFocus={() => searchQuery.trim() && setSearchOpen(true)}
-            placeholder={activeRowId ? "Search to fill the selected card…" : "Search feeds — corn, silage, soybean…"}
+            placeholder={activeRowId ? t("Search to fill the selected card…") : t("Search feeds — corn, silage, soybean…")}
             className="flex-1 border-none focus:outline-none"
             style={{
               backgroundColor: "transparent",
@@ -905,7 +913,7 @@ export default function FeedSelectionPage() {
             <button
               type="button"
               onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
-              aria-label="Clear search"
+              aria-label={t("Clear search")}
               className="flex items-center justify-center flex-shrink-0"
               style={{
                 width: 30,
@@ -946,8 +954,8 @@ export default function FeedSelectionPage() {
           </svg>
           <span>
             {activeRowId
-              ? "Selected card will receive the next search result"
-              : "Tip — tap a feed card below to choose where the result will go"}
+              ? t("Selected card will receive the next search result")
+              : t("Tip — tap a feed card below to choose where the result will go")}
           </span>
         </div>
 
@@ -969,11 +977,11 @@ export default function FeedSelectionPage() {
           >
             {isSearching ? (
               <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                Searching…
+                {t("Searching…")}
               </div>
             ) : searchResults.length === 0 ? (
               <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                No matches yet. (Search backend coming soon.)
+                {t("No matches yet. (Search backend coming soon.)")}
               </div>
             ) : (
               searchResults.map((r, i) => (
@@ -1040,7 +1048,7 @@ export default function FeedSelectionPage() {
           }}
         >
           <IcAddFeed size={20} color="#064E3B" />
-          Add More Feed
+          {t("Add More Feed")}
         </button>
       </div>
 
@@ -1078,10 +1086,10 @@ export default function FeedSelectionPage() {
               shown for the duration of the API call). */}
           <span>
             {loadingRows.size > 0
-              ? "Loading feed data…"
+              ? t("Loading feed data…")
               : isEvaluation
-                ? "Get Evaluation"
-                : "Generate Recommendation"}
+                ? t("Get Evaluation")
+                : t("Generate Recommendation")}
           </span>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M4.5 9H13.5M10 5.5L13.5 9L10 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
@@ -1122,12 +1130,12 @@ export default function FeedSelectionPage() {
                 className="text-center font-bold"
                 style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
               >
-                Add Custom Feed
+                {t("Add Custom Feed")}
               </h3>
               <button
                 onClick={() => setShowCustomFeedModal(false)}
                 style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
-                aria-label="Close"
+                aria-label={t("Close")}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
               </button>
@@ -1144,7 +1152,7 @@ export default function FeedSelectionPage() {
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
               <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                Feed Details
+                {t("Feed Details")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
@@ -1158,7 +1166,7 @@ export default function FeedSelectionPage() {
             <>
             {/* Feed Type — first required field (no Country in Android end-user UI) */}
             <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Feed Type<span style={{ color: "#FC2E20" }}> *</span>
+              {t("Feed Type")}<span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <div className="relative mb-3">
               {loadingCustomTypes ? (
@@ -1173,8 +1181,8 @@ export default function FeedSelectionPage() {
                     value={customFeedForm.feed_type}
                     onChange={handleCustomTypeChange}
                     disabled={!user?.country_id}
-                    placeholder="Select feed type"
-                    options={customFeedTypes.map((t) => ({ value: t, label: t }))}
+                    placeholder={t("Select feed type")}
+                    options={customFeedTypes.map((ft) => ({ value: ft, label: ft }))}
                   />
                 </div>
               )}
@@ -1182,7 +1190,7 @@ export default function FeedSelectionPage() {
 
             {/* Feed Category — gated on feed type */}
             <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Feed Category<span style={{ color: "#FC2E20" }}> *</span>
+              {t("Feed Category")}<span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <div className="relative mb-3">
               {loadingCustomCats ? (
@@ -1200,7 +1208,7 @@ export default function FeedSelectionPage() {
                     value={customFeedForm.feed_category}
                     onChange={(v) => setCustomFeedForm((p) => ({ ...p, feed_category: v }))}
                     disabled={!customFeedForm.feed_type}
-                    placeholder={!customFeedForm.feed_type ? "Select type first" : "Select category"}
+                    placeholder={!customFeedForm.feed_type ? t("Select type first") : t("Select category")}
                     options={customFeedCategories.map((c) => ({ value: c, label: c }))}
                   />
                 </div>
@@ -1211,7 +1219,7 @@ export default function FeedSelectionPage() {
                 also shows a user-name prefix (e.g. "John-") via
                 PrefsManager.getUserNamePrefix(). We render the same. */}
             <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              Feed Name<span style={{ color: "#FC2E20" }}> *</span>
+              {t("Feed Name")}<span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <div
               className="flex items-center rounded-xl mb-4"
@@ -1251,7 +1259,7 @@ export default function FeedSelectionPage() {
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
               <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                Nutritional Information
+                {t("Nutritional Information")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
@@ -1273,13 +1281,13 @@ export default function FeedSelectionPage() {
               return (
                 <>
                   <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                    Nutrient Composition (%)
+                    {t("Nutrient Composition (%)")}
                   </p>
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     {fields.map((f) => (
                       <CustomFeedNutrientInput
                         key={f.key}
-                        label={f.label}
+                        label={t(f.label)}
                         value={customFeedForm[f.key]}
                         onChange={(v) => setCustomFeedForm((p) => ({ ...p, [f.key]: v }))}
                       />
@@ -1310,7 +1318,7 @@ export default function FeedSelectionPage() {
                     <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
                     </svg>
-                  ) : "Submit"}
+                  ) : t("Submit")}
                 </button>
               );
             })()}
@@ -1346,14 +1354,14 @@ export default function FeedSelectionPage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontSize: 20, fontFamily: "Nunito, sans-serif", margin: "20px 16px 0" }}
             >
-              Incomplete Feeds
+              {t("Incomplete Feeds")}
             </p>
             {/* Description */}
             <p
               className="text-center"
               style={{ color: "#6D6D6D", fontSize: 16, fontFamily: "Nunito, sans-serif", margin: "16px 16px 0", lineHeight: 1.5 }}
             >
-              The following feeds have missing nutritional data and will be automatically discarded from the formulation:
+              {t("The following feeds have missing nutritional data and will be automatically discarded from the formulation:")}
             </p>
             {/* Honeydew card with feed names */}
             <div
@@ -1385,7 +1393,7 @@ export default function FeedSelectionPage() {
               className="text-center"
               style={{ color: "#6D6D6D", fontSize: 16, fontFamily: "Nunito, sans-serif", margin: "30px 12px 0" }}
             >
-              Would you like to proceed?
+              {t("Would you like to proceed?")}
             </p>
             {/* No, Review button */}
             <button
@@ -1405,7 +1413,7 @@ export default function FeedSelectionPage() {
                 margin: "30px 16px 0",
               }}
             >
-              No, Review
+              {t("No, Review")}
             </button>
             {/* Yes, Proceed button */}
             <button
@@ -1425,7 +1433,7 @@ export default function FeedSelectionPage() {
                 margin: "20px 16px 0",
               }}
             >
-              Yes, Proceed
+              {t("Yes, Proceed")}
             </button>
           </div>
         </div>
@@ -1458,16 +1466,20 @@ export default function FeedSelectionPage() {
               className="text-center font-bold"
               style={{ color: "#064E3B", fontSize: 20, fontFamily: "Nunito, sans-serif", margin: "20px 16px 0" }}
             >
-              Forage Required
+              {t("Forage Required")}
             </p>
             <p
               className="text-center"
               style={{ color: "#6D6D6D", fontSize: 16, fontFamily: "Nunito, sans-serif", margin: "16px 16px 0", lineHeight: 1.5 }}
             >
-              Add at least one <span style={{ color: "#1CA069", fontWeight: 700 }}>Forage</span> feed
-              {" "}before generating a {isEvaluation ? "diet evaluation" : "recommendation"}.
-              Forages are the backbone of a balanced ration — the optimizer
-              needs one to produce a sensible result.
+              {/* Rendered as one flat dictionary key with an embedded ${mode}
+                  token — collapses the inline "Forage" color-emphasis span
+                  from the English-only version since the sheet stores this
+                  as a single sentence. "Forage" itself is a feed-type
+                  identity word, so the dictionary intentionally keeps it
+                  untranslated (see the Hindi cell — still reads "Forage"). */}
+              {t("Add at least one Forage feed before generating a ${mode} recommendation. Forages are the backbone of a balanced ration — the optimizer needs one to produce a sensible result.")
+                .replace("${mode}", isEvaluation ? "diet evaluation" : "recommendation")}
             </p>
             <button
               onClick={() => setShowNoForageDialog(false)}
@@ -1486,7 +1498,7 @@ export default function FeedSelectionPage() {
                 margin: "30px 16px 0",
               }}
             >
-              OK, Add a Forage
+              {t("OK, Add a Forage")}
             </button>
           </div>
         </div>
@@ -1512,12 +1524,12 @@ export default function FeedSelectionPage() {
                 className="text-base font-bold"
                 style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
               >
-                Custom Diet Limits
+                {t("Custom Diet Limits")}
               </h3>
               <button
                 onClick={() => setShowLimitsModal(false)}
                 style={{ background: "none", border: "none", cursor: "pointer" }}
-                aria-label="Close"
+                aria-label={t("Close")}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" />
@@ -1534,7 +1546,7 @@ export default function FeedSelectionPage() {
                     className="text-xs font-bold uppercase mb-2"
                     style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
                   >
-                    {label}
+                    {t(label)}
                   </p>
                   <input
                     type="number"
@@ -1559,7 +1571,9 @@ export default function FeedSelectionPage() {
                       fontFamily: "Nunito, sans-serif",
                     }}
                   >
-                    {outOfRange ? `Value must be between ${min} and ${max}` : `Range ${min} – ${max}`}
+                    {outOfRange
+                      ? t("Value must be between ${min} and ${max}").replace("${min}", String(min)).replace("${max}", String(max))
+                      : t("Range ${min} – ${max}").replace("${min}", String(min)).replace("${max}", String(max))}
                   </p>
                 </div>
               );
@@ -1580,11 +1594,11 @@ export default function FeedSelectionPage() {
                 <button
                   onClick={() => {
                     if (anyOutOfRange) {
-                      showSnackbar("Please correct out-of-range values before applying", "error");
+                      showSnackbar(t("Please correct out-of-range values before applying"), "error");
                       return;
                     }
                     if (!anyFilled) {
-                      showSnackbar("Enter at least one limit before applying", "info");
+                      showSnackbar(t("Enter at least one limit before applying"), "info");
                       return;
                     }
                     setDietLimits(limits);
@@ -1600,7 +1614,7 @@ export default function FeedSelectionPage() {
                     cursor: cantApply ? "not-allowed" : "pointer",
                   }}
                 >
-                  Apply Limits
+                  {t("Apply Limits")}
                 </button>
               );
             })()}

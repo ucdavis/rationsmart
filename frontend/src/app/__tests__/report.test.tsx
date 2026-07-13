@@ -569,6 +569,71 @@ describe('Report — "Save Report" + "View PDF"', () => {
   });
 });
 
+// ─── 9. UI-label i18n (src/lib/i18n-ui.ts) — per-simulation language ───────
+// This screen (cattle-info → feed-selection → report) resolves its display
+// language from cattleInfo.simulation_language FIRST, falling back to
+// user.preferred_language, then "en" — the same priority chain store.ts's
+// langProvider already uses for feed-data i18n (see useT's langOverride doc
+// comment in src/lib/i18n-ui.ts). These tests seed cattleInfo directly
+// (rather than going through the cattle-info form) since this suite only
+// exercises the Report page in isolation.
+describe("Report — UI-label i18n via cattleInfo.simulation_language", () => {
+  it("translates section headings and the toolbar title to Hindi when cattleInfo.simulation_language is 'hi'", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    // "hi" dictionary lazy-loads via dynamic import() — findBy waits for it.
+    await screen.findByText("सिफारिश रिपोर्ट"); // Recommendation Report (toolbar)
+    expect(screen.getByText("रिपोर्ट विवरण")).toBeInTheDocument(); // Report Details
+    expect(screen.getByText("पशु विशेषताएं")).toBeInTheDocument(); // Animal Characteristics
+    expect(screen.queryByText("Report Details")).not.toBeInTheDocument();
+  });
+
+  it("translates the Evaluation Report toolbar title + Cost Analysis heading in evaluation mode", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeEvalResponse(),
+    });
+    render(<ReportPage />);
+    await screen.findByText("मूल्यांकन रिपोर्ट"); // Evaluation Report
+    expect(screen.getByText("लागत विश्लेषण")).toBeInTheDocument(); // Cost Analysis
+  });
+
+  it("falls back to user.preferred_language when cattleInfo.simulation_language is null/unset", async () => {
+    useStore.setState({
+      user: seedUser({ preferred_language: "hi" }),
+      cattleInfo: baseCattleInfo({ simulation_language: null }),
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    await screen.findByText("रिपोर्ट विवरण"); // Report Details
+  });
+
+  it("prioritizes cattleInfo.simulation_language over user.preferred_language when both are set", async () => {
+    useStore.setState({
+      user: seedUser({ preferred_language: "vi" }),
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    await screen.findByText("रिपोर्ट विवरण"); // Report Details (Hindi wins)
+    expect(screen.queryByText("Report Details")).not.toBeInTheDocument();
+  });
+
+  it("translates the Diet Status banner title and the bottom action bar buttons to Hindi", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
+    });
+    render(<ReportPage />);
+    await screen.findByText("सिमुलेशन स्थिति"); // Simulation Status (Notes banner)
+    expect(screen.getByRole("button", { name: /नया केस/ })).toBeInTheDocument(); // New Case
+    expect(screen.getByRole("button", { name: /रिपोर्ट सहेजें/ })).toBeInTheDocument(); // Save Report
+  });
+});
+
 // ─── 8. StatusBadge color mapping ───────────────────────────────────────────
 // Confirmed rendered on this page: Evaluation Summary's "Overall Status"
 // row and Intake Evaluation's "Status" row (evaluation mode only).
