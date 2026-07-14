@@ -83,7 +83,7 @@ cycler==0.12.1
 pyparsing==3.2.1
 
 # ── Utilities ─────────────────────────────────────────────────────────────────
-requests==2.32.5
+requests==2.33.0
 python-dateutil==2.9.0.post0
 pytz==2024.2
 tzdata==2024.2
