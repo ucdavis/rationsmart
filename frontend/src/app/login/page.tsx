@@ -193,6 +193,8 @@ export default function LoginPage() {
         <div className="px-3">
           <input
             type="email"
+            name="login-email"
+            id="login-email"
             inputMode="email"
             autoComplete="email"
             value={email}
@@ -335,6 +337,8 @@ export default function LoginPage() {
             <div className="px-3">
               <input
                 type="email"
+                name="reset-pin-email"
+                id="reset-pin-email"
                 inputMode="email"
                 autoComplete="email"
                 value={resetEmail}
