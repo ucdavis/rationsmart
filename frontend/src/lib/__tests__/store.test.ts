@@ -220,13 +220,22 @@ describe("persist integration", () => {
     expect(parsed.state.user.name).toBe("Bob");
   });
 
-  it("persist only partializes documented fields (no reportData / snackbar)", () => {
+  it("persist only partializes documented fields (no snackbar) — reportData IS persisted", () => {
+    // Bug fixed 2026-07-15: reportData used to be excluded here, on the
+    // assumption the user always views a just-generated report in the
+    // same tab session. In practice the report page could show "No
+    // Report" if the tab reloaded (e.g. mobile OS reclaiming a
+    // backgrounded tab) moments after a successful generate — the
+    // report existed server-side and was in memory a second ago, but a
+    // fresh page load reset reportData back to null. Persisting it
+    // means a reload lands back on the report just produced instead of
+    // losing it; "New Case" / Reset still explicitly null it out.
     useStore.getState().setUser(makeUser());
     useStore.getState().setReportData({ mode: "evaluation" } as never);
     useStore.getState().showSnackbar("hi");
     const raw = window.localStorage.getItem("rationsmart-storage");
     const parsed = JSON.parse(raw as string);
-    expect(parsed.state.reportData).toBeUndefined();
+    expect(parsed.state.reportData).toEqual({ mode: "evaluation" });
     expect(parsed.state.snackbar).toBeUndefined();
     // But user + feedSelections + cattleInfo etc. ARE persisted
     expect(parsed.state.user).toBeDefined();

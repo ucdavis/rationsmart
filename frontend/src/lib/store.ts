@@ -175,6 +175,20 @@ export const useStore = create<AppState>()(
         feedSelections: state.feedSelections,
         dietLimits: state.dietLimits,
         lastUiLanguage: state.lastUiLanguage,
+        // reportData used to be session-only (excluded here) on the
+        // assumption the user would always view it in the same tab
+        // session it was generated in. In practice: generate a report →
+        // the app gets backgrounded/the tab gets reclaimed by the OS
+        // under memory pressure (common on mobile right after a
+        // several-second diet-optimization request) → the next render
+        // is a fresh page load with reportData back at its null default
+        // → "No Report, generate one from Feed Selection" even though a
+        // report WAS just generated seconds ago. Persisting it means a
+        // reload lands back on the report just produced instead of
+        // losing it. "New Case" / Reset already explicitly null it out
+        // when the user is starting over, so this doesn't risk showing
+        // a report tied to a since-abandoned simulation.
+        reportData: state.reportData,
       }),
       // NOTE: skipHydration was enabled here in an earlier commit to
       // silence React #418/#423 hydration mismatches caused by persist
