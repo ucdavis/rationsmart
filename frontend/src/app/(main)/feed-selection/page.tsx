@@ -7,7 +7,7 @@ import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import CustomSelect from "@/components/CustomSelect";
-import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds, fetchFeedTaxonomyLabels } from "@/lib/api";
+import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds, fetchFeedTaxonomyLabels, buildDietSimulationId } from "@/lib/api";
 import type { FeedItem, DietLimits, FeedSearchResult, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
 import { IcAddFeed } from "@/components/Icons";
@@ -663,8 +663,14 @@ export default function FeedSelectionPage() {
       // history entry distinct without touching the Simulation Name the
       // user actually typed/sees on the Cattle Info form — only the
       // identifier sent to the backend (and echoed back as this report's
-      // own simulation_id) picks up the suffix.
-      const simulationId = `${cattleInfo.simulation_name} (${isEvaluation ? "Evaluation" : "Recommendation"})`;
+      // own simulation_id) picks up the suffix. buildDietSimulationId
+      // strips any suffix ALREADY on cattleInfo.simulation_name first —
+      // restoring a saved simulation writes the backend's echoed (already
+      // suffixed) simulation_id back into this same field (see
+      // stripDietModeSuffix's doc comment in api.ts), so without
+      // stripping, regenerating from a restored row would compound the
+      // suffix every time ("Sim 1 (Recommendation) (Recommendation)").
+      const simulationId = buildDietSimulationId(cattleInfo.simulation_name, isEvaluation);
       const cattlePayload = toCattleInfoPayload(cattleInfo);
 
       if (isEvaluation) {

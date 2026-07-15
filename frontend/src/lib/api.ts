@@ -127,6 +127,34 @@ export interface CattleInfoPayload {
   animal_category?: string;     // one of AnimalCategory string values
 }
 
+// Backend has no field distinct from `simulation_id` for a "clean" display
+// name — it treats simulation_id AS the identifier/name, full stop (see
+// SimulationListItem in the v1 swagger: only `simulation_id`, no separate
+// name). We append a mode suffix to it (buildDietSimulationId) so
+// regenerating the same case under a different diet mode gets its own
+// Simulation History entry instead of colliding on an identical id.
+// But restoring a saved simulation (Simulation History → tap a row)
+// writes the backend's ECHOED simulation_id straight back into the
+// editable Simulation Name field (cattle-info's loadSimulation), since
+// that's the only name-like value the backend gives us — with no
+// stripping, regenerating from a restored row appends the suffix AGAIN
+// onto an already-suffixed name ("Sim 1 (Recommendation) (Recommendation)",
+// compounding on every restore+regenerate cycle). Strip a recognized
+// suffix before restoring into the form so each regenerate starts from
+// the true base name and appends exactly one clean suffix.
+const DIET_MODE_SUFFIXES = [" (Recommendation)", " (Evaluation)"] as const;
+
+export function buildDietSimulationId(baseName: string, isEvaluation: boolean): string {
+  return `${stripDietModeSuffix(baseName)} (${isEvaluation ? "Evaluation" : "Recommendation"})`;
+}
+
+export function stripDietModeSuffix(name: string): string {
+  for (const suffix of DIET_MODE_SUFFIXES) {
+    if (name.endsWith(suffix)) return name.slice(0, -suffix.length);
+  }
+  return name;
+}
+
 // Android default BaseThresholds (ash=10, fat/ee=7, ndf=45, starch=26)
 export const DEFAULT_BASE_THRESHOLDS: DietLimits = {
   ash_max: 10,

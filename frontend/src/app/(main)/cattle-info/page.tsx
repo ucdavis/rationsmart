@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
-import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating, labelForLanguage } from "@/lib/api";
+import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating, labelForLanguage, stripDietModeSuffix } from "@/lib/api";
 import type { AnimalCategory } from "@/lib/api";
 import { useT } from "@/lib/i18n-ui";
 import {
@@ -366,7 +366,12 @@ export default function CattleInfoPage() {
       const matchedCountry = countries.find((c) => c.name?.toLowerCase() === countryName.toLowerCase());
       setForm((prev) => ({
         ...prev,
-        simulation_name: data?.simulation_id ?? prev.simulation_name,
+        // Strip a "(Recommendation)"/"(Evaluation)" suffix — see
+        // stripDietModeSuffix's doc comment in api.ts. The backend
+        // echoes back exactly what we sent as simulation_id, so without
+        // stripping here, regenerating from a restored row would
+        // compound the suffix on every cycle.
+        simulation_name: data?.simulation_id ? stripDietModeSuffix(data.simulation_id) : prev.simulation_name,
         country_id: matchedCountry ? String(matchedCountry.id) : prev.country_id,
         country_name: matchedCountry?.name ?? countryName ?? prev.country_name,
         breed: ci?.breed ?? prev.breed,
@@ -476,7 +481,7 @@ export default function CattleInfoPage() {
         return primaryCountryLang ?? null;
       })();
       setCattleInfo({
-        simulation_name: data?.simulation_id ?? "",
+        simulation_name: data?.simulation_id ? stripDietModeSuffix(data.simulation_id) : "",
         country: matchedCountry?.name ?? countryName ?? "",
         country_id: matchedCountry ? String(matchedCountry.id) : "",
         breed: ci?.breed ?? "",

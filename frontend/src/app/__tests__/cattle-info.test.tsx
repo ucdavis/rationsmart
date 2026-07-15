@@ -658,6 +658,44 @@ describe("Cattle Info — Simulation History", () => {
     expect(useStore.getState().cattleInfo?.simulation_name).toBe("SIM-1");
   });
 
+  // Bug fixed 2026-07-15: the backend echoes back exactly what was sent
+  // as simulation_id (no separate "clean name" field — see
+  // stripDietModeSuffix's doc comment in api.ts). buildDietSimulationId
+  // appends "(Recommendation)"/"(Evaluation)" at generate time so two
+  // reports for the same case get distinct Simulation History entries.
+  // Restoring a saved simulation whose simulation_id already carries
+  // that suffix must strip it back to the base name — otherwise the
+  // Simulation Name field (and cattleInfo.simulation_name) shows the
+  // suffix, and the NEXT generate compounds it: "Sim 1 (Recommendation)
+  // (Recommendation)".
+  it("loadSimulation strips an already-present mode suffix from the restored simulation_id, so the Simulation Name field shows the clean base name", async () => {
+    getCountries.mockResolvedValueOnce({ data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }] });
+    getUserReports.mockResolvedValueOnce({
+      data: { simulations: [{ report_id: "R-3", simulation_id: "Sim 1 (Recommendation)", country_name: "India" }] },
+    });
+    getSimulationDetails.mockResolvedValueOnce({
+      data: {
+        simulation_id: "Sim 1 (Recommendation)",
+        country_name: "India",
+        cattle_info: { breed: "Holstein", body_weight: 400 },
+        feed_selection: [],
+      },
+    });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    const row = await screen.findByText("Sim 1 (Recommendation)");
+    fireEvent.click(row);
+
+    await waitFor(() => expect(getSimulationDetails).toHaveBeenCalledWith("R-3", "u-1"));
+
+    const nameInput = screen.getByRole("textbox") as HTMLInputElement;
+    await waitFor(() => expect(nameInput.value).toBe("Sim 1"));
+    expect(useStore.getState().cattleInfo?.simulation_name).toBe("Sim 1");
+  });
+
   it("loadSimulation sets feedSelectionType to RECOMMENDATION when quantity_as_fed is absent", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     getUserReports.mockResolvedValueOnce({

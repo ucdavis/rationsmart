@@ -10,6 +10,8 @@ import {
   ANIMAL_CATEGORIES,
   ANIMAL_CATEGORY_LABELS,
   DEFAULT_BASE_THRESHOLDS,
+  buildDietSimulationId,
+  stripDietModeSuffix,
   type CattleInfo,
 } from "@/lib/api";
 
@@ -106,6 +108,48 @@ describe("DEFAULT_BASE_THRESHOLDS", () => {
       ndf_max: 45,
       starch_max: 26,
     });
+  });
+});
+
+// ─── buildDietSimulationId / stripDietModeSuffix ────────────────────────
+// Backend has no field distinct from simulation_id for a display name —
+// it treats simulation_id AS the identifier. buildDietSimulationId
+// appends a mode suffix so Simulation History doesn't collapse two
+// generates of the same case under one row; stripDietModeSuffix undoes
+// that when restoring a saved simulation's echoed simulation_id back
+// into the editable Simulation Name field, so regenerating from a
+// restored row doesn't compound the suffix.
+
+describe("buildDietSimulationId", () => {
+  it("appends (Recommendation) / (Evaluation) to a clean base name", () => {
+    expect(buildDietSimulationId("Sim 1", false)).toBe("Sim 1 (Recommendation)");
+    expect(buildDietSimulationId("Sim 1", true)).toBe("Sim 1 (Evaluation)");
+  });
+
+  it("does not compound when the base name already carries a suffix from a restored simulation", () => {
+    // This is the exact bug: restoring "Sim 1 (Recommendation)" (the
+    // backend's echoed simulation_id) into cattleInfo.simulation_name,
+    // then generating again, must NOT produce "Sim 1 (Recommendation)
+    // (Recommendation)".
+    expect(buildDietSimulationId("Sim 1 (Recommendation)", false)).toBe("Sim 1 (Recommendation)");
+    expect(buildDietSimulationId("Sim 1 (Recommendation)", true)).toBe("Sim 1 (Evaluation)");
+    expect(buildDietSimulationId("Sim 1 (Evaluation)", false)).toBe("Sim 1 (Recommendation)");
+  });
+});
+
+describe("stripDietModeSuffix", () => {
+  it("removes a trailing (Recommendation) or (Evaluation)", () => {
+    expect(stripDietModeSuffix("Sim 1 (Recommendation)")).toBe("Sim 1");
+    expect(stripDietModeSuffix("Sim 1 (Evaluation)")).toBe("Sim 1");
+  });
+
+  it("leaves a name with no recognized suffix untouched", () => {
+    expect(stripDietModeSuffix("Sim 1")).toBe("Sim 1");
+    expect(stripDietModeSuffix("SIM-1")).toBe("SIM-1");
+  });
+
+  it("only strips a single trailing suffix, not one baked into the middle of the name", () => {
+    expect(stripDietModeSuffix("Sim (Recommendation) 1")).toBe("Sim (Recommendation) 1");
   });
 });
 
