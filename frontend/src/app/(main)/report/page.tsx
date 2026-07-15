@@ -401,14 +401,8 @@ export default function ReportPage() {
       // Per the v1 swagger (SaveReportResponse), `success` and
       // `error_message` are independent fields — a save can succeed
       // (report persisted, `success: true`) while `error_message`
-      // separately describes a secondary problem, most commonly that
-      // POST /v1/animal/reports/pdf is marked "not yet implemented" in
-      // the backend spec so no bucket_url could be generated. Treating
-      // ANY error_message as a hard failure (the previous behavior)
-      // wrongly told the user the save itself failed — and bailed out
-      // before ever surfacing the saved report — when the record had
-      // actually been persisted and would show up on the Feed Reports
-      // screen. Only `success === false` is a real save failure now.
+      // separately describes a secondary problem. Only `success ===
+      // false` is a real save failure.
       if (body?.success === false) {
         showSnackbar(body?.error_message ?? body?.message ?? "Save returned an error", "error");
         return;
@@ -416,11 +410,15 @@ export default function ReportPage() {
       const url = body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url ?? null;
       setPdfUrl(url);
       if (!url) {
-        showSnackbar(
-          (body?.error_message ?? body?.message ?? "Report saved") +
-            " (PDF generation pending — backend feature still being built, but it's saved and will appear in Feed Reports)",
-          "info"
-        );
+        // Don't guess WHY the url is missing — surface exactly what the
+        // backend said (error_message/message). A previous version of
+        // this code unconditionally appended "(PDF generation pending —
+        // backend feature still being built)" here, assuming the reason
+        // was always the same known backend gap. That's an assumption,
+        // not something this response confirms, and it actively
+        // misleads when the real cause is something else (e.g. this
+        // specific report/report_id) — show the backend's own words.
+        showSnackbar(body?.error_message ?? body?.message ?? "Report saved", "info");
       } else {
         showSnackbar(body?.message ?? "Report saved successfully!", "success");
       }

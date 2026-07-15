@@ -649,7 +649,22 @@ export default function FeedSelectionPage() {
         (item) => item.feed_uuid !== null && item.price_per_kg !== null
       );
 
-      const simulationId = cattleInfo.simulation_name;
+      // Backend keys Simulation History by `simulation_id` (each row in
+      // GET /v1/animal/simulations carries the simulation_id we send here
+      // alongside its own report_id — see SimulationListItem in the v1
+      // swagger). "New Case" deliberately does NOT clear the Simulation
+      // Name field (unlike the Android app, which forces a fresh name via
+      // resetToDefaults()) — that's an intentional product decision for
+      // this PWA, not something to port over. But that means re-running
+      // the SAME case under a different diet mode (e.g. Recommendation,
+      // then New Case → Evaluation, same name untouched) sent the exact
+      // same simulation_id twice, and only one entry showed up in
+      // Simulation History. Appending the mode keeps each report's
+      // history entry distinct without touching the Simulation Name the
+      // user actually typed/sees on the Cattle Info form — only the
+      // identifier sent to the backend (and echoed back as this report's
+      // own simulation_id) picks up the suffix.
+      const simulationId = `${cattleInfo.simulation_name} (${isEvaluation ? "Evaluation" : "Recommendation"})`;
       const cattlePayload = toCattleInfoPayload(cattleInfo);
 
       if (isEvaluation) {

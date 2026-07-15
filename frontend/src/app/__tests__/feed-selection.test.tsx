@@ -336,7 +336,7 @@ describe("feed-selection — generateReport payloads", () => {
       user_id: "u-1",
       country_id: cattleInfo.country_id,
       currency: "INR",
-      simulation_id: cattleInfo.simulation_name,
+      simulation_id: `${cattleInfo.simulation_name} (Evaluation)`,
       cattle_info: toCattleInfoPayload(cattleInfo),
       feed_evaluation: [
         { feed_id: "uuid-forage-1", quantity_as_fed: 3, price_per_kg: 10 },
@@ -366,7 +366,7 @@ describe("feed-selection — generateReport payloads", () => {
     expect(recommendDiet).toHaveBeenCalledWith({
       user_id: "u-1",
       country_id: cattleInfo.country_id,
-      simulation_id: cattleInfo.simulation_name,
+      simulation_id: `${cattleInfo.simulation_name} (Recommendation)`,
       cattle_info: toCattleInfoPayload(cattleInfo),
       feed_selection: [{ feed_id: "uuid-forage-1", price_per_kg: 10 }],
       base_thresholds: { ...DEFAULT_BASE_THRESHOLDS, ash_max: 12 },
