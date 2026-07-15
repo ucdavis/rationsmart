@@ -651,24 +651,19 @@ describe("Cattle Info — Simulation History", () => {
     expect(feedSelections[0].feed_uuid).toBe("uuid-1");
     expect(feedSelections[0].feed_type_name).toBe("Forage");
 
+    // Simulation Name is deliberately left BLANK on restore — the
+    // backend echoes back exactly what was sent as simulation_id (mode
+    // suffix included, see buildDietSimulationId in api.ts), which isn't
+    // a name that should repopulate the editable field. Every other
+    // field still restores normally.
     const nameInput = screen.getByRole("textbox") as HTMLInputElement;
-    expect(nameInput.value).toBe("SIM-1");
+    expect(nameInput.value).toBe("");
     expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("400");
 
-    expect(useStore.getState().cattleInfo?.simulation_name).toBe("SIM-1");
+    expect(useStore.getState().cattleInfo?.simulation_name).toBe("");
   });
 
-  // Bug fixed 2026-07-15: the backend echoes back exactly what was sent
-  // as simulation_id (no separate "clean name" field — see
-  // stripDietModeSuffix's doc comment in api.ts). buildDietSimulationId
-  // appends "(Recommendation)"/"(Evaluation)" at generate time so two
-  // reports for the same case get distinct Simulation History entries.
-  // Restoring a saved simulation whose simulation_id already carries
-  // that suffix must strip it back to the base name — otherwise the
-  // Simulation Name field (and cattleInfo.simulation_name) shows the
-  // suffix, and the NEXT generate compounds it: "Sim 1 (Recommendation)
-  // (Recommendation)".
-  it("loadSimulation strips an already-present mode suffix from the restored simulation_id, so the Simulation Name field shows the clean base name", async () => {
+  it("loadSimulation leaves Simulation Name blank even when the restored simulation_id carries a mode suffix", async () => {
     getCountries.mockResolvedValueOnce({ data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }] });
     getUserReports.mockResolvedValueOnce({
       data: { simulations: [{ report_id: "R-3", simulation_id: "Sim 1 (Recommendation)", country_name: "India" }] },
@@ -692,8 +687,9 @@ describe("Cattle Info — Simulation History", () => {
     await waitFor(() => expect(getSimulationDetails).toHaveBeenCalledWith("R-3", "u-1"));
 
     const nameInput = screen.getByRole("textbox") as HTMLInputElement;
-    await waitFor(() => expect(nameInput.value).toBe("Sim 1"));
-    expect(useStore.getState().cattleInfo?.simulation_name).toBe("Sim 1");
+    await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("400"));
+    expect(nameInput.value).toBe("");
+    expect(useStore.getState().cattleInfo?.simulation_name).toBe("");
   });
 
   it("loadSimulation sets feedSelectionType to RECOMMENDATION when quantity_as_fed is absent", async () => {
