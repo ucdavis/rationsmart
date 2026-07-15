@@ -28,18 +28,13 @@ const adminCards: AdminCard[] = [
   { title: "Feedback\nManagement", href: "/admin/feedback", icon: <IcFeedbackManagement size={28} color="#064E3B" /> },
   { title: "Bulk Upload &\nExport Feed", href: "/admin/bulk-upload", icon: <IcBulkUpload size={28} color="#064E3B" /> },
   { title: "Feed\nReports", href: "/admin/reports", icon: <IcReportNav size={28} color="#064E3B" /> },
-  // i18n V2 Phase 2 — three new admin tools.
-  // Translations: workbook download/upload, coverage, per-feed editor.
-  { title: "Translations", href: "/admin/translations", icon: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-      <path d="M3 5h12M9 3v2M5 7c0 6 4 8 4 8M3 17l4-8 4 8M5 14h4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M13 21l4-8 4 8M15 18h4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ) },
-  // Language Catalog (2026-06-29) — merged screen. Combines the
-  // catalog-registry duty with the per-country enable/disable that
-  // used to live on /admin/country-languages. One tile, one page.
-  { title: "Language\nCatalog", href: "/admin/languages", icon: (
+  // Languages (2026-07-15) — the Translations tile is REMOVED here per
+  // ~/Downloads/admin_language_api_and_ui_design.md's Option 3: one card
+  // owns the whole i18n lifecycle (register → assign → translate →
+  // track) via 3 tabs — Countries / Languages / Feeds. Was previously
+  // "Language Catalog" (2026-06-29 merge of country-languages), and
+  // before that a separate "Translations" tile — both now folded in.
+  { title: "Languages", href: "/admin/languages", icon: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
       <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
