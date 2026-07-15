@@ -33,6 +33,16 @@ interface CustomSelectProps {
    * element rather than swapping in separate skeleton markup. Default
    * false — existing callers are unaffected. */
   loading?: boolean;
+  /** Shown inside the popup when `options` is empty, instead of the
+   * popup silently not rendering at all — previously the trigger's
+   * chevron would still flip open on click (no `options.length` guard
+   * there) with nothing appearing underneath, which reads as "stuck" or
+   * "broken" rather than "there's genuinely nothing to pick here" (e.g.
+   * a Feed Type + Category combination with zero matching feeds).
+   * Callers should pass an already-translated string. Defaults to
+   * plain English since most callers don't have a category with zero
+   * results often enough to warrant a translated default. */
+  emptyLabel?: string;
 }
 
 export default function CustomSelect({
@@ -46,6 +56,7 @@ export default function CustomSelect({
   showChevron = true,
   transparentTrigger = false,
   loading = false,
+  emptyLabel = "No options available",
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -127,7 +138,7 @@ export default function CustomSelect({
         )}
       </button>
 
-      {open && options.length > 0 && (
+      {open && (
         <div
           ref={popupRef}
           style={{
@@ -144,6 +155,19 @@ export default function CustomSelect({
             overflowY: "auto",
           }}
         >
+          {options.length === 0 && (
+            <div
+              style={{
+                padding: "10px 12px",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 14,
+                color: "#999999",
+                borderRadius: 10,
+              }}
+            >
+              {emptyLabel}
+            </div>
+          )}
           {options.map((opt, idx) => {
             const last = options.length - 1;
             return (

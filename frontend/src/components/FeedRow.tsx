@@ -1137,6 +1137,7 @@ export default function FeedRow({
             disabled={!item.feed_type_name}
             loading={loadingCats}
             placeholder={!item.feed_type_name ? t("Select type first") : t("Select")}
+            emptyLabel={t("No categories found for this feed type")}
             options={categories.map<CustomSelectOption>((c) => ({
               value: String(c.id),
               label: taxonomyLabels?.categories?.[c.name] ?? c.display,
@@ -1166,6 +1167,7 @@ export default function FeedRow({
             disabled={!item.category_name}
             loading={loadingSubs}
             placeholder={!item.category_name ? t("Select category") : t("Select feed")}
+            emptyLabel={t("No feeds found for this category")}
             options={subCategories.map<CustomSelectOption>((s) => ({
               value: s.feed_uuid,
               label: taxonomyLabels?.feeds?.[s.feed_uuid] ?? s.display_name,

@@ -65,11 +65,34 @@ describe("CustomSelect", () => {
     expect(screen.queryByText("Forage")).not.toBeInTheDocument();
   });
 
-  it("renders no popup when options list is empty, even after clicking", () => {
+  it("shows the default empty-state message when options list is empty, instead of the chevron flipping open onto nothing", () => {
     render(<CustomSelect value="" onChange={() => {}} options={[]} />);
     fireEvent.click(screen.getByRole("button", { name: "Select" }));
-    // No option rows to find; just assert no stray popup container renders.
+    // No option rows to find, but the popup itself renders with feedback —
+    // previously the chevron rotated open with literally nothing appearing,
+    // which reads as stuck/broken rather than "genuinely nothing here".
+    expect(screen.getByText("No options available")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Forage" })).not.toBeInTheDocument();
+  });
+
+  it("shows a caller-provided emptyLabel instead of the default", () => {
+    render(
+      <CustomSelect
+        value=""
+        onChange={() => {}}
+        options={[]}
+        emptyLabel="No feeds found for this category"
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    expect(screen.getByText("No feeds found for this category")).toBeInTheDocument();
+    expect(screen.queryByText("No options available")).not.toBeInTheDocument();
+  });
+
+  it("does not show the empty-state message once options are populated", () => {
+    render(<CustomSelect value="" onChange={() => {}} options={OPTIONS} />);
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    expect(screen.queryByText("No options available")).not.toBeInTheDocument();
   });
 
   it("hides the chevron when showChevron=false", () => {
