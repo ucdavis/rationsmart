@@ -21,32 +21,25 @@ const labelStyle = {
   fontFamily: "Nunito, sans-serif",
 };
 
-// Disabled-looking field placeholder used while the initial /v1/auth/countries
-// fetch is in flight. Renders in the exact dimensions of the real input so
-// every editable field can show a uniform loading state, then the whole
-// form snaps to live state once data arrives.
-function LoadingPill({ text }: { text: string }) {
-  return (
-    <div
-      className="w-full rounded-2xl px-4 py-3.5 pr-10 flex items-center justify-between"
-      style={{
-        backgroundColor: "#F1F5F9",
-        color: "#6D6D6D",
-        fontFamily: "Nunito, sans-serif",
-        cursor: "wait",
-      }}
-      aria-busy
-    >
-      <span className="text-base">{text}</span>
-      <svg
-        width="18" height="18" viewBox="0 0 24 24" fill="none"
-        className="animate-spin"
-        style={{ color: "#1CA069", flexShrink: 0 }}
-      >
-        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="14 30" />
-      </svg>
-    </div>
-  );
+// UX: shimmer the REAL form fields in place while getCountries is in
+// flight, rather than swapping in a separately-built skeleton/placeholder
+// tree. Matches cattle-info's loadingFieldProps() exactly — reusing the
+// real elements guarantees byte-identical layout before/after; only the
+// appearance (shimmer background, hidden value, disabled) changes.
+// Spread onto a native <input>/<select> alongside its normal
+// className/style: `{...loadingFieldProps(countriesLoading, className, style)}`.
+function loadingFieldProps(
+  loading: boolean,
+  className: string,
+  style: React.CSSProperties
+): { className: string; style: React.CSSProperties; disabled: boolean; tabIndex?: number } {
+  if (!loading) return { className, style, disabled: false };
+  return {
+    className: `${className} shimmer`,
+    style: { ...style, color: "transparent", caretColor: "transparent" },
+    disabled: true,
+    tabIndex: -1,
+  };
 }
 
 export default function ProfilePage() {
@@ -308,47 +301,76 @@ export default function ProfilePage() {
           </div>
 
           {/* Uniform loading: while countries are being fetched, every
-              editable field (Name, Country, Language) renders as a
-              loading pill. The whole form snaps to live state at once
-              when data arrives — no more "screen settled, then language
-              pops in" inconsistency. */}
-          {countriesLoading ? (
+              editable field (Name, Country, Language) shimmers in place —
+              same real markup rendered either way (see loadingFieldProps
+              above, matching cattle-info's pattern), so there's no layout
+              jump when data arrives, just the shimmer/disabled/hidden-text
+              treatment lifting off all three fields at once. */}
+          {/* Name (editable) */}
+          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>{t("Name *")}</p>
+          <input
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            {...loadingFieldProps(
+              countriesLoading,
+              "w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+              inputStyle()
+            )}
+          />
+
+          {/* Country (editable dropdown) — appearance-none strips the
+              native chevron, so we overlay an Android-style ic_text_drop_down
+              caret on the right. */}
+          <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Country *")}</p>
+          <div className="relative">
+            <select
+              value={selectedCountryId}
+              onChange={(e) => setSelectedCountryId(e.target.value)}
+              {...loadingFieldProps(
+                countriesLoading,
+                "w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none",
+                { ...inputStyle(), cursor: "pointer" }
+              )}
+            >
+              {countries.map((c) => (
+                <option key={c.id} value={String(c.id)}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <div
+              className="absolute pointer-events-none"
+              style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          </div>
+
+          {/* Language (editable dropdown) — always rendered, shimmered
+              in place like Name/Country while countries are loading
+              (rather than being skipped/replaced) since showLangSelector
+              is always true. English is forced into the list even when
+              the country technically supports only English, so the user
+              can always see + reconfirm their language. */}
+          {showLangSelector && (
             <>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>{t("Name *")}</p>
-              <LoadingPill text={t("Loading…")} />
-
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Country *")}</p>
-              <LoadingPill text={t("Loading…")} />
-
               <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Language")}</p>
-              <LoadingPill text={t("Loading…")} />
-            </>
-          ) : (
-            <>
-              {/* Name (editable) */}
-              <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>{t("Name *")}</p>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                style={inputStyle()}
-              />
-
-              {/* Country (editable dropdown) — appearance-none strips the
-                  native chevron, so we overlay an Android-style ic_text_drop_down
-                  caret on the right. */}
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Country *")}</p>
               <div className="relative">
                 <select
-                  value={selectedCountryId}
-                  onChange={(e) => setSelectedCountryId(e.target.value)}
-                  className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
-                  style={{ ...inputStyle(), cursor: "pointer" }}
+                  value={selectedLang}
+                  onChange={(e) => setSelectedLang(e.target.value)}
+                  {...loadingFieldProps(
+                    countriesLoading,
+                    "w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none",
+                    { ...inputStyle(), cursor: "pointer" }
+                  )}
                 >
-                  {countries.map((c) => (
-                    <option key={c.id} value={String(c.id)}>
-                      {c.name}
+                  {supportedLangs.map((code) => (
+                    <option key={code} value={code}>
+                      {labelForLanguage(code)}
                     </option>
                   ))}
                 </select>
@@ -361,40 +383,6 @@ export default function ProfilePage() {
                   </svg>
                 </div>
               </div>
-
-              {/* Language (editable dropdown) — always rendered once
-                  countries have loaded. English is forced into the list
-                  even when the country technically supports only English,
-                  so the user can always see + reconfirm their language.
-                  Rendered INSIDE the loaded branch so it never appears
-                  alongside the Language skeleton above. */}
-              {showLangSelector && (
-                <>
-                  <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Language")}</p>
-                  <div className="relative">
-                    <select
-                      value={selectedLang}
-                      onChange={(e) => setSelectedLang(e.target.value)}
-                      className="w-full rounded-2xl px-4 py-3.5 pr-10 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none"
-                      style={{ ...inputStyle(), cursor: "pointer" }}
-                    >
-                      {supportedLangs.map((code) => (
-                        <option key={code} value={code}>
-                          {labelForLanguage(code)}
-                        </option>
-                      ))}
-                    </select>
-                    <div
-                      className="absolute pointer-events-none"
-                      style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </div>
-                  </div>
-                </>
-              )}
             </>
           )}
 

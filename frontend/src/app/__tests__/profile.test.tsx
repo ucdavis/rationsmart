@@ -76,17 +76,42 @@ async function renderReady() {
   await waitFor(() => expect(screen.getAllByRole("textbox").length).toBeGreaterThan(0));
 }
 
-describe("Profile — loading skeleton", () => {
-  it("renders the 3 loading pills while countries are in flight", () => {
-    getCountries.mockReturnValueOnce(new Promise(() => {})); // never resolves
-    render(<ProfilePage />);
-    // Loading… placeholders — 3 of them (Name / Country / Language)
-    const pills = screen.getAllByText("Loading…");
-    expect(pills).toHaveLength(3);
-    // Uniform: all three labels visible
+describe("Profile — loading shimmer (real fields in place, not a separate skeleton)", () => {
+  it("shimmers the real Name/Country/Language fields while countries are fetching, then the same elements become interactive", async () => {
+    let resolveCountries!: (v: { data: typeof countries }) => void;
+    getCountries.mockReturnValueOnce(
+      new Promise((resolve) => { resolveCountries = resolve; })
+    );
+    const { container } = render(<ProfilePage />);
+
+    // Same real labels/fields mounted immediately — no separate skeleton.
     expect(screen.getByText(/^Name/)).toBeInTheDocument();
     expect(screen.getByText(/^Country/)).toBeInTheDocument();
     expect(screen.getByText("Language")).toBeInTheDocument();
+
+    // Name input: disabled + shimmering, text hidden.
+    const nameInput = screen.getAllByRole("textbox")[0] as HTMLInputElement;
+    expect(nameInput).toBeDisabled();
+    expect(nameInput.className).toContain("shimmer");
+
+    // Country + Language selects: disabled + shimmering.
+    const selects = container.querySelectorAll("select");
+    expect(selects.length).toBe(2);
+    selects.forEach((sel) => {
+      expect(sel).toBeDisabled();
+      expect(sel.className).toContain("shimmer");
+    });
+
+    resolveCountries({ data: countries });
+
+    // Once resolved, the SAME elements become interactive.
+    await waitFor(() => expect(nameInput).not.toBeDisabled());
+    expect(nameInput.className).not.toContain("shimmer");
+    container.querySelectorAll("select").forEach((sel) => {
+      expect(sel).not.toBeDisabled();
+      expect(sel.className).not.toContain("shimmer");
+    });
+    expect(container.querySelectorAll(".shimmer").length).toBe(0);
   });
 });
 
