@@ -306,3 +306,22 @@ class AdminUserToggleResponse(BaseModel):
     new_status: str
     user_name: str
     user_email: str
+
+
+class AdminCountryToggleRequest(BaseModel):
+    action: str = Field(..., description="'enable' or 'disable'")
+
+    @field_validator('action', mode='before')
+    @classmethod
+    def validate_action(cls, v):
+        if v.lower() not in ('enable', 'disable'):
+            raise ValueError('action must be "enable" or "disable"')
+        return v.lower()
+
+
+class AdminCountryToggleResponse(BaseModel):
+    success: bool
+    message: str
+    country_id: str
+    country_name: str
+    new_status: str
