@@ -325,3 +325,16 @@ class AdminCountryToggleResponse(BaseModel):
     country_id: str
     country_name: str
     new_status: str
+
+
+class AdminCountryListItem(BaseModel):
+    id: str
+    name: str
+    country_code: str
+    is_active: bool
+
+
+class AdminCountryListAllResponse(BaseModel):
+    success: bool
+    total_count: int
+    countries: List[AdminCountryListItem]

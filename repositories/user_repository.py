@@ -183,6 +183,13 @@ class UserRepository:
         )
         return result.scalars().all()
 
+    async def get_all_countries_unfiltered(self) -> List[CountryModel]:
+        """All countries regardless of is_active status (admin listing)."""
+        result = await self.db.execute(
+            select(CountryModel).order_by(CountryModel.name)
+        )
+        return result.scalars().all()
+
     async def get_country_by_id(self, country_id: str) -> Optional[CountryModel]:
         result = await self.db.execute(
             select(CountryModel).where(CountryModel.id == country_id)
