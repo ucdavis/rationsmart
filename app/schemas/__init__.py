@@ -21,6 +21,8 @@ from app.schemas.auth import (
     AdminUserListResponse,
     AdminUserToggleRequest,
     AdminUserToggleResponse,
+    AdminCountryToggleRequest,
+    AdminCountryToggleResponse,
 )
 from app.schemas.feed import (
     FeedTypeBase,
@@ -110,6 +112,7 @@ __all__ = [
     "UserInformation", "UserUpdateRequest", "UpdateUserInformation",
     "UserDeleteAccountResponse",
     "AdminUserListItem", "AdminUserListResponse", "AdminUserToggleRequest", "AdminUserToggleResponse",
+    "AdminCountryToggleRequest", "AdminCountryToggleResponse",
     # feed
     "FeedTypeBase", "FeedTypeCreate", "FeedTypeUpdate", "FeedTypeResponse",
     "FeedCategoryBase", "FeedCategoryCreate", "FeedCategoryUpdate", "FeedCategoryResponse",

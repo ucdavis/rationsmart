@@ -194,3 +194,8 @@ class UserRepository:
             select(CountryModel).where(CountryModel.name.ilike(name))
         )
         return result.scalars().first()
+
+    async def toggle_country_status(self, country: CountryModel, active: bool) -> None:
+        country.is_active = active
+        country.updated_at = datetime.utcnow()
+        await self.db.flush()

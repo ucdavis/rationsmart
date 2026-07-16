@@ -14,6 +14,8 @@ from app.schemas.auth import (
     AdminUserToggleRequest,
     AdminUserToggleResponse,
     AdminUserListItem,
+    AdminCountryToggleRequest,
+    AdminCountryToggleResponse,
 )
 from app.schemas.feed import (
     AdminBulkLogResponse,
@@ -914,6 +916,47 @@ async def list_countries_with_languages(
             )
             for c, langs in pairs
         ],
+    )
+
+
+@router.put(
+    "/countries/{country_id}/toggle-status",
+    response_model=AdminCountryToggleResponse,
+    summary="Activate or deactivate a country (admin)",
+)
+async def toggle_country_status(
+    country_id: str,
+    body: AdminCountryToggleRequest,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Activate or deactivate a country. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `country_id` — UUID of the target country.
+
+    **Mandatory body field:** `action` — `"enable"` to activate, `"disable"` to deactivate.
+
+    A deactivated country is hidden from `GET /v1/auth/countries` (registration and
+    profile screens) and from the admin country list. Existing users, feeds, and
+    reports referencing the country are unaffected. Returns `404` if the country
+    is not found.
+    """
+    repo = UserRepository(db)
+    country = await repo.get_country_by_id(country_id)
+    if not country:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Country not found")
+    active = body.action == "enable"
+    await repo.toggle_country_status(country, active)
+    await db.commit()
+    return AdminCountryToggleResponse(
+        success=True,
+        message=f"Country {body.action}d successfully",
+        country_id=str(country.id),
+        country_name=country.name or "",
+        new_status="active" if active else "inactive",
     )
 
 
