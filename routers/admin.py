@@ -16,6 +16,8 @@ from app.schemas.auth import (
     AdminUserListItem,
     AdminCountryToggleRequest,
     AdminCountryToggleResponse,
+    AdminCountryListItem,
+    AdminCountryListAllResponse,
 )
 from app.schemas.feed import (
     AdminBulkLogResponse,
@@ -880,6 +882,43 @@ async def update_language(
     await invalidate_lang_cache()
     return LanguageResponse(code=lang.code, name=lang.name, is_active=lang.is_active,
                             created_at=lang.created_at)
+
+
+# ── Country management ────────────────────────────────────────────────────────
+
+@router.get(
+    "/list-all-countries",
+    response_model=AdminCountryListAllResponse,
+    summary="List all countries regardless of active status (admin)",
+)
+async def list_all_countries(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Return every country — active and inactive — sorted by name.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    Companion to `PUT /v1/admin/countries/{country_id}/toggle-status`: use this
+    list to see current activation state and pick countries to enable/disable.
+    Unlike `GET /v1/admin/countries`, inactive countries are included.
+    """
+    repo = UserRepository(db)
+    countries = await repo.get_all_countries_unfiltered()
+    return AdminCountryListAllResponse(
+        success=True,
+        total_count=len(countries),
+        countries=[
+            AdminCountryListItem(
+                id=str(c.id),
+                name=c.name or "",
+                country_code=c.country_code or "",
+                is_active=c.is_active,
+            )
+            for c in countries
+        ],
+    )
 
 
 # ── Country↔language assignment (i18n Phase 5) ───────────────────────────────
