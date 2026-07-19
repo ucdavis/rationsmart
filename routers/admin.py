@@ -1,5 +1,6 @@
 import logging
 import math
+from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
@@ -53,11 +54,27 @@ from app.schemas.translation import (
     TranslationCoverageResponse,
     WorkbookImportSummary,
 )
+from app.schemas.feed_sync import (
+    FeedSyncConfigResponse,
+    FeedSyncConfigUpdateRequest,
+    FeedSyncLogDetailResponse,
+    FeedSyncLogItem,
+    FeedSyncLogListResponse,
+    FeedSyncRunResponse,
+    SchedulerStatusResponse,
+    SchedulerToggleRequest,
+    SchedulerToggleResponse,
+    day_name_to_int,
+    int_to_day_name,
+    mask_token,
+)
+from app.celery_app import celery_app
 from repositories.feed_repository import FeedRepository
+from repositories.feed_sync_repository import FeedSyncRepository
 from repositories.language_repository import LanguageRepository
 from repositories.report_repository import ReportRepository
 from repositories.user_repository import UserRepository
-from services import feed_service, report_service, translation_service
+from services import feed_service, feed_sync_service, report_service, translation_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
@@ -1070,3 +1087,278 @@ async def unassign_language_from_country(
         )
     await db.commit()
     return {"success": True, "message": f"Language '{code}' removed from country '{country_id}'"}
+
+
+# ── CLIMDES feed-library sync (plan v2 §9.5) ─────────────────────────────────
+
+async def _get_sync_config_or_404(repo: FeedSyncRepository):
+    config = await repo.get_config()
+    if config is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Feed-sync configuration not found (run the DB migration)",
+        )
+    return config
+
+
+def _sync_config_response(config) -> FeedSyncConfigResponse:
+    return FeedSyncConfigResponse(
+        success=True,
+        endpoint_url=config.endpoint_url,
+        auth_type=config.auth_type,
+        auth_header_name=config.auth_header_name,
+        auth_token_masked=mask_token(config.auth_token),
+        sync_day_of_week=int_to_day_name(config.sync_day_of_week),
+        scheduler_enabled=config.scheduler_enabled,
+        scheduler_toggled_by=(
+            str(config.scheduler_toggled_by) if config.scheduler_toggled_by else None
+        ),
+        scheduler_toggled_at=config.scheduler_toggled_at,
+        last_run_at=config.last_run_at,
+        last_success_at=config.last_success_at,
+    )
+
+
+def _sync_log_item(log) -> FeedSyncLogItem:
+    return FeedSyncLogItem(
+        id=str(log.id),
+        started_at=log.started_at,
+        finished_at=log.finished_at,
+        status=log.status,
+        trigger_type=log.trigger_type,
+        triggered_by=str(log.triggered_by) if log.triggered_by else None,
+        http_status=log.http_status,
+        total_rows=log.total_rows or 0,
+        inserted=log.inserted or 0,
+        updated=log.updated or 0,
+        skipped=log.skipped or 0,
+        translations_inserted=log.translations_inserted or 0,
+        translations_updated=log.translations_updated or 0,
+        translations_skipped=log.translations_skipped or 0,
+    )
+
+
+@router.get(
+    "/feed-sync/config",
+    response_model=FeedSyncConfigResponse,
+    summary="Read the CLIMDES feed-sync configuration (admin)",
+)
+async def get_feed_sync_config(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Current sync settings. The stored credential is **never returned in full**
+    (`auth_token_masked`, D10). `scheduler_enabled` is read-only here — flip it
+    via `PUT /feed-sync/scheduler/toggle`.
+    """
+    config = await _get_sync_config_or_404(FeedSyncRepository(db))
+    return _sync_config_response(config)
+
+
+@router.put(
+    "/feed-sync/config",
+    response_model=FeedSyncConfigResponse,
+    summary="Update the CLIMDES feed-sync configuration (admin)",
+)
+async def update_feed_sync_config(
+    body: FeedSyncConfigUpdateRequest,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Partial update: only the provided fields change (endpoint URL, auth,
+    **sync day of week** as a lowercase day name). Does **not** carry
+    `scheduler_enabled` — the toggle endpoint owns it (D19).
+    """
+    repo = FeedSyncRepository(db)
+    config = await _get_sync_config_or_404(repo)
+
+    data = body.model_dump(exclude_unset=True, exclude_none=True)
+    if "sync_day_of_week" in data:
+        data["sync_day_of_week"] = day_name_to_int(data["sync_day_of_week"])
+    await repo.update_config(config, data)
+    await db.commit()
+    return _sync_config_response(config)
+
+
+@router.put(
+    "/feed-sync/scheduler/toggle",
+    response_model=SchedulerToggleResponse,
+    summary="Enable/disable the automatic feed-sync scheduler (admin)",
+)
+async def toggle_feed_sync_scheduler(
+    body: SchedulerToggleRequest,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    The UI toggle button (UC-8). Gates **scheduled runs only** — manual
+    "Sync now" works regardless (D19). Takes effect at the next daily tick;
+    a run already in progress is not cancelled. Enabling requires a
+    configured endpoint URL (`400` otherwise); disabling is always allowed.
+    """
+    repo = FeedSyncRepository(db)
+    config = await _get_sync_config_or_404(repo)
+
+    enable = body.action == "enable"
+    if enable and not (config.endpoint_url or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Cannot enable the automatic scheduler: CLIMDES endpoint is not configured",
+        )
+
+    await repo.set_scheduler_enabled(config, enable, admin_user.id)
+    await db.commit()
+    return SchedulerToggleResponse(
+        success=True,
+        message=f"Automatic scheduler {body.action}d successfully",
+        scheduler_enabled=enable,
+        new_status="enabled" if enable else "disabled",
+    )
+
+
+@router.get(
+    "/feed-sync/scheduler/status",
+    response_model=SchedulerStatusResponse,
+    summary="Automatic-scheduler status for the UI toggle (admin)",
+)
+async def get_feed_sync_scheduler_status(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Lightweight status for rendering the toggle + day picker:
+    `next_scheduled_run` is the date of the next 00:00 tick on the chosen day
+    (`null` while the scheduler is disabled); `running` reports an in-progress run.
+    """
+    repo = FeedSyncRepository(db)
+    config = await _get_sync_config_or_404(repo)
+    running = await repo.get_running_log() is not None
+
+    next_run = None
+    if config.scheduler_enabled:
+        next_run = feed_sync_service.next_scheduled_run(
+            config.sync_day_of_week, datetime.now(timezone.utc).date()
+        )
+    return SchedulerStatusResponse(
+        success=True,
+        scheduler_enabled=config.scheduler_enabled,
+        sync_day_of_week=int_to_day_name(config.sync_day_of_week),
+        next_scheduled_run=next_run,
+        last_run_at=config.last_run_at,
+        last_success_at=config.last_success_at,
+        running=running,
+    )
+
+
+@router.post(
+    "/feed-sync/run",
+    response_model=FeedSyncRunResponse,
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Trigger a manual feed sync now (admin, non-blocking)",
+)
+async def run_feed_sync(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    "Sync now" (UC-3): creates a `running` log row, dispatches the worker task
+    with `force=true` (bypasses the due-gate — works even when the scheduler
+    toggle is off, D9/D19), and returns `202` immediately with the `log_id`
+    to poll via `GET /feed-sync/logs/{log_id}`.
+
+    Errors: `400` endpoint not configured · `409` a run is already in progress.
+    """
+    repo = FeedSyncRepository(db)
+    config = await _get_sync_config_or_404(repo)
+
+    if not (config.endpoint_url or "").strip():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="CLIMDES endpoint is not configured",
+        )
+    if await repo.get_running_log() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A sync run is already in progress",
+        )
+
+    log = await repo.create_log("manual", triggered_by=admin_user.id)
+    await db.commit()  # make the 'running' row visible before dispatch
+
+    try:
+        celery_app.send_task(
+            "sync_feed_library",
+            kwargs={
+                "force": True,
+                "log_id": str(log.id),
+                "triggered_by": str(admin_user.id),
+            },
+        )
+    except Exception as exc:
+        logger.error("Failed to dispatch sync_feed_library: %s", exc)
+        await repo.finalize_log(
+            log, "failed",
+            error_message="Failed to dispatch the sync task (Celery/Redis unavailable)",
+        )
+        await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Failed to dispatch the sync task — worker/broker unavailable",
+        )
+
+    return FeedSyncRunResponse(
+        success=True,
+        message="Feed sync dispatched — poll the log for progress",
+        log_id=str(log.id),
+    )
+
+
+@router.get(
+    "/feed-sync/logs",
+    response_model=FeedSyncLogListResponse,
+    summary="Paginated feed-sync run history (admin)",
+)
+async def list_feed_sync_logs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Run history, newest first (UC-5). Row-level detail lives on the single-log endpoint."""
+    logs, total = await FeedSyncRepository(db).list_logs(page=page, page_size=page_size)
+    return FeedSyncLogListResponse(
+        success=True,
+        total_count=total,
+        page=page,
+        page_size=page_size,
+        total_pages=math.ceil(total / page_size) if total else 0,
+        logs=[_sync_log_item(log) for log in logs],
+    )
+
+
+@router.get(
+    "/feed-sync/logs/{log_id}",
+    response_model=FeedSyncLogDetailResponse,
+    summary="Single feed-sync run with row-level detail (admin)",
+)
+async def get_feed_sync_log(
+    log_id: str,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """One run incl. `failed_rows` and `skipped_translations` (each `{fd_code, language, reason}`, UC-5/UC-6)."""
+    log = await FeedSyncRepository(db).get_log(log_id)
+    if log is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Sync log '{log_id}' not found",
+        )
+    return FeedSyncLogDetailResponse(
+        success=True,
+        **_sync_log_item(log).model_dump(),
+        error_message=log.error_message,
+        failed_rows=log.failed_rows,
+        skipped_translations=log.skipped_translations,
+    )
