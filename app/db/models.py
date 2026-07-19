@@ -10,7 +10,8 @@ import uuid
 
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, Date, DateTime,
-    ForeignKey, Integer, LargeBinary, Numeric, String, Text, UniqueConstraint,
+    ForeignKey, Integer, LargeBinary, Numeric, SmallInteger, String, Text,
+    UniqueConstraint,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.sql import func, text
@@ -441,6 +442,88 @@ class VocabularyTranslation(Base):
     )
 
 
+# ── CLIMDES feed-library sync (climdes_IMPLEMENTATION_PLAN_v2 §9.3) ──────────
+#
+# Two tables only. The sync reads/writes the existing i18n tables through
+# translation_service — no new i18n structures here.
+
+class FeedSyncConfig(Base):
+    """Singleton settings row for the CLIMDES feed-library sync.
+
+    Exactly one row exists (seeded by the migration). `scheduler_enabled` gates
+    scheduled runs ONLY — manual sync needs just a configured endpoint_url (D9/D19).
+    `sync_day_of_week` uses Python's datetime.weekday() convention: Monday=0 …
+    Sunday=6; default 2 = Wednesday (D22).
+    """
+    __tablename__ = "feed_sync_config"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"), default=uuid.uuid4)
+    endpoint_url = Column(Text, nullable=True)
+    auth_type = Column(String(20), nullable=False, server_default=text("'none'"), default="none")
+    auth_header_name = Column(String(100), nullable=True)
+    auth_token = Column(Text, nullable=True)                # masked on read (D10)
+    sync_day_of_week = Column(SmallInteger, nullable=False, server_default=text("2"), default=2)
+    scheduler_enabled = Column(Boolean, nullable=False, server_default=text("false"), default=False)
+    scheduler_toggled_by = Column(
+        UUID(as_uuid=True), ForeignKey("user_information.id", ondelete="SET NULL"), nullable=True,
+    )
+    scheduler_toggled_at = Column(DateTime(timezone=True), nullable=True)
+    last_run_at = Column(DateTime(timezone=True), nullable=True)
+    last_success_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint(
+            "auth_type IN ('none', 'api_key', 'bearer')",
+            name="ck_feed_sync_config_auth_type",
+        ),
+        CheckConstraint(
+            "sync_day_of_week BETWEEN 0 AND 6",
+            name="ck_feed_sync_config_day_of_week",
+        ),
+    )
+
+
+class FeedSyncLog(Base):
+    """One row per sync run (scheduled or manual), created at start and
+    finalized at the end. `failed_rows` / `skipped_translations` hold the
+    per-row detail lists described in plan §9.3."""
+    __tablename__ = "feed_sync_log"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"), default=uuid.uuid4)
+    started_at = Column(DateTime(timezone=True), server_default=func.now())
+    finished_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(String(20), nullable=False, server_default=text("'running'"), default="running")
+    trigger_type = Column(String(20), nullable=False)
+    triggered_by = Column(
+        UUID(as_uuid=True), ForeignKey("user_information.id", ondelete="SET NULL"), nullable=True,
+    )
+    http_status = Column(Integer, nullable=True)
+    total_rows = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    inserted = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    updated = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    skipped = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    translations_inserted = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    translations_updated = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    translations_skipped = Column(Integer, nullable=False, server_default=text("0"), default=0)
+    failed_rows = Column(JSONB, nullable=True)
+    skipped_translations = Column(JSONB, nullable=True)
+    error_message = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('running', 'success', 'failed')",
+            name="ck_feed_sync_log_status",
+        ),
+        CheckConstraint(
+            "trigger_type IN ('scheduled', 'manual')",
+            name="ck_feed_sync_log_trigger_type",
+        ),
+    )
+
+
 __all__ = [
     "Base",
     "CountryModel",
@@ -462,4 +545,6 @@ __all__ = [
     "CountryLanguage",
     "FeedTranslation",
     "VocabularyTranslation",
+    "FeedSyncConfig",
+    "FeedSyncLog",
 ]
