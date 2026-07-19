@@ -38,6 +38,22 @@ services:
         --concurrency=4
     restart: unless-stopped
 
+  beat:
+    build: .
+    env_file: .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.celery_app beat
+        --loglevel=info
+        --schedule /tmp/celerybeat-schedule
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     ports:

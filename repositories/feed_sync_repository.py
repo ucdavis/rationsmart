@@ -4,6 +4,7 @@ Owns the `feed_sync_config` singleton and `feed_sync_log` rows. All methods
 flush only — the caller (router or Celery task session context) commits,
 matching the repo-wide convention.
 """
+import uuid
 from typing import Any, Dict, Optional, Tuple
 
 from sqlalchemy import func, select
@@ -94,8 +95,12 @@ class FeedSyncRepository:
         return log
 
     async def get_log(self, log_id) -> Optional[FeedSyncLog]:
+        try:
+            log_uuid = uuid.UUID(str(log_id))  # callers pass str (task kwargs, URL path)
+        except (TypeError, ValueError):
+            return None
         result = await self.db.execute(
-            select(FeedSyncLog).where(FeedSyncLog.id == log_id)
+            select(FeedSyncLog).where(FeedSyncLog.id == log_uuid)
         )
         return result.scalars().first()
 

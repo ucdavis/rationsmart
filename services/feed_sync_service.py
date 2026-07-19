@@ -17,6 +17,7 @@ registered + active + assigned to the feed's country — never auto-created).
 import io
 import logging
 import re
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, Optional, Tuple
 
@@ -161,6 +162,11 @@ async def sync_feed_library(
     import pandas as pd
 
     now = now or datetime.now(timezone.utc)
+    if log_id is not None:
+        try:
+            log_id = uuid.UUID(str(log_id))  # Celery kwargs arrive as str
+        except (TypeError, ValueError):
+            return {"ran": False, "reason": f"invalid log_id {log_id!r}"}
     sync_repo = FeedSyncRepository(db)
 
     config = await sync_repo.get_config()
@@ -194,20 +200,27 @@ async def sync_feed_library(
         )
         await db.commit()  # make the 'running' row visible to pollers
 
-    async def _fail(message: str, http_status: Optional[int] = None) -> Dict[str, Any]:
+    async def _fail(
+        message: str, http_status: Optional[int] = None, retryable: bool = False
+    ) -> Dict[str, Any]:
         await sync_repo.finalize_log(
             log, "failed", error_message=message, http_status=http_status
         )
         await sync_repo.touch_last_run(config, success=False)
         await db.commit()
         logger.error("Feed sync failed: %s", message)
-        return {"ran": True, "log_id": str(log.id), "status": "failed", "error": message}
+        return {
+            "ran": True, "log_id": str(log.id), "status": "failed",
+            "error": message, "retryable": retryable,
+        }
 
     # ── Fetch ────────────────────────────────────────────────────────────────
+    # Fetch failures are the only retryable kind (D23) — the Celery task
+    # retries them with backoff, reusing this run's log row.
     try:
         content, http_status = await fetch_feed_library(config)
     except FeedSyncFetchError as exc:
-        return await _fail(str(exc), http_status=exc.http_status)
+        return await _fail(str(exc), http_status=exc.http_status, retryable=True)
 
     # ── Parse + file-level pre-checks (D14) ──────────────────────────────────
     try:
