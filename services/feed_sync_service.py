@@ -18,7 +18,7 @@ import io
 import logging
 import re
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone  # noqa: F401 (date used in annotations)
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
@@ -125,6 +125,13 @@ def _coerce_numeric(value) -> Tuple[bool, Optional[float]]:
         return True, float(text)
     except ValueError:
         return False, None
+
+
+def next_scheduled_run(sync_day_of_week: int, today) -> "date":
+    """Date of the next 00:00 tick matching the sync day, strictly after today
+    (today's own tick has already fired by the time anyone can ask)."""
+    days_ahead = (sync_day_of_week - today.weekday()) % 7
+    return today + timedelta(days=days_ahead or 7)
 
 
 def _is_due(config, now: datetime) -> Tuple[bool, str]:
