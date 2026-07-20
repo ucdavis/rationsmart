@@ -21,8 +21,6 @@ from app.schemas.auth import (
     AdminCountryListAllResponse,
 )
 from app.schemas.feed import (
-    AdminBulkLogResponse,
-    AdminBulkUploadResponse,
     AdminFeedCategoryRequest,
     AdminFeedCategoryResponse,
     AdminFeedListResponse,
@@ -302,33 +300,11 @@ async def delete_feed(
     return {"success": True, "message": message}
 
 
-# ── Bulk upload / export ──────────────────────────────────────────────────────
-
-@router.post("/bulk-upload-feeds", response_model=AdminBulkUploadResponse,
-             summary="Bulk-import feeds from an Excel file (admin)")
-async def bulk_upload_feeds(
-    file: UploadFile = File(...),
-    admin_user: UserInformationModel = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Upload an Excel file (`.xlsx` or `.xls`) to batch-insert standard feeds. Admin only.
-
-    **Requires:** Bearer JWT with admin privileges.
-
-    **Mandatory form field:** `file` — the Excel workbook. Accepted formats: `.xlsx`, `.xls`.
-
-    The workbook must match the expected column schema (use `GET /v1/admin/export-feeds` to download a template).
-    Returns a summary of rows inserted, skipped, and any per-row errors.
-    """
-    if not file.filename.endswith((".xlsx", ".xls")):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="File must be an Excel file (.xlsx or .xls)")
-    content = await file.read()
-    result = await feed_service.bulk_upload_feeds(db, content)
-    if result["success"]:
-        await db.commit()
-    return AdminBulkUploadResponse(**result)
-
+# ── Export (bulk-upload template) ─────────────────────────────────────────────
+# The legacy `/bulk-upload-feeds` (fd_name-keyed) and `/read-bulk-upload-logfile/`
+# (S3-stub) endpoints were retired in favor of `POST /feed-sync/run-from-file`,
+# which imports this same template through the CLIMDES sync engine — see
+# docs/dev_docs/bulk_upload_changes/IMPLEMENTATION_PLAN.md (D1/D4).
 
 @router.get("/export-feeds", summary="Download all standard feeds as an Excel file (admin)")
 async def export_feeds(
@@ -336,7 +312,10 @@ async def export_feeds(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Export the full standard feed catalogue to an `.xlsx` file for download or use as a bulk-upload template. Admin only.
+    Export the full standard feed catalogue to an `.xlsx` file, in the same
+    column contract as the CLIMDES Feed Library — for download, or as a
+    ready-to-edit template for `POST /v1/admin/feed-sync/run-from-file`
+    (the bulk-upload fallback when CLIMDES is unreachable). Admin only.
 
     **Requires:** Bearer JWT with admin privileges.
 
@@ -368,22 +347,6 @@ async def export_custom_feeds(
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
     )
-
-
-@router.get("/read-bulk-upload-logfile/", response_model=AdminBulkLogResponse,
-            summary="Get bulk upload log metadata (admin)")
-async def read_bulk_upload_logfile(
-    admin_user: UserInformationModel = Depends(require_admin_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Retrieve metadata about the most recent bulk feed upload log file. Admin only.
-
-    **Requires:** Bearer JWT with admin privileges.
-
-    **Status:** S3 URL resolution is pending — currently returns a placeholder response.
-    """
-    return AdminBulkLogResponse(success=True, message="Log retrieval pending Task 2.8 (S3 integration)")
 
 
 # ── Feed types ────────────────────────────────────────────────────────────────
@@ -1312,6 +1275,55 @@ async def run_feed_sync(
         success=True,
         message="Feed sync dispatched — poll the log for progress",
         log_id=str(log.id),
+    )
+
+
+@router.post(
+    "/feed-sync/run-from-file",
+    response_model=FeedSyncLogDetailResponse,
+    summary="Import a Feed Library Excel file directly (admin fallback when CLIMDES is unreachable)",
+)
+async def run_feed_sync_from_file(
+    file: UploadFile = File(...),
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Bulk-upload/CLIMDES-fallback path (docs/dev_docs/bulk_upload_changes/
+    IMPLEMENTATION_PLAN.md): runs the uploaded workbook through the exact
+    same validate -> upsert -> translate -> log pipeline as a CLIMDES sync
+    (D2), logged in the same feed_sync_log table with
+    trigger_type='file_upload' (D3) — for use when the CLIMDES server is
+    unreachable. Synchronous, not `202`/poll (D7): there is no external HTTP
+    fetch to decouple from, so the finished result is returned directly,
+    same shape as `GET /feed-sync/logs/{log_id}`.
+
+    Errors: `400` bad file extension · `409` a sync run is already in progress.
+    """
+    if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File must be an Excel file (.xlsx or .xls)",
+        )
+    content = await file.read()
+
+    result = await feed_sync_service.run_file_upload_import(
+        db, content, triggered_by=admin_user.id
+    )
+
+    if not result.get("ran"):
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=result.get("reason", "A sync run is already in progress"),
+        )
+
+    log = await FeedSyncRepository(db).get_log(result["log_id"])
+    return FeedSyncLogDetailResponse(
+        success=True,
+        **_sync_log_item(log).model_dump(),
+        error_message=log.error_message,
+        failed_rows=log.failed_rows,
+        skipped_translations=log.skipped_translations,
     )
 
 

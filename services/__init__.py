@@ -15,7 +15,7 @@ from services.report_service import (
     save_simulation, get_all_saved_reports, delete_report, get_user_reports,
 )
 from services.feed_service import (
-    bulk_upload_feeds, export_feeds, export_custom_feeds,
+    export_feeds, export_custom_feeds,
     create_feed, update_feed, delete_feed, list_feeds,
     create_feed_type, delete_feed_type,
     create_feed_category, delete_feed_category,

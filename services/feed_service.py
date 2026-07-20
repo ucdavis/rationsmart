@@ -76,8 +76,6 @@ async def make_unique_custom_feed_code(repo, fd_name: str, max_attempts: int = 2
     raise RuntimeError("Could not generate a unique custom fd_code after multiple attempts")
 
 
-# Columns required for bulk upload Excel files
-_REQUIRED_COLUMNS = {"fd_name", "fd_category", "fd_type", "fd_country_name"}
 _NUMERIC_COLUMNS = {
     "fd_dm", "fd_ash", "fd_cp", "fd_npn_cp", "fd_ee", "fd_cf", "fd_nfe",
     "fd_st", "fd_ndf", "fd_hemicellulose", "fd_adf", "fd_cellulose", "fd_lg",
@@ -296,189 +294,75 @@ async def list_feeds(
     )
 
 
-# ── Bulk upload ───────────────────────────────────────────────────────────────
-
-async def bulk_upload_feeds(
-    db: AsyncSession, file_bytes: bytes
-) -> Dict[str, Any]:
-    """
-    Parse an Excel file and upsert feeds.
-    Returns a summary dict with counts and a list of failed rows.
-    """
-    import pandas as pd
-
-    repo = FeedRepository(db)
-    user_repo = UserRepository(db)
-
-    try:
-        df = pd.read_excel(io.BytesIO(file_bytes))
-    except Exception as exc:
-        return {
-            "success": False,
-            "message": f"Failed to parse Excel file: {exc}",
-            "total_records": 0,
-            "successful_uploads": 0,
-            "failed_uploads": 0,
-            "existing_records": 0,
-            "updated_records": 0,
-            "failed_records": [],
-            "bulk_import_log": None,
-        }
-
-    missing_cols = _REQUIRED_COLUMNS - set(df.columns)
-    if missing_cols:
-        return {
-            "success": False,
-            "message": f"Missing required columns: {', '.join(missing_cols)}",
-            "total_records": len(df),
-            "successful_uploads": 0,
-            "failed_uploads": len(df),
-            "existing_records": 0,
-            "updated_records": 0,
-            "failed_records": [],
-            "bulk_import_log": None,
-        }
-
-    total = len(df)
-    success_count = updated = existing = 0
-    failed: List[Dict] = []
-
-    # Load the active taxonomy once — fd_type/fd_category are validated against these
-    # (case-insensitive, trimmed) and rows are canonicalized to the master spelling.
-    type_by_name, cat_by_type_and_name = await repo.get_active_taxonomy_maps()
-
-    for idx, row in df.iterrows():
-        row_num = int(idx) + 2  # Excel is 1-indexed; header is row 1
-        try:
-            raw_name = row.get("fd_name")
-            fd_name = "" if pd.isna(raw_name) else str(raw_name).strip()
-            if not fd_name:
-                failed.append({"row": row_num, "reason": "fd_name is empty"})
-                continue
-
-            invalid_numeric = []
-            for col in _NUMERIC_COLUMNS:
-                val = row.get(col)
-                if val is not None and val != "" and not isinstance(val, (int, float)):
-                    try:
-                        float(val)
-                    except (ValueError, TypeError):
-                        invalid_numeric.append(col)
-            if invalid_numeric:
-                failed.append({"row": row_num, "reason": f"Non-numeric in: {', '.join(invalid_numeric)}"})
-                continue
-
-            country_name = str(row.get("fd_country_name", "")).strip()
-            country_id = None
-            if country_name:
-                c = await user_repo.get_country_by_name(country_name)
-                country_id = str(c.id) if c else None
-
-            fd_code = str(row.get("fd_code", "") or "").strip()
-            if not fd_code:
-                failed.append({"row": row_num, "reason": "fd_code is missing — cannot generate stable feed ID"})
-                continue
-
-            # ── Taxonomy validation (fd_type + fd_category) ─────────────────────
-            # Empty Excel cells arrive as NaN (float); pd.isna guards against
-            # str(NaN) -> "nan" slipping past the blank check in resolve_taxonomy.
-            raw_type = row.get("fd_type")
-            raw_cat = row.get("fd_category")
-            type_cell = "" if pd.isna(raw_type) else str(raw_type).strip()
-            cat_cell = "" if pd.isna(raw_cat) else str(raw_cat).strip()
-
-            ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
-                type_by_name, cat_by_type_and_name, type_cell, cat_cell
-            )
-            if not ok:
-                failed.append({"row": row_num, "reason": reason})
-                continue
-
-            data: Dict[str, Any] = {
-                "fd_name": fd_name,
-                "fd_category": canon_cat,  # canonical master spelling
-                "fd_type": canon_type,     # canonical master spelling
-                "fd_category_id": cat_id,
-                "fd_type_id": type_id,
-                "fd_country_name": country_name or None,
-                "fd_country_cd": str(row.get("fd_country_cd", "") or "").strip() or None,
-                "fd_code": fd_code,
-            }
-            for col in _NUMERIC_COLUMNS:
-                val = row.get(col)
-                data[col] = float(val) if val is not None and val != "" else None
-
-            existing_feed = await repo.get_by_name(fd_name)
-            if existing_feed:
-                await repo.update(existing_feed, data)
-                updated += 1
-                existing += 1
-            else:
-                data["id"] = stable_feed_uuid(fd_code)
-                await repo.create(data, country_id=country_id)
-                success_count += 1
-
-        except Exception as exc:
-            failed.append({"row": row_num, "reason": str(exc)})
-
-    await db.flush()
-    return {
-        "success": True,
-        "message": f"Processed {total} records: {success_count} new, {updated} updated, {len(failed)} failed",
-        "total_records": total,
-        "successful_uploads": success_count,
-        "failed_uploads": len(failed),
-        "existing_records": existing,
-        "updated_records": updated,
-        "failed_records": failed,
-        "bulk_import_log": None,
-    }
-
-
 # ── Export ────────────────────────────────────────────────────────────────────
+# Bulk feed import now goes entirely through the CLIMDES sync engine — see
+# services.feed_sync_service.run_file_upload_import() — which reuses
+# resolve_taxonomy/stable_feed_uuid/_NUMERIC_COLUMNS from this module. The
+# legacy fd_name-keyed bulk_upload_feeds() was retired; see
+# docs/dev_docs/bulk_upload_changes/IMPLEMENTATION_PLAN.md (D1).
+
+# Column order matches the CLIMDES Feed Library contract exactly (D4/§13.2 of
+# climdes_IMPLEMENTATION_PLAN_v2.md) so the export doubles as a ready-to-edit
+# template for POST /feed-sync/run-from-file. feed_id and the 4 nutrient
+# columns CLIMDES doesn't carry (fd_cf, fd_nfe, fd_hemicellulose, fd_cellulose)
+# are intentionally absent — see docs/dev_docs/bulk_upload_changes/
+# IMPLEMENTATION_PLAN.md §7.
+_EXPORT_NUMERIC_COLUMNS = [
+    "fd_dm", "fd_cp", "fd_npn_cp", "fd_ndf", "fd_adf", "fd_lg",
+    "fd_ash", "fd_ee", "fd_adin", "fd_ndin", "fd_p", "fd_ca", "fd_st",
+]
+
 
 async def export_feeds(db: AsyncSession) -> Tuple[bytes, str]:
     """
-    Export all standard feeds as Excel bytes.
+    Export all standard feeds as Excel bytes, in the unified CLIMDES-template
+    column contract (D4). Blank nutrient cells stay blank (not coalesced to
+    0.0) so re-uploading an unedited export never zeroes out real data.
+
+    A feed with translations in more than one language can't fit CLIMDES's
+    one-language-per-row shape (D8): the local-name pair is left blank for
+    such feeds (and for feeds with zero translations); it's populated only
+    when there's exactly one. Admins managing multiple languages per feed
+    should use the Translation Workbook instead.
+
     Returns (file_bytes, filename).
     """
     import pandas as pd
 
+    from repositories.translation_repository import TranslationRepository
+
     repo = FeedRepository(db)
     feeds = await repo.get_all_for_export()
+    translations = await TranslationRepository(db).get_all_feed_translations_map()
 
     rows = []
     for f in feeds:
-        rows.append(
-            {
-                "feed_id": str(f.id),
-                "fd_code": f.fd_code,
-                "fd_name": f.fd_name,
-                "fd_type": f.fd_type,
-                "fd_category": f.fd_category,
-                "fd_country_name": f.fd_country_name,
-                "fd_country_cd": f.fd_country_cd,
-                "fd_dm": float(f.fd_dm or 0),
-                "fd_ash": float(f.fd_ash or 0),
-                "fd_cp": float(f.fd_cp or 0),
-                "fd_npn_cp": float(f.fd_npn_cp or 0),
-                "fd_ee": float(f.fd_ee or 0),
-                "fd_cf": float(f.fd_cf or 0),
-                "fd_nfe": float(f.fd_nfe or 0),
-                "fd_st": float(f.fd_st or 0),
-                "fd_ndf": float(f.fd_ndf or 0),
-                "fd_hemicellulose": float(f.fd_hemicellulose or 0),
-                "fd_adf": float(f.fd_adf or 0),
-                "fd_cellulose": float(f.fd_cellulose or 0),
-                "fd_lg": float(f.fd_lg or 0),
-                "fd_ndin": float(f.fd_ndin or 0),
-                "fd_adin": float(f.fd_adin or 0),
-                "fd_ca": float(f.fd_ca or 0),
-                "fd_p": float(f.fd_p or 0),
-            }
-        )
+        feed_translations = translations.get(str(f.id), {})
+        if len(feed_translations) == 1:
+            (lang_cd, local_name), = feed_translations.items()
+        else:
+            lang_cd, local_name = None, None
 
-    df = pd.DataFrame(rows)
+        row = {
+            "fd_code": f.fd_code,
+            "fd_name": f.fd_name,
+            "fd_language_cd": lang_cd,
+            "fd_name_local_language": local_name,
+            "fd_category": f.fd_category,
+            "fd_type": f.fd_type,
+            "fd_country_name": f.fd_country_name,
+            "fd_country_cd": f.fd_country_cd,
+        }
+        for col in _EXPORT_NUMERIC_COLUMNS:
+            value = getattr(f, col)
+            row[col] = float(value) if value is not None else None
+        rows.append(row)
+
+    df = pd.DataFrame(rows, columns=[
+        "fd_code", "fd_name", "fd_language_cd", "fd_name_local_language",
+        "fd_category", "fd_type", "fd_country_name", "fd_country_cd",
+        *_EXPORT_NUMERIC_COLUMNS,
+    ])
     buf = io.BytesIO()
     df.to_excel(buf, index=False)
     timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S")

@@ -79,6 +79,19 @@ class TranslationRepository:
             out.setdefault(fid, {})[lang] = name
         return out
 
+    async def get_all_feed_translations_map(self) -> dict[str, dict[str, str]]:
+        """Return {feed_id_str → {lang → name}} across ALL feeds, no country
+        scoping — used by the unified CLIMDES-template export
+        (bulk_upload_changes plan, D8), which is a global admin export."""
+        result = await self.db.execute(
+            select(FeedTranslation.feed_id, FeedTranslation.language, FeedTranslation.name)
+        )
+        out: dict[str, dict[str, str]] = {}
+        for feed_id, lang, name in result.all():
+            fid = str(feed_id)
+            out.setdefault(fid, {})[lang] = name
+        return out
+
     async def get_vocabulary_translations_map(
         self, country_id: str, kind: str
     ) -> dict[str, dict[str, str]]:

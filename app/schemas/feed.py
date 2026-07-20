@@ -205,30 +205,9 @@ class AdminFeedListResponse(BaseModel):
     total_pages: int
 
 
-class AdminBulkUploadResponse(BaseModel):
-    success: bool
-    message: str
-    total_records: int
-    successful_uploads: int
-    failed_uploads: int
-    existing_records: int
-    updated_records: int
-    failed_records: List[Dict[str, Any]]
-    bulk_import_log: Optional[str] = None
-
-
 class AdminExportResponse(BaseModel):
     success: bool
     message: str
     file_url: str
     file_name: str
     total_records: int
-
-
-class AdminBulkLogResponse(BaseModel):
-    success: bool
-    message: str
-    log_file_url: Optional[str] = None
-    filename: Optional[str] = None
-    file_size: Optional[str] = None
-    created_at: Optional[str] = None
