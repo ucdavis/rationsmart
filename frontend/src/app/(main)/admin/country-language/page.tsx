@@ -107,6 +107,71 @@ const inputStyle = { backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 const sheetOverlayStyle = { left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.65)" };
 
+// ── Skeleton loading states (shimmer pattern from admin/users, admin/feeds,
+// admin/reports — same `.shimmer` CSS keyframe, shaped to each real row). ──
+
+function SkeletonCardShell({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
+      <div className="px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
+        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", opacity: 0.5 }}>{title}</p>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function SkeletonCountryRow() {
+  return (
+    <div className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+      <div className="flex items-center gap-3">
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-4 w-28 rounded-full shimmer" />
+          <div className="h-3 w-20 rounded-full shimmer" />
+        </div>
+        <div className="h-7 w-12 rounded-full shimmer flex-shrink-0" />
+      </div>
+      <div className="flex gap-1.5 mt-3">
+        <div className="h-6 w-16 rounded-full shimmer" />
+        <div className="h-6 w-20 rounded-full shimmer" />
+      </div>
+    </div>
+  );
+}
+
+function SkeletonLanguageRow() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-4 w-24 rounded-full shimmer" />
+        <div className="h-3 w-32 rounded-full shimmer" />
+      </div>
+      <div className="h-7 w-12 rounded-full shimmer flex-shrink-0" />
+    </div>
+  );
+}
+
+function SkeletonPickerRow() {
+  return (
+    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl" style={{ border: "1px solid #DCE0E4" }}>
+      <div className="h-4 w-28 rounded-full shimmer" />
+      <div className="h-3 w-14 rounded-full shimmer" />
+    </div>
+  );
+}
+
+function SkeletonFeedRow() {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-4 w-32 rounded-full shimmer" />
+        <div className="h-3 w-20 rounded-full shimmer" />
+      </div>
+      <div className="h-5 w-16 rounded-full shimmer flex-shrink-0" />
+    </div>
+  );
+}
+
 export default function AdminCountryLanguagePage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
@@ -185,8 +250,13 @@ export default function AdminCountryLanguagePage() {
       </div>
 
       {isLoading && countries.length === 0 && allLanguages.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Loading…</p>
+        <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
+          <SkeletonCardShell title="Enabled Countries / Languages">
+            {[0, 1, 2].map((i) => <SkeletonCountryRow key={i} />)}
+          </SkeletonCardShell>
+          <SkeletonCardShell title="Registered Languages">
+            {[0, 1, 2, 3].map((i) => <SkeletonLanguageRow key={i} />)}
+          </SkeletonCardShell>
         </div>
       ) : tab === "countries" ? (
         <CountriesLanguagesTab
@@ -530,7 +600,9 @@ function CountriesLanguagesTab({
             <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>Activate a country</h3>
             <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>RationSmart becomes available to farmers in the activated country.</p>
             {isLoadingInactive ? (
-              <p className="text-sm text-center py-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Loading…</p>
+              <div className="flex flex-col gap-2">
+                {[0, 1, 2].map((i) => <SkeletonPickerRow key={i} />)}
+              </div>
             ) : inactiveCountries.length === 0 ? (
               <p className="text-sm text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>All registered countries are already enabled.</p>
             ) : (
@@ -883,7 +955,9 @@ function FeedNamesTab({
             {!isLoadingFeeds && <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{doneCount} of {feeds.length} named</p>}
           </div>
           {isLoadingFeeds ? (
-            <p className="text-sm text-center py-6" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Loading…</p>
+            <div>
+              {[0, 1, 2, 3, 4].map((i) => <SkeletonFeedRow key={i} />)}
+            </div>
           ) : (
             <div style={{ maxHeight: 320, overflowY: "auto" }}>
               {feeds.map((f) => (
