@@ -647,6 +647,18 @@ function FeedNamesTab({
   const [selCountry, setSelCountry] = useState<CountryRow | null>(null);
   const [selLang, setSelLang] = useState<string | null>(null);
 
+  // Default to the first country (and its first local language) as soon as
+  // the list loads, so the feed list is visible without an extra tap —
+  // only when nothing has been picked yet, so it doesn't clobber the
+  // admin's own selection on a later reload.
+  useEffect(() => {
+    if (selCountry || countries.length === 0) return;
+    const first = countries[0];
+    setSelCountry(first);
+    setSelLang(first.languages.find((g) => g !== "en") ?? null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [countries]);
+
   const [feeds, setFeeds] = useState<Array<AdminFeedLite & { translation?: FeedTranslation | null }>>([]);
   const [isLoadingFeeds, setIsLoadingFeeds] = useState(false);
 

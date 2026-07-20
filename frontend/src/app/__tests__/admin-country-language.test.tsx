@@ -220,6 +220,32 @@ describe("Admin Country/Language — Local Feed Names screen", () => {
     fireEvent.click(screen.getByText("Local Feed Names"));
   };
 
+  it("defaults to the first country + its first local language and shows its feeds without any extra clicks", async () => {
+    listCountriesWithLanguages.mockResolvedValue({
+      data: {
+        success: true,
+        countries: [
+          { id: "c-in", name: "India", country_code: "IN", is_active: true, languages: ["en", "hi"] },
+          { id: "c-ph", name: "Philippines", country_code: "PH", is_active: true, languages: ["en", "tl"] },
+        ],
+      },
+    });
+    getAdminFeeds.mockResolvedValue({
+      data: { success: true, message: "ok", feeds: [{ feed_id: "f1", fd_name: "Maize" }], total_count: 1, page: 1, page_size: 100, total_pages: 1 },
+    });
+    listFeedTranslations.mockResolvedValue({ data: { success: true, feed_id: "f1", translations: [] } });
+
+    render(<AdminCountryLanguagePage />);
+    await screen.findByText("India");
+    fireEvent.click(screen.getByText("Local Feed Names"));
+
+    // No country/language chip click — India + Hindi (its first local
+    // language) should already be selected, and its feed list visible.
+    await waitFor(() => expect(getAdminFeeds).toHaveBeenCalledWith("", 1, 100, "", "", "India", ""));
+    expect(await screen.findByText("Maize")).toBeInTheDocument();
+    expect(screen.getByText("3 · Feed names in हिन्दी")).toBeInTheDocument();
+  });
+
   it("lists feeds for the selected country + language with named/unnamed status", async () => {
     getAdminFeeds.mockResolvedValue({
       data: {
