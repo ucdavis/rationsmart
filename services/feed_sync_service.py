@@ -30,7 +30,12 @@ from repositories.language_repository import LanguageRepository
 from repositories.translation_repository import TranslationRepository
 from repositories.user_repository import UserRepository
 from services import translation_service
-from services.feed_service import _NUMERIC_COLUMNS, resolve_taxonomy, stable_feed_uuid
+from services.feed_service import (
+    _NUMERIC_COLUMNS,
+    make_unique_feed_code,
+    resolve_taxonomy,
+    stable_feed_uuid,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -166,8 +171,6 @@ async def sync_feed_library(
 
     Returns a summary dict: {"ran": bool, "reason"?, "log_id"?, counts...}.
     """
-    import pandas as pd
-
     now = now or datetime.now(timezone.utc)
     if log_id is not None:
         try:
@@ -207,40 +210,72 @@ async def sync_feed_library(
         )
         await db.commit()  # make the 'running' row visible to pollers
 
-    async def _fail(
-        message: str, http_status: Optional[int] = None, retryable: bool = False
-    ) -> Dict[str, Any]:
-        await sync_repo.finalize_log(
-            log, "failed", error_message=message, http_status=http_status
-        )
-        await sync_repo.touch_last_run(config, success=False)
-        await db.commit()
-        logger.error("Feed sync failed: %s", message)
-        return {
-            "ran": True, "log_id": str(log.id), "status": "failed",
-            "error": message, "retryable": retryable,
-        }
-
     # ── Fetch ────────────────────────────────────────────────────────────────
     # Fetch failures are the only retryable kind (D23) — the Celery task
     # retries them with backoff, reusing this run's log row.
     try:
         content, http_status = await fetch_feed_library(config)
     except FeedSyncFetchError as exc:
-        return await _fail(str(exc), http_status=exc.http_status, retryable=True)
+        await sync_repo.finalize_log(
+            log, "failed", error_message=str(exc), http_status=exc.http_status
+        )
+        await sync_repo.touch_last_run(config, success=False)
+        await db.commit()
+        logger.error("Feed sync failed: %s", exc)
+        return {
+            "ran": True, "log_id": str(log.id), "status": "failed",
+            "error": str(exc), "retryable": True,
+        }
+
+    result = await _run_import_pipeline(db, content, log, http_status=http_status)
+    await sync_repo.touch_last_run(config, success=(result.get("status") == "success"))
+    await db.commit()
+    return result
+
+
+# ── Shared import pipeline (bulk_upload_changes plan §8 Phase 2) ──────────────
+# Used by both the CLIMDES HTTP-fetch sync above and the file-upload fallback
+# below — the only difference between the two callers is where `content`
+# (the raw .xlsx bytes) came from.
+
+async def _run_import_pipeline(
+    db: AsyncSession,
+    content: bytes,
+    log,
+    http_status: Optional[int] = None,
+) -> Dict[str, Any]:
+    """Parse `content` as a CLIMDES-contract Excel workbook and run the
+    validate -> upsert -> translate pipeline (UC-4), finalizing `log`.
+
+    Does NOT commit and does NOT touch `feed_sync_config` — those are the
+    caller's responsibility, since only the CLIMDES HTTP path has a config
+    (schedule/last-run tracking) to touch; a file-upload run has none.
+    """
+    import pandas as pd
+
+    sync_repo = FeedSyncRepository(db)
+
+    async def _fail(message: str, retryable: bool = False) -> Dict[str, Any]:
+        await sync_repo.finalize_log(
+            log, "failed", error_message=message, http_status=http_status
+        )
+        logger.error("Feed import failed: %s", message)
+        return {
+            "ran": True, "log_id": str(log.id), "status": "failed",
+            "error": message, "retryable": retryable,
+        }
 
     # ── Parse + file-level pre-checks (D14) ──────────────────────────────────
     try:
         df = pd.read_excel(io.BytesIO(content))
     except Exception as exc:
-        return await _fail(f"Failed to parse Excel file: {exc}", http_status=http_status)
+        return await _fail(f"Failed to parse Excel file: {exc}")
 
     missing = MANDATORY_COLUMNS - set(df.columns)
     if missing:
         return await _fail(
             f"Mandatory column(s) missing from the Feed Library file: "
-            f"{', '.join(sorted(missing))} — nothing imported",
-            http_status=http_status,
+            f"{', '.join(sorted(missing))} — nothing imported"
         )
 
     # ── Reference data, loaded once ──────────────────────────────────────────
@@ -281,16 +316,10 @@ async def sync_feed_library(
         row_num = int(idx) + 2  # Excel rows are 1-indexed; header is row 1
         fd_code = _cell_str(row, "fd_code")
         try:
-            if not fd_code:
-                failed_rows.append(
-                    {"row": row_num, "fd_code": None, "reason": "fd_code is missing"}
-                )
-                continue
-
             fd_name = _cell_str(row, "fd_name")
             if not fd_name:
                 failed_rows.append(
-                    {"row": row_num, "fd_code": fd_code, "reason": "fd_name (English) is empty"}
+                    {"row": row_num, "fd_code": fd_code or None, "reason": "fd_name (English) is empty"}
                 )
                 continue
 
@@ -298,7 +327,7 @@ async def sync_feed_library(
             country = await _country_for(country_name) if country_name else None
             if country is None:
                 failed_rows.append({
-                    "row": row_num, "fd_code": fd_code,
+                    "row": row_num, "fd_code": fd_code or None,
                     "reason": f"unknown country '{country_name}'" if country_name
                     else "fd_country_name is missing",
                 })
@@ -314,7 +343,7 @@ async def sync_feed_library(
                     bad_numeric.append(col)
             if bad_numeric:
                 failed_rows.append({
-                    "row": row_num, "fd_code": fd_code,
+                    "row": row_num, "fd_code": fd_code or None,
                     "reason": f"non-numeric value in: {', '.join(bad_numeric)}",
                 })
                 continue
@@ -325,11 +354,10 @@ async def sync_feed_library(
                 _cell_str(row, "fd_type"), _cell_str(row, "fd_category"),
             )
             if not ok:
-                failed_rows.append({"row": row_num, "fd_code": fd_code, "reason": reason})
+                failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
                 continue
 
             data: Dict[str, Any] = {
-                "fd_code": fd_code,
                 "fd_name": fd_name,                       # English, as-is (I1)
                 "fd_type": canon_type,
                 "fd_category": canon_cat,
@@ -340,13 +368,38 @@ async def sync_feed_library(
                 **numeric_values,
             }
 
-            # English feed upsert, keyed on fd_code (D5)
-            feed = await feed_repo.get_by_code(fd_code)
-            if feed is not None:
-                await feed_repo.update(feed, data)
-                feed.fd_country_id = country.id  # update() whitelist omits the FK
-                updated += 1
+            # ── fd_code resolution (bulk_upload_changes plan, D5) ────────────
+            # Present -> upsert-by-code, identical to a genuine CLIMDES row.
+            # Blank -> a RationSmart-native feed (a real CLIMDES row always
+            # populates fd_code, so this branch is effectively file-upload-
+            # only): guard against an admin who left it blank meaning "update
+            # by name" by checking for a name collision first, else
+            # auto-generate a unique RS-code the same way the single
+            # "Add Feed" screen already does.
+            if fd_code:
+                data["fd_code"] = fd_code
+                feed = await feed_repo.get_by_code(fd_code)
+                if feed is not None:
+                    await feed_repo.update(feed, data)
+                    feed.fd_country_id = country.id  # update() whitelist omits the FK
+                    updated += 1
+                else:
+                    data["id"] = stable_feed_uuid(fd_code)
+                    feed = await feed_repo.create(data, country_id=str(country.id))
+                    inserted += 1
             else:
+                existing_by_name = await feed_repo.get_by_name(fd_name)
+                if existing_by_name is not None:
+                    failed_rows.append({
+                        "row": row_num, "fd_code": None,
+                        "reason": (
+                            f"fd_code is missing and a feed named '{fd_name}' already "
+                            "exists — supply its fd_code to update it"
+                        ),
+                    })
+                    continue
+                fd_code = await make_unique_feed_code(feed_repo, fd_name)
+                data["fd_code"] = fd_code
                 data["id"] = stable_feed_uuid(fd_code)
                 feed = await feed_repo.create(data, country_id=str(country.id))
                 inserted += 1
@@ -383,10 +436,10 @@ async def sync_feed_library(
                 })
                 continue
 
-            result = await translation_service.upsert_feed_translation(
+            translation_result = await translation_service.upsert_feed_translation(
                 db, str(feed.id), code, local_name
             )
-            if result.get("action") == "updated":
+            if translation_result.get("action") == "updated":
                 translations_updated += 1
             else:
                 translations_inserted += 1
@@ -413,13 +466,40 @@ async def sync_feed_library(
         skipped_translations=skipped_translations,
         **counts,
     )
-    await sync_repo.touch_last_run(config, success=True)
-    await db.commit()
 
     logger.info(
-        "Feed sync succeeded: %s rows — %s inserted, %s updated, %s skipped, "
+        "Feed import succeeded: %s rows — %s inserted, %s updated, %s skipped, "
         "%s/%s translations written, %s translation skips",
         counts["total_rows"], inserted, updated, counts["skipped"],
         translations_inserted, translations_updated, counts["translations_skipped"],
     )
     return {"ran": True, "log_id": str(log.id), "status": "success", **counts}
+
+
+# ── File-upload fallback (bulk_upload_changes plan) ───────────────────────────
+
+async def run_file_upload_import(
+    db: AsyncSession, content: bytes, triggered_by=None
+) -> Dict[str, Any]:
+    """Run the exact same validate -> upsert -> translate -> log pipeline as
+    a CLIMDES sync, but against an admin-uploaded Excel file instead of an
+    HTTP fetch — the fallback path for when the CLIMDES server is down.
+
+    Always synchronous (D7 — there is no external network call to decouple
+    from) and always an explicit, forced action: there is no schedule/
+    due-gate concept for a file upload, and `feed_sync_config` (which only
+    tracks the CLIMDES fetch schedule) is never read or touched here.
+    """
+    sync_repo = FeedSyncRepository(db)
+
+    running = await sync_repo.get_running_log()
+    if running is not None:
+        logger.warning("File-upload import: another run is already in progress — refused")
+        return {"ran": False, "reason": "another run is already in progress"}
+
+    log = await sync_repo.create_log("file_upload", triggered_by=triggered_by)
+    await db.commit()  # make the 'running' row visible to pollers/other callers
+
+    result = await _run_import_pipeline(db, content, log, http_status=None)
+    await db.commit()
+    return result

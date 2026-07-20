@@ -46,9 +46,7 @@ from app.schemas.feed import (
     AdminFeedRequest,
     AdminFeedResponse,
     AdminFeedListResponse,
-    AdminBulkUploadResponse,
     AdminExportResponse,
-    AdminBulkLogResponse,
 )
 from app.schemas.animal import (
     AnimalCharacteristics,
@@ -124,7 +122,7 @@ __all__ = [
     "AdminFeedTypeRequest", "AdminFeedTypeResponse",
     "AdminFeedCategoryRequest", "AdminFeedCategoryResponse",
     "AdminFeedRequest", "AdminFeedResponse", "AdminFeedListResponse",
-    "AdminBulkUploadResponse", "AdminExportResponse", "AdminBulkLogResponse",
+    "AdminExportResponse",
     # animal
     "AnimalCharacteristics", "CattleInfo", "FeedWithPrice", "BaseThresholds",
     "DietRecommendationRequest", "AnimalCharacteristicItem", "AnimalCharacteristicsData",

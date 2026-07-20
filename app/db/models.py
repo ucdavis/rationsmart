@@ -486,9 +486,11 @@ class FeedSyncConfig(Base):
 
 
 class FeedSyncLog(Base):
-    """One row per sync run (scheduled or manual), created at start and
-    finalized at the end. `failed_rows` / `skipped_translations` hold the
-    per-row detail lists described in plan §9.3."""
+    """One row per sync run (scheduled, manual, or file_upload — a manually
+    uploaded Excel file run through the same engine, see
+    docs/dev_docs/bulk_upload_changes/IMPLEMENTATION_PLAN.md), created at
+    start and finalized at the end. `failed_rows` / `skipped_translations`
+    hold the per-row detail lists described in plan §9.3."""
     __tablename__ = "feed_sync_log"
 
     id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"), default=uuid.uuid4)
@@ -518,7 +520,7 @@ class FeedSyncLog(Base):
             name="ck_feed_sync_log_status",
         ),
         CheckConstraint(
-            "trigger_type IN ('scheduled', 'manual')",
+            "trigger_type IN ('scheduled', 'manual', 'file_upload')",
             name="ck_feed_sync_log_trigger_type",
         ),
     )
