@@ -36,18 +36,10 @@ const adminCards: AdminCard[] = [
       <path d="M13 21l4-8 4 8M15 18h4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ) },
-  // Language Catalog (2026-06-29) — merged screen. Combines the
-  // catalog-registry duty with the per-country enable/disable that
-  // used to live on /admin/country-languages. One tile, one page.
-  { title: "Language\nCatalog", href: "/admin/languages", icon: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
-      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  ) },
   // Country/Language (new) — enable/disable countries + languages, associate
-  // languages per country, and set local (translated) feed names. Additive
-  // alongside Translations / Language Catalog, not a replacement.
+  // languages per country, and set local (translated) feed names. Replaces
+  // the Language Catalog tile on the landing grid (2026-07-20) — the old
+  // /admin/languages route still exists but is no longer linked from here.
   { title: "Country/\nLanguage", href: "/admin/country-language", icon: (
     <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
       <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
