@@ -1059,6 +1059,50 @@ export const toggleCountryStatus = (country_id: string, action: "enable" | "disa
 export const listAllCountries = () =>
   api.get("/v1/admin/list-all-countries");
 
+// ─── CLIMDES Feed Library Sync (Admin) ──────────────────────────────────────
+// Spec source: ~/Downloads/climdes_admin_ui_design.md, verified live against
+// http://<DEV_BACKEND_IP>:8000/openapi.json (2026-07-20) — all six endpoints
+// below exist exactly as documented. External org CLIMDES publishes a Feed
+// Library (Excel export); this lets an admin configure the connection, flip
+// the weekly auto-sync on/off, trigger a manual sync, and audit past runs.
+
+// Lightweight status for the toggle + day picker + "Sync now" gating.
+export const getFeedSyncSchedulerStatus = () =>
+  api.get("/v1/admin/feed-sync/scheduler/status");
+
+// Full connection config. auth_token_masked is write-only on the way in —
+// the GET only ever echoes a masked form (e.g. "****9xyz") or null.
+export const getFeedSyncConfig = () => api.get("/v1/admin/feed-sync/config");
+
+// Partial update — only send changed fields. scheduler_enabled is
+// deliberately NOT accepted here; use toggleFeedSyncScheduler for that.
+export const updateFeedSyncConfig = (body: {
+  endpoint_url?: string;
+  auth_type?: "none" | "api_key" | "bearer";
+  auth_header_name?: string | null;
+  auth_token?: string;
+  sync_day_of_week?: string;
+}) => api.put("/v1/admin/feed-sync/config", body);
+
+// Gates automatic (scheduled) runs only — "Sync now" always works regardless
+// of this toggle. Enabling with no endpoint_url configured returns 400.
+export const toggleFeedSyncScheduler = (action: "enable" | "disable") =>
+  api.put("/v1/admin/feed-sync/scheduler/toggle", { action });
+
+// "Sync now" — non-blocking. Returns 202 + log_id immediately; poll
+// getFeedSyncLog(log_id) until status leaves "running". 400 = endpoint not
+// configured, 409 = a run is already in progress, 503 = worker/broker down.
+export const runFeedSyncNow = () => api.post("/v1/admin/feed-sync/run");
+
+// Paginated run history, newest first. page_size capped at 100 server-side.
+export const getFeedSyncLogs = (page = 1, page_size = 20) =>
+  api.get("/v1/admin/feed-sync/logs", { params: { page, page_size } });
+
+// Single run with row-level detail (failed_rows, skipped_translations) —
+// absent on the list endpoint to keep that response small.
+export const getFeedSyncLog = (log_id: string) =>
+  api.get(`/v1/admin/feed-sync/logs/${log_id}`);
+
 // Y3 §1.1.1 — feed search. Live backend endpoint per
 // docs/Search_Implmentation.md §9.1:
 //   GET /v1/animal/search-feeds?query=...&country_id=...&limit=20

@@ -46,6 +46,15 @@ const adminCards: AdminCard[] = [
       <circle cx="12" cy="9" r="2.5" stroke="#064E3B" strokeWidth="1.6" />
     </svg>
   ) },
+  // CLIMDES Feed Library Sync (new) — configure the external feed-catalogue
+  // connection, toggle the weekly auto-import, trigger a manual sync, and
+  // audit past runs. See ~/Downloads/climdes_admin_ui_design.md.
+  { title: "Feed Library\nSync", href: "/admin/feed-sync", icon: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M4 4v5h5M20 20v-5h-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4.5 15a8 8 0 0014.2 3.4M19.5 9A8 8 0 005.3 5.6" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ) },
 ];
 
 export default function AdminPage() {
