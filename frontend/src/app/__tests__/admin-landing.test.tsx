@@ -59,6 +59,7 @@ describe("Admin landing — admin user", () => {
       ["Feedback Management", "/admin/feedback"],
       ["Bulk Upload & Export Feed", "/admin/bulk-upload"],
       ["Feed Reports", "/admin/reports"],
+      ["Country/ Language", "/admin/country-language"],
     ];
 
     // Card titles render with a literal "\n" (whiteSpace: pre-line for the

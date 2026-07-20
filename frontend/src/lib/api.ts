@@ -1044,6 +1044,21 @@ export const assignLanguageToCountry = (country_id: string, code: string) =>
 export const unassignLanguageFromCountry = (country_id: string, code: string) =>
   api.delete(`/v1/admin/countries/${country_id}/languages/${code}`);
 
+// 4.7 — activate/deactivate a country. Verified live 2026-07-20: a
+// deactivated country is hidden from GET /v1/auth/countries (registration/
+// profile) and from GET /v1/admin/countries (the active-only admin list —
+// see 4.4), but existing users/feeds/reports referencing it are untouched.
+export const toggleCountryStatus = (country_id: string, action: "enable" | "disable") =>
+  api.put(`/v1/admin/countries/${country_id}/toggle-status`, { action });
+
+// 4.8 — list EVERY country, active and inactive (companion to 4.7 — 4.4
+// only returns active ones, so this is the only way to find inactive
+// countries to offer in an "Activate a country" picker). No `languages`
+// field on these rows (AdminCountryListItem) — that's only echoed on the
+// active-only 4.4 response.
+export const listAllCountries = () =>
+  api.get("/v1/admin/list-all-countries");
+
 // Y3 §1.1.1 — feed search. Live backend endpoint per
 // docs/Search_Implmentation.md §9.1:
 //   GET /v1/animal/search-feeds?query=...&country_id=...&limit=20

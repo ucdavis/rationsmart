@@ -45,6 +45,15 @@ const adminCards: AdminCard[] = [
       <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
   ) },
+  // Country/Language (new) — enable/disable countries + languages, associate
+  // languages per country, and set local (translated) feed names. Additive
+  // alongside Translations / Language Catalog, not a replacement.
+  { title: "Country/\nLanguage", href: "/admin/country-language", icon: (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+      <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
+      <circle cx="12" cy="9" r="2.5" stroke="#064E3B" strokeWidth="1.6" />
+    </svg>
+  ) },
 ];
 
 export default function AdminPage() {
