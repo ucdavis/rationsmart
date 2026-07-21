@@ -35,8 +35,8 @@ def build_diet_response(
     
     # Get derived grazing status from engine results
     animal_reqs = optimization_results.get('animal_requirements', {})
-    env_grazing = animal_reqs.get('Env_Grazing', 1)
-    grazing_label = "Grazing" if env_grazing == 0 else "Non-grazing"
+    env_grazing = animal_reqs.get('Env_Grazing', 0)
+    grazing_label = "Grazing" if env_grazing == 1 else "Non-grazing"
     
     # 1. Animal Information (Formatted)
     animal_information = {
@@ -52,7 +52,7 @@ def build_diet_response(
         'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
         'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
         'distance': round(safe_float(cattle_info.distance), 2),
-        'grazing': getattr(cattle_info, 'grazing', env_grazing == 0),
+        'grazing': getattr(cattle_info, 'grazing', env_grazing == 1),
         'topography': cattle_info.topography
     }
 
@@ -303,8 +303,8 @@ def build_evaluation_response(
     animal_requirements = evaluation_results.get("animal_requirements", {})
 
     # 0. Animal Information (Standardized format for consistency)
-    env_grazing = animal_requirements.get('Env_Grazing', 1)
-    grazing_label = "Grazing" if env_grazing == 0 else "Non-grazing"
+    env_grazing = animal_requirements.get('Env_Grazing', 0)
+    grazing_label = "Grazing" if env_grazing == 1 else "Non-grazing"
     
     animal_information = {
         'breed': cattle_info.breed or None,
@@ -319,7 +319,7 @@ def build_evaluation_response(
         'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
         'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
         'distance': round(safe_float(cattle_info.distance), 2),
-        'grazing': getattr(cattle_info, 'grazing', env_grazing == 0),
+        'grazing': getattr(cattle_info, 'grazing', env_grazing == 1),
         'topography': cattle_info.topography
     }
 

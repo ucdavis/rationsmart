@@ -62,6 +62,19 @@ class CattleInfo(BaseModel):
             return None
         return round(float(v), 2)
 
+    @field_validator('topography', mode='before')
+    @classmethod
+    def validate_topography(cls, v):
+        allowed = {"flat": "Flat", "hilly": "Hilly", "mountainous": "Mountainous"}
+        canonical = allowed.get(str(v).strip().lower())
+        if canonical is None:
+            raise ValueError("topography must be one of: Flat, Hilly, Mountainous")
+        return canonical
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.grazing and self.distance < 1:
+            raise ValueError('distance must be >= 1 km when grazing is enabled')
+
 
 # ── Feed with price (diet recommendation input) ──────────────────────────────
 
