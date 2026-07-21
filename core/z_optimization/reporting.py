@@ -36,7 +36,6 @@ def build_diet_response(
     # Get derived grazing status from engine results
     animal_reqs = optimization_results.get('animal_requirements', {})
     env_grazing = animal_reqs.get('Env_Grazing', 0)
-    grazing_label = "Grazing" if env_grazing == 1 else "Non-grazing"
     
     # 1. Animal Information (Formatted)
     animal_information = {
@@ -304,7 +303,6 @@ def build_evaluation_response(
 
     # 0. Animal Information (Standardized format for consistency)
     env_grazing = animal_requirements.get('Env_Grazing', 0)
-    grazing_label = "Grazing" if env_grazing == 1 else "Non-grazing"
     
     animal_information = {
         'breed': cattle_info.breed or None,
