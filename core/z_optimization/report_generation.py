@@ -1205,6 +1205,14 @@ def rsm_generate_report_v2(
         margin_sign = "+" if margin_per_liter >= 0 else "−"
         abs_margin = abs(margin_per_liter)
         abs_iofc = abs(daily_iofc)
+        # Explicit profitability verdict (mirrors solution_summary.margin_summary.message).
+        margin_rounded = round(margin_per_liter, 2)
+        if margin_rounded > 0:
+            verdict_text = f"Cost per liter is {currency_display}{abs_margin:.2f} below your milk rate — profitable"
+        elif margin_rounded < 0:
+            verdict_text = f"Cost per liter is {currency_display}{abs_margin:.2f} above your milk rate — loss"
+        else:
+            verdict_text = "Cost per liter equals your milk rate — break-even"
         margin_banner_html = (
             f"<div class='margin-banner {margin_cls}'>"
             f"<div class='margin-cell'><span class='margin-lab'>Milk Price / Liter</span>"
@@ -1216,6 +1224,7 @@ def rsm_generate_report_v2(
             f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Daily Income Over Feed Cost</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_iofc:.2f}</span></div>"
             f"</div>"
+            f"<div class='margin-verdict {margin_cls}'>{verdict_text}</div>"
         )
 
     m_prod, m_yield, m_int, m_ym, m_class = 0.0, 0.0, 0.0, 0.0, "Unknown"
@@ -1325,6 +1334,9 @@ def rsm_generate_report_v2(
       .margin-val { display: block; margin-top: 3px; font-size: 1.2rem; font-weight: 800; color: #334155; }
       .margin-positive .margin-highlight .margin-val { color: #15803d; }
       .margin-negative .margin-highlight .margin-val { color: #b91c1c; }
+      .margin-verdict { margin-top: 6px; text-align: center; font-size: 0.72rem; font-weight: 700; }
+      .margin-verdict.margin-positive { color: #15803d; }
+      .margin-verdict.margin-negative { color: #b91c1c; }
       .transposed-only { display: none !important; }
       .wide-only { display: block !important; }
       @media print {
