@@ -27,3 +27,6 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Claude Code local session settings
+.claude/

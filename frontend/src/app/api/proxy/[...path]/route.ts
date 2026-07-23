@@ -4,6 +4,13 @@ import http from "node:http";
 const BACKEND_HOST = process.env.BACKEND_HOST ?? "<DEV_BACKEND_IP>";
 const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
 
+// Upstream request timeout. Without this, a backend that accepts the
+// connection but never responds keeps the serverless function (and its
+// socket) alive until the platform's hard limit — a resource-exhaustion
+// vector. Kept just above the axios client's 60-s timeout so the browser
+// gives up first under normal conditions.
+const UPSTREAM_TIMEOUT_MS = 65_000;
+
 const HOP_BY_HOP = new Set([
   "host",
   "connection",
@@ -51,6 +58,7 @@ async function handler(
       path: backendPath,
       method: req.method,
       headers: forwardHeaders,
+      timeout: UPSTREAM_TIMEOUT_MS,
     };
 
     const proxyReq = http.request(options, (proxyRes) => {
@@ -70,6 +78,7 @@ async function handler(
           path: redirectPath,
           method: req.method,
           headers: forwardHeaders,
+          timeout: UPSTREAM_TIMEOUT_MS,
         };
 
         const redirectReq = http.request(redirectOpts, (redirectRes) => {
@@ -106,6 +115,10 @@ async function handler(
         redirectReq.on("error", () =>
           resolve(NextResponse.json({ detail: "Redirect request error" }, { status: 502 }))
         );
+        redirectReq.on("timeout", () => {
+          redirectReq.destroy();
+          resolve(NextResponse.json({ detail: "Upstream timeout" }, { status: 504 }));
+        });
 
         if (bodyBuffer) redirectReq.write(bodyBuffer);
         redirectReq.end();
@@ -143,14 +156,17 @@ async function handler(
       );
     });
 
-    proxyReq.on("error", (err) =>
-      resolve(
-        NextResponse.json(
-          { detail: "Proxy error: " + err.message },
-          { status: 502 }
-        )
-      )
-    );
+    proxyReq.on("error", (err) => {
+      // Log the real cause server-side (Vercel function logs) but return a
+      // generic message so upstream/connection internals aren't echoed to
+      // the browser.
+      console.error("[proxy] upstream request error:", err.message);
+      resolve(NextResponse.json({ detail: "Upstream request failed" }, { status: 502 }));
+    });
+    proxyReq.on("timeout", () => {
+      proxyReq.destroy();
+      resolve(NextResponse.json({ detail: "Upstream timeout" }, { status: 504 }));
+    });
 
     if (bodyBuffer) proxyReq.write(bodyBuffer);
     proxyReq.end();

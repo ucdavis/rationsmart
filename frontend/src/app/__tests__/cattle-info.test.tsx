@@ -215,7 +215,7 @@ describe("Cattle Info — field validation handlers", () => {
 });
 
 describe("Cattle Info — Active Grazing toggle", () => {
-  it("reveals Distance Walked + Topography when turned ON, hides them when turned OFF", async () => {
+  it("keeps Distance Walked + Topography rendered; disabled + neutralised to 0 when OFF, enabled when ON", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });
     render(<CattleInfoPage />);
     // The whole form now renders behind a loading skeleton until
@@ -224,20 +224,43 @@ describe("Cattle Info — Active Grazing toggle", () => {
     // interacting with any field.
     await screen.findByRole("button", { name: "Simulation history" });
 
-    expect(screen.queryByText("Distance Walked (km)")).toBeNull();
-    expect(screen.queryByText("Topography")).toBeNull();
-
-    const grazingToggle = screen.getByRole("checkbox");
-    fireEvent.click(grazingToggle);
-
+    // Grazing contract: the fields are ALWAYS rendered (no longer hidden).
     expect(screen.getByText("Distance Walked (km)")).toBeInTheDocument();
     expect(screen.getByText("Topography")).toBeInTheDocument();
     expect(screen.getByText("Flat")).toBeInTheDocument();
     expect(screen.getByText("Hilly")).toBeInTheDocument();
 
+    const distanceInput = inputAfterLabel("Distance Walked (km)");
+    // Grazing defaults OFF → field disabled and neutralised to "0".
+    expect(distanceInput.disabled).toBe(true);
+    expect(distanceInput.value).toBe("0");
+
+    const grazingToggle = screen.getByRole("checkbox");
     fireEvent.click(grazingToggle);
-    expect(screen.queryByText("Distance Walked (km)")).toBeNull();
-    expect(screen.queryByText("Topography")).toBeNull();
+    // ON → field enabled for entry.
+    expect(distanceInput.disabled).toBe(false);
+
+    fireEvent.click(grazingToggle);
+    // OFF again → disabled and back to 0.
+    expect(distanceInput.disabled).toBe(true);
+    expect(distanceInput.value).toBe("0");
+  });
+
+  it("shows a min-distance error when grazing is ON and distance < 1 km", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    fireEvent.click(screen.getByRole("checkbox")); // grazing ON
+    const distanceInput = inputAfterLabel("Distance Walked (km)");
+
+    // A sub-1 value (e.g. restored / pasted) is flagged...
+    fireEvent.change(distanceInput, { target: { value: "0.5" } });
+    expect(screen.getByText("Distance walked must be at least 1 km")).toBeInTheDocument();
+
+    // ...and clears once the value is >= 1.
+    fireEvent.change(distanceInput, { target: { value: "2" } });
+    expect(screen.queryByText("Distance walked must be at least 1 km")).toBeNull();
   });
 });
 

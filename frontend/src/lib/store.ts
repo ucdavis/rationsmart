@@ -169,7 +169,12 @@ export const useStore = create<AppState>()(
     {
       name: "rationsmart-storage",
       partialize: (state) => ({
-        user: state.user,
+        // SECURITY: strip the account PIN before persisting. The user object
+        // is written to localStorage; the PIN is a credential and nothing in
+        // the app reads `user.pin` after login. Blanking it here guarantees no
+        // code path can ever persist it, and scrubs any PIN left in
+        // localStorage by an older build on the next store write.
+        user: state.user ? { ...state.user, pin: "" } : null,
         feedSelectionType: state.feedSelectionType,
         cattleInfo: state.cattleInfo,
         feedSelections: state.feedSelections,

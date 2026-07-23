@@ -137,7 +137,12 @@ export default function LoginPage() {
         country_id: String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""),
         country_code: (typeof country === "object" ? country?.country_code : undefined) ?? u.country_code ?? "",
         currency,
-        pin,
+        // SECURITY: never persist the account PIN. The store is written to
+        // localStorage (partialized `user`), so storing the real PIN here
+        // would leave the user's credential in cleartext. Nothing in the app
+        // reads `user.pin` after login (auth is the JWT below), so keep it
+        // empty. Re-auth flows (delete-account, reset) collect the PIN fresh.
+        pin: "",
         is_admin,
         // v1: store the JWT so every subsequent animal/* + admin/* call
         // can attach `Authorization: Bearer <token>` via the axios interceptor.

@@ -641,6 +641,15 @@ export default function CattleInfoPage() {
 
   const hasFieldErrors = Object.values(errors).some(Boolean);
 
+  // Spec (Grazing contract): when grazing is ON, Distance Walked must be
+  // >= 1 km. Derived (not stored in `errors`) so it reactively covers both
+  // typed input and values populated by simulation restore. When grazing is
+  // OFF the field is neutralised (distance 0), so no error applies.
+  const distanceError =
+    form.grazing && form.distance_walked !== "" && parseFloat(form.distance_walked) < 1
+      ? t("Distance walked must be at least 1 km")
+      : undefined;
+
   // Y3 §1.4 — non-lactating categories (Dry Cow / Heifer / Baby Calf)
   // don't produce milk, so Milk Production fields are neither rendered
   // nor required. `showMilkSection` is the single source of truth for
@@ -674,7 +683,7 @@ export default function CattleInfoPage() {
     form.parity !== "" &&
     milkFieldsValid &&
     !isNaN(temp) && temp !== 0 &&
-    (!form.grazing || (parseFloat(form.distance_walked) > 0 && form.topography !== "")) &&
+    (!form.grazing || (parseFloat(form.distance_walked) >= 1 && form.topography !== "")) &&
     !hasFieldErrors;
 
   // Diagnostic — print which gating sub-expression is letting Continue
@@ -1272,12 +1281,12 @@ export default function CattleInfoPage() {
               </div>
             )}
 
-            {/* Distance Walked + Topography — shown only when grazing is ON */}
-            {form.grazing && (
-              <>
-                {/* Topography: label + radios all on one row (matches Android start_toEndOf layout)
-                    Android rg_topography marginTop offset_12 (12dp) and no bottom margin
-                    — the next field's own mt-3 (offset_12 12dp) handles the spacing. */}
+            {/* Distance Walked + Topography — per the Grazing contract these
+                are ALWAYS rendered: enabled when grazing is ON, disabled +
+                greyed out when OFF. handleContinue still sends the neutral
+                distance:0 / topography:"Flat" payload when OFF. */}
+            <div style={{ opacity: form.grazing ? 1 : 0.5 }}>
+                {/* Topography: label + radios all on one row (matches Android start_toEndOf layout) */}
                 <div className="flex items-center gap-5 mt-3 ml-1">
                   <span
                     className="text-xs font-bold uppercase tracking-wide"
@@ -1289,33 +1298,37 @@ export default function CattleInfoPage() {
                     })()}
                     <span style={{ color: "#FC2E20" }}>{" *"}</span>
                   </span>
-                  {(["Flat", "Hilly"] as const).map((opt) => (
+                  {(["Flat", "Hilly"] as const).map((opt) => {
+                    const selected = form.topography === opt;
+                    const active = form.grazing && selected;
+                    return (
                     <button
                       key={opt}
                       type="button"
+                      disabled={!form.grazing}
                       onClick={() => set("topography")(opt)}
                       className="flex items-center gap-2"
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                      style={{ background: "none", border: "none", cursor: form.grazing ? "pointer" : "not-allowed", padding: 0 }}
                     >
                       <div
                         style={{
                           width: 20,
                           height: 20,
                           borderRadius: "50%",
-                          border: `2px solid ${form.topography === opt ? "#064E3B" : "#E2E8F0"}`,
+                          border: `2px solid ${active ? "#064E3B" : "#E2E8F0"}`,
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
                           flexShrink: 0,
                         }}
                       >
-                        {form.topography === opt && (
+                        {selected && (
                           <div
                             style={{
                               width: 10,
                               height: 10,
                               borderRadius: "50%",
-                              backgroundColor: "#064E3B",
+                              backgroundColor: active ? "#064E3B" : "#C2C2C2",
                             }}
                           />
                         )}
@@ -1324,30 +1337,37 @@ export default function CattleInfoPage() {
                         style={{
                           fontFamily: "Nunito, sans-serif",
                           fontSize: 14,
-                          fontWeight: form.topography === opt ? 700 : 400,
-                          color: form.topography === opt ? "#064E3B" : "#6D6D6D",
+                          fontWeight: active ? 700 : 400,
+                          color: active ? "#064E3B" : "#6D6D6D",
                         }}
                       >
                         {t(opt)}
                       </span>
                     </button>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <FieldLabel>{t("Distance Walked (km) *")}</FieldLabel>
                 <input
                   type="number"
                   inputMode="decimal"
-                  value={form.distance_walked}
+                  value={form.grazing ? form.distance_walked : "0"}
                   onChange={(e) => handleDistanceWalked(e.target.value)}
                   {...loadingFieldProps(
                     loadingCountries,
                     "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
-                    inputStyle
+                    form.grazing
+                      ? inputStyle
+                      : { ...inputStyle, backgroundColor: "#F1F5F9", color: "#999999", cursor: "not-allowed" }
                   )}
+                  // Placed AFTER the spread so it ORs with the loading-disabled
+                  // state that loadingFieldProps sets (otherwise the spread's
+                  // own `disabled` would overwrite this one).
+                  disabled={!form.grazing || loadingCountries}
                 />
-              </>
-            )}
+                <FieldError message={distanceError} />
+            </div>
           </div>
         </SectionCard>
       </div>
