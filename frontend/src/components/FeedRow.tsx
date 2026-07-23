@@ -1,7 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFeedTypes, getFeedTypesLocalized, getFeedCategories, getFeedCategoriesLocalized, getFeedSubCategories, updateCustomFeed, insertCustomFeed, checkInsertOrUpdate } from "@/lib/api";
+import {
+  getFeedTypes,
+  getFeedTypesLocalized,
+  getFeedCategories,
+  getFeedCategoriesLocalized,
+  getFeedSubCategories,
+  updateCustomFeed,
+  insertCustomFeed,
+  checkInsertOrUpdate,
+} from "@/lib/api";
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useStore } from "@/lib/store";
@@ -19,8 +28,19 @@ function getNutrientLayout(category: string): NutrientLayout {
 }
 
 type EditFormKey =
-  | "fd_dm" | "fd_ash" | "fd_cp" | "fd_npn_cp" | "fd_ee" | "fd_st"
-  | "fd_ndf" | "fd_adf" | "fd_lg" | "fd_ndin" | "fd_adin" | "fd_ca" | "fd_p";
+  | "fd_dm"
+  | "fd_ash"
+  | "fd_cp"
+  | "fd_npn_cp"
+  | "fd_ee"
+  | "fd_st"
+  | "fd_ndf"
+  | "fd_adf"
+  | "fd_lg"
+  | "fd_ndin"
+  | "fd_adin"
+  | "fd_ca"
+  | "fd_p";
 
 const NUTRIENT_FIELDS_ADDITIVE: { key: EditFormKey; label: string }[] = [
   { key: "fd_dm", label: "Dry Matter" },
@@ -74,12 +94,24 @@ function fmtNum(v: unknown): string {
 // dropdown. Populated via dual-fetch (see getFeedTypesLocalized /
 // getFeedCategoriesLocalized). When response arrays don't align (rare),
 // display falls back to name.
-interface FeedType { id: number; name: string; display: string; }
-interface FeedCategory { id: number; name: string; display: string; }
+interface FeedType {
+  id: number;
+  name: string;
+  display: string;
+}
+interface FeedCategory {
+  id: number;
+  name: string;
+  display: string;
+}
 // i18n V2 — display_name is the translated label shown to the user;
 // feed_name is the stable English identifier used for backend lookups
 // and comparison against the row's stored sub_category_name.
-interface FeedSubCategoryItem { feed_name: string; feed_uuid: string; display_name: string; }
+interface FeedSubCategoryItem {
+  feed_name: string;
+  feed_uuid: string;
+  display_name: string;
+}
 
 interface FeedRowProps {
   item: FeedItem;
@@ -144,7 +176,9 @@ function FieldBox({
       style={{
         backgroundColor: loading ? undefined : "#FFFFFF",
         borderRadius: 16,
-        border: loading ? "1.5px solid transparent" : `1.5px solid ${hasValue ? "#064E3B" : "#DCE0E4"}`,
+        border: loading
+          ? "1.5px solid transparent"
+          : `1.5px solid ${hasValue ? "#064E3B" : "#DCE0E4"}`,
         padding: "16px 12px 12px",
         position: "relative",
         opacity: disabled && !loading ? 0.55 : 1,
@@ -260,8 +294,19 @@ export default function FeedRow({
   const [editFeedDetailsExpanded, setEditFeedDetailsExpanded] = useState(true);
   const [editNutritionalInfoExpanded, setEditNutritionalInfoExpanded] = useState(true);
   const [editForm, setEditForm] = useState<Record<EditFormKey, string>>({
-    fd_dm: "", fd_ash: "", fd_cp: "", fd_npn_cp: "", fd_ee: "", fd_st: "",
-    fd_ndf: "", fd_adf: "", fd_lg: "", fd_ndin: "", fd_adin: "", fd_ca: "", fd_p: "",
+    fd_dm: "",
+    fd_ash: "",
+    fd_cp: "",
+    fd_npn_cp: "",
+    fd_ee: "",
+    fd_st: "",
+    fd_ndf: "",
+    fd_adf: "",
+    fd_lg: "",
+    fd_ndin: "",
+    fd_adin: "",
+    fd_ca: "",
+    fd_p: "",
   });
 
   const canEdit = !!item.feed_uuid;
@@ -271,8 +316,19 @@ export default function FeedRow({
     setShowEditModal(true);
     setIsLoadingEdit(true);
     setEditForm({
-      fd_dm: "", fd_ash: "", fd_cp: "", fd_npn_cp: "", fd_ee: "", fd_st: "",
-      fd_ndf: "", fd_adf: "", fd_lg: "", fd_ndin: "", fd_adin: "", fd_ca: "", fd_p: "",
+      fd_dm: "",
+      fd_ash: "",
+      fd_cp: "",
+      fd_npn_cp: "",
+      fd_ee: "",
+      fd_st: "",
+      fd_ndf: "",
+      fd_adf: "",
+      fd_lg: "",
+      fd_ndin: "",
+      fd_adin: "",
+      fd_ca: "",
+      fd_p: "",
     });
     try {
       const res = await checkInsertOrUpdate(user.country_id, item.feed_uuid, user.id);
@@ -331,7 +387,9 @@ export default function FeedRow({
       // Mirror Android FeedDetailsViewModel: empty → 0.0 (toDoubleOrZero).
       const toNum = (v: string) => (v ? Number(v) : 0);
       const feed_details: Record<string, unknown> = {
-        feed_name: editIsInsert ? `${editNamePrefix}${editFeedName.trim()}` : `${editNamePrefix}${editFeedName.trim()}`,
+        feed_name: editIsInsert
+          ? `${editNamePrefix}${editFeedName.trim()}`
+          : `${editNamePrefix}${editFeedName.trim()}`,
         feed_type: item.feed_type_name ?? "",
         feed_category: item.category_name ?? "",
         country_code: user.country_code ?? "",
@@ -357,7 +415,9 @@ export default function FeedRow({
           feed_insert: true,
           feed_details,
         });
-        const newName = (res.data?.feed_details?.feed_name as string) ?? `${editNamePrefix}${editFeedName.trim()}`;
+        const newName =
+          (res.data?.feed_details?.feed_name as string) ??
+          `${editNamePrefix}${editFeedName.trim()}`;
         const newId = (res.data?.feed_details?.feed_id as string) ?? item.feed_uuid;
         // Android DialogFeedDetails repopulates the spinner after insert
         // so the new feed becomes the selected option. We mirror that
@@ -368,11 +428,16 @@ export default function FeedRow({
         setSubCategories((prev) =>
           prev.some((s) => s.feed_uuid === newId)
             ? prev
-            // New custom feed — no server translation exists yet, so
-            // display_name is just the entered English name.
-            : [...prev, { feed_name: newName, feed_uuid: newId!, display_name: newName }]
+            : // New custom feed — no server translation exists yet, so
+              // display_name is just the entered English name.
+              [...prev, { feed_name: newName, feed_uuid: newId!, display_name: newName }]
         );
-        onUpdate(item.id, { sub_category_id: 1, sub_category_name: newName, feed_uuid: newId, display_name: newName });
+        onUpdate(item.id, {
+          sub_category_id: 1,
+          sub_category_name: newName,
+          feed_uuid: newId,
+          display_name: newName,
+        });
         showSnackbar(t("Custom feed saved"), "success");
       } else {
         await updateCustomFeed({
@@ -387,9 +452,7 @@ export default function FeedRow({
         const updatedName = `${editNamePrefix}${editFeedName.trim()}`;
         if (updatedName && updatedName !== item.sub_category_name) {
           setSubCategories((prev) =>
-            prev.map((s) =>
-              s.feed_uuid === item.feed_uuid ? { ...s, feed_name: updatedName } : s
-            )
+            prev.map((s) => (s.feed_uuid === item.feed_uuid ? { ...s, feed_name: updatedName } : s))
           );
           onUpdate(item.id, { sub_category_name: updatedName });
         }
@@ -429,18 +492,25 @@ export default function FeedRow({
           ? (data as { feed_types: unknown[] }).feed_types
           : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
             ? (data as { unique_feed_types: unknown[] }).unique_feed_types
-            // Some responses come back as a single bare object instead of
-            // a 1-item array when there's exactly one result (a common
-            // REST quirk) — wrap it rather than silently showing an empty
-            // dropdown for an option that genuinely exists.
-            : data && typeof data === "object" && !Array.isArray(data) &&
-                (("type_name" in data) || ("name" in data))
+            : // Some responses come back as a single bare object instead of
+              // a 1-item array when there's exactly one result (a common
+              // REST quirk) — wrap it rather than silently showing an empty
+              // dropdown for an option that genuinely exists.
+              data &&
+                typeof data === "object" &&
+                !Array.isArray(data) &&
+                ("type_name" in data || "name" in data)
               ? [data]
               : [];
       return raw
         .map((it) => {
           if (typeof it === "string") return { name: it, display: it };
-          const o = it as { type_name?: string; name?: string; display_name?: string; display_type?: string };
+          const o = it as {
+            type_name?: string;
+            name?: string;
+            display_name?: string;
+            display_type?: string;
+          };
           const name = o?.type_name ?? o?.name ?? "";
           const display = o?.display_type ?? o?.display_name ?? name;
           return { name, display };
@@ -489,7 +559,10 @@ export default function FeedRow({
           if (item.feed_type_name && !types.find((t) => t.name === item.feed_type_name)) {
             if (isForageType(item.feed_type_name) && types.find((t) => t.name === "Forage")) {
               onUpdate(item.id, { feed_type_name: "Forage" });
-            } else if (isRoughageType(item.feed_type_name) && types.find((t) => t.name === "Roughage")) {
+            } else if (
+              isRoughageType(item.feed_type_name) &&
+              types.find((t) => t.name === "Roughage")
+            ) {
               onUpdate(item.id, { feed_type_name: "Roughage" });
             } else if (/[^\x00-\x7F]/.test(item.feed_type_name)) {
               // Non-ASCII stored identity that isn't a known Forage/Roughage
@@ -536,16 +609,23 @@ export default function FeedRow({
             }
           }
         } catch (parseErr) {
-          console.error("[feed-cascade] feed types response parsing failed (request itself succeeded):", parseErr, res.data);
+          console.error(
+            "[feed-cascade] feed types response parsing failed (request itself succeeded):",
+            parseErr
+          );
         }
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error("[feed-cascade] feed types fetch failed:", err?.message, err?.response?.data);
+        console.error("[feed-cascade] feed types fetch failed:", err?.message);
         if (!item.feed_type_name) showSnackbar(t("Could not load feed types"), "error");
       })
-      .finally(() => { if (!cancelled) setLoadingTypes(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingTypes(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user?.country_id, showSnackbar]);
 
   // Self-heal — an earlier i18n build briefly sent ?lang= to
@@ -565,7 +645,9 @@ export default function FeedRow({
   useEffect(() => {
     if (!item.feed_type_name || !taxonomyLabels?.types) return;
     if (feedTypes.some((ft) => ft.name === item.feed_type_name)) return;
-    const englishKey = Object.entries(taxonomyLabels.types).find(([, v]) => v === item.feed_type_name)?.[0];
+    const englishKey = Object.entries(taxonomyLabels.types).find(
+      ([, v]) => v === item.feed_type_name
+    )?.[0];
     if (englishKey && feedTypes.some((ft) => ft.name === englishKey)) {
       onUpdate(item.id, { feed_type_name: englishKey });
     }
@@ -597,18 +679,25 @@ export default function FeedRow({
             ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
             : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
               ? (data as { feed_categories: unknown[] }).feed_categories
-              // Some categories come back as a single bare object instead
-              // of a 1-item array when there's exactly one result for that
-              // feed type — wrap it instead of rendering an empty dropdown
-              // for a category that genuinely exists.
-              : data && typeof data === "object" && !Array.isArray(data) &&
-                  (("category_name" in data) || ("name" in data))
+              : // Some categories come back as a single bare object instead
+                // of a 1-item array when there's exactly one result for that
+                // feed type — wrap it instead of rendering an empty dropdown
+                // for a category that genuinely exists.
+                data &&
+                  typeof data === "object" &&
+                  !Array.isArray(data) &&
+                  ("category_name" in data || "name" in data)
                 ? [data]
                 : [];
       return raw
         .map((it) => {
           if (typeof it === "string") return { name: it, display: it };
-          const o = it as { category_name?: string; name?: string; display_name?: string; display_category?: string };
+          const o = it as {
+            category_name?: string;
+            name?: string;
+            display_name?: string;
+            display_category?: string;
+          };
           const name = o?.category_name ?? o?.name ?? "";
           const display = o?.display_category ?? o?.display_name ?? name;
           return { name, display };
@@ -664,7 +753,11 @@ export default function FeedRow({
               sub_category_name: "",
               feed_uuid: null,
             });
-          } else if (!matched && item.category_name && (item.feed_uuid || item.category_id != null)) {
+          } else if (
+            !matched &&
+            item.category_name &&
+            (item.feed_uuid || item.category_id != null)
+          ) {
             // If the row's stored category isn't in the fetched list but
             // the row has been actively used (feed_uuid picked earlier),
             // inject a synthetic entry so the CustomSelect dropdown still
@@ -687,23 +780,36 @@ export default function FeedRow({
             // even though feedSelections had the row cached in the store,
             // because a name-only cascade mismatch cleared everything.
             if (!item.feed_uuid) {
-              onUpdate(item.id, { category_id: null, category_name: "", sub_category_id: null, sub_category_name: "", feed_uuid: null });
+              onUpdate(item.id, {
+                category_id: null,
+                category_name: "",
+                sub_category_id: null,
+                sub_category_name: "",
+                feed_uuid: null,
+              });
               setSubCategories([]);
             }
           } else if (matched.id !== item.category_id) {
             onUpdate(item.id, { category_id: matched.id });
           }
         } catch (parseErr) {
-          console.error("[feed-cascade] feed categories response parsing failed (request itself succeeded):", parseErr, res.data);
+          console.error(
+            "[feed-cascade] feed categories response parsing failed (request itself succeeded):",
+            parseErr
+          );
         }
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error("[feed-cascade] feed categories fetch failed:", err?.message, err?.response?.data);
+        console.error("[feed-cascade] feed categories fetch failed:", err?.message);
         if (!item.category_name) showSnackbar(t("Could not load categories"), "error");
       })
-      .finally(() => { if (!cancelled) setLoadingCats(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingCats(false);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_type_name, user?.country_id, user?.id]);
 
@@ -715,7 +821,9 @@ export default function FeedRow({
   useEffect(() => {
     if (!item.category_name || !taxonomyLabels?.categories) return;
     if (categories.some((c) => c.name === item.category_name)) return;
-    const englishKey = Object.entries(taxonomyLabels.categories).find(([, v]) => v === item.category_name)?.[0];
+    const englishKey = Object.entries(taxonomyLabels.categories).find(
+      ([, v]) => v === item.category_name
+    )?.[0];
     if (englishKey && categories.some((c) => c.name === englishKey)) {
       onUpdate(item.id, { category_name: englishKey });
     }
@@ -750,27 +858,37 @@ export default function FeedRow({
           const data = res.data as unknown;
           const standardFeeds = (data as { standard_feeds?: unknown[] })?.standard_feeds;
           const customFeeds = (data as { custom_feeds?: unknown[] })?.custom_feeds;
-          const raw: unknown[] = (Array.isArray(standardFeeds) || Array.isArray(customFeeds))
-            ? [...(Array.isArray(standardFeeds) ? standardFeeds : []), ...(Array.isArray(customFeeds) ? customFeeds : [])]
-            : Array.isArray(data)
-              ? data
-              : Array.isArray((data as { sub_categories?: unknown[] })?.sub_categories)
-                ? (data as { sub_categories: unknown[] }).sub_categories
-                : Array.isArray((data as { feeds?: unknown[] })?.feeds)
-                  ? (data as { feeds: unknown[] }).feeds
-                  // A single matching feed can come back as a bare object
-                  // instead of a 1-item array — wrap it instead of
-                  // rendering an empty Feed dropdown for a feed that
-                  // genuinely exists.
-                  : data && typeof data === "object" && !Array.isArray(data) &&
-                      (("feed_id" in data) || ("fd_name" in data))
-                    ? [data]
-                    : [];
+          const raw: unknown[] =
+            Array.isArray(standardFeeds) || Array.isArray(customFeeds)
+              ? [
+                  ...(Array.isArray(standardFeeds) ? standardFeeds : []),
+                  ...(Array.isArray(customFeeds) ? customFeeds : []),
+                ]
+              : Array.isArray(data)
+                ? data
+                : Array.isArray((data as { sub_categories?: unknown[] })?.sub_categories)
+                  ? (data as { sub_categories: unknown[] }).sub_categories
+                  : Array.isArray((data as { feeds?: unknown[] })?.feeds)
+                    ? (data as { feeds: unknown[] }).feeds
+                    : // A single matching feed can come back as a bare object
+                      // instead of a 1-item array — wrap it instead of
+                      // rendering an empty Feed dropdown for a feed that
+                      // genuinely exists.
+                      data &&
+                        typeof data === "object" &&
+                        !Array.isArray(data) &&
+                        ("feed_id" in data || "fd_name" in data)
+                      ? [data]
+                      : [];
           const list: FeedSubCategoryItem[] = raw
             .map((it) => {
               const o = it as {
-                feed_id?: string; feed_uuid?: string; id?: string;
-                fd_name?: string; feed_name?: string; name?: string;
+                feed_id?: string;
+                feed_uuid?: string;
+                id?: string;
+                fd_name?: string;
+                feed_name?: string;
+                name?: string;
                 display_name?: string;
               };
               const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
@@ -778,11 +896,15 @@ export default function FeedRow({
               // i18n V2 — display_name falls back to English name when no
               // translation exists, so we can render unconditionally.
               const display = o?.display_name ?? name;
-              return uuid && name ? { feed_name: name, feed_uuid: uuid, display_name: display } : null;
+              return uuid && name
+                ? { feed_name: name, feed_uuid: uuid, display_name: display }
+                : null;
             })
             .filter((s): s is FeedSubCategoryItem => s !== null);
           const match = list.find(
-            (s) => (item.feed_uuid && s.feed_uuid === item.feed_uuid) || s.feed_name === item.sub_category_name
+            (s) =>
+              (item.feed_uuid && s.feed_uuid === item.feed_uuid) ||
+              s.feed_name === item.sub_category_name
           );
           // If the row has a picked feed_uuid but it's not in the new
           // list (e.g. missing Hindi translation on backend), inject a
@@ -825,18 +947,26 @@ export default function FeedRow({
             });
           }
         } catch (parseErr) {
-          console.error("[feed-cascade] sub-categories response parsing failed (request itself succeeded):", parseErr, res.data);
+          console.error(
+            "[feed-cascade] sub-categories response parsing failed (request itself succeeded):",
+            parseErr
+          );
         }
       })
       .catch((err) => {
         if (cancelled) return;
-        console.error("[feed-cascade] sub-categories fetch failed:", err?.message, err?.response?.data);
+        console.error("[feed-cascade] sub-categories fetch failed:", err?.message);
         // If the row already has a restored sub_category_name / feed_uuid,
         // the visible state is intact — suppress the toast.
-        if (!item.sub_category_name && !item.feed_uuid) showSnackbar(t("Could not load sub-categories"), "error");
+        if (!item.sub_category_name && !item.feed_uuid)
+          showSnackbar(t("Could not load sub-categories"), "error");
       })
-      .finally(() => { if (!cancelled) setLoadingSubs(false); });
-    return () => { cancelled = true; };
+      .finally(() => {
+        if (!cancelled) setLoadingSubs(false);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.category_name, item.feed_type_name, user?.country_id, user?.id]);
 
@@ -846,8 +976,15 @@ export default function FeedRow({
   // Otherwise the new feed inherits stale bounds from the previous one,
   // and the toggle stays "on" against no feed at all.
   useEffect(() => {
-    if (!item.feed_uuid && (item.inclusion_limits_enabled || item.min_kg_per_day != null || item.max_kg_per_day != null)) {
-      onUpdate(item.id, { inclusion_limits_enabled: false, min_kg_per_day: null, max_kg_per_day: null });
+    if (
+      !item.feed_uuid &&
+      (item.inclusion_limits_enabled || item.min_kg_per_day != null || item.max_kg_per_day != null)
+    ) {
+      onUpdate(item.id, {
+        inclusion_limits_enabled: false,
+        min_kg_per_day: null,
+        max_kg_per_day: null,
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_uuid]);
@@ -889,9 +1026,10 @@ export default function FeedRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const cost = showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
-    ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
-    : null;
+  const cost =
+    showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
+      ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
+      : null;
 
   // While this row's own cascade is in flight, treat the WHOLE row as
   // loading — not just Type/Category/Feed. A restored row (simulation
@@ -918,11 +1056,24 @@ export default function FeedRow({
         cursor: onActivate ? "pointer" : "default",
       }}
     >
-
       {/* Card header: FEED # + active pill + edit + delete buttons */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 10px 8px" }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 10px 8px",
+        }}
+      >
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700, fontSize: 16 }}>
+          <span
+            style={{
+              color: "#064E3B",
+              fontFamily: "Nunito, sans-serif",
+              fontWeight: 700,
+              fontSize: 16,
+            }}
+          >
             {t("FEED ${N}").replace("${N}", String(index + 1))}
           </span>
           {isActive && (
@@ -953,7 +1104,11 @@ export default function FeedRow({
             disabled={!canEdit || rowLoading}
             className={rowLoading ? "shimmer" : undefined}
             style={{
-              backgroundColor: rowLoading ? undefined : canEdit ? "rgba(5,188,109,0.15)" : "#D3D3D3",
+              backgroundColor: rowLoading
+                ? undefined
+                : canEdit
+                  ? "rgba(5,188,109,0.15)"
+                  : "#D3D3D3",
               borderRadius: 10,
               padding: 8,
               border: "none",
@@ -965,8 +1120,20 @@ export default function FeedRow({
             }}
             aria-label={t("Edit feed nutritional values")}
           >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ opacity: rowLoading ? 0 : 1 }}>
-              <path d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z" stroke={canEdit ? "#064E3B" : "#6D6D6D"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              style={{ opacity: rowLoading ? 0 : 1 }}
+            >
+              <path
+                d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z"
+                stroke={canEdit ? "#064E3B" : "#6D6D6D"}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </button>
           {/* FEED 1 (index 0) intentionally has NO delete button —
@@ -1008,7 +1175,8 @@ export default function FeedRow({
           className="text-xs font-bold uppercase mb-2 ml-1"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          {t("Feed Type")}<span style={{ color: "#FC2E20" }}>{" *"}</span>
+          {t("Feed Type")}
+          <span style={{ color: "#FC2E20" }}>{" *"}</span>
         </p>
         {loadingTypes ? (
           // Same 2-column radio grid as the real content below (feed
@@ -1028,7 +1196,10 @@ export default function FeedRow({
                     flexShrink: 0,
                   }}
                 />
-                <span className="shimmer rounded" style={{ width: 70, height: 12, borderRadius: 4 }} />
+                <span
+                  className="shimmer rounded"
+                  style={{ width: 70, height: 12, borderRadius: 4 }}
+                />
               </div>
             ))}
           </div>
@@ -1086,7 +1257,14 @@ export default function FeedRow({
                     }}
                   >
                     {selected && (
-                      <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: "#064E3B" }} />
+                      <span
+                        style={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
+                          backgroundColor: "#064E3B",
+                        }}
+                      />
                     )}
                   </span>
                   <span
@@ -1115,7 +1293,12 @@ export default function FeedRow({
             shimmers it in place (via FieldBox's + CustomSelect's own
             `loading` props) instead of swapping in a bare placeholder
             div, so there's no layout drift once the fetch resolves. */}
-        <FieldBox label={t("Feed Category")} hasValue={!!item.category_name} disabled={!item.feed_type_name} loading={loadingCats}>
+        <FieldBox
+          label={t("Feed Category")}
+          hasValue={!!item.category_name}
+          disabled={!item.feed_type_name}
+          loading={loadingCats}
+        >
           <CustomSelect
             transparentTrigger
             value={item.category_id != null ? String(item.category_id) : ""}
@@ -1144,7 +1327,12 @@ export default function FeedRow({
             }))}
           />
         </FieldBox>
-        <FieldBox label={t("Feed")} hasValue={!!item.feed_uuid} disabled={!item.category_name} loading={loadingSubs}>
+        <FieldBox
+          label={t("Feed")}
+          hasValue={!!item.feed_uuid}
+          disabled={!item.category_name}
+          loading={loadingSubs}
+        >
           <CustomSelect
             transparentTrigger
             value={item.feed_uuid ?? ""}
@@ -1161,7 +1349,10 @@ export default function FeedRow({
                 // so selected.display_name is English-only — overlay the
                 // taxonomyLabels translation (falls back to English when
                 // this specific feed has no translation row yet).
-                display_name: (selected && (taxonomyLabels?.feeds?.[selected.feed_uuid] ?? selected.display_name)) ?? null,
+                display_name:
+                  (selected &&
+                    (taxonomyLabels?.feeds?.[selected.feed_uuid] ?? selected.display_name)) ??
+                  null,
               });
             }}
             disabled={!item.category_name}
@@ -1231,7 +1422,9 @@ export default function FeedRow({
                 placeholder={t("NA")}
                 value={item.min_kg_per_day ?? ""}
                 onChange={(e) =>
-                  onUpdate(item.id, { min_kg_per_day: e.target.value ? Number(e.target.value) : null })
+                  onUpdate(item.id, {
+                    min_kg_per_day: e.target.value ? Number(e.target.value) : null,
+                  })
                 }
                 {...cascadeLoadingProps(rowLoading, innerInputStyle)}
               />
@@ -1251,7 +1444,9 @@ export default function FeedRow({
                 placeholder={t("No upper bound")}
                 value={item.max_kg_per_day ?? ""}
                 onChange={(e) =>
-                  onUpdate(item.id, { max_kg_per_day: e.target.value ? Number(e.target.value) : null })
+                  onUpdate(item.id, {
+                    max_kg_per_day: e.target.value ? Number(e.target.value) : null,
+                  })
                 }
                 {...cascadeLoadingProps(rowLoading, innerInputStyle)}
               />
@@ -1265,7 +1460,12 @@ export default function FeedRow({
           row) — or while rowLoading, since a restored row can already
           have a real price while its cascade is still re-verifying. */}
       <div style={{ padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
-        <FieldBox label={t("Price ${currencySymbol}/KG").replace("${currencySymbol}", currencySymbol)} hasValue={item.price_per_kg != null && item.price_per_kg !== 0} disabled={!item.feed_uuid} loading={rowLoading}>
+        <FieldBox
+          label={t("Price ${currencySymbol}/KG").replace("${currencySymbol}", currencySymbol)}
+          hasValue={item.price_per_kg != null && item.price_per_kg !== 0}
+          disabled={!item.feed_uuid}
+          loading={rowLoading}
+        >
           <input
             type="number"
             inputMode="decimal"
@@ -1276,7 +1476,10 @@ export default function FeedRow({
             onChange={(e) =>
               onUpdate(item.id, { price_per_kg: e.target.value ? Number(e.target.value) : null })
             }
-            {...cascadeLoadingProps(rowLoading, { ...innerInputStyle, cursor: !item.feed_uuid ? "not-allowed" : "text" })}
+            {...cascadeLoadingProps(rowLoading, {
+              ...innerInputStyle,
+              cursor: !item.feed_uuid ? "not-allowed" : "text",
+            })}
           />
         </FieldBox>
       </div>
@@ -1284,7 +1487,12 @@ export default function FeedRow({
       {/* Row 7 — Quantity + Cost (eval mode only, 50/50) */}
       {showQuantity && (
         <div style={{ ...colGap, padding: "0 10px 16px" }}>
-          <FieldBox label={t("Quantity")} hasValue={item.quantity_kg != null && item.quantity_kg !== 0} disabled={!item.price_per_kg} loading={rowLoading}>
+          <FieldBox
+            label={t("Quantity")}
+            hasValue={item.quantity_kg != null && item.quantity_kg !== 0}
+            disabled={!item.price_per_kg}
+            loading={rowLoading}
+          >
             <input
               type="number"
               inputMode="decimal"
@@ -1295,7 +1503,10 @@ export default function FeedRow({
               onChange={(e) =>
                 onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
               }
-              {...cascadeLoadingProps(rowLoading, { ...innerInputStyle, cursor: !item.price_per_kg ? "not-allowed" : "text" })}
+              {...cascadeLoadingProps(rowLoading, {
+                ...innerInputStyle,
+                cursor: !item.price_per_kg ? "not-allowed" : "text",
+              })}
             />
           </FieldBox>
           <FieldBox label={t("Cost")} hasValue={!!cost} disabled={!cost} loading={rowLoading}>
@@ -1347,7 +1558,12 @@ export default function FeedRow({
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
               <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2.2" />
-              <path d="M16.5 16.5L21 21" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" />
+              <path
+                d="M16.5 16.5L21 21"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
             </svg>
             <span>{t("Search to fill")}</span>
           </button>
@@ -1359,207 +1575,318 @@ export default function FeedRow({
             isInsert=true  → title "Add Custom Feed", name editable with user prefix
             isInsert=false → title "Edit Nutritional Information", name disabled,
                              prefix derived from "-" split of existing feed name. */}
-      {showEditModal && (() => {
-        const layout = getNutrientLayout(item.category_name);
-        const fields =
-          layout === "additive" ? NUTRIENT_FIELDS_ADDITIVE :
-          layout === "mineral" ? NUTRIENT_FIELDS_MINERAL :
-          NUTRIENT_FIELDS_GENERAL;
-        const title = editIsInsert ? t("Add Custom Feed") : t("Edit Nutritional Information");
-        const submitReady = !isSavingEdit && !isLoadingEdit && editFeedName.trim() !== "";
-        return (
-        <div
-          className="fixed top-0 h-full z-50 flex flex-col justify-end"
-          style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-          onClick={(e) => { if (e.target === e.currentTarget && !isSavingEdit) setShowEditModal(false); }}
-        >
-          <div
-            className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
-            style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-          >
-            {/* Drag handle (Android view_drag_handle) */}
-            <div className="flex justify-center mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
-            </div>
-
-            {/* Title with close button */}
-            <div className="relative mb-4">
-              <h3
-                className="text-center font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-              >
-                {title}
-              </h3>
-              <button
-                onClick={() => !isSavingEdit && setShowEditModal(false)}
-                style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
-                aria-label={t("Close")}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Separator line below title */}
-            <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
-
-            {isLoadingEdit ? (
-              <div className="flex items-center justify-center py-12">
-                <svg className="animate-spin" width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="#064E3B" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-              </div>
-            ) : (
-            <>
-            {/* Feed Details collapsible section — minus when expanded, plus when collapsed */}
-            <button
-              onClick={() => setEditFeedDetailsExpanded((p) => !p)}
-              className="w-full flex items-center justify-between mb-3"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
+      {showEditModal &&
+        (() => {
+          const layout = getNutrientLayout(item.category_name);
+          const fields =
+            layout === "additive"
+              ? NUTRIENT_FIELDS_ADDITIVE
+              : layout === "mineral"
+                ? NUTRIENT_FIELDS_MINERAL
+                : NUTRIENT_FIELDS_GENERAL;
+          const title = editIsInsert ? t("Add Custom Feed") : t("Edit Nutritional Information");
+          const submitReady = !isSavingEdit && !isLoadingEdit && editFeedName.trim() !== "";
+          return (
+            <div
+              className="fixed top-0 h-full z-50 flex flex-col justify-end"
+              style={{
+                left: "max(0px, calc((100vw - 480px) / 2))",
+                width: "min(100vw, 480px)",
+                backgroundColor: "rgba(0,0,0,0.45)",
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget && !isSavingEdit) setShowEditModal(false);
+              }}
             >
-              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                {t("Feed Details")}
-              </span>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
-                {!editFeedDetailsExpanded && (
-                  <path d="M9 3v12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
-                )}
-              </svg>
-            </button>
+              <div
+                className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
+                style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+              >
+                {/* Drag handle (Android view_drag_handle) */}
+                <div className="flex justify-center mb-3">
+                  <div
+                    style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }}
+                  />
+                </div>
 
-            {editFeedDetailsExpanded && (
-              <>
-                {/* Feed Type — read-only. Only the LABEL above is UI chrome
+                {/* Title with close button */}
+                <div className="relative mb-4">
+                  <h3
+                    className="text-center font-bold"
+                    style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+                  >
+                    {title}
+                  </h3>
+                  <button
+                    onClick={() => !isSavingEdit && setShowEditModal(false)}
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: 0,
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                    }}
+                    aria-label={t("Close")}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                      <path
+                        d="M5 5L15 15M15 5L5 15"
+                        stroke="#6D6D6D"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Separator line below title */}
+                <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
+
+                {isLoadingEdit ? (
+                  <div className="flex items-center justify-center py-12">
+                    <svg
+                      className="animate-spin"
+                      width="28"
+                      height="28"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="#064E3B"
+                        strokeWidth="3"
+                        strokeDasharray="40"
+                        strokeDashoffset="10"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </div>
+                ) : (
+                  <>
+                    {/* Feed Details collapsible section — minus when expanded, plus when collapsed */}
+                    <button
+                      onClick={() => setEditFeedDetailsExpanded((p) => !p)}
+                      className="w-full flex items-center justify-between mb-3"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px 0",
+                      }}
+                    >
+                      <span
+                        className="font-bold"
+                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                      >
+                        {t("Feed Details")}
+                      </span>
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                        {!editFeedDetailsExpanded && (
+                          <path
+                            d="M9 3v12"
+                            stroke="#064E3B"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        )}
+                      </svg>
+                    </button>
+
+                    {editFeedDetailsExpanded && (
+                      <>
+                        {/* Feed Type — read-only. Only the LABEL above is UI chrome
                     (translated); the value itself is the feed-identity
                     string, which has its own separate taxonomyLabels/display
                     system — left untouched here per that system's ownership. */}
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {t("Feed Type")}
-                </p>
-                <div
-                  className="rounded-xl px-4 py-3 text-sm mb-3"
-                  style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                >
-                  {item.feed_type_name || "—"}
-                </div>
+                        <p
+                          className="text-xs font-bold uppercase mb-1"
+                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {t("Feed Type")}
+                        </p>
+                        <div
+                          className="rounded-xl px-4 py-3 text-sm mb-3"
+                          style={{
+                            backgroundColor: "#EBEAEA",
+                            color: "#231F20",
+                            fontFamily: "Nunito, sans-serif",
+                          }}
+                        >
+                          {item.feed_type_name || "—"}
+                        </div>
 
-                {/* Feed Category — read-only (see note above) */}
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {t("Feed Category")}
-                </p>
-                <div
-                  className="rounded-xl px-4 py-3 text-sm mb-3"
-                  style={{ backgroundColor: "#EBEAEA", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                >
-                  {item.category_name || "—"}
-                </div>
+                        {/* Feed Category — read-only (see note above) */}
+                        <p
+                          className="text-xs font-bold uppercase mb-1"
+                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {t("Feed Category")}
+                        </p>
+                        <div
+                          className="rounded-xl px-4 py-3 text-sm mb-3"
+                          style={{
+                            backgroundColor: "#EBEAEA",
+                            color: "#231F20",
+                            fontFamily: "Nunito, sans-serif",
+                          }}
+                        >
+                          {item.category_name || "—"}
+                        </div>
 
-                {/* Feed Name — prefix + editable suffix (or fully disabled when
+                        {/* Feed Name — prefix + editable suffix (or fully disabled when
                     isInsert=false and the original name already contains "-"). */}
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {t("Feed Name")}<span style={{ color: "#FC2E20" }}> *</span>
-                </p>
-                <div
-                  className="flex items-center rounded-xl mb-4"
-                  style={{
-                    backgroundColor: editIsInsert ? "#F1F5F9" : "#EBEAEA",
-                  }}
-                >
-                  {editNamePrefix && (
-                    <span
-                      className="pl-4 pr-1 text-sm"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        <p
+                          className="text-xs font-bold uppercase mb-1"
+                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {t("Feed Name")}
+                          <span style={{ color: "#FC2E20" }}> *</span>
+                        </p>
+                        <div
+                          className="flex items-center rounded-xl mb-4"
+                          style={{
+                            backgroundColor: editIsInsert ? "#F1F5F9" : "#EBEAEA",
+                          }}
+                        >
+                          {editNamePrefix && (
+                            <span
+                              className="pl-4 pr-1 text-sm"
+                              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                            >
+                              {editNamePrefix}
+                            </span>
+                          )}
+                          <input
+                            type="text"
+                            value={editFeedName}
+                            onChange={(e) =>
+                              setEditFeedName(e.target.value.replace(/[^a-zA-Z0-9\s]/g, ""))
+                            }
+                            disabled={!editIsInsert}
+                            className="flex-1 bg-transparent px-3 py-3 text-sm border-none focus:outline-none"
+                            style={{
+                              color: "#231F20",
+                              fontFamily: "Nunito, sans-serif",
+                              cursor: !editIsInsert ? "not-allowed" : "text",
+                            }}
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Nutritional Information collapsible section — minus when expanded, plus when collapsed */}
+                    <button
+                      onClick={() => setEditNutritionalInfoExpanded((p) => !p)}
+                      className="w-full flex items-center justify-between mb-3"
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        padding: "4px 0",
+                      }}
                     >
-                      {editNamePrefix}
-                    </span>
-                  )}
-                  <input
-                    type="text"
-                    value={editFeedName}
-                    onChange={(e) => setEditFeedName(e.target.value.replace(/[^a-zA-Z0-9\s]/g, ""))}
-                    disabled={!editIsInsert}
-                    className="flex-1 bg-transparent px-3 py-3 text-sm border-none focus:outline-none"
-                    style={{
-                      color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
-                      cursor: !editIsInsert ? "not-allowed" : "text",
-                    }}
-                  />
-                </div>
-              </>
-            )}
+                      <span
+                        className="font-bold"
+                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                      >
+                        {t("Nutritional Information")}
+                      </span>
+                      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                        {!editNutritionalInfoExpanded && (
+                          <path
+                            d="M9 3v12"
+                            stroke="#064E3B"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                        )}
+                      </svg>
+                    </button>
 
-            {/* Nutritional Information collapsible section — minus when expanded, plus when collapsed */}
-            <button
-              onClick={() => setEditNutritionalInfoExpanded((p) => !p)}
-              className="w-full flex items-center justify-between mb-3"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
-            >
-              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
-                {t("Nutritional Information")}
-              </span>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
-                {!editNutritionalInfoExpanded && (
-                  <path d="M9 3v12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                    {editNutritionalInfoExpanded && (
+                      <>
+                        <p
+                          className="text-xs mb-3"
+                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {t("Nutrient Composition (%)")}
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 mb-5">
+                          {fields.map((f) => (
+                            <div key={f.key}>
+                              <p
+                                className="text-xs font-bold uppercase mb-1"
+                                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                              >
+                                {t(f.label)}
+                              </p>
+                              <input
+                                type="number"
+                                inputMode="decimal"
+                                value={editForm[f.key]}
+                                onChange={(e) =>
+                                  setEditForm((p) => ({ ...p, [f.key]: e.target.value }))
+                                }
+                                placeholder="0.00"
+                                className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                                style={{
+                                  backgroundColor: "#F1F5F9",
+                                  color: "#231F20",
+                                  fontFamily: "Nunito, sans-serif",
+                                }}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    <button
+                      onClick={handleEditSubmit}
+                      disabled={!submitReady}
+                      className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center"
+                      style={{
+                        backgroundColor: submitReady ? "#064E3B" : "#D3D3D3",
+                        color: submitReady ? "white" : "#999",
+                        border: "none",
+                        fontFamily: "Nunito, sans-serif",
+                        cursor: submitReady ? "pointer" : "not-allowed",
+                      }}
+                    >
+                      {isSavingEdit ? (
+                        <svg
+                          className="animate-spin"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeDasharray="40"
+                            strokeDashoffset="10"
+                            strokeLinecap="round"
+                          />
+                        </svg>
+                      ) : (
+                        t("Submit")
+                      )}
+                    </button>
+                  </>
                 )}
-              </svg>
-            </button>
-
-            {editNutritionalInfoExpanded && (
-              <>
-                <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {t("Nutrient Composition (%)")}
-                </p>
-                <div className="grid grid-cols-2 gap-3 mb-5">
-                  {fields.map((f) => (
-                    <div key={f.key}>
-                      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{t(f.label)}</p>
-                      <input
-                        type="number"
-                        inputMode="decimal"
-                        value={editForm[f.key]}
-                        onChange={(e) => setEditForm((p) => ({ ...p, [f.key]: e.target.value }))}
-                        placeholder="0.00"
-                        className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                        style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-
-            <button
-              onClick={handleEditSubmit}
-              disabled={!submitReady}
-              className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center"
-              style={{
-                backgroundColor: submitReady ? "#064E3B" : "#D3D3D3",
-                color: submitReady ? "white" : "#999",
-                border: "none",
-                fontFamily: "Nunito, sans-serif",
-                cursor: submitReady ? "pointer" : "not-allowed",
-              }}
-            >
-              {isSavingEdit ? (
-                <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
-                </svg>
-              ) : t("Submit")}
-            </button>
-            </>
-            )}
-          </div>
-        </div>
-        );
-      })()}
+              </div>
+            </div>
+          );
+        })()}
     </div>
   );
 }

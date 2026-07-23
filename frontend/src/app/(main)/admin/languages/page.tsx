@@ -159,7 +159,10 @@ export default function AdminLanguageCatalogPage() {
       showSnackbar(`${name} reactivated`, "success");
       reload();
     } catch (err: unknown) {
-      const ax = err as { response?: { status?: number; data?: { detail?: string } }; message?: string };
+      const ax = err as {
+        response?: { status?: number; data?: { detail?: string } };
+        message?: string;
+      };
       const reason = ax?.response?.data?.detail ?? ax?.message ?? "Could not reactivate language";
       showSnackbar(reason, "error");
     } finally {
@@ -194,14 +197,20 @@ export default function AdminLanguageCatalogPage() {
             data: langRes.value.data,
           });
           const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
-          setAllLanguages(Array.isArray(d) ? d : d?.languages ?? []);
+          setAllLanguages(Array.isArray(d) ? d : (d?.languages ?? []));
         } else {
-          const ax = langRes.reason as { response?: { status?: number; data?: unknown }; message?: string };
+          const ax = langRes.reason as {
+            response?: { status?: number; data?: unknown };
+            message?: string;
+          };
           console.error("[admin/languages] catalog load failed:", {
-            status: ax?.response?.status, data: ax?.response?.data, message: ax?.message,
+            status: ax?.response?.status,
+            message: ax?.message,
           });
           showSnackbar(
-            ax?.response?.status ? `Could not load language catalog (HTTP ${ax.response.status})` : "Could not load language catalog",
+            ax?.response?.status
+              ? `Could not load language catalog (HTTP ${ax.response.status})`
+              : "Could not load language catalog",
             "error"
           );
         }
@@ -211,30 +220,34 @@ export default function AdminLanguageCatalogPage() {
             data: countriesRes.value.data,
           });
           const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
-          const fromApi = (Array.isArray(d) ? d : d?.countries ?? []) as CountryRow[];
+          const fromApi = (Array.isArray(d) ? d : (d?.countries ?? [])) as CountryRow[];
           // Merge in rollout placeholders for any country the backend
           // hasn't seeded yet (e.g. Ethiopia). The placeholder is
           // rendered as a card with disabled controls so the admin can
           // SEE the country is expected but not yet set up.
-          const placeholders: CountryRow[] = ROLLOUT_PLACEHOLDERS
-            .filter((p) =>
-              !fromApi.some((c) => c.name.toLowerCase().includes(p.name.toLowerCase()))
-            )
-            .map((p) => ({
-              id: `__placeholder_${p.country_code}__`,
-              name: p.name,
-              country_code: p.country_code,
-              languages: [],
-              _isPlaceholder: true,
-            }));
+          const placeholders: CountryRow[] = ROLLOUT_PLACEHOLDERS.filter(
+            (p) => !fromApi.some((c) => c.name.toLowerCase().includes(p.name.toLowerCase()))
+          ).map((p) => ({
+            id: `__placeholder_${p.country_code}__`,
+            name: p.name,
+            country_code: p.country_code,
+            languages: [],
+            _isPlaceholder: true,
+          }));
           setCountries([...fromApi, ...placeholders]);
         } else {
-          const ax = countriesRes.reason as { response?: { status?: number; data?: unknown }; message?: string };
+          const ax = countriesRes.reason as {
+            response?: { status?: number; data?: unknown };
+            message?: string;
+          };
           console.error("[admin/languages] countries load failed:", {
-            status: ax?.response?.status, data: ax?.response?.data, message: ax?.message,
+            status: ax?.response?.status,
+            message: ax?.message,
           });
           showSnackbar(
-            ax?.response?.status ? `Could not load countries (HTTP ${ax.response.status})` : "Could not load countries",
+            ax?.response?.status
+              ? `Could not load countries (HTTP ${ax.response.status})`
+              : "Could not load countries",
             "error"
           );
         }
@@ -293,9 +306,7 @@ export default function AdminLanguageCatalogPage() {
     setIsAssigning(true);
     const countryId = assignSheetCountry.id;
     setCountries((prev) =>
-      prev.map((c) =>
-        c.id !== countryId ? c : { ...c, languages: [...c.languages, code] }
-      )
+      prev.map((c) => (c.id !== countryId ? c : { ...c, languages: [...c.languages, code] }))
     );
     try {
       await assignLanguageToCountry(countryId, code);
@@ -372,19 +383,29 @@ export default function AdminLanguageCatalogPage() {
   // skipped-no-country / failed). It does NOT auto-create catalog rows
   // — admin must add via the "+ Add Language" button first. The summary
   // tells them which catalog entries are missing.
-  const DEFAULT_SEEDS: Array<{ countryHint: string; regionalCue?: string; langCode: string; langDisplay: string }> = [
-    { countryHint: "india",       langCode: "hi", langDisplay: "Hindi" },
+  const DEFAULT_SEEDS: Array<{
+    countryHint: string;
+    regionalCue?: string;
+    langCode: string;
+    langDisplay: string;
+  }> = [
+    { countryHint: "india", langCode: "hi", langDisplay: "Hindi" },
     { countryHint: "philippines", langCode: "tl", langDisplay: "Filipino (Tagalog)" },
-    { countryHint: "indonesia",   langCode: "id", langDisplay: "Indonesian (Bahasa Indonesia)" },
-    { countryHint: "thailand",    langCode: "th", langDisplay: "Thai" },
-    { countryHint: "vietnam",     langCode: "vi", langDisplay: "Vietnamese" },
-    { countryHint: "bangladesh",  langCode: "bn", langDisplay: "Bengali (Bangla)" },
-    { countryHint: "nepal",       langCode: "ne", langDisplay: "Nepali" },
+    { countryHint: "indonesia", langCode: "id", langDisplay: "Indonesian (Bahasa Indonesia)" },
+    { countryHint: "thailand", langCode: "th", langDisplay: "Thai" },
+    { countryHint: "vietnam", langCode: "vi", langDisplay: "Vietnamese" },
+    { countryHint: "bangladesh", langCode: "bn", langDisplay: "Bengali (Bangla)" },
+    { countryHint: "nepal", langCode: "ne", langDisplay: "Nepali" },
     // Ethiopia — two languages. If backend has a single Ethiopia row,
     // both go on it. If backend has two regional rows, the regionalCue
     // routes each language to its own row.
-    { countryHint: "ethiopia",    regionalCue: "amhar", langCode: "am", langDisplay: "Amharic" },
-    { countryHint: "ethiopia",    regionalCue: "oromia", langCode: "om", langDisplay: "Oromo (Afaan Oromo)" },
+    { countryHint: "ethiopia", regionalCue: "amhar", langCode: "am", langDisplay: "Amharic" },
+    {
+      countryHint: "ethiopia",
+      regionalCue: "oromia",
+      langCode: "om",
+      langDisplay: "Oromo (Afaan Oromo)",
+    },
   ];
 
   const handleSeed = async () => {
@@ -402,9 +423,15 @@ export default function AdminLanguageCatalogPage() {
 
     // Verbose run banner — easy to find the start of a seed batch in the
     // console when there are dozens of other [api ←] lines around it.
-    console.group("%c[seed] Seed Defaults — start", "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;");
+    console.group(
+      "%c[seed] Seed Defaults — start",
+      "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;"
+    );
     console.log("[seed] catalog active codes:", Array.from(catalogActive));
-    console.log("[seed] countries known to UI:", countries.map((c) => ({ id: c.id, name: c.name, languages: c.languages })));
+    console.log(
+      "[seed] countries known to UI:",
+      countries.map((c) => ({ id: c.id, name: c.name, languages: c.languages }))
+    );
     console.log("[seed] mapping plan:", DEFAULT_SEEDS);
 
     for (const seed of DEFAULT_SEEDS) {
@@ -424,8 +451,8 @@ export default function AdminLanguageCatalogPage() {
       // excluded — backend has no real country_id for them, so any
       // POST would 404. The seed summary reports them under
       // skippedNoCountry so the admin sees the gap.
-      let candidates = countries.filter((c) =>
-        !c._isPlaceholder && c.name.toLowerCase().includes(seed.countryHint)
+      let candidates = countries.filter(
+        (c) => !c._isPlaceholder && c.name.toLowerCase().includes(seed.countryHint)
       );
       if (seed.regionalCue) {
         const regional = candidates.filter((c) => c.name.toLowerCase().includes(seed.regionalCue!));
@@ -435,12 +462,19 @@ export default function AdminLanguageCatalogPage() {
       }
 
       if (candidates.length === 0) {
-        console.warn(`[seed] ${tag}  SKIP — country '${seed.countryHint}' not found in API response`);
-        skippedNoCountry.push(`${seed.countryHint}${seed.regionalCue ? ` (${seed.regionalCue})` : ""}`);
+        console.warn(
+          `[seed] ${tag}  SKIP — country '${seed.countryHint}' not found in API response`
+        );
+        skippedNoCountry.push(
+          `${seed.countryHint}${seed.regionalCue ? ` (${seed.regionalCue})` : ""}`
+        );
         continue;
       }
 
-      console.log(`[seed] ${tag}  candidates:`, candidates.map((c) => c.name));
+      console.log(
+        `[seed] ${tag}  candidates:`,
+        candidates.map((c) => c.name)
+      );
 
       // Step 3: POST the assignment for each matched country. Skip if
       // already assigned.
@@ -461,13 +495,19 @@ export default function AdminLanguageCatalogPage() {
           });
           assigned.push(`${country.name} → ${seed.langCode}`);
         } catch (err: unknown) {
-          const ax = err as { response?: { status?: number; data?: { detail?: string } | unknown }; message?: string };
-          const reason = (ax?.response?.data as { detail?: string })?.detail ?? ax?.message ?? "unknown error";
-          console.error(`[seed] ${country.name} → ${seed.langCode}  ✗ ${ax?.response?.status ?? "ERR"}`, {
-            status: ax?.response?.status,
-            data: ax?.response?.data,
-            message: ax?.message,
-          });
+          const ax = err as {
+            response?: { status?: number; data?: { detail?: string } | unknown };
+            message?: string;
+          };
+          const reason =
+            (ax?.response?.data as { detail?: string })?.detail ?? ax?.message ?? "unknown error";
+          console.error(
+            `[seed] ${country.name} → ${seed.langCode}  ✗ ${ax?.response?.status ?? "ERR"}`,
+            {
+              status: ax?.response?.status,
+              message: ax?.message,
+            }
+          );
           failed.push({ key: `${country.name} → ${seed.langCode}`, reason });
         }
       }
@@ -491,10 +531,18 @@ export default function AdminLanguageCatalogPage() {
     const total = assigned.length;
     if (total > 0) {
       showSnackbar(`Seeded ${total} assignment${total === 1 ? "" : "s"}`, "success");
-    } else if (skippedExisting.length > 0 && failed.length === 0 && skippedNoLanguage.length === 0 && skippedNoCountry.length === 0) {
+    } else if (
+      skippedExisting.length > 0 &&
+      failed.length === 0 &&
+      skippedNoLanguage.length === 0 &&
+      skippedNoCountry.length === 0
+    ) {
       showSnackbar("All default mappings already in place", "info");
     } else if (failed.length > 0) {
-      showSnackbar(`${failed.length} assignment${failed.length === 1 ? "" : "s"} failed — see panel`, "error");
+      showSnackbar(
+        `${failed.length} assignment${failed.length === 1 ? "" : "s"} failed — see panel`,
+        "error"
+      );
     } else {
       showSnackbar("No assignments made — see panel for reasons", "info");
     }
@@ -541,8 +589,17 @@ export default function AdminLanguageCatalogPage() {
       {/* Explainer banner — tells the admin what this screen actually
           does, since the old "Languages" name confused users who expected
           a UI-language switcher. */}
-      <div className="mx-3 mt-3 px-3.5 py-3 rounded-2xl flex gap-2.5" style={{ backgroundColor: "#E3F2FD", border: "1px solid rgba(41,108,211,0.20)" }}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 2 }}>
+      <div
+        className="mx-3 mt-3 px-3.5 py-3 rounded-2xl flex gap-2.5"
+        style={{ backgroundColor: "#E3F2FD", border: "1px solid rgba(41,108,211,0.20)" }}
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          style={{ flexShrink: 0, marginTop: 2 }}
+        >
           <circle cx="12" cy="12" r="10" fill="#296CD3" />
           <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
           <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
@@ -553,8 +610,8 @@ export default function AdminLanguageCatalogPage() {
           </p>
           <p className="text-xs mt-0.5" style={{ color: "#1E40AF", lineHeight: 1.5 }}>
             Expand a country and switch on the languages its users can pick from
-            <span className="font-bold"> Profile → Language</span>. English is always available.
-            To register a new language, use <span className="font-bold">+ Add Language</span>.
+            <span className="font-bold"> Profile → Language</span>. English is always available. To
+            register a new language, use <span className="font-bold">+ Add Language</span>.
           </p>
         </div>
       </div>
@@ -565,12 +622,24 @@ export default function AdminLanguageCatalogPage() {
       <div className="flex items-center justify-between px-4 pt-3 pb-1 gap-2">
         <div className="flex items-center gap-2 flex-shrink-0 min-w-0">
           <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-            {allLanguages.length} in catalog · {countries.length} countr{countries.length === 1 ? "y" : "ies"}
+            {allLanguages.length} in catalog · {countries.length} countr
+            {countries.length === 1 ? "y" : "ies"}
           </p>
           {isLoading && (countries.length > 0 || allLanguages.length > 0) && (
-            <span className="inline-flex items-center gap-1 text-xs" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}>
+            <span
+              className="inline-flex items-center gap-1 text-xs"
+              style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}
+            >
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="animate-spin">
-                <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeDasharray="14 30" />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray="14 30"
+                />
               </svg>
               Refreshing…
             </span>
@@ -580,10 +649,21 @@ export default function AdminLanguageCatalogPage() {
           <button
             onClick={() => setShowAdd(true)}
             className="flex items-center gap-1.5 px-3 py-2 rounded-full font-bold text-sm"
-            style={{ backgroundColor: "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+            style={{
+              backgroundColor: "#064E3B",
+              color: "#FFFFFF",
+              border: "none",
+              fontFamily: "Nunito, sans-serif",
+              cursor: "pointer",
+            }}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+              <path
+                d="M12 5v14M5 12h14"
+                stroke="currentColor"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+              />
             </svg>
             Add Language
           </button>
@@ -594,57 +674,95 @@ export default function AdminLanguageCatalogPage() {
           happened so the admin can see exactly which assignments went
           through, which were already there, and which couldn't proceed. */}
       {seedSummary && (
-        <div className="mx-3 mt-3 rounded-2xl px-3.5 py-3" style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}>
+        <div
+          className="mx-3 mt-3 rounded-2xl px-3.5 py-3"
+          style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}
+        >
           <div className="flex items-start justify-between mb-1.5">
-            <p className="font-bold text-sm" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="font-bold text-sm"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            >
               Seed Defaults Result
             </p>
             <button
               onClick={() => setSeedSummary(null)}
               aria-label="Dismiss"
-              style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#6D6D6D" }}
+              style={{
+                background: "none",
+                border: "none",
+                padding: 0,
+                cursor: "pointer",
+                color: "#6D6D6D",
+              }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path
+                  d="M3 3l8 8M11 3L3 11"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           </div>
-          <div className="space-y-1 text-xs" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+          <div
+            className="space-y-1 text-xs"
+            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+          >
             <p>
-              <span className="font-bold" style={{ color: "#064E3B" }}>Assigned ({seedSummary.assigned.length}):</span>{" "}
-              {seedSummary.assigned.length === 0 ? <span style={{ color: "#6D6D6D" }}>none</span> : seedSummary.assigned.join(", ")}
+              <span className="font-bold" style={{ color: "#064E3B" }}>
+                Assigned ({seedSummary.assigned.length}):
+              </span>{" "}
+              {seedSummary.assigned.length === 0 ? (
+                <span style={{ color: "#6D6D6D" }}>none</span>
+              ) : (
+                seedSummary.assigned.join(", ")
+              )}
             </p>
             {seedSummary.skippedExisting.length > 0 && (
               <p>
-                <span className="font-bold" style={{ color: "#6D6D6D" }}>Already in place ({seedSummary.skippedExisting.length}):</span>{" "}
+                <span className="font-bold" style={{ color: "#6D6D6D" }}>
+                  Already in place ({seedSummary.skippedExisting.length}):
+                </span>{" "}
                 {seedSummary.skippedExisting.join(", ")}
               </p>
             )}
             {seedSummary.skippedNoLanguage.length > 0 && (
               <p>
-                <span className="font-bold" style={{ color: "#FF9800" }}>Skipped — not in catalog ({seedSummary.skippedNoLanguage.length}):</span>{" "}
+                <span className="font-bold" style={{ color: "#FF9800" }}>
+                  Skipped — not in catalog ({seedSummary.skippedNoLanguage.length}):
+                </span>{" "}
                 {seedSummary.skippedNoLanguage.join(", ")}
               </p>
             )}
             {seedSummary.skippedNoCountry.length > 0 && (
               <p>
-                <span className="font-bold" style={{ color: "#FF9800" }}>Skipped — country not found ({seedSummary.skippedNoCountry.length}):</span>{" "}
+                <span className="font-bold" style={{ color: "#FF9800" }}>
+                  Skipped — country not found ({seedSummary.skippedNoCountry.length}):
+                </span>{" "}
                 {seedSummary.skippedNoCountry.join(", ")}
               </p>
             )}
             {seedSummary.failed.length > 0 && (
               <div>
-                <p className="font-bold" style={{ color: "#E44A4A" }}>Failed ({seedSummary.failed.length}):</p>
+                <p className="font-bold" style={{ color: "#E44A4A" }}>
+                  Failed ({seedSummary.failed.length}):
+                </p>
                 <ul className="ml-3 list-disc">
                   {seedSummary.failed.map((f, i) => (
-                    <li key={i}>{f.key} — {f.reason}</li>
+                    <li key={i}>
+                      {f.key} — {f.reason}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
             {seedSummary.skippedNoLanguage.length > 0 && (
               <p className="mt-2 italic" style={{ color: "#6D6D6D" }}>
-                Tip: add the missing catalog entries via <span className="font-bold">+ Add Language</span>, then tap <span className="font-bold">Seed Defaults</span> again.
+                Tip: add the missing catalog entries via{" "}
+                <span className="font-bold">+ Add Language</span>, then tap{" "}
+                <span className="font-bold">Seed Defaults</span> again.
               </p>
             )}
           </div>
@@ -660,206 +778,306 @@ export default function AdminLanguageCatalogPage() {
             User feedback: "why Amharic is missing" — previously a
             registered language with no country assignments was invisible
             in the UI. This section fixes that. */}
-        {allLanguages.length > 0 && (() => {
-          // Pre-compute counts for the header pills + filtered list.
-          const inactiveCount = allLanguages.filter((l) => !l.is_active).length;
-          const orphanCount = allLanguages.filter(
-            (l) => l.is_active && l.code !== "en" && !countries.some((c) => c.languages.includes(l.code))
-          ).length;
-          const q = catalogQuery.trim().toLowerCase();
-          const sorted = [...allLanguages].sort((a, b) => {
-            if (a.code === "en") return -1;
-            if (b.code === "en") return 1;
-            if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
-            return a.name.localeCompare(b.name);
-          });
-          const filtered = sorted.filter((lang) => {
-            if (catalogFilter === "inactive" && lang.is_active) return false;
-            if (catalogFilter === "orphan") {
-              if (!lang.is_active) return false;
-              if (lang.code === "en") return false;
-              if (countries.some((c) => c.languages.includes(lang.code))) return false;
-            }
-            if (q) {
-              const native = labelForLanguage(lang.code);
-              if (
-                !lang.name.toLowerCase().includes(q) &&
-                !lang.code.toLowerCase().includes(q) &&
-                !native.toLowerCase().includes(q)
-              ) return false;
-            }
-            return true;
-          });
-          return (
-          <div className="bg-white rounded-2xl mb-2.5" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-            {/* Catalog header strip — always visible. Acts as the click
+        {allLanguages.length > 0 &&
+          (() => {
+            // Pre-compute counts for the header pills + filtered list.
+            const inactiveCount = allLanguages.filter((l) => !l.is_active).length;
+            const orphanCount = allLanguages.filter(
+              (l) =>
+                l.is_active &&
+                l.code !== "en" &&
+                !countries.some((c) => c.languages.includes(l.code))
+            ).length;
+            const q = catalogQuery.trim().toLowerCase();
+            const sorted = [...allLanguages].sort((a, b) => {
+              if (a.code === "en") return -1;
+              if (b.code === "en") return 1;
+              if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+              return a.name.localeCompare(b.name);
+            });
+            const filtered = sorted.filter((lang) => {
+              if (catalogFilter === "inactive" && lang.is_active) return false;
+              if (catalogFilter === "orphan") {
+                if (!lang.is_active) return false;
+                if (lang.code === "en") return false;
+                if (countries.some((c) => c.languages.includes(lang.code))) return false;
+              }
+              if (q) {
+                const native = labelForLanguage(lang.code);
+                if (
+                  !lang.name.toLowerCase().includes(q) &&
+                  !lang.code.toLowerCase().includes(q) &&
+                  !native.toLowerCase().includes(q)
+                )
+                  return false;
+              }
+              return true;
+            });
+            return (
+              <div
+                className="bg-white rounded-2xl mb-2.5"
+                style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+              >
+                {/* Catalog header strip — always visible. Acts as the click
                 target for expand/collapse. Shows compact counts so the
                 admin sees the catalog state without expanding. */}
-            <button
-              onClick={() => setCatalogExpanded((v) => !v)}
-              className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left"
-              style={{ backgroundColor: "transparent", border: "none", cursor: "pointer", borderRadius: 16 }}
-            >
-              <div className="flex items-center gap-2 flex-wrap min-w-0">
-                <span className="text-xs font-bold uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}>
-                  Catalog · {allLanguages.length}
-                </span>
-                {inactiveCount > 0 && (
-                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
-                    {inactiveCount} inactive
-                  </span>
-                )}
-                {orphanCount > 0 && (
-                  <span className="text-xs font-bold px-1.5 py-0.5 rounded" style={{ backgroundColor: "#FFF8E1", color: "#B26A00", fontFamily: "Nunito, sans-serif" }}>
-                    {orphanCount} unused
-                  </span>
-                )}
-              </div>
-              <svg
-                width="18" height="18" viewBox="0 0 24 24" fill="none"
-                style={{
-                  flexShrink: 0,
-                  transform: catalogExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.15s ease",
-                  color: "#6D6D6D",
-                }}
-              >
-                <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </button>
-
-            {/* Expanded body — filter pills, search, then a scrolling
-                list capped at 320px so the country cards always stay in
-                view. The padding mirrors the country-card body. */}
-            {catalogExpanded && (
-              <div className="px-4 pb-3">
-                {/* Filter pills */}
-                <div className="flex items-center gap-1.5 flex-wrap mb-2">
-                  {(["all", "inactive", "orphan"] as const).map((f) => {
-                    const active = catalogFilter === f;
-                    const label = f === "all" ? "All" : f === "inactive" ? "Inactive" : "Unused";
-                    return (
-                      <button
-                        key={f}
-                        onClick={() => setCatalogFilter(f)}
-                        className="text-xs font-bold px-2.5 py-1 rounded-full"
+                <button
+                  onClick={() => setCatalogExpanded((v) => !v)}
+                  className="w-full flex items-center justify-between gap-2 px-4 py-3 text-left"
+                  style={{
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    borderRadius: 16,
+                  }}
+                >
+                  <div className="flex items-center gap-2 flex-wrap min-w-0">
+                    <span
+                      className="text-xs font-bold uppercase tracking-wide"
+                      style={{
+                        color: "#6D6D6D",
+                        fontFamily: "Nunito, sans-serif",
+                        letterSpacing: 0.4,
+                      }}
+                    >
+                      Catalog · {allLanguages.length}
+                    </span>
+                    {inactiveCount > 0 && (
+                      <span
+                        className="text-xs font-bold px-1.5 py-0.5 rounded"
                         style={{
-                          backgroundColor: active ? "#064E3B" : "transparent",
-                          color: active ? "#FFFFFF" : "#064E3B",
-                          border: active ? "1.5px solid #064E3B" : "1.5px solid #C2C2C2",
+                          backgroundColor: "#FEC5BB",
+                          color: "#E44A4A",
                           fontFamily: "Nunito, sans-serif",
-                          cursor: "pointer",
                         }}
                       >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-                {/* Search input */}
-                <input
-                  type="text"
-                  value={catalogQuery}
-                  onChange={(e) => setCatalogQuery(e.target.value)}
-                  placeholder="Search by name, code, or native script"
-                  className="w-full rounded-xl px-3 py-2 text-sm border-none focus:outline-none mb-2"
-                  style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                />
-                {/* Scrolling list — capped height so it never pushes the
-                    countries section off the screen. */}
-                <div style={{ maxHeight: 320, overflowY: "auto" }}>
-                {filtered.length === 0 ? (
-                  <p className="text-sm text-center py-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                    No matches.
-                  </p>
-                ) : filtered.map((lang) => {
-                // English is the implicit baseline — every country has
-                // it, so we say "All countries" instead of listing them.
-                // For other languages, compute the assigned-to list from
-                // countries[]; show "Not enabled anywhere" when empty.
-                const enabledIn = lang.code === "en"
-                  ? "All countries"
-                  : countries
-                      .filter((c) => c.languages.includes(lang.code))
-                      .map((c) => c.name);
-                const isEmpty = Array.isArray(enabledIn) && enabledIn.length === 0;
-                const inactive = !lang.is_active;
-                return (
-                  <div
-                    key={lang.code}
-                    className="flex items-start justify-between gap-2 py-2"
-                    style={{ borderTop: "1px solid #F8FAF9", opacity: inactive ? 0.6 : 1 }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2 flex-wrap">
-                        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                          {lang.name}
-                        </p>
-                        <span className="text-xs uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                          {lang.code}
-                        </span>
-                        {labelForLanguage(lang.code) !== lang.code.toUpperCase() && (
-                          <span className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                            · {labelForLanguage(lang.code)}
-                          </span>
-                        )}
-                        {inactive && (
-                          <span
-                            className="text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wide"
-                            style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-                          >
-                            Inactive
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                        {typeof enabledIn === "string"
-                          ? <>Enabled in: <span style={{ color: "#231F20" }}>{enabledIn}</span></>
-                          : isEmpty
-                            ? <span style={{ color: "#FF9800", fontStyle: "italic" }}>Not enabled in any country</span>
-                            : <>Enabled in: <span style={{ color: "#231F20" }}>{enabledIn.join(", ")}</span></>
-                        }
-                      </p>
-                      {inactive && (
-                        <p className="text-xs mt-1" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif", fontStyle: "italic" }}>
-                          Hidden from Add Language dropdown until reactivated.
-                        </p>
-                      )}
-                    </div>
-                    {inactive && (
-                      <button
-                        onClick={() => handleReactivate(lang.code)}
-                        disabled={reactivatingCode === lang.code}
-                        className="flex-shrink-0 font-bold text-xs"
+                        {inactiveCount} inactive
+                      </span>
+                    )}
+                    {orphanCount > 0 && (
+                      <span
+                        className="text-xs font-bold px-1.5 py-0.5 rounded"
                         style={{
-                          backgroundColor: reactivatingCode === lang.code ? "#D3D3D3" : "#064E3B",
-                          color: "#FFFFFF",
-                          borderRadius: 999,
-                          border: "none",
-                          padding: "6px 12px",
-                          cursor: reactivatingCode === lang.code ? "not-allowed" : "pointer",
+                          backgroundColor: "#FFF8E1",
+                          color: "#B26A00",
                           fontFamily: "Nunito, sans-serif",
-                          whiteSpace: "nowrap",
-                          opacity: reactivatingCode === lang.code ? 0.7 : 1,
                         }}
                       >
-                        {reactivatingCode === lang.code ? "..." : "Reactivate"}
-                      </button>
+                        {orphanCount} unused
+                      </span>
                     )}
                   </div>
-                );
-              })}
-                </div>
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    style={{
+                      flexShrink: 0,
+                      transform: catalogExpanded ? "rotate(180deg)" : "rotate(0deg)",
+                      transition: "transform 0.15s ease",
+                      color: "#6D6D6D",
+                    }}
+                  >
+                    <path
+                      d="M6 9l6 6 6-6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+
+                {/* Expanded body — filter pills, search, then a scrolling
+                list capped at 320px so the country cards always stay in
+                view. The padding mirrors the country-card body. */}
+                {catalogExpanded && (
+                  <div className="px-4 pb-3">
+                    {/* Filter pills */}
+                    <div className="flex items-center gap-1.5 flex-wrap mb-2">
+                      {(["all", "inactive", "orphan"] as const).map((f) => {
+                        const active = catalogFilter === f;
+                        const label =
+                          f === "all" ? "All" : f === "inactive" ? "Inactive" : "Unused";
+                        return (
+                          <button
+                            key={f}
+                            onClick={() => setCatalogFilter(f)}
+                            className="text-xs font-bold px-2.5 py-1 rounded-full"
+                            style={{
+                              backgroundColor: active ? "#064E3B" : "transparent",
+                              color: active ? "#FFFFFF" : "#064E3B",
+                              border: active ? "1.5px solid #064E3B" : "1.5px solid #C2C2C2",
+                              fontFamily: "Nunito, sans-serif",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Search input */}
+                    <input
+                      type="text"
+                      value={catalogQuery}
+                      onChange={(e) => setCatalogQuery(e.target.value)}
+                      placeholder="Search by name, code, or native script"
+                      className="w-full rounded-xl px-3 py-2 text-sm border-none focus:outline-none mb-2"
+                      style={{
+                        backgroundColor: "#F1F5F9",
+                        color: "#231F20",
+                        fontFamily: "Nunito, sans-serif",
+                      }}
+                    />
+                    {/* Scrolling list — capped height so it never pushes the
+                    countries section off the screen. */}
+                    <div style={{ maxHeight: 320, overflowY: "auto" }}>
+                      {filtered.length === 0 ? (
+                        <p
+                          className="text-sm text-center py-4"
+                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          No matches.
+                        </p>
+                      ) : (
+                        filtered.map((lang) => {
+                          // English is the implicit baseline — every country has
+                          // it, so we say "All countries" instead of listing them.
+                          // For other languages, compute the assigned-to list from
+                          // countries[]; show "Not enabled anywhere" when empty.
+                          const enabledIn =
+                            lang.code === "en"
+                              ? "All countries"
+                              : countries
+                                  .filter((c) => c.languages.includes(lang.code))
+                                  .map((c) => c.name);
+                          const isEmpty = Array.isArray(enabledIn) && enabledIn.length === 0;
+                          const inactive = !lang.is_active;
+                          return (
+                            <div
+                              key={lang.code}
+                              className="flex items-start justify-between gap-2 py-2"
+                              style={{
+                                borderTop: "1px solid #F8FAF9",
+                                opacity: inactive ? 0.6 : 1,
+                              }}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-baseline gap-2 flex-wrap">
+                                  <p
+                                    className="font-bold"
+                                    style={{
+                                      color: "#231F20",
+                                      fontFamily: "Nunito, sans-serif",
+                                      fontSize: 14,
+                                    }}
+                                  >
+                                    {lang.name}
+                                  </p>
+                                  <span
+                                    className="text-xs uppercase tracking-wide"
+                                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                                  >
+                                    {lang.code}
+                                  </span>
+                                  {labelForLanguage(lang.code) !== lang.code.toUpperCase() && (
+                                    <span
+                                      className="text-xs"
+                                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                                    >
+                                      · {labelForLanguage(lang.code)}
+                                    </span>
+                                  )}
+                                  {inactive && (
+                                    <span
+                                      className="text-xs font-bold px-1.5 py-0.5 rounded uppercase tracking-wide"
+                                      style={{
+                                        backgroundColor: "#FEC5BB",
+                                        color: "#E44A4A",
+                                        fontFamily: "Nunito, sans-serif",
+                                      }}
+                                    >
+                                      Inactive
+                                    </span>
+                                  )}
+                                </div>
+                                <p
+                                  className="text-xs mt-1"
+                                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                                >
+                                  {typeof enabledIn === "string" ? (
+                                    <>
+                                      Enabled in:{" "}
+                                      <span style={{ color: "#231F20" }}>{enabledIn}</span>
+                                    </>
+                                  ) : isEmpty ? (
+                                    <span style={{ color: "#FF9800", fontStyle: "italic" }}>
+                                      Not enabled in any country
+                                    </span>
+                                  ) : (
+                                    <>
+                                      Enabled in:{" "}
+                                      <span style={{ color: "#231F20" }}>
+                                        {enabledIn.join(", ")}
+                                      </span>
+                                    </>
+                                  )}
+                                </p>
+                                {inactive && (
+                                  <p
+                                    className="text-xs mt-1"
+                                    style={{
+                                      color: "#E44A4A",
+                                      fontFamily: "Nunito, sans-serif",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    Hidden from Add Language dropdown until reactivated.
+                                  </p>
+                                )}
+                              </div>
+                              {inactive && (
+                                <button
+                                  onClick={() => handleReactivate(lang.code)}
+                                  disabled={reactivatingCode === lang.code}
+                                  className="flex-shrink-0 font-bold text-xs"
+                                  style={{
+                                    backgroundColor:
+                                      reactivatingCode === lang.code ? "#D3D3D3" : "#064E3B",
+                                    color: "#FFFFFF",
+                                    borderRadius: 999,
+                                    border: "none",
+                                    padding: "6px 12px",
+                                    cursor:
+                                      reactivatingCode === lang.code ? "not-allowed" : "pointer",
+                                    fontFamily: "Nunito, sans-serif",
+                                    whiteSpace: "nowrap",
+                                    opacity: reactivatingCode === lang.code ? 0.7 : 1,
+                                  }}
+                                >
+                                  {reactivatingCode === lang.code ? "..." : "Reactivate"}
+                                </button>
+                              )}
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          );
-        })()}
+            );
+          })()}
 
         {/* Countries section header — small label so the catalog/countries
             split is visually obvious. */}
         {countries.length > 0 && (
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-2 mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-2 mt-1"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", letterSpacing: 0.4 }}
+          >
             Countries · {countries.length}
           </p>
         )}
@@ -871,11 +1089,17 @@ export default function AdminLanguageCatalogPage() {
             replaced with "Loading…" on every reload which felt like the
             page had gone blank. */}
         {isLoading && countries.length === 0 ? (
-          <div className="bg-white rounded-2xl px-4 py-6 text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <div
+            className="bg-white rounded-2xl px-4 py-6 text-center"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
             Loading…
           </div>
         ) : countries.length === 0 ? (
-          <div className="bg-white rounded-2xl px-4 py-10 text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <div
+            className="bg-white rounded-2xl px-4 py-10 text-center"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
             No countries found.
           </div>
         ) : (
@@ -901,12 +1125,24 @@ export default function AdminLanguageCatalogPage() {
                   <button
                     onClick={() => toggleExpand(c.id)}
                     className="w-full flex items-center justify-between px-4 py-3.5"
-                    style={{ background: "none", border: "none", cursor: "pointer", textAlign: "left" }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
                     aria-expanded={isOpen}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline gap-2 flex-wrap">
-                        <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+                        <p
+                          className="font-bold"
+                          style={{
+                            color: "#231F20",
+                            fontFamily: "Nunito, sans-serif",
+                            fontSize: 16,
+                          }}
+                        >
                           {c.name}
                         </p>
                         {isPlaceholder && (
@@ -914,16 +1150,25 @@ export default function AdminLanguageCatalogPage() {
                           // it without expanding.
                           <span
                             className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
-                            style={{ backgroundColor: "#FFF3E0", color: "#FF7800", fontFamily: "Nunito, sans-serif" }}
+                            style={{
+                              backgroundColor: "#FFF3E0",
+                              color: "#FF7800",
+                              fontFamily: "Nunito, sans-serif",
+                            }}
                           >
                             Backend pending
                           </span>
                         )}
                       </div>
-                      <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                        {isPlaceholder
-                          ? "Backend has not registered this country yet"
-                          : <>English{extraLangs.length > 0 && ` + ${extraLangs.length} more`}</>}
+                      <p
+                        className="text-xs mt-0.5"
+                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                      >
+                        {isPlaceholder ? (
+                          "Backend has not registered this country yet"
+                        ) : (
+                          <>English{extraLangs.length > 0 && ` + ${extraLangs.length} more`}</>
+                        )}
                       </p>
                     </div>
                     {/* Chevron rotates 180° when open */}
@@ -932,9 +1177,19 @@ export default function AdminLanguageCatalogPage() {
                       height="18"
                       viewBox="0 0 24 24"
                       fill="none"
-                      style={{ flexShrink: 0, transform: isOpen ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.18s" }}
+                      style={{
+                        flexShrink: 0,
+                        transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
+                        transition: "transform 0.18s",
+                      }}
                     >
-                      <path d="M6 9l6 6 6-6" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M6 9l6 6 6-6"
+                        stroke="#064E3B"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </button>
 
@@ -946,129 +1201,175 @@ export default function AdminLanguageCatalogPage() {
                       render an explanatory empty state instead of the
                       assign/toggle controls — backend has no country_id,
                       so any POST would fail. */}
-                  {isOpen && (isPlaceholder ? (
-                    <div className="border-t px-4 py-4" style={{ borderColor: "#F1F5F9" }}>
-                      <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>
-                        <span className="font-bold" style={{ color: "#FF7800" }}>{c.name}</span> is in
-                        the rollout plan but has not been seeded into the backend
-                        country table yet. Ask the backend team to add it; this
-                        card will switch to live controls automatically once the
-                        country shows up in <span className="font-mono">/v1/admin/countries</span>.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="border-t" style={{ borderColor: "#F1F5F9" }}>
-                      {extraLangs.length === 0 ? (
-                        <p className="text-xs italic px-4 py-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                          Only English is enabled. Tap “+ Add Language” to enable another for this country.
+                  {isOpen &&
+                    (isPlaceholder ? (
+                      <div className="border-t px-4 py-4" style={{ borderColor: "#F1F5F9" }}>
+                        <p
+                          className="text-xs"
+                          style={{
+                            color: "#6D6D6D",
+                            fontFamily: "Nunito, sans-serif",
+                            lineHeight: 1.5,
+                          }}
+                        >
+                          <span className="font-bold" style={{ color: "#FF7800" }}>
+                            {c.name}
+                          </span>{" "}
+                          is in the rollout plan but has not been seeded into the backend country
+                          table yet. Ask the backend team to add it; this card will switch to live
+                          controls automatically once the country shows up in{" "}
+                          <span className="font-mono">/v1/admin/countries</span>.
                         </p>
-                      ) : (
-                        extraLangs.map((code) => {
-                          // Resolve catalog metadata for the row's display
-                          // name AND active state. If the catalog row exists
-                          // but is_active=false, this is a STALE assignment —
-                          // the language was assigned to this country at
-                          // some point, then later deactivated globally. The
-                          // assignment still exists in the DB (per spec:
-                          // "Existing translations are preserved.") but the
-                          // language is no longer offered to users.
-                          //
-                          // We render stale rows with an INACTIVE chip and
-                          // amber border so the admin can see the
-                          // inconsistency and clean it up (toggle OFF to
-                          // unassign). Without this, a deactivated language
-                          // could silently linger in country.languages forever.
-                          const catalog = allLanguages.find((l) => l.code === code);
-                          const displayName = catalog?.name ?? code.toUpperCase();
-                          const isCatalogInactive = catalog ? !catalog.is_active : false;
-                          const key = `${c.id}:${code}`;
-                          const isPending = pendingKey.has(key);
-                          return (
-                            <div
-                              key={code}
-                              className="flex items-center justify-between px-4 py-3"
-                              style={{
-                                borderTop: "1px solid #F8FAF9",
-                                backgroundColor: isCatalogInactive ? "#FFF8E1" : "transparent",
-                              }}
-                            >
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline gap-2 flex-wrap">
-                                  <p
-                                    className="font-bold"
-                                    style={{
-                                      color: isCatalogInactive ? "#6D6D6D" : "#231F20",
-                                      fontFamily: "Nunito, sans-serif",
-                                      fontSize: 14,
-                                      textDecoration: isCatalogInactive ? "line-through" : "none",
-                                    }}
-                                  >
-                                    {displayName}
-                                  </p>
-                                  <span className="text-xs uppercase tracking-wide" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                                    {code}
-                                  </span>
-                                  {isCatalogInactive && (
-                                    <span
-                                      className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
-                                      style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-                                      title="Language is deactivated globally — not shown to users despite this assignment. Toggle off to clean up."
+                      </div>
+                    ) : (
+                      <div className="border-t" style={{ borderColor: "#F1F5F9" }}>
+                        {extraLangs.length === 0 ? (
+                          <p
+                            className="text-xs italic px-4 py-3"
+                            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                          >
+                            Only English is enabled. Tap “+ Add Language” to enable another for this
+                            country.
+                          </p>
+                        ) : (
+                          extraLangs.map((code) => {
+                            // Resolve catalog metadata for the row's display
+                            // name AND active state. If the catalog row exists
+                            // but is_active=false, this is a STALE assignment —
+                            // the language was assigned to this country at
+                            // some point, then later deactivated globally. The
+                            // assignment still exists in the DB (per spec:
+                            // "Existing translations are preserved.") but the
+                            // language is no longer offered to users.
+                            //
+                            // We render stale rows with an INACTIVE chip and
+                            // amber border so the admin can see the
+                            // inconsistency and clean it up (toggle OFF to
+                            // unassign). Without this, a deactivated language
+                            // could silently linger in country.languages forever.
+                            const catalog = allLanguages.find((l) => l.code === code);
+                            const displayName = catalog?.name ?? code.toUpperCase();
+                            const isCatalogInactive = catalog ? !catalog.is_active : false;
+                            const key = `${c.id}:${code}`;
+                            const isPending = pendingKey.has(key);
+                            return (
+                              <div
+                                key={code}
+                                className="flex items-center justify-between px-4 py-3"
+                                style={{
+                                  borderTop: "1px solid #F8FAF9",
+                                  backgroundColor: isCatalogInactive ? "#FFF8E1" : "transparent",
+                                }}
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-baseline gap-2 flex-wrap">
+                                    <p
+                                      className="font-bold"
+                                      style={{
+                                        color: isCatalogInactive ? "#6D6D6D" : "#231F20",
+                                        fontFamily: "Nunito, sans-serif",
+                                        fontSize: 14,
+                                        textDecoration: isCatalogInactive ? "line-through" : "none",
+                                      }}
                                     >
-                                      Inactive
+                                      {displayName}
+                                    </p>
+                                    <span
+                                      className="text-xs uppercase tracking-wide"
+                                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                                    >
+                                      {code}
                                     </span>
-                                  )}
-                                </div>
-                                {/* Native-script preview when known — same
+                                    {isCatalogInactive && (
+                                      <span
+                                        className="text-xs font-bold uppercase tracking-wide px-1.5 py-0.5 rounded"
+                                        style={{
+                                          backgroundColor: "#FEC5BB",
+                                          color: "#E44A4A",
+                                          fontFamily: "Nunito, sans-serif",
+                                        }}
+                                        title="Language is deactivated globally — not shown to users despite this assignment. Toggle off to clean up."
+                                      >
+                                        Inactive
+                                      </span>
+                                    )}
+                                  </div>
+                                  {/* Native-script preview when known — same
                                     string the user will see in their Profile
                                     dropdown. Skipped for inactive rows to
                                     reduce visual noise. */}
-                                {!isCatalogInactive && labelForLanguage(code) !== code.toUpperCase() && (
-                                  <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                                    {labelForLanguage(code)}
-                                  </p>
-                                )}
-                                {isCatalogInactive && (
-                                  <p className="text-xs italic mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                                    Deactivated globally — not offered to users. Toggle off to remove this stale assignment.
-                                  </p>
-                                )}
+                                  {!isCatalogInactive &&
+                                    labelForLanguage(code) !== code.toUpperCase() && (
+                                      <p
+                                        className="text-xs mt-0.5"
+                                        style={{
+                                          color: "#6D6D6D",
+                                          fontFamily: "Nunito, sans-serif",
+                                        }}
+                                      >
+                                        {labelForLanguage(code)}
+                                      </p>
+                                    )}
+                                  {isCatalogInactive && (
+                                    <p
+                                      className="text-xs italic mt-0.5"
+                                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                                    >
+                                      Deactivated globally — not offered to users. Toggle off to
+                                      remove this stale assignment.
+                                    </p>
+                                  )}
+                                </div>
+                                <label
+                                  className="toggle-switch"
+                                  aria-label={`Disable ${code} for ${c.name}`}
+                                  style={{
+                                    opacity: isPending ? 0.55 : 1,
+                                    cursor: isPending ? "wait" : "pointer",
+                                  }}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked
+                                    disabled={isPending}
+                                    onChange={() => handleUnassign(c, code)}
+                                  />
+                                  <span className="toggle-slider" />
+                                </label>
                               </div>
-                              <label
-                                className="toggle-switch"
-                                aria-label={`Disable ${code} for ${c.name}`}
-                                style={{ opacity: isPending ? 0.55 : 1, cursor: isPending ? "wait" : "pointer" }}
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked
-                                  disabled={isPending}
-                                  onChange={() => handleUnassign(c, code)}
-                                />
-                                <span className="toggle-slider" />
-                              </label>
-                            </div>
-                          );
-                        })
-                      )}
+                            );
+                          })
+                        )}
 
-                      {/* "+ Add Language" pill — opens the per-country sheet
+                        {/* "+ Add Language" pill — opens the per-country sheet
                           listing catalog entries this country hasn't enabled
                           yet. */}
-                      <div className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
-                        <button
-                          onClick={() => openAssign(c)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
-                          style={{ backgroundColor: "#E4F7EF", color: "#064E3B", border: "1.5px solid rgba(5,188,109,0.30)", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-                          aria-label={`Add a language to ${c.name}`}
-                        >
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                            <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
-                          </svg>
-                          Add Language
-                        </button>
+                        <div className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+                          <button
+                            onClick={() => openAssign(c)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold"
+                            style={{
+                              backgroundColor: "#E4F7EF",
+                              color: "#064E3B",
+                              border: "1.5px solid rgba(5,188,109,0.30)",
+                              fontFamily: "Nunito, sans-serif",
+                              cursor: "pointer",
+                            }}
+                            aria-label={`Add a language to ${c.name}`}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M12 5v14M5 12h14"
+                                stroke="currentColor"
+                                strokeWidth="2.4"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            Add Language
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               );
             })}
@@ -1079,94 +1380,148 @@ export default function AdminLanguageCatalogPage() {
       {/* Per-country assign sheet — pick a catalog language not yet
           enabled for this country and POST the assignment. Distinct
           from the global-catalog Add Language sheet below. */}
-      {assignSheetCountry && (() => {
-        const regional = regionalCodesForCountry(assignSheetCountry.name);
-        const available = computeAvailableForCountry(assignSheetCountry);
-        // If selectedNewCode is somehow not in the rendered options
-        // (e.g. catalog reloaded behind us and the language got
-        // deactivated, or another tab assigned it), fall back to the
-        // first visible option so Enable never sends a hidden code.
-        const effectiveCode =
-          available.some((l) => l.code === selectedNewCode)
+      {assignSheetCountry &&
+        (() => {
+          const regional = regionalCodesForCountry(assignSheetCountry.name);
+          const available = computeAvailableForCountry(assignSheetCountry);
+          // If selectedNewCode is somehow not in the rendered options
+          // (e.g. catalog reloaded behind us and the language got
+          // deactivated, or another tab assigned it), fall back to the
+          // first visible option so Enable never sends a hidden code.
+          const effectiveCode = available.some((l) => l.code === selectedNewCode)
             ? selectedNewCode
             : (available[0]?.code ?? "");
-        return (
-          <div
-            className="fixed top-0 h-full z-50 flex flex-col justify-end"
-            style={{
-              left: "max(0px, calc((100vw - 480px) / 2))",
-              width: "min(100vw, 480px)",
-              backgroundColor: "rgba(0,0,0,0.65)",
-            }}
-            onClick={(e) => { if (e.target === e.currentTarget) setAssignSheetCountry(null); }}
-          >
-            <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-              <div className="flex justify-center mb-3">
-                <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
-              </div>
-              <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>
-                Add Language
-              </h3>
-              <p className="text-center text-sm mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                {assignSheetCountry.name}
-              </p>
-              {regional && (
-                <p className="text-center text-xs mb-5" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontStyle: "italic" }}>
-                  Showing regional languages only
+          return (
+            <div
+              className="fixed top-0 h-full z-50 flex flex-col justify-end"
+              style={{
+                left: "max(0px, calc((100vw - 480px) / 2))",
+                width: "min(100vw, 480px)",
+                backgroundColor: "rgba(0,0,0,0.65)",
+              }}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setAssignSheetCountry(null);
+              }}
+            >
+              <div
+                className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+                style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+              >
+                <div className="flex justify-center mb-3">
+                  <div
+                    style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }}
+                  />
+                </div>
+                <h3
+                  className="text-center font-bold mb-1"
+                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+                >
+                  Add Language
+                </h3>
+                <p
+                  className="text-center text-sm mb-1"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {assignSheetCountry.name}
                 </p>
-              )}
-              {!regional && <div className="mb-5" />}
-
-              {available.length === 0 ? (
-                <p className="text-sm text-center mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {regional
-                    ? <>No regional language available to add. Either all are already enabled, or the missing ones are inactive in the catalog. Use <span className="font-bold">+ Add Language</span> at the top to register a new one.</>
-                    : <>All catalog languages are already enabled for this country. To register a new one, use <span className="font-bold">+ Add Language</span> at the top of the screen.</>
-                  }
-                </p>
-              ) : (
-                <>
-                  <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                    LANGUAGE
-                  </p>
-                  <select
-                    value={effectiveCode}
-                    onChange={(e) => setSelectedNewCode(e.target.value)}
-                    className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"
-                    style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                {regional && (
+                  <p
+                    className="text-center text-xs mb-5"
+                    style={{
+                      color: "#1CA069",
+                      fontFamily: "Nunito, sans-serif",
+                      fontStyle: "italic",
+                    }}
                   >
-                    {available.map((l) => (
-                      <option key={l.code} value={l.code}>
-                        {labelForLanguage(l.code) !== l.code.toUpperCase()
-                          ? `${labelForLanguage(l.code)} — ${l.name} (${l.code})`
-                          : `${l.name} (${l.code})`}
-                      </option>
-                    ))}
-                  </select>
-                </>
-              )}
+                    Showing regional languages only
+                  </p>
+                )}
+                {!regional && <div className="mb-5" />}
 
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setAssignSheetCountry(null)}
-                  className="flex-1 py-3 rounded-xl font-bold"
-                  style={{ backgroundColor: "transparent", color: "#064E3B", border: "2px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleAssign}
-                  disabled={available.length === 0 || isAssigning || !selectedNewCode}
-                  className="flex-1 py-3 rounded-xl font-bold"
-                  style={{ backgroundColor: available.length === 0 || isAssigning ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: available.length === 0 || isAssigning ? "not-allowed" : "pointer" }}
-                >
-                  {isAssigning ? "Adding…" : "Enable"}
-                </button>
+                {available.length === 0 ? (
+                  <p
+                    className="text-sm text-center mb-5"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    {regional ? (
+                      <>
+                        No regional language available to add. Either all are already enabled, or
+                        the missing ones are inactive in the catalog. Use{" "}
+                        <span className="font-bold">+ Add Language</span> at the top to register a
+                        new one.
+                      </>
+                    ) : (
+                      <>
+                        All catalog languages are already enabled for this country. To register a
+                        new one, use <span className="font-bold">+ Add Language</span> at the top of
+                        the screen.
+                      </>
+                    )}
+                  </p>
+                ) : (
+                  <>
+                    <p
+                      className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
+                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      LANGUAGE
+                    </p>
+                    <select
+                      value={effectiveCode}
+                      onChange={(e) => setSelectedNewCode(e.target.value)}
+                      className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"
+                      style={{
+                        backgroundColor: "#F1F5F9",
+                        color: "#231F20",
+                        fontFamily: "Nunito, sans-serif",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {available.map((l) => (
+                        <option key={l.code} value={l.code}>
+                          {labelForLanguage(l.code) !== l.code.toUpperCase()
+                            ? `${labelForLanguage(l.code)} — ${l.name} (${l.code})`
+                            : `${l.name} (${l.code})`}
+                        </option>
+                      ))}
+                    </select>
+                  </>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setAssignSheetCountry(null)}
+                    className="flex-1 py-3 rounded-xl font-bold"
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "#064E3B",
+                      border: "2px solid #064E3B",
+                      fontFamily: "Nunito, sans-serif",
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleAssign}
+                    disabled={available.length === 0 || isAssigning || !selectedNewCode}
+                    className="flex-1 py-3 rounded-xl font-bold"
+                    style={{
+                      backgroundColor:
+                        available.length === 0 || isAssigning ? "#D3D3D3" : "#064E3B",
+                      color: "#FFFFFF",
+                      border: "none",
+                      fontFamily: "Nunito, sans-serif",
+                      cursor: available.length === 0 || isAssigning ? "not-allowed" : "pointer",
+                    }}
+                  >
+                    {isAssigning ? "Adding…" : "Enable"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Add Language bottom sheet — registers a row in the global
           catalog. After insert it will appear (unassigned) under every
@@ -1179,17 +1534,28 @@ export default function AdminLanguageCatalogPage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.65)",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowAdd(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAdd(false);
+          }}
         >
-          <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
+          <div
+            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+          >
             <div className="flex justify-center mb-3">
               <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
             </div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>
+            <h3
+              className="text-center font-bold mb-4"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
               Add Language
             </h3>
 
-            <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               CODE <span style={{ color: "#FC2E20" }}>*</span>
             </p>
             <input
@@ -1199,10 +1565,17 @@ export default function AdminLanguageCatalogPage() {
               placeholder="e.g. hi, vi, sw"
               maxLength={10}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark mb-3"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              style={{
+                backgroundColor: "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+              }}
             />
 
-            <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               NAME <span style={{ color: "#FC2E20" }}>*</span>
             </p>
             <input
@@ -1212,14 +1585,24 @@ export default function AdminLanguageCatalogPage() {
               placeholder="e.g. Hindi, Vietnamese, Kiswahili"
               maxLength={100}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark mb-5"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              style={{
+                backgroundColor: "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+              }}
             />
 
             <div className="flex gap-3">
               <button
                 onClick={() => setShowAdd(false)}
                 className="flex-1 py-3 rounded-xl font-bold"
-                style={{ backgroundColor: "transparent", color: "#064E3B", border: "2px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#064E3B",
+                  border: "2px solid #064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
@@ -1227,7 +1610,13 @@ export default function AdminLanguageCatalogPage() {
                 onClick={handleAdd}
                 disabled={isCreating}
                 className="flex-1 py-3 rounded-xl font-bold"
-                style={{ backgroundColor: isCreating ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isCreating ? "not-allowed" : "pointer" }}
+                style={{
+                  backgroundColor: isCreating ? "#D3D3D3" : "#064E3B",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: isCreating ? "not-allowed" : "pointer",
+                }}
               >
                 {isCreating ? "Adding…" : "Submit"}
               </button>

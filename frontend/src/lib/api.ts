@@ -32,8 +32,8 @@ export interface CattleInfo {
   milk_fat_percent: number;
   average_temperature: number;
   grazing: boolean;
-  distance: number;    // km walked while grazing; 0 when grazing=false
-  topography: string;  // "Flat" or "Hilly"; always "Flat" when grazing=false
+  distance: number; // km walked while grazing; 0 when grazing=false
+  topography: string; // "Flat" or "Hilly"; always "Flat" when grazing=false
   // Y3 §1.3 — milk price for §2.1 cost-per-liter comparison. Currency is
   // user's selected country currency (rendered as suffix by report page).
   // Optional: null means user did not provide a price; backend should skip
@@ -55,13 +55,18 @@ export interface CattleInfo {
 }
 
 export type AnimalCategory = "Lactating Cow" | "Dry Cow" | "Heifer" | "Baby Calf/Heifer";
-export const ANIMAL_CATEGORIES: AnimalCategory[] = ["Lactating Cow", "Dry Cow", "Heifer", "Baby Calf/Heifer"];
+export const ANIMAL_CATEGORIES: AnimalCategory[] = [
+  "Lactating Cow",
+  "Dry Cow",
+  "Heifer",
+  "Baby Calf/Heifer",
+];
 // Display labels — plural per the Y3 §1.4 spec wording. Wire values
 // stay singular so saved simulations / backend stay backward-compatible.
 export const ANIMAL_CATEGORY_LABELS: Record<AnimalCategory, string> = {
   "Lactating Cow": "Lactating cows",
   "Dry Cow": "Dry cows",
-  "Heifer": "Heifers",
+  Heifer: "Heifers",
   "Baby Calf/Heifer": "Baby calves/heifers",
 };
 export const isLactating = (cat: AnimalCategory): boolean => cat === "Lactating Cow";
@@ -74,7 +79,7 @@ export interface FeedItem {
   category_name: string;
   sub_category_id: number | null;
   sub_category_name: string;
-  feed_uuid: string | null;    // feed_id sent to the API (from FeedSubCategory.feed_uuid)
+  feed_uuid: string | null; // feed_id sent to the API (from FeedSubCategory.feed_uuid)
   // i18n V2 — translated display name captured at pick time. Used as a
   // client-side fallback when the backend's diet endpoints don't yet
   // return display_name on FeedBreakdown / CostEffectiveDiet rows.
@@ -96,8 +101,8 @@ export interface FeedItem {
 // Matches Android BaseThresholds — single max value per nutrient
 export interface DietLimits {
   ash_max: number;
-  ee_max: number;     // Ether Extract (fat)
-  ndf_max: number;    // Neutral Detergent Fiber
+  ee_max: number; // Ether Extract (fat)
+  ndf_max: number; // Neutral Detergent Fiber
   starch_max: number;
 }
 
@@ -124,7 +129,7 @@ export interface CattleInfoPayload {
   // Placeholder snake_case names used here; renaming is a one-line patch.
   // TODO(maria-y3): finalize field names + units (price per L? per Kg?).
   milk_price?: number | null;
-  animal_category?: string;     // one of AnimalCategory string values
+  animal_category?: string; // one of AnimalCategory string values
 }
 
 // Backend has no field distinct from `simulation_id` for a "clean" display
@@ -184,7 +189,7 @@ export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
     breed: ci.breed,
     bc_score: ci.body_condition_score,
     body_weight: ci.body_weight,
-    calving_interval: 370,   // Android hardcodes 370
+    calving_interval: 370, // Android hardcodes 370
     bw_gain: ci.body_weight_gain,
     days_in_milk: isLactating ? ci.days_in_milk : 0,
     days_of_pregnancy: ci.days_of_pregnancy,
@@ -235,7 +240,7 @@ export interface RecommendationRequest {
     min_kg_per_day?: number | null;
     max_kg_per_day?: number | null;
   }>;
-  base_thresholds: DietLimits;   // Android always sends this — never omit
+  base_thresholds: DietLimits; // Android always sends this — never omit
 }
 
 // ─── Evaluation Response Types (matches Android FeedEvaluationResponse) ───────
@@ -400,7 +405,7 @@ export interface Country {
 export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
   en: "English",
   hi: "हिन्दी",
-  tl: "Tagalog",                  // Filipino
+  tl: "Tagalog", // Filipino
   id: "Bahasa Indonesia",
   th: "ไทย",
   vi: "Tiếng Việt",
@@ -431,7 +436,7 @@ export const labelForLanguage = (code: string): string =>
 
 const api = axios.create({
   baseURL: "/api/proxy",
-  timeout: 60000,   // Android uses 60s connect/read/write timeouts
+  timeout: 60000, // Android uses 60s connect/read/write timeouts
   headers: {
     "Content-Type": "application/json",
   },
@@ -456,8 +461,10 @@ export const langParam = (): { lang: string } => ({ lang: langProvider() });
 // timestamp when pushing a diagnostic build so we can confirm the new
 // bundle is what's actually running (not a stale SW cache).
 if (typeof window !== "undefined") {
-  console.log("%c[RationSmart] testing build · v1+diag · 2026-06-16T11:30Z",
-    "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;");
+  console.log(
+    "%c[RationSmart] testing build · v1+diag · 2026-06-16T11:30Z",
+    "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;"
+  );
 }
 
 api.interceptors.request.use((config) => {
@@ -476,9 +483,10 @@ api.interceptors.request.use((config) => {
       params: config.params,
       hasToken: !!token,
       tokenPreview: token ? token.slice(0, 16) + "…" : null,
-      bodyKeys: config.data && typeof config.data === "object" && !(config.data instanceof FormData)
-        ? Object.keys(config.data as Record<string, unknown>)
-        : undefined,
+      bodyKeys:
+        config.data && typeof config.data === "object" && !(config.data instanceof FormData)
+          ? Object.keys(config.data as Record<string, unknown>)
+          : undefined,
     });
   }
   return config;
@@ -500,7 +508,11 @@ api.interceptors.response.use(
       const cfg = err?.config ?? {};
       const method = (cfg.method || "GET").toUpperCase();
       const url = (cfg.baseURL ?? "") + (cfg.url ?? "");
-      console.error(`[api ×] ${err?.response?.status ?? "ERR"} ${method} ${url}`, err?.response?.data ?? err?.message);
+      // SECURITY: log status + message only, never `err.response.data`. On a
+      // production build console.error survives (removeConsole excludes it),
+      // and the response body can carry PII / FastAPI `detail` strings. The
+      // full body is still visible in the DevTools Network tab when needed.
+      console.error(`[api ×] ${err?.response?.status ?? "ERR"} ${method} ${url}`, err?.message);
     }
     return Promise.reject(err);
   }
@@ -540,10 +552,7 @@ api.interceptors.response.use(
       // FastAPI validation errors: [{loc, msg, type}]
       message = detail.map((d: { msg?: string }) => d.msg ?? JSON.stringify(d)).join(", ");
     } else {
-      message =
-        error?.response?.data?.message ??
-        error?.message ??
-        "An unexpected error occurred";
+      message = error?.response?.data?.message ?? error?.message ?? "An unexpected error occurred";
     }
     return Promise.reject(new Error(message));
   }
@@ -565,12 +574,10 @@ export interface LoginResponse {
 export const login = (email_id: string, pin: string) =>
   api.post<LoginResponse>("/v1/auth/login", { email_id, pin });
 
-export const register = (data: RegisterData) =>
-  api.post("/v1/auth/register", data);
+export const register = (data: RegisterData) => api.post("/v1/auth/register", data);
 
 // POST /v1/auth/forgot-pin — { email_id }
-export const resetPin = (email_id: string) =>
-  api.post("/v1/auth/forgot-pin", { email_id });
+export const resetPin = (email_id: string) => api.post("/v1/auth/forgot-pin", { email_id });
 
 // POST /v1/auth/set-new-pin — { email_id, old_pin (4 digits), new_pin (6 digits) }
 // Used when login returns requires_pin_reset=true. Migrates a legacy
@@ -585,8 +592,7 @@ export const changePin = (email_id: string, current_pin: string, new_pin: string
   api.post("/v1/auth/change-pin", { email_id, current_pin, new_pin });
 
 // POST /v1/auth/verify-email — { token } — email verification flow
-export const verifyEmail = (token: string) =>
-  api.post("/v1/auth/verify-email", { token });
+export const verifyEmail = (token: string) => api.post("/v1/auth/verify-email", { token });
 
 // POST /v1/auth/resend-verification — { email_id }
 export const resendVerification = (email_id: string) =>
@@ -611,8 +617,7 @@ export const updateUserProfile = (
 
 // POST /v1/auth/user-delete-account — JWT auth; body { pin } (6-digit)
 // user identity comes from the JWT, no more user_id query param.
-export const deleteAccount = (pin: string) =>
-  api.post("/v1/auth/user-delete-account", { pin });
+export const deleteAccount = (pin: string) => api.post("/v1/auth/user-delete-account", { pin });
 
 // ─── Feed taxonomy (JWT-protected) ──────────────────────────────────────────
 // user_id no longer passed — derived from the JWT by the backend.
@@ -683,7 +688,9 @@ export const getFeedSubCategories = (
   country_id: string,
   _user_id?: string
 ) =>
-  api.get("/v1/animal/feed-name", { params: { country_id, feed_type, category: feed_category, lang: "en" } });
+  api.get("/v1/animal/feed-name", {
+    params: { country_id, feed_type, category: feed_category, lang: "en" },
+  });
 
 // i18n V2 — client-side translation dictionary for Feed Type + Category
 // labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
@@ -696,19 +703,36 @@ export const getFeedSubCategories = (
 // map (`feeds`) that getFeedSubCategories' now-English-only fetch overlays
 // onto its (always-complete) identity list. Cached per (country_id, lang).
 export type FeedTaxonomyLabels = {
-  types: Record<string, string>;      // English identity → localized label
+  types: Record<string, string>; // English identity → localized label
   categories: Record<string, string>; // English identity → localized label
-  feeds: Record<string, string>;      // feed id/uuid → localized display_name
+  feeds: Record<string, string>; // feed id/uuid → localized display_name
 };
 
 export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedTaxonomyLabels> {
   const res = await api.get("/v1/animal/feed-name", {
     params: { country_id, ...langParam() },
   });
-  const feeds = (res.data as {
-    standard_feeds?: { id?: string; feed_id?: string; fd_type?: string; display_type?: string; fd_category?: string; display_category?: string; display_name?: string }[];
-    custom_feeds?: { id?: string; feed_id?: string; fd_type?: string; display_type?: string; fd_category?: string; display_category?: string; display_name?: string }[];
-  }) ?? {};
+  const feeds =
+    (res.data as {
+      standard_feeds?: {
+        id?: string;
+        feed_id?: string;
+        fd_type?: string;
+        display_type?: string;
+        fd_category?: string;
+        display_category?: string;
+        display_name?: string;
+      }[];
+      custom_feeds?: {
+        id?: string;
+        feed_id?: string;
+        fd_type?: string;
+        display_type?: string;
+        fd_category?: string;
+        display_category?: string;
+        display_name?: string;
+      }[];
+    }) ?? {};
   const merged = [...(feeds.standard_feeds ?? []), ...(feeds.custom_feeds ?? [])];
   const types: Record<string, string> = {};
   const categories: Record<string, string> = {};
@@ -724,8 +748,7 @@ export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedT
 
 // ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────
 
-export const evaluateDiet = (data: EvaluationRequest) =>
-  api.post("/v1/animal/evaluate-diet", data);
+export const evaluateDiet = (data: EvaluationRequest) => api.post("/v1/animal/evaluate-diet", data);
 
 export const recommendDiet = (data: RecommendationRequest) =>
   api.post("/v1/animal/diet-recommendation", data);
@@ -745,7 +768,7 @@ export const recommendDiet = (data: RecommendationRequest) =>
 export interface FeedReport {
   report_id: string | null;
   report_type: string | null;
-  bucket_url: string | null;   // PDF download URL
+  bucket_url: string | null; // PDF download URL
   simulation_id: string | null;
   user_name: string | null;
   report_created_date: string | null;
@@ -798,12 +821,17 @@ export const getSavedReports = async (_user_id?: string) => {
     merged.set(r.report_id ?? r.simulation_id ?? `__idx_${i}`, r);
   });
 
-  return { data: { reports: Array.from(merged.values()), success: true, message: null } as FeedReportListResponse };
+  return {
+    data: {
+      reports: Array.from(merged.values()),
+      success: true,
+      message: null,
+    } as FeedReportListResponse,
+  };
 };
 
 // GET /v1/animal/simulations — simulation history (was POST /fetch-all-simulations)
-export const getUserReports = (_user_id?: string) =>
-  api.get("/v1/animal/simulations");
+export const getUserReports = (_user_id?: string) => api.get("/v1/animal/simulations");
 
 // POST /v1/animal/save-report — { report_id, user_id } (user_id still required in body per spec)
 export const saveReport = (report_id: string, user_id: string) =>
@@ -836,8 +864,7 @@ export const getAdminUsers = (
   country = "",
   status = "",
   search = ""
-) =>
-  api.get("/v1/admin/users", { params: { page, page_size, country, status, search } });
+) => api.get("/v1/admin/users", { params: { page, page_size, country, status, search } });
 
 // PUT /v1/admin/users/{user_id}/toggle-status — JWT-derived admin.
 // v1 body shape is AdminUserToggleRequest { action: string }, NOT
@@ -846,10 +873,11 @@ export const getAdminUsers = (
 // other naming variant the server might prefer is "enable"/"disable";
 // swap if the backend rejects.
 export const toggleUserStatus = (user_id: string, _admin_user_id: string, is_active: boolean) =>
-  api.put(`/v1/admin/users/${user_id}/toggle-status`, { action: is_active ? "activate" : "deactivate" });
+  api.put(`/v1/admin/users/${user_id}/toggle-status`, {
+    action: is_active ? "activate" : "deactivate",
+  });
 
-export const getAdminFeedTypes = (_admin_user_id: string) =>
-  api.get("/v1/admin/list-feed-types");
+export const getAdminFeedTypes = (_admin_user_id: string) => api.get("/v1/admin/list-feed-types");
 
 export const getAdminFeedCategories = (_admin_user_id: string) =>
   api.get("/v1/admin/list-feed-categories");
@@ -887,7 +915,7 @@ export const exportAdminFeeds = (_admin_user_id: string) =>
 export const bulkUploadFeeds = (
   _admin_user_id: string,
   file: File,
-  onProgress?: (pct: number) => void,
+  onProgress?: (pct: number) => void
 ) => {
   const form = new FormData();
   form.append("file", file);
@@ -1025,16 +1053,14 @@ export const createLanguage = (body: { code: string; name: string }) =>
   api.post("/v1/admin/languages", body);
 
 // 4.2 — list all registered languages (system-wide)
-export const listLanguages = () =>
-  api.get("/v1/admin/languages");
+export const listLanguages = () => api.get("/v1/admin/languages");
 
 // 4.3 — update a language (name / is_active)
 export const patchLanguage = (code: string, body: { name?: string; is_active?: boolean }) =>
   api.patch(`/v1/admin/languages/${code}`, body);
 
 // 4.4 — list countries with their assigned languages
-export const listCountriesWithLanguages = () =>
-  api.get("/v1/admin/countries");
+export const listCountriesWithLanguages = () => api.get("/v1/admin/countries");
 
 // 4.5 — assign a language to a country
 export const assignLanguageToCountry = (country_id: string, code: string) =>
@@ -1056,8 +1082,7 @@ export const toggleCountryStatus = (country_id: string, action: "enable" | "disa
 // countries to offer in an "Activate a country" picker). No `languages`
 // field on these rows (AdminCountryListItem) — that's only echoed on the
 // active-only 4.4 response.
-export const listAllCountries = () =>
-  api.get("/v1/admin/list-all-countries");
+export const listAllCountries = () => api.get("/v1/admin/list-all-countries");
 
 // ─── CLIMDES Feed Library Sync (Admin) ──────────────────────────────────────
 // Spec source: ~/Downloads/climdes_admin_ui_design.md, verified live against
@@ -1067,8 +1092,7 @@ export const listAllCountries = () =>
 // the weekly auto-sync on/off, trigger a manual sync, and audit past runs.
 
 // Lightweight status for the toggle + day picker + "Sync now" gating.
-export const getFeedSyncSchedulerStatus = () =>
-  api.get("/v1/admin/feed-sync/scheduler/status");
+export const getFeedSyncSchedulerStatus = () => api.get("/v1/admin/feed-sync/scheduler/status");
 
 // Full connection config. auth_token_masked is write-only on the way in —
 // the GET only ever echoes a masked form (e.g. "****9xyz") or null.
@@ -1100,8 +1124,7 @@ export const getFeedSyncLogs = (page = 1, page_size = 20) =>
 
 // Single run with row-level detail (failed_rows, skipped_translations) —
 // absent on the list endpoint to keep that response small.
-export const getFeedSyncLog = (log_id: string) =>
-  api.get(`/v1/admin/feed-sync/logs/${log_id}`);
+export const getFeedSyncLog = (log_id: string) => api.get(`/v1/admin/feed-sync/logs/${log_id}`);
 
 // Y3 §1.1.1 — feed search. Live backend endpoint per
 // docs/Search_Implmentation.md §9.1:
@@ -1111,9 +1134,9 @@ export const getFeedSyncLog = (log_id: string) =>
 // backend shape drifts (per §6 of the spec, three wrappers accepted).
 export interface FeedSearchResult {
   feed_uuid: string;
-  feed_name: string;          // English source — stable; used to talk to backend
-  feed_type: string;          // English source
-  feed_category: string;      // English source
+  feed_name: string; // English source — stable; used to talk to backend
+  feed_type: string; // English source
+  feed_category: string; // English source
   // i18n V2 — translated strings for display only. Server falls back to the
   // English source when no translation exists, so these are always populated.
   // Renderers MUST use display_* fields; identifier comparisons MUST use
@@ -1183,11 +1206,19 @@ export const searchFeeds = async (
     if (Array.isArray(body)) {
       raw = body as RawFeed[];
     } else if (body && typeof body === "object") {
-      const o = body as { feeds?: RawFeed[]; results?: RawFeed[]; standard_feeds?: RawFeed[]; custom_feeds?: RawFeed[] };
+      const o = body as {
+        feeds?: RawFeed[];
+        results?: RawFeed[];
+        standard_feeds?: RawFeed[];
+        custom_feeds?: RawFeed[];
+      };
       if (Array.isArray(o.feeds)) raw = o.feeds;
       else if (Array.isArray(o.results)) raw = o.results;
       else if (Array.isArray(o.standard_feeds) || Array.isArray(o.custom_feeds)) {
-        raw = [...(o.standard_feeds ?? []), ...(o.custom_feeds ?? []).map((f) => ({ ...f, is_custom: true }))];
+        raw = [
+          ...(o.standard_feeds ?? []),
+          ...(o.custom_feeds ?? []).map((f) => ({ ...f, is_custom: true })),
+        ];
       }
     }
     const normalized = raw.map(normalizeRow).filter((r): r is FeedSearchResult => r !== null);

@@ -10,7 +10,10 @@ import { useT } from "@/lib/i18n-ui";
 
 function SkeletonCard() {
   return (
-    <div className="mx-3 bg-white overflow-hidden" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16 }}>
+    <div
+      className="mx-3 bg-white overflow-hidden"
+      style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16 }}
+    >
       <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
         <div className="h-9 w-9 rounded-full shimmer" style={{ backgroundColor: "#E2E8F0" }} />
         <div className="h-8 w-28 rounded-full shimmer" style={{ backgroundColor: "#E2E8F0" }} />
@@ -29,7 +32,11 @@ function SkeletonCard() {
 function formatDate(raw: string | null): string {
   if (!raw) return "";
   try {
-    return new Date(raw).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    return new Date(raw).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
   } catch {
     return raw;
   }
@@ -62,7 +69,7 @@ export default function ReportsPage() {
         setReports(list);
       })
       .catch((err) => {
-        console.error("[reports] fetch failed:", err?.message, err?.response?.data);
+        console.error("[reports] fetch failed:", err?.message);
         showSnackbar(t("Could not load reports"), "error");
       })
       .finally(() => setIsLoading(false));
@@ -88,20 +95,41 @@ export default function ReportsPage() {
           </>
         ) : reports.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-            <div className="flex items-center justify-center rounded-full mb-5" style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}>
+            <div
+              className="flex items-center justify-center rounded-full mb-5"
+              style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}
+            >
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
                 <rect x="5" y="4" width="26" height="28" rx="3" stroke="#064E3B" strokeWidth="2" />
-                <path d="M11 12H25M11 17H22M11 22H17" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                <path
+                  d="M11 12H25M11 17H22M11 22H17"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
-            <p className="text-lg font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>{t("No saved reports")}</p>
-            <p className="text-sm mb-8" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-lg font-bold mb-2"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            >
+              {t("No saved reports")}
+            </p>
+            <p
+              className="text-sm mb-8"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t('Generate a ration report and tap "Save Report" to see it here')}
             </p>
             <button
               onClick={() => router.push("/cattle-info")}
               className="px-8 py-4 rounded-xl font-bold text-base text-white"
-              style={{ backgroundColor: "#064E3B", border: "none", cursor: "pointer", fontFamily: "Nunito, sans-serif" }}
+              style={{
+                backgroundColor: "#064E3B",
+                border: "none",
+                cursor: "pointer",
+                fontFamily: "Nunito, sans-serif",
+              }}
             >
               {t("Create Report")}
             </button>
@@ -115,14 +143,25 @@ export default function ReportsPage() {
                 <div
                   key={cardId}
                   className="mx-3 bg-white overflow-hidden"
-                  style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16 }}
+                  style={{
+                    borderRadius: 16,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                    marginTop: 16,
+                  }}
                 >
                   {/* Top row: ic_report_nav doc icon (top-left) + View Report
                       pill (top-right). Matches layout_item_report.xml:19-67. */}
-                  <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
+                  <div
+                    className="flex items-center justify-between"
+                    style={{ padding: "10px 10px 0 10px" }}
+                  >
                     <div
                       className="flex items-center justify-center"
-                      style={{ borderRadius: 60, backgroundColor: "rgba(5,188,109,0.15)", padding: 6 }}
+                      style={{
+                        borderRadius: 60,
+                        backgroundColor: "rgba(5,188,109,0.15)",
+                        padding: 6,
+                      }}
                     >
                       {/* ic_report_nav — Material Symbols "description" (filled
                           document with corner notch and inset lines) */}
@@ -136,14 +175,14 @@ export default function ReportsPage() {
                         className="flex items-center font-bold"
                         style={{
                           borderRadius: 60,
-                          backgroundColor: "#E4F7EF",   // bright_gray_new
+                          backgroundColor: "#E4F7EF", // bright_gray_new
                           padding: "8px 14px",
                           gap: 8,
                           border: "none",
                           cursor: "pointer",
-                          color: "#064E3B",              // dark_aquamarine_green
+                          color: "#064E3B", // dark_aquamarine_green
                           fontFamily: "Nunito, sans-serif",
-                          fontSize: 12,                  // font_12 (matches Android)
+                          fontSize: 12, // font_12 (matches Android)
                         }}
                       >
                         {t("View Report")}
@@ -176,10 +215,26 @@ export default function ReportsPage() {
 
                   {/* SIMULATION ID — always visible (Android keeps tv_title_simulation_id
                       and tv_simulation_id visible at all times). */}
-                  <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 20, marginLeft: 10 }}>
+                  <p
+                    style={{
+                      color: "#6D6D6D",
+                      fontFamily: "Nunito, sans-serif",
+                      fontSize: 12,
+                      marginTop: 20,
+                      marginLeft: 10,
+                    }}
+                  >
                     {t("Simulation ID")}
                   </p>
-                  <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, margin: "4px 10px 0 10px" }}>
+                  <p
+                    className="font-bold"
+                    style={{
+                      color: "#231F20",
+                      fontFamily: "Nunito, sans-serif",
+                      fontSize: 16,
+                      margin: "4px 10px 0 10px",
+                    }}
+                  >
                     {report.simulation_id || t("N/A")}
                   </p>
 
@@ -188,17 +243,72 @@ export default function ReportsPage() {
                     <div style={{ padding: "0 10px" }}>
                       <div className="grid grid-cols-2 gap-x-3" style={{ marginTop: 10 }}>
                         <div>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>{t("Report ID")}</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_id || t("N/A")}</p>
+                          <p
+                            style={{
+                              color: "#6D6D6D",
+                              fontFamily: "Nunito, sans-serif",
+                              fontSize: 12,
+                            }}
+                          >
+                            {t("Report ID")}
+                          </p>
+                          <p
+                            className="font-bold"
+                            style={{
+                              color: "#231F20",
+                              fontFamily: "Nunito, sans-serif",
+                              fontSize: 16,
+                              marginTop: 4,
+                            }}
+                          >
+                            {report.report_id || t("N/A")}
+                          </p>
                         </div>
                         <div>
-                          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>{t("Report Type")}</p>
-                          <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>{report.report_type || t("N/A")}</p>
+                          <p
+                            style={{
+                              color: "#6D6D6D",
+                              fontFamily: "Nunito, sans-serif",
+                              fontSize: 12,
+                            }}
+                          >
+                            {t("Report Type")}
+                          </p>
+                          <p
+                            className="font-bold"
+                            style={{
+                              color: "#231F20",
+                              fontFamily: "Nunito, sans-serif",
+                              fontSize: 16,
+                              marginTop: 4,
+                            }}
+                          >
+                            {report.report_type || t("N/A")}
+                          </p>
                         </div>
                       </div>
-                      <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12, marginTop: 10 }}>{t("Date")}</p>
-                      <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}>
-                        {report.report_created_date ? formatDate(report.report_created_date) : t("N/A")}
+                      <p
+                        style={{
+                          color: "#6D6D6D",
+                          fontFamily: "Nunito, sans-serif",
+                          fontSize: 12,
+                          marginTop: 10,
+                        }}
+                      >
+                        {t("Date")}
+                      </p>
+                      <p
+                        className="font-bold"
+                        style={{
+                          color: "#231F20",
+                          fontFamily: "Nunito, sans-serif",
+                          fontSize: 16,
+                          marginTop: 4,
+                        }}
+                      >
+                        {report.report_created_date
+                          ? formatDate(report.report_created_date)
+                          : t("N/A")}
                       </p>
                     </div>
                   )}
@@ -224,7 +334,10 @@ export default function ReportsPage() {
                       height="24"
                       viewBox="0 0 960 960"
                       fill="#064E3B"
-                      style={{ transform: isExpanded ? "rotate(180deg)" : "none", transition: "transform 0.3s linear" }}
+                      style={{
+                        transform: isExpanded ? "rotate(180deg)" : "none",
+                        transition: "transform 0.3s linear",
+                      }}
                     >
                       <path d="M459,579 L314,434q-3,-3 -4.5,-6.5T308,420q0,-8 5.5,-14t14.5,-6h304q9,0 14.5,6t5.5,14q0,2 -6,14L501,579q-5,5 -10,7t-11,2q-6,0 -11,-2t-10,-7Z" />
                     </svg>
@@ -253,10 +366,19 @@ export default function ReportsPage() {
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M9 3L5 7L9 11" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M9 3L5 7L9 11"
+                      stroke="#064E3B"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </button>
-                <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                <span
+                  className="font-bold"
+                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+                >
                   {page + 1}
                 </span>
                 <button
@@ -276,7 +398,13 @@ export default function ReportsPage() {
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M5 3L9 7L5 11" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M5 3L9 7L5 11"
+                      stroke="#064E3B"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </button>
               </div>
