@@ -21,6 +21,7 @@ def _build_animal_information(cattle_info, env_grazing):
     """
     return {
         'breed': cattle_info.breed or None,
+        'physiological_state': getattr(cattle_info, 'physiological_state', None),
         'body_weight': format_value_with_unit(cattle_info.body_weight, 'Kg'),
         'bw_gain': format_value_with_unit(cattle_info.bw_gain, 'kg/day'),
         'bc_score': cattle_info.bc_score or None,
@@ -314,6 +315,61 @@ def build_diet_response(
     }
     
     return ensure_json_safe(response_data)
+
+def build_calf_recommendation_response(
+    animal_requirements: Dict[str, Any],
+    cattle_info: Any,
+    simulation_id: str,
+    report_id: str,
+) -> Dict[str, Any]:
+    """Build the API response for a Baby Calf/Heifer recommendation.
+
+    A baby calf has no least-cost solid-feed ration — the recommendation IS the
+    milk-feeding schedule (morning / evening / total litres) produced by the
+    requirements path. No optimizer output is involved. Water intake is intentionally
+    omitted: it is only computed in the post-optimization diet step, which a calf never
+    runs (see the animal-category plan). `solution_status="MILK_FEEDING_ONLY"` signals
+    to the frontend that this is a milk schedule, not a solved ration.
+    """
+    milk_total = float(animal_requirements.get("milk_total", 0) or 0)
+    milk_morning = float(animal_requirements.get("milk_morning", 0) or 0)
+    milk_evening = float(animal_requirements.get("milk_evening", 0) or 0)
+    dmi = float(animal_requirements.get("Trg_Dt_DMIn", 0) or 0)
+    an_bw = float(animal_requirements.get("An_BW", 0) or 0)
+    intake_pct_bw = round((dmi / an_bw) * 100, 2) if an_bw > 0 else 0.0
+
+    animal_information = _build_animal_information(
+        cattle_info, animal_requirements.get("Env_Grazing", 0)
+    )
+
+    response_data = {
+        "simulation_id": simulation_id,
+        "report_id": report_id,
+        "physiological_state": "Baby Calf/Heifer",
+        "solution_status": "MILK_FEEDING_ONLY",
+        "animal_information": animal_information,
+        "calf_feeding_schedule": {
+            "daily_milk_allowance_liters": round(milk_total, 1),
+            "morning_liters": round(milk_morning, 1),
+            "evening_liters": round(milk_evening, 1),
+            "table": [
+                {"feeding_time": "Morning", "milk_liters": round(milk_morning, 1)},
+                {"feeding_time": "Evening", "milk_liters": round(milk_evening, 1)},
+                {"feeding_time": "Total per Day", "milk_liters": round(milk_total, 1)},
+            ],
+        },
+        "animal_requirements": {
+            "dry_matter_intake": format_value_with_unit(round(dmi, 2), "kg/day"),
+            "intake_pct_bw": format_value_with_unit(intake_pct_bw, "%BW"),
+        },
+        "recommendations": [
+            "Feed milk only, split between morning and evening. Solid-feed ration "
+            "formulation does not apply to a baby calf (milk intake only, up to ~8 weeks of age)."
+        ],
+        "warnings": [],
+    }
+    return ensure_json_safe(response_data)
+
 
 def build_evaluation_response(
     evaluation_results: Dict[str, Any],

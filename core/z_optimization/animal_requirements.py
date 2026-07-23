@@ -13,7 +13,6 @@ and other models for:
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 
 # Import utilities
 from .utilities import adjust_dmi_temperature
@@ -203,38 +202,13 @@ def rsm_calculate_an_requirements(animal_inputs):
     else:
         milk_total = milk_morning = milk_evening = 0
 
-    # Report summary if "Baby Calf/Heifer"
-    # For this category formulation stops here
-    # This table can be displayed in the front end as a summary of the milk feeding recommendation and be available for exporting
-    # Feel fre to modify it to fit the app style
+    # Report summary if "Baby Calf/Heifer": for this category formulation stops here.
+    # The milk-feeding schedule is returned as data (milk_total / milk_morning /
+    # milk_evening, above) for the API/report layer to render — no plotting here.
+    # (The old standalone version drew a matplotlib table via plt.show(); that has no
+    # place in the API engine and is intentionally removed.)
 
-    # Only create and plot the table if the animal is a Baby Calf/Heifer
-    if An_StatePhys == "Baby Calf/Heifer":
-        # Create df
-        data = {
-            "Feeding Time": ["Morning", "Evening", "Total per Day"],
-            "Milk Amount (liters)": [milk_morning, milk_evening, milk_total]
-        }
-        df = pd.DataFrame(data)
-
-        # Plot the result in a table format
-        fig, ax = plt.subplots(figsize=(6, 2))
-        ax.axis('off')
-        table = ax.table(
-            cellText=df.values,
-            colLabels=df.columns,
-            cellLoc='center',
-            loc='center',
-            colColours=['#f2f2f2'] * 2
-        )
-        table.auto_set_font_size(False)
-        table.set_fontsize(12)
-        table.scale(1.2, 1.5)
-        plt.title(f"Milk Feeding Recommendation", fontsize=14, weight='bold')
-        plt.tight_layout()
-        plt.show()
-
-    # Energy requirements 
+    # Energy requirements
 
     # Maintenance Energy, Mcal/d 
 

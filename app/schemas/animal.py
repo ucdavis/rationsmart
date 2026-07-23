@@ -2,7 +2,7 @@ import uuid
 from datetime import date, datetime
 from typing import Annotated, Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 # ── Basic animal characteristics (legacy endpoint) ───────────────────────────
@@ -34,18 +34,27 @@ class AnimalCharacteristics(BaseModel):
 class CattleInfo(BaseModel):
     body_weight: float = Field(..., description="Body weight in kg")
     breed: str
-    lactating: bool
-    milk_production: float = Field(..., description="Litres per day")
-    days_in_milk: int
-    parity: int
-    days_of_pregnancy: int
-    tp_milk: float = Field(..., description="True protein % in milk")
-    fat_milk: float = Field(..., description="Fat % in milk")
+    physiological_state: str = Field(
+        ...,
+        description="Physiological state / animal category: Lactating Cow | Dry Cow | Heifer | Baby Calf/Heifer",
+    )
+    # Lactation drivers — required only for a Lactating Cow (enforced by the
+    # model-validator below), default to 0 otherwise. The service layer additionally
+    # forces them to 0 for any non-lactating state so the engine's 25 L milk default
+    # (Trg_MilkProd_L) can never leak in. See the animal-category plan.
+    milk_production: float = Field(0.0, description="Litres per day (required for Lactating Cow)")
+    days_in_milk: int = Field(0, description="Days in milk (required for Lactating Cow)")
+    tp_milk: float = Field(0.0, description="True protein % in milk (required for Lactating Cow)")
+    fat_milk: float = Field(0.0, description="Fat % in milk (required for Lactating Cow)")
+    # Lactation-context fields — optional with engine-matching defaults so non-lactating
+    # states may omit them (the engine forces parity=0 for a Heifer regardless).
+    parity: int = Field(0)
+    days_of_pregnancy: int = Field(0)
+    calving_interval: int = Field(0, description="Days")
     temperature: float = Field(..., description="Ambient temperature °C")
     topography: str = Field(..., description="Flat or Hilly")
     distance: float = Field(..., description="Walking distance km")
     grazing: bool = Field(False)
-    calving_interval: int = Field(..., description="Days")
     bw_gain: float = Field(0.2, description="Body weight gain kg/day")
     bc_score: float = Field(3.0, description="Body condition score 1–5")
     milk_price: Optional[float] = Field(None, ge=0, description="Milk sale price per litre, local currency")
@@ -54,6 +63,39 @@ class CattleInfo(BaseModel):
     @classmethod
     def round_floats(cls, v):
         return round(float(v), 2)
+
+    @field_validator('physiological_state', mode='before')
+    @classmethod
+    def validate_physiological_state(cls, v):
+        aliases = {
+            "lactating cow": "Lactating Cow", "lactating": "Lactating Cow",
+            "dry cow": "Dry Cow", "dry": "Dry Cow",
+            "heifer": "Heifer",
+            "baby calf/heifer": "Baby Calf/Heifer", "baby calf": "Baby Calf/Heifer",
+            "calf": "Baby Calf/Heifer",
+        }
+        key = str(v).strip().lower()
+        if key not in aliases:
+            raise ValueError(
+                "physiological_state must be one of: Lactating Cow, Dry Cow, Heifer, Baby Calf/Heifer"
+            )
+        return aliases[key]
+
+    @model_validator(mode='after')
+    def _require_lactation_fields(self):
+        # Milk drivers are mandatory for a Lactating Cow (they define the ration);
+        # for every other state they are neutralized server-side, so a caller may omit them.
+        if self.physiological_state == "Lactating Cow":
+            missing = [
+                f for f in ("milk_production", "days_in_milk", "tp_milk", "fat_milk")
+                if f not in self.model_fields_set
+            ]
+            if missing:
+                raise ValueError(
+                    "milk_production, days_in_milk, tp_milk, fat_milk are required for a "
+                    "Lactating Cow (missing: " + ", ".join(missing) + ")"
+                )
+        return self
 
     @field_validator('milk_price', mode='before')
     @classmethod

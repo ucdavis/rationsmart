@@ -261,6 +261,86 @@ async def _build_feed_data_list(
     return feed_data_list, missing
 
 
+# ── Animal-input helpers ──────────────────────────────────────────────────────
+
+def _neutralize_lactation_fields(animal_inputs: Dict[str, Any], physiological_state: str) -> Dict[str, Any]:
+    """Force lactation drivers to 0 for any non-lactating state, in place.
+
+    Safety rule for the animal-category feature: the engine defaults
+    ``Trg_MilkProd_L`` to 25 L when absent and folds lactation energy/protein/minerals
+    in whenever milk > 0 (not gated by state). Since the milk fields are optional for
+    non-lactating states, we zero them here — server-side so it cannot be bypassed —
+    rather than relying on the caller to send 0. Returns the same dict for convenience.
+    """
+    if physiological_state != "Lactating Cow":
+        animal_inputs["milk_production"] = 0   # Trg_MilkProd_L -> 0 (zeros An_NELlact, An_MPl, milk minerals)
+        animal_inputs["days_in_milk"] = 0       # An_LactDay
+        animal_inputs["tp_milk"] = 0             # Trg_MilkTPp
+        animal_inputs["fat_milk"] = 0            # Trg_MilkFatp
+    return animal_inputs
+
+
+async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id: str) -> Dict[str, Any]:
+    """Baby Calf/Heifer recommendation: return the milk-feeding schedule directly.
+
+    A baby calf has no least-cost solid-feed ration to solve — the recommendation IS
+    the milk-feeding schedule the requirements path already produces. We compute the
+    requirements without touching the optimizer (which has no calf constraint profile),
+    build the calf response, persist a Report row, and return. Caller-facing behavior
+    mirrors run_diet_recommendation (commits before returning).
+    """
+    from core.z_optimization.animal_requirements import rsm_calculate_an_requirements
+    from core.z_optimization.reporting import build_calf_recommendation_response
+
+    cattle = request.cattle_info
+    animal_inputs = {
+        "body_weight": cattle.body_weight,
+        "breed": cattle.breed,
+        "An_StatePhys": cattle.physiological_state,
+        "milk_production": 0,
+        "days_in_milk": 0,
+        "parity": 0,
+        "days_of_pregnancy": cattle.days_of_pregnancy,
+        "tp_milk": 0,
+        "fat_milk": 0,
+        "temperature": cattle.temperature,
+        "topography": cattle.topography,
+        "distance": cattle.distance,
+        "grazing": cattle.grazing,
+        "calving_interval": cattle.calving_interval,
+        "bw_gain": cattle.bw_gain,
+        "bc_score": cattle.bc_score,
+    }
+    animal_requirements = rsm_calculate_an_requirements(animal_inputs)
+
+    report_id = f"rec-{_uuid_mod.uuid4().hex[:8]}"
+    response = build_calf_recommendation_response(
+        animal_requirements=animal_requirements,
+        cattle_info=cattle,
+        simulation_id=request.simulation_id,
+        report_id=report_id,
+    )
+
+    report_repo = ReportRepository(db)
+    await report_repo.delete_unsaved_for_user(user_id)
+    new_report = Report(
+        report_id=report_id,
+        report_type="rec",
+        simulation_id=request.simulation_id,
+        user_id=_uuid_mod.UUID(user_id),
+        country_id=_uuid_mod.UUID(request.country_id) if request.country_id else None,
+        animal_inputs=animal_inputs,
+        feed_selection=[],
+        custom_constraints=None,
+        json_result=response,
+        save_report=False,
+        saved_to_bucket=False,
+    )
+    await report_repo.save(new_report)
+    await db.commit()
+    return response
+
+
 # ── Diet recommendation ───────────────────────────────────────────────────────
 
 async def run_diet_recommendation(
@@ -284,6 +364,14 @@ async def run_diet_recommendation(
     from core.z_optimization.nsga3_runner import z_optimization_main
     from core.z_optimization.reporting import build_diet_response
 
+    cattle = request.cattle_info
+
+    # Baby Calf/Heifer: no least-cost solid-feed ration to solve — the recommendation
+    # IS the milk-feeding schedule. Short-circuit before feed resolution and the
+    # optimizer (which has no calf constraint profile and would raise).
+    if cattle.physiological_state == "Baby Calf/Heifer":
+        return await _run_baby_calf_recommendation(db, request, user_id)
+
     # 1 — Resolve feeds
     feed_data_list, missing = await _build_feed_data_list(db, request.feed_selection, user_id)
     if not feed_data_list:
@@ -292,11 +380,10 @@ async def run_diet_recommendation(
         logger.warning("Missing feed IDs (skipped): %s", missing)
 
     # 2 — Build animal inputs for the optimizer
-    cattle = request.cattle_info
     animal_inputs = {
         "body_weight": cattle.body_weight,
         "breed": cattle.breed,
-        "lactating": cattle.lactating,
+        "An_StatePhys": cattle.physiological_state,   # always present (required, validated)
         "milk_production": cattle.milk_production,
         "days_in_milk": cattle.days_in_milk,
         "parity": cattle.parity,
@@ -312,6 +399,9 @@ async def run_diet_recommendation(
         "bc_score": cattle.bc_score,
         "milk_price": cattle.milk_price,
     }
+    # Zero the lactation drivers for Dry Cow / Heifer so the engine's 25 L milk
+    # default cannot leak in (see _neutralize_lactation_fields).
+    _neutralize_lactation_fields(animal_inputs, cattle.physiological_state)
 
     custom_thresholds = None
     if request.base_thresholds:
@@ -433,6 +523,15 @@ async def run_diet_evaluation(
     from core.z_optimization.evaluation import evaluate_diet
     from core.z_optimization.reporting import build_evaluation_response
 
+    # A baby calf has no solid ration to evaluate — reject before running the cow/heifer
+    # pipeline (which would otherwise return a misleading report: milk-supported computed
+    # against a defaulted milk target, methane forced to 0, calf schedule discarded).
+    # The router maps this ValueError to HTTP 400.
+    if request.cattle_info.physiological_state == "Baby Calf/Heifer":
+        raise ValueError(
+            "evaluation is not applicable to baby calves — no solid ration to evaluate"
+        )
+
     feed_repo = FeedRepository(db)
     user_repo = UserRepository(db)
     ids = [item.feed_id for item in request.feed_evaluation]
@@ -454,7 +553,7 @@ async def run_diet_evaluation(
     animal_inputs = {
         "body_weight": cattle.body_weight,
         "breed": cattle.breed,
-        "lactating": cattle.lactating,
+        "An_StatePhys": cattle.physiological_state,   # always present (required, validated)
         "milk_production": cattle.milk_production,
         "days_in_milk": cattle.days_in_milk,
         "parity": cattle.parity,
@@ -470,6 +569,9 @@ async def run_diet_evaluation(
         "bc_score": cattle.bc_score,
         "milk_price": cattle.milk_price,
     }
+    # Zero the lactation drivers for Dry Cow / Heifer so the engine's 25 L milk
+    # default cannot leak in (see _neutralize_lactation_fields).
+    _neutralize_lactation_fields(animal_inputs, cattle.physiological_state)
 
     country = await user_repo.get_country_by_id(request.country_id)
     country_name = country.name if country else ""
