@@ -1,0 +1,62 @@
+# CI quality gate — CHECKS ONLY. This workflow never deploys.
+#
+# It is deliberately separate from deploy-testing.yml (which is disabled;
+# see CLAUDE.md §10.16 — deploys are manual on purpose). This gate only
+# runs lint / typecheck / format / tests / audit so a regression is caught
+# in CI without touching the manual `vercel deploy` release flow.
+#
+# Blocking steps (fail the run): install (npm ci = lockfile integrity
+# check, the `uv lock --check` equivalent), lint, typecheck, format, tests.
+# Non-blocking: npm audit — it is informational because the residual
+# advisories are dev/build-time (vitest UI, next-pwa→workbox chain) or
+# have no in-range fix (Next.js CVEs with only a v15 patch). Making it
+# blocking would keep the gate permanently red on issues we've triaged
+# and deliberately deferred. Revisit if `npm audit --audit-level=high`
+# ever exits 0.
+
+name: CI quality gate
+
+on:
+  push:
+    branches: [testing, main]
+  pull_request:
+    branches: [testing, main]
+  workflow_dispatch:
+
+# Cancel a stale run when new commits land on the same ref.
+concurrency:
+  group: quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      # `npm ci` fails if package.json and package-lock.json disagree —
+      # this is our lockfile-integrity gate.
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format check
+        run: npm run format:check
+
+      - name: Tests
+        run: npm test
+
+      # Informational only — see header note. Does not fail the gate.
+      - name: Security audit (informational)
+        continue-on-error: true
+        run: npm audit --audit-level=high
