@@ -12,6 +12,31 @@ from .utilities import format_value_with_unit, safe_float, ensure_json_safe
 
 logger = logging.getLogger(__name__)
 
+
+def _build_animal_information(cattle_info, env_grazing):
+    """
+    Build the standardized animal-information block shared by the diet
+    recommendation and diet evaluation responses. Presentation layer only:
+    each field is formatted for display; no engine values are altered.
+    """
+    return {
+        'breed': cattle_info.breed or None,
+        'body_weight': format_value_with_unit(cattle_info.body_weight, 'Kg'),
+        'bw_gain': format_value_with_unit(cattle_info.bw_gain, 'kg/day'),
+        'bc_score': cattle_info.bc_score or None,
+        'days_in_milk': format_value_with_unit(cattle_info.days_in_milk, 'Days'),
+        'milk_production': format_value_with_unit(cattle_info.milk_production, 'Liter'),
+        'tp_milk': format_value_with_unit(cattle_info.tp_milk, '%'),
+        'fat_milk': format_value_with_unit(cattle_info.fat_milk, '%'),
+        'parity': cattle_info.parity or None,
+        'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
+        'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
+        'distance': round(safe_float(cattle_info.distance), 2),
+        'grazing': getattr(cattle_info, 'grazing', env_grazing == 1),
+        'topography': cattle_info.topography
+    }
+
+
 def build_diet_response(
     optimization_results: Dict[str, Any],
     cattle_info: Any,
@@ -35,26 +60,10 @@ def build_diet_response(
     
     # Get derived grazing status from engine results
     animal_reqs = optimization_results.get('animal_requirements', {})
-    env_grazing = animal_reqs.get('Env_Grazing', 1)
-    grazing_label = "Grazing" if env_grazing == 0 else "Non-grazing"
+    env_grazing = animal_reqs.get('Env_Grazing', 0)
     
     # 1. Animal Information (Formatted)
-    animal_information = {
-        'breed': cattle_info.breed or None,
-        'body_weight': format_value_with_unit(cattle_info.body_weight, 'Kg'),
-        'bw_gain': format_value_with_unit(cattle_info.bw_gain, 'kg/day'),
-        'bc_score': cattle_info.bc_score or None,
-        'days_in_milk': format_value_with_unit(cattle_info.days_in_milk, 'Days'),
-        'milk_production': format_value_with_unit(cattle_info.milk_production, 'Liter'),
-        'tp_milk': format_value_with_unit(cattle_info.tp_milk, '%'),
-        'fat_milk': format_value_with_unit(cattle_info.fat_milk, '%'),
-        'parity': cattle_info.parity or None,
-        'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
-        'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
-        'distance': round(safe_float(cattle_info.distance), 2),
-        'grazing': getattr(cattle_info, 'grazing', env_grazing == 0),
-        'topography': cattle_info.topography
-    }
+    animal_information = _build_animal_information(cattle_info, env_grazing)
 
     # 2. Least Cost Diet
     diet_table = post_results.get('diet_table', [])
@@ -303,25 +312,9 @@ def build_evaluation_response(
     animal_requirements = evaluation_results.get("animal_requirements", {})
 
     # 0. Animal Information (Standardized format for consistency)
-    env_grazing = animal_requirements.get('Env_Grazing', 1)
-    grazing_label = "Grazing" if env_grazing == 0 else "Non-grazing"
+    env_grazing = animal_requirements.get('Env_Grazing', 0)
     
-    animal_information = {
-        'breed': cattle_info.breed or None,
-        'body_weight': format_value_with_unit(cattle_info.body_weight, 'Kg'),
-        'bw_gain': format_value_with_unit(cattle_info.bw_gain, 'kg/day'),
-        'bc_score': cattle_info.bc_score or None,
-        'days_in_milk': format_value_with_unit(cattle_info.days_in_milk, 'Days'),
-        'milk_production': format_value_with_unit(cattle_info.milk_production, 'Liter'),
-        'tp_milk': format_value_with_unit(cattle_info.tp_milk, '%'),
-        'fat_milk': format_value_with_unit(cattle_info.fat_milk, '%'),
-        'parity': cattle_info.parity or None,
-        'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
-        'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
-        'distance': round(safe_float(cattle_info.distance), 2),
-        'grazing': getattr(cattle_info, 'grazing', env_grazing == 0),
-        'topography': cattle_info.topography
-    }
+    animal_information = _build_animal_information(cattle_info, env_grazing)
 
     # 1. Milk Production Analysis
     milk_production_analysis = {

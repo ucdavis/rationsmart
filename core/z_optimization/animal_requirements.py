@@ -109,11 +109,11 @@ def rsm_calculate_an_requirements(animal_inputs):
     if user_grazing is not None:
         # User explicitly specified grazing status
         # UI/API: True (Grazing), False (Non-grazing)
-        # Engine: 0 (Grazing), 1 (Non-grazing)
-        Env_Grazing = 0 if user_grazing is True else 1
+        # Engine: 1 (Grazing), 0 (Non-grazing)
+        Env_Grazing = 1 if user_grazing is True else 0
     else:
         # Fallback to distance-based inference if field missing
-        Env_Grazing = 0 if Env_Dist_km > 0 else 1
+        Env_Grazing = 1 if Env_Dist_km > 0 else 0
         
     Env_Topog = animal_inputs.get("Env_Topog", 0)  # Topography (0 for flat, 1 for hilly, 2 for mountainous)           
 
@@ -246,8 +246,15 @@ def rsm_calculate_an_requirements(animal_inputs):
     An_NEL_maint = 0.08 * An_MBW if An_StatePhys == "Lactating Cow" else (An_ME_maint * Km_ME_NE)  # Mcal/d
 
     An_NEmUse_Env = 0
-    An_NEm_Act = (0.00035 * Env_Dist / 1000) * An_BW  # Walking
-    An_NEm_Act_Topo = 0.0067 * Env_Topo / 1000 * An_BW  # Topography
+    # Activity energy (walking + topography) only applies when the animal is grazing;
+    # a housed animal (Env_Grazing == 0) gets no allowance regardless of whatever
+    # distance/topography values were passed in.
+    if Env_Grazing == 1:
+        An_NEm_Act = (0.00035 * Env_Dist / 1000) * An_BW  # Walking
+        An_NEm_Act_Topo = 0.0067 * Env_Topo / 1000 * An_BW  # Topography
+    else:
+        An_NEm_Act = 0.0
+        An_NEm_Act_Topo = 0.0
     An_NEmUse_Act = An_NEm_Act + An_NEm_Act_Topo
     An_NEm = An_NEL_maint + An_NEmUse_Env + An_NEmUse_Act
     An_ME_m = An_NEm / Km_ME_NE  # Maintenance ME, Mcal/d
@@ -750,8 +757,8 @@ def rsm_create_animal_inputs_dataframe(animal_requirements):
     Trg_MilkFatp = animal_requirements.get("Trg_MilkFatp", 0)
     
     # Grazing status
-    env_grazing = animal_requirements.get("Env_Grazing", 1)
-    grazing_display = "Grazing" if env_grazing == 0 else "Non-grazing"
+    env_grazing = animal_requirements.get("Env_Grazing", 0)
+    grazing_display = "Grazing" if env_grazing == 1 else "Non-grazing"
     
     Animal_inputs = pd.DataFrame({
         "Parameter": [
