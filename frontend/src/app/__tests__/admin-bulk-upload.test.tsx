@@ -114,12 +114,14 @@ describe("Bulk Upload — Upload Feed CSV", () => {
   it("the progress bar reflects onUploadProgress callback values mid-flight, then completes to 100%", async () => {
     let progressCb: ((pct: number) => void) | undefined;
     let resolveUpload!: (v: unknown) => void;
-    bulkUploadFeeds.mockImplementationOnce((_id: string, _file: File, onProgress?: (pct: number) => void) => {
-      progressCb = onProgress;
-      return new Promise((resolve) => {
-        resolveUpload = resolve;
-      });
-    });
+    bulkUploadFeeds.mockImplementationOnce(
+      (_id: string, _file: File, onProgress?: (pct: number) => void) => {
+        progressCb = onProgress;
+        return new Promise((resolve) => {
+          resolveUpload = resolve;
+        });
+      }
+    );
 
     render(<BulkUploadPage />);
     selectCsvFile();
@@ -243,7 +245,9 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
 
     await screen.findByText("चारा अपलोड करें"); // UPLOAD FEEDS
     expect(screen.getByText("CSV या Excel ब्राउज़ करने के लिए टैप करें")).toBeInTheDocument(); // Tap to browse CSV or Excel
-    expect(screen.getByText("* केवल आपके डिवाइस पर संग्रहीत फ़ाइलें समर्थित हैं।")).toBeInTheDocument();
+    expect(
+      screen.getByText("* केवल आपके डिवाइस पर संग्रहीत फ़ाइलें समर्थित हैं।")
+    ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /टेम्पलेट डाउनलोड करें/ })).toBeInTheDocument(); // Download Template
   });
 

@@ -14,11 +14,7 @@ export default function NumberInputGuard() {
   useEffect(() => {
     const onWheel = (e: WheelEvent) => {
       const t = e.target as HTMLElement | null;
-      if (
-        t instanceof HTMLInputElement &&
-        t.type === "number" &&
-        document.activeElement === t
-      ) {
+      if (t instanceof HTMLInputElement && t.type === "number" && document.activeElement === t) {
         e.preventDefault();
       }
     };

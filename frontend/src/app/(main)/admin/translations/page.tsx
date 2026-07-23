@@ -96,7 +96,7 @@ export default function AdminTranslationsPage() {
         const cs = (cRes.data ?? []) as CountryRow[];
         setCountries(cs);
         if (cs.length > 0 && !selectedCountryId) setSelectedCountryId(String(cs[0].id));
-        const ls = ((lRes.data as { languages?: SystemLanguage[] })?.languages ?? []);
+        const ls = (lRes.data as { languages?: SystemLanguage[] })?.languages ?? [];
         setAllLanguages(ls);
       })
       .catch(() => showSnackbar("Could not load country / language list", "error"));
@@ -107,9 +107,10 @@ export default function AdminTranslationsPage() {
   // Prefer the country's own supported_languages (post-i18n-V2 backend).
   // Strip "en" since coverage is meaningless for the baseline.
   const selectedCountry = countries.find((c) => String(c.id) === selectedCountryId);
-  const coverageLangs = (selectedCountry?.supported_languages
-    ?? allLanguages.filter((l) => l.is_active).map((l) => l.code))
-    .filter((c) => c !== "en");
+  const coverageLangs = (
+    selectedCountry?.supported_languages ??
+    allLanguages.filter((l) => l.is_active).map((l) => l.code)
+  ).filter((c) => c !== "en");
 
   // Default the coverage language to the first available one whenever
   // the country changes.
@@ -132,7 +133,9 @@ export default function AdminTranslationsPage() {
       const res = await downloadTranslationWorkbook(selectedCountryId);
       // Pull filename from Content-Disposition when present; otherwise
       // build a sensible default tagged with the country id.
-      const cdRaw = (res.headers["content-disposition"] || res.headers["Content-Disposition"] || "") as string;
+      const cdRaw = (res.headers["content-disposition"] ||
+        res.headers["Content-Disposition"] ||
+        "") as string;
       const cdMatch = /filename\*?=(?:UTF-8'')?["']?([^;"'\r\n]+)["']?/i.exec(cdRaw);
       const fileName = cdMatch?.[1]
         ? decodeURIComponent(cdMatch[1].trim())
@@ -213,28 +216,47 @@ export default function AdminTranslationsPage() {
       <div className="flex-1 overflow-y-auto pb-24">
         {/* ── Country picker — shared for all three sections ────────── */}
         <div className="px-4 pt-4">
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide mb-1.5"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
             COUNTRY
           </p>
           <select
             value={selectedCountryId}
             onChange={(e) => setSelectedCountryId(e.target.value)}
             className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-4"
-            style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+            style={{
+              backgroundColor: "#F1F5F9",
+              color: "#231F20",
+              fontFamily: "Nunito, sans-serif",
+              cursor: "pointer",
+            }}
           >
             {countries.length === 0 && <option value="">Loading…</option>}
             {countries.map((c) => (
-              <option key={c.id} value={String(c.id)}>{c.name}</option>
+              <option key={c.id} value={String(c.id)}>
+                {c.name}
+              </option>
             ))}
           </select>
         </div>
 
         {/* ── §1 Workbook ─────────────────────────────────────────────── */}
-        <div className="mx-3 mt-1 bg-white rounded-2xl px-4 py-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-          <p className="font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+        <div
+          className="mx-3 mt-1 bg-white rounded-2xl px-4 py-4"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+        >
+          <p
+            className="font-bold mb-2"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+          >
             Translation Workbook
           </p>
-          <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>
+          <p
+            className="text-xs mb-3"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+          >
             Download the pre-filled xlsx, fill in the language columns, then upload it back.
           </p>
 
@@ -243,13 +265,22 @@ export default function AdminTranslationsPage() {
             onClick={handleDownload}
             disabled={isDownloading || !selectedCountryId}
             className="w-full py-3 rounded-xl font-bold mb-3"
-            style={{ backgroundColor: isDownloading || !selectedCountryId ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isDownloading || !selectedCountryId ? "not-allowed" : "pointer" }}
+            style={{
+              backgroundColor: isDownloading || !selectedCountryId ? "#D3D3D3" : "#064E3B",
+              color: "#FFFFFF",
+              border: "none",
+              fontFamily: "Nunito, sans-serif",
+              cursor: isDownloading || !selectedCountryId ? "not-allowed" : "pointer",
+            }}
           >
             {isDownloading ? "Downloading…" : "Download Translation Template"}
           </button>
 
           {/* Upload — file picker + Submit */}
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide mb-1.5"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
             UPLOAD FILLED WORKBOOK
           </p>
           <div className="rounded-xl px-3 py-3 mb-3" style={{ backgroundColor: "#F1F5F9" }}>
@@ -261,8 +292,14 @@ export default function AdminTranslationsPage() {
               style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
             />
             {uploadFile && (
-              <p className="text-xs mt-1.5 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                Selected: <span className="font-bold" style={{ color: "#064E3B" }}>{uploadFile.name}</span>
+              <p
+                className="text-xs mt-1.5 ml-1"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                Selected:{" "}
+                <span className="font-bold" style={{ color: "#064E3B" }}>
+                  {uploadFile.name}
+                </span>
               </p>
             )}
           </div>
@@ -270,34 +307,83 @@ export default function AdminTranslationsPage() {
             onClick={handleUpload}
             disabled={isUploading || !uploadFile || !selectedCountryId}
             className="w-full py-3 rounded-xl font-bold"
-            style={{ backgroundColor: isUploading || !uploadFile || !selectedCountryId ? "#D3D3D3" : "#1CA069", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isUploading || !uploadFile || !selectedCountryId ? "not-allowed" : "pointer" }}
+            style={{
+              backgroundColor:
+                isUploading || !uploadFile || !selectedCountryId ? "#D3D3D3" : "#1CA069",
+              color: "#FFFFFF",
+              border: "none",
+              fontFamily: "Nunito, sans-serif",
+              cursor: isUploading || !uploadFile || !selectedCountryId ? "not-allowed" : "pointer",
+            }}
           >
             {isUploading ? "Uploading…" : "Upload Workbook"}
           </button>
 
           {/* Import-result panel — sticks until next upload */}
           {uploadSummary && (
-            <div className="mt-3 rounded-xl px-3 py-3" style={{ backgroundColor: uploadSummary.success === false ? "#FEC5BB" : "#F0FDF4", border: `1px solid ${uploadSummary.success === false ? "rgba(228,74,74,0.25)" : "rgba(5,188,109,0.20)"}` }}>
-              <p className="font-bold text-sm mb-1" style={{ color: uploadSummary.success === false ? "#E44A4A" : "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+            <div
+              className="mt-3 rounded-xl px-3 py-3"
+              style={{
+                backgroundColor: uploadSummary.success === false ? "#FEC5BB" : "#F0FDF4",
+                border: `1px solid ${uploadSummary.success === false ? "rgba(228,74,74,0.25)" : "rgba(5,188,109,0.20)"}`,
+              }}
+            >
+              <p
+                className="font-bold text-sm mb-1"
+                style={{
+                  color: uploadSummary.success === false ? "#E44A4A" : "#064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                }}
+              >
                 {uploadSummary.success === false ? "Import Failed" : "Import Summary"}
               </p>
               {uploadSummary.message && (
-                <p className="text-xs mb-2" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{uploadSummary.message}</p>
+                <p
+                  className="text-xs mb-2"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {uploadSummary.message}
+                </p>
               )}
-              <div className="text-xs space-y-0.5" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                <p>Feeds — {uploadSummary.feeds_inserted ?? 0} inserted · {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0} skipped</p>
-                <p>Types — {uploadSummary.types_inserted ?? 0} inserted · {uploadSummary.types_updated ?? 0} updated · {uploadSummary.types_skipped ?? 0} skipped</p>
-                <p>Categories — {uploadSummary.categories_inserted ?? 0} inserted · {uploadSummary.categories_updated ?? 0} updated · {uploadSummary.categories_skipped ?? 0} skipped</p>
+              <div
+                className="text-xs space-y-0.5"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                <p>
+                  Feeds — {uploadSummary.feeds_inserted ?? 0} inserted ·{" "}
+                  {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0}{" "}
+                  skipped
+                </p>
+                <p>
+                  Types — {uploadSummary.types_inserted ?? 0} inserted ·{" "}
+                  {uploadSummary.types_updated ?? 0} updated · {uploadSummary.types_skipped ?? 0}{" "}
+                  skipped
+                </p>
+                <p>
+                  Categories — {uploadSummary.categories_inserted ?? 0} inserted ·{" "}
+                  {uploadSummary.categories_updated ?? 0} updated ·{" "}
+                  {uploadSummary.categories_skipped ?? 0} skipped
+                </p>
               </div>
               {uploadSummary.errors && uploadSummary.errors.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-xs font-bold mb-1" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
+                  <p
+                    className="text-xs font-bold mb-1"
+                    style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
+                  >
                     Errors ({uploadSummary.errors.length}):
                   </p>
-                  <ul className="text-xs space-y-0.5 list-disc ml-4" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                    {uploadSummary.errors.slice(0, 10).map((e, i) => <li key={i}>{e}</li>)}
+                  <ul
+                    className="text-xs space-y-0.5 list-disc ml-4"
+                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    {uploadSummary.errors.slice(0, 10).map((e, i) => (
+                      <li key={i}>{e}</li>
+                    ))}
                     {uploadSummary.errors.length > 10 && (
-                      <li style={{ color: "#6D6D6D" }}>… and {uploadSummary.errors.length - 10} more</li>
+                      <li style={{ color: "#6D6D6D" }}>
+                        … and {uploadSummary.errors.length - 10} more
+                      </li>
                     )}
                   </ul>
                 </div>
@@ -307,28 +393,51 @@ export default function AdminTranslationsPage() {
         </div>
 
         {/* ── §2 Coverage ─────────────────────────────────────────────── */}
-        <div className="mx-3 mt-3 bg-white rounded-2xl px-4 py-4" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-          <p className="font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+        <div
+          className="mx-3 mt-3 bg-white rounded-2xl px-4 py-4"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
+        >
+          <p
+            className="font-bold mb-2"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+          >
             Translation Coverage
           </p>
-          <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>
+          <p
+            className="text-xs mb-3"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+          >
             How complete the feed, type, and category translations are for the picked language.
           </p>
 
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide mb-1.5"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
             LANGUAGE
           </p>
           {coverageLangs.length === 0 ? (
-            <p className="text-xs italic mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              No non-English languages assigned to this country yet. Add one in
-              Admin → Country Languages first.
+            <p
+              className="text-xs italic mb-3"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              No non-English languages assigned to this country yet. Add one in Admin → Country
+              Languages first.
             </p>
           ) : (
             <select
               value={selectedLang}
-              onChange={(e) => { setSelectedLang(e.target.value); setCoverage(null); }}
+              onChange={(e) => {
+                setSelectedLang(e.target.value);
+                setCoverage(null);
+              }}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-3"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+              style={{
+                backgroundColor: "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                cursor: "pointer",
+              }}
             >
               {coverageLangs.map((code) => (
                 <option key={code} value={code}>
@@ -342,7 +451,17 @@ export default function AdminTranslationsPage() {
             onClick={handleLoadCoverage}
             disabled={isLoadingCoverage || !selectedCountryId || !selectedLang}
             className="w-full py-3 rounded-xl font-bold"
-            style={{ backgroundColor: isLoadingCoverage || !selectedCountryId || !selectedLang ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isLoadingCoverage || !selectedCountryId || !selectedLang ? "not-allowed" : "pointer" }}
+            style={{
+              backgroundColor:
+                isLoadingCoverage || !selectedCountryId || !selectedLang ? "#D3D3D3" : "#064E3B",
+              color: "#FFFFFF",
+              border: "none",
+              fontFamily: "Nunito, sans-serif",
+              cursor:
+                isLoadingCoverage || !selectedCountryId || !selectedLang
+                  ? "not-allowed"
+                  : "pointer",
+            }}
           >
             {isLoadingCoverage ? "Loading…" : "Check Coverage"}
           </button>
@@ -351,23 +470,45 @@ export default function AdminTranslationsPage() {
             <div className="mt-3 space-y-3">
               {/* Three progress rows: Feeds, Types, Categories */}
               {[
-                { label: "Feeds", translated: coverage.translated_feeds, total: coverage.total_feeds, missing: coverage.missing_feeds },
-                { label: "Feed Types", translated: coverage.translated_types, total: coverage.total_types },
-                { label: "Categories", translated: coverage.translated_categories, total: coverage.total_categories },
+                {
+                  label: "Feeds",
+                  translated: coverage.translated_feeds,
+                  total: coverage.total_feeds,
+                  missing: coverage.missing_feeds,
+                },
+                {
+                  label: "Feed Types",
+                  translated: coverage.translated_types,
+                  total: coverage.total_types,
+                },
+                {
+                  label: "Categories",
+                  translated: coverage.translated_categories,
+                  total: coverage.total_categories,
+                },
               ].map(({ label, translated, total, missing }) => {
                 const p = pct(translated, total);
                 return (
                   <div key={label}>
                     <div className="flex items-baseline justify-between mb-1">
-                      <p className="text-sm font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+                      <p
+                        className="text-sm font-bold"
+                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                      >
                         {label}
                       </p>
-                      <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                      <p
+                        className="text-xs"
+                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                      >
                         {translated ?? 0} / {total ?? 0}
                         {missing != null && missing > 0 && ` · ${missing} missing`}
                       </p>
                     </div>
-                    <div className="w-full rounded-full overflow-hidden" style={{ height: 8, backgroundColor: "#F1F5F9" }}>
+                    <div
+                      className="w-full rounded-full overflow-hidden"
+                      style={{ height: 8, backgroundColor: "#F1F5F9" }}
+                    >
                       <div
                         style={{
                           height: "100%",
@@ -377,7 +518,14 @@ export default function AdminTranslationsPage() {
                         }}
                       />
                     </div>
-                    <p className="text-xs mt-0.5 text-right" style={{ color: p >= 80 ? "#1CA069" : p >= 40 ? "#FF9800" : "#E44A4A", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
+                    <p
+                      className="text-xs mt-0.5 text-right"
+                      style={{
+                        color: p >= 80 ? "#1CA069" : p >= 40 ? "#FF9800" : "#E44A4A",
+                        fontFamily: "Nunito, sans-serif",
+                        fontWeight: 700,
+                      }}
+                    >
                       {p}%
                     </p>
                   </div>

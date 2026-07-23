@@ -68,8 +68,10 @@ export default function CustomSelect({
     const onDocClick = (e: MouseEvent) => {
       const t = e.target as Node;
       if (
-        triggerRef.current && !triggerRef.current.contains(t) &&
-        popupRef.current && !popupRef.current.contains(t)
+        triggerRef.current &&
+        !triggerRef.current.contains(t) &&
+        popupRef.current &&
+        !popupRef.current.contains(t)
       ) {
         setOpen(false);
       }
@@ -122,7 +124,10 @@ export default function CustomSelect({
           textAlign: "left",
         }}
       >
-        <span className="truncate" style={{ flex: 1, minWidth: 0, paddingRight: showChevron ? 8 : 0 }}>
+        <span
+          className="truncate"
+          style={{ flex: 1, minWidth: 0, paddingRight: showChevron ? 8 : 0 }}
+        >
           {displayLabel}
         </span>
         {showChevron && !loading && (
@@ -131,9 +136,19 @@ export default function CustomSelect({
             height="14"
             viewBox="0 0 14 14"
             fill="none"
-            style={{ flexShrink: 0, transform: open ? "rotate(180deg)" : "none", transition: "transform 0.18s" }}
+            style={{
+              flexShrink: 0,
+              transform: open ? "rotate(180deg)" : "none",
+              transition: "transform 0.18s",
+            }}
           >
-            <path d="M3 5L7 9L11 5" stroke="#6D6D6D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M3 5L7 9L11 5"
+              stroke="#6D6D6D"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         )}
       </button>
@@ -174,7 +189,10 @@ export default function CustomSelect({
               <button
                 key={opt.value}
                 type="button"
-                onClick={() => { onChange(opt.value); setOpen(false); }}
+                onClick={() => {
+                  onChange(opt.value);
+                  setOpen(false);
+                }}
                 className="w-full text-left"
                 style={{
                   backgroundColor: rowBg(idx, last),

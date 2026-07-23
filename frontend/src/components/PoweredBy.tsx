@@ -9,10 +9,7 @@ export default function PoweredBy() {
       <span className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
         {t("POWERED BY")}
       </span>
-      <span
-        className="text-sm"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-      >
+      <span className="text-sm" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
         {t("DigitalGreen")}
       </span>
     </div>

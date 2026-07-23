@@ -90,8 +90,12 @@ const countries = [
 ];
 
 function seedLoad(opts: { languages?: unknown[]; countries?: unknown[] } = {}) {
-  listLanguages.mockResolvedValue({ data: { success: true, languages: opts.languages ?? languages } });
-  listCountriesWithLanguages.mockResolvedValue({ data: { success: true, countries: opts.countries ?? countries } });
+  listLanguages.mockResolvedValue({
+    data: { success: true, languages: opts.languages ?? languages },
+  });
+  listCountriesWithLanguages.mockResolvedValue({
+    data: { success: true, countries: opts.countries ?? countries },
+  });
 }
 
 beforeEach(() => {
@@ -158,7 +162,9 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     fireEvent.click(screen.getByText("+ Add language"));
     const sheet = await screen.findByText(/Associate a language — India/);
     // Only Tagalog is unassigned for India (en, hi already present).
-    fireEvent.click(within(sheet.closest("div")!.parentElement as HTMLElement).getByText(/Associate →/));
+    fireEvent.click(
+      within(sheet.closest("div")!.parentElement as HTMLElement).getByText(/Associate →/)
+    );
     await waitFor(() => expect(assignLanguageToCountry).toHaveBeenCalledWith("c-in", "tl"));
   });
 
@@ -193,7 +199,9 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     fireEvent.change(screen.getByPlaceholderText("e.g. Swahili"), { target: { value: "Swahili" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. sw"), { target: { value: "sw" } });
     fireEvent.click(screen.getByText("Register language"));
-    await waitFor(() => expect(createLanguage).toHaveBeenCalledWith({ code: "sw", name: "Swahili" }));
+    await waitFor(() =>
+      expect(createLanguage).toHaveBeenCalledWith({ code: "sw", name: "Swahili" })
+    );
   });
 
   it("asks for confirmation before deactivating a language globally", async () => {
@@ -225,15 +233,37 @@ describe("Admin Country/Language — Local Feed Names screen", () => {
       data: {
         success: true,
         countries: [
-          { id: "c-in", name: "India", country_code: "IN", is_active: true, languages: ["en", "hi"] },
-          { id: "c-ph", name: "Philippines", country_code: "PH", is_active: true, languages: ["en", "tl"] },
+          {
+            id: "c-in",
+            name: "India",
+            country_code: "IN",
+            is_active: true,
+            languages: ["en", "hi"],
+          },
+          {
+            id: "c-ph",
+            name: "Philippines",
+            country_code: "PH",
+            is_active: true,
+            languages: ["en", "tl"],
+          },
         ],
       },
     });
     getAdminFeeds.mockResolvedValue({
-      data: { success: true, message: "ok", feeds: [{ feed_id: "f1", fd_name: "Maize" }], total_count: 1, page: 1, page_size: 100, total_pages: 1 },
+      data: {
+        success: true,
+        message: "ok",
+        feeds: [{ feed_id: "f1", fd_name: "Maize" }],
+        total_count: 1,
+        page: 1,
+        page_size: 100,
+        total_pages: 1,
+      },
     });
-    listFeedTranslations.mockResolvedValue({ data: { success: true, feed_id: "f1", translations: [] } });
+    listFeedTranslations.mockResolvedValue({
+      data: { success: true, feed_id: "f1", translations: [] },
+    });
 
     render(<AdminCountryLanguagePage />);
     await screen.findByText("India");
@@ -241,7 +271,9 @@ describe("Admin Country/Language — Local Feed Names screen", () => {
 
     // No country/language chip click — India + Hindi (its first local
     // language) should already be selected, and its feed list visible.
-    await waitFor(() => expect(getAdminFeeds).toHaveBeenCalledWith("", 1, 100, "", "", "India", ""));
+    await waitFor(() =>
+      expect(getAdminFeeds).toHaveBeenCalledWith("", 1, 100, "", "", "India", "")
+    );
     expect(await screen.findByText("Maize")).toBeInTheDocument();
     expect(screen.getByText("3 · Feed names in हिन्दी")).toBeInTheDocument();
   });
@@ -283,10 +315,22 @@ describe("Admin Country/Language — Local Feed Names screen", () => {
 
   it("saves a new local feed name via the edit sheet", async () => {
     getAdminFeeds.mockResolvedValue({
-      data: { success: true, message: "ok", feeds: [{ feed_id: "f2", fd_name: "Wheat Bran" }], total_count: 1, page: 1, page_size: 100, total_pages: 1 },
+      data: {
+        success: true,
+        message: "ok",
+        feeds: [{ feed_id: "f2", fd_name: "Wheat Bran" }],
+        total_count: 1,
+        page: 1,
+        page_size: 100,
+        total_pages: 1,
+      },
     });
-    listFeedTranslations.mockResolvedValue({ data: { success: true, feed_id: "f2", translations: [] } });
-    upsertFeedTranslation.mockResolvedValue({ data: { feed_id: "f2", language: "hi", name: "गेहूं की भूसी", action: "inserted" } });
+    listFeedTranslations.mockResolvedValue({
+      data: { success: true, feed_id: "f2", translations: [] },
+    });
+    upsertFeedTranslation.mockResolvedValue({
+      data: { feed_id: "f2", language: "hi", name: "गेहूं की भूसी", action: "inserted" },
+    });
 
     await switchToFeedsTab();
     fireEvent.click(screen.getByText("India"));
@@ -297,16 +341,32 @@ describe("Admin Country/Language — Local Feed Names screen", () => {
     fireEvent.click(screen.getByText("Save name"));
 
     await waitFor(() =>
-      expect(upsertFeedTranslation).toHaveBeenCalledWith({ feed_id: "f2", language: "hi", name: "गेहूं की भूसी" })
+      expect(upsertFeedTranslation).toHaveBeenCalledWith({
+        feed_id: "f2",
+        language: "hi",
+        name: "गेहूं की भूसी",
+      })
     );
   });
 
   it("deletes an existing local feed name after confirming", async () => {
     getAdminFeeds.mockResolvedValue({
-      data: { success: true, message: "ok", feeds: [{ feed_id: "f1", fd_name: "Maize" }], total_count: 1, page: 1, page_size: 100, total_pages: 1 },
+      data: {
+        success: true,
+        message: "ok",
+        feeds: [{ feed_id: "f1", fd_name: "Maize" }],
+        total_count: 1,
+        page: 1,
+        page_size: 100,
+        total_pages: 1,
+      },
     });
     listFeedTranslations.mockResolvedValue({
-      data: { success: true, feed_id: "f1", translations: [{ feed_id: "f1", language: "hi", name: "मक्का" }] },
+      data: {
+        success: true,
+        feed_id: "f1",
+        translations: [{ feed_id: "f1", language: "hi", name: "मक्का" }],
+      },
     });
     deleteFeedTranslation.mockResolvedValue({ data: { success: true } });
 
@@ -319,7 +379,12 @@ describe("Admin Country/Language — Local Feed Names screen", () => {
 
   it("shows a message directing to Screen 1 when the country has no local language", async () => {
     listCountriesWithLanguages.mockResolvedValue({
-      data: { success: true, countries: [{ id: "c-vn", name: "Vietnam", country_code: "VN", is_active: true, languages: ["en"] }] },
+      data: {
+        success: true,
+        countries: [
+          { id: "c-vn", name: "Vietnam", country_code: "VN", is_active: true, languages: ["en"] },
+        ],
+      },
     });
     render(<AdminCountryLanguagePage />);
     await screen.findByText("Vietnam");

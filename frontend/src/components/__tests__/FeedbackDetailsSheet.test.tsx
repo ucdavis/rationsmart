@@ -14,9 +14,7 @@ function make(over: Partial<FeedbackDetails> = {}): FeedbackDetails {
 
 describe("FeedbackDetailsSheet", () => {
   it("returns null when details are null (unmounted)", () => {
-    const { container } = render(
-      <FeedbackDetailsSheet details={null} onClose={() => {}} />
-    );
+    const { container } = render(<FeedbackDetailsSheet details={null} onClose={() => {}} />);
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -34,10 +32,7 @@ describe("FeedbackDetailsSheet", () => {
 
   it("renders the feedback text verbatim", () => {
     render(
-      <FeedbackDetailsSheet
-        details={make({ text: "Very nice thanks" })}
-        onClose={() => {}}
-      />
+      <FeedbackDetailsSheet details={make({ text: "Very nice thanks" })} onClose={() => {}} />
     );
     expect(screen.getByText("Very nice thanks")).toBeInTheDocument();
   });
@@ -73,32 +68,17 @@ describe("FeedbackDetailsSheet", () => {
   });
 
   it("falls back to 'Feedback not provided!' for empty text", () => {
-    render(
-      <FeedbackDetailsSheet
-        details={make({ text: "" })}
-        onClose={() => {}}
-      />
-    );
+    render(<FeedbackDetailsSheet details={make({ text: "" })} onClose={() => {}} />);
     expect(screen.getByText("Feedback not provided!")).toBeInTheDocument();
   });
 
   it("falls back for whitespace-only text (matches Android trim behaviour)", () => {
-    render(
-      <FeedbackDetailsSheet
-        details={make({ text: "   \n  " })}
-        onClose={() => {}}
-      />
-    );
+    render(<FeedbackDetailsSheet details={make({ text: "   \n  " })} onClose={() => {}} />);
     expect(screen.getByText("Feedback not provided!")).toBeInTheDocument();
   });
 
   it("falls back category to 'N/A' when empty", () => {
-    render(
-      <FeedbackDetailsSheet
-        details={make({ category: "" })}
-        onClose={() => {}}
-      />
-    );
+    render(<FeedbackDetailsSheet details={make({ category: "" })} onClose={() => {}} />);
     expect(screen.getByText("N/A")).toBeInTheDocument();
   });
 
@@ -111,9 +91,7 @@ describe("FeedbackDetailsSheet", () => {
 
   it("Backdrop click closes; click inside panel does NOT", () => {
     const onClose = vi.fn();
-    const { container } = render(
-      <FeedbackDetailsSheet details={make()} onClose={onClose} />
-    );
+    const { container } = render(<FeedbackDetailsSheet details={make()} onClose={onClose} />);
     const backdrop = container.firstChild as HTMLElement;
     // Click on the backdrop element itself (target === currentTarget path)
     fireEvent.click(backdrop);
@@ -127,12 +105,7 @@ describe("FeedbackDetailsSheet", () => {
   });
 
   it("renders 'Not available' when createdAt is missing/invalid", () => {
-    render(
-      <FeedbackDetailsSheet
-        details={make({ createdAt: "" })}
-        onClose={() => {}}
-      />
-    );
+    render(<FeedbackDetailsSheet details={make({ createdAt: "" })} onClose={() => {}} />);
     expect(screen.getByText("Not available")).toBeInTheDocument();
   });
 });

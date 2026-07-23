@@ -39,7 +39,12 @@ function setStandalone(isStandalone: boolean) {
   }));
 }
 
-function dispatchBeforeInstallPrompt(overrides: Partial<{ prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> }> = {}) {
+function dispatchBeforeInstallPrompt(
+  overrides: Partial<{
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+  }> = {}
+) {
   const evt = new Event("beforeinstallprompt") as Event & {
     prompt: () => Promise<void>;
     userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
@@ -82,10 +87,9 @@ describe("InstallPrompt", () => {
 
     expect(screen.queryByText("Install RationSmart")).toBeNull();
 
-    await waitFor(
-      () => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(),
-      { timeout: 3000 }
-    );
+    await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+      timeout: 3000,
+    });
     expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument();
   });
 
@@ -174,7 +178,10 @@ describe("InstallPrompt", () => {
   });
 
   it("clears localStorage['rationsmart-storage'] when the browser fires 'appinstalled' — critical anti-stale-auth landmine", async () => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { user: { id: "stale-reinstall" } } }));
+    window.localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ state: { user: { id: "stale-reinstall" } } })
+    );
     render(<InstallPrompt />);
 
     await act(async () => {
@@ -187,10 +194,9 @@ describe("InstallPrompt", () => {
   it("dismiss (X) button hides the banner without touching localStorage", async () => {
     window.localStorage.setItem(STORAGE_KEY, "keep-me");
     render(<InstallPrompt />);
-    await waitFor(
-      () => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(),
-      { timeout: 3000 }
-    );
+    await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+      timeout: 3000,
+    });
 
     fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
 
@@ -204,10 +210,9 @@ describe("InstallPrompt", () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     render(<InstallPrompt />);
 
-    await waitFor(
-      () => expect(screen.getByText("RationSmart इंस्टॉल करें")).toBeInTheDocument(),
-      { timeout: 3000 }
-    );
+    await waitFor(() => expect(screen.getByText("RationSmart इंस्टॉल करें")).toBeInTheDocument(), {
+      timeout: 3000,
+    });
     expect(screen.getByText("ऐप अनुभव के लिए होम स्क्रीन में जोड़ें")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "इंस्टॉल करें" })).toBeInTheDocument();
     expect(screen.queryByText("Install RationSmart")).not.toBeInTheDocument();

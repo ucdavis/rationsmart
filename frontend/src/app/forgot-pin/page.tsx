@@ -31,11 +31,12 @@ export default function ForgotPinPage() {
       if (successMsg) showSnackbar(successMsg, "success");
     } catch (err: unknown) {
       // Android fallback for non-404, non-network errors
-      const message = err instanceof Error && err.message && err.message !== "Network Error"
-        ? err.message
-        : err instanceof Error && err.message === "Network Error"
-          ? t("Please make sure you're device has internet connectivity.")
-          : t("Unexpected error: failed to generate PIN. Please, try again!");
+      const message =
+        err instanceof Error && err.message && err.message !== "Network Error"
+          ? err.message
+          : err instanceof Error && err.message === "Network Error"
+            ? t("Please make sure you're device has internet connectivity.")
+            : t("Unexpected error: failed to generate PIN. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -43,10 +44,7 @@ export default function ForgotPinPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
@@ -60,7 +58,13 @@ export default function ForgotPinPage() {
         <button
           onClick={() => router.back()}
           className="flex items-center justify-center rounded-xl bg-white"
-          style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
+          style={{
+            width: 40,
+            height: 40,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            border: "none",
+            cursor: "pointer",
+          }}
           aria-label={t("Back")}
         >
           <IcBack size={20} color="#064E3B" />
@@ -113,12 +117,19 @@ export default function ForgotPinPage() {
               className="text-sm mb-8"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
             >
-              {t("We've sent PIN reset instructions to your email address. Please check your inbox.")}
+              {t(
+                "We've sent PIN reset instructions to your email address. Please check your inbox."
+              )}
             </p>
             <button
               onClick={() => router.push("/login")}
               className="px-8 py-4 rounded-full font-bold text-base text-white"
-              style={{ backgroundColor: "#064E3B", fontFamily: "Nunito, sans-serif", border: "none", cursor: "pointer" }}
+              style={{
+                backgroundColor: "#064E3B",
+                fontFamily: "Nunito, sans-serif",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               {t("Back to Login")}
             </button>
@@ -142,7 +153,8 @@ export default function ForgotPinPage() {
               className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              {t("Email Address")}<RequiredAsterisk />
+              {t("Email Address")}
+              <RequiredAsterisk />
             </p>
             <input
               type="email"
@@ -172,8 +184,23 @@ export default function ForgotPinPage() {
             >
               {isLoading ? (
                 <>
-                  <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  <svg
+                    className="animate-spin"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="40"
+                      strokeDashoffset="10"
+                      strokeLinecap="round"
+                    />
                   </svg>
                   <span>{t("Sending...")}</span>
                 </>
@@ -181,7 +208,13 @@ export default function ForgotPinPage() {
                 <>
                   {t("Proceed")}
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M5 12h14M13 6l6 6-6 6"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </>
               )}

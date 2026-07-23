@@ -6,11 +6,7 @@ import { useStore } from "@/lib/store";
 import NavDrawer from "@/components/NavDrawer";
 import { DrawerContext } from "@/lib/DrawerContext";
 
-export default function MainLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const user = useStore((s) => s.user);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -58,17 +54,9 @@ export default function MainLayout({
 
   return (
     <DrawerContext.Provider value={{ openDrawer: () => setDrawerOpen(true) }}>
-      <div
-        className="flex flex-col min-h-screen"
-        style={{ backgroundColor: "#F8FAF9" }}
-      >
-        <NavDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-        />
-        <main className="flex-1 overflow-y-auto">
-          {children}
-        </main>
+      <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+        <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+        <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </DrawerContext.Provider>
   );

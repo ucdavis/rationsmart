@@ -101,11 +101,25 @@ interface UploadSummary {
 }
 
 type Tab = "countries" | "feeds";
-type ConfirmState = { title: string; body: string; label: string; danger?: boolean; onConfirm: () => void } | null;
+type ConfirmState = {
+  title: string;
+  body: string;
+  label: string;
+  danger?: boolean;
+  onConfirm: () => void;
+} | null;
 
-const inputStyle = { backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" };
+const inputStyle = {
+  backgroundColor: "#F1F5F9",
+  color: "#231F20",
+  fontFamily: "Nunito, sans-serif",
+};
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
-const sheetOverlayStyle = { left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.65)" };
+const sheetOverlayStyle = {
+  left: "max(0px, calc((100vw - 480px) / 2))",
+  width: "min(100vw, 480px)",
+  backgroundColor: "rgba(0,0,0,0.65)",
+};
 
 // ── Skeleton loading states (shimmer pattern from admin/users, admin/feeds,
 // admin/reports — same `.shimmer` CSS keyframe, shaped to each real row). ──
@@ -113,8 +127,16 @@ const sheetOverlayStyle = { left: "max(0px, calc((100vw - 480px) / 2))", width: 
 function SkeletonCardShell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-      <div className="px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", opacity: 0.5 }}>{title}</p>
+      <div
+        className="px-4 py-3"
+        style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+      >
+        <p
+          className="text-xs font-bold uppercase tracking-wide"
+          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", opacity: 0.5 }}
+        >
+          {title}
+        </p>
       </div>
       {children}
     </div>
@@ -153,7 +175,10 @@ function SkeletonLanguageRow() {
 
 function SkeletonPickerRow() {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 rounded-xl" style={{ border: "1px solid #DCE0E4" }}>
+    <div
+      className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+      style={{ border: "1px solid #DCE0E4" }}
+    >
       <div className="h-4 w-28 rounded-full shimmer" />
       <div className="h-3 w-14 rounded-full shimmer" />
     </div>
@@ -195,13 +220,13 @@ export default function AdminCountryLanguagePage() {
       .then(([langRes, countriesRes]) => {
         if (langRes.status === "fulfilled") {
           const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
-          setAllLanguages(Array.isArray(d) ? d : d?.languages ?? []);
+          setAllLanguages(Array.isArray(d) ? d : (d?.languages ?? []));
         } else {
           showSnackbar("Could not load language registry", "error");
         }
         if (countriesRes.status === "fulfilled") {
           const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
-          setCountries((Array.isArray(d) ? d : d?.countries ?? []) as CountryRow[]);
+          setCountries((Array.isArray(d) ? d : (d?.countries ?? [])) as CountryRow[]);
         } else {
           showSnackbar("Could not load countries", "error");
         }
@@ -214,8 +239,23 @@ export default function AdminCountryLanguagePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.is_admin]);
 
-  const askConfirm = (title: string, body: string, label: string, danger: boolean, onConfirm: () => void) => {
-    setConfirm({ title, body, label, danger, onConfirm: () => { onConfirm(); setConfirm(null); } });
+  const askConfirm = (
+    title: string,
+    body: string,
+    label: string,
+    danger: boolean,
+    onConfirm: () => void
+  ) => {
+    setConfirm({
+      title,
+      body,
+      label,
+      danger,
+      onConfirm: () => {
+        onConfirm();
+        setConfirm(null);
+      },
+    });
   };
 
   if (!user?.is_admin) return null;
@@ -226,10 +266,12 @@ export default function AdminCountryLanguagePage() {
 
       <div className="px-3 pt-3">
         <div className="flex rounded-2xl p-1" style={{ backgroundColor: "#E4F7EF" }}>
-          {([
-            { key: "countries", label: "Countries & Languages" },
-            { key: "feeds", label: "Local Feed Names" },
-          ] as const).map((t) => (
+          {(
+            [
+              { key: "countries", label: "Countries & Languages" },
+              { key: "feeds", label: "Local Feed Names" },
+            ] as const
+          ).map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
@@ -252,10 +294,14 @@ export default function AdminCountryLanguagePage() {
       {isLoading && countries.length === 0 && allLanguages.length === 0 ? (
         <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
           <SkeletonCardShell title="Enabled Countries / Languages">
-            {[0, 1, 2].map((i) => <SkeletonCountryRow key={i} />)}
+            {[0, 1, 2].map((i) => (
+              <SkeletonCountryRow key={i} />
+            ))}
           </SkeletonCardShell>
           <SkeletonCardShell title="Registered Languages">
-            {[0, 1, 2, 3].map((i) => <SkeletonLanguageRow key={i} />)}
+            {[0, 1, 2, 3].map((i) => (
+              <SkeletonLanguageRow key={i} />
+            ))}
           </SkeletonCardShell>
         </div>
       ) : tab === "countries" ? (
@@ -273,23 +319,52 @@ export default function AdminCountryLanguagePage() {
       {confirm && (
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
         >
-          <div className="bg-white rounded-2xl w-full px-5 py-5" style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
-            <p className="font-bold mb-2" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 15 }}>{confirm.title}</p>
-            <p className="text-sm mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>{confirm.body}</p>
+          <div
+            className="bg-white rounded-2xl w-full px-5 py-5"
+            style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
+          >
+            <p
+              className="font-bold mb-2"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 15 }}
+            >
+              {confirm.title}
+            </p>
+            <p
+              className="text-sm mb-4"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+            >
+              {confirm.body}
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-                style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#064E3B",
+                  border: "1.5px solid #064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={confirm.onConfirm}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-                style={{ backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 {confirm.label}
               </button>
@@ -316,7 +391,13 @@ function CountriesLanguagesTab({
   allLanguages: SystemLanguage[];
   reload: () => void;
   showSnackbar: (msg: string, type?: "success" | "error" | "info") => void;
-  askConfirm: (title: string, body: string, label: string, danger: boolean, onConfirm: () => void) => void;
+  askConfirm: (
+    title: string,
+    body: string,
+    label: string,
+    danger: boolean,
+    onConfirm: () => void
+  ) => void;
 }) {
   const [showActivate, setShowActivate] = useState(false);
   const [inactiveCountries, setInactiveCountries] = useState<InactiveCountryRow[]>([]);
@@ -338,7 +419,7 @@ function CountriesLanguagesTab({
     listAllCountries()
       .then((res) => {
         const d = res.data as { countries?: InactiveCountryRow[] } | InactiveCountryRow[];
-        const all = (Array.isArray(d) ? d : d?.countries ?? []) as InactiveCountryRow[];
+        const all = (Array.isArray(d) ? d : (d?.countries ?? [])) as InactiveCountryRow[];
         setInactiveCountries(all.filter((c) => !c.is_active));
       })
       .catch(() => showSnackbar("Could not load countries", "error"))
@@ -375,7 +456,11 @@ function CountriesLanguagesTab({
           const msg = err instanceof Error ? err.message : "Could not deactivate country";
           showSnackbar(msg, "error");
         } finally {
-          setPendingKey((prev) => { const next = new Set(prev); next.delete(key); return next; });
+          setPendingKey((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
         }
       }
     );
@@ -400,7 +485,11 @@ function CountriesLanguagesTab({
           const msg = err instanceof Error ? err.message : "Could not remove language";
           showSnackbar(msg, "error");
         } finally {
-          setPendingKey((prev) => { const next = new Set(prev); next.delete(key); return next; });
+          setPendingKey((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
         }
       }
     );
@@ -436,11 +525,21 @@ function CountriesLanguagesTab({
         const msg = err instanceof Error ? err.message : "Could not update language";
         showSnackbar(msg, "error");
       } finally {
-        setPendingKey((prev) => { const next = new Set(prev); next.delete(key); return next; });
+        setPendingKey((prev) => {
+          const next = new Set(prev);
+          next.delete(key);
+          return next;
+        });
       }
     };
     if (l.is_active) {
-      askConfirm(`Deactivate ${l.name}?`, `${l.name} stops resolving for every user in every country. Translations are kept.`, "Deactivate", true, flip);
+      askConfirm(
+        `Deactivate ${l.name}?`,
+        `${l.name} stops resolving for every user in every country. Translations are kept.`,
+        "Deactivate",
+        true,
+        flip
+      );
     } else {
       flip();
     }
@@ -474,22 +573,43 @@ function CountriesLanguagesTab({
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
       {/* Enabled Countries / Languages */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+        <div
+          className="flex items-center gap-2 px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide flex-1"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
             Enabled Countries / Languages
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{countries.length} enabled</p>
+          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            {countries.length} enabled
+          </p>
           <button
             onClick={openActivateSheet}
             aria-label="Activate a country"
             className="flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 24, height: 24, backgroundColor: "#064E3B", color: "#FFFFFF", border: "none", cursor: "pointer", fontSize: 14 }}
+            style={{
+              width: 24,
+              height: 24,
+              backgroundColor: "#064E3B",
+              color: "#FFFFFF",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 14,
+            }}
           >
             ＋
           </button>
         </div>
         {countries.length === 0 ? (
-          <p className="text-sm text-center py-6" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>No countries enabled yet.</p>
+          <p
+            className="text-sm text-center py-6"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
+            No countries enabled yet.
+          </p>
         ) : (
           countries.map((c) => {
             const extraLangs = c.languages.filter((x) => x !== "en");
@@ -498,29 +618,50 @@ function CountriesLanguagesTab({
               <div key={c.id} className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{c.name}</p>
-                    <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                    <p
+                      className="font-bold text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {c.name}
+                    </p>
+                    <p
+                      className="text-xs"
+                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                    >
                       {extraLangs.length} local language{extraLangs.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <label
                     className="toggle-switch flex-shrink-0"
                     aria-label={`Deactivate ${c.name}`}
-                    style={{ opacity: isPending ? 0.55 : 1, cursor: isPending ? "wait" : "pointer" }}
+                    style={{
+                      opacity: isPending ? 0.55 : 1,
+                      cursor: isPending ? "wait" : "pointer",
+                    }}
                   >
-                    <input type="checkbox" checked disabled={isPending} onChange={() => handleDeactivateCountry(c)} />
+                    <input
+                      type="checkbox"
+                      checked
+                      disabled={isPending}
+                      onChange={() => handleDeactivateCountry(c)}
+                    />
                     <span className="toggle-slider" />
                   </label>
                 </div>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {extraLangs.map((code) => {
-                    const langName = allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
+                    const langName =
+                      allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
                     const key = `${c.id}:${code}`;
                     return (
                       <span
                         key={code}
                         className="flex items-center gap-1.5 text-xs font-bold pl-2.5 pr-1 py-1 rounded-full"
-                        style={{ backgroundColor: "#F1F5F9", color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                        style={{
+                          backgroundColor: "#F1F5F9",
+                          color: "#064E3B",
+                          fontFamily: "Nunito, sans-serif",
+                        }}
                       >
                         {langName}
                         <button
@@ -528,7 +669,15 @@ function CountriesLanguagesTab({
                           disabled={pendingKey.has(key)}
                           aria-label={`Dis-associate ${langName} from ${c.name}`}
                           className="flex items-center justify-center rounded-full"
-                          style={{ width: 16, height: 16, background: "rgba(6,78,59,0.13)", border: "none", cursor: pendingKey.has(key) ? "wait" : "pointer", fontSize: 9, color: "#064E3B" }}
+                          style={{
+                            width: 16,
+                            height: 16,
+                            background: "rgba(6,78,59,0.13)",
+                            border: "none",
+                            cursor: pendingKey.has(key) ? "wait" : "pointer",
+                            fontSize: 9,
+                            color: "#064E3B",
+                          }}
                         >
                           ✕
                         </button>
@@ -538,7 +687,13 @@ function CountriesLanguagesTab({
                   <button
                     onClick={() => setAssocFor(c)}
                     className="text-xs font-bold px-2.5 py-1 rounded-full"
-                    style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px dashed rgba(5,188,109,0.5)", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "#064E3B",
+                      border: "1.5px dashed rgba(5,188,109,0.5)",
+                      fontFamily: "Nunito, sans-serif",
+                      cursor: "pointer",
+                    }}
                   >
                     + Add language
                   </button>
@@ -551,16 +706,32 @@ function CountriesLanguagesTab({
 
       {/* Registered Languages */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+        <div
+          className="flex items-center gap-2 px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide flex-1"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
             Registered Languages
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{activeLangCount} active</p>
+          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            {activeLangCount} active
+          </p>
           <button
             onClick={() => setShowRegister(true)}
             aria-label="Register a new language"
             className="flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 24, height: 24, backgroundColor: "#064E3B", color: "#FFFFFF", border: "none", cursor: "pointer", fontSize: 14 }}
+            style={{
+              width: 24,
+              height: 24,
+              backgroundColor: "#064E3B",
+              color: "#FFFFFF",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 14,
+            }}
           >
             ＋
           </button>
@@ -570,20 +741,49 @@ function CountriesLanguagesTab({
           const key = `lang:${l.code}`;
           const isPending = pendingKey.has(key);
           return (
-            <div key={l.code} className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #F8FAF9", opacity: l.is_active ? 1 : 0.6 }}>
+            <div
+              key={l.code}
+              className="flex items-center gap-3 px-4 py-3"
+              style={{ borderTop: "1px solid #F8FAF9", opacity: l.is_active ? 1 : 0.6 }}
+            >
               <div className="min-w-0 flex-1">
-                <p className="font-bold text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{labelForLanguage(l.code)}</p>
-                <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {l.name} · {l.code}{!l.is_active && " · inactive"}
+                <p
+                  className="font-bold text-sm"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {labelForLanguage(l.code)}
+                </p>
+                <p
+                  className="text-xs"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {l.name} · {l.code}
+                  {!l.is_active && " · inactive"}
                 </p>
               </div>
               {isEnglish ? (
-                <span className="text-xs font-bold px-2 py-1 rounded flex-shrink-0" style={{ backgroundColor: "#E4F7EF", color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+                <span
+                  className="text-xs font-bold px-2 py-1 rounded flex-shrink-0"
+                  style={{
+                    backgroundColor: "#E4F7EF",
+                    color: "#064E3B",
+                    fontFamily: "Nunito, sans-serif",
+                  }}
+                >
                   locked 🔒
                 </span>
               ) : (
-                <label className="toggle-switch flex-shrink-0" aria-label={`${l.is_active ? "Deactivate" : "Activate"} ${l.name}`} style={{ opacity: isPending ? 0.55 : 1, cursor: isPending ? "wait" : "pointer" }}>
-                  <input type="checkbox" checked={l.is_active} disabled={isPending} onChange={() => handleToggleLanguage(l)} />
+                <label
+                  className="toggle-switch flex-shrink-0"
+                  aria-label={`${l.is_active ? "Deactivate" : "Activate"} ${l.name}`}
+                  style={{ opacity: isPending ? 0.55 : 1, cursor: isPending ? "wait" : "pointer" }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={l.is_active}
+                    disabled={isPending}
+                    onChange={() => handleToggleLanguage(l)}
+                  />
                   <span className="toggle-slider" />
                 </label>
               )}
@@ -594,17 +794,45 @@ function CountriesLanguagesTab({
 
       {/* Activate-a-country sheet */}
       {showActivate && (
-        <div className="fixed top-0 h-full z-50 flex flex-col justify-end" style={sheetOverlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setShowActivate(false); }}>
-          <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-            <div className="flex justify-center mb-3"><div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} /></div>
-            <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>Activate a country</h3>
-            <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>RationSmart becomes available to farmers in the activated country.</p>
+        <div
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={sheetOverlayStyle}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowActivate(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+          >
+            <div className="flex justify-center mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+            <h3
+              className="text-center font-bold mb-1"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
+              Activate a country
+            </h3>
+            <p
+              className="text-center text-sm mb-5"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              RationSmart becomes available to farmers in the activated country.
+            </p>
             {isLoadingInactive ? (
               <div className="flex flex-col gap-2">
-                {[0, 1, 2].map((i) => <SkeletonPickerRow key={i} />)}
+                {[0, 1, 2].map((i) => (
+                  <SkeletonPickerRow key={i} />
+                ))}
               </div>
             ) : inactiveCountries.length === 0 ? (
-              <p className="text-sm text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>All registered countries are already enabled.</p>
+              <p
+                className="text-sm text-center"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                All registered countries are already enabled.
+              </p>
             ) : (
               <div className="flex flex-col gap-2">
                 {inactiveCountries.map((c) => (
@@ -612,10 +840,24 @@ function CountriesLanguagesTab({
                     key={c.id}
                     onClick={() => handleActivateCountry(c)}
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
-                    style={{ border: "1px solid #DCE0E4", background: "#FFFFFF", cursor: "pointer" }}
+                    style={{
+                      border: "1px solid #DCE0E4",
+                      background: "#FFFFFF",
+                      cursor: "pointer",
+                    }}
                   >
-                    <span className="font-bold text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{c.name}</span>
-                    <span className="text-xs font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Activate →</span>
+                    <span
+                      className="font-bold text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {c.name}
+                    </span>
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      Activate →
+                    </span>
                   </button>
                 ))}
               </div>
@@ -625,52 +867,115 @@ function CountriesLanguagesTab({
       )}
 
       {/* Associate-a-language sheet (per country) */}
-      {assocFor && (() => {
-        const available = allLanguages.filter((l) => l.is_active && !assocFor.languages.includes(l.code));
-        return (
-          <div className="fixed top-0 h-full z-50 flex flex-col justify-end" style={sheetOverlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setAssocFor(null); }}>
-            <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-              <div className="flex justify-center mb-3"><div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} /></div>
-              <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>Associate a language — {assocFor.name}</h3>
-              <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                The combination will appear in the Cattle Info screen for farmers in {assocFor.name}.
-              </p>
-              {available.length === 0 ? (
-                <p className="text-sm text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  All active languages are already associated. Register or activate a language first.
-                </p>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  {available.map((l) => (
-                    <button
-                      key={l.code}
-                      onClick={() => handleAssociate(l.code)}
-                      disabled={isAssociating}
-                      className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
-                      style={{ border: "1px solid #DCE0E4", background: "#FFFFFF", cursor: isAssociating ? "wait" : "pointer" }}
-                    >
-                      <span className="font-bold text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                        {labelForLanguage(l.code)} <span style={{ color: "#6D6D6D", fontWeight: 400 }}>· {l.name}</span>
-                      </span>
-                      <span className="text-xs font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Associate →</span>
-                    </button>
-                  ))}
+      {assocFor &&
+        (() => {
+          const available = allLanguages.filter(
+            (l) => l.is_active && !assocFor.languages.includes(l.code)
+          );
+          return (
+            <div
+              className="fixed top-0 h-full z-50 flex flex-col justify-end"
+              style={sheetOverlayStyle}
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setAssocFor(null);
+              }}
+            >
+              <div
+                className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+                style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+              >
+                <div className="flex justify-center mb-3">
+                  <div
+                    style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }}
+                  />
                 </div>
-              )}
+                <h3
+                  className="text-center font-bold mb-1"
+                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+                >
+                  Associate a language — {assocFor.name}
+                </h3>
+                <p
+                  className="text-center text-sm mb-5"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  The combination will appear in the Cattle Info screen for farmers in{" "}
+                  {assocFor.name}.
+                </p>
+                {available.length === 0 ? (
+                  <p
+                    className="text-sm text-center"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    All active languages are already associated. Register or activate a language
+                    first.
+                  </p>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    {available.map((l) => (
+                      <button
+                        key={l.code}
+                        onClick={() => handleAssociate(l.code)}
+                        disabled={isAssociating}
+                        className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
+                        style={{
+                          border: "1px solid #DCE0E4",
+                          background: "#FFFFFF",
+                          cursor: isAssociating ? "wait" : "pointer",
+                        }}
+                      >
+                        <span
+                          className="font-bold text-sm"
+                          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {labelForLanguage(l.code)}{" "}
+                          <span style={{ color: "#6D6D6D", fontWeight: 400 }}>· {l.name}</span>
+                        </span>
+                        <span
+                          className="text-xs font-bold"
+                          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          Associate →
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       {/* Register-a-language sheet — Name + Code only (see file-header note:
           the prototype's "Native name" field has nowhere to persist to on
           the real API, so it's not collected here). */}
       {showRegister && (
-        <div className="fixed top-0 h-full z-50 flex flex-col justify-end" style={sheetOverlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setShowRegister(false); }}>
-          <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-            <div className="flex justify-center mb-3"><div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} /></div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}>Register a new language</h3>
-            <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Language name (English)</p>
+        <div
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={sheetOverlayStyle}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowRegister(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+          >
+            <div className="flex justify-center mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+            <h3
+              className="text-center font-bold mb-4"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
+              Register a new language
+            </h3>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              Language name (English)
+            </p>
             <input
               type="text"
               value={regName}
@@ -680,7 +985,12 @@ function CountriesLanguagesTab({
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-3"
               style={inputStyle}
             />
-            <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>ISO code</p>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              ISO code
+            </p>
             <input
               type="text"
               value={regCode}
@@ -694,7 +1004,13 @@ function CountriesLanguagesTab({
               onClick={handleRegister}
               disabled={isRegistering}
               className="w-full py-3 rounded-xl font-bold"
-              style={{ backgroundColor: isRegistering ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isRegistering ? "not-allowed" : "pointer" }}
+              style={{
+                backgroundColor: isRegistering ? "#D3D3D3" : "#064E3B",
+                color: "#FFFFFF",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: isRegistering ? "not-allowed" : "pointer",
+              }}
             >
               {isRegistering ? "Registering…" : "Register language"}
             </button>
@@ -731,10 +1047,14 @@ function FeedNamesTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [countries]);
 
-  const [feeds, setFeeds] = useState<Array<AdminFeedLite & { translation?: FeedTranslation | null }>>([]);
+  const [feeds, setFeeds] = useState<
+    Array<AdminFeedLite & { translation?: FeedTranslation | null }>
+  >([]);
   const [isLoadingFeeds, setIsLoadingFeeds] = useState(false);
 
-  const [editingFeed, setEditingFeed] = useState<(AdminFeedLite & { translation?: FeedTranslation | null }) | null>(null);
+  const [editingFeed, setEditingFeed] = useState<
+    (AdminFeedLite & { translation?: FeedTranslation | null }) | null
+  >(null);
   const [editValue, setEditValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -772,21 +1092,38 @@ function FeedNamesTab({
       if (cancelled) return;
       setFeeds(all.map((f) => ({ ...f })));
       const results = await Promise.allSettled(
-        all.map((f) => listFeedTranslations(f.feed_id).then((r) => ({
-          feed_id: f.feed_id,
-          translation: ((r.data as { translations?: FeedTranslation[] })?.translations ?? []).find((t) => t.language === selLang) ?? null,
-        })))
+        all.map((f) =>
+          listFeedTranslations(f.feed_id).then((r) => ({
+            feed_id: f.feed_id,
+            translation:
+              ((r.data as { translations?: FeedTranslation[] })?.translations ?? []).find(
+                (t) => t.language === selLang
+              ) ?? null,
+          }))
+        )
       );
       if (cancelled) return;
-      const byId = new Map(results.filter((r) => r.status === "fulfilled").map((r) => {
-        const v = (r as PromiseFulfilledResult<{ feed_id: string; translation: FeedTranslation | null }>).value;
-        return [v.feed_id, v.translation];
-      }));
+      const byId = new Map(
+        results
+          .filter((r) => r.status === "fulfilled")
+          .map((r) => {
+            const v = (
+              r as PromiseFulfilledResult<{ feed_id: string; translation: FeedTranslation | null }>
+            ).value;
+            return [v.feed_id, v.translation];
+          })
+      );
       setFeeds((prev) => prev.map((f) => ({ ...f, translation: byId.get(f.feed_id) ?? null })));
     })()
-      .catch(() => { if (!cancelled) showSnackbar("Could not load feeds", "error"); })
-      .finally(() => { if (!cancelled) setIsLoadingFeeds(false); });
-    return () => { cancelled = true; };
+      .catch(() => {
+        if (!cancelled) showSnackbar("Could not load feeds", "error");
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingFeeds(false);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selCountry?.id, selLang, showFeeds]);
 
@@ -802,9 +1139,15 @@ function FeedNamesTab({
     }
     setIsSaving(true);
     try {
-      const res = await upsertFeedTranslation({ feed_id: editingFeed.feed_id, language: selLang, name: editValue.trim() });
+      const res = await upsertFeedTranslation({
+        feed_id: editingFeed.feed_id,
+        language: selLang,
+        name: editValue.trim(),
+      });
       const saved = res.data as FeedTranslation;
-      setFeeds((prev) => prev.map((f) => (f.feed_id === editingFeed.feed_id ? { ...f, translation: saved } : f)));
+      setFeeds((prev) =>
+        prev.map((f) => (f.feed_id === editingFeed.feed_id ? { ...f, translation: saved } : f))
+      );
       showSnackbar(`Saved ${editingFeed.fd_name}`, "success");
       setEditingFeed(null);
     } catch (err: unknown) {
@@ -820,7 +1163,9 @@ function FeedNamesTab({
     setIsDeleting(true);
     try {
       await deleteFeedTranslation(editingFeed.feed_id, selLang);
-      setFeeds((prev) => prev.map((f) => (f.feed_id === editingFeed.feed_id ? { ...f, translation: null } : f)));
+      setFeeds((prev) =>
+        prev.map((f) => (f.feed_id === editingFeed.feed_id ? { ...f, translation: null } : f))
+      );
       showSnackbar("Name deleted", "success");
       setEditingFeed(null);
     } catch (err: unknown) {
@@ -836,9 +1181,13 @@ function FeedNamesTab({
     setIsDownloading(true);
     try {
       const res = await downloadTranslationWorkbook(selCountry.id);
-      const cdRaw = (res.headers["content-disposition"] || res.headers["Content-Disposition"] || "") as string;
+      const cdRaw = (res.headers["content-disposition"] ||
+        res.headers["Content-Disposition"] ||
+        "") as string;
       const cdMatch = /filename\*?=(?:UTF-8'')?["']?([^;"'\r\n]+)["']?/i.exec(cdRaw);
-      const fileName = cdMatch?.[1] ? decodeURIComponent(cdMatch[1].trim()) : `translations_${selCountry.id}.xlsx`;
+      const fileName = cdMatch?.[1]
+        ? decodeURIComponent(cdMatch[1].trim())
+        : `translations_${selCountry.id}.xlsx`;
       const blob = res.data as Blob;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -883,8 +1232,16 @@ function FeedNamesTab({
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
       {/* 1 — Pick a country */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>1 · Pick a country</p>
+        <div
+          className="px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
+            1 · Pick a country
+          </p>
         </div>
         <div className="flex gap-2 px-4 py-3 overflow-x-auto">
           {countries.map((c) => (
@@ -908,15 +1265,25 @@ function FeedNamesTab({
             </button>
           ))}
           {countries.length === 0 && (
-            <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>No countries enabled.</p>
+            <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              No countries enabled.
+            </p>
           )}
         </div>
       </div>
 
       {/* 2 — Pick a language */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>2 · Pick a language</p>
+        <div
+          className="px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
+            2 · Pick a language
+          </p>
         </div>
         <div className="px-4 py-3">
           <div className="flex gap-2 overflow-x-auto pb-1">
@@ -938,8 +1305,12 @@ function FeedNamesTab({
             ))}
           </div>
           {selCountry && localLangs.length === 0 && (
-            <p className="text-sm mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>
-              No local language is associated with this country yet — associate one on the Countries &amp; Languages screen.
+            <p
+              className="text-sm mt-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+            >
+              No local language is associated with this country yet — associate one on the Countries
+              &amp; Languages screen.
             </p>
           )}
         </div>
@@ -948,15 +1319,27 @@ function FeedNamesTab({
       {/* 3 — Feed names */}
       {showFeeds && (
         <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-          <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-            <p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+          <div
+            className="flex items-center gap-2 px-4 py-3"
+            style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          >
+            <p
+              className="text-xs font-bold uppercase tracking-wide flex-1"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            >
               3 · Feed names in {selLang ? labelForLanguage(selLang).toUpperCase() : ""}
             </p>
-            {!isLoadingFeeds && <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{doneCount} of {feeds.length} named</p>}
+            {!isLoadingFeeds && (
+              <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                {doneCount} of {feeds.length} named
+              </p>
+            )}
           </div>
           {isLoadingFeeds ? (
             <div>
-              {[0, 1, 2, 3, 4].map((i) => <SkeletonFeedRow key={i} />)}
+              {[0, 1, 2, 3, 4].map((i) => (
+                <SkeletonFeedRow key={i} />
+              ))}
             </div>
           ) : (
             <div style={{ maxHeight: 320, overflowY: "auto" }}>
@@ -965,16 +1348,38 @@ function FeedNamesTab({
                   key={f.feed_id}
                   onClick={() => openFeedEdit(f)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
-                  style={{ borderTop: "1px solid #F8FAF9", background: "none", border: "none", cursor: "pointer" }}
+                  style={{
+                    borderTop: "1px solid #F8FAF9",
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                  }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm truncate" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{f.fd_name}</p>
+                    <p
+                      className="font-bold text-sm truncate"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {f.fd_name}
+                    </p>
                     {f.translation && (
-                      <p className="text-xs truncate" style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}>{f.translation.name}</p>
+                      <p
+                        className="text-xs truncate"
+                        style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}
+                      >
+                        {f.translation.name}
+                      </p>
                     )}
                   </div>
                   {!f.translation && (
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0" style={{ backgroundColor: "rgba(255,152,0,0.12)", color: "#B4690E", fontFamily: "Nunito, sans-serif" }}>
+                    <span
+                      className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
+                      style={{
+                        backgroundColor: "rgba(255,152,0,0.12)",
+                        color: "#B4690E",
+                        fontFamily: "Nunito, sans-serif",
+                      }}
+                    >
                       + Add name
                     </span>
                   )}
@@ -988,19 +1393,38 @@ function FeedNamesTab({
 
       {/* Bulk upsert via workbook */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Bulk upsert via workbook</p>
+        <div
+          className="px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
+            Bulk upsert via workbook
+          </p>
         </div>
         <div className="px-4 py-3">
-          <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>
-            Export all feed names across languages for {selCountry?.name ?? "the selected country"} as a workbook, edit offline, then import to upsert in bulk.
+          <p
+            className="text-xs mb-3"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+          >
+            Export all feed names across languages for {selCountry?.name ?? "the selected country"}{" "}
+            as a workbook, edit offline, then import to upsert in bulk.
           </p>
           <div className="flex gap-2 mb-3">
             <button
               onClick={handleDownload}
               disabled={isDownloading || !selCountry}
               className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-              style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: isDownloading || !selCountry ? "not-allowed" : "pointer", opacity: !selCountry ? 0.5 : 1 }}
+              style={{
+                backgroundColor: "transparent",
+                color: "#064E3B",
+                border: "1.5px solid #064E3B",
+                fontFamily: "Nunito, sans-serif",
+                cursor: isDownloading || !selCountry ? "not-allowed" : "pointer",
+                opacity: !selCountry ? 0.5 : 1,
+              }}
             >
               {isDownloading ? "Downloading…" : "↓ Export"}
             </button>
@@ -1008,7 +1432,13 @@ function FeedNamesTab({
               onClick={handleUpload}
               disabled={isUploading || !uploadFile || !selCountry}
               className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-              style={{ backgroundColor: isUploading || !uploadFile || !selCountry ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isUploading || !uploadFile || !selCountry ? "not-allowed" : "pointer" }}
+              style={{
+                backgroundColor: isUploading || !uploadFile || !selCountry ? "#D3D3D3" : "#064E3B",
+                color: "#FFFFFF",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: isUploading || !uploadFile || !selCountry ? "not-allowed" : "pointer",
+              }}
             >
               {isUploading ? "Uploading…" : "↑ Import"}
             </button>
@@ -1021,12 +1451,31 @@ function FeedNamesTab({
             style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
           />
           {uploadSummary && (
-            <div className="mt-3 rounded-xl px-3 py-3" style={{ backgroundColor: uploadSummary.success === false ? "#FEC5BB" : "#F0FDF4", border: `1px solid ${uploadSummary.success === false ? "rgba(228,74,74,0.25)" : "rgba(5,188,109,0.20)"}` }}>
-              <p className="font-bold text-sm mb-1" style={{ color: uploadSummary.success === false ? "#E44A4A" : "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+            <div
+              className="mt-3 rounded-xl px-3 py-3"
+              style={{
+                backgroundColor: uploadSummary.success === false ? "#FEC5BB" : "#F0FDF4",
+                border: `1px solid ${uploadSummary.success === false ? "rgba(228,74,74,0.25)" : "rgba(5,188,109,0.20)"}`,
+              }}
+            >
+              <p
+                className="font-bold text-sm mb-1"
+                style={{
+                  color: uploadSummary.success === false ? "#E44A4A" : "#064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                }}
+              >
                 {uploadSummary.success === false ? "Import failed" : "Import summary"}
               </p>
-              <div className="text-xs space-y-0.5" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                <p>Feeds — {uploadSummary.feeds_inserted ?? 0} added · {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0} unchanged</p>
+              <div
+                className="text-xs space-y-0.5"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                <p>
+                  Feeds — {uploadSummary.feeds_inserted ?? 0} added ·{" "}
+                  {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0}{" "}
+                  unchanged
+                </p>
               </div>
             </div>
           )}
@@ -1035,12 +1484,38 @@ function FeedNamesTab({
 
       {/* Feed edit sheet */}
       {editingFeed && selLang && (
-        <div className="fixed top-0 h-full z-50 flex flex-col justify-end" style={sheetOverlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setEditingFeed(null); }}>
-          <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}>
-            <div className="flex justify-center mb-3"><div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} /></div>
-            <p className="text-xs font-bold" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{selCountry?.name} · {labelForLanguage(selLang)}</p>
-            <h3 className="font-bold mb-4" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 17 }}>{editingFeed.fd_name}</h3>
-            <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Name in {labelForLanguage(selLang)}</p>
+        <div
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={sheetOverlayStyle}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditingFeed(null);
+          }}
+        >
+          <div
+            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
+          >
+            <div className="flex justify-center mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
+            <p
+              className="text-xs font-bold"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              {selCountry?.name} · {labelForLanguage(selLang)}
+            </p>
+            <h3
+              className="font-bold mb-4"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 17 }}
+            >
+              {editingFeed.fd_name}
+            </h3>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              Name in {labelForLanguage(selLang)}
+            </p>
             <input
               type="text"
               value={editValue}
@@ -1054,7 +1529,13 @@ function FeedNamesTab({
               onClick={handleSaveFeed}
               disabled={isSaving}
               className="w-full py-3 rounded-xl font-bold mb-2"
-              style={{ backgroundColor: isSaving ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isSaving ? "not-allowed" : "pointer" }}
+              style={{
+                backgroundColor: isSaving ? "#D3D3D3" : "#064E3B",
+                color: "#FFFFFF",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: isSaving ? "not-allowed" : "pointer",
+              }}
             >
               {isSaving ? "Saving…" : editingFeed.translation ? "Update name" : "Save name"}
             </button>
@@ -1063,7 +1544,13 @@ function FeedNamesTab({
                 onClick={handleDeleteFeed}
                 disabled={isDeleting}
                 className="w-full py-2.5 rounded-xl font-bold"
-                style={{ backgroundColor: "transparent", color: "#E44A4A", border: "1.5px solid rgba(228,74,74,0.4)", fontFamily: "Nunito, sans-serif", cursor: isDeleting ? "not-allowed" : "pointer" }}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#E44A4A",
+                  border: "1.5px solid rgba(228,74,74,0.4)",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: isDeleting ? "not-allowed" : "pointer",
+                }}
               >
                 {isDeleting ? "Deleting…" : "Delete this name"}
               </button>

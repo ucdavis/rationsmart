@@ -1,8 +1,7 @@
 // Ported from Android Ext.kt — keep in sync with server-side validation rules
 
 export function isEmailAddressValid(email: string): boolean {
-  const emailRegex =
-    /^[A-Za-z0-9+_.%-]{1,256}@(?=.{1,255}$)([A-Za-z0-9-]+\.)+[A-Za-z]{2,63}$/;
+  const emailRegex = /^[A-Za-z0-9+_.%-]{1,256}@(?=.{1,255}$)([A-Za-z0-9-]+\.)+[A-Za-z]{2,63}$/;
   return emailRegex.test(email);
 }
 
@@ -114,8 +113,16 @@ export function toSimulationHistoryDisplayDate(datetime: string | null | undefin
     // "yyyy-MM-dd HH:mm:ss" — replace space with T for ISO parsing
     const d = new Date(datetime.replace(" ", "T"));
     if (isNaN(d.getTime())) return "Not available";
-    const datePart = d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-    const timePart = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+    const datePart = d.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+    const timePart = d.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
     return `${datePart} at ${timePart}`;
   } catch {
     return "Not available";

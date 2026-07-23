@@ -30,11 +30,7 @@ export default function SectionCard({
             className="rounded-xl p-1.5 flex items-center justify-center"
             style={{ backgroundColor: "#E4F7EF", minWidth: 36, minHeight: 36 }}
           >
-            {iconSvg ? (
-              iconSvg
-            ) : (
-              <span style={{ fontSize: 18 }}>{iconEmoji}</span>
-            )}
+            {iconSvg ? iconSvg : <span style={{ fontSize: 18 }}>{iconEmoji}</span>}
           </div>
           <span
             className="text-base font-bold"

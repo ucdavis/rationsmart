@@ -43,17 +43,22 @@ describe("SplashGuard", () => {
     expect(replaceMock).not.toHaveBeenCalled();
   });
 
-  it.each(["/login", "/register", "/forgot-pin", "/set-new-pin", "/verify-email", "/terms", "/help"])(
-    "never redirects on public path %s",
-    (path) => {
-      pathnameRef.current = path;
-      mockNavigationType("navigate");
-      render(<SplashGuard />);
-      expect(replaceMock).not.toHaveBeenCalled();
-    }
-  );
+  it.each([
+    "/login",
+    "/register",
+    "/forgot-pin",
+    "/set-new-pin",
+    "/verify-email",
+    "/terms",
+    "/help",
+  ])("never redirects on public path %s", (path) => {
+    pathnameRef.current = path;
+    mockNavigationType("navigate");
+    render(<SplashGuard />);
+    expect(replaceMock).not.toHaveBeenCalled();
+  });
 
-  it("never redirects on the splash route itself (\"/\")", () => {
+  it('never redirects on the splash route itself ("/")', () => {
     pathnameRef.current = "/";
     mockNavigationType("navigate");
     render(<SplashGuard />);

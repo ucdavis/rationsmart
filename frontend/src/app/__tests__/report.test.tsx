@@ -167,7 +167,13 @@ function makeRecResponse(
       warnings: [],
     },
     least_cost_diet: [
-      { currency: "PHP", daily_cost: 60, feed_name: "Napier Grass", price_per_kg: 5, quantity_kg_per_day: 12 },
+      {
+        currency: "PHP",
+        daily_cost: 60,
+        feed_name: "Napier Grass",
+        price_per_kg: 5,
+        quantity_kg_per_day: 12,
+      },
     ],
     environmental_impact: {
       classification: "Low",
@@ -224,13 +230,17 @@ describe("Report — Diet Status banner theme by diet_rating", () => {
     useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ERROR_NO_BEST" }) });
     render(<ReportPage />);
     expect(screen.getByText("Simulation Status")).toHaveStyle({ color: hexToRgb("#FC2E20") });
-    expect(screen.getByText("No optimized solution found")).toHaveStyle({ color: hexToRgb("#E44A4A") });
+    expect(screen.getByText("No optimized solution found")).toHaveStyle({
+      color: hexToRgb("#E44A4A"),
+    });
   });
 
   it("ERROR_PRECHECK shares the same red theme as the other ERROR_* ratings", () => {
     useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ERROR_PRECHECK" }) });
     render(<ReportPage />);
-    expect(screen.getByText("No optimized solution found")).toHaveStyle({ color: hexToRgb("#E44A4A") });
+    expect(screen.getByText("No optimized solution found")).toHaveStyle({
+      color: hexToRgb("#E44A4A"),
+    });
   });
 
   it("INFEASIBLE renders the green-ish theme (title #1CA069, body #064E3B) — intentional Android parity, not a bug", () => {
@@ -483,7 +493,9 @@ describe('Report — "Save Report" + "View PDF"', () => {
     render(<ReportPage />);
     fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
     await waitFor(() => expect(saveReport).toHaveBeenCalledWith("R-REC-99", "u-1"));
-    await waitFor(() => expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument()
+    );
 
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     fireEvent.click(screen.getByRole("button", { name: /View PDF/ }));
@@ -499,7 +511,9 @@ describe('Report — "Save Report" + "View PDF"', () => {
     });
     render(<ReportPage />);
     fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument()
+    );
 
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     fireEvent.click(screen.getByRole("button", { name: /View PDF/ }));
@@ -515,7 +529,9 @@ describe('Report — "Save Report" + "View PDF"', () => {
     });
     render(<ReportPage />);
     fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
-    await waitFor(() => expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument()
+    );
 
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     fireEvent.click(screen.getByRole("button", { name: /View PDF/ }));
@@ -531,7 +547,12 @@ describe('Report — "Save Report" + "View PDF"', () => {
   // ever confirming the report was actually saved.
   it("success:true + error_message (PDF-pending) shows an info toast, not an error — and does NOT early-return", async () => {
     saveReport.mockResolvedValueOnce({
-      data: { success: true, message: "Report saved", error_message: "PDF generation not yet implemented", bucket_url: null },
+      data: {
+        success: true,
+        message: "Report saved",
+        error_message: "PDF generation not yet implemented",
+        bucket_url: null,
+      },
     });
     useStore.setState({
       reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-4" }),

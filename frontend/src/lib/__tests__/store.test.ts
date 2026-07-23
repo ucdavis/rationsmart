@@ -245,10 +245,12 @@ describe("persist integration", () => {
 
 describe("registered_language field (i18n V2)", () => {
   it("both fields co-exist on the User type", () => {
-    useStore.getState().setUser(makeUser({
-      registered_language: "hi",
-      preferred_language: "vi",
-    }));
+    useStore.getState().setUser(
+      makeUser({
+        registered_language: "hi",
+        preferred_language: "vi",
+      })
+    );
     const u = useStore.getState().user!;
     expect(u.registered_language).toBe("hi");
     expect(u.preferred_language).toBe("vi");
@@ -256,9 +258,7 @@ describe("registered_language field (i18n V2)", () => {
 
   it("registered_language is optional (legacy persisted users)", () => {
     // Simulates a user who was logged in before the field was added.
-    useStore.getState().setUser(
-      { ...makeUser(), registered_language: undefined } as User
-    );
+    useStore.getState().setUser({ ...makeUser(), registered_language: undefined } as User);
     expect(useStore.getState().user?.registered_language).toBeUndefined();
     expect(useStore.getState().user?.preferred_language).toBeDefined();
   });

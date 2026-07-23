@@ -108,9 +108,7 @@ describe("CustomSelect", () => {
   });
 
   it("transparentTrigger=true renders the trigger button with a transparent background", () => {
-    render(
-      <CustomSelect value="" onChange={() => {}} options={OPTIONS} transparentTrigger />
-    );
+    render(<CustomSelect value="" onChange={() => {}} options={OPTIONS} transparentTrigger />);
     const trigger = screen.getByRole("button", { name: "Select" });
     expect(trigger).toHaveStyle({ background: "transparent" });
   });

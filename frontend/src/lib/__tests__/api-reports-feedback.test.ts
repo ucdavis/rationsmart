@@ -90,7 +90,12 @@ describe("getSavedReports", () => {
     mockApi.get.mockResolvedValueOnce({ data: [{ report_id: "r1", simulation_id: "s1" }] });
     // ...but /v1/animal/user-reports has both.
     mockApi.get.mockResolvedValueOnce({
-      data: { reports: [{ report_id: "r1", simulation_id: "s1" }, { report_id: "r2", simulation_id: "s2" }] },
+      data: {
+        reports: [
+          { report_id: "r1", simulation_id: "s1" },
+          { report_id: "r2", simulation_id: "s2" },
+        ],
+      },
     });
 
     const res = await getSavedReports("u1");
@@ -150,7 +155,11 @@ describe("getSimulationDetails", () => {
 describe("submitFeedback", () => {
   it("POSTs the feedback payload to /v1/user-feedback/submit without a user_id", async () => {
     mockApi.post.mockResolvedValueOnce({ data: {} });
-    await submitFeedback("u1", { feedback_type: "General", text_feedback: "great", overall_rating: 5 });
+    await submitFeedback("u1", {
+      feedback_type: "General",
+      text_feedback: "great",
+      overall_rating: 5,
+    });
     expect(mockApi.post).toHaveBeenCalledWith("/v1/user-feedback/submit", {
       feedback_type: "General",
       text_feedback: "great",
@@ -163,13 +172,17 @@ describe("getMyFeedback", () => {
   it("GETs /v1/user-feedback/my with default limit=50, offset=0", async () => {
     mockApi.get.mockResolvedValueOnce({ data: [] });
     await getMyFeedback("u1");
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/user-feedback/my", { params: { limit: 50, offset: 0 } });
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/user-feedback/my", {
+      params: { limit: 50, offset: 0 },
+    });
   });
 
   it("forwards explicit limit/offset", async () => {
     mockApi.get.mockResolvedValueOnce({ data: [] });
     await getMyFeedback("u1", 5, 10);
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/user-feedback/my", { params: { limit: 5, offset: 10 } });
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/user-feedback/my", {
+      params: { limit: 5, offset: 10 },
+    });
   });
 });
 
@@ -195,7 +208,12 @@ describe("checkInsertOrUpdate", () => {
 
 describe("insertCustomFeed", () => {
   it("POSTs the full body to /v1/animal/custom-feeds", async () => {
-    const body = { country_id: "1", user_id: "u1", feed_insert: true, feed_details: { fd_name: "X" } };
+    const body = {
+      country_id: "1",
+      user_id: "u1",
+      feed_insert: true,
+      feed_details: { fd_name: "X" },
+    };
     mockApi.post.mockResolvedValueOnce({ data: {} });
     await insertCustomFeed(body);
     expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/custom-feeds", body);

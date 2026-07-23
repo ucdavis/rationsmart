@@ -125,7 +125,9 @@ export function useT(langOverride?: string): (source: string) => string {
   // there. lastUiLanguage must ONLY apply post-logout (user === null);
   // a signed-in user's own falsy preference should resolve straight to
   // "en", never borrow the device's last-used language.
-  const userLang = useStore((s) => (s.user ? (s.user.preferred_language || "en") : (s.lastUiLanguage ?? "en")));
+  const userLang = useStore((s) =>
+    s.user ? s.user.preferred_language || "en" : (s.lastUiLanguage ?? "en")
+  );
   const lang = langOverride ?? userLang;
   const [, setLoadedTick] = useState(0);
 

@@ -34,7 +34,7 @@ afterEach(() => {
 });
 
 describe("SplashOverlay", () => {
-  it("on \"/\" — renders the branded splash immediately", () => {
+  it('on "/" — renders the branded splash immediately', () => {
     vi.useFakeTimers();
     pathnameRef.current = "/";
     const { container } = render(<SplashOverlay />);
@@ -42,7 +42,7 @@ describe("SplashOverlay", () => {
     expect(container.textContent).toContain("RationSmart");
   });
 
-  it("on \"/\" — stays visible right before the 2s mark", () => {
+  it('on "/" — stays visible right before the 2s mark', () => {
     vi.useFakeTimers();
     pathnameRef.current = "/";
     const { container } = render(<SplashOverlay />);
@@ -52,7 +52,7 @@ describe("SplashOverlay", () => {
     expect(container.querySelector("#pwa-splash")).toBeTruthy();
   });
 
-  it("on \"/\" — unmounts itself after the full 2s splash duration", () => {
+  it('on "/" — unmounts itself after the full 2s splash duration', () => {
     vi.useFakeTimers();
     pathnameRef.current = "/";
     const { container } = render(<SplashOverlay />);

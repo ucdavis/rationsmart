@@ -55,7 +55,9 @@ describe("range validators", () => {
   });
 
   describe("daysOfPregnancyIsInRange (0..280)", () => {
-    it.each([0, 100, 279, 280])("accepts %i", (n) => expect(daysOfPregnancyIsInRange(n)).toBe(true));
+    it.each([0, 100, 279, 280])("accepts %i", (n) =>
+      expect(daysOfPregnancyIsInRange(n)).toBe(true)
+    );
     it.each([-1, 281, 400])("rejects %i", (n) => expect(daysOfPregnancyIsInRange(n)).toBe(false));
   });
 
@@ -70,8 +72,12 @@ describe("range validators", () => {
   });
 
   describe("bodyWeightGainIsInRange (0..1.8)", () => {
-    it.each([0, 0.5, 1.0, 1.7, 1.8])("accepts %s", (n) => expect(bodyWeightGainIsInRange(n)).toBe(true));
-    it.each([-0.1, 1.81, 2, 10])("rejects %s", (n) => expect(bodyWeightGainIsInRange(n)).toBe(false));
+    it.each([0, 0.5, 1.0, 1.7, 1.8])("accepts %s", (n) =>
+      expect(bodyWeightGainIsInRange(n)).toBe(true)
+    );
+    it.each([-0.1, 1.81, 2, 10])("rejects %s", (n) =>
+      expect(bodyWeightGainIsInRange(n)).toBe(false)
+    );
   });
 
   describe("milkProductionIsInRange (1..59)", () => {

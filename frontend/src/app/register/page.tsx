@@ -70,18 +70,13 @@ export default function RegisterPage() {
 
   // Android: PIN enabled only when country + email + name are all filled and email is valid
   const pinEnabled =
-    countryId !== "" &&
-    name.trim().length > 0 &&
-    isEmailAddressValid(email.trim());
+    countryId !== "" && name.trim().length > 0 && isEmailAddressValid(email.trim());
 
   // Android: confirm PIN enabled only when all 4 PIN digits are filled
   const confirmPinEnabled = pin.length === 6;
 
   // Android: button enabled when all fields valid + PINs match
-  const isReady =
-    pinEnabled &&
-    pin.length === 6 &&
-    confirmPin.length === 6;
+  const isReady = pinEnabled && pin.length === 6 && confirmPin.length === 6;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleaned = cleanNameInput(e.target.value);
@@ -123,11 +118,12 @@ export default function RegisterPage() {
       router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err: unknown) {
       // Android fallback for non-400, non-network errors
-      const message = err instanceof Error && err.message && err.message !== "Network Error"
-        ? err.message
-        : err instanceof Error && err.message === "Network Error"
-          ? t("Please make sure you're device has internet connectivity.")
-          : t("Unexpected error: failed to register. Please, try again!");
+      const message =
+        err instanceof Error && err.message && err.message !== "Network Error"
+          ? err.message
+          : err instanceof Error && err.message === "Network Error"
+            ? t("Please make sure you're device has internet connectivity.")
+            : t("Unexpected error: failed to register. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -146,10 +142,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
@@ -163,7 +156,13 @@ export default function RegisterPage() {
         <button
           onClick={() => router.back()}
           className="flex items-center justify-center rounded-xl bg-white"
-          style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
+          style={{
+            width: 40,
+            height: 40,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            border: "none",
+            cursor: "pointer",
+          }}
           aria-label={t("Back")}
         >
           <IcBack size={20} color="#064E3B" />
@@ -192,8 +191,12 @@ export default function RegisterPage() {
         </div>
 
         {/* Name */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5" style={labelStyle}>
-          {t("Name")}<RequiredAsterisk />
+        <p
+          className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
+          style={labelStyle}
+        >
+          {t("Name")}
+          <RequiredAsterisk />
         </p>
         <div className="px-3">
           <input
@@ -206,8 +209,12 @@ export default function RegisterPage() {
         </div>
 
         {/* Email */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
-          {t("Email Address")}<RequiredAsterisk />
+        <p
+          className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5"
+          style={labelStyle}
+        >
+          {t("Email Address")}
+          <RequiredAsterisk />
         </p>
         <div className="px-3">
           <input
@@ -222,8 +229,12 @@ export default function RegisterPage() {
         </div>
 
         {/* Country */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
-          {t("Country")}<RequiredAsterisk />
+        <p
+          className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5"
+          style={labelStyle}
+        >
+          {t("Country")}
+          <RequiredAsterisk />
         </p>
         <div className="px-3 relative">
           <select
@@ -246,7 +257,13 @@ export default function RegisterPage() {
           </select>
           <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 6L8 10L12 6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="#6D6D6D"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
         </div>
@@ -256,7 +273,10 @@ export default function RegisterPage() {
             choices come from the selected country's supported_languages.
             The chosen value becomes the user's registered_language on
             the backend and is the baseline restored at every login. */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5" style={labelStyle}>
+        <p
+          className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5"
+          style={labelStyle}
+        >
           {t("Language")}
         </p>
         <div className="px-3 relative">
@@ -279,7 +299,13 @@ export default function RegisterPage() {
           </select>
           <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M4 6L8 10L12 6" stroke="#6D6D6D" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+              <path
+                d="M4 6L8 10L12 6"
+                stroke="#6D6D6D"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
         </div>
@@ -305,11 +331,7 @@ export default function RegisterPage() {
           <p className="text-xs uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
             {t("Confirm PIN")}
           </p>
-          <PinInput
-            value={confirmPin}
-            onChange={setConfirmPin}
-            disabled={!confirmPinEnabled}
-          />
+          <PinInput value={confirmPin} onChange={setConfirmPin} disabled={!confirmPinEnabled} />
         </div>
 
         {confirmPin.length === 6 && pin !== confirmPin && (
@@ -339,7 +361,16 @@ export default function RegisterPage() {
         >
           {isLoading ? (
             <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="3"
+                strokeDasharray="40"
+                strokeDashoffset="10"
+                strokeLinecap="round"
+              />
             </svg>
           ) : (
             t("Proceed")

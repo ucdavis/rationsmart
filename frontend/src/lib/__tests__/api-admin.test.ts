@@ -82,13 +82,17 @@ describe("toggleUserStatus", () => {
   it("PUTs {action: 'activate'} when enabling a user", async () => {
     mockApi.put.mockResolvedValueOnce({ data: {} });
     await toggleUserStatus("user-1", "admin-1", true);
-    expect(mockApi.put).toHaveBeenCalledWith("/v1/admin/users/user-1/toggle-status", { action: "activate" });
+    expect(mockApi.put).toHaveBeenCalledWith("/v1/admin/users/user-1/toggle-status", {
+      action: "activate",
+    });
   });
 
   it("PUTs {action: 'deactivate'} when disabling a user", async () => {
     mockApi.put.mockResolvedValueOnce({ data: {} });
     await toggleUserStatus("user-1", "admin-1", false);
-    expect(mockApi.put).toHaveBeenCalledWith("/v1/admin/users/user-1/toggle-status", { action: "deactivate" });
+    expect(mockApi.put).toHaveBeenCalledWith("/v1/admin/users/user-1/toggle-status", {
+      action: "deactivate",
+    });
   });
 });
 
@@ -142,7 +146,9 @@ describe("exportAdminFeeds / exportCustomFeeds", () => {
     await exportAdminFeeds("admin-1");
     expect(mockApi.get).toHaveBeenCalledWith("/v1/admin/export-feeds", { responseType: "blob" });
     await exportCustomFeeds("admin-1");
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/admin/export-custom-feeds", { responseType: "blob" });
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/admin/export-custom-feeds", {
+      responseType: "blob",
+    });
   });
 });
 
@@ -202,7 +208,14 @@ describe("getAdminFeeds", () => {
     mockApi.get.mockResolvedValueOnce({ data: [] });
     await getAdminFeeds("admin-1");
     expect(mockApi.get).toHaveBeenCalledWith("/v1/admin/list-feeds", {
-      params: { page: 1, page_size: 20, feed_type: "", feed_category: "", country_name: "", search: "" },
+      params: {
+        page: 1,
+        page_size: 20,
+        feed_type: "",
+        feed_category: "",
+        country_name: "",
+        search: "",
+      },
     });
   });
 
@@ -210,7 +223,14 @@ describe("getAdminFeeds", () => {
     mockApi.get.mockResolvedValueOnce({ data: [] });
     await getAdminFeeds("admin-1", 2, 10, "Forage", "Grass", "India", "hay");
     expect(mockApi.get).toHaveBeenCalledWith("/v1/admin/list-feeds", {
-      params: { page: 2, page_size: 10, feed_type: "Forage", feed_category: "Grass", country_name: "India", search: "hay" },
+      params: {
+        page: 2,
+        page_size: 10,
+        feed_type: "Forage",
+        feed_category: "Grass",
+        country_name: "India",
+        search: "hay",
+      },
     });
   });
 });

@@ -46,17 +46,27 @@ beforeEach(() => {
 });
 
 const countries = [
-  { id: 1, name: "India", country_code: "IN", currency: "INR", supported_languages: ["en", "hi", "bn"] },
-  { id: 2, name: "Vietnam", country_code: "VN", currency: "VND", supported_languages: ["en", "vi"] },
+  {
+    id: 1,
+    name: "India",
+    country_code: "IN",
+    currency: "INR",
+    supported_languages: ["en", "hi", "bn"],
+  },
+  {
+    id: 2,
+    name: "Vietnam",
+    country_code: "VN",
+    currency: "VND",
+    supported_languages: ["en", "vi"],
+  },
   { id: 3, name: "USA", country_code: "US", currency: "USD" }, // no supported_languages
 ];
 
 async function renderPage() {
   getCountries.mockResolvedValue({ data: countries });
   render(<RegisterPage />);
-  await waitFor(() =>
-    expect(screen.getByRole("option", { name: "India" })).toBeInTheDocument()
-  );
+  await waitFor(() => expect(screen.getByRole("option", { name: "India" })).toBeInTheDocument());
 }
 
 describe("Register — layout", () => {
@@ -89,7 +99,9 @@ describe("Register — language dropdown reacts to country", () => {
   async function selectCountry(name: string) {
     const combos = screen.getAllByRole("combobox");
     // combos[0] = country, combos[1] = language (rendered later on the page)
-    fireEvent.change(combos[0], { target: { value: String(countries.find(c => c.name === name)!.id) } });
+    fireEvent.change(combos[0], {
+      target: { value: String(countries.find((c) => c.name === name)!.id) },
+    });
   }
 
   it("India → shows English + Hindi + Bengali (all in supported_languages)", async () => {
@@ -193,7 +205,7 @@ describe("Register — successful submit", () => {
       name: "Aiyappa",
       email_id: "aiyappa@dg.org",
       country_id: "1",
-      language: "en",     // default
+      language: "en", // default
     });
     expect(payload.pin).toBe("123456");
   });

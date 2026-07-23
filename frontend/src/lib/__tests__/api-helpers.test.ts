@@ -75,12 +75,7 @@ describe("langParam + setLangProvider", () => {
 
 describe("animal category helpers", () => {
   it("ANIMAL_CATEGORIES lists all four values in the documented order", () => {
-    expect(ANIMAL_CATEGORIES).toEqual([
-      "Lactating Cow",
-      "Dry Cow",
-      "Heifer",
-      "Baby Calf/Heifer",
-    ]);
+    expect(ANIMAL_CATEGORIES).toEqual(["Lactating Cow", "Dry Cow", "Heifer", "Baby Calf/Heifer"]);
   });
 
   it("ANIMAL_CATEGORY_LABELS uses plural display strings", () => {
@@ -216,9 +211,7 @@ describe("toCattleInfoPayload — non-lactating categories zero out milk fields"
   it.each(["Dry Cow", "Heifer", "Baby Calf/Heifer"] as const)(
     "%s → lactating=false, all milk-side numerics zeroed and milk_price null",
     (cat) => {
-      const p = toCattleInfoPayload(
-        makeCattleInfo({ animal_category: cat })
-      );
+      const p = toCattleInfoPayload(makeCattleInfo({ animal_category: cat }));
       expect(p.lactating).toBe(false);
       expect(p.days_in_milk).toBe(0);
       expect(p.milk_production).toBe(0);
@@ -231,17 +224,13 @@ describe("toCattleInfoPayload — non-lactating categories zero out milk fields"
 
 describe("toCattleInfoPayload — grazing rules", () => {
   it("grazing=false ⇒ distance forced to 0 even if UI had a value", () => {
-    const p = toCattleInfoPayload(
-      makeCattleInfo({ grazing: false, distance: 5 })
-    );
+    const p = toCattleInfoPayload(makeCattleInfo({ grazing: false, distance: 5 }));
     expect(p.grazing).toBe(false);
     expect(p.distance).toBe(0);
   });
 
   it("grazing=false ⇒ topography forced to 'Flat'", () => {
-    const p = toCattleInfoPayload(
-      makeCattleInfo({ grazing: false, topography: "Hilly" })
-    );
+    const p = toCattleInfoPayload(makeCattleInfo({ grazing: false, topography: "Hilly" }));
     expect(p.topography).toBe("Flat");
   });
 
@@ -276,9 +265,7 @@ describe("toCattleInfoPayload — milk_price handling", () => {
   });
 
   it("undefined milk_price is coerced to null", () => {
-    const p = toCattleInfoPayload(
-      makeCattleInfo({ milk_price: undefined as unknown as number })
-    );
+    const p = toCattleInfoPayload(makeCattleInfo({ milk_price: undefined as unknown as number }));
     expect(p.milk_price).toBeNull();
   });
 
@@ -288,9 +275,7 @@ describe("toCattleInfoPayload — milk_price handling", () => {
   });
 
   it("non-lactating always sends null even with a value set", () => {
-    const p = toCattleInfoPayload(
-      makeCattleInfo({ animal_category: "Dry Cow", milk_price: 42 })
-    );
+    const p = toCattleInfoPayload(makeCattleInfo({ animal_category: "Dry Cow", milk_price: 42 }));
     expect(p.milk_price).toBeNull();
   });
 });

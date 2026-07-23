@@ -29,22 +29,23 @@ export default function LoadingButton({
   const effectiveLoadingLabel = loadingLabel ?? t("Loading...");
   const bgColor =
     variant === "primary"
-      ? disabled || isLoading ? "#D3D3D3" : "#064E3B"
+      ? disabled || isLoading
+        ? "#D3D3D3"
+        : "#064E3B"
       : variant === "secondary"
-      ? "transparent"
-      : "#E44A4A";
+        ? "transparent"
+        : "#E44A4A";
 
   const textColor =
     variant === "primary"
-      ? disabled || isLoading ? "#999999" : "#FFFFFF"
+      ? disabled || isLoading
+        ? "#999999"
+        : "#FFFFFF"
       : variant === "secondary"
-      ? "#064E3B"
-      : "#FFFFFF";
+        ? "#064E3B"
+        : "#FFFFFF";
 
-  const border =
-    variant === "secondary"
-      ? "2px solid #064E3B"
-      : "none";
+  const border = variant === "secondary" ? "2px solid #064E3B" : "none";
 
   return (
     <button
@@ -70,13 +71,7 @@ export default function LoadingButton({
       }}
     >
       {isLoading && (
-        <svg
-          className="animate-spin"
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-        >
+        <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
           <circle
             cx="12"
             cy="12"

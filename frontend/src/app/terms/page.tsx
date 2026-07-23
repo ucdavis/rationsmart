@@ -57,10 +57,7 @@ export default function TermsPage() {
   const t = useT();
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       <Toolbar type="back" title={t("Terms & Conditions")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8">
@@ -69,7 +66,10 @@ export default function TermsPage() {
           className="rounded-2xl bg-white px-4 py-5 mb-4"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
         >
-          <p className="text-base font-bold mb-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+          <p
+            className="text-base font-bold mb-1"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
             {t("Terms & Conditions")}
           </p>
           <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>

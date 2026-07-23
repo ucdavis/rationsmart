@@ -197,8 +197,20 @@ describe("Feedback — submit error path", () => {
 
 describe("Feedback — history list", () => {
   const historyItems = [
-    { id: 1, feedback_type: "General", text_feedback: "Great app", overall_rating: 4, created_at: "2026-06-01T00:00:00Z" },
-    { id: 2, feedback_type: "Defect", text_feedback: "Found a bug", overall_rating: 2, created_at: "2026-06-02T00:00:00Z" },
+    {
+      id: 1,
+      feedback_type: "General",
+      text_feedback: "Great app",
+      overall_rating: 4,
+      created_at: "2026-06-01T00:00:00Z",
+    },
+    {
+      id: 2,
+      feedback_type: "Defect",
+      text_feedback: "Found a bug",
+      overall_rating: 2,
+      created_at: "2026-06-02T00:00:00Z",
+    },
   ];
 
   it("renders the last-5 feedback list returned by getMyFeedback on mount", async () => {

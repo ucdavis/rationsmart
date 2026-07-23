@@ -44,7 +44,9 @@ export default function FeedbackDetailsSheet({
         width: "min(100vw, 480px)",
         backgroundColor: "rgba(0,0,0,0.65)",
       }}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         className="bg-white rounded-t-2xl px-4 pt-5 pb-6"
@@ -87,8 +89,21 @@ export default function FeedbackDetailsSheet({
             value={toFeedReportDisplayDate(details.createdAt)}
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="3.5" y="5" width="17" height="16" rx="2" stroke="#064E3B" strokeWidth="1.8" />
-                <path d="M3.5 10h17M8 3v4M16 3v4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" />
+                <rect
+                  x="3.5"
+                  y="5"
+                  width="17"
+                  height="16"
+                  rx="2"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                />
+                <path
+                  d="M3.5 10h17M8 3v4M16 3v4"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </svg>
             }
           />
@@ -97,10 +112,42 @@ export default function FeedbackDetailsSheet({
             value={details.category || "N/A"}
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
-                <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
-                <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
-                <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" stroke="#064E3B" strokeWidth="1.8" />
+                <rect
+                  x="3.5"
+                  y="3.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                />
+                <rect
+                  x="13.5"
+                  y="3.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                />
+                <rect
+                  x="3.5"
+                  y="13.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                />
+                <rect
+                  x="13.5"
+                  y="13.5"
+                  width="7"
+                  height="7"
+                  rx="1.5"
+                  stroke="#064E3B"
+                  strokeWidth="1.8"
+                />
               </svg>
             }
           />
@@ -109,7 +156,12 @@ export default function FeedbackDetailsSheet({
         {/* Your Feedback label + text card */}
         <p
           className="font-bold mt-6"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14, marginLeft: 4 }}
+          style={{
+            color: "#6D6D6D",
+            fontFamily: "Nunito, sans-serif",
+            fontSize: 14,
+            marginLeft: 4,
+          }}
         >
           Your Feedback
         </p>
@@ -147,22 +199,22 @@ export default function FeedbackDetailsSheet({
   );
 }
 
-function InfoTile({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-}) {
+function InfoTile({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
-    <div className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-3" style={{ backgroundColor: "#F0FDF4" }}>
+    <div
+      className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-3"
+      style={{ backgroundColor: "#F0FDF4" }}
+    >
       <div className="flex-shrink-0">{icon}</div>
       <div className="min-w-0">
         <p
           className="uppercase"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 11, letterSpacing: 0.4 }}
+          style={{
+            color: "#6D6D6D",
+            fontFamily: "Nunito, sans-serif",
+            fontSize: 11,
+            letterSpacing: 0.4,
+          }}
         >
           {label}
         </p>

@@ -107,7 +107,9 @@ describe("resendVerification", () => {
   it("POSTs {email_id} to /v1/auth/resend-verification", async () => {
     mockApi.post.mockResolvedValueOnce({ data: {} });
     await resendVerification("a@b.com");
-    expect(mockApi.post).toHaveBeenCalledWith("/v1/auth/resend-verification", { email_id: "a@b.com" });
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/auth/resend-verification", {
+      email_id: "a@b.com",
+    });
   });
 });
 

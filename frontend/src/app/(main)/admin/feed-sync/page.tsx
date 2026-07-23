@@ -99,9 +99,23 @@ interface FeedSyncLogDetail extends FeedSyncLogItem {
 }
 
 type Tab = "sync" | "history";
-type ConfirmState = { title: string; body: string; label: string; danger?: boolean; onConfirm: () => void } | null;
+type ConfirmState = {
+  title: string;
+  body: string;
+  label: string;
+  danger?: boolean;
+  onConfirm: () => void;
+} | null;
 
-const DAY_OPTIONS = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"].map((d) => ({
+const DAY_OPTIONS = [
+  "monday",
+  "tuesday",
+  "wednesday",
+  "thursday",
+  "friday",
+  "saturday",
+  "sunday",
+].map((d) => ({
   value: d,
   label: d.charAt(0).toUpperCase() + d.slice(1),
 }));
@@ -127,7 +141,13 @@ function formatNextRun(dateStr: string | null): string {
   if (!dateStr) return "—";
   const d = new Date(`${dateStr}T00:00:00Z`);
   if (Number.isNaN(d.getTime())) return dateStr;
-  return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
+  return d.toLocaleDateString(undefined, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 function formatDuration(startedAt: string | null, finishedAt: string | null): string {
@@ -147,7 +167,10 @@ function deepLinkForReason(reason: string): { label: string; href: string } | nu
   if (r.includes("not assigned to") || r.includes("not a registered active language")) {
     return { label: "Assign language →", href: "/admin/country-language" };
   }
-  if (r.includes("does not match any active feed type") || r.includes("is not a valid active category")) {
+  if (
+    r.includes("does not match any active feed type") ||
+    r.includes("is not a valid active category")
+  ) {
     return { label: "Manage feed types →", href: "/admin/feeds" };
   }
   return null;
@@ -160,7 +183,12 @@ function csvEscape(v: unknown): string {
 
 function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
   if (rows.length === 0) return;
-  const cols = Array.from(rows.reduce((set, r) => { Object.keys(r).forEach((k) => set.add(k)); return set; }, new Set<string>()));
+  const cols = Array.from(
+    rows.reduce((set, r) => {
+      Object.keys(r).forEach((k) => set.add(k));
+      return set;
+    }, new Set<string>())
+  );
   const lines = [cols.join(","), ...rows.map((r) => cols.map((c) => csvEscape(r[c])).join(","))];
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -174,8 +202,16 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
 }
 
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
-const inputStyle = { backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" };
-const sheetOverlayStyle = { left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.65)" };
+const inputStyle = {
+  backgroundColor: "#F1F5F9",
+  color: "#231F20",
+  fontFamily: "Nunito, sans-serif",
+};
+const sheetOverlayStyle = {
+  left: "max(0px, calc((100vw - 480px) / 2))",
+  width: "min(100vw, 480px)",
+  backgroundColor: "rgba(0,0,0,0.65)",
+};
 
 function StatusChip({ status }: { status: string }) {
   const s = status.toLowerCase();
@@ -183,8 +219,8 @@ function StatusChip({ status }: { status: string }) {
     s === "success"
       ? { bg: "rgba(28,160,105,0.12)", fg: "#1CA069", label: "Success" }
       : s === "failed"
-      ? { bg: "rgba(228,74,74,0.12)", fg: "#E44A4A", label: "Failed" }
-      : { bg: "rgba(255,152,0,0.14)", fg: "#B4690E", label: "Running" };
+        ? { bg: "rgba(228,74,74,0.12)", fg: "#E44A4A", label: "Failed" }
+        : { bg: "rgba(255,152,0,0.14)", fg: "#B4690E", label: "Running" };
   return (
     <span
       className={`text-xs font-bold px-2 py-0.5 rounded-full ${s === "running" ? "animate-pulse" : ""}`}
@@ -232,13 +268,30 @@ export default function AdminFeedSyncPage() {
   useEffect(() => {
     if (!user?.is_admin) return;
     const id = setInterval(() => {
-      getFeedSyncSchedulerStatus().then((res) => setStatus(res.data)).catch(() => {});
+      getFeedSyncSchedulerStatus()
+        .then((res) => setStatus(res.data))
+        .catch(() => {});
     }, 60000);
     return () => clearInterval(id);
   }, [user?.is_admin]);
 
-  const askConfirm = (title: string, body: string, label: string, danger: boolean, onConfirm: () => void) => {
-    setConfirm({ title, body, label, danger, onConfirm: () => { onConfirm(); setConfirm(null); } });
+  const askConfirm = (
+    title: string,
+    body: string,
+    label: string,
+    danger: boolean,
+    onConfirm: () => void
+  ) => {
+    setConfirm({
+      title,
+      body,
+      label,
+      danger,
+      onConfirm: () => {
+        onConfirm();
+        setConfirm(null);
+      },
+    });
   };
 
   const handleViewDetails = (logId: string) => {
@@ -254,10 +307,12 @@ export default function AdminFeedSyncPage() {
 
       <div className="px-3 pt-3">
         <div className="flex rounded-2xl p-1" style={{ backgroundColor: "#E4F7EF" }}>
-          {([
-            { key: "sync", label: "Sync & Settings" },
-            { key: "history", label: "Run History" },
-          ] as const).map((t) => (
+          {(
+            [
+              { key: "sync", label: "Sync & Settings" },
+              { key: "history", label: "Run History" },
+            ] as const
+          ).map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
@@ -303,29 +358,62 @@ export default function AdminFeedSyncPage() {
           onViewDetails={handleViewDetails}
         />
       ) : (
-        <RunHistoryTab showSnackbar={showSnackbar} viewLogId={viewLogId} onViewLogIdConsumed={() => setViewLogId(null)} />
+        <RunHistoryTab
+          showSnackbar={showSnackbar}
+          viewLogId={viewLogId}
+          onViewLogIdConsumed={() => setViewLogId(null)}
+        />
       )}
 
       {confirm && (
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{ left: "max(0px, calc((100vw - 480px) / 2))", width: "min(100vw, 480px)", backgroundColor: "rgba(0,0,0,0.5)" }}
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
         >
-          <div className="bg-white rounded-2xl w-full px-5 py-5" style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}>
-            <p className="font-bold mb-2" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 15 }}>{confirm.title}</p>
-            <p className="text-sm mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}>{confirm.body}</p>
+          <div
+            className="bg-white rounded-2xl w-full px-5 py-5"
+            style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
+          >
+            <p
+              className="font-bold mb-2"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 15 }}
+            >
+              {confirm.title}
+            </p>
+            <p
+              className="text-sm mb-4"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+            >
+              {confirm.body}
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={() => setConfirm(null)}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-                style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#064E3B",
+                  border: "1.5px solid #064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
               <button
                 onClick={confirm.onConfirm}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-                style={{ backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 {confirm.label}
               </button>
@@ -353,11 +441,19 @@ function SyncSettingsTab({
 }: {
   status: SchedulerStatus | null;
   config: SyncConfig | null;
-  setStatus: (s: SchedulerStatus | ((prev: SchedulerStatus | null) => SchedulerStatus | null)) => void;
+  setStatus: (
+    s: SchedulerStatus | ((prev: SchedulerStatus | null) => SchedulerStatus | null)
+  ) => void;
   setConfig: (c: SyncConfig) => void;
   reload: () => Promise<void> | void;
   showSnackbar: (msg: string, type?: "success" | "error" | "info") => void;
-  askConfirm: (title: string, body: string, label: string, danger: boolean, onConfirm: () => void) => void;
+  askConfirm: (
+    title: string,
+    body: string,
+    label: string,
+    danger: boolean,
+    onConfirm: () => void
+  ) => void;
   onViewDetails: (logId: string) => void;
 }) {
   const [isTogglingScheduler, setIsTogglingScheduler] = useState(false);
@@ -378,10 +474,13 @@ function SyncSettingsTab({
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const statusPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => () => {
-    if (pollRef.current) clearInterval(pollRef.current);
-    if (statusPollRef.current) clearInterval(statusPollRef.current);
-  }, []);
+  useEffect(
+    () => () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+      if (statusPollRef.current) clearInterval(statusPollRef.current);
+    },
+    []
+  );
 
   // Someone else's run (a scheduled tick, or another admin's manual sync)
   // is in progress — poll status (not a log_id we don't have) until it
@@ -400,7 +499,9 @@ function SyncSettingsTab({
         })
         .catch(() => {});
     }, 5000);
-    return () => { if (statusPollRef.current) clearInterval(statusPollRef.current); };
+    return () => {
+      if (statusPollRef.current) clearInterval(statusPollRef.current);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status?.running, runningLogId]);
 
@@ -506,7 +607,8 @@ function SyncSettingsTab({
       const anyErr = err as { response?: { status?: number } };
       const httpStatus = anyErr?.response?.status;
       if (httpStatus === 409) showSnackbar("A sync is already running", "error");
-      else if (httpStatus === 503) showSnackbar("Sync service unavailable — try again shortly", "error");
+      else if (httpStatus === 503)
+        showSnackbar("Sync service unavailable — try again shortly", "error");
       else showSnackbar(err instanceof Error ? err.message : "Could not start the sync", "error");
     } finally {
       setIsDispatching(false);
@@ -521,8 +623,10 @@ function SyncSettingsTab({
       return;
     }
     const body: Parameters<typeof updateFeedSyncConfig>[0] = {};
-    if (formEndpoint.trim() !== (config.endpoint_url ?? "")) body.endpoint_url = formEndpoint.trim();
-    if (formAuthType !== config.auth_type) body.auth_type = formAuthType as "none" | "api_key" | "bearer";
+    if (formEndpoint.trim() !== (config.endpoint_url ?? ""))
+      body.endpoint_url = formEndpoint.trim();
+    if (formAuthType !== config.auth_type)
+      body.auth_type = formAuthType as "none" | "api_key" | "bearer";
     if (formAuthType === "api_key" && formHeaderName.trim() !== (config.auth_header_name ?? "")) {
       body.auth_header_name = formHeaderName.trim();
     }
@@ -561,41 +665,79 @@ function SyncSettingsTab({
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
       {/* STATUS CARD */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+        <div
+          className="px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
             Automatic Sync
           </p>
         </div>
         <div className="px-4 py-4 space-y-4">
           {isStale && (
-            <div className="rounded-xl px-3 py-2 text-xs font-bold" style={{ backgroundColor: "rgba(255,152,0,0.14)", color: "#B4690E", fontFamily: "Nunito, sans-serif" }}>
+            <div
+              className="rounded-xl px-3 py-2 text-xs font-bold"
+              style={{
+                backgroundColor: "rgba(255,152,0,0.14)",
+                color: "#B4690E",
+                fontFamily: "Nunito, sans-serif",
+              }}
+            >
               Last sync overdue — check Run History
             </div>
           )}
 
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="font-bold text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>Automatic Scheduler</p>
-              <p className="text-xs mt-0.5" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              <p
+                className="font-bold text-sm"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                Automatic Scheduler
+              </p>
+              <p
+                className="text-xs mt-0.5"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
                 {status.scheduler_enabled
                   ? `Syncs automatically every ${capitalize(status.sync_day_of_week)} at 00:00 UTC.`
                   : "Automatic sync is off. You can still sync manually."}
               </p>
               {!canEnable && !status.scheduler_enabled && (
-                <p className="text-xs mt-0.5 font-bold" style={{ color: "#B4690E", fontFamily: "Nunito, sans-serif" }}>
+                <p
+                  className="text-xs mt-0.5 font-bold"
+                  style={{ color: "#B4690E", fontFamily: "Nunito, sans-serif" }}
+                >
                   Configure the CLIMDES endpoint first
                 </p>
               )}
               {config.scheduler_toggled_by && (
-                <p className="text-xs mt-1" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
-                  Last changed by {config.scheduler_toggled_by.slice(0, 8)}… on {formatDateTime(config.scheduler_toggled_at)}
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
+                >
+                  Last changed by {config.scheduler_toggled_by.slice(0, 8)}… on{" "}
+                  {formatDateTime(config.scheduler_toggled_at)}
                 </p>
               )}
             </div>
             <label
               className="toggle-switch flex-shrink-0"
-              aria-label={status.scheduler_enabled ? "Disable automatic scheduler" : "Enable automatic scheduler"}
-              style={{ opacity: isTogglingScheduler || (!canEnable && !status.scheduler_enabled) ? 0.5 : 1, cursor: isTogglingScheduler || (!canEnable && !status.scheduler_enabled) ? "not-allowed" : "pointer" }}
+              aria-label={
+                status.scheduler_enabled
+                  ? "Disable automatic scheduler"
+                  : "Enable automatic scheduler"
+              }
+              style={{
+                opacity: isTogglingScheduler || (!canEnable && !status.scheduler_enabled) ? 0.5 : 1,
+                cursor:
+                  isTogglingScheduler || (!canEnable && !status.scheduler_enabled)
+                    ? "not-allowed"
+                    : "pointer",
+              }}
             >
               <input
                 type="checkbox"
@@ -608,7 +750,12 @@ function SyncSettingsTab({
           </div>
 
           <div>
-            <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Sync day</p>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              Sync day
+            </p>
             <CustomSelect
               value={status.sync_day_of_week}
               onChange={handleDayChange}
@@ -616,23 +763,48 @@ function SyncSettingsTab({
               disabled={isSavingDay}
               style={{ backgroundColor: "#F1F5F9", borderRadius: 14, padding: "10px 12px" }}
             />
-            <p className="text-xs mt-1" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
-              Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate refresh.
+            <p
+              className="text-xs mt-1"
+              style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
+            >
+              Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate
+              refresh.
             </p>
           </div>
 
           <div className="space-y-2 pt-1" style={{ borderTop: "1px solid #F1F5F9" }}>
             <div className="flex justify-between text-sm pt-2">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Next scheduled sync</span>
-              <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{formatNextRun(status.next_scheduled_run)}</span>
+              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                Next scheduled sync
+              </span>
+              <span
+                className="font-bold"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                {formatNextRun(status.next_scheduled_run)}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
               <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Last run</span>
-              <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }} title={status.last_run_at ?? undefined}>{formatDateTime(status.last_run_at)}</span>
+              <span
+                className="font-bold"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                title={status.last_run_at ?? undefined}
+              >
+                {formatDateTime(status.last_run_at)}
+              </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Last successful sync</span>
-              <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }} title={status.last_success_at ?? undefined}>{formatDateTime(status.last_success_at)}</span>
+              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                Last successful sync
+              </span>
+              <span
+                className="font-bold"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                title={status.last_success_at ?? undefined}
+              >
+                {formatDateTime(status.last_success_at)}
+              </span>
             </div>
           </div>
 
@@ -651,7 +823,10 @@ function SyncSettingsTab({
             >
               ⟳ Sync now
             </button>
-            <span className="text-xs font-bold" style={{ color: isRunning ? "#B4690E" : "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <span
+              className="text-xs font-bold"
+              style={{ color: isRunning ? "#B4690E" : "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               status: {isRunning ? "running…" : "idle"}
             </span>
           </div>
@@ -663,26 +838,56 @@ function SyncSettingsTab({
         <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
           <div
             className="px-4 py-3"
-            style={{ backgroundColor: lastResult.status === "success" ? "rgba(28,160,105,0.12)" : "rgba(228,74,74,0.12)", borderBottom: "1px solid #F1F5F9" }}
+            style={{
+              backgroundColor:
+                lastResult.status === "success" ? "rgba(28,160,105,0.12)" : "rgba(228,74,74,0.12)",
+              borderBottom: "1px solid #F1F5F9",
+            }}
           >
-            <p className="font-bold text-sm" style={{ color: lastResult.status === "success" ? "#1CA069" : "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
-              {lastResult.status === "success" ? "✅ Sync complete" : "❌ Sync failed"} — {formatDateTime(lastResult.finished_at)}
+            <p
+              className="font-bold text-sm"
+              style={{
+                color: lastResult.status === "success" ? "#1CA069" : "#E44A4A",
+                fontFamily: "Nunito, sans-serif",
+              }}
+            >
+              {lastResult.status === "success" ? "✅ Sync complete" : "❌ Sync failed"} —{" "}
+              {formatDateTime(lastResult.finished_at)}
             </p>
           </div>
-          <div className="px-4 py-3 space-y-1 text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+          <div
+            className="px-4 py-3 space-y-1 text-sm"
+            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+          >
             {lastResult.status === "success" ? (
               <>
                 <p>{lastResult.total_rows.toLocaleString()} rows processed</p>
-                <p>{lastResult.inserted.toLocaleString()} feeds added · {lastResult.updated.toLocaleString()} feeds updated · {lastResult.skipped.toLocaleString()} rows skipped</p>
-                <p>{lastResult.translations_inserted.toLocaleString()} local names saved · {lastResult.translations_skipped.toLocaleString()} local names skipped</p>
+                <p>
+                  {lastResult.inserted.toLocaleString()} feeds added ·{" "}
+                  {lastResult.updated.toLocaleString()} feeds updated ·{" "}
+                  {lastResult.skipped.toLocaleString()} rows skipped
+                </p>
+                <p>
+                  {lastResult.translations_inserted.toLocaleString()} local names saved ·{" "}
+                  {lastResult.translations_skipped.toLocaleString()} local names skipped
+                </p>
               </>
             ) : (
-              <p style={{ color: "#E44A4A" }}>{lastResult.error_message ?? "An unexpected error occurred."}</p>
+              <p style={{ color: "#E44A4A" }}>
+                {lastResult.error_message ?? "An unexpected error occurred."}
+              </p>
             )}
             <button
               onClick={() => onViewDetails(lastResult.id)}
               className="text-sm font-bold mt-2"
-              style={{ background: "none", border: "none", color: "#064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer", padding: 0 }}
+              style={{
+                background: "none",
+                border: "none",
+                color: "#064E3B",
+                fontFamily: "Nunito, sans-serif",
+                cursor: "pointer",
+                padding: 0,
+              }}
             >
               View details →
             </button>
@@ -692,15 +897,27 @@ function SyncSettingsTab({
 
       {/* CONNECTION SETTINGS */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="flex items-center gap-2 px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide flex-1" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+        <div
+          className="flex items-center gap-2 px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide flex-1"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
             Connection Settings
           </p>
           {!isEditingSettings && (
             <button
               onClick={openSettingsEditor}
               className="text-xs font-bold px-3 py-1 rounded-full"
-              style={{ backgroundColor: "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+              style={{
+                backgroundColor: "#064E3B",
+                color: "#FFFFFF",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: "pointer",
+              }}
             >
               Edit
             </button>
@@ -710,28 +927,58 @@ function SyncSettingsTab({
         {!isEditingSettings ? (
           <div className="px-4 py-4 space-y-3 text-sm">
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Endpoint URL</span>
-              <span className="font-bold text-right break-all" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{config.endpoint_url || "Not configured"}</span>
+              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                Endpoint URL
+              </span>
+              <span
+                className="font-bold text-right break-all"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                {config.endpoint_url || "Not configured"}
+              </span>
             </div>
             <div className="flex justify-between gap-3">
               <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Auth type</span>
-              <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{AUTH_TYPE_OPTIONS.find((o) => o.value === config.auth_type)?.label ?? capitalize(config.auth_type)}</span>
+              <span
+                className="font-bold"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                {AUTH_TYPE_OPTIONS.find((o) => o.value === config.auth_type)?.label ??
+                  capitalize(config.auth_type)}
+              </span>
             </div>
             {config.auth_type === "api_key" && (
               <div className="flex justify-between gap-3">
-                <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Header name</span>
-                <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{config.auth_header_name || "—"}</span>
+                <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+                  Header name
+                </span>
+                <span
+                  className="font-bold"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {config.auth_header_name || "—"}
+                </span>
               </div>
             )}
             <div className="flex justify-between gap-3">
               <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Token</span>
-              <span className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{config.auth_token_masked || "Not set"}</span>
+              <span
+                className="font-bold"
+                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              >
+                {config.auth_token_masked || "Not set"}
+              </span>
             </div>
           </div>
         ) : (
           <div className="px-4 py-4 space-y-3">
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Endpoint URL</p>
+              <p
+                className="text-xs font-bold uppercase tracking-wide mb-1"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                Endpoint URL
+              </p>
               <input
                 type="text"
                 value={formEndpoint}
@@ -742,12 +989,27 @@ function SyncSettingsTab({
               />
             </div>
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Auth type</p>
-              <CustomSelect value={formAuthType} onChange={setFormAuthType} options={AUTH_TYPE_OPTIONS} style={{ backgroundColor: "#F1F5F9", borderRadius: 14, padding: "10px 12px" }} />
+              <p
+                className="text-xs font-bold uppercase tracking-wide mb-1"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                Auth type
+              </p>
+              <CustomSelect
+                value={formAuthType}
+                onChange={setFormAuthType}
+                options={AUTH_TYPE_OPTIONS}
+                style={{ backgroundColor: "#F1F5F9", borderRadius: 14, padding: "10px 12px" }}
+              />
             </div>
             {formAuthType === "api_key" && (
               <div>
-                <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Header name</p>
+                <p
+                  className="text-xs font-bold uppercase tracking-wide mb-1"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  Header name
+                </p>
                 <input
                   type="text"
                   value={formHeaderName}
@@ -759,14 +1021,27 @@ function SyncSettingsTab({
               </div>
             )}
             <div>
-              <p className="text-xs font-bold uppercase tracking-wide mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Token</p>
+              <p
+                className="text-xs font-bold uppercase tracking-wide mb-1"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
+                Token
+              </p>
               {!isReplacingToken ? (
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 rounded-xl px-4 py-3 text-sm" style={inputStyle}>{config.auth_token_masked || "Not set"}</div>
+                  <div className="flex-1 rounded-xl px-4 py-3 text-sm" style={inputStyle}>
+                    {config.auth_token_masked || "Not set"}
+                  </div>
                   <button
                     onClick={() => setIsReplacingToken(true)}
                     className="text-xs font-bold px-3 py-2 rounded-xl flex-shrink-0"
-                    style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                    style={{
+                      backgroundColor: "transparent",
+                      color: "#064E3B",
+                      border: "1.5px solid #064E3B",
+                      fontFamily: "Nunito, sans-serif",
+                      cursor: "pointer",
+                    }}
                   >
                     Replace token
                   </button>
@@ -785,7 +1060,12 @@ function SyncSettingsTab({
             </div>
 
             {settingsError && (
-              <p className="text-xs font-bold" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>{settingsError}</p>
+              <p
+                className="text-xs font-bold"
+                style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
+              >
+                {settingsError}
+              </p>
             )}
 
             <div className="flex gap-3 pt-1">
@@ -793,7 +1073,13 @@ function SyncSettingsTab({
                 onClick={() => setIsEditingSettings(false)}
                 disabled={isSavingSettings}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-                style={{ backgroundColor: "transparent", color: "#064E3B", border: "1.5px solid #064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: "transparent",
+                  color: "#064E3B",
+                  border: "1.5px solid #064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 Cancel
               </button>
@@ -801,7 +1087,13 @@ function SyncSettingsTab({
                 onClick={handleSaveSettings}
                 disabled={isSavingSettings}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
-                style={{ backgroundColor: isSavingSettings ? "#D3D3D3" : "#064E3B", color: "#FFFFFF", border: "none", fontFamily: "Nunito, sans-serif", cursor: isSavingSettings ? "not-allowed" : "pointer" }}
+                style={{
+                  backgroundColor: isSavingSettings ? "#D3D3D3" : "#064E3B",
+                  color: "#FFFFFF",
+                  border: "none",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: isSavingSettings ? "not-allowed" : "pointer",
+                }}
               >
                 {isSavingSettings ? "Saving…" : "Save changes"}
               </button>
@@ -858,7 +1150,9 @@ function RunHistoryTab({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  useEffect(() => { loadLogs(page); }, [page, loadLogs]);
+  useEffect(() => {
+    loadLogs(page);
+  }, [page, loadLogs]);
 
   const openDetail = useCallback((id: string) => {
     setIsDetailOpen(true);
@@ -889,7 +1183,16 @@ function RunHistoryTab({
     const rows = openLog?.failed_rows ?? [];
     if (!rowFilter.trim()) return rows;
     const q = rowFilter.trim().toLowerCase();
-    return rows.filter((r) => String(r.fd_code ?? "").toLowerCase().includes(q) || String(r.reason ?? "").toLowerCase().includes(q) || String(r.row ?? "").includes(q));
+    return rows.filter(
+      (r) =>
+        String(r.fd_code ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(r.reason ?? "")
+          .toLowerCase()
+          .includes(q) ||
+        String(r.row ?? "").includes(q)
+    );
   }, [openLog, rowFilter]);
 
   const groupedSkippedTranslations = useMemo(() => {
@@ -902,45 +1205,85 @@ function RunHistoryTab({
     return Array.from(map.entries()).sort((a, b) => b[1].length - a[1].length);
   }, [openLog]);
 
-  const namesLabel = (l: FeedSyncLogItem) => `${l.translations_inserted + l.translations_updated}/${l.translations_skipped}`;
+  const namesLabel = (l: FeedSyncLogItem) =>
+    `${l.translations_inserted + l.translations_updated}/${l.translations_skipped}`;
 
   return (
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
-        <div className="flex items-center justify-between px-4 py-3" style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}>
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Run History</p>
-          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{totalCount} runs</p>
+        <div
+          className="flex items-center justify-between px-4 py-3"
+          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        >
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+          >
+            Run History
+          </p>
+          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            {totalCount} runs
+          </p>
         </div>
 
         {isLoadingLogs ? (
           <div>
             {[0, 1, 2, 3].map((i) => (
-              <div key={i} className="px-4 py-3 space-y-2" style={{ borderTop: "1px solid #F8FAF9" }}>
+              <div
+                key={i}
+                className="px-4 py-3 space-y-2"
+                style={{ borderTop: "1px solid #F8FAF9" }}
+              >
                 <div className="h-4 w-40 rounded-full shimmer" />
                 <div className="h-3 w-56 rounded-full shimmer" />
               </div>
             ))}
           </div>
         ) : logs.length === 0 ? (
-          <p className="text-sm text-center py-6" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>No sync runs yet.</p>
+          <p
+            className="text-sm text-center py-6"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
+            No sync runs yet.
+          </p>
         ) : (
           logs.map((log) => (
             <button
               key={log.id}
               onClick={() => openDetail(log.id)}
               className="w-full text-left px-4 py-3"
-              style={{ borderTop: "1px solid #F8FAF9", background: "none", border: "none", borderTopWidth: 1, borderTopStyle: "solid", borderTopColor: "#F8FAF9", cursor: "pointer" }}
+              style={{
+                borderTop: "1px solid #F8FAF9",
+                background: "none",
+                border: "none",
+                borderTopWidth: 1,
+                borderTopStyle: "solid",
+                borderTopColor: "#F8FAF9",
+                cursor: "pointer",
+              }}
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="font-bold text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }} title={log.started_at ?? undefined}>
+                <p
+                  className="font-bold text-sm"
+                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                  title={log.started_at ?? undefined}
+                >
                   {formatDateTime(log.started_at)}
                 </p>
                 <StatusChip status={log.status} />
               </div>
-              <p className="text-xs mt-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              <p
+                className="text-xs mt-1"
+                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              >
                 {capitalize(log.trigger_type)}
                 {log.status !== "running" && (
-                  <> · Rows {log.total_rows.toLocaleString()} · +New {log.inserted.toLocaleString()} · ~Upd {log.updated.toLocaleString()} · Skip {log.skipped.toLocaleString()} · Names {namesLabel(log)}</>
+                  <>
+                    {" "}
+                    · Rows {log.total_rows.toLocaleString()} · +New {log.inserted.toLocaleString()}{" "}
+                    · ~Upd {log.updated.toLocaleString()} · Skip {log.skipped.toLocaleString()} ·
+                    Names {namesLabel(log)}
+                  </>
                 )}
               </p>
             </button>
@@ -948,21 +1291,38 @@ function RunHistoryTab({
         )}
 
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+          <div
+            className="flex items-center justify-between px-4 py-3"
+            style={{ borderTop: "1px solid #F8FAF9" }}
+          >
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page <= 1}
               className="text-sm font-bold px-3 py-1.5 rounded-lg"
-              style={{ backgroundColor: "transparent", color: page <= 1 ? "#C2C2C2" : "#064E3B", border: "none", fontFamily: "Nunito, sans-serif", cursor: page <= 1 ? "not-allowed" : "pointer" }}
+              style={{
+                backgroundColor: "transparent",
+                color: page <= 1 ? "#C2C2C2" : "#064E3B",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: page <= 1 ? "not-allowed" : "pointer",
+              }}
             >
               ‹ Prev
             </button>
-            <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Page {page} of {totalPages}</p>
+            <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              Page {page} of {totalPages}
+            </p>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page >= totalPages}
               className="text-sm font-bold px-3 py-1.5 rounded-lg"
-              style={{ backgroundColor: "transparent", color: page >= totalPages ? "#C2C2C2" : "#064E3B", border: "none", fontFamily: "Nunito, sans-serif", cursor: page >= totalPages ? "not-allowed" : "pointer" }}
+              style={{
+                backgroundColor: "transparent",
+                color: page >= totalPages ? "#C2C2C2" : "#064E3B",
+                border: "none",
+                fontFamily: "Nunito, sans-serif",
+                cursor: page >= totalPages ? "not-allowed" : "pointer",
+              }}
             >
               Next ›
             </button>
@@ -972,9 +1332,20 @@ function RunHistoryTab({
 
       {/* Run detail drawer */}
       {isDetailOpen && (
-        <div className="fixed top-0 h-full z-50 flex flex-col justify-end" style={sheetOverlayStyle} onClick={(e) => { if (e.target === e.currentTarget) setIsDetailOpen(false); }}>
-          <div className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto" style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)", maxHeight: "88vh" }}>
-            <div className="flex justify-center mb-3"><div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} /></div>
+        <div
+          className="fixed top-0 h-full z-50 flex flex-col justify-end"
+          style={sheetOverlayStyle}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setIsDetailOpen(false);
+          }}
+        >
+          <div
+            className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
+            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)", maxHeight: "88vh" }}
+          >
+            <div className="flex justify-center mb-3">
+              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+            </div>
 
             {isLoadingDetail || !openLog ? (
               <div className="space-y-3 py-4">
@@ -985,32 +1356,86 @@ function RunHistoryTab({
             ) : (
               <>
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="font-bold" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }} title={openLog.started_at ?? undefined}>
+                  <p
+                    className="font-bold"
+                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                    title={openLog.started_at ?? undefined}
+                  >
                     Run {formatDateTime(openLog.started_at)}
                   </p>
                   <StatusChip status={openLog.status} />
                 </div>
-                <p className="text-xs mb-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  {capitalize(openLog.trigger_type)} · Duration {formatDuration(openLog.started_at, openLog.finished_at)}{openLog.http_status ? ` · HTTP ${openLog.http_status}` : ""}
+                <p
+                  className="text-xs mb-4"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {capitalize(openLog.trigger_type)} · Duration{" "}
+                  {formatDuration(openLog.started_at, openLog.finished_at)}
+                  {openLog.http_status ? ` · HTTP ${openLog.http_status}` : ""}
                 </p>
 
                 {openLog.status === "failed" && openLog.error_message && (
-                  <div className="rounded-xl px-3 py-2 mb-4 text-sm" style={{ backgroundColor: "#FEC5BB", color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
+                  <div
+                    className="rounded-xl px-3 py-2 mb-4 text-sm"
+                    style={{
+                      backgroundColor: "#FEC5BB",
+                      color: "#E44A4A",
+                      fontFamily: "Nunito, sans-serif",
+                    }}
+                  >
                     {openLog.error_message}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
                   <div className="rounded-xl p-3" style={{ backgroundColor: "#F8FAF9" }}>
-                    <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Feeds</p>
-                    <p className="text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{openLog.inserted.toLocaleString()} added</p>
-                    <p className="text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{openLog.updated.toLocaleString()} updated</p>
-                    <p className="text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{openLog.skipped.toLocaleString()} rows skipped</p>
+                    <p
+                      className="text-xs font-bold uppercase tracking-wide mb-2"
+                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      Feeds
+                    </p>
+                    <p
+                      className="text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {openLog.inserted.toLocaleString()} added
+                    </p>
+                    <p
+                      className="text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {openLog.updated.toLocaleString()} updated
+                    </p>
+                    <p
+                      className="text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {openLog.skipped.toLocaleString()} rows skipped
+                    </p>
                   </div>
                   <div className="rounded-xl p-3" style={{ backgroundColor: "#F8FAF9" }}>
-                    <p className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>Local names</p>
-                    <p className="text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{(openLog.translations_inserted + openLog.translations_updated).toLocaleString()} saved</p>
-                    <p className="text-sm" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{openLog.translations_skipped.toLocaleString()} skipped</p>
+                    <p
+                      className="text-xs font-bold uppercase tracking-wide mb-2"
+                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      Local names
+                    </p>
+                    <p
+                      className="text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {(
+                        openLog.translations_inserted + openLog.translations_updated
+                      ).toLocaleString()}{" "}
+                      saved
+                    </p>
+                    <p
+                      className="text-sm"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {openLog.translations_skipped.toLocaleString()} skipped
+                    </p>
                   </div>
                 </div>
 
@@ -1021,16 +1446,36 @@ function RunHistoryTab({
                       <button
                         onClick={() => setRowsExpanded((v) => !v)}
                         className="flex-1 text-left"
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
                       >
-                        <p className="font-bold text-sm" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-                          {rowsExpanded ? "▾" : "▸"} Skipped rows ({openLog.failed_rows.length.toLocaleString()})
+                        <p
+                          className="font-bold text-sm"
+                          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {rowsExpanded ? "▾" : "▸"} Skipped rows (
+                          {openLog.failed_rows.length.toLocaleString()})
                         </p>
                       </button>
                       <button
-                        onClick={() => downloadCsv(`feed-sync-${openLog.id}-skipped-rows.csv`, openLog.failed_rows ?? [])}
+                        onClick={() =>
+                          downloadCsv(
+                            `feed-sync-${openLog.id}-skipped-rows.csv`,
+                            openLog.failed_rows ?? []
+                          )
+                        }
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: "#E4F7EF", color: "#064E3B", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                        style={{
+                          backgroundColor: "#E4F7EF",
+                          color: "#064E3B",
+                          border: "none",
+                          fontFamily: "Nunito, sans-serif",
+                          cursor: "pointer",
+                        }}
                       >
                         ⬇ CSV
                       </button>
@@ -1040,28 +1485,53 @@ function RunHistoryTab({
                         <input
                           type="text"
                           value={rowFilter}
-                          onChange={(e) => { setRowFilter(e.target.value); setRowsShown(ROWS_CHUNK); }}
+                          onChange={(e) => {
+                            setRowFilter(e.target.value);
+                            setRowsShown(ROWS_CHUNK);
+                          }}
                           placeholder="Search by row, feed code, or reason…"
                           className="w-full rounded-xl px-3 py-2 text-sm border-none focus:outline-none mb-2"
                           style={inputStyle}
                         />
-                        <div style={{ maxHeight: 240, overflowY: "auto" }} className="rounded-xl" >
+                        <div style={{ maxHeight: 240, overflowY: "auto" }} className="rounded-xl">
                           {filteredFailedRows.slice(0, rowsShown).map((r, i) => (
-                            <div key={i} className="text-xs px-2 py-1.5" style={{ borderBottom: "1px solid #F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-                              <span className="font-bold">row {r.row ?? "—"}</span>{r.fd_code ? ` · ${r.fd_code}` : ""} — {r.reason ?? "No reason given"}
+                            <div
+                              key={i}
+                              className="text-xs px-2 py-1.5"
+                              style={{
+                                borderBottom: "1px solid #F1F5F9",
+                                color: "#231F20",
+                                fontFamily: "Nunito, sans-serif",
+                              }}
+                            >
+                              <span className="font-bold">row {r.row ?? "—"}</span>
+                              {r.fd_code ? ` · ${r.fd_code}` : ""} — {r.reason ?? "No reason given"}
                             </div>
                           ))}
                           {filteredFailedRows.length === 0 && (
-                            <p className="text-xs py-3 text-center" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>No matching rows.</p>
+                            <p
+                              className="text-xs py-3 text-center"
+                              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                            >
+                              No matching rows.
+                            </p>
                           )}
                         </div>
                         {rowsShown < filteredFailedRows.length && (
                           <button
                             onClick={() => setRowsShown((n) => n + ROWS_CHUNK)}
                             className="text-xs font-bold mt-2"
-                            style={{ background: "none", border: "none", color: "#064E3B", fontFamily: "Nunito, sans-serif", cursor: "pointer", padding: 0 }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#064E3B",
+                              fontFamily: "Nunito, sans-serif",
+                              cursor: "pointer",
+                              padding: 0,
+                            }}
                           >
-                            Show {Math.min(ROWS_CHUNK, filteredFailedRows.length - rowsShown)} more (of {filteredFailedRows.length.toLocaleString()})
+                            Show {Math.min(ROWS_CHUNK, filteredFailedRows.length - rowsShown)} more
+                            (of {filteredFailedRows.length.toLocaleString()})
                           </button>
                         )}
                       </div>
@@ -1076,16 +1546,37 @@ function RunHistoryTab({
                       <button
                         onClick={() => setTransExpanded((v) => !v)}
                         className="flex-1 text-left"
-                        style={{ background: "none", border: "none", cursor: "pointer", padding: 0 }}
+                        style={{
+                          background: "none",
+                          border: "none",
+                          cursor: "pointer",
+                          padding: 0,
+                        }}
                       >
-                        <p className="font-bold text-sm" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
-                          {transExpanded ? "▾" : "▸"} Skipped local names ({openLog.skipped_translations.length.toLocaleString()}) — grouped by reason
+                        <p
+                          className="font-bold text-sm"
+                          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                        >
+                          {transExpanded ? "▾" : "▸"} Skipped local names (
+                          {openLog.skipped_translations.length.toLocaleString()}) — grouped by
+                          reason
                         </p>
                       </button>
                       <button
-                        onClick={() => downloadCsv(`feed-sync-${openLog.id}-skipped-names.csv`, openLog.skipped_translations ?? [])}
+                        onClick={() =>
+                          downloadCsv(
+                            `feed-sync-${openLog.id}-skipped-names.csv`,
+                            openLog.skipped_translations ?? []
+                          )
+                        }
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
-                        style={{ backgroundColor: "#E4F7EF", color: "#064E3B", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                        style={{
+                          backgroundColor: "#E4F7EF",
+                          color: "#064E3B",
+                          border: "none",
+                          fontFamily: "Nunito, sans-serif",
+                          cursor: "pointer",
+                        }}
                       >
                         ⬇ CSV
                       </button>
@@ -1095,8 +1586,15 @@ function RunHistoryTab({
                         {groupedSkippedTranslations.map(([reason, items]) => {
                           const link = deepLinkForReason(reason);
                           return (
-                            <div key={reason} className="flex items-center justify-between gap-2 rounded-xl px-3 py-2" style={{ backgroundColor: "#F8FAF9" }}>
-                              <p className="text-xs flex-1" style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+                            <div
+                              key={reason}
+                              className="flex items-center justify-between gap-2 rounded-xl px-3 py-2"
+                              style={{ backgroundColor: "#F8FAF9" }}
+                            >
+                              <p
+                                className="text-xs flex-1"
+                                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                              >
                                 {reason} <span className="font-bold">({items.length})</span>
                               </p>
                               {link && (

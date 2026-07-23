@@ -14,7 +14,7 @@ import { useEffect } from "react";
 //    status bar — without it the bar stays white (themeColor #FFFFFF
 //    from the root layout) over green page content, leaving a visible
 //    band at the top. Restored on unmount.
-const ADMIN_THEME = "#C8E6C9";  // sage_breeze — first stop of bg_admin
+const ADMIN_THEME = "#C8E6C9"; // sage_breeze — first stop of bg_admin
 const DEFAULT_THEME = "#FFFFFF";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

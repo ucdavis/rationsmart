@@ -71,11 +71,12 @@ function SetNewPinInner() {
       if (msg) showSnackbar(msg, "success");
       setDone(true);
     } catch (err: unknown) {
-      const message = err instanceof Error && err.message && err.message !== "Network Error"
-        ? err.message
-        : err instanceof Error && err.message === "Network Error"
-          ? t("Please make sure you're device has internet connectivity.")
-          : t("Unexpected error: failed to update PIN. Please try again.");
+      const message =
+        err instanceof Error && err.message && err.message !== "Network Error"
+          ? err.message
+          : err instanceof Error && err.message === "Network Error"
+            ? t("Please make sure you're device has internet connectivity.")
+            : t("Unexpected error: failed to update PIN. Please try again.");
       showSnackbar(message, "error");
     } finally {
       setIsSubmitting(false);
@@ -92,14 +93,26 @@ function SetNewPinInner() {
         <button
           onClick={() => router.replace("/login")}
           className="flex items-center justify-center rounded-xl bg-white"
-          style={{ width: 40, height: 40, boxShadow: "0 2px 8px rgba(0,0,0,0.1)", border: "none", cursor: "pointer" }}
+          style={{
+            width: 40,
+            height: 40,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+            border: "none",
+            cursor: "pointer",
+          }}
           aria-label={t("Back")}
         >
           <IcBack size={20} color="#064E3B" />
         </button>
         <h1
           className="flex-1 text-center"
-          style={{ color: "#042F23", fontFamily: "Nunito, sans-serif", fontSize: 16, fontWeight: 700, margin: 0 }}
+          style={{
+            color: "#042F23",
+            fontFamily: "Nunito, sans-serif",
+            fontSize: 16,
+            fontWeight: 700,
+            margin: 0,
+          }}
         >
           {t("Upgrade Your PIN")}
         </h1>
@@ -119,19 +132,36 @@ function SetNewPinInner() {
               style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}
             >
               <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
-                <path d="M9 19l7 7L29 13" stroke="#064E3B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M9 19l7 7L29 13"
+                  stroke="#064E3B"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+            <h2
+              className="text-xl font-bold mb-2"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("PIN Updated")}
             </h2>
-            <p className="text-sm mb-8" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}>
+            <p
+              className="text-sm mb-8"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
+            >
               {t("Your account now uses a 6-digit PIN. Please sign in with your new PIN.")}
             </p>
             <button
               onClick={() => router.replace("/login")}
               className="px-8 py-4 rounded-full font-bold text-base text-white"
-              style={{ backgroundColor: "#064E3B", fontFamily: "Nunito, sans-serif", border: "none", cursor: "pointer" }}
+              style={{
+                backgroundColor: "#064E3B",
+                fontFamily: "Nunito, sans-serif",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               {t("Sign In")}
             </button>
@@ -148,11 +178,17 @@ function SetNewPinInner() {
               className="text-center text-sm mt-1 mb-5 px-2"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
             >
-              {t("RationSmart now uses a 6-digit PIN for stronger security. Confirm your existing\n              4-digit PIN and pick a new 6-digit one.")}
+              {t(
+                "RationSmart now uses a 6-digit PIN for stronger security. Confirm your existing\n              4-digit PIN and pick a new 6-digit one."
+              )}
             </p>
 
-            <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              {t("Email Address")}<RequiredAsterisk />
+            <p
+              className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              {t("Email Address")}
+              <RequiredAsterisk />
             </p>
             <input
               type="email"
@@ -160,23 +196,46 @@ function SetNewPinInner() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-              style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+              style={{
+                backgroundColor: "#F1F5F9",
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+              }}
             />
 
-            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("Current 4-digit PIN")}
             </p>
             <PinInput value={oldPin} onChange={setOldPin} length={4} />
 
-            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("New 6-digit PIN")}
             </p>
-            <PinInput value={newPin} onChange={setNewPin_} length={6} disabled={oldPin.length !== 4} />
+            <PinInput
+              value={newPin}
+              onChange={setNewPin_}
+              length={6}
+              disabled={oldPin.length !== 4}
+            />
 
-            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("Confirm New PIN")}
             </p>
-            <PinInput value={confirmPin} onChange={setConfirmPin} length={6} disabled={newPin.length !== 6} />
+            <PinInput
+              value={confirmPin}
+              onChange={setConfirmPin}
+              length={6}
+              disabled={newPin.length !== 6}
+            />
 
             {confirmPin.length === 6 && newPin !== confirmPin && (
               <p
@@ -201,8 +260,23 @@ function SetNewPinInner() {
                 }}
               >
                 {isSubmitting ? (
-                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  <svg
+                    className="animate-spin"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="40"
+                      strokeDashoffset="10"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 ) : (
                   t("Update PIN")

@@ -12,10 +12,7 @@ export default function WelcomePage() {
   const t = useT();
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       {/* Top: App Branding */}
       <div className="flex justify-center pt-5 pb-2">
         <AppBranding />

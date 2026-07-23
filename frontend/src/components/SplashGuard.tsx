@@ -12,13 +12,23 @@ export default function SplashGuard() {
   // directly there, no 2s splash detour. Listing the explicit set is
   // simpler than trying to derive it from the auth state because we
   // run before the persist store rehydrates.
-  const PUBLIC_PATHS = new Set(["/welcome", "/login", "/register", "/forgot-pin", "/set-new-pin", "/verify-email", "/terms", "/help"]);
+  const PUBLIC_PATHS = new Set([
+    "/welcome",
+    "/login",
+    "/register",
+    "/forgot-pin",
+    "/set-new-pin",
+    "/verify-email",
+    "/terms",
+    "/help",
+  ]);
 
   useEffect(() => {
     if (pathname === "/") return;
     if (PUBLIC_PATHS.has(pathname)) return;
 
-    const nav = performance.getEntriesByType("navigation")[0] as PerformanceNavigationTiming | undefined;
+    const nav = performance.getEntriesByType("navigation")[0] as
+      PerformanceNavigationTiming | undefined;
 
     // In-app navigation we should never interrupt.
     if (nav?.type === "back_forward") return;

@@ -23,38 +23,99 @@ interface AdminCard {
 // English source strings stay as the identity/lookup key (see i18n-ui.ts)
 // — card.title is passed through t() at render time, not translated here.
 const adminCards: AdminCard[] = [
-  { title: "User\nManagement", href: "/admin/users", icon: <IcUserManagement size={28} color="#064E3B" /> },
-  { title: "Feed\nManagement", href: "/admin/feeds", icon: <IcFeedManagement size={28} color="#064E3B" /> },
-  { title: "Feedback\nManagement", href: "/admin/feedback", icon: <IcFeedbackManagement size={28} color="#064E3B" /> },
-  { title: "Bulk Upload &\nExport Feed", href: "/admin/bulk-upload", icon: <IcBulkUpload size={28} color="#064E3B" /> },
-  { title: "Feed\nReports", href: "/admin/reports", icon: <IcReportNav size={28} color="#064E3B" /> },
+  {
+    title: "User\nManagement",
+    href: "/admin/users",
+    icon: <IcUserManagement size={28} color="#064E3B" />,
+  },
+  {
+    title: "Feed\nManagement",
+    href: "/admin/feeds",
+    icon: <IcFeedManagement size={28} color="#064E3B" />,
+  },
+  {
+    title: "Feedback\nManagement",
+    href: "/admin/feedback",
+    icon: <IcFeedbackManagement size={28} color="#064E3B" />,
+  },
+  {
+    title: "Bulk Upload &\nExport Feed",
+    href: "/admin/bulk-upload",
+    icon: <IcBulkUpload size={28} color="#064E3B" />,
+  },
+  {
+    title: "Feed\nReports",
+    href: "/admin/reports",
+    icon: <IcReportNav size={28} color="#064E3B" />,
+  },
   // i18n V2 Phase 2 — three new admin tools.
   // Translations: workbook download/upload, coverage, per-feed editor.
-  { title: "Translations", href: "/admin/translations", icon: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-      <path d="M3 5h12M9 3v2M5 7c0 6 4 8 4 8M3 17l4-8 4 8M5 14h4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M13 21l4-8 4 8M15 18h4" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ) },
+  {
+    title: "Translations",
+    href: "/admin/translations",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M3 5h12M9 3v2M5 7c0 6 4 8 4 8M3 17l4-8 4 8M5 14h4"
+          stroke="#064E3B"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M13 21l4-8 4 8M15 18h4"
+          stroke="#064E3B"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
   // Country/Language (new) — enable/disable countries + languages, associate
   // languages per country, and set local (translated) feed names. Replaces
   // the Language Catalog tile on the landing grid (2026-07-20) — the old
   // /admin/languages route still exists but is no longer linked from here.
-  { title: "Country/\nLanguage", href: "/admin/country-language", icon: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-      <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" stroke="#064E3B" strokeWidth="1.8" strokeLinejoin="round" />
-      <circle cx="12" cy="9" r="2.5" stroke="#064E3B" strokeWidth="1.6" />
-    </svg>
-  ) },
+  {
+    title: "Country/\nLanguage",
+    href: "/admin/country-language",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"
+          stroke="#064E3B"
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <circle cx="12" cy="9" r="2.5" stroke="#064E3B" strokeWidth="1.6" />
+      </svg>
+    ),
+  },
   // CLIMDES Feed Library Sync (new) — configure the external feed-catalogue
   // connection, toggle the weekly auto-import, trigger a manual sync, and
   // audit past runs. See ~/Downloads/climdes_admin_ui_design.md.
-  { title: "Feed Library\nSync", href: "/admin/feed-sync", icon: (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-      <path d="M4 4v5h5M20 20v-5h-5" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M4.5 15a8 8 0 0014.2 3.4M19.5 9A8 8 0 005.3 5.6" stroke="#064E3B" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ) },
+  {
+    title: "Feed Library\nSync",
+    href: "/admin/feed-sync",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M4 4v5h5M20 20v-5h-5"
+          stroke="#064E3B"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M4.5 15a8 8 0 0014.2 3.4M19.5 9A8 8 0 005.3 5.6"
+          stroke="#064E3B"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminPage() {
@@ -84,7 +145,10 @@ export default function AdminPage() {
             <path d="M18 12v8M18 23v1" stroke="#E44A4A" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         </div>
-        <p className="text-xl font-bold mb-2" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
+        <p
+          className="text-xl font-bold mb-2"
+          style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
+        >
           {t("Access Denied")}
         </p>
         <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
@@ -144,7 +208,12 @@ export default function AdminPage() {
               </div>
               <p
                 className="text-base font-bold text-left"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line", lineHeight: 1.25 }}
+                style={{
+                  color: "#064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                  whiteSpace: "pre-line",
+                  lineHeight: 1.25,
+                }}
               >
                 {t(card.title)}
               </p>

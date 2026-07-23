@@ -65,7 +65,9 @@ describe("Verify Email — layout", () => {
 describe("Verify Email — resend flow", () => {
   it("calls resendVerification(email) and shows a success snackbar", async () => {
     searchParamsState.value = "email=aiyappa%40dg.org";
-    resendVerification.mockResolvedValueOnce({ data: { message: "Verification email sent again" } });
+    resendVerification.mockResolvedValueOnce({
+      data: { message: "Verification email sent again" },
+    });
 
     render(<VerifyEmailPage />);
     fireEvent.click(screen.getByRole("button", { name: /Resend Verification Email/ }));

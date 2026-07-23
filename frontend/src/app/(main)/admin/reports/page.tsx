@@ -43,7 +43,7 @@ export default function AdminReportsPage() {
     getAdminReports(user.id, 1, 50)
       .then((res) => {
         const data = res.data;
-        setReports(Array.isArray(data) ? data : data?.reports ?? data?.items ?? []);
+        setReports(Array.isArray(data) ? data : (data?.reports ?? data?.items ?? []));
       })
       .catch(() => showSnackbar(t("Could not load reports"), "error"))
       .finally(() => setIsLoading(false));
@@ -64,13 +64,20 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
+    <div
+      className="flex flex-col min-h-screen"
+      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
+    >
       <Toolbar type="back" title={t("Feed Reports")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {isLoading ? (
-          [0,1,2].map((i) => (
-            <div key={i} className="mx-3 my-2 rounded-2xl bg-white p-4 space-y-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+          [0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="mx-3 my-2 rounded-2xl bg-white p-4 space-y-3"
+              style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+            >
               <div className="flex justify-between">
                 <div className="h-3.5 w-32 rounded-full shimmer" />
                 <div className="h-6 w-20 rounded-full shimmer" />
@@ -80,7 +87,9 @@ export default function AdminReportsPage() {
           ))
         ) : reports.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center px-6">
-            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>{t("No reports found")}</p>
+            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
+              {t("No reports found")}
+            </p>
           </div>
         ) : (
           reports.map((r, idx) => {
@@ -88,34 +97,48 @@ export default function AdminReportsPage() {
             // Evaluation → vivid_gamboge / vivid_gamboge_15
             // Recommendation → celtic_blue / celtic_blue_15
             // else → dark_aquamarine_green / bright_gray_new
-            const reportType = r.report_type ?? (
-              r.report_mode === "evaluation" ||
+            const reportType =
+              r.report_type ??
+              (r.report_mode === "evaluation" ||
               (r.optimization_status?.toLowerCase().includes("evaluat") ?? false)
-                ? "Evaluation" : "Recommendation"
-            );
+                ? "Evaluation"
+                : "Recommendation");
             // reportType doubles as the theme-comparison key below (and can
             // come straight from backend data via r.report_type) — only the
             // rendered "Report Type" value further down is passed through
             // t() for display.
-            const themed = reportType === "Evaluation"
-              ? { bg: "rgba(255,159,28,0.15)", text: "#FF9F1C" }       // vivid_gamboge_15 / vivid_gamboge
-              : reportType === "Recommendation"
-                ? { bg: "rgba(41,108,211,0.15)", text: "#296CD3" }     // celtic_blue_15 / celtic_blue
-                : { bg: "#E4F7EF", text: "#064E3B" };                  // bright_gray_new / dark_aquamarine_green
+            const themed =
+              reportType === "Evaluation"
+                ? { bg: "rgba(255,159,28,0.15)", text: "#FF9F1C" } // vivid_gamboge_15 / vivid_gamboge
+                : reportType === "Recommendation"
+                  ? { bg: "rgba(41,108,211,0.15)", text: "#296CD3" } // celtic_blue_15 / celtic_blue
+                  : { bg: "#E4F7EF", text: "#064E3B" }; // bright_gray_new / dark_aquamarine_green
             const key = r.report_id ?? r.simulation_id ?? String(idx);
             return (
               <div
                 key={key}
                 className="mx-3 bg-white overflow-hidden"
-                style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16, paddingBottom: 10 }}
+                style={{
+                  borderRadius: 16,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                  marginTop: 16,
+                  paddingBottom: 10,
+                }}
               >
                 {/* Top row: ic_report_nav pill + user name + View Report pill */}
-                <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
+                <div
+                  className="flex items-center justify-between"
+                  style={{ padding: "10px 10px 0 10px" }}
+                >
                   <div className="flex items-center gap-2.5 flex-1 min-w-0">
                     {/* ic_report_nav inside go_green_15 circular pill (6dp content padding) */}
                     <div
                       className="flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 60, padding: 6 }}
+                      style={{
+                        backgroundColor: "rgba(5,188,109,0.15)",
+                        borderRadius: 60,
+                        padding: 6,
+                      }}
                     >
                       <svg width="24" height="24" viewBox="0 0 960 960" fill="#064E3B">
                         <path d="M360,720h240q17,0 28.5,-11.5T640,680q0,-17 -11.5,-28.5T600,640L360,640q-17,0 -28.5,11.5T320,680q0,17 11.5,28.5T360,720ZM360,560h240q17,0 28.5,-11.5T640,520q0,-17 -11.5,-28.5T600,480L360,480q-17,0 -28.5,11.5T320,520q0,17 11.5,28.5T360,560ZM240,880q-33,0 -56.5,-23.5T160,800v-640q0,-33 23.5,-56.5T240,80h287q16,0 30.5,6t25.5,17l194,194q11,11 17,25.5t6,30.5v447q0,33 -23.5,56.5T720,880L240,880ZM520,320v-160L240,160v640h480v-440L560,360q-17,0 -28.5,-11.5T520,320Z" />
@@ -159,14 +182,34 @@ export default function AdminReportsPage() {
                     values are bold, raisin_black) */}
                 <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>{t("Simulation ID")}</p>
-                    <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                      {t("Simulation ID")}
+                    </p>
+                    <p
+                      className="font-bold"
+                      style={{
+                        color: "#231F20",
+                        fontSize: 14,
+                        fontFamily: "Nunito, sans-serif",
+                        marginTop: 4,
+                      }}
+                    >
                       {r.simulation_id || r.simulation_name || t("N/A")}
                     </p>
                   </div>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>{t("Report Type")}</p>
-                    <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                      {t("Report Type")}
+                    </p>
+                    <p
+                      className="font-bold"
+                      style={{
+                        color: "#231F20",
+                        fontSize: 14,
+                        fontFamily: "Nunito, sans-serif",
+                        marginTop: 4,
+                      }}
+                    >
                       {t(reportType) || t("N/A")}
                     </p>
                   </div>
@@ -174,8 +217,18 @@ export default function AdminReportsPage() {
 
                 {/* Date */}
                 <div style={{ padding: "10px 10px 0" }}>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>{t("Date")}</p>
-                  <p className="font-bold" style={{ color: "#231F20", fontSize: 14, fontFamily: "Nunito, sans-serif", marginTop: 4 }}>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                    {t("Date")}
+                  </p>
+                  <p
+                    className="font-bold"
+                    style={{
+                      color: "#231F20",
+                      fontSize: 14,
+                      fontFamily: "Nunito, sans-serif",
+                      marginTop: 4,
+                    }}
+                  >
                     {toAdminReportDisplayDate(r.created_at)}
                   </p>
                 </div>

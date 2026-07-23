@@ -7,7 +7,20 @@ import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import CustomSelect from "@/components/CustomSelect";
-import { evaluateDiet, recommendDiet, getFeedTypes, getFeedCategories, insertCustomFeed, checkInsertOrUpdate, updateCustomFeed, toCattleInfoPayload, DEFAULT_BASE_THRESHOLDS, searchFeeds, fetchFeedTaxonomyLabels, buildDietSimulationId } from "@/lib/api";
+import {
+  evaluateDiet,
+  recommendDiet,
+  getFeedTypes,
+  getFeedCategories,
+  insertCustomFeed,
+  checkInsertOrUpdate,
+  updateCustomFeed,
+  toCattleInfoPayload,
+  DEFAULT_BASE_THRESHOLDS,
+  searchFeeds,
+  fetchFeedTaxonomyLabels,
+  buildDietSimulationId,
+} from "@/lib/api";
 import type { FeedItem, DietLimits, FeedSearchResult, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
 import { IcAddFeed } from "@/components/Icons";
@@ -36,10 +49,10 @@ const createFeedItem = (): FeedItem => ({
 // Values outside these bounds are clamped and a hint appears below
 // the field. min is always 0; max varies per nutrient.
 const LIMIT_ROWS: { label: string; key: keyof DietLimits; min: number; max: number }[] = [
-  { label: "Ash Max (%)",         key: "ash_max",    min: 0, max: 15  },
-  { label: "EE Max (%) — Fat",    key: "ee_max",     min: 0, max: 7   },
-  { label: "NDF Max (%) — Fiber", key: "ndf_max",    min: 0, max: 100 },
-  { label: "Starch Max (%)",      key: "starch_max", min: 0, max: 30  },
+  { label: "Ash Max (%)", key: "ash_max", min: 0, max: 15 },
+  { label: "EE Max (%) — Fat", key: "ee_max", min: 0, max: 7 },
+  { label: "NDF Max (%) — Fiber", key: "ndf_max", min: 0, max: 100 },
+  { label: "Starch Max (%)", key: "starch_max", min: 0, max: 30 },
 ];
 
 // Custom feed form — keys mirror Android FeedDetailsViewModel fields.
@@ -49,19 +62,19 @@ const EMPTY_CUSTOM = {
   feed_type: "",
   feed_category: "",
   feed_name: "",
-  fd_dm: "",        // Dry Matter
-  fd_ash: "",       // Ash
-  fd_cp: "",        // Crude Protein
-  fd_npn_cp: "",    // NPN (Additive only)
-  fd_ee: "",        // Ether Extract
-  fd_st: "",        // Starch
-  fd_ndf: "",       // NDF
-  fd_adf: "",       // ADF
-  fd_lg: "",        // Lignin
-  fd_ndin: "",      // NDIN
-  fd_adin: "",      // ADIN
-  fd_ca: "",        // Calcium
-  fd_p: "",         // Phosphorus
+  fd_dm: "", // Dry Matter
+  fd_ash: "", // Ash
+  fd_cp: "", // Crude Protein
+  fd_npn_cp: "", // NPN (Additive only)
+  fd_ee: "", // Ether Extract
+  fd_st: "", // Starch
+  fd_ndf: "", // NDF
+  fd_adf: "", // ADF
+  fd_lg: "", // Lignin
+  fd_ndin: "", // NDIN
+  fd_adin: "", // ADIN
+  fd_ca: "", // Calcium
+  fd_p: "", // Phosphorus
 };
 
 // Match Android DialogFeedDetails category → layout mapping.
@@ -112,10 +125,23 @@ const NUTRIENT_FIELDS_MINERAL: { key: CustomFeedFormKey; label: string }[] = [
   { key: "fd_p", label: "Phosphorus" },
 ];
 
-function CustomFeedNutrientInput({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
+function CustomFeedNutrientInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>{label}</p>
+      <p
+        className="text-xs font-bold uppercase mb-1"
+        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+      >
+        {label}
+      </p>
       <input
         type="number"
         inputMode="decimal"
@@ -200,7 +226,11 @@ export default function FeedSelectionPage() {
   // that langProvider reads are `preferred_language` (profile-scoped)
   // and `cattleInfo.simulation_language` (per-run override), so we
   // depend on both here.
-  const [taxonomyLabels, setTaxonomyLabels] = useState<FeedTaxonomyLabels>({ types: {}, categories: {}, feeds: {} });
+  const [taxonomyLabels, setTaxonomyLabels] = useState<FeedTaxonomyLabels>({
+    types: {},
+    categories: {},
+    feeds: {},
+  });
   const simulationLanguage = cattleInfo?.simulation_language ?? null;
   const preferredLanguage = user?.preferred_language ?? null;
   useEffect(() => {
@@ -219,8 +249,12 @@ export default function FeedSelectionPage() {
           setTaxonomyLabels(labels);
         }
       })
-      .catch(() => { /* silent — labels just fall back to English identity */ });
-    return () => { cancelled = true; };
+      .catch(() => {
+        /* silent — labels just fall back to English identity */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [user?.country_id, simulationLanguage, preferredLanguage]);
 
   // Defensive resync — when the user navigates back to /cattle-info and
@@ -240,12 +274,14 @@ export default function FeedSelectionPage() {
     // Without the partial-state check, partial data was silently lost on
     // navigate-away-and-back.
     if (feedSelections.length === 0) return;
-    const itemsFingerprint = items.map((i) =>
-      `${i.feed_uuid ?? ""}|${i.feed_type_name ?? ""}|${i.category_name ?? ""}`
-    ).sort().join("\n");
-    const storedFingerprint = feedSelections.map((s) =>
-      `${s.feed_uuid ?? ""}|${s.feed_type_name ?? ""}|${s.category_name ?? ""}`
-    ).sort().join("\n");
+    const itemsFingerprint = items
+      .map((i) => `${i.feed_uuid ?? ""}|${i.feed_type_name ?? ""}|${i.category_name ?? ""}`)
+      .sort()
+      .join("\n");
+    const storedFingerprint = feedSelections
+      .map((s) => `${s.feed_uuid ?? ""}|${s.feed_type_name ?? ""}|${s.category_name ?? ""}`)
+      .sort()
+      .join("\n");
     // Only take from store when it has strictly more information than
     // items does — a stored entry whose fingerprint is non-empty AND
     // isn't already in the local items set. Empty (all-blank) rows
@@ -340,7 +376,9 @@ export default function FeedSelectionPage() {
     setIsSearching(true);
     const timer = setTimeout(() => {
       searchFeeds(searchQuery.trim(), user.country_id, user.id)
-        .then((res) => { setSearchResults(res.data ?? []); })
+        .then((res) => {
+          setSearchResults(res.data ?? []);
+        })
         .catch(() => setSearchResults([]))
         .finally(() => setIsSearching(false));
     }, 250);
@@ -434,11 +472,13 @@ export default function FeedSelectionPage() {
           : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
             ? (data as { unique_feed_types: unknown[] }).unique_feed_types
             : [];
-      const names: string[] = raw.map((it) => {
-        if (typeof it === "string") return it;
-        const o = it as { type_name?: string; name?: string };
-        return o?.type_name ?? o?.name ?? "";
-      }).filter((n) => n);
+      const names: string[] = raw
+        .map((it) => {
+          if (typeof it === "string") return it;
+          const o = it as { type_name?: string; name?: string };
+          return o?.type_name ?? o?.name ?? "";
+        })
+        .filter((n) => n);
       setCustomFeedTypes(names);
     } catch {
       showSnackbar(t("Could not load feed types"), "error");
@@ -464,11 +504,13 @@ export default function FeedSelectionPage() {
             : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
               ? (data as { feed_categories: unknown[] }).feed_categories
               : [];
-      const names: string[] = raw.map((it) => {
-        if (typeof it === "string") return it;
-        const o = it as { category_name?: string; name?: string };
-        return o?.category_name ?? o?.name ?? "";
-      }).filter((n) => n);
+      const names: string[] = raw
+        .map((it) => {
+          if (typeof it === "string") return it;
+          const o = it as { category_name?: string; name?: string };
+          return o?.category_name ?? o?.name ?? "";
+        })
+        .filter((n) => n);
       setCustomFeedCategories(names);
     } catch {
       showSnackbar(t("Could not load categories"), "error");
@@ -514,7 +556,11 @@ export default function FeedSelectionPage() {
       let isUpdate = false;
       let existingFeedId = "";
       try {
-        const checkRes = await checkInsertOrUpdate(user.country_id, customFeedForm.feed_name.trim(), user.id);
+        const checkRes = await checkInsertOrUpdate(
+          user.country_id,
+          customFeedForm.feed_name.trim(),
+          user.id
+        );
         const checkData = checkRes.data;
         isUpdate = !(checkData?.insert_feed ?? true);
         existingFeedId = checkData?.feed_details?.feed_id ?? "";
@@ -557,9 +603,7 @@ export default function FeedSelectionPage() {
   };
 
   const updateItem = (id: string, updates: Partial<FeedItem>) => {
-    const updated = items.map((item) =>
-      item.id === id ? { ...item, ...updates } : item
-    );
+    const updated = items.map((item) => (item.id === id ? { ...item, ...updates } : item));
     setItems(updated);
     setFeedSelections(updated);
   };
@@ -616,9 +660,13 @@ export default function FeedSelectionPage() {
         // — carries English but the row's Feed dropdown labels come from a
         // different endpoint that translates in place) then to "Feed N".
         const localizedType = item.feed_type_name
-          ? taxonomyLabels.types[item.feed_type_name] ?? item.feed_type_name
+          ? (taxonomyLabels.types[item.feed_type_name] ?? item.feed_type_name)
           : "";
-        return localizedType || item.sub_category_name || t("Feed ${N}").replace("${N}", String(items.indexOf(item) + 1));
+        return (
+          localizedType ||
+          item.sub_category_name ||
+          t("Feed ${N}").replace("${N}", String(items.indexOf(item) + 1))
+        );
       });
     if (incomplete.length > 0) {
       setIncompleteFeedNames(incomplete);
@@ -699,7 +747,12 @@ export default function FeedSelectionPage() {
             // blank max → omit max; toggle off → omit both. Backend
             // §2.4 reads these and overrides default constraints.
             // TODO(maria-y3): confirm canonical key names.
-            const base: { feed_id: string; price_per_kg: number; min_kg_per_day?: number; max_kg_per_day?: number } = {
+            const base: {
+              feed_id: string;
+              price_per_kg: number;
+              min_kg_per_day?: number;
+              max_kg_per_day?: number;
+            } = {
               feed_id: item.feed_uuid!,
               price_per_kg: item.price_per_kg!,
             };
@@ -747,10 +800,7 @@ export default function FeedSelectionPage() {
   } as const;
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
 
       {/* Custom buttons row */}
@@ -793,7 +843,13 @@ export default function FeedSelectionPage() {
             key={mode}
             onClick={() => setFeedSelectionType(mode)}
             className="flex items-center gap-2"
-            style={{ background: "none", border: "none", cursor: "pointer", padding: 0, justifyContent: "flex-start" }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: 0,
+              justifyContent: "flex-start",
+            }}
           >
             {/* Radio button */}
             <div
@@ -887,7 +943,9 @@ export default function FeedSelectionPage() {
             >
               {(() => {
                 const idx = items.findIndex((it) => it.id === activeRowId);
-                return idx >= 0 ? t("↓ Jump to Feed ${N}").replace("${N}", String(idx + 1)) : t("↓ Jump to card");
+                return idx >= 0
+                  ? t("↓ Jump to Feed ${N}").replace("${N}", String(idx + 1))
+                  : t("↓ Jump to card");
               })()}
             </button>
           )}
@@ -919,17 +977,35 @@ export default function FeedSelectionPage() {
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="11" cy="11" r="7" stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"} strokeWidth="2.2" />
-              <path d="M16.5 16.5L21 21" stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"} strokeWidth="2.2" strokeLinecap="round" />
+              <circle
+                cx="11"
+                cy="11"
+                r="7"
+                stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"}
+                strokeWidth="2.2"
+              />
+              <path
+                d="M16.5 16.5L21 21"
+                stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"}
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
             </svg>
           </div>
           <input
             ref={searchInputRef}
             type="text"
             value={searchQuery}
-            onChange={(e) => { setSearchQuery(e.target.value); setSearchOpen(true); }}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setSearchOpen(true);
+            }}
             onFocus={() => searchQuery.trim() && setSearchOpen(true)}
-            placeholder={activeRowId ? t("Search to fill the selected card…") : t("Search feeds — corn, silage, soybean…")}
+            placeholder={
+              activeRowId
+                ? t("Search to fill the selected card…")
+                : t("Search feeds — corn, silage, soybean…")
+            }
             className="flex-1 border-none focus:outline-none"
             style={{
               backgroundColor: "transparent",
@@ -944,7 +1020,10 @@ export default function FeedSelectionPage() {
           {searchQuery && (
             <button
               type="button"
-              onClick={() => { setSearchQuery(""); setSearchOpen(false); }}
+              onClick={() => {
+                setSearchQuery("");
+                setSearchOpen(false);
+              }}
               aria-label={t("Clear search")}
               className="flex items-center justify-center flex-shrink-0"
               style={{
@@ -959,7 +1038,12 @@ export default function FeedSelectionPage() {
               }}
             >
               <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M3 3l8 8M11 3L3 11"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           )}
@@ -969,18 +1053,34 @@ export default function FeedSelectionPage() {
             confirmation line once a card is selected. */}
         <div
           className="flex items-center gap-2 mt-2.5 ml-1"
-          style={{ fontFamily: "Nunito, sans-serif", fontSize: 12.5, color: activeRowId ? "#064E3B" : "#6D6D6D", fontWeight: activeRowId ? 700 : 500 }}
+          style={{
+            fontFamily: "Nunito, sans-serif",
+            fontSize: 12.5,
+            color: activeRowId ? "#064E3B" : "#6D6D6D",
+            fontWeight: activeRowId ? 700 : 500,
+          }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
             {activeRowId ? (
               <>
                 <circle cx="12" cy="12" r="10" fill="#1CA069" />
-                <path d="M8 12.5l2.5 2.5L16 9.5" stroke="#FFFFFF" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M8 12.5l2.5 2.5L16 9.5"
+                  stroke="#FFFFFF"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </>
             ) : (
               <>
                 <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="1.8" />
-                <path d="M12 8v4M12 16h.01" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path
+                  d="M12 8v4M12 16h.01"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
               </>
             )}
           </svg>
@@ -1008,11 +1108,25 @@ export default function FeedSelectionPage() {
             }}
           >
             {isSearching ? (
-              <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  color: "#6D6D6D",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 13,
+                }}
+              >
                 {t("Searching…")}
               </div>
             ) : searchResults.length === 0 ? (
-              <div style={{ padding: "12px 14px", color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
+              <div
+                style={{
+                  padding: "12px 14px",
+                  color: "#6D6D6D",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 13,
+                }}
+              >
                 {t("No matches yet. (Search backend coming soon.)")}
               </div>
             ) : (
@@ -1032,8 +1146,12 @@ export default function FeedSelectionPage() {
                   }}
                 >
                   {/* i18n V2 — render display_* (translated, English fallback). */}
-                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>{r.display_name ?? r.feed_name}</p>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>{(r.display_type ?? r.feed_type)} · {(r.display_category ?? r.feed_category)}</p>
+                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>
+                    {r.display_name ?? r.feed_name}
+                  </p>
+                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>
+                    {r.display_type ?? r.feed_type} · {r.display_category ?? r.feed_category}
+                  </p>
                 </button>
               ))
             )}
@@ -1124,7 +1242,13 @@ export default function FeedSelectionPage() {
                 : t("Generate Recommendation")}
           </span>
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-            <path d="M4.5 9H13.5M10 5.5L13.5 9L10 12.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+              d="M4.5 9H13.5M10 5.5L13.5 9L10 12.5"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </button>
       </div>
@@ -1143,7 +1267,9 @@ export default function FeedSelectionPage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.45)",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowCustomFeedModal(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCustomFeedModal(false);
+          }}
         >
           <div
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
@@ -1166,10 +1292,24 @@ export default function FeedSelectionPage() {
               </h3>
               <button
                 onClick={() => setShowCustomFeedModal(false)}
-                style={{ position: "absolute", right: 0, top: 0, background: "none", border: "none", cursor: "pointer" }}
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  top: 0,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                }}
                 aria-label={t("Close")}
               >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" /></svg>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path
+                    d="M5 5L15 15M15 5L5 15"
+                    stroke="#6D6D6D"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
               </button>
             </div>
 
@@ -1183,7 +1323,10 @@ export default function FeedSelectionPage() {
               className="w-full flex items-center justify-between mb-3"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
-              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+              <span
+                className="font-bold"
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+              >
                 {t("Feed Details")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1195,91 +1338,107 @@ export default function FeedSelectionPage() {
             </button>
 
             {feedDetailsExpanded && (
-            <>
-            {/* Feed Type — first required field (no Country in Android end-user UI) */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              {t("Feed Type")}<span style={{ color: "#FC2E20" }}> *</span>
-            </p>
-            <div className="relative mb-3">
-              {loadingCustomTypes ? (
-                <div className="h-11 rounded-xl shimmer" />
-              ) : (
-                <div
-                  className="rounded-xl px-4 py-3"
-                  style={{ backgroundColor: "#F1F5F9", opacity: !user?.country_id ? 0.6 : 1 }}
+              <>
+                {/* Feed Type — first required field (no Country in Android end-user UI) */}
+                <p
+                  className="text-xs font-bold uppercase mb-1"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
                 >
-                  <CustomSelect
-                    transparentTrigger
-                    value={customFeedForm.feed_type}
-                    onChange={handleCustomTypeChange}
-                    disabled={!user?.country_id}
-                    placeholder={t("Select feed type")}
-                    options={customFeedTypes.map((ft) => ({ value: ft, label: ft }))}
-                  />
+                  {t("Feed Type")}
+                  <span style={{ color: "#FC2E20" }}> *</span>
+                </p>
+                <div className="relative mb-3">
+                  {loadingCustomTypes ? (
+                    <div className="h-11 rounded-xl shimmer" />
+                  ) : (
+                    <div
+                      className="rounded-xl px-4 py-3"
+                      style={{ backgroundColor: "#F1F5F9", opacity: !user?.country_id ? 0.6 : 1 }}
+                    >
+                      <CustomSelect
+                        transparentTrigger
+                        value={customFeedForm.feed_type}
+                        onChange={handleCustomTypeChange}
+                        disabled={!user?.country_id}
+                        placeholder={t("Select feed type")}
+                        options={customFeedTypes.map((ft) => ({ value: ft, label: ft }))}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Feed Category — gated on feed type */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              {t("Feed Category")}<span style={{ color: "#FC2E20" }}> *</span>
-            </p>
-            <div className="relative mb-3">
-              {loadingCustomCats ? (
-                <div className="h-11 rounded-xl shimmer" />
-              ) : (
-                <div
-                  className="rounded-xl px-4 py-3"
-                  style={{
-                    backgroundColor: !customFeedForm.feed_type ? "#EBEAEA" : "#F1F5F9",
-                    opacity: !customFeedForm.feed_type ? 0.6 : 1,
-                  }}
+                {/* Feed Category — gated on feed type */}
+                <p
+                  className="text-xs font-bold uppercase mb-1"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
                 >
-                  <CustomSelect
-                    transparentTrigger
-                    value={customFeedForm.feed_category}
-                    onChange={(v) => setCustomFeedForm((p) => ({ ...p, feed_category: v }))}
-                    disabled={!customFeedForm.feed_type}
-                    placeholder={!customFeedForm.feed_type ? t("Select type first") : t("Select category")}
-                    options={customFeedCategories.map((c) => ({ value: c, label: c }))}
-                  />
+                  {t("Feed Category")}
+                  <span style={{ color: "#FC2E20" }}> *</span>
+                </p>
+                <div className="relative mb-3">
+                  {loadingCustomCats ? (
+                    <div className="h-11 rounded-xl shimmer" />
+                  ) : (
+                    <div
+                      className="rounded-xl px-4 py-3"
+                      style={{
+                        backgroundColor: !customFeedForm.feed_type ? "#EBEAEA" : "#F1F5F9",
+                        opacity: !customFeedForm.feed_type ? 0.6 : 1,
+                      }}
+                    >
+                      <CustomSelect
+                        transparentTrigger
+                        value={customFeedForm.feed_category}
+                        onChange={(v) => setCustomFeedForm((p) => ({ ...p, feed_category: v }))}
+                        disabled={!customFeedForm.feed_type}
+                        placeholder={
+                          !customFeedForm.feed_type ? t("Select type first") : t("Select category")
+                        }
+                        options={customFeedCategories.map((c) => ({ value: c, label: c }))}
+                      />
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Feed Name — gated on category. Android DialogFeedDetails
+                {/* Feed Name — gated on category. Android DialogFeedDetails
                 also shows a user-name prefix (e.g. "John-") via
                 PrefsManager.getUserNamePrefix(). We render the same. */}
-            <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-              {t("Feed Name")}<span style={{ color: "#FC2E20" }}> *</span>
-            </p>
-            <div
-              className="flex items-center rounded-xl mb-4"
-              style={{
-                backgroundColor: !customFeedForm.feed_category ? "#EBEAEA" : "#F1F5F9",
-                opacity: !customFeedForm.feed_category ? 0.6 : 1,
-              }}
-            >
-              <span
-                className="pl-4 pr-1 text-sm"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
-                {user?.name ? `${user.name.split(" ")[0]}-` : ""}
-              </span>
-              <input
-                type="text"
-                value={customFeedForm.feed_name}
-                onChange={(e) => setCustomFeedForm((p) => ({ ...p, feed_name: e.target.value }))}
-                disabled={!customFeedForm.feed_category}
-                className="flex-1 bg-transparent px-1 py-3 text-sm border-none focus:outline-none"
-                style={{
-                  color: "#231F20",
-                  fontFamily: "Nunito, sans-serif",
-                  cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
-                }}
-              />
-            </div>
-            </>
+                <p
+                  className="text-xs font-bold uppercase mb-1"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {t("Feed Name")}
+                  <span style={{ color: "#FC2E20" }}> *</span>
+                </p>
+                <div
+                  className="flex items-center rounded-xl mb-4"
+                  style={{
+                    backgroundColor: !customFeedForm.feed_category ? "#EBEAEA" : "#F1F5F9",
+                    opacity: !customFeedForm.feed_category ? 0.6 : 1,
+                  }}
+                >
+                  <span
+                    className="pl-4 pr-1 text-sm"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    {user?.name ? `${user.name.split(" ")[0]}-` : ""}
+                  </span>
+                  <input
+                    type="text"
+                    value={customFeedForm.feed_name}
+                    onChange={(e) =>
+                      setCustomFeedForm((p) => ({ ...p, feed_name: e.target.value }))
+                    }
+                    disabled={!customFeedForm.feed_category}
+                    className="flex-1 bg-transparent px-1 py-3 text-sm border-none focus:outline-none"
+                    style={{
+                      color: "#231F20",
+                      fontFamily: "Nunito, sans-serif",
+                      cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
+                    }}
+                  />
+                </div>
+              </>
             )}
 
             {/* "Nutritional Information" expand/collapse header
@@ -1290,7 +1449,10 @@ export default function FeedSelectionPage() {
               className="w-full flex items-center justify-between mb-3"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
-              <span className="font-bold" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}>
+              <span
+                className="font-bold"
+                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+              >
                 {t("Nutritional Information")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1301,38 +1463,49 @@ export default function FeedSelectionPage() {
               </svg>
             </button>
 
-            {nutritionalInfoExpanded && (() => {
-              // Match Android DialogFeedDetails: layout is chosen by feedCategory.
-              // Before category is selected, default to General (matches Android
-              // initUi where layoutNutrientInfoGeneral.root.visibility = VISIBLE).
-              const layout = getNutrientLayout(customFeedForm.feed_category);
-              const fields =
-                layout === "additive" ? NUTRIENT_FIELDS_ADDITIVE :
-                layout === "mineral" ? NUTRIENT_FIELDS_MINERAL :
-                NUTRIENT_FIELDS_GENERAL;
-              return (
-                <>
-                  <p className="text-xs mb-3" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                    {t("Nutrient Composition (%)")}
-                  </p>
-                  <div className="grid grid-cols-2 gap-3 mb-5">
-                    {fields.map((f) => (
-                      <CustomFeedNutrientInput
-                        key={f.key}
-                        label={t(f.label)}
-                        value={customFeedForm[f.key]}
-                        onChange={(v) => setCustomFeedForm((p) => ({ ...p, [f.key]: v }))}
-                      />
-                    ))}
-                  </div>
-                </>
-              );
-            })()}
+            {nutritionalInfoExpanded &&
+              (() => {
+                // Match Android DialogFeedDetails: layout is chosen by feedCategory.
+                // Before category is selected, default to General (matches Android
+                // initUi where layoutNutrientInfoGeneral.root.visibility = VISIBLE).
+                const layout = getNutrientLayout(customFeedForm.feed_category);
+                const fields =
+                  layout === "additive"
+                    ? NUTRIENT_FIELDS_ADDITIVE
+                    : layout === "mineral"
+                      ? NUTRIENT_FIELDS_MINERAL
+                      : NUTRIENT_FIELDS_GENERAL;
+                return (
+                  <>
+                    <p
+                      className="text-xs mb-3"
+                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {t("Nutrient Composition (%)")}
+                    </p>
+                    <div className="grid grid-cols-2 gap-3 mb-5">
+                      {fields.map((f) => (
+                        <CustomFeedNutrientInput
+                          key={f.key}
+                          label={t(f.label)}
+                          value={customFeedForm[f.key]}
+                          onChange={(v) => setCustomFeedForm((p) => ({ ...p, [f.key]: v }))}
+                        />
+                      ))}
+                    </div>
+                  </>
+                );
+              })()}
 
             {/* Submit — Android btn_submit. Disabled (light_gray_new bg +
                 spanish_gray text) until ALL four required fields are filled. */}
             {(() => {
-              const ready = !!user?.country_id && !!customFeedForm.feed_type && !!customFeedForm.feed_category && customFeedForm.feed_name.trim() !== "" && !isSavingCustom;
+              const ready =
+                !!user?.country_id &&
+                !!customFeedForm.feed_type &&
+                !!customFeedForm.feed_category &&
+                customFeedForm.feed_name.trim() !== "" &&
+                !isSavingCustom;
               return (
                 <button
                   onClick={handleSaveCustomFeed}
@@ -1347,10 +1520,27 @@ export default function FeedSelectionPage() {
                   }}
                 >
                   {isSavingCustom ? (
-                    <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                    <svg
+                      className="animate-spin"
+                      width="22"
+                      height="22"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                    >
+                      <circle
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeDasharray="40"
+                        strokeDashoffset="10"
+                        strokeLinecap="round"
+                      />
                     </svg>
-                  ) : t("Submit")}
+                  ) : (
+                    t("Submit")
+                  )}
                 </button>
               );
             })()}
@@ -1376,24 +1566,47 @@ export default function FeedSelectionPage() {
                 style={{ backgroundColor: "rgba(255,152,0,0.15)", borderRadius: 60, padding: 14 }}
               >
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#FF9800" strokeWidth="2" strokeLinejoin="round" />
-                  <path d="M12 9v4M12 17h.01" stroke="#FF9800" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                    stroke="#FF9800"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 9v4M12 17h.01"
+                    stroke="#FF9800"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
             </div>
             {/* Title */}
             <p
               className="text-center font-bold"
-              style={{ color: "#064E3B", fontSize: 20, fontFamily: "Nunito, sans-serif", margin: "20px 16px 0" }}
+              style={{
+                color: "#064E3B",
+                fontSize: 20,
+                fontFamily: "Nunito, sans-serif",
+                margin: "20px 16px 0",
+              }}
             >
               {t("Incomplete Feeds")}
             </p>
             {/* Description */}
             <p
               className="text-center"
-              style={{ color: "#6D6D6D", fontSize: 16, fontFamily: "Nunito, sans-serif", margin: "16px 16px 0", lineHeight: 1.5 }}
+              style={{
+                color: "#6D6D6D",
+                fontSize: 16,
+                fontFamily: "Nunito, sans-serif",
+                margin: "16px 16px 0",
+                lineHeight: 1.5,
+              }}
             >
-              {t("The following feeds have missing nutritional data and will be automatically discarded from the formulation:")}
+              {t(
+                "The following feeds have missing nutritional data and will be automatically discarded from the formulation:"
+              )}
             </p>
             {/* Honeydew card with feed names */}
             <div
@@ -1423,7 +1636,12 @@ export default function FeedSelectionPage() {
             {/* Proceed question */}
             <p
               className="text-center"
-              style={{ color: "#6D6D6D", fontSize: 16, fontFamily: "Nunito, sans-serif", margin: "30px 12px 0" }}
+              style={{
+                color: "#6D6D6D",
+                fontSize: 16,
+                fontFamily: "Nunito, sans-serif",
+                margin: "30px 12px 0",
+              }}
             >
               {t("Would you like to proceed?")}
             </p>
@@ -1449,7 +1667,10 @@ export default function FeedSelectionPage() {
             </button>
             {/* Yes, Proceed button */}
             <button
-              onClick={() => { setShowIncompleteFeedsDialog(false); generateReport(); }}
+              onClick={() => {
+                setShowIncompleteFeedsDialog(false);
+                generateReport();
+              }}
               className="font-bold"
               style={{
                 display: "block",
@@ -1489,20 +1710,41 @@ export default function FeedSelectionPage() {
                 style={{ backgroundColor: "rgba(255,152,0,0.15)", borderRadius: 60, padding: 14 }}
               >
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#FF9800" strokeWidth="2" strokeLinejoin="round" />
-                  <path d="M12 9v4M12 17h.01" stroke="#FF9800" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+                    stroke="#FF9800"
+                    strokeWidth="2"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M12 9v4M12 17h.01"
+                    stroke="#FF9800"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </div>
             </div>
             <p
               className="text-center font-bold"
-              style={{ color: "#064E3B", fontSize: 20, fontFamily: "Nunito, sans-serif", margin: "20px 16px 0" }}
+              style={{
+                color: "#064E3B",
+                fontSize: 20,
+                fontFamily: "Nunito, sans-serif",
+                margin: "20px 16px 0",
+              }}
             >
               {t("Forage Required")}
             </p>
             <p
               className="text-center"
-              style={{ color: "#6D6D6D", fontSize: 16, fontFamily: "Nunito, sans-serif", margin: "16px 16px 0", lineHeight: 1.5 }}
+              style={{
+                color: "#6D6D6D",
+                fontSize: 16,
+                fontFamily: "Nunito, sans-serif",
+                margin: "16px 16px 0",
+                lineHeight: 1.5,
+              }}
             >
               {/* Rendered as one flat dictionary key with an embedded ${mode}
                   token — collapses the inline "Forage" color-emphasis span
@@ -1510,8 +1752,9 @@ export default function FeedSelectionPage() {
                   as a single sentence. "Forage" itself is a feed-type
                   identity word, so the dictionary intentionally keeps it
                   untranslated (see the Hindi cell — still reads "Forage"). */}
-              {t("Add at least one Forage feed before generating a ${mode} recommendation. Forages are the backbone of a balanced ration — the optimizer needs one to produce a sensible result.")
-                .replace("${mode}", isEvaluation ? "diet evaluation" : "recommendation")}
+              {t(
+                "Add at least one Forage feed before generating a ${mode} recommendation. Forages are the backbone of a balanced ration — the optimizer needs one to produce a sensible result."
+              ).replace("${mode}", isEvaluation ? "diet evaluation" : "recommendation")}
             </p>
             <button
               onClick={() => setShowNoForageDialog(false)}
@@ -1545,7 +1788,9 @@ export default function FeedSelectionPage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.45)",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowLimitsModal(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLimitsModal(false);
+          }}
         >
           <div
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
@@ -1564,7 +1809,12 @@ export default function FeedSelectionPage() {
                 aria-label={t("Close")}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path d="M5 5L15 15M15 5L5 15" stroke="#6D6D6D" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M5 5L15 15M15 5L5 15"
+                    stroke="#6D6D6D"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -1604,8 +1854,12 @@ export default function FeedSelectionPage() {
                     }}
                   >
                     {outOfRange
-                      ? t("Value must be between ${min} and ${max}").replace("${min}", String(min)).replace("${max}", String(max))
-                      : t("Range ${min} – ${max}").replace("${min}", String(min)).replace("${max}", String(max))}
+                      ? t("Value must be between ${min} and ${max}")
+                          .replace("${min}", String(min))
+                          .replace("${max}", String(max))
+                      : t("Range ${min} – ${max}")
+                          .replace("${min}", String(min))
+                          .replace("${max}", String(max))}
                   </p>
                 </div>
               );
@@ -1626,7 +1880,10 @@ export default function FeedSelectionPage() {
                 <button
                   onClick={() => {
                     if (anyOutOfRange) {
-                      showSnackbar(t("Please correct out-of-range values before applying"), "error");
+                      showSnackbar(
+                        t("Please correct out-of-range values before applying"),
+                        "error"
+                      );
                       return;
                     }
                     if (!anyFilled) {

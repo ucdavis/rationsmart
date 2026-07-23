@@ -46,7 +46,9 @@ describe("SelectField", () => {
   });
 
   it("uses a custom placeholder string", () => {
-    render(<SelectField options={options} value="" onChange={() => {}} placeholder="Choose a country" />);
+    render(
+      <SelectField options={options} value="" onChange={() => {}} placeholder="Choose a country" />
+    );
     expect(screen.getByText("Choose a country")).toBeInTheDocument();
   });
 });

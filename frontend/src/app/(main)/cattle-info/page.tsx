@@ -4,7 +4,15 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
-import { getCountries, getUserReports, getSimulationDetails, ANIMAL_CATEGORIES, ANIMAL_CATEGORY_LABELS, isLactating, labelForLanguage } from "@/lib/api";
+import {
+  getCountries,
+  getUserReports,
+  getSimulationDetails,
+  ANIMAL_CATEGORIES,
+  ANIMAL_CATEGORY_LABELS,
+  isLactating,
+  labelForLanguage,
+} from "@/lib/api";
 import type { AnimalCategory } from "@/lib/api";
 import { useT } from "@/lib/i18n-ui";
 import {
@@ -33,7 +41,20 @@ import {
 const BREEDS = ["Holstein", "Crossbreed", "Indigenous"];
 const PARITIES = ["1", "2", "3", "4", "5", "6", "7", "8", "9"];
 const MILK_FAT_OPTIONS = ["3.5", "4.0", "4.5", "5.0", "5.5"];
-const MILK_PROTEIN_OPTIONS = ["2.5", "2.6", "2.7", "2.8", "2.9", "3.0", "3.1", "3.2", "3.3", "3.4", "3.5", "3.6"];
+const MILK_PROTEIN_OPTIONS = [
+  "2.5",
+  "2.6",
+  "2.7",
+  "2.8",
+  "2.9",
+  "3.0",
+  "3.1",
+  "3.2",
+  "3.3",
+  "3.4",
+  "3.5",
+  "3.6",
+];
 
 interface Country {
   id: string | number;
@@ -62,8 +83,8 @@ interface FormState {
   milk_fat_percent: string;
   average_temperature: string;
   grazing: boolean;
-  distance_walked: string;  // km walked; shown when grazing=ON
-  topography: string;       // "Flat" or "Hilly"; shown when grazing=ON
+  distance_walked: string; // km walked; shown when grazing=ON
+  topography: string; // "Flat" or "Hilly"; shown when grazing=ON
   // Y3 §1.3 — milk price for §2.1 margin card. Optional (blank = null).
   milk_price: string;
   // Y3 §1.4 — drives form gating (hides Milk Production for non-lactating)
@@ -142,7 +163,11 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
       </p>
     );
   }
-  return <p className={cls} style={style}>{children}</p>;
+  return (
+    <p className={cls} style={style}>
+      {children}
+    </p>
+  );
 }
 
 // UX: shimmer the REAL form fields in place while getCountries is in
@@ -171,10 +196,7 @@ function loadingFieldProps(
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p
-      className="text-xs mt-1 ml-1"
-      style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-    >
+    <p className="text-xs mt-1 ml-1" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
       {message}
     </p>
   );
@@ -224,7 +246,17 @@ function SelectInput({
 export default function CattleInfoPage() {
   const router = useRouter();
   const { openDrawer } = useDrawer();
-  const { cattleInfo, setCattleInfo, user, setUser, showSnackbar, reportData, setReportData, setFeedSelections, setFeedSelectionType } = useStore((s) => ({
+  const {
+    cattleInfo,
+    setCattleInfo,
+    user,
+    setUser,
+    showSnackbar,
+    reportData,
+    setReportData,
+    setFeedSelections,
+    setFeedSelectionType,
+  } = useStore((s) => ({
     setFeedSelections: s.setFeedSelections,
     setFeedSelectionType: s.setFeedSelectionType,
     cattleInfo: s.cattleInfo,
@@ -245,14 +277,21 @@ export default function CattleInfoPage() {
         breed: cattleInfo.breed ?? "",
         body_weight: cattleInfo.body_weight ? String(cattleInfo.body_weight) : "",
         body_weight_gain: cattleInfo.body_weight_gain ? String(cattleInfo.body_weight_gain) : "",
-        body_condition_score: cattleInfo.body_condition_score ? String(cattleInfo.body_condition_score) : "",
+        body_condition_score: cattleInfo.body_condition_score
+          ? String(cattleInfo.body_condition_score)
+          : "",
         days_in_milk: cattleInfo.days_in_milk !== undefined ? String(cattleInfo.days_in_milk) : "",
-        days_of_pregnancy: cattleInfo.days_of_pregnancy !== undefined ? String(cattleInfo.days_of_pregnancy) : "",
+        days_of_pregnancy:
+          cattleInfo.days_of_pregnancy !== undefined ? String(cattleInfo.days_of_pregnancy) : "",
         parity: cattleInfo.parity !== undefined ? String(cattleInfo.parity) : "",
         milk_production: cattleInfo.milk_production ? String(cattleInfo.milk_production) : "",
-        milk_protein_percent: cattleInfo.milk_protein_percent ? String(cattleInfo.milk_protein_percent) : "",
+        milk_protein_percent: cattleInfo.milk_protein_percent
+          ? String(cattleInfo.milk_protein_percent)
+          : "",
         milk_fat_percent: cattleInfo.milk_fat_percent ? String(cattleInfo.milk_fat_percent) : "",
-        average_temperature: cattleInfo.average_temperature ? String(cattleInfo.average_temperature) : "",
+        average_temperature: cattleInfo.average_temperature
+          ? String(cattleInfo.average_temperature)
+          : "",
         grazing: cattleInfo.grazing ?? false,
         distance_walked: cattleInfo.distance != null ? String(cattleInfo.distance) : "0",
         topography: cattleInfo.topography ?? "Flat",
@@ -311,7 +350,9 @@ export default function CattleInfoPage() {
     : null;
   const rawSimulationLanguage = form.simulation_language || user?.preferred_language || "en";
   const effectiveSimulationLanguage = languageOptionsForCountry
-    ? (languageOptionsForCountry.includes(rawSimulationLanguage) ? rawSimulationLanguage : "en")
+    ? languageOptionsForCountry.includes(rawSimulationLanguage)
+      ? rawSimulationLanguage
+      : "en"
     : rawSimulationLanguage;
 
   // UI-label i18n — this screen (and feed-selection/report) uses its OWN
@@ -349,7 +390,7 @@ export default function CattleInfoPage() {
       .then((res) => {
         const data = res.data;
         // API returns { simulations: [...], success: bool }
-        setHistoryList(Array.isArray(data) ? data : data?.simulations ?? []);
+        setHistoryList(Array.isArray(data) ? data : (data?.simulations ?? []));
       })
       .catch(() => showSnackbar(t("Could not load history"), "error"))
       .finally(() => setIsLoadingHistory(false));
@@ -363,7 +404,9 @@ export default function CattleInfoPage() {
       const data = res.data;
       const ci = data?.cattle_info ?? data;
       const countryName = data?.country_name ?? "";
-      const matchedCountry = countries.find((c) => c.name?.toLowerCase() === countryName.toLowerCase());
+      const matchedCountry = countries.find(
+        (c) => c.name?.toLowerCase() === countryName.toLowerCase()
+      );
       setForm((prev) => ({
         ...prev,
         // Deliberately left blank on restore from Simulation History —
@@ -377,14 +420,18 @@ export default function CattleInfoPage() {
         breed: ci?.breed ?? prev.breed,
         body_weight: ci?.body_weight != null ? String(ci.body_weight) : prev.body_weight,
         body_weight_gain: ci?.bw_gain != null ? String(ci.bw_gain) : prev.body_weight_gain,
-        body_condition_score: ci?.bc_score != null ? String(ci.bc_score) : prev.body_condition_score,
+        body_condition_score:
+          ci?.bc_score != null ? String(ci.bc_score) : prev.body_condition_score,
         days_in_milk: ci?.days_in_milk != null ? String(ci.days_in_milk) : prev.days_in_milk,
-        days_of_pregnancy: ci?.days_of_pregnancy != null ? String(ci.days_of_pregnancy) : prev.days_of_pregnancy,
+        days_of_pregnancy:
+          ci?.days_of_pregnancy != null ? String(ci.days_of_pregnancy) : prev.days_of_pregnancy,
         parity: ci?.parity != null ? String(ci.parity) : prev.parity,
-        milk_production: ci?.milk_production != null ? String(ci.milk_production) : prev.milk_production,
+        milk_production:
+          ci?.milk_production != null ? String(ci.milk_production) : prev.milk_production,
         milk_protein_percent: ci?.tp_milk != null ? String(ci.tp_milk) : prev.milk_protein_percent,
         milk_fat_percent: ci?.fat_milk != null ? String(ci.fat_milk) : prev.milk_fat_percent,
-        average_temperature: ci?.temperature != null ? String(ci.temperature) : prev.average_temperature,
+        average_temperature:
+          ci?.temperature != null ? String(ci.temperature) : prev.average_temperature,
         grazing: ci?.grazing ?? prev.grazing,
         distance_walked: ci?.distance != null ? String(ci.distance) : prev.distance_walked,
         topography: ci?.topography ?? prev.topography,
@@ -393,7 +440,8 @@ export default function CattleInfoPage() {
         // then these reads will silently fall through to prev (unchanged).
         // TODO(maria-y3): confirm response keys for milk_price + animal_category.
         milk_price: ci?.milk_price != null ? String(ci.milk_price) : prev.milk_price,
-        animal_category: (ci?.animal_category as AnimalCategory | undefined) ?? prev.animal_category,
+        animal_category:
+          (ci?.animal_category as AnimalCategory | undefined) ?? prev.animal_category,
         // i18n V2 — hydrate simulation_language from the restored
         // simulation. Priority chain:
         //   1. backend response's simulation_language (once shipped)
@@ -424,37 +472,54 @@ export default function CattleInfoPage() {
       // the feed-selection page picks it up on mount.
       const feedSelectionList = Array.isArray(data?.feed_selection) ? data.feed_selection : [];
       if (feedSelectionList.length > 0) {
-        const restoredItems = feedSelectionList.map((sel: {
-          feed_type?: string;
-          feed_category?: string;
-          feed_name?: string;
-          feed_id?: string;
-          price_per_kg?: number | string | null;
-          quantity_as_fed?: number | string | null;
-          // Y3 §1.1.2 — backend may echo these on simulation restore.
-          // TODO(maria-y3): confirm canonical keys on /fetch-simulation-details.
-          min_kg_per_day?: number | string | null;
-          max_kg_per_day?: number | string | null;
-        }, idx: number) => {
-          const minVal = sel.min_kg_per_day != null && sel.min_kg_per_day !== "" ? Number(sel.min_kg_per_day) : null;
-          const maxVal = sel.max_kg_per_day != null && sel.max_kg_per_day !== "" ? Number(sel.max_kg_per_day) : null;
-          return {
-            id: `feed_restored_${idx}_${Date.now()}`,
-            feed_type_id: sel.feed_type ? idx + 1 : null,
-            feed_type_name: sel.feed_type ?? "",
-            category_id: sel.feed_category ? idx + 1 : null,
-            category_name: sel.feed_category ?? "",
-            sub_category_id: sel.feed_id ? 1 : null,
-            sub_category_name: sel.feed_name ?? "",
-            feed_uuid: sel.feed_id ?? null,
-            price_per_kg: sel.price_per_kg != null && sel.price_per_kg !== "" ? Number(sel.price_per_kg) : null,
-            quantity_kg: sel.quantity_as_fed != null && sel.quantity_as_fed !== "" ? Number(sel.quantity_as_fed) : null,
-            // Toggle defaults ON when either bound is present in the restored payload.
-            inclusion_limits_enabled: minVal != null || maxVal != null,
-            min_kg_per_day: minVal,
-            max_kg_per_day: maxVal,
-          };
-        });
+        const restoredItems = feedSelectionList.map(
+          (
+            sel: {
+              feed_type?: string;
+              feed_category?: string;
+              feed_name?: string;
+              feed_id?: string;
+              price_per_kg?: number | string | null;
+              quantity_as_fed?: number | string | null;
+              // Y3 §1.1.2 — backend may echo these on simulation restore.
+              // TODO(maria-y3): confirm canonical keys on /fetch-simulation-details.
+              min_kg_per_day?: number | string | null;
+              max_kg_per_day?: number | string | null;
+            },
+            idx: number
+          ) => {
+            const minVal =
+              sel.min_kg_per_day != null && sel.min_kg_per_day !== ""
+                ? Number(sel.min_kg_per_day)
+                : null;
+            const maxVal =
+              sel.max_kg_per_day != null && sel.max_kg_per_day !== ""
+                ? Number(sel.max_kg_per_day)
+                : null;
+            return {
+              id: `feed_restored_${idx}_${Date.now()}`,
+              feed_type_id: sel.feed_type ? idx + 1 : null,
+              feed_type_name: sel.feed_type ?? "",
+              category_id: sel.feed_category ? idx + 1 : null,
+              category_name: sel.feed_category ?? "",
+              sub_category_id: sel.feed_id ? 1 : null,
+              sub_category_name: sel.feed_name ?? "",
+              feed_uuid: sel.feed_id ?? null,
+              price_per_kg:
+                sel.price_per_kg != null && sel.price_per_kg !== ""
+                  ? Number(sel.price_per_kg)
+                  : null,
+              quantity_kg:
+                sel.quantity_as_fed != null && sel.quantity_as_fed !== ""
+                  ? Number(sel.quantity_as_fed)
+                  : null,
+              // Toggle defaults ON when either bound is present in the restored payload.
+              inclusion_limits_enabled: minVal != null || maxVal != null,
+              min_kg_per_day: minVal,
+              max_kg_per_day: maxVal,
+            };
+          }
+        );
         setFeedSelections(restoredItems);
 
         // Android: if every quantity_as_fed is null → Recommendation;
@@ -523,7 +588,11 @@ export default function CattleInfoPage() {
 
   // Android body condition score validation
   const handleBCS = (input: string) => {
-    if (!input) { set("body_condition_score")(""); setError("body_condition_score", undefined); return; }
+    if (!input) {
+      set("body_condition_score")("");
+      setError("body_condition_score", undefined);
+      return;
+    }
     if (input.startsWith(".")) return; // Android clears if starts with "."
     if (containsMultipleDecimalPoints(input)) {
       const idx = getDecimalPointIndex(input);
@@ -541,7 +610,11 @@ export default function CattleInfoPage() {
 
   // Android body weight validation
   const handleBodyWeight = (input: string) => {
-    if (!input) { set("body_weight")(""); setError("body_weight", undefined); return; }
+    if (!input) {
+      set("body_weight")("");
+      setError("body_weight", undefined);
+      return;
+    }
     if (containsMultipleDecimalPoints(input)) {
       const idx = getDecimalPointIndex(input);
       set("body_weight")(input.slice(0, idx));
@@ -558,7 +631,11 @@ export default function CattleInfoPage() {
 
   // Android body weight gain validation
   const handleBWGain = (input: string) => {
-    if (!input) { set("body_weight_gain")(""); setError("body_weight_gain", undefined); return; }
+    if (!input) {
+      set("body_weight_gain")("");
+      setError("body_weight_gain", undefined);
+      return;
+    }
     if (input.startsWith(".")) return;
     if (containsMultipleDecimalPoints(input)) {
       const idx = getDecimalPointIndex(input);
@@ -576,7 +653,11 @@ export default function CattleInfoPage() {
 
   // Android days in milk validation
   const handleDaysInMilk = (input: string) => {
-    if (!input) { set("days_in_milk")(""); setError("days_in_milk", undefined); return; }
+    if (!input) {
+      set("days_in_milk")("");
+      setError("days_in_milk", undefined);
+      return;
+    }
     const val = parseInt(input);
     if (!isNaN(val) && !daysInMilkIsInRange(val)) {
       setError("days_in_milk", t("Value Range 0-400"));
@@ -588,7 +669,11 @@ export default function CattleInfoPage() {
 
   // Android days of pregnancy validation
   const handleDaysOfPregnancy = (input: string) => {
-    if (!input) { set("days_of_pregnancy")(""); setError("days_of_pregnancy", undefined); return; }
+    if (!input) {
+      set("days_of_pregnancy")("");
+      setError("days_of_pregnancy", undefined);
+      return;
+    }
     const val = parseInt(input);
     if (!isNaN(val) && !daysOfPregnancyIsInRange(val)) {
       setError("days_of_pregnancy", t("Value Range 0-280"));
@@ -600,7 +685,11 @@ export default function CattleInfoPage() {
 
   // Android milk production validation
   const handleMilkProduction = (input: string) => {
-    if (!input) { set("milk_production")(""); setError("milk_production", undefined); return; }
+    if (!input) {
+      set("milk_production")("");
+      setError("milk_production", undefined);
+      return;
+    }
     if (containsMultipleDecimalPoints(input)) {
       const idx = getDecimalPointIndex(input);
       set("milk_production")(input.slice(0, idx));
@@ -617,7 +706,10 @@ export default function CattleInfoPage() {
 
   // Android avg temperature validation (format only, no range error — but must be non-zero to enable button)
   const handleAvgTemp = (input: string) => {
-    if (!input) { set("average_temperature")(""); return; }
+    if (!input) {
+      set("average_temperature")("");
+      return;
+    }
     if (input.startsWith(".")) return;
     if (containsMultipleDecimalPoints(input)) {
       const idx = getDecimalPointIndex(input);
@@ -629,7 +721,10 @@ export default function CattleInfoPage() {
 
   // Android distance walked validation (same as body weight format)
   const handleDistanceWalked = (input: string) => {
-    if (!input) { set("distance_walked")(""); return; }
+    if (!input) {
+      set("distance_walked")("");
+      return;
+    }
     if (input === "0" || input.startsWith(".")) return;
     if (containsMultipleDecimalPoints(input)) {
       const idx = getDecimalPointIndex(input);
@@ -665,24 +760,36 @@ export default function CattleInfoPage() {
   const temp = parseFloat(form.average_temperature);
   const mp = parseFloat(form.milk_production);
 
-  const milkFieldsValid = !showMilkSection || (
-    !isNaN(mp) && mp > 0 && mp <= 59 &&
-    form.milk_fat_percent !== "" &&
-    form.milk_protein_percent !== ""
-  );
+  const milkFieldsValid =
+    !showMilkSection ||
+    (!isNaN(mp) &&
+      mp > 0 &&
+      mp <= 59 &&
+      form.milk_fat_percent !== "" &&
+      form.milk_protein_percent !== "");
 
   const requiredFilled =
     form.simulation_name.trim() !== "" &&
     form.country_id !== "" &&
     form.breed !== "" &&
-    !isNaN(bw) && bw >= 350 && bw <= 720 &&
-    !isNaN(bwGain) && bwGain <= 1.8 &&
-    !isNaN(bcs) && bcs >= 1 && bcs <= 5 &&
-    !isNaN(dim) && dim >= 0 && dim <= 400 &&
-    !isNaN(dop) && dop >= 0 && dop <= 280 &&
+    !isNaN(bw) &&
+    bw >= 350 &&
+    bw <= 720 &&
+    !isNaN(bwGain) &&
+    bwGain <= 1.8 &&
+    !isNaN(bcs) &&
+    bcs >= 1 &&
+    bcs <= 5 &&
+    !isNaN(dim) &&
+    dim >= 0 &&
+    dim <= 400 &&
+    !isNaN(dop) &&
+    dop >= 0 &&
+    dop <= 280 &&
     form.parity !== "" &&
     milkFieldsValid &&
-    !isNaN(temp) && temp !== 0 &&
+    !isNaN(temp) &&
+    temp !== 0 &&
     (!form.grazing || (parseFloat(form.distance_walked) >= 1 && form.topography !== "")) &&
     !hasFieldErrors;
 
@@ -713,7 +820,12 @@ export default function CattleInfoPage() {
     // keep showing the currency that was set at login (e.g. user logs
     // in as Vietnam → switches to India here → feed-selection still
     // reads user.currency = "VND" → labels stay "Price VND/KG").
-    if (user && selectedCountry && (selectedCountry.currency !== user.currency || String(selectedCountry.id) !== String(user.country_id))) {
+    if (
+      user &&
+      selectedCountry &&
+      (selectedCountry.currency !== user.currency ||
+        String(selectedCountry.id) !== String(user.country_id))
+    ) {
       setUser({
         ...user,
         country_id: String(selectedCountry.id),
@@ -757,11 +869,13 @@ export default function CattleInfoPage() {
       // support (see effectiveSimulationLanguage above for the full
       // explanation of the bug this prevents).
       simulation_language: (() => {
-        const resolved = form.simulation_language && form.simulation_language !== ""
-          ? form.simulation_language
-          : (!languageOptionsForCountry || languageOptionsForCountry.includes(user?.preferred_language ?? "en")
+        const resolved =
+          form.simulation_language && form.simulation_language !== ""
+            ? form.simulation_language
+            : !languageOptionsForCountry ||
+                languageOptionsForCountry.includes(user?.preferred_language ?? "en")
               ? null
-              : effectiveSimulationLanguage);
+              : effectiveSimulationLanguage;
         console.log("[cattle-info save] simulation_language resolution:", {
           "form.simulation_language": form.simulation_language,
           "user.preferred_language": user?.preferred_language,
@@ -817,11 +931,14 @@ export default function CattleInfoPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
-      <Toolbar type="home" title={t("Cattle Info")} onMenuOpen={openDrawer} showForward={!!reportData} onForward={() => router.push("/report")} />
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+      <Toolbar
+        type="home"
+        title={t("Cattle Info")}
+        onMenuOpen={openDrawer}
+        showForward={!!reportData}
+        onForward={() => router.push("/report")}
+      />
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
         {/* Section 1: Simulation Details */}
@@ -903,44 +1020,53 @@ export default function CattleInfoPage() {
             {loadingCountries ? (
               <>
                 <FieldLabel>{t("Language")}</FieldLabel>
-                <SelectInput value="" onChange={() => {}} options={[]} placeholder={t("Select")} loading />
+                <SelectInput
+                  value=""
+                  onChange={() => {}}
+                  options={[]}
+                  placeholder={t("Select")}
+                  loading
+                />
               </>
-            ) : countries.length > 0 && (() => {
-              return (
-                <>
-                  <FieldLabel>{t("Language")}</FieldLabel>
-                  <SelectInput
-                    value={effectiveSimulationLanguage}
-                    onChange={(v) =>
-                      setForm((p) => ({
-                        ...p,
-                        // Store the picked language verbatim — including
-                        // "en". Collapsing an explicit English pick to
-                        // null used to mean "no override, inherit
-                        // profile" — indistinguishable from never having
-                        // touched this dropdown. For a user whose PROFILE
-                        // language is non-English (e.g. Hindi), explicitly
-                        // choosing English for THIS simulation was
-                        // silently discarded: on restore (Simulation
-                        // History), simulation_language came back empty
-                        // and the fallback chain resolved to the
-                        // country's primary non-English language instead
-                        // of the English the user actually picked. Only
-                        // an untouched dropdown (EMPTY_FORM / Reset) is
-                        // null now; any explicit choice — English
-                        // included — sticks.
-                        simulation_language: v,
-                      }))
-                    }
-                    options={(languageOptionsForCountry ?? ["en"]).map((code) => ({
-                      value: code,
-                      label: labelForLanguage(code),
-                    }))}
-                    placeholder={t("Select language")}
-                  />
-                </>
-              );
-            })()}
+            ) : (
+              countries.length > 0 &&
+              (() => {
+                return (
+                  <>
+                    <FieldLabel>{t("Language")}</FieldLabel>
+                    <SelectInput
+                      value={effectiveSimulationLanguage}
+                      onChange={(v) =>
+                        setForm((p) => ({
+                          ...p,
+                          // Store the picked language verbatim — including
+                          // "en". Collapsing an explicit English pick to
+                          // null used to mean "no override, inherit
+                          // profile" — indistinguishable from never having
+                          // touched this dropdown. For a user whose PROFILE
+                          // language is non-English (e.g. Hindi), explicitly
+                          // choosing English for THIS simulation was
+                          // silently discarded: on restore (Simulation
+                          // History), simulation_language came back empty
+                          // and the fallback chain resolved to the
+                          // country's primary non-English language instead
+                          // of the English the user actually picked. Only
+                          // an untouched dropdown (EMPTY_FORM / Reset) is
+                          // null now; any explicit choice — English
+                          // included — sticks.
+                          simulation_language: v,
+                        }))
+                      }
+                      options={(languageOptionsForCountry ?? ["en"]).map((code) => ({
+                        value: code,
+                        label: labelForLanguage(code),
+                      }))}
+                      placeholder={t("Select language")}
+                    />
+                  </>
+                );
+              })()
+            )}
 
             {/* Y3 §1.4 — Animal Category selector. Sits in Simulation
                 Details (top of the form) because the choice gates
@@ -950,7 +1076,10 @@ export default function CattleInfoPage() {
             <SelectInput
               value={form.animal_category}
               onChange={(v) => set("animal_category")(v)}
-              options={ANIMAL_CATEGORIES.map((c) => ({ value: c, label: ANIMAL_CATEGORY_LABELS[c] }))}
+              options={ANIMAL_CATEGORIES.map((c) => ({
+                value: c,
+                label: ANIMAL_CATEGORY_LABELS[c],
+              }))}
               placeholder={t("Select category")}
               loading={loadingCountries}
             />
@@ -958,7 +1087,10 @@ export default function CattleInfoPage() {
         </SectionCard>
 
         {/* Section 2: Animal Characteristics */}
-        <SectionCard iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />} title={t("Animal Characteristics")}>
+        <SectionCard
+          iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />}
+          title={t("Animal Characteristics")}
+        >
           <div className="px-3">
             <FieldLabel>{t("Breed Selection *")}</FieldLabel>
             <SelectInput
@@ -1038,7 +1170,10 @@ export default function CattleInfoPage() {
         </SectionCard>
 
         {/* Section 3: Reproductive Data */}
-        <SectionCard iconSvg={<IcReproductiveData size={22} color="#064E3B" />} title={t("Reproductive Data")}>
+        <SectionCard
+          iconSvg={<IcReproductiveData size={22} color="#064E3B" />}
+          title={t("Reproductive Data")}
+        >
           <div className="px-3">
             <div className="grid grid-cols-2 gap-3 mt-1">
               <div>
@@ -1075,74 +1210,77 @@ export default function CattleInfoPage() {
             apply. The form's required-field gating (`milkFieldsValid`)
             skips this section when hidden. */}
         {showMilkSection && (
-        <SectionCard iconSvg={<IcMilkProduction size={22} color="#064E3B" />} title={t("Milk Production")}>
-          <div className="px-3">
-            <FieldLabel>{t("Milk Production (L) *")}</FieldLabel>
-            <input
-              type="number"
-              inputMode="decimal"
-              value={form.milk_production}
-              onChange={(e) => handleMilkProduction(e.target.value)}
-              {...loadingFieldProps(
-                loadingCountries,
-                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
-                inputStyle
-              )}
-            />
-            <FieldError message={errors.milk_production} />
+          <SectionCard
+            iconSvg={<IcMilkProduction size={22} color="#064E3B" />}
+            title={t("Milk Production")}
+          >
+            <div className="px-3">
+              <FieldLabel>{t("Milk Production (L) *")}</FieldLabel>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={form.milk_production}
+                onChange={(e) => handleMilkProduction(e.target.value)}
+                {...loadingFieldProps(
+                  loadingCountries,
+                  "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                  inputStyle
+                )}
+              />
+              <FieldError message={errors.milk_production} />
 
-            <div className="grid grid-cols-2 gap-3 mt-1">
-              <div>
-                <FieldLabel>{t("Milk Protein % *")}</FieldLabel>
-                <SelectInput
-                  value={form.milk_protein_percent}
-                  onChange={set("milk_protein_percent")}
-                  options={MILK_PROTEIN_OPTIONS.map((v) => ({ value: v, label: v }))}
-                  placeholder={t("Select")}
-                  loading={loadingCountries}
-                />
+              <div className="grid grid-cols-2 gap-3 mt-1">
+                <div>
+                  <FieldLabel>{t("Milk Protein % *")}</FieldLabel>
+                  <SelectInput
+                    value={form.milk_protein_percent}
+                    onChange={set("milk_protein_percent")}
+                    options={MILK_PROTEIN_OPTIONS.map((v) => ({ value: v, label: v }))}
+                    placeholder={t("Select")}
+                    loading={loadingCountries}
+                  />
+                </div>
+                <div>
+                  <FieldLabel>{t("Milk Fat % *")}</FieldLabel>
+                  <SelectInput
+                    value={form.milk_fat_percent}
+                    onChange={set("milk_fat_percent")}
+                    options={MILK_FAT_OPTIONS.map((v) => ({ value: v, label: v }))}
+                    placeholder={t("Select")}
+                    loading={loadingCountries}
+                  />
+                </div>
               </div>
-              <div>
-                <FieldLabel>{t("Milk Fat % *")}</FieldLabel>
-                <SelectInput
-                  value={form.milk_fat_percent}
-                  onChange={set("milk_fat_percent")}
-                  options={MILK_FAT_OPTIONS.map((v) => ({ value: v, label: v }))}
-                  placeholder={t("Select")}
-                  loading={loadingCountries}
-                />
-              </div>
-            </div>
 
-            {/* Y3 §1.3 — Milk Price input. Optional. Currency suffix comes
+              {/* Y3 §1.3 — Milk Price input. Optional. Currency suffix comes
                 from the user's selected country. Used by §2.1 margin card.
                 Translated as a composed string — the dictionary stores the
                 key with a literal "${user.currency}" placeholder (same
                 pattern as the "${N} star" / "${count} TOTAL" keys used
                 elsewhere), so we translate first and then substitute the
                 real currency code into the translated string. */}
-            <FieldLabel>
-              {t("Milk Price (${user.currency}/L)").replace(
-                "${user.currency}",
-                user?.currency || "currency"
-              )}
-            </FieldLabel>
-            <input
-              type="number"
-              inputMode="decimal"
-              min={0}
-              step={0.01}
-              value={form.milk_price}
-              onChange={(e) => set("milk_price")(e.target.value)}
-              placeholder={t("Optional")}
-              {...loadingFieldProps(
-                loadingCountries,
-                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
-                inputStyle
-              )}
-            />
-          </div>
-        </SectionCard>
+              <FieldLabel>
+                {t("Milk Price (${user.currency}/L)").replace(
+                  "${user.currency}",
+                  user?.currency || "currency"
+                )}
+              </FieldLabel>
+              <input
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step={0.01}
+                value={form.milk_price}
+                onChange={(e) => set("milk_price")(e.target.value)}
+                placeholder={t("Optional")}
+                {...loadingFieldProps(
+                  loadingCountries,
+                  "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                  inputStyle
+                )}
+              />
+            </div>
+          </SectionCard>
         )}
 
         {/* Section 5: Environment */}
@@ -1197,7 +1335,12 @@ export default function CattleInfoPage() {
                   }}
                 >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" fill={showGrazingTooltip ? "#064E3B" : "#1CA069"} />
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      fill={showGrazingTooltip ? "#064E3B" : "#1CA069"}
+                    />
                     <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
                     <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
                   </svg>
@@ -1252,7 +1395,12 @@ export default function CattleInfoPage() {
                 </svg>
                 <p
                   className="text-sm"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", lineHeight: 1.5, margin: 0 }}
+                  style={{
+                    color: "#231F20",
+                    fontFamily: "Nunito, sans-serif",
+                    lineHeight: 1.5,
+                    margin: 0,
+                  }}
                 >
                   {t(
                     "Grazing activity increases energy requirements. If enabled, RationSmart adds an extra energy allowance based on topography and distance walked. Leave this off for housed animals."
@@ -1275,7 +1423,12 @@ export default function CattleInfoPage() {
                   }}
                 >
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                    <path d="M3 3l8 8M11 3L3 11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                    <path
+                      d="M3 3l8 8M11 3L3 11"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 </button>
               </div>
@@ -1286,29 +1439,34 @@ export default function CattleInfoPage() {
                 greyed out when OFF. handleContinue still sends the neutral
                 distance:0 / topography:"Flat" payload when OFF. */}
             <div style={{ opacity: form.grazing ? 1 : 0.5 }}>
-                {/* Topography: label + radios all on one row (matches Android start_toEndOf layout) */}
-                <div className="flex items-center gap-5 mt-3 ml-1">
-                  <span
-                    className="text-xs font-bold uppercase tracking-wide"
-                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                  >
-                    {(() => {
-                      const label = t("Topography *");
-                      return label.endsWith(" *") ? label.slice(0, -2) : label;
-                    })()}
-                    <span style={{ color: "#FC2E20" }}>{" *"}</span>
-                  </span>
-                  {(["Flat", "Hilly"] as const).map((opt) => {
-                    const selected = form.topography === opt;
-                    const active = form.grazing && selected;
-                    return (
+              {/* Topography: label + radios all on one row (matches Android start_toEndOf layout) */}
+              <div className="flex items-center gap-5 mt-3 ml-1">
+                <span
+                  className="text-xs font-bold uppercase tracking-wide"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {(() => {
+                    const label = t("Topography *");
+                    return label.endsWith(" *") ? label.slice(0, -2) : label;
+                  })()}
+                  <span style={{ color: "#FC2E20" }}>{" *"}</span>
+                </span>
+                {(["Flat", "Hilly"] as const).map((opt) => {
+                  const selected = form.topography === opt;
+                  const active = form.grazing && selected;
+                  return (
                     <button
                       key={opt}
                       type="button"
                       disabled={!form.grazing}
                       onClick={() => set("topography")(opt)}
                       className="flex items-center gap-2"
-                      style={{ background: "none", border: "none", cursor: form.grazing ? "pointer" : "not-allowed", padding: 0 }}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: form.grazing ? "pointer" : "not-allowed",
+                        padding: 0,
+                      }}
                     >
                       <div
                         style={{
@@ -1344,29 +1502,34 @@ export default function CattleInfoPage() {
                         {t(opt)}
                       </span>
                     </button>
-                    );
-                  })}
-                </div>
+                  );
+                })}
+              </div>
 
-                <FieldLabel>{t("Distance Walked (km) *")}</FieldLabel>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  value={form.grazing ? form.distance_walked : "0"}
-                  onChange={(e) => handleDistanceWalked(e.target.value)}
-                  {...loadingFieldProps(
-                    loadingCountries,
-                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
-                    form.grazing
-                      ? inputStyle
-                      : { ...inputStyle, backgroundColor: "#F1F5F9", color: "#999999", cursor: "not-allowed" }
-                  )}
-                  // Placed AFTER the spread so it ORs with the loading-disabled
-                  // state that loadingFieldProps sets (otherwise the spread's
-                  // own `disabled` would overwrite this one).
-                  disabled={!form.grazing || loadingCountries}
-                />
-                <FieldError message={distanceError} />
+              <FieldLabel>{t("Distance Walked (km) *")}</FieldLabel>
+              <input
+                type="number"
+                inputMode="decimal"
+                value={form.grazing ? form.distance_walked : "0"}
+                onChange={(e) => handleDistanceWalked(e.target.value)}
+                {...loadingFieldProps(
+                  loadingCountries,
+                  "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                  form.grazing
+                    ? inputStyle
+                    : {
+                        ...inputStyle,
+                        backgroundColor: "#F1F5F9",
+                        color: "#999999",
+                        cursor: "not-allowed",
+                      }
+                )}
+                // Placed AFTER the spread so it ORs with the loading-disabled
+                // state that loadingFieldProps sets (otherwise the spread's
+                // own `disabled` would overwrite this one).
+                disabled={!form.grazing || loadingCountries}
+              />
+              <FieldError message={distanceError} />
             </div>
           </div>
         </SectionCard>
@@ -1479,108 +1642,236 @@ export default function CattleInfoPage() {
 
             {/* Content */}
             <div>
-            {isLoadingHistory ? (
-              <div className="space-y-3 px-3 pb-3">
-                {[0, 1, 2].map((i) => (
-                  <div key={i} className="bg-white p-4 space-y-3" style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
-                    <div className="h-5 w-48 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
-                    <div className="h-3.5 w-36 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
-                    <div className="h-3.5 w-28 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
-                    <div className="h-3.5 w-40 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
-                  </div>
-                ))}
-              </div>
-            ) : historyList.length === 0 ? (
-              <p
-                className="text-sm text-center py-8"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
-                {t("No saved simulations found")}
-              </p>
-            ) : (
-              <div className="pb-3">
-                {historyList.map((item, idx) => {
-                  const rowId = item.report_id ?? item.simulation_id ?? String(idx);
-                  const isRowLoading = loadingSimId === rowId;
-                  const displayName = item.simulation_id ?? t("Simulation");
-                  const countryName = item.country_name ?? item.country ?? "";
-                  const createdAt = item.created_at
-                    ? new Date(item.created_at).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-                    : "";
-                  return (
+              {isLoadingHistory ? (
+                <div className="space-y-3 px-3 pb-3">
+                  {[0, 1, 2].map((i) => (
                     <div
-                      key={rowId}
-                      className="mx-3 mt-3 bg-white"
-                      style={{
-                        borderRadius: 16,
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-                        cursor: loadingSimId !== null ? "not-allowed" : "pointer",
-                        opacity: loadingSimId !== null && !isRowLoading ? 0.6 : 1,
-                      }}
-                      onClick={() => !loadingSimId && loadSimulation(item.report_id ?? item.simulation_id ?? "")}
+                      key={i}
+                      className="bg-white p-4 space-y-3"
+                      style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
                     >
-                      <div className="flex items-center" style={{ paddingBottom: 10 }}>
-                        {/* Left: text fields */}
-                        <div className="flex-1 min-w-0">
-                          <p
-                            className="font-bold"
-                            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18, margin: "10px 10px 0 10px" }}
-                          >
-                            {displayName}
-                          </p>
-                          <div className="flex items-center" style={{ marginTop: 10, marginLeft: 10 }}>
-                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: 6 }}>
-                              <rect x="2" y="1.5" width="10" height="11" rx="1.5" stroke="#6D6D6D" strokeWidth="1.2" />
-                              <path d="M4 5h6M4 7h5M4 9h3.5" stroke="#6D6D6D" strokeWidth="1.2" strokeLinecap="round" />
-                            </svg>
-                            <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                              {t("ID: ")}{rowId}
-                            </span>
+                      <div
+                        className="h-5 w-48 rounded shimmer"
+                        style={{ backgroundColor: "#E2E8F0" }}
+                      />
+                      <div
+                        className="h-3.5 w-36 rounded shimmer"
+                        style={{ backgroundColor: "#E2E8F0" }}
+                      />
+                      <div
+                        className="h-3.5 w-28 rounded shimmer"
+                        style={{ backgroundColor: "#E2E8F0" }}
+                      />
+                      <div
+                        className="h-3.5 w-40 rounded shimmer"
+                        style={{ backgroundColor: "#E2E8F0" }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : historyList.length === 0 ? (
+                <p
+                  className="text-sm text-center py-8"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {t("No saved simulations found")}
+                </p>
+              ) : (
+                <div className="pb-3">
+                  {historyList.map((item, idx) => {
+                    const rowId = item.report_id ?? item.simulation_id ?? String(idx);
+                    const isRowLoading = loadingSimId === rowId;
+                    const displayName = item.simulation_id ?? t("Simulation");
+                    const countryName = item.country_name ?? item.country ?? "";
+                    const createdAt = item.created_at
+                      ? new Date(item.created_at).toLocaleDateString("en-GB", {
+                          day: "2-digit",
+                          month: "short",
+                          year: "numeric",
+                        })
+                      : "";
+                    return (
+                      <div
+                        key={rowId}
+                        className="mx-3 mt-3 bg-white"
+                        style={{
+                          borderRadius: 16,
+                          boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                          cursor: loadingSimId !== null ? "not-allowed" : "pointer",
+                          opacity: loadingSimId !== null && !isRowLoading ? 0.6 : 1,
+                        }}
+                        onClick={() =>
+                          !loadingSimId &&
+                          loadSimulation(item.report_id ?? item.simulation_id ?? "")
+                        }
+                      >
+                        <div className="flex items-center" style={{ paddingBottom: 10 }}>
+                          {/* Left: text fields */}
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="font-bold"
+                              style={{
+                                color: "#231F20",
+                                fontFamily: "Nunito, sans-serif",
+                                fontSize: 18,
+                                margin: "10px 10px 0 10px",
+                              }}
+                            >
+                              {displayName}
+                            </p>
+                            <div
+                              className="flex items-center"
+                              style={{ marginTop: 10, marginLeft: 10 }}
+                            >
+                              <svg
+                                width="14"
+                                height="14"
+                                viewBox="0 0 14 14"
+                                fill="none"
+                                style={{ flexShrink: 0, marginRight: 6 }}
+                              >
+                                <rect
+                                  x="2"
+                                  y="1.5"
+                                  width="10"
+                                  height="11"
+                                  rx="1.5"
+                                  stroke="#6D6D6D"
+                                  strokeWidth="1.2"
+                                />
+                                <path
+                                  d="M4 5h6M4 7h5M4 9h3.5"
+                                  stroke="#6D6D6D"
+                                  strokeWidth="1.2"
+                                  strokeLinecap="round"
+                                />
+                              </svg>
+                              <span
+                                style={{
+                                  color: "#6D6D6D",
+                                  fontFamily: "Nunito, sans-serif",
+                                  fontSize: 13,
+                                }}
+                              >
+                                {t("ID: ")}
+                                {rowId}
+                              </span>
+                            </div>
+                            {countryName && (
+                              <div
+                                className="flex items-center"
+                                style={{ marginTop: 10, marginLeft: 10 }}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 14 14"
+                                  fill="none"
+                                  style={{ flexShrink: 0, marginRight: 6 }}
+                                >
+                                  <path
+                                    d="M7 1.5A3.5 3.5 0 0 0 3.5 5c0 2.625 3.5 7 3.5 7S10.5 7.625 10.5 5A3.5 3.5 0 0 0 7 1.5zm0 4.75A1.25 1.25 0 1 1 7 4a1.25 1.25 0 0 1 0 2.25z"
+                                    fill="#6D6D6D"
+                                  />
+                                </svg>
+                                <span
+                                  style={{
+                                    color: "#6D6D6D",
+                                    fontFamily: "Nunito, sans-serif",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  {t("Country: ")}
+                                  {countryName}
+                                </span>
+                              </div>
+                            )}
+                            {createdAt && (
+                              <div
+                                className="flex items-center"
+                                style={{ marginTop: 10, marginLeft: 10 }}
+                              >
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 14 14"
+                                  fill="none"
+                                  style={{ flexShrink: 0, marginRight: 6 }}
+                                >
+                                  <rect
+                                    x="1.5"
+                                    y="2.5"
+                                    width="11"
+                                    height="10"
+                                    rx="1.5"
+                                    stroke="#6D6D6D"
+                                    strokeWidth="1.2"
+                                  />
+                                  <path
+                                    d="M4.5 1.5v2M9.5 1.5v2M1.5 5.5h11"
+                                    stroke="#6D6D6D"
+                                    strokeWidth="1.2"
+                                    strokeLinecap="round"
+                                  />
+                                </svg>
+                                <span
+                                  style={{
+                                    color: "#6D6D6D",
+                                    fontFamily: "Nunito, sans-serif",
+                                    fontSize: 13,
+                                  }}
+                                >
+                                  {t("Created on: ")}
+                                  {createdAt}
+                                </span>
+                              </div>
+                            )}
                           </div>
-                          {countryName && (
-                            <div className="flex items-center" style={{ marginTop: 10, marginLeft: 10 }}>
-                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: 6 }}>
-                                <path d="M7 1.5A3.5 3.5 0 0 0 3.5 5c0 2.625 3.5 7 3.5 7S10.5 7.625 10.5 5A3.5 3.5 0 0 0 7 1.5zm0 4.75A1.25 1.25 0 1 1 7 4a1.25 1.25 0 0 1 0 2.25z" fill="#6D6D6D" />
+                          {/* Right: arrow pill card */}
+                          <div
+                            className="flex items-center justify-center flex-shrink-0"
+                            style={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 60,
+                              backgroundColor: "#E4F7EF",
+                              marginRight: 10,
+                            }}
+                          >
+                            {isRowLoading ? (
+                              <svg
+                                className="animate-spin"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                fill="none"
+                              >
+                                <circle cx="8" cy="8" r="6" stroke="#E2E8F0" strokeWidth="2" />
+                                <path
+                                  d="M8 2a6 6 0 0 1 6 6"
+                                  stroke="#064E3B"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                />
                               </svg>
-                              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                                {t("Country: ")}{countryName}
-                              </span>
-                            </div>
-                          )}
-                          {createdAt && (
-                            <div className="flex items-center" style={{ marginTop: 10, marginLeft: 10 }}>
-                              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ flexShrink: 0, marginRight: 6 }}>
-                                <rect x="1.5" y="2.5" width="11" height="10" rx="1.5" stroke="#6D6D6D" strokeWidth="1.2" />
-                                <path d="M4.5 1.5v2M9.5 1.5v2M1.5 5.5h11" stroke="#6D6D6D" strokeWidth="1.2" strokeLinecap="round" />
+                            ) : (
+                              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                <path
+                                  d="M6 4L10 8L6 12"
+                                  stroke="#064E3B"
+                                  strokeWidth="1.6"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
                               </svg>
-                              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 13 }}>
-                                {t("Created on: ")}{createdAt}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {/* Right: arrow pill card */}
-                        <div
-                          className="flex items-center justify-center flex-shrink-0"
-                          style={{ width: 34, height: 34, borderRadius: 60, backgroundColor: "#E4F7EF", marginRight: 10 }}
-                        >
-                          {isRowLoading ? (
-                            <svg className="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <circle cx="8" cy="8" r="6" stroke="#E2E8F0" strokeWidth="2" />
-                              <path d="M8 2a6 6 0 0 1 6 6" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
-                            </svg>
-                          ) : (
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                              <path d="M6 4L10 8L6 12" stroke="#064E3B" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          )}
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </>

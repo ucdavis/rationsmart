@@ -9,12 +9,12 @@
 // away and the frontend can revert to using English identity everywhere.
 
 export const FORAGE_ALIASES: ReadonlySet<string> = new Set([
-  "Forage",                          // en
-  "चारा",                            // hi — verified 2026-07-08 vs <DEV_BACKEND_IP>:8000
+  "Forage", // en
+  "चारा", // hi — verified 2026-07-08 vs <DEV_BACKEND_IP>:8000
 ]);
 
 export const ROUGHAGE_ALIASES: ReadonlySet<string> = new Set([
-  "Roughage",                        // en
+  "Roughage", // en
 ]);
 
 export const isForageType = (name: string | null | undefined): boolean =>

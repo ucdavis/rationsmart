@@ -20,7 +20,10 @@ interface AdminUser {
 
 function SkeletonCard() {
   return (
-    <div className="mx-3 my-2 rounded-2xl bg-white p-4 space-y-3" style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}>
+    <div
+      className="mx-3 my-2 rounded-2xl bg-white p-4 space-y-3"
+      style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+    >
       <div className="flex justify-between">
         <div className="h-4 w-32 rounded-full shimmer" />
         <div className="h-6 w-14 rounded-full shimmer" />
@@ -60,7 +63,7 @@ export default function AdminUsersPage() {
       do {
         const res = await getAdminUsers(user.id, page, PAGE_SIZE, "", s, q);
         const data = res.data;
-        const list: AdminUser[] = Array.isArray(data) ? data : data?.users ?? data?.items ?? [];
+        const list: AdminUser[] = Array.isArray(data) ? data : (data?.users ?? data?.items ?? []);
         all.push(...list);
         totalCount = data?.total_count ?? data?.total ?? all.length;
         totalPages = data?.total_pages ?? Math.ceil(totalCount / PAGE_SIZE);
@@ -76,14 +79,16 @@ export default function AdminUsersPage() {
     }
   };
 
-  useEffect(() => { load(); }, [user?.id]);
+  useEffect(() => {
+    load();
+  }, [user?.id]);
 
   const handleToggle = async (u: AdminUser) => {
     if (!user?.id) return;
     setTogglingId(u.id);
     try {
       await toggleUserStatus(u.id, user.id, !u.is_active);
-      setUsers((prev) => prev.map((x) => x.id === u.id ? { ...x, is_active: !u.is_active } : x));
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
       showSnackbar(`User ${!u.is_active ? "activated" : "deactivated"}`, "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("Toggle failed");
@@ -100,7 +105,10 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}>
+    <div
+      className="flex flex-col min-h-screen"
+      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
+    >
       <Toolbar type="back" title={t("User Management")} onBack={() => router.back()} />
 
       {/* Stats card — TOTAL USERS uppercase, matches Android cv_aggregated_view */}
@@ -109,8 +117,21 @@ export default function AdminUsersPage() {
         style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
       >
         <div>
-          <p className="uppercase tracking-wide" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>{t("Total Users")}</p>
-          <p style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 28, fontWeight: 700, lineHeight: 1.2 }}>
+          <p
+            className="uppercase tracking-wide"
+            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+          >
+            {t("Total Users")}
+          </p>
+          <p
+            style={{
+              color: "#064E3B",
+              fontFamily: "Nunito, sans-serif",
+              fontSize: 28,
+              fontWeight: 700,
+              lineHeight: 1.2,
+            }}
+          >
             {formatTotalUsers(total)}
           </p>
         </div>
@@ -143,7 +164,10 @@ export default function AdminUsersPage() {
           </>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-            <p className="text-base font-bold mb-2" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-base font-bold mb-2"
+              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("No users found")}
             </p>
           </div>
@@ -152,11 +176,19 @@ export default function AdminUsersPage() {
             <div
               key={u.id}
               className="mx-3 my-2 bg-white"
-              style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", cursor: "pointer", paddingBottom: 14 }}
+              style={{
+                borderRadius: 20,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                cursor: "pointer",
+                paddingBottom: 14,
+              }}
               onClick={() => setSelectedUser(u)}
             >
               {/* Top row: rounded-square avatar + ROLE label | status badge top-right */}
-              <div className="flex items-start justify-between gap-3" style={{ padding: "12px 12px 0" }}>
+              <div
+                className="flex items-start justify-between gap-3"
+                style={{ padding: "12px 12px 0" }}
+              >
                 <div className="flex items-center flex-1 min-w-0" style={{ gap: 12 }}>
                   {/* Rounded-square avatar pill — matches Android cv_role
                       (mint_whisper bg, 16dp corner, 10dp content padding,
@@ -178,7 +210,10 @@ export default function AdminUsersPage() {
                       </svg>
                     )}
                   </div>
-                  <span className="font-bold uppercase" style={{ color: "#064E3B", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
+                  <span
+                    className="font-bold uppercase"
+                    style={{ color: "#064E3B", fontSize: 12, fontFamily: "Nunito, sans-serif" }}
+                  >
                     {u.is_admin ? t("ADMIN") : t("USER")}
                   </span>
                 </div>
@@ -186,7 +221,10 @@ export default function AdminUsersPage() {
                     rounded rect (10dp), solid honeydew/peachy_pink bg, 1dp colored
                     stroke. Text colors: dark_aquamarine_green / carmine_pink. */}
                 <button
-                  onClick={(e) => { e.stopPropagation(); handleToggle(u); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggle(u);
+                  }}
                   disabled={togglingId === u.id}
                   className="font-bold"
                   style={{
@@ -205,16 +243,33 @@ export default function AdminUsersPage() {
                 </button>
               </div>
               {/* Name — starts after the 44px avatar pill (12 card pad + 44 avatar + 12 gap = 68) */}
-              <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18, fontFamily: "Nunito, sans-serif", margin: "4px 12px 0 68px" }}>
+              <p
+                className="font-bold truncate"
+                style={{
+                  color: "#231F20",
+                  fontSize: 18,
+                  fontFamily: "Nunito, sans-serif",
+                  margin: "4px 12px 0 68px",
+                }}
+              >
                 {u.name}
               </p>
               {/* Email row — envelope icon prefix. Android ic_email is a
                   FILLED envelope (not outlined), tinted dark_silver. 16dp size. */}
               <div className="flex items-center" style={{ margin: "8px 12px 0 68px", gap: 4 }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="#6D6D6D" style={{ flexShrink: 0 }}>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="#6D6D6D"
+                  style={{ flexShrink: 0 }}
+                >
                   <path d="M20,4L4,4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2L22,6c0,-1.1 -0.9,-2 -2,-2zM19.6,8.25l-6.54,4.09c-0.65,0.41 -1.47,0.41 -2.12,0L4.4,8.25c-0.25,-0.16 -0.4,-0.43 -0.4,-0.72 0,-0.67 0.73,-1.07 1.3,-0.72L12,11l6.7,-4.19c0.57,-0.35 1.3,0.05 1.3,0.72 0,0.29 -0.15,0.56 -0.4,0.72z" />
                 </svg>
-                <span className="truncate" style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                <span
+                  className="truncate"
+                  style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}
+                >
                   {u.email_id}
                 </span>
               </div>
@@ -222,10 +277,18 @@ export default function AdminUsersPage() {
                   ic_location renders as a filled outline pin with center dot. */}
               {getCountryName(u.country) && (
                 <div className="flex items-center" style={{ margin: "4px 12px 0 68px", gap: 4 }}>
-                  <svg width="16" height="16" viewBox="0 0 960 960" fill="#6D6D6D" style={{ flexShrink: 0 }}>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 960 960"
+                    fill="#6D6D6D"
+                    style={{ flexShrink: 0 }}
+                  >
                     <path d="M480,769q119,-107 179.5,-197T720,411q0,-105 -68.5,-174T480,168q-103,0 -171.5,69T240,411q0,71 60.5,161T480,769ZM480,841q-13,0 -24.5,-4.5T433,823q-40,-35 -86.5,-82T260,640q-40,-54 -66,-112.5T168,411q0,-134 89,-224.5T480,96q133,0 222.5,90.5T792,411q0,58 -26.5,117t-66,113q-39.5,54 -86,100.5T527,823q-11,9 -22.5,13.5T480,841ZM480,480q30,0 51,-21t21,-51q0,-30 -21,-51t-51,-21q-30,0 -51,21t-21,51q0,30 21,51t51,21Z" />
                   </svg>
-                  <span style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}>
+                  <span
+                    style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}
+                  >
                     {getCountryName(u.country)}
                   </span>
                 </div>
@@ -249,7 +312,12 @@ export default function AdminUsersPage() {
         >
           <div
             className="w-full rounded-t-3xl bg-white"
-            style={{ maxWidth: "min(100vw, 480px)", maxHeight: "92vh", overflowY: "auto", paddingBottom: 20 }}
+            style={{
+              maxWidth: "min(100vw, 480px)",
+              maxHeight: "92vh",
+              overflowY: "auto",
+              paddingBottom: 20,
+            }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drag handle (Android view_drag_handle: 40dp × 6dp mint pin) */}
@@ -287,7 +355,12 @@ export default function AdminUsersPage() {
             {/* Name — centered, bold, raisin_black, font_20 */}
             <p
               className="text-center font-bold"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20, marginInline: 12 }}
+              style={{
+                color: "#231F20",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 20,
+                marginInline: 12,
+              }}
             >
               {selectedUser.name}
             </p>
@@ -397,13 +470,23 @@ export default function AdminUsersPage() {
                 >
                   {t("Account Activation")}
                 </p>
-                <p style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14, marginTop: 2 }}>
+                <p
+                  style={{
+                    color: "#231F20",
+                    fontFamily: "Nunito, sans-serif",
+                    fontSize: 14,
+                    marginTop: 2,
+                  }}
+                >
                   {t("Set user status")}
                 </p>
               </div>
               {/* Material-style switch */}
               <button
-                onClick={() => { handleToggle(selectedUser); setSelectedUser(null); }}
+                onClick={() => {
+                  handleToggle(selectedUser);
+                  setSelectedUser(null);
+                }}
                 disabled={togglingId === selectedUser.id}
                 aria-label={selectedUser.is_active ? t("Deactivate user") : t("Activate user")}
                 style={{
@@ -437,7 +520,10 @@ export default function AdminUsersPage() {
             {/* Save + Cancel buttons (Android btn_save filled green,
                 btn_cancel outlined). Save toggles status via existing handler. */}
             <button
-              onClick={() => { handleToggle(selectedUser); setSelectedUser(null); }}
+              onClick={() => {
+                handleToggle(selectedUser);
+                setSelectedUser(null);
+              }}
               disabled={togglingId === selectedUser.id}
               className="font-bold"
               style={{

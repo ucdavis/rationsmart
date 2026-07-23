@@ -265,8 +265,25 @@ describe("Admin Feeds — Feed CRUD modal", () => {
     // Pre-fill: nutrient numeric inputs, in JSX declaration order
     const nutrientInputs = within(modal).getAllByPlaceholderText("0.00") as HTMLInputElement[];
     expect(nutrientInputs).toHaveLength(17);
-    const [dm, ash, cellulose, cf, cp, ee, hemicellulose, st, ndf, adf, lg, ndin, nfe, npn, adin, ca, p] =
-      nutrientInputs;
+    const [
+      dm,
+      ash,
+      cellulose,
+      cf,
+      cp,
+      ee,
+      hemicellulose,
+      st,
+      ndf,
+      adf,
+      lg,
+      ndin,
+      nfe,
+      npn,
+      adin,
+      ca,
+      p,
+    ] = nutrientInputs;
     expect(dm.value).toBe("35.5");
     expect(ash.value).toBe("6.4");
     expect(cellulose.value).toBe("12");
@@ -340,7 +357,9 @@ describe("Admin Feeds — Feed CRUD modal", () => {
     fireEvent.change(countrySelect, { target: { value: "India" } });
     fireEvent.change(typeSelect, { target: { value: "Forage" } });
     fireEvent.change(categorySelect, { target: { value: "Roughage" } });
-    fireEvent.change(screen.getByPlaceholderText("e.g. Maize Silage"), { target: { value: "Test Feed" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Maize Silage"), {
+      target: { value: "Test Feed" },
+    });
 
     // Touch exactly one nutrient field to prove real values pass through
     // Number(), while every other untouched numeric defaults to 0.

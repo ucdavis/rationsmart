@@ -35,15 +35,21 @@ export default function Snackbar() {
   // INFO    = azure #007BFF / white text
   const styleMap = {
     success: { bg: "#064E3B", text: "#FFFFFF" },
-    error:   { bg: "#FFDB58", text: "#231F20" },
-    info:    { bg: "#007BFF", text: "#FFFFFF" },
+    error: { bg: "#FFDB58", text: "#231F20" },
+    info: { bg: "#007BFF", text: "#FFFFFF" },
   };
   const s = styleMap[snackbar.type];
 
   const iconMap = {
     success: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-        <path d="M5 12l5 5L20 7" stroke={s.text} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M5 12l5 5L20 7"
+          stroke={s.text}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     ),
     error: (

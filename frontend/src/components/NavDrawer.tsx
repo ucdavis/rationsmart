@@ -36,9 +36,19 @@ type MenuItem = {
 const userMenuItems: MenuItem[] = [
   { label: "Profile", href: "/profile", icon: <IcProfileNav size={20} color="#064E3B" /> },
   { label: "Feed Reports", href: "/reports", icon: <IcReportNav size={20} color="#064E3B" /> },
-  { label: "Help & Support", href: "/help", icon: <IcHelpSupport size={20} color="#064E3B" />, badge: "Ongoing" },
+  {
+    label: "Help & Support",
+    href: "/help",
+    icon: <IcHelpSupport size={20} color="#064E3B" />,
+    badge: "Ongoing",
+  },
   { label: "Feedback", href: "/feedback", icon: <IcFeedbackNav size={20} color="#064E3B" /> },
-  { label: "Terms & Conditions", href: "/terms", icon: <IcTerms size={20} color="#064E3B" />, badge: "Ongoing" },
+  {
+    label: "Terms & Conditions",
+    href: "/terms",
+    icon: <IcTerms size={20} color="#064E3B" />,
+    badge: "Ongoing",
+  },
 ];
 
 // Admin options: Admin first, then same as userOptions
@@ -223,7 +233,9 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowLogoutConfirm(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLogoutConfirm(false);
+          }}
         >
           <div
             className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
@@ -232,12 +244,44 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           >
             {/* Icon */}
             <div className="flex justify-center mb-4">
-              <div className="flex items-center justify-center" style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(5,188,109,0.15)" }}>
-                <div className="flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#FFFFFF" }}>
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  backgroundColor: "rgba(5,188,109,0.15)",
+                }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#FFFFFF" }}
+                >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <polyline points="16 17 21 12 16 7" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <line x1="21" y1="12" x2="9" y2="12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path
+                      d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                      stroke="#064E3B"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <polyline
+                      points="16 17 21 12 16 7"
+                      stroke="#064E3B"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <line
+                      x1="21"
+                      y1="12"
+                      x2="9"
+                      y2="12"
+                      stroke="#064E3B"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
               </div>
@@ -258,14 +302,26 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               <button
                 onClick={handleLogout}
                 className="w-full py-3 rounded-full font-bold"
-                style={{ backgroundColor: "#064E3B", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  backgroundColor: "#064E3B",
+                  color: "white",
+                  border: "none",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 {t("Yes, Logout")}
               </button>
               <button
                 onClick={() => setShowLogoutConfirm(false)}
                 className="w-full py-3 rounded-full font-bold"
-                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer" }}
+                style={{
+                  border: "2px solid #064E3B",
+                  color: "#064E3B",
+                  background: "white",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                }}
               >
                 {t("No")}
               </button>

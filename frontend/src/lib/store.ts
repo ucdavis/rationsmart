@@ -19,7 +19,7 @@ export interface User {
   country_id: string;
   country_code: string;
   currency: string;
-  pin: string;             // 6-digit on the v1 backend; 4-digit accepted for legacy login only
+  pin: string; // 6-digit on the v1 backend; 4-digit accepted for legacy login only
   is_admin: boolean;
   // v1 testing-branch addition: JWT issued by POST /v1/auth/login.
   // Every animal/* and admin/* request gets this as `Authorization: Bearer <token>`.
@@ -106,9 +106,7 @@ export const useStore = create<AppState>()(
       },
 
       setToken: (token: string | null) =>
-        set((state) =>
-          state.user ? { user: { ...state.user, token } } : state
-        ),
+        set((state) => (state.user ? { user: { ...state.user, token } } : state)),
 
       logout: () => {
         if (typeof window !== "undefined") {
@@ -135,15 +133,18 @@ export const useStore = create<AppState>()(
         // effectively blank (no feed_uuid / feed_type_name / category_name).
         if (typeof window !== "undefined") {
           const empty = items.length === 0;
-          const allBlank = !empty && items.every(
-            (r) => !r.feed_uuid && !r.feed_type_name && !r.category_name
-          );
+          const allBlank =
+            !empty && items.every((r) => !r.feed_uuid && !r.feed_type_name && !r.category_name);
           if (empty || allBlank) {
             console.warn(
               `[store] setFeedSelections(${empty ? "[]" : "all-blank"}) — items:`,
-              JSON.stringify(items.map((i) => ({
-                fu: i.feed_uuid, ft: i.feed_type_name, cn: i.category_name,
-              }))),
+              JSON.stringify(
+                items.map((i) => ({
+                  fu: i.feed_uuid,
+                  ft: i.feed_type_name,
+                  cn: i.category_name,
+                }))
+              ),
               "\nstack:",
               new Error().stack?.split("\n").slice(1, 10).join("\n")
             );
@@ -156,14 +157,11 @@ export const useStore = create<AppState>()(
 
       setDietLimits: (limits) => set({ dietLimits: limits }),
 
-      showSnackbar: (message, type = "info") =>
-        set({ snackbar: { message, type, visible: true } }),
+      showSnackbar: (message, type = "info") => set({ snackbar: { message, type, visible: true } }),
 
       hideSnackbar: () =>
         set((state) =>
-          state.snackbar
-            ? { snackbar: { ...state.snackbar, visible: false } }
-            : { snackbar: null }
+          state.snackbar ? { snackbar: { ...state.snackbar, visible: false } } : { snackbar: null }
         ),
     }),
     {
@@ -221,11 +219,7 @@ setTokenProvider(() => useStore.getState().user?.token ?? null);
 //   3. "en"                             ← pre-login / brand-new user
 setLangProvider(() => {
   const s = useStore.getState();
-  return (
-    s.cattleInfo?.simulation_language ??
-    s.user?.preferred_language ??
-    "en"
-  );
+  return s.cattleInfo?.simulation_language ?? s.user?.preferred_language ?? "en";
 });
 
 // v1: when ANY authenticated call comes back 401 (Token expired /

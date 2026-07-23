@@ -120,10 +120,7 @@ async function loadHandler(host: string, port = "8000") {
   return import("@/app/api/proxy/[...path]/route");
 }
 
-function makeRequest(
-  pathSegments: string[],
-  init: RequestInit & { search?: string } = {}
-) {
+function makeRequest(pathSegments: string[], init: RequestInit & { search?: string } = {}) {
   const { search = "", ...rest } = init;
   const url = `http://localhost/api/proxy/${pathSegments.join("/")}${search}`;
   return new NextRequest(url, rest);

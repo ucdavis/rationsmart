@@ -48,8 +48,20 @@ const seedUser = (over: Partial<User> = {}): User => ({
 });
 
 const countries = [
-  { id: "1", name: "India", country_code: "IN", currency: "INR", supported_languages: ["en", "hi", "bn"] },
-  { id: "2", name: "Vietnam", country_code: "VN", currency: "VND", supported_languages: ["en", "vi"] },
+  {
+    id: "1",
+    name: "India",
+    country_code: "IN",
+    currency: "INR",
+    supported_languages: ["en", "hi", "bn"],
+  },
+  {
+    id: "2",
+    name: "Vietnam",
+    country_code: "VN",
+    currency: "VND",
+    supported_languages: ["en", "vi"],
+  },
   { id: "3", name: "USA", country_code: "US", currency: "USD" },
 ];
 
@@ -80,7 +92,9 @@ describe("Profile — loading shimmer (real fields in place, not a separate skel
   it("shimmers the real Name/Country/Language fields while countries are fetching, then the same elements become interactive", async () => {
     let resolveCountries!: (v: { data: typeof countries }) => void;
     getCountries.mockReturnValueOnce(
-      new Promise((resolve) => { resolveCountries = resolve; })
+      new Promise((resolve) => {
+        resolveCountries = resolve;
+      })
     );
     const { container } = render(<ProfilePage />);
 

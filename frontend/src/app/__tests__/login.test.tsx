@@ -125,7 +125,10 @@ describe("Login — successful path", () => {
 
   it("falls back to registered_language when preferred_language is missing", async () => {
     login.mockResolvedValueOnce({
-      data: { user: { id: "u-2", email_id: "x@x.com", country_id: "1" }, token: { access_token: "t" } },
+      data: {
+        user: { id: "u-2", email_id: "x@x.com", country_id: "1" },
+        token: { access_token: "t" },
+      },
     });
     getUserProfile.mockResolvedValueOnce({
       data: { is_admin: false, registered_language: "hi" },

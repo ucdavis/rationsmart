@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { updateUserProfile, deleteAccount, getCountries, resetPin, changePin, labelForLanguage } from "@/lib/api";
+import {
+  updateUserProfile,
+  deleteAccount,
+  getCountries,
+  resetPin,
+  changePin,
+  labelForLanguage,
+} from "@/lib/api";
 import { isEmailAddressValid } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
@@ -74,7 +81,15 @@ export default function ProfilePage() {
   const [isChangingPin, setIsChangingPin] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [countries, setCountries] = useState<Array<{ id: string | number; name: string; country_code?: string; currency?: string; supported_languages?: string[] }>>([]);
+  const [countries, setCountries] = useState<
+    Array<{
+      id: string | number;
+      name: string;
+      country_code?: string;
+      currency?: string;
+      supported_languages?: string[];
+    }>
+  >([]);
   // Countries are fetched on mount. Until they arrive we can't decide
   // whether to render the Language selector (we don't know the user's
   // country's supported_languages). Previously the selector silently
@@ -93,12 +108,15 @@ export default function ProfilePage() {
     getCountries()
       .then((res) => {
         const list = res.data ?? [];
-        setCountries(list.map((c) => ({
-          id: c.id, name: c.name,
-          country_code: c.country_code ?? c.code,
-          currency: c.currency ?? undefined,
-          supported_languages: c.supported_languages,
-        })));
+        setCountries(
+          list.map((c) => ({
+            id: c.id,
+            name: c.name,
+            country_code: c.country_code ?? c.code,
+            currency: c.currency ?? undefined,
+            supported_languages: c.supported_languages,
+          }))
+        );
       })
       .catch(() => {
         // silently ignore — dropdown will just be empty
@@ -202,7 +220,8 @@ export default function ProfilePage() {
   };
 
   const isChangePinReady =
-    currentPin.length >= 4 && currentPin.length <= 6 &&
+    currentPin.length >= 4 &&
+    currentPin.length <= 6 &&
     newPin.length === 6 &&
     confirmNewPin.length === 6 &&
     newPin === confirmNewPin;
@@ -219,9 +238,10 @@ export default function ProfilePage() {
       setNewPin("");
       setConfirmNewPin("");
     } catch (err: unknown) {
-      const message = err instanceof Error && err.message
-        ? err.message
-        : "Could not change PIN. Please try again.";
+      const message =
+        err instanceof Error && err.message
+          ? err.message
+          : "Could not change PIN. Please try again.";
       showSnackbar(message, "error");
     } finally {
       setIsChangingPin(false);
@@ -253,18 +273,13 @@ export default function ProfilePage() {
 
   const canSave =
     name.trim() !== "" &&
-    (
-      name.trim() !== user.name ||
+    (name.trim() !== user.name ||
       String(selectedCountryId) !== String(user.country_id) ||
       // i18n V2 — Save enables when language changed too.
-      (showLangSelector && selectedLang !== (user.preferred_language ?? "en"))
-    );
+      (showLangSelector && selectedLang !== (user.preferred_language ?? "en")));
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       <Toolbar type="back" title={t("Your Profile")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
@@ -274,14 +289,28 @@ export default function ProfilePage() {
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", borderRadius: 18 }}
         >
           {/* Avatar + Name + Email — horizontal row */}
-          <div className="flex items-center gap-3 mb-4 pb-4" style={{ borderBottom: "1px solid #F1F5F9" }}>
+          <div
+            className="flex items-center gap-3 mb-4 pb-4"
+            style={{ borderBottom: "1px solid #F1F5F9" }}
+          >
             <div
               className="flex items-center justify-center flex-shrink-0"
-              style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 16, border: "1px solid rgba(5,188,109,0.15)" }}
+              style={{
+                width: 52,
+                height: 52,
+                backgroundColor: "#F0FDF4",
+                borderRadius: 16,
+                border: "1px solid rgba(5,188,109,0.15)",
+              }}
             >
               <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
                 <circle cx="20" cy="14" r="7" stroke="#064E3B" strokeWidth="2.2" />
-                <path d="M6 36c0-6.627 6.268-12 14-12s14 5.373 14 12" stroke="#064E3B" strokeWidth="2.2" strokeLinecap="round" />
+                <path
+                  d="M6 36c0-6.627 6.268-12 14-12s14 5.373 14 12"
+                  stroke="#064E3B"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                />
               </svg>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
@@ -307,7 +336,9 @@ export default function ProfilePage() {
               jump when data arrives, just the shimmer/disabled/hidden-text
               treatment lifting off all three fields at once. */}
           {/* Name (editable) */}
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>{t("Name *")}</p>
+          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>
+            {t("Name *")}
+          </p>
           <input
             type="text"
             value={name}
@@ -322,7 +353,12 @@ export default function ProfilePage() {
           {/* Country (editable dropdown) — appearance-none strips the
               native chevron, so we overlay an Android-style ic_text_drop_down
               caret on the right. */}
-          <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Country *")}</p>
+          <p
+            className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1"
+            style={labelStyle}
+          >
+            {t("Country *")}
+          </p>
           <div className="relative">
             <select
               value={selectedCountryId}
@@ -344,7 +380,13 @@ export default function ProfilePage() {
               style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                <path
+                  d="M3 6l5 5 5-5"
+                  stroke="#231F20"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </div>
           </div>
@@ -357,7 +399,12 @@ export default function ProfilePage() {
               can always see + reconfirm their language. */}
           {showLangSelector && (
             <>
-              <p className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1" style={labelStyle}>{t("Language")}</p>
+              <p
+                className="text-xs font-bold uppercase tracking-wide mt-4 mb-1.5 ml-1"
+                style={labelStyle}
+              >
+                {t("Language")}
+              </p>
               <div className="relative">
                 <select
                   value={selectedLang}
@@ -379,7 +426,13 @@ export default function ProfilePage() {
                   style={{ right: 16, top: "50%", transform: "translateY(-50%)" }}
                 >
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 6l5 5 5-5" stroke="#231F20" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path
+                      d="M3 6l5 5 5-5"
+                      stroke="#231F20"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                 </div>
               </div>
@@ -402,8 +455,23 @@ export default function ProfilePage() {
           >
             {isSaving ? (
               <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                <svg
+                  className="animate-spin"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray="40"
+                    strokeDashoffset="10"
+                    strokeLinecap="round"
+                  />
                 </svg>
                 {t("Saving...")}
               </>
@@ -411,10 +479,32 @@ export default function ProfilePage() {
               <>
                 {t("Update Profile")}
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <path d="M4 12a8 8 0 0 1 13.659-5.667" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M20 12a8 8 0 0 1-13.659 5.667" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                  <polyline points="16 7 17.659 6.333 21 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <polyline points="8 17 6.341 17.667 3 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path
+                    d="M4 12a8 8 0 0 1 13.659-5.667"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <path
+                    d="M20 12a8 8 0 0 1-13.659 5.667"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                  <polyline
+                    points="16 7 17.659 6.333 21 5"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <polyline
+                    points="8 17 6.341 17.667 3 19"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </>
             )}
@@ -431,8 +521,8 @@ export default function ProfilePage() {
             className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
-              color: "#E44A4A",                          // carmine_pink
-              backgroundColor: "rgba(228,74,74,0.20)",   // carmine_pink_20
+              color: "#E44A4A", // carmine_pink
+              backgroundColor: "rgba(228,74,74,0.20)", // carmine_pink_20
               fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
               borderRadius: 14,
@@ -451,8 +541,8 @@ export default function ProfilePage() {
             className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
-              color: "#296CD3",                              // celtic_blue
-              backgroundColor: "rgba(41,108,211,0.25)",      // celtic_blue_25
+              color: "#296CD3", // celtic_blue
+              backgroundColor: "rgba(41,108,211,0.25)", // celtic_blue_25
               fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
               borderRadius: 14,
@@ -486,12 +576,16 @@ export default function ProfilePage() {
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <rect x="5" y="11" width="14" height="9" rx="2" stroke="#064E3B" strokeWidth="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+              <path
+                d="M8 11V8a4 4 0 0 1 8 0v3"
+                stroke="#064E3B"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
             {t("Change PIN")}
           </button>
         </div>
-
       </div>
 
       {/* Reset-PIN bottom sheet — mirrors Login's Forgot PIN flow. The
@@ -580,14 +674,35 @@ export default function ProfilePage() {
                 }}
               >
                 {isSendingReset ? (
-                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  <svg
+                    className="animate-spin"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="40"
+                      strokeDashoffset="10"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 ) : (
                   <>
                     {t("Proceed")}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M5 12h14M13 6l6 6-6 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </>
                 )}
@@ -612,7 +727,9 @@ export default function ProfilePage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget) setShowDeleteDialog(false); }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowDeleteDialog(false);
+          }}
         >
           <div
             className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
@@ -623,7 +740,12 @@ export default function ProfilePage() {
                 circle, tinted red_ryb, inside a carmine_pink_20 pill. */}
             <div
               className="flex items-center justify-center mx-auto mb-4"
-              style={{ width: 56, height: 56, borderRadius: "50%", backgroundColor: "rgba(228,74,74,0.20)" }}
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: "50%",
+                backgroundColor: "rgba(228,74,74,0.20)",
+              }}
             >
               <svg width="28" height="28" viewBox="0 0 960 960" fill="#FC2E20">
                 <path d="M480,680q17,0 28.5,-11.5T520,640v-160q0,-17 -11.5,-28.5T480,440q-17,0 -28.5,11.5T440,480v160q0,17 11.5,28.5T480,680ZM480,360q17,0 28.5,-11.5T520,320q0,-17 -11.5,-28.5T480,280q-17,0 -28.5,11.5T440,320q0,17 11.5,28.5T480,360ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
@@ -634,7 +756,12 @@ export default function ProfilePage() {
                 want\nto delete your account?" */}
             <h3
               className="text-center font-bold mb-2 mx-3"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, whiteSpace: "pre-line" }}
+              style={{
+                color: "#064E3B",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 20,
+                whiteSpace: "pre-line",
+              }}
             >
               {t("Are you sure you want\nto delete your account?")}
             </h3>
@@ -652,7 +779,14 @@ export default function ProfilePage() {
               <button
                 onClick={() => setShowDeleteDialog(false)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
-                style={{ border: "2px solid #064E3B", color: "#064E3B", background: "white", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}
+                style={{
+                  border: "2px solid #064E3B",
+                  color: "#064E3B",
+                  background: "white",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                  borderRadius: 16,
+                }}
               >
                 <svg width="18" height="18" viewBox="0 0 960 960" fill="#064E3B">
                   <path d="m480,536 l116,116q11,11 28,11t28,-11q11,-11 11,-28t-11,-28L536,480l116,-116q11,-11 11,-28t-11,-28q-11,-11 -28,-11t-28,11L480,424 364,308q-11,-11 -28,-11t-28,11q-11,11 -11,28t11,28l116,116 -116,116q-11,11 -11,28t11,28q11,11 28,11t28,-11l116,-116ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
@@ -663,9 +797,19 @@ export default function ProfilePage() {
               {/* YES — filled carmine_pink button with ic_delete_account
                   (filled trash, same icon as the Profile Delete button) */}
               <button
-                onClick={() => { setShowDeleteDialog(false); setShowPinSheet(true); }}
+                onClick={() => {
+                  setShowDeleteDialog(false);
+                  setShowPinSheet(true);
+                }}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
-                style={{ backgroundColor: "#E44A4A", color: "white", border: "none", fontFamily: "Nunito, sans-serif", cursor: "pointer", borderRadius: 16 }}
+                style={{
+                  backgroundColor: "#E44A4A",
+                  color: "white",
+                  border: "none",
+                  fontFamily: "Nunito, sans-serif",
+                  cursor: "pointer",
+                  borderRadius: 16,
+                }}
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
                   <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
@@ -690,7 +834,12 @@ export default function ProfilePage() {
             width: "min(100vw, 480px)",
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
-          onClick={(e) => { if (e.target === e.currentTarget && !isDeleting) { setShowPinSheet(false); setDeletePin(""); } }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget && !isDeleting) {
+              setShowPinSheet(false);
+              setDeletePin("");
+            }
+          }}
         >
           <div
             className="bg-white rounded-t-2xl w-full max-w-[430px] pb-5 pt-5 px-4"
@@ -699,7 +848,14 @@ export default function ProfilePage() {
           >
             {/* Drag handle — bg_bottom_sheet_pin = go_green_15 (mint) */}
             <div className="flex justify-center mb-5">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "rgba(5,188,109,0.15)" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: "rgba(5,188,109,0.15)",
+                }}
+              />
             </div>
             <h3
               className="text-center font-bold mb-5"
@@ -723,10 +879,27 @@ export default function ProfilePage() {
                 }}
               >
                 {isDeleting ? (
-                  <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  <svg
+                    className="animate-spin"
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="40"
+                      strokeDashoffset="10"
+                      strokeLinecap="round"
+                    />
                   </svg>
-                ) : t("Submit")}
+                ) : (
+                  t("Submit")
+                )}
               </button>
             </div>
 
@@ -783,22 +956,36 @@ export default function ProfilePage() {
               {t("Enter your current PIN and choose a new 6-digit PIN.")}
             </p>
 
-            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("Current PIN")}
             </p>
-            <PinInput value={currentPin} onChange={setCurrentPin} length={6} disabled={isChangingPin} />
+            <PinInput
+              value={currentPin}
+              onChange={setCurrentPin}
+              length={6}
+              disabled={isChangingPin}
+            />
 
-            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("New 6-digit PIN")}
             </p>
             <PinInput
               value={newPin}
               onChange={setNewPin}
               length={6}
-              disabled={isChangingPin || (currentPin.length < 4 || currentPin.length > 6)}
+              disabled={isChangingPin || currentPin.length < 4 || currentPin.length > 6}
             />
 
-            <p className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p
+              className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
               {t("Confirm New PIN")}
             </p>
             <PinInput
@@ -831,10 +1018,27 @@ export default function ProfilePage() {
                 }}
               >
                 {isChangingPin ? (
-                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  <svg
+                    className="animate-spin"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="40"
+                      strokeDashoffset="10"
+                      strokeLinecap="round"
+                    />
                   </svg>
-                ) : t("Update PIN")}
+                ) : (
+                  t("Update PIN")
+                )}
               </button>
             </div>
 

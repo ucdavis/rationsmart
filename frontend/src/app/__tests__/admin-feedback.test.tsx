@@ -57,7 +57,9 @@ beforeEach(() => {
 describe("Admin feedback — loads via Promise.all", () => {
   it("calls getAdminFeedbacks(user.id, 50, 0) and getAdminFeedbackStats(user.id)", async () => {
     getAdminFeedbacks.mockResolvedValueOnce({ data: { feedbacks: [] } });
-    getAdminFeedbackStats.mockResolvedValueOnce({ data: { total_feedbacks: 0, overall_rating: 0 } });
+    getAdminFeedbackStats.mockResolvedValueOnce({
+      data: { total_feedbacks: 0, overall_rating: 0 },
+    });
 
     render(<AdminFeedbackPage />);
 
@@ -292,9 +294,27 @@ describe("Admin feedback — list population from the API", () => {
     getAdminFeedbacks.mockResolvedValueOnce({
       data: {
         feedbacks: [
-          { id: 1, user_name: "A", feedback_type: "General", overall_rating: 1, created_at: "2026-06-04T10:30:00Z" },
-          { id: 2, user_name: "B", feedback_type: "Defect", overall_rating: 2, created_at: "2026-06-04T10:30:00Z" },
-          { id: 3, user_name: "C", feedback_type: "Feature Request", overall_rating: 3, created_at: "2026-06-04T10:30:00Z" },
+          {
+            id: 1,
+            user_name: "A",
+            feedback_type: "General",
+            overall_rating: 1,
+            created_at: "2026-06-04T10:30:00Z",
+          },
+          {
+            id: 2,
+            user_name: "B",
+            feedback_type: "Defect",
+            overall_rating: 2,
+            created_at: "2026-06-04T10:30:00Z",
+          },
+          {
+            id: 3,
+            user_name: "C",
+            feedback_type: "Feature Request",
+            overall_rating: 3,
+            created_at: "2026-06-04T10:30:00Z",
+          },
         ],
       },
     });
@@ -314,7 +334,9 @@ describe("Admin feedback — i18n (Hindi)", () => {
   it("renders the toolbar title and stats labels in Hindi when preferred_language is 'hi'", async () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) } as never);
     getAdminFeedbacks.mockResolvedValueOnce({ data: { feedbacks: [] } });
-    getAdminFeedbackStats.mockResolvedValueOnce({ data: { total_feedbacks: 0, overall_rating: 0 } });
+    getAdminFeedbackStats.mockResolvedValueOnce({
+      data: { total_feedbacks: 0, overall_rating: 0 },
+    });
 
     render(<AdminFeedbackPage />);
 

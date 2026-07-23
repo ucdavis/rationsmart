@@ -44,11 +44,12 @@ export default function LoginPage() {
       setResetEmail("");
     } catch (err: unknown) {
       // Android fallback for non-404, non-network errors
-      const message = err instanceof Error && err.message && err.message !== "Network Error"
-        ? err.message
-        : err instanceof Error && err.message === "Network Error"
-          ? t("Please make sure you're device has internet connectivity.")
-          : t("Unexpected error: failed to generate PIN. Please, try again!");
+      const message =
+        err instanceof Error && err.message && err.message !== "Network Error"
+          ? err.message
+          : err instanceof Error && err.message === "Network Error"
+            ? t("Please make sure you're device has internet connectivity.")
+            : t("Unexpected error: failed to generate PIN. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsSendingReset(false);
@@ -108,18 +109,26 @@ export default function LoginPage() {
       let preferred_language = "en";
       try {
         const country = u.country;
-        const countryId = String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? "");
+        const countryId = String(
+          u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""
+        );
         const [profileRes, countriesRes] = await Promise.allSettled([
           getUserProfile(emailId),
           getCountries(),
         ]);
         if (profileRes.status === "fulfilled") {
-          const d = profileRes.value.data as { is_admin?: boolean; preferred_language?: string; registered_language?: string };
+          const d = profileRes.value.data as {
+            is_admin?: boolean;
+            preferred_language?: string;
+            registered_language?: string;
+          };
           is_admin = d?.is_admin ?? false;
           preferred_language = d?.preferred_language ?? d?.registered_language ?? "en";
         }
         if (countriesRes.status === "fulfilled") {
-          const found = (countriesRes.value.data as Array<{id: string; currency?: string}>).find((c) => String(c.id) === countryId);
+          const found = (countriesRes.value.data as Array<{ id: string; currency?: string }>).find(
+            (c) => String(c.id) === countryId
+          );
           currency = found?.currency ?? "";
         }
       } catch {
@@ -135,7 +144,8 @@ export default function LoginPage() {
         email: emailId,
         country: (typeof country === "object" ? country?.name : country) ?? "",
         country_id: String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""),
-        country_code: (typeof country === "object" ? country?.country_code : undefined) ?? u.country_code ?? "",
+        country_code:
+          (typeof country === "object" ? country?.country_code : undefined) ?? u.country_code ?? "",
         currency,
         // SECURITY: never persist the account PIN. The store is written to
         // localStorage (partialized `user`), so storing the real PIN here
@@ -149,10 +159,7 @@ export default function LoginPage() {
         // The login response's `token` field is a TokenResponse object —
         // the JWT itself is in `access_token`. (We also handle the case
         // where the backend ever returns a bare string, defensively.)
-        token:
-          typeof body.token === "string"
-            ? body.token
-            : (body.token?.access_token ?? null),
+        token: typeof body.token === "string" ? body.token : (body.token?.access_token ?? null),
         // Single source of truth: preferred_language read from the
         // backend. registered_language is kept on the model as an
         // optional legacy field, populated to the same value for
@@ -165,11 +172,12 @@ export default function LoginPage() {
       router.replace("/cattle-info");
     } catch (err: unknown) {
       // Android fallback when not a 401/detail error
-      const message = err instanceof Error && err.message && err.message !== "Network Error"
-        ? err.message
-        : err instanceof Error && err.message === "Network Error"
-          ? t("Please make sure you're device has internet connectivity.")
-          : t("Unexpected error: failed to login. Please, try again!");
+      const message =
+        err instanceof Error && err.message && err.message !== "Network Error"
+          ? err.message
+          : err instanceof Error && err.message === "Network Error"
+            ? t("Please make sure you're device has internet connectivity.")
+            : t("Unexpected error: failed to login. Please, try again!");
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -177,10 +185,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-6">
         {/* App branding */}
@@ -193,7 +198,8 @@ export default function LoginPage() {
           className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
           style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
         >
-          {t("Email Address")}<RequiredAsterisk />
+          {t("Email Address")}
+          <RequiredAsterisk />
         </p>
         <div className="px-3">
           <input
@@ -239,7 +245,16 @@ export default function LoginPage() {
           >
             {isLoading ? (
               <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeDasharray="40"
+                  strokeDashoffset="10"
+                  strokeLinecap="round"
+                />
               </svg>
             ) : (
               t("Proceed")
@@ -264,10 +279,20 @@ export default function LoginPage() {
           <button
             onClick={() => router.push("/register")}
             className="text-base"
-            style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "12px",
+              lineHeight: 1,
+            }}
           >
-            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{t("New User? ")}</span>
-            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>{t("Register here")}</span>
+            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+              {t("New User? ")}
+            </span>
+            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
+              {t("Register here")}
+            </span>
           </button>
         </div>
 
@@ -276,10 +301,20 @@ export default function LoginPage() {
           <button
             onClick={() => setShowResetSheet(true)}
             className="text-base"
-            style={{ background: "none", border: "none", cursor: "pointer", padding: "12px", lineHeight: 1 }}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "12px",
+              lineHeight: 1,
+            }}
           >
-            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>{t("Forgot PIN? ")}</span>
-            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>{t("Tap here")}</span>
+            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
+              {t("Forgot PIN? ")}
+            </span>
+            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
+              {t("Tap here")}
+            </span>
           </button>
         </div>
       </div>
@@ -337,7 +372,8 @@ export default function LoginPage() {
               className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
-              {t("Email Address")}<RequiredAsterisk />
+              {t("Email Address")}
+              <RequiredAsterisk />
             </p>
             <div className="px-3">
               <input
@@ -374,14 +410,35 @@ export default function LoginPage() {
                 }}
               >
                 {isSendingReset ? (
-                  <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                  <svg
+                    className="animate-spin"
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="40"
+                      strokeDashoffset="10"
+                      strokeLinecap="round"
+                    />
                   </svg>
                 ) : (
                   <>
                     {t("Proceed")}
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      <path
+                        d="M5 12h14M13 6l6 6-6 6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
                     </svg>
                   </>
                 )}

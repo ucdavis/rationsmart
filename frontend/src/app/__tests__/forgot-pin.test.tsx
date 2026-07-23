@@ -66,9 +66,7 @@ describe("Forgot PIN — successful submit", () => {
     await waitFor(() => expect(resetPin).toHaveBeenCalledWith("aiyappa@dg.org"));
 
     expect(await screen.findByText("Check Your Email")).toBeInTheDocument();
-    expect(
-      screen.getByText(/We've sent PIN reset instructions/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/We've sent PIN reset instructions/)).toBeInTheDocument();
 
     await waitFor(() => {
       const snap = useStore.getState().snackbar;

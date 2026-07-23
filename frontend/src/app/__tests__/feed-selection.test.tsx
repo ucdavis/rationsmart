@@ -52,7 +52,12 @@ vi.mock("@/lib/api", async () => {
 
 import FeedSelectionPage from "@/app/(main)/feed-selection/page";
 import { useStore, type User } from "@/lib/store";
-import { DEFAULT_BASE_THRESHOLDS, toCattleInfoPayload, type CattleInfo, type FeedItem } from "@/lib/api";
+import {
+  DEFAULT_BASE_THRESHOLDS,
+  toCattleInfoPayload,
+  type CattleInfo,
+  type FeedItem,
+} from "@/lib/api";
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -140,7 +145,9 @@ beforeEach(() => {
 
   getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
   getFeedCategories.mockReset().mockResolvedValue({ data: [] });
-  getFeedSubCategories.mockReset().mockResolvedValue({ data: { standard_feeds: [], custom_feeds: [] } });
+  getFeedSubCategories
+    .mockReset()
+    .mockResolvedValue({ data: { standard_feeds: [], custom_feeds: [] } });
   fetchFeedTaxonomyLabels.mockReset().mockResolvedValue({ types: {}, categories: {} });
   searchFeeds.mockReset().mockResolvedValue({ data: [] });
   recommendDiet.mockReset();
@@ -338,9 +345,7 @@ describe("feed-selection — generateReport payloads", () => {
       currency: "INR",
       simulation_id: `${cattleInfo.simulation_name} (Evaluation)`,
       cattle_info: toCattleInfoPayload(cattleInfo),
-      feed_evaluation: [
-        { feed_id: "uuid-forage-1", quantity_as_fed: 3, price_per_kg: 10 },
-      ],
+      feed_evaluation: [{ feed_id: "uuid-forage-1", quantity_as_fed: 3, price_per_kg: 10 }],
     });
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/report"));
@@ -399,9 +404,15 @@ describe("feed-selection — Generating Report overlay", () => {
   it("shows the modal while the request is in flight and hides it after resolution", async () => {
     let resolveFn: (v: unknown) => void = () => {};
     recommendDiet.mockImplementation(
-      () => new Promise((resolve) => { resolveFn = resolve; })
+      () =>
+        new Promise((resolve) => {
+          resolveFn = resolve;
+        })
     );
-    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [mkValidForageRow()] });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+    });
     await renderReady();
 
     expect(screen.queryByText("Generating your report")).not.toBeInTheDocument();

@@ -42,7 +42,12 @@ function StarRating({
           onClick={() => onChange?.(star)}
           onMouseEnter={() => !readOnly && setHovered(star)}
           onMouseLeave={() => !readOnly && setHovered(0)}
-          style={{ background: "none", border: "none", cursor: readOnly ? "default" : "pointer", padding: 2 }}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: readOnly ? "default" : "pointer",
+            padding: 2,
+          }}
           aria-label={t("${N} star").replace("${N}", String(star))}
         >
           <IcStar
@@ -101,13 +106,15 @@ export default function FeedbackPage() {
     getMyFeedback(user.id, 5, 0)
       .then((res) => {
         const data = res.data;
-        setHistory(Array.isArray(data) ? data : data?.feedbacks ?? []);
+        setHistory(Array.isArray(data) ? data : (data?.feedbacks ?? []));
       })
       .catch(() => showSnackbar(t("Could not load feedback history"), "error"))
       .finally(() => setLoadingHistory(false));
   };
 
-  useEffect(() => { loadHistory(); }, [user]);
+  useEffect(() => {
+    loadHistory();
+  }, [user]);
 
   const handleSubmit = async () => {
     if (!user) return;
@@ -135,10 +142,7 @@ export default function FeedbackPage() {
   const canSubmit = text.trim().length > 0 || rating > 0;
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ backgroundColor: "#F8FAF9" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       <Toolbar type="back" title={t("Feedback")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
@@ -166,11 +170,7 @@ export default function FeedbackPage() {
         {/* Category radio buttons */}
         <div className="flex gap-6 ml-3 mt-1.5">
           {CATEGORIES.map((c) => (
-            <label
-              key={c}
-              className="flex items-center gap-1.5"
-              style={{ cursor: "pointer" }}
-            >
+            <label key={c} className="flex items-center gap-1.5" style={{ cursor: "pointer" }}>
               <input
                 type="radio"
                 name="feedback-category"
@@ -179,7 +179,9 @@ export default function FeedbackPage() {
                 onChange={() => setCategory(c)}
                 style={{ accentColor: "#064E3B", width: 18, height: 18, cursor: "pointer" }}
               />
-              <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>{t(c)}</span>
+              <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
+                {t(c)}
+              </span>
             </label>
           ))}
         </div>
@@ -228,8 +230,23 @@ export default function FeedbackPage() {
           >
             {isSubmitting ? (
               <>
-                <svg className="animate-spin" width="18" height="18" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="40" strokeDashoffset="10" strokeLinecap="round" />
+                <svg
+                  className="animate-spin"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray="40"
+                    strokeDashoffset="10"
+                    strokeLinecap="round"
+                  />
                 </svg>
                 {t("Submitting...")}
               </>
@@ -340,19 +357,23 @@ export default function FeedbackPage() {
                 </div>
                 {/* Row 2: Category badge */}
                 <div className="mb-2.5">
-                  <span style={categoryBadgeStyle(item.feedback_type)}>{item.feedback_type?.toUpperCase()}</span>
+                  <span style={categoryBadgeStyle(item.feedback_type)}>
+                    {item.feedback_type?.toUpperCase()}
+                  </span>
                 </div>
                 {/* Row 3: Feedback text */}
                 <p
                   className="text-sm"
-                  style={{
-                    color: "#231F20",
-                    fontFamily: "Nunito, sans-serif",
-                    display: "-webkit-box",
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                  } as React.CSSProperties}
+                  style={
+                    {
+                      color: "#231F20",
+                      fontFamily: "Nunito, sans-serif",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    } as React.CSSProperties
+                  }
                 >
                   {item.text_feedback}
                 </p>

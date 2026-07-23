@@ -114,9 +114,7 @@ describe("Set New PIN — submit", () => {
     await waitFor(() => expect(submit).not.toBeDisabled());
     fireEvent.click(submit);
 
-    await waitFor(() =>
-      expect(setNewPin).toHaveBeenCalledWith("legacy@dg.org", "1234", "123456")
-    );
+    await waitFor(() => expect(setNewPin).toHaveBeenCalledWith("legacy@dg.org", "1234", "123456"));
   });
 
   it("shows the success state and 'Sign In' navigates to /login", async () => {

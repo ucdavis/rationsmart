@@ -109,7 +109,13 @@ describe("default first row (documents stale CLAUDE.md §6 claim)", () => {
     const onUpdate = vi.fn();
     getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
     render(
-      <FeedRow item={makeItem()} index={0} showQuantity={false} onUpdate={onUpdate} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={0}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />
     );
     await screen.findByText("Forage");
     expect(onUpdate).not.toHaveBeenCalledWith(
@@ -154,7 +160,13 @@ describe("cascade fetch order", () => {
   it("fetches categories only after feed_type_name is set, sub-categories only once both type+category are set", async () => {
     const onUpdate = vi.fn();
     const { rerender } = render(
-      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={onUpdate} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+      />
     );
     await waitFor(() => expect(getFeedTypes).toHaveBeenCalledTimes(1));
     expect(getFeedCategories).not.toHaveBeenCalled();
@@ -200,7 +212,11 @@ describe("cascade-reset rule (§10.10)", () => {
     });
     render(
       <FeedRow
-        item={makeItem({ feed_type_name: "Concentrate", category_id: 1, category_name: "Preserved" })}
+        item={makeItem({
+          feed_type_name: "Concentrate",
+          category_id: 1,
+          category_name: "Preserved",
+        })}
         index={1}
         showQuantity={false}
         onUpdate={onUpdate}
@@ -245,7 +261,13 @@ describe("cascade-reset rule (§10.10)", () => {
 describe("delete button visibility", () => {
   it("is NOT rendered for index 0", async () => {
     render(
-      <FeedRow item={makeItem()} index={0} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={0}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
     expect(screen.queryByRole("button", { name: "Remove feed" })).not.toBeInTheDocument();
     // Let the (harmless) cascade effects settle before the test unmounts,
@@ -256,7 +278,13 @@ describe("delete button visibility", () => {
   it("is rendered and calls onDelete for index > 0", async () => {
     const onDelete = vi.fn();
     render(
-      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={onDelete} />
+      <FeedRow
+        item={makeItem()}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={onDelete}
+      />
     );
     const btn = screen.getByRole("button", { name: "Remove feed" });
     fireEvent.click(btn);
@@ -276,8 +304,12 @@ describe("edit dialog — insert path (§10.8 regression guard)", () => {
       sub_category_id: 1,
       sub_category_name: "Old Feed",
     });
-    getFeedTypes.mockResolvedValueOnce({ data: [{ type_name: "Concentrate", display_type: "Concentrate" }] });
-    getFeedCategories.mockResolvedValueOnce({ data: [{ category_name: "Grain", display_category: "Grain" }] });
+    getFeedTypes.mockResolvedValueOnce({
+      data: [{ type_name: "Concentrate", display_type: "Concentrate" }],
+    });
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Grain", display_category: "Grain" }],
+    });
     getFeedSubCategories.mockResolvedValueOnce({
       data: { standard_feeds: [{ feed_id: "old-uuid", fd_name: "Old Feed" }], custom_feeds: [] },
     });
@@ -339,9 +371,14 @@ describe("edit dialog — update path", () => {
       sub_category_name: "John-MyFeed",
     });
     getFeedTypes.mockResolvedValueOnce({ data: [{ type_name: "Forage", display_type: "Forage" }] });
-    getFeedCategories.mockResolvedValueOnce({ data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }] });
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }],
+    });
     getFeedSubCategories.mockResolvedValueOnce({
-      data: { standard_feeds: [], custom_feeds: [{ feed_id: "existing-uuid", fd_name: "John-MyFeed" }] },
+      data: {
+        standard_feeds: [],
+        custom_feeds: [{ feed_id: "existing-uuid", fd_name: "John-MyFeed" }],
+      },
     });
     checkInsertOrUpdate.mockResolvedValueOnce({
       data: { insert_feed: false, feed_details: { feed_name: "John-MyFeed" } },
@@ -382,7 +419,9 @@ describe("edit dialog — update path", () => {
     expect(body.feed_insert).toBe(false);
     expect(body.feed_details.feed_name).toBe("John-MyFeed");
 
-    await waitFor(() => expect(screen.queryByText("Edit Nutritional Information")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText("Edit Nutritional Information")).not.toBeInTheDocument()
+    );
     expect(screen.getByRole("button", { name: "John-MyFeed" })).toBeInTheDocument();
   });
 });
@@ -390,7 +429,11 @@ describe("edit dialog — update path", () => {
 // --- 8. Feed-name prefix logic --------------------------------------------
 describe("edit dialog — feed name prefix logic", () => {
   it("!isInsert + name containing '-' splits prefix/value at the FIRST dash", async () => {
-    const item = makeItem({ feed_type_name: "Forage", category_name: "Green Fodder", feed_uuid: "u1" });
+    const item = makeItem({
+      feed_type_name: "Forage",
+      category_name: "Green Fodder",
+      feed_uuid: "u1",
+    });
     checkInsertOrUpdate.mockResolvedValueOnce({
       data: { insert_feed: false, feed_details: { feed_name: "John-MyFeed-Extra" } },
     });
@@ -399,7 +442,11 @@ describe("edit dialog — feed name prefix logic", () => {
     );
     // Edit is disabled while the row's own cascade is still resolving
     // (rowLoading) — wait for it to settle before interacting.
-    await waitFor(() => expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Edit feed nutritional values" })
+      ).not.toBeDisabled()
+    );
     fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
     await screen.findByText("Edit Nutritional Information");
 
@@ -409,14 +456,22 @@ describe("edit dialog — feed name prefix logic", () => {
   });
 
   it("!isInsert + name without '-' falls back to `${userFirstName}-`", async () => {
-    const item = makeItem({ feed_type_name: "Forage", category_name: "Green Fodder", feed_uuid: "u1" });
+    const item = makeItem({
+      feed_type_name: "Forage",
+      category_name: "Green Fodder",
+      feed_uuid: "u1",
+    });
     checkInsertOrUpdate.mockResolvedValueOnce({
       data: { insert_feed: false, feed_details: { feed_name: "PlainName" } },
     });
     const { container } = render(
       <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
     );
-    await waitFor(() => expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Edit feed nutritional values" })
+      ).not.toBeDisabled()
+    );
     fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
     await screen.findByText("Edit Nutritional Information");
 
@@ -446,7 +501,11 @@ describe("edit dialog — nutrient field layout by category", () => {
       const { container } = render(
         <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
       );
-      await waitFor(() => expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).not.toBeDisabled());
+      await waitFor(() =>
+        expect(
+          screen.getByRole("button", { name: "Edit feed nutritional values" })
+        ).not.toBeDisabled()
+      );
       fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
       await screen.findByText("Edit Nutritional Information");
 
@@ -473,7 +532,13 @@ describe("bare single-object cascade responses (singleton REST quirk)", () => {
   it("wraps a bare feed-type object instead of showing an empty list", async () => {
     getFeedTypes.mockResolvedValueOnce({ data: { type_name: "Forage" } });
     render(
-      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
     await screen.findByText("Forage");
   });
@@ -523,10 +588,20 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
     // match null, but a hostile shape reaching into extractOptions'
     // .map/.filter chain differently could still throw — simulate that by
     // returning a value whose `feed_types` getter throws mid-access.
-    const hostile = { get feed_types() { throw new Error("boom"); } };
+    const hostile = {
+      get feed_types() {
+        throw new Error("boom");
+      },
+    };
     getFeedTypes.mockResolvedValueOnce({ data: hostile });
     render(
-      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
     await waitFor(() => expect(getFeedTypes).toHaveBeenCalled());
     await new Promise((r) => setTimeout(r, 0));
@@ -534,7 +609,11 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
   });
 
   it("a malformed categories response does not show the 'Could not load categories' toast", async () => {
-    const hostile = { get categories() { throw new Error("boom"); } };
+    const hostile = {
+      get categories() {
+        throw new Error("boom");
+      },
+    };
     getFeedCategories.mockResolvedValueOnce({ data: hostile });
     render(
       <FeedRow
@@ -551,7 +630,11 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
   });
 
   it("a malformed sub-categories response does not show the 'Could not load sub-categories' toast", async () => {
-    const hostile = { get standard_feeds() { throw new Error("boom"); } };
+    const hostile = {
+      get standard_feeds() {
+        throw new Error("boom");
+      },
+    };
     getFeedSubCategories.mockResolvedValueOnce({ data: hostile });
     render(
       <FeedRow
@@ -570,7 +653,13 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
   it("a genuine network failure on feed types (no stored value) still shows the toast", async () => {
     getFeedTypes.mockRejectedValueOnce(new Error("Network Error"));
     render(
-      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
     await waitFor(() => {
       expect(useStore.getState().snackbar?.message).toBe("Could not load feed types");
@@ -586,9 +675,19 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
 describe("loading shimmer uses the real elements (not a separate skeleton div)", () => {
   it("Feed Type: shows a 2-radio shimmer placeholder (same grid) while loadingTypes, then the real Forage/Concentrate radios", async () => {
     let resolveTypes!: (v: { data: string[] }) => void;
-    getFeedTypes.mockReturnValueOnce(new Promise((resolve) => { resolveTypes = resolve; }));
+    getFeedTypes.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveTypes = resolve;
+      })
+    );
     const { container } = render(
-      <FeedRow item={makeItem()} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
 
     expect(screen.queryByText("Forage")).not.toBeInTheDocument();
@@ -605,7 +704,11 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
   it("Feed Category: shimmers the same FieldBox+CustomSelect in place while loadingCats, then shows the real dropdown", async () => {
     let resolveCats!: (v: { data: { category_name: string; display_category: string }[] }) => void;
     getFeedTypes.mockResolvedValueOnce({ data: ["Forage"] });
-    getFeedCategories.mockReturnValueOnce(new Promise((resolve) => { resolveCats = resolve; }));
+    getFeedCategories.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveCats = resolve;
+      })
+    );
     render(
       <FeedRow
         item={makeItem({ feed_type_name: "Forage" })}
@@ -619,7 +722,9 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
 
     // Label cutout is hidden while shimmering (see FieldBox), but the
     // trigger button (real CustomSelect) is present, disabled.
-    const triggers = screen.getAllByRole("button").filter((b) => b.className.includes("w-full flex items-center justify-between"));
+    const triggers = screen
+      .getAllByRole("button")
+      .filter((b) => b.className.includes("w-full flex items-center justify-between"));
     expect(triggers.length).toBeGreaterThan(0);
     triggers.forEach((t) => expect(t).toBeDisabled());
 
@@ -637,8 +742,14 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
   it("a restored row with real Price/Quantity/inclusion-limits values shimmers ALL of them while its cascade re-verifies, not just Type/Category/Feed", async () => {
     let resolveSubs!: (v: { data: { standard_feeds: unknown[]; custom_feeds: unknown[] } }) => void;
     getFeedTypes.mockResolvedValueOnce({ data: ["Forage"] });
-    getFeedCategories.mockResolvedValueOnce({ data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }] });
-    getFeedSubCategories.mockReturnValueOnce(new Promise((resolve) => { resolveSubs = resolve; }));
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }],
+    });
+    getFeedSubCategories.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveSubs = resolve;
+      })
+    );
 
     const restoredItem = makeItem({
       feed_type_name: "Forage",
@@ -674,7 +785,12 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
     expect(screen.getByRole("button", { name: "Edit feed nutritional values" })).toBeDisabled();
     expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(3);
 
-    resolveSubs({ data: { standard_feeds: [{ feed_id: "restored-uuid", fd_name: "Restored Feed" }], custom_feeds: [] } });
+    resolveSubs({
+      data: {
+        standard_feeds: [{ feed_id: "restored-uuid", fd_name: "Restored Feed" }],
+        custom_feeds: [],
+      },
+    });
 
     await waitFor(() => expect(priceInput).not.toBeDisabled());
     expect(quantityInput).not.toBeDisabled();
@@ -700,7 +816,13 @@ describe("UI-label i18n — simulation_language override", () => {
       user: seedUser({ preferred_language: "en" }),
     });
     render(
-      <FeedRow item={makeItem()} index={0} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={0}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
     // "FEED ${N}" -> "FEED 1" is a literal-placeholder key with no Hindi
     // digit substitution — the dictionary keeps "FEED" as-is per the
@@ -717,7 +839,13 @@ describe("UI-label i18n — simulation_language override", () => {
       user: seedUser({ preferred_language: "hi" }),
     });
     render(
-      <FeedRow item={makeItem()} index={0} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
+      <FeedRow
+        item={makeItem()}
+        index={0}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
     );
     await screen.findByText("चारा प्रकार"); // "Feed Type"
   });
@@ -755,7 +883,11 @@ describe("stale non-ASCII feed_type_name / category_name self-heal", () => {
     getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
     render(
       <FeedRow
-        item={makeItem({ feed_type_id: 2, feed_type_name: "सांद्र आहार (दाना)", category_name: "Grain" })}
+        item={makeItem({
+          feed_type_id: 2,
+          feed_type_name: "सांद्र आहार (दाना)",
+          category_name: "Grain",
+        })}
         index={1}
         showQuantity={false}
         onUpdate={onUpdate}
@@ -785,7 +917,10 @@ describe("stale non-ASCII feed_type_name / category_name self-heal", () => {
     await waitFor(() => {
       expect(onUpdate).toHaveBeenCalledWith("row-1", { feed_type_name: "Forage" });
     });
-    expect(onUpdate).not.toHaveBeenCalledWith("row-1", expect.objectContaining({ feed_type_name: "" }));
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ feed_type_name: "" })
+    );
   });
 
   it("clears a corrupted non-ASCII category_name that doesn't match the freshly fetched English categories", async () => {

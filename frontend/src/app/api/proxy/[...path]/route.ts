@@ -97,7 +97,12 @@ async function handler(
             // re-issue lands here, so without setting the headers here
             // most calls (auth/countries, fetch-simulation-details, etc.)
             // never expose the upstream host to the browser.
-            const env = BACKEND_HOST === "<PROD_BACKEND_IP>" ? "prod" : BACKEND_HOST === "<DEV_BACKEND_IP>" ? "dev" : "custom";
+            const env =
+              BACKEND_HOST === "<PROD_BACKEND_IP>"
+                ? "prod"
+                : BACKEND_HOST === "<DEV_BACKEND_IP>"
+                  ? "dev"
+                  : "custom";
             resHeaders.set("x-backend-host", `${BACKEND_HOST}:${BACKEND_PORT}`);
             resHeaders.set("x-backend-env", env);
             resolve(
@@ -141,7 +146,12 @@ async function handler(
         // served the request — "dev" (<DEV_BACKEND_IP>) or "prod"
         // (<PROD_BACKEND_IP>). Helps debug dev/prod data mismatches without
         // dropping to the terminal.
-        const env = BACKEND_HOST === "<PROD_BACKEND_IP>" ? "prod" : BACKEND_HOST === "<DEV_BACKEND_IP>" ? "dev" : "custom";
+        const env =
+          BACKEND_HOST === "<PROD_BACKEND_IP>"
+            ? "prod"
+            : BACKEND_HOST === "<DEV_BACKEND_IP>"
+              ? "dev"
+              : "custom";
         resHeaders.set("x-backend-host", `${BACKEND_HOST}:${BACKEND_PORT}`);
         resHeaders.set("x-backend-env", env);
         resolve(

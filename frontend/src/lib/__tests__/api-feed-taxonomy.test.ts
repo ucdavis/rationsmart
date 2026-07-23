@@ -46,7 +46,9 @@ describe("getFeedTypes", () => {
     setLangProvider(() => "hi");
     mockApi.get.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });
     await getFeedTypes("7", "unused-user-id");
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-type/7", { params: { lang: "en" } });
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-type/7", {
+      params: { lang: "en" },
+    });
   });
 
   it("getFeedTypesLocalized is the same function reference (simple alias)", () => {
@@ -98,10 +100,20 @@ describe("fetchFeedTaxonomyLabels", () => {
     mockApi.get.mockResolvedValueOnce({
       data: {
         standard_feeds: [
-          { fd_type: "Forage", display_type: "चारा", fd_category: "Grass", display_category: "घास" },
+          {
+            fd_type: "Forage",
+            display_type: "चारा",
+            fd_category: "Grass",
+            display_category: "घास",
+          },
         ],
         custom_feeds: [
-          { fd_type: "Concentrate", display_type: "सांद्रण", fd_category: "Grain", display_category: "अनाज" },
+          {
+            fd_type: "Concentrate",
+            display_type: "सांद्रण",
+            fd_category: "Grain",
+            display_category: "अनाज",
+          },
         ],
       },
     });
@@ -114,7 +126,11 @@ describe("fetchFeedTaxonomyLabels", () => {
     mockApi.get.mockResolvedValueOnce({
       data: {
         standard_feeds: [
-          { fd_type: "Forage" /* no display_type */, fd_category: "Grass", display_category: "घास" },
+          {
+            fd_type: "Forage" /* no display_type */,
+            fd_category: "Grass",
+            display_category: "घास",
+          },
           { display_type: "सांद्रण" /* no fd_type */ },
         ],
       },
@@ -207,7 +223,9 @@ describe("searchFeeds", () => {
 
   it("accepts a bare array response", async () => {
     mockApi.get.mockResolvedValueOnce({
-      data: [{ feed_uuid: "u1", feed_name: "Maize", feed_type: "Concentrate", feed_category: "Grain" }],
+      data: [
+        { feed_uuid: "u1", feed_name: "Maize", feed_type: "Concentrate", feed_category: "Grain" },
+      ],
     });
     const res = await searchFeeds("maize", "7", "u1");
     expect(res.data).toHaveLength(1);
@@ -223,7 +241,9 @@ describe("searchFeeds", () => {
   });
 
   it("accepts a {results: [...]} wrapper", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: { results: [{ feed_uuid: "u1", feed_name: "Maize" }] } });
+    mockApi.get.mockResolvedValueOnce({
+      data: { results: [{ feed_uuid: "u1", feed_name: "Maize" }] },
+    });
     const res = await searchFeeds("maize", "7", "u1");
     expect(res.data).toHaveLength(1);
   });
@@ -245,7 +265,16 @@ describe("searchFeeds", () => {
 
   it("normalizeRow prefers fd_name > feed_name > name, and feed_uuid > feed_id > id", async () => {
     mockApi.get.mockResolvedValueOnce({
-      data: [{ id: "id1", feed_id: "fid1", feed_uuid: "uuid1", fd_name: "FdName", feed_name: "FeedName", name: "Name" }],
+      data: [
+        {
+          id: "id1",
+          feed_id: "fid1",
+          feed_uuid: "uuid1",
+          fd_name: "FdName",
+          feed_name: "FeedName",
+          name: "Name",
+        },
+      ],
     });
     const res = await searchFeeds("x", "7", "u1");
     expect(res.data[0].feed_uuid).toBe("uuid1");
@@ -267,7 +296,9 @@ describe("searchFeeds", () => {
 
   it("display_* fields fall back to the English source when absent", async () => {
     mockApi.get.mockResolvedValueOnce({
-      data: [{ feed_uuid: "u1", feed_name: "Maize", feed_type: "Concentrate", feed_category: "Grain" }],
+      data: [
+        { feed_uuid: "u1", feed_name: "Maize", feed_type: "Concentrate", feed_category: "Grain" },
+      ],
     });
     const res = await searchFeeds("x", "7", "u1");
     expect(res.data[0].display_name).toBe("Maize");

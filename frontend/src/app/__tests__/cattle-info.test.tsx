@@ -37,7 +37,14 @@ const seedUser = (over: Partial<User> = {}): User => ({
 });
 
 const countries = [
-  { id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR", supported_languages: ["en", "hi"] },
+  {
+    id: "1",
+    name: "India",
+    code: "IN",
+    country_code: "IN",
+    currency: "INR",
+    supported_languages: ["en", "hi"],
+  },
   { id: "2", name: "Vietnam", code: "VN", country_code: "VN", currency: "VND" },
 ];
 
@@ -177,7 +184,7 @@ describe("Cattle Info — field validation handlers", () => {
     expect(screen.queryByText("Value Range 1-5")).toBeNull();
   });
 
-  it("handleBCS: a leading-dot edit (\".5\") is rejected — the field reverts to its last valid value", async () => {
+  it('handleBCS: a leading-dot edit (".5") is rejected — the field reverts to its last valid value', async () => {
     // Android parity comment: "clears if starts with '.'" — handleBCS
     // returns early without calling setState, so React's controlled-input
     // sync restores the DOM to the last committed value ("3.0").
@@ -352,7 +359,12 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
 
   it("does NOT touch the user object when the country is left unchanged", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
-    const originalUser = seedUser({ country_id: "1", country: "India", country_code: "IN", currency: "INR" });
+    const originalUser = seedUser({
+      country_id: "1",
+      country: "India",
+      country_code: "IN",
+      currency: "INR",
+    });
     useStore.setState({ user: originalUser });
     render(<CattleInfoPage />);
     // The whole form now renders behind a loading skeleton until
@@ -387,7 +399,9 @@ describe("Cattle Info — whole-page loading shimmer (real elements, not a separ
   it("shimmers every real field in place while countries are fetching, then the same elements become interactive", async () => {
     let resolveCountries!: (v: { data: typeof countries }) => void;
     getCountries.mockReturnValueOnce(
-      new Promise((resolve) => { resolveCountries = resolve; })
+      new Promise((resolve) => {
+        resolveCountries = resolve;
+      })
     );
     useStore.setState({ user: seedUser({ country_id: "1" }) });
     const { container } = render(<CattleInfoPage />);
@@ -595,7 +609,12 @@ describe("Cattle Info — Simulation History", () => {
     getUserReports.mockResolvedValueOnce({
       data: {
         simulations: [
-          { report_id: "R-1", simulation_id: "SIM-1", country_name: "India", created_at: "2026-01-01T00:00:00Z" },
+          {
+            report_id: "R-1",
+            simulation_id: "SIM-1",
+            country_name: "India",
+            created_at: "2026-01-01T00:00:00Z",
+          },
         ],
       },
     });
@@ -625,7 +644,9 @@ describe("Cattle Info — Simulation History", () => {
     // Hindi — a real, intentional side effect of the cattle-info UI-label
     // i18n rollout, but irrelevant to what this test actually verifies
     // (feed-selection restoration), so it's isolated here.
-    getCountries.mockResolvedValueOnce({ data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }] });
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }],
+    });
     getUserReports.mockResolvedValueOnce({
       data: { simulations: [{ report_id: "R-1", simulation_id: "SIM-1", country_name: "India" }] },
     });
@@ -650,7 +671,14 @@ describe("Cattle Info — Simulation History", () => {
           topography: "Flat",
         },
         feed_selection: [
-          { feed_type: "Forage", feed_category: "Grass", feed_name: "Napier", feed_id: "uuid-1", price_per_kg: 5, quantity_as_fed: 10 },
+          {
+            feed_type: "Forage",
+            feed_category: "Grass",
+            feed_name: "Napier",
+            feed_id: "uuid-1",
+            price_per_kg: 5,
+            quantity_as_fed: 10,
+          },
         ],
       },
     });
@@ -687,9 +715,15 @@ describe("Cattle Info — Simulation History", () => {
   });
 
   it("loadSimulation leaves Simulation Name blank even when the restored simulation_id carries a mode suffix", async () => {
-    getCountries.mockResolvedValueOnce({ data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }] });
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }],
+    });
     getUserReports.mockResolvedValueOnce({
-      data: { simulations: [{ report_id: "R-3", simulation_id: "Sim 1 (Recommendation)", country_name: "India" }] },
+      data: {
+        simulations: [
+          { report_id: "R-3", simulation_id: "Sim 1 (Recommendation)", country_name: "India" },
+        ],
+      },
     });
     getSimulationDetails.mockResolvedValueOnce({
       data: {
@@ -741,7 +775,14 @@ describe("Cattle Info — Simulation History", () => {
           topography: "Flat",
         },
         feed_selection: [
-          { feed_type: "Forage", feed_category: "Grass", feed_name: "Napier", feed_id: "uuid-2", price_per_kg: 5, quantity_as_fed: null },
+          {
+            feed_type: "Forage",
+            feed_category: "Grass",
+            feed_name: "Napier",
+            feed_id: "uuid-2",
+            price_per_kg: 5,
+            quantity_as_fed: null,
+          },
         ],
       },
     });

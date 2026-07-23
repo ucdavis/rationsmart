@@ -132,10 +132,16 @@ describe("Admin Users — total count chip", () => {
   });
 
   it("reflects total_count from the LAST page's response, not just users.length of page 1", async () => {
-    const page1 = Array.from({ length: 100 }, (_, i) => mkUser({ id: `p1-${i}`, email_id: `p1-${i}@x.com` }));
+    const page1 = Array.from({ length: 100 }, (_, i) =>
+      mkUser({ id: `p1-${i}`, email_id: `p1-${i}@x.com` })
+    );
     const page2 = [mkUser({ id: "last", name: "Last User", email_id: "last@x.com" })];
-    getAdminUsers.mockResolvedValueOnce({ data: { users: page1, total_count: 101, total_pages: 2 } });
-    getAdminUsers.mockResolvedValueOnce({ data: { users: page2, total_count: 101, total_pages: 2 } });
+    getAdminUsers.mockResolvedValueOnce({
+      data: { users: page1, total_count: 101, total_pages: 2 },
+    });
+    getAdminUsers.mockResolvedValueOnce({
+      data: { users: page2, total_count: 101, total_pages: 2 },
+    });
 
     render(<AdminUsersPage />);
 
@@ -195,7 +201,9 @@ describe("Admin Users — activate/deactivate toggle", () => {
 
     await waitFor(() => expect(toggleUserStatus).toHaveBeenCalledWith("u-1", "admin-1", false));
     // Optimistic local flip on success — no refetch, the row updates in place.
-    await waitFor(() => expect(screen.getByRole("button", { name: "INACTIVE" })).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "INACTIVE" })).toBeInTheDocument()
+    );
     expect(getAdminUsers).toHaveBeenCalledTimes(1);
 
     expect(useStore.getState().snackbar).toEqual(
@@ -205,7 +213,11 @@ describe("Admin Users — activate/deactivate toggle", () => {
 
   it("tapping an inactive user's badge activates them", async () => {
     getAdminUsers.mockResolvedValueOnce({
-      data: { users: [mkUser({ id: "u-2", name: "Ivy Inactive", is_active: false })], total_count: 1, total_pages: 1 },
+      data: {
+        users: [mkUser({ id: "u-2", name: "Ivy Inactive", is_active: false })],
+        total_count: 1,
+        total_pages: 1,
+      },
     });
     toggleUserStatus.mockResolvedValueOnce({ data: {} });
 
