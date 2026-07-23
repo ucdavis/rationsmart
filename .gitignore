@@ -51,6 +51,8 @@ results/
 tests/
 docs/
 scripts/
+# CLIMDES feed-library exports — keep locally for reference, never commit
+climdes_product_export_digitalgreen*.xlsx
 
 
 
