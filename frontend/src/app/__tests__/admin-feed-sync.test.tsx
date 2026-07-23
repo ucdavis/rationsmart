@@ -134,7 +134,12 @@ describe("Admin Feed Library Sync — Sync & Settings tab", () => {
     expect(
       screen.getByText(/Syncs automatically every Wednesday at 00:00 UTC/)
     ).toBeInTheDocument();
-    expect(screen.getByText(/Wed,\s*22 Jul,?\s*2026/)).toBeInTheDocument();
+    // Locale-robust: the component formats next_scheduled_run via
+    // toLocaleDateString(undefined, …), so field ORDER follows the runtime
+    // locale — "Wed, 22 Jul 2026" (en-GB, dev machines) vs "Wed, Jul 22,
+    // 2026" (en-US, CI). Accept both so the assertion isn't machine-locale
+    // dependent.
+    expect(screen.getByText(/Wed,\s*(22 Jul|Jul 22),?\s*2026/)).toBeInTheDocument();
     expect(screen.getByText(baseConfig.endpoint_url)).toBeInTheDocument();
   });
 
