@@ -23,6 +23,7 @@ from .animal_requirements import rsm_create_animal_requirements_dataframe
 
 # Import from utilities
 from .utilities import rename_variable, replace_na_and_negatives
+from .diet_tables import forage_concentrate_ratio_from_proportions
 
 # Purpose: Compute weighted mineral absorption coefficients from forage/concentrate totals.
 # Notes: Uses total rows to derive proportional absorption for Ca and P; falls back to defaults.
@@ -1267,6 +1268,16 @@ def rsm_generate_report_v2(
             concentrate_total['Name'] = 'Total'
             dt_concentrates = pd.concat([dt_concentrates, concentrate_total.to_frame().T], ignore_index=True)
 
+    # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
+    # None when there is no formulated ration (empty diet / calf milk-only path).
+    forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(dt_proportions, dt_forages)
+    fc_ratio_card = (
+        f"    <div class='summary-card'><img src='{icon_forage}' class='summary-icon'>"
+        f"<span class='summary-lab'>Forage:Concentrate (as-fed)</span>"
+        f"<span class='summary-val'>{forage_concentrate_ratio.replace(':', ' : ')}</span></div>"
+        if forage_concentrate_ratio else ""
+    )
+
     weighted_ca, weighted_p = calculate_weighted_absorption(dt_forages, dt_concentrates)
     ca_absorbed = animal_requirements.get("An_Ca_req", 0)
     p_absorbed = animal_requirements.get("An_P_req", 0)
@@ -1573,6 +1584,7 @@ def rsm_generate_report_v2(
             f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
             f"    <div class='summary-card'><img src='{icon_cost_liter}' class='summary-icon'><span class='summary-lab'>Cost / Liter</span><span class='summary-val'>{f'{currency_display}{cost_per_liter:.2f}' if cost_per_liter is not None else '—'}</span></div>",
             f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
+            fc_ratio_card,
             "</div>",
             (margin_banner_html if report_context["show_milk_price_comparison"] else ""),
             "</div>",

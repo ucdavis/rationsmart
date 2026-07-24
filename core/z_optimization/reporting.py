@@ -9,6 +9,10 @@ from pathlib import Path
 import logging
 
 from .utilities import format_value_with_unit, safe_float, ensure_json_safe
+from .diet_tables import (
+    forage_concentrate_ratio_from_proportions,
+    compute_forage_concentrate_ratio,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -297,6 +301,11 @@ def build_diet_response(
             if clean_msg:
                 violated_params_list.append(clean_msg)
 
+    # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
+    forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(
+        post_results.get('dt_proportions'), post_results.get('dt_forages')
+    )
+
     # Build final structure
     response_data = {
         'report_info': {
@@ -313,6 +322,7 @@ def build_diet_response(
             'milk_production': animal_information.get('milk_production', '0 Liter'),
             'dry_matter_intake': format_value_with_unit(dry_matter_intake, 'kg/day') if dry_matter_intake > 0 else "0 kg/day",
             'predicted_water_intake': format_value_with_unit(post_results.get('water_intake', 0.0), 'L/day') if post_results.get('water_intake', 0.0) > 0 else "0 L/day",
+            'forage_concentrate_ratio': forage_concentrate_ratio,
             'margin_summary': margin_summary
         },
         'animal_information': animal_information,
@@ -580,10 +590,22 @@ def build_evaluation_response(
         except (ValueError, IndexError):
             continue
 
+    # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
+    # Prefer the engine's forage/concentrate proportion frames; fall back to feed_breakdown
+    # (forage = feed_type == "Forage"; concentrate side is everything else, incl. minerals).
+    forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(
+        post_results.get('dt_proportions'), post_results.get('dt_forages')
+    )
+    if forage_concentrate_ratio is None and feed_breakdown:
+        forage_af = sum(r["quantity_as_fed_kg_per_day"] for r in feed_breakdown if r["feed_type"] == "Forage")
+        concentrate_af = sum(r["quantity_as_fed_kg_per_day"] for r in feed_breakdown if r["feed_type"] != "Forage")
+        forage_concentrate_ratio = compute_forage_concentrate_ratio(forage_af, concentrate_af)
+
     # 7. Evaluation Summary
     evaluation_summary = {
         "overall_status": "Adequate" if milk_support.get("DMI_Status") == "Adequate" else "Marginal",
-        "limiting_factor": milk_production_analysis["limiting_nutrient"]
+        "limiting_factor": milk_production_analysis["limiting_nutrient"],
+        "forage_concentrate_ratio": forage_concentrate_ratio
     }
 
     response_data = {

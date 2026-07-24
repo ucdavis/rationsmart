@@ -382,6 +382,40 @@ def rsm_create_proportions_dataframe(Dt, Dt_DMInSum):
 
     return Dt_proportions, Dt_forages, Dt_concentrates, Dt_results
 
+# Purpose: Compute the forage-to-concentrate ratio on a fresh-matter (as-fed) basis.
+# Notes: Concentrate side includes minerals (consistent with the Concentrate Details table).
+#        Returns a normalized "F:C" pair summing to 100 (e.g. "60:40"), or None when there
+#        is no formulated ration (empty diet / baby-calf milk-only path).
+def compute_forage_concentrate_ratio(forage_af_kg, concentrate_af_kg):
+    total = float(forage_af_kg) + float(concentrate_af_kg)
+    if total <= 0:
+        return None
+    forage_pct = round(float(forage_af_kg) / total * 100)
+    concentrate_pct = 100 - forage_pct  # derive from forage so the pair always sums to 100
+    return f"{forage_pct}:{concentrate_pct}"
+
+# Purpose: Extract forage/concentrate as-fed totals from proportions frames and build the ratio.
+# Notes: Concentrate is defined as everything that is not forage (grand total - forage), so the
+#        concentrate side includes minerals and any other non-forage category, regardless of how
+#        the taxonomy labels them. Reads the 'Total' row AF_kg from the dt_proportions (grand
+#        total) and dt_forages dataframes produced by rsm_create_proportions_dataframe.
+def forage_concentrate_ratio_from_proportions(dt_proportions, dt_forages):
+    def _total_af_kg(df):
+        if df is None or not hasattr(df, 'empty') or df.empty or 'Name' not in df.columns:
+            return 0.0
+        total_rows = df[df['Name'] == 'Total']
+        if total_rows.empty or 'AF_kg' not in total_rows.columns:
+            return 0.0
+        try:
+            return float(total_rows.iloc[0]['AF_kg'])
+        except (ValueError, TypeError):
+            return 0.0
+
+    total_af = _total_af_kg(dt_proportions)
+    forage_af = _total_af_kg(dt_forages)
+    concentrate_af = max(total_af - forage_af, 0.0)
+    return compute_forage_concentrate_ratio(forage_af, concentrate_af)
+
 # Purpose: Estimate methane production metrics from diet composition.
 # Notes: Chooses formula by physiological state and reports yield/intensity classifications.
 def rsm_calculate_methane_emissions(Dt, Dt_DMInSum, f_nd, animal_requirements, best_solution_vector):
