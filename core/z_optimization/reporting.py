@@ -9,6 +9,10 @@ from pathlib import Path
 import logging
 
 from .utilities import format_value_with_unit, safe_float, ensure_json_safe
+from .diet_tables import (
+    forage_concentrate_ratio_from_proportions,
+    compute_forage_concentrate_ratio,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -297,6 +301,11 @@ def build_diet_response(
             if clean_msg:
                 violated_params_list.append(clean_msg)
 
+    # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
+    forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(
+        post_results.get('dt_proportions'), post_results.get('dt_forages')
+    )
+
     # Build final structure
     response_data = {
         'report_info': {
@@ -313,6 +322,7 @@ def build_diet_response(
             'milk_production': animal_information.get('milk_production', '0 Liter'),
             'dry_matter_intake': format_value_with_unit(dry_matter_intake, 'kg/day') if dry_matter_intake > 0 else "0 kg/day",
             'predicted_water_intake': format_value_with_unit(post_results.get('water_intake', 0.0), 'L/day') if post_results.get('water_intake', 0.0) > 0 else "0 L/day",
+            'forage_concentrate_ratio': forage_concentrate_ratio,
             'margin_summary': margin_summary
         },
         'animal_information': animal_information,
@@ -549,7 +559,12 @@ def build_evaluation_response(
     # Create a mapping of feed_id to its index in the engine's f_nd results
     # The feeds list passed to evaluate_diet corresponds to f_nd order
     engine_feed_names = list(f_nd.get("Fd_Name", []))
-    
+
+    # Raw (unrounded) as-fed totals for the forage:concentrate ratio fallback, accumulated
+    # by type over the same feeds that make it into feed_breakdown.
+    fallback_forage_af = 0.0
+    fallback_concentrate_af = 0.0
+
     for item in feed_evaluation:
         feed_id = item.feed_id
         # feeds may be ORM objects or plain dicts (from dataclasses.asdict)
@@ -577,13 +592,31 @@ def build_evaluation_response(
                 "total_cost": round(float(ingredient_amounts_af[idx] * f_nd["Fd_Cost"][idx]), 2),
                 "contribution_percent": round((ingredient_amounts_af[idx] / sum(ingredient_amounts_af)) * 100, 2) if sum(ingredient_amounts_af) > 0 else 0
             })
+            af_raw = float(ingredient_amounts_af[idx])
+            if ftype == "Forage":
+                fallback_forage_af += af_raw
+            else:
+                fallback_concentrate_af += af_raw
         except (ValueError, IndexError):
             continue
+
+    # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
+    # Prefer the engine's forage/concentrate proportion frames; fall back to the raw as-fed
+    # totals accumulated above (forage = feed_type == "Forage"; concentrate side is everything
+    # else, incl. minerals).
+    forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(
+        post_results.get('dt_proportions'), post_results.get('dt_forages')
+    )
+    if forage_concentrate_ratio is None and feed_breakdown:
+        forage_concentrate_ratio = compute_forage_concentrate_ratio(
+            fallback_forage_af, fallback_concentrate_af
+        )
 
     # 7. Evaluation Summary
     evaluation_summary = {
         "overall_status": "Adequate" if milk_support.get("DMI_Status") == "Adequate" else "Marginal",
-        "limiting_factor": milk_production_analysis["limiting_nutrient"]
+        "limiting_factor": milk_production_analysis["limiting_nutrient"],
+        "forage_concentrate_ratio": forage_concentrate_ratio
     }
 
     response_data = {
