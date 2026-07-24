@@ -18,17 +18,28 @@ def _build_animal_information(cattle_info, env_grazing):
     Build the standardized animal-information block shared by the diet
     recommendation and diet evaluation responses. Presentation layer only:
     each field is formatted for display; no engine values are altered.
+
+    The milk fields are shown only for a Lactating Cow. For every other state they
+    are displayed as 0 — mirroring diet_service._neutralize_lactation_fields — so the
+    "Animal Information" block never shows milk values the engine did not use (a
+    caller may submit a stray milk_production for a Dry Cow; the schema does not force
+    it to 0, but the report must stay consistent with the computed ration).
     """
+    is_lactating = getattr(cattle_info, 'physiological_state', None) == "Lactating Cow"
+    milk_production = cattle_info.milk_production if is_lactating else 0
+    days_in_milk = cattle_info.days_in_milk if is_lactating else 0
+    tp_milk = cattle_info.tp_milk if is_lactating else 0
+    fat_milk = cattle_info.fat_milk if is_lactating else 0
     return {
         'breed': cattle_info.breed or None,
         'physiological_state': getattr(cattle_info, 'physiological_state', None),
         'body_weight': format_value_with_unit(cattle_info.body_weight, 'Kg'),
         'bw_gain': format_value_with_unit(cattle_info.bw_gain, 'kg/day'),
         'bc_score': cattle_info.bc_score or None,
-        'days_in_milk': format_value_with_unit(cattle_info.days_in_milk, 'Days'),
-        'milk_production': format_value_with_unit(cattle_info.milk_production, 'Liter'),
-        'tp_milk': format_value_with_unit(cattle_info.tp_milk, '%'),
-        'fat_milk': format_value_with_unit(cattle_info.fat_milk, '%'),
+        'days_in_milk': format_value_with_unit(days_in_milk, 'Days'),
+        'milk_production': format_value_with_unit(milk_production, 'Liter'),
+        'tp_milk': format_value_with_unit(tp_milk, '%'),
+        'fat_milk': format_value_with_unit(fat_milk, '%'),
         'parity': cattle_info.parity or None,
         'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
         'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
@@ -202,7 +213,11 @@ def build_diet_response(
         }
 
     daily_cost = float(post_results.get('total_cost', 0.0))
-    milk_prod = float(cattle_info.milk_production)
+    # Only a Lactating Cow has a milk yield to cost against; mirror the engine-side
+    # neutralization so cost-per-liter / margin stay consistent even if a caller sent
+    # a stray milk_production for a non-lactating state.
+    is_lactating = getattr(cattle_info, 'physiological_state', None) == "Lactating Cow"
+    milk_prod = float(cattle_info.milk_production) if is_lactating else 0.0
     cost_per_liter = round(daily_cost / milk_prod, 2) if milk_prod > 0 else 0.0
 
     # Milk selling rate vs. diet cost-per-liter comparison (optional input).
