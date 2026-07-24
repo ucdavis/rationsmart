@@ -433,8 +433,25 @@ CONSTRAINT_PROFILES: Dict[str, Dict] = {
 
 # Purpose: Retrieve the constraint profile for a physiological state.
 # Notes: Raises KeyError when the state is unknown to avoid silent fallbacks.
+# The exception type is deliberately KeyError — several callers (optimization_core,
+# feasibility, constraints_adequacy) catch KeyError to fall back or re-raise; do not
+# change it to another type. "Baby Calf/Heifer" has no profile by design: it is
+# short-circuited to a milk-feeding schedule before the optimizer (see
+# services/diet_service.run_diet_recommendation), so reaching here for a calf is a
+# routing bug and the clearer message helps diagnose it.
 def get_constraint_profile(state: str, *, profiles: Dict[str, Dict] = None) -> Dict:
+    """Return the optimizer constraint profile for a physiological state.
+
+    Raises KeyError when no profile exists (type kept deliberately — several callers
+    catch KeyError). Baby Calf/Heifer has no profile by design: it is short-circuited
+    to a milk-feeding schedule before the optimizer, so reaching here for a calf
+    indicates a routing bug.
+    """
     profiles = profiles or CONSTRAINT_PROFILES
     if state not in profiles:
-        raise KeyError(f"Missing constraint profile for '{state}'")
+        raise KeyError(
+            f"No optimizer constraint profile for physiological state '{state}'. "
+            f"Supported: {', '.join(profiles)}. "
+            f"(Baby Calf/Heifer is handled by the milk-feeding short-circuit, not the optimizer.)"
+        )
     return profiles[state]

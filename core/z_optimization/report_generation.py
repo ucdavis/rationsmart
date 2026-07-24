@@ -1019,6 +1019,122 @@ def get_image_base64(image_path: str) -> str:
         return ""
 
 
+# Purpose: Build a state-aware display context for the v2 report renderer.
+# Notes: Filters the animal-input / requirement tables and toggles the milk-price and
+# calf-feeding sections per physiological state, WITHOUT changing any engine calculation.
+# Re-implemented for this repo (references the standalone version's shape; not a copy).
+def build_report_context(
+    post_results,
+    animal_requirements,
+    animal_inputs_df,
+    requirements_df,
+    *,
+    evaluation_mode=False,
+):
+    """Build a per-state display context for ``rsm_generate_report_v2``.
+
+    Filters the animal-input and requirement rows, sets the headline summary metric,
+    toggles the milk-price comparison, and (for a baby calf) builds the milk-feeding
+    table. Presentation only — no engine value is changed. Returns a dict of the
+    shaped tables and display flags.
+    """
+    animal_state = str(animal_requirements.get("An_StatePhys", "") or "").strip()
+
+    profiles = {
+        "Lactating Cow": {
+            "animal_input_rows": None,          # show all rows
+            "requirements_rows": None,
+            "summary_label": "Target milk production",
+            "summary_value": float(animal_requirements.get("Trg_MilkProd_L", 0) or 0),
+            "summary_unit": "L",
+            "summary_precision": 1,
+            "show_milk_price_comparison": True,
+            "show_calf_feeding_summary": False,
+        },
+        "Dry Cow": {
+            "animal_input_rows": [
+                "Breed", "Animal Type", "Animal Weight", "Body Condition Score",
+                "Daily BW Gain", "Parity", "Days of Pregnancy", "Distance Walked", "Topography",
+            ],
+            "requirements_rows": None,
+            "summary_label": "Target BW gain",
+            "summary_value": float(animal_requirements.get("Trg_FrmGain", 0) or 0),
+            "summary_unit": "kg/d",
+            "summary_precision": 2,
+            "show_milk_price_comparison": False,
+            "show_calf_feeding_summary": False,
+        },
+        "Heifer": {
+            "animal_input_rows": [
+                "Breed", "Animal Type", "Animal Weight", "Daily BW Gain",
+                "Days of Pregnancy", "Distance Walked", "Topography",
+            ],
+            "requirements_rows": None,
+            "summary_label": "Target BW gain",
+            "summary_value": float(animal_requirements.get("Trg_FrmGain", 0) or 0),
+            "summary_unit": "kg/d",
+            "summary_precision": 2,
+            "show_milk_price_comparison": False,
+            "show_calf_feeding_summary": False,
+        },
+        "Baby Calf/Heifer": {
+            "animal_input_rows": ["Breed", "Animal Type", "Animal Weight"],
+            # Water Intake intentionally omitted for the calf (never computed — the calf
+            # skips the post-optimization diet step; see the animal-category plan).
+            "requirements_rows": ["Dry matter intake", "Intake (%Body Weight)"],
+            "summary_label": "Daily milk allowance",
+            "summary_value": float(animal_requirements.get("milk_total", 0) or 0),
+            "summary_unit": "L",
+            "summary_precision": 1,
+            "show_milk_price_comparison": False,
+            "show_calf_feeding_summary": True,
+        },
+    }
+    profile = profiles.get(animal_state, profiles["Lactating Cow"]).copy()
+
+    def filter_display_df(df, row_order):
+        """Return df keeping only the ``row_order`` rows, in that order.
+
+        No-op when the frame is missing/empty, no row order is given, or it has no
+        ``Parameter`` column to filter on.
+        """
+        if df is None or getattr(df, "empty", True) or not row_order or "Parameter" not in df.columns:
+            return df
+        filtered = df[df["Parameter"].isin(row_order)].copy()
+        filtered["_row_order"] = pd.Categorical(filtered["Parameter"], categories=row_order, ordered=True)
+        filtered = filtered.sort_values("_row_order").drop(columns="_row_order")
+        return filtered
+
+    animal_inputs_display = filter_display_df(animal_inputs_df, profile.get("animal_input_rows"))
+    requirements_display = filter_display_df(requirements_df, profile.get("requirements_rows"))
+
+    calf_feeding_table = None
+    if profile.get("show_calf_feeding_summary"):
+        calf_feeding_table = pd.DataFrame({
+            "Feeding Time": ["Morning", "Evening", "Total per Day"],
+            "Milk Amount (liters)": [
+                round(float(animal_requirements.get("milk_morning", 0) or 0), 1),
+                round(float(animal_requirements.get("milk_evening", 0) or 0), 1),
+                round(float(animal_requirements.get("milk_total", 0) or 0), 1),
+            ],
+        })
+
+    summary_value = float(profile.get("summary_value", 0) or 0)
+    summary_precision = int(profile.get("summary_precision", 1))
+    summary_metric_value = f"{summary_value:.{summary_precision}f} {profile.get('summary_unit', '')}".strip()
+
+    return {
+        "animal_state": animal_state,
+        "animal_inputs": animal_inputs_display,
+        "requirements": requirements_display,
+        "summary_metric_value": summary_metric_value,
+        "summary_metric_label": profile.get("summary_label", "Target milk production"),
+        "show_milk_price_comparison": bool(profile.get("show_milk_price_comparison")),
+        "show_calf_feeding_summary": bool(profile.get("show_calf_feeding_summary")),
+        "calf_feeding_table": calf_feeding_table,
+    }
+
+
 def rsm_generate_report_v2(
     post_results,
     animal_requirements,
@@ -1171,6 +1287,18 @@ def rsm_generate_report_v2(
         if forage_ndf_bw is not None and np.isfinite(forage_ndf_bw):
             parts.append(f"<strong>Forage NDF %BW</strong> = {forage_ndf_bw:.2f}% (target < 1.0%)")
         forage_footnote_html = f"<p class='footnote'>{' | '.join(parts)}</p>"
+
+    # Per-state report shaping (all four physiological states). Filters the animal-input
+    # and requirement rows, sets the headline summary metric, toggles the milk-price
+    # comparison, and (for a baby calf) surfaces the milk-feeding table. Presentation only —
+    # no engine value is changed.
+    report_context = build_report_context(
+        post_results, animal_requirements, animal_inputs, An_Requirements,
+        evaluation_mode=evaluation_mode,
+    )
+    animal_inputs = report_context["animal_inputs"]
+    An_Requirements = report_context["requirements"]
+    calf_feeding_table = report_context["calf_feeding_table"]
 
     dfs = [animal_inputs, An_Requirements, dt_results, dt_proportions, dt_forages, dt_concentrates, methane_report, ration_evaluation]
     for df in dfs:
@@ -1395,7 +1523,8 @@ def rsm_generate_report_v2(
         html += "</div>"
         return html
 
-    parts = [
+    # Shared document head (doctype + meta + title + style + header/meta block + open content)
+    head_parts = [
         "<!DOCTYPE html><html><head>",
         "<meta charset='utf-8'/><meta name='viewport' content='width=device-width, initial-scale=1.0'>",
         f"<title>{'Diet Evaluation' if evaluation_mode else 'Diet Recommendation'}</title>",
@@ -1410,37 +1539,67 @@ def rsm_generate_report_v2(
         f"<div class='meta-item'><strong>Generated</strong><span>{report_date}</span></div>",
         "</div></div>",
         "<div class='content'>",
-        f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>Solution Summary</h2>",
-        "<div class='summary-grid'>",
-        f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>Target Production</span><span class='summary-val'>{milk_target:.1f} L</span></div>",
-        f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
-        f"    <div class='summary-card'><img src='{icon_cost_liter}' class='summary-icon'><span class='summary-lab'>Cost / Liter</span><span class='summary-val'>{f'{currency_display}{cost_per_liter:.2f}' if cost_per_liter is not None else '—'}</span></div>",
-        f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
-        "</div>",
-        margin_banner_html,
-        "</div>",
-        f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{'Diet' if evaluation_mode else 'Least Cost Diet'}</h2>",
-        "<div class='table-container'>" + dt_results.to_html(index=False, classes='diet-table', escape=False) + "</div>",
-        messages_html, "</div>",
-        env_impact_html,
-        f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>Animal Information</h2>",
-        "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
-        f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>Nutritional Requirements</h2>",
-        "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
-        f"<div class='section wide-only'><h2><img src='{icon_prop}' class='section-icon'>Nutrient Proportions (%)</h2>",
-        "<div class='table-container'>" + dt_proportions_display.to_html(index=False, classes='proportions-table') + "</div></div>",
-        _transpose_to_html(dt_proportions_display, icon_prop, "Nutrient Proportions", is_img=True),
-        f"<div class='section wide-only'><h2><img src='{icon_forage}' class='section-icon'>Forage Details</h2>",
-        "<div class='table-container'>" + dt_forages_display.to_html(index=False, classes='forage-table') + "</div>",
-        forage_footnote_html, "</div>",
-        _transpose_to_html(dt_forages_display, icon_forage, "Forage Details", footer=forage_footnote_html, is_img=True),
-        f"<div class='section wide-only'><h2><img src='{icon_concentrate}' class='section-icon'>Concentrate Details</h2>",
-        "<div class='table-container'>" + dt_concentrates_display.to_html(index=False, classes='concentrate-table') + "</div></div>",
-        _transpose_to_html(dt_concentrates_display, icon_concentrate, "Concentrate Details", is_img=True),
-        "</div>",
-        "</div>",
-        "</div></div></body></html>",
     ]
+
+    if report_context["show_calf_feeding_summary"]:
+        # Baby Calf/Heifer: milk-feeding schedule only — no diet / cost / methane sections.
+        calf_table_html = ""
+        if calf_feeding_table is not None and not calf_feeding_table.empty:
+            calf_table_html = (
+                "<div class='table-container'>"
+                + calf_feeding_table.to_html(index=False, classes='diet-table', escape=False)
+                + "</div>"
+            )
+        body_parts = [
+            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>Solution Summary</h2>",
+            "<div class='summary-grid'>",
+            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{report_context['summary_metric_label']}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
+            "</div></div>",
+            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>Milk Feeding Schedule</h2>",
+            calf_table_html,
+            "<p class='footnote'>Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a baby calf.</p>",
+            "</div>",
+            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>Animal Information</h2>",
+            "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
+            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>Nutritional Requirements</h2>",
+            "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
+            "</div></div></body></html>",
+        ]
+    else:
+        body_parts = [
+            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>Solution Summary</h2>",
+            "<div class='summary-grid'>",
+            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{report_context['summary_metric_label']}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_cost_liter}' class='summary-icon'><span class='summary-lab'>Cost / Liter</span><span class='summary-val'>{f'{currency_display}{cost_per_liter:.2f}' if cost_per_liter is not None else '—'}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
+            "</div>",
+            (margin_banner_html if report_context["show_milk_price_comparison"] else ""),
+            "</div>",
+            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{'Diet' if evaluation_mode else 'Least Cost Diet'}</h2>",
+            "<div class='table-container'>" + dt_results.to_html(index=False, classes='diet-table', escape=False) + "</div>",
+            messages_html, "</div>",
+            env_impact_html,
+            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>Animal Information</h2>",
+            "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
+            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>Nutritional Requirements</h2>",
+            "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
+            f"<div class='section wide-only'><h2><img src='{icon_prop}' class='section-icon'>Nutrient Proportions (%)</h2>",
+            "<div class='table-container'>" + dt_proportions_display.to_html(index=False, classes='proportions-table') + "</div></div>",
+            _transpose_to_html(dt_proportions_display, icon_prop, "Nutrient Proportions", is_img=True),
+            f"<div class='section wide-only'><h2><img src='{icon_forage}' class='section-icon'>Forage Details</h2>",
+            "<div class='table-container'>" + dt_forages_display.to_html(index=False, classes='forage-table') + "</div>",
+            forage_footnote_html, "</div>",
+            _transpose_to_html(dt_forages_display, icon_forage, "Forage Details", footer=forage_footnote_html, is_img=True),
+            f"<div class='section wide-only'><h2><img src='{icon_concentrate}' class='section-icon'>Concentrate Details</h2>",
+            "<div class='table-container'>" + dt_concentrates_display.to_html(index=False, classes='concentrate-table') + "</div></div>",
+            _transpose_to_html(dt_concentrates_display, icon_concentrate, "Concentrate Details", is_img=True),
+            "</div>",
+            "</div>",
+            "</div></div></body></html>",
+        ]
+
+    parts = head_parts + body_parts
 
     html_content = "\n".join(parts)
     Path(output_file).write_text(html_content, encoding="utf-8")

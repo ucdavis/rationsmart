@@ -18,16 +18,28 @@ def _build_animal_information(cattle_info, env_grazing):
     Build the standardized animal-information block shared by the diet
     recommendation and diet evaluation responses. Presentation layer only:
     each field is formatted for display; no engine values are altered.
+
+    The milk fields are shown only for a Lactating Cow. For every other state they
+    are displayed as 0 — mirroring diet_service._neutralize_lactation_fields — so the
+    "Animal Information" block never shows milk values the engine did not use (a
+    caller may submit a stray milk_production for a Dry Cow; the schema does not force
+    it to 0, but the report must stay consistent with the computed ration).
     """
+    is_lactating = getattr(cattle_info, 'physiological_state', None) == "Lactating Cow"
+    milk_production = cattle_info.milk_production if is_lactating else 0
+    days_in_milk = cattle_info.days_in_milk if is_lactating else 0
+    tp_milk = cattle_info.tp_milk if is_lactating else 0
+    fat_milk = cattle_info.fat_milk if is_lactating else 0
     return {
         'breed': cattle_info.breed or None,
+        'physiological_state': getattr(cattle_info, 'physiological_state', None),
         'body_weight': format_value_with_unit(cattle_info.body_weight, 'Kg'),
         'bw_gain': format_value_with_unit(cattle_info.bw_gain, 'kg/day'),
         'bc_score': cattle_info.bc_score or None,
-        'days_in_milk': format_value_with_unit(cattle_info.days_in_milk, 'Days'),
-        'milk_production': format_value_with_unit(cattle_info.milk_production, 'Liter'),
-        'tp_milk': format_value_with_unit(cattle_info.tp_milk, '%'),
-        'fat_milk': format_value_with_unit(cattle_info.fat_milk, '%'),
+        'days_in_milk': format_value_with_unit(days_in_milk, 'Days'),
+        'milk_production': format_value_with_unit(milk_production, 'Liter'),
+        'tp_milk': format_value_with_unit(tp_milk, '%'),
+        'fat_milk': format_value_with_unit(fat_milk, '%'),
         'parity': cattle_info.parity or None,
         'days_of_pregnancy': format_value_with_unit(cattle_info.days_of_pregnancy, 'Days'),
         'temperature': format_value_with_unit(cattle_info.temperature, '°C'),
@@ -201,7 +213,11 @@ def build_diet_response(
         }
 
     daily_cost = float(post_results.get('total_cost', 0.0))
-    milk_prod = float(cattle_info.milk_production)
+    # Only a Lactating Cow has a milk yield to cost against; mirror the engine-side
+    # neutralization so cost-per-liter / margin stay consistent even if a caller sent
+    # a stray milk_production for a non-lactating state.
+    is_lactating = getattr(cattle_info, 'physiological_state', None) == "Lactating Cow"
+    milk_prod = float(cattle_info.milk_production) if is_lactating else 0.0
     cost_per_liter = round(daily_cost / milk_prod, 2) if milk_prod > 0 else 0.0
 
     # Milk selling rate vs. diet cost-per-liter comparison (optional input).
@@ -314,6 +330,61 @@ def build_diet_response(
     }
     
     return ensure_json_safe(response_data)
+
+def build_calf_recommendation_response(
+    animal_requirements: Dict[str, Any],
+    cattle_info: Any,
+    simulation_id: str,
+    report_id: str,
+) -> Dict[str, Any]:
+    """Build the API response for a Baby Calf/Heifer recommendation.
+
+    A baby calf has no least-cost solid-feed ration — the recommendation IS the
+    milk-feeding schedule (morning / evening / total litres) produced by the
+    requirements path. No optimizer output is involved. Water intake is intentionally
+    omitted: it is only computed in the post-optimization diet step, which a calf never
+    runs (see the animal-category plan). `solution_status="MILK_FEEDING_ONLY"` signals
+    to the frontend that this is a milk schedule, not a solved ration.
+    """
+    milk_total = float(animal_requirements.get("milk_total", 0) or 0)
+    milk_morning = float(animal_requirements.get("milk_morning", 0) or 0)
+    milk_evening = float(animal_requirements.get("milk_evening", 0) or 0)
+    dmi = float(animal_requirements.get("Trg_Dt_DMIn", 0) or 0)
+    an_bw = float(animal_requirements.get("An_BW", 0) or 0)
+    intake_pct_bw = round((dmi / an_bw) * 100, 2) if an_bw > 0 else 0.0
+
+    animal_information = _build_animal_information(
+        cattle_info, animal_requirements.get("Env_Grazing", 0)
+    )
+
+    response_data = {
+        "simulation_id": simulation_id,
+        "report_id": report_id,
+        "physiological_state": "Baby Calf/Heifer",
+        "solution_status": "MILK_FEEDING_ONLY",
+        "animal_information": animal_information,
+        "calf_feeding_schedule": {
+            "daily_milk_allowance_liters": round(milk_total, 1),
+            "morning_liters": round(milk_morning, 1),
+            "evening_liters": round(milk_evening, 1),
+            "table": [
+                {"feeding_time": "Morning", "milk_liters": round(milk_morning, 1)},
+                {"feeding_time": "Evening", "milk_liters": round(milk_evening, 1)},
+                {"feeding_time": "Total per Day", "milk_liters": round(milk_total, 1)},
+            ],
+        },
+        "animal_requirements": {
+            "dry_matter_intake": format_value_with_unit(round(dmi, 2), "kg/day"),
+            "intake_pct_bw": format_value_with_unit(intake_pct_bw, "%BW"),
+        },
+        "recommendations": [
+            "Feed milk only, split between morning and evening. Solid-feed ration "
+            "formulation does not apply to a baby calf (milk intake only, up to ~8 weeks of age)."
+        ],
+        "warnings": [],
+    }
+    return ensure_json_safe(response_data)
+
 
 def build_evaluation_response(
     evaluation_results: Dict[str, Any],
