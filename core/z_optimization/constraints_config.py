@@ -440,6 +440,13 @@ CONSTRAINT_PROFILES: Dict[str, Dict] = {
 # services/diet_service.run_diet_recommendation), so reaching here for a calf is a
 # routing bug and the clearer message helps diagnose it.
 def get_constraint_profile(state: str, *, profiles: Dict[str, Dict] = None) -> Dict:
+    """Return the optimizer constraint profile for a physiological state.
+
+    Raises KeyError when no profile exists (type kept deliberately — several callers
+    catch KeyError). Baby Calf/Heifer has no profile by design: it is short-circuited
+    to a milk-feeding schedule before the optimizer, so reaching here for a calf
+    indicates a routing bug.
+    """
     profiles = profiles or CONSTRAINT_PROFILES
     if state not in profiles:
         raise KeyError(

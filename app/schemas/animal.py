@@ -67,6 +67,11 @@ class CattleInfo(BaseModel):
     @field_validator('physiological_state', mode='before')
     @classmethod
     def validate_physiological_state(cls, v):
+        """Normalize physiological_state to one of the four canonical categories.
+
+        Accepts the canonical names case-insensitively plus common aliases
+        (e.g. "lactating", "dry", "calf"); raises ValueError on anything else.
+        """
         aliases = {
             "lactating cow": "Lactating Cow", "lactating": "Lactating Cow",
             "dry cow": "Dry Cow", "dry": "Dry Cow",
@@ -83,8 +88,11 @@ class CattleInfo(BaseModel):
 
     @model_validator(mode='after')
     def _require_lactation_fields(self):
-        # Milk drivers are mandatory for a Lactating Cow (they define the ration);
-        # for every other state they are neutralized server-side, so a caller may omit them.
+        """Require the milk fields only for a Lactating Cow.
+
+        Milk drivers define a lactating cow's ration, so they are mandatory there;
+        for every other state they are neutralized server-side and may be omitted.
+        """
         if self.physiological_state == "Lactating Cow":
             missing = [
                 f for f in ("milk_production", "days_in_milk", "tp_milk", "fat_milk")

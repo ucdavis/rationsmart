@@ -1031,6 +1031,13 @@ def build_report_context(
     *,
     evaluation_mode=False,
 ):
+    """Build a per-state display context for ``rsm_generate_report_v2``.
+
+    Filters the animal-input and requirement rows, sets the headline summary metric,
+    toggles the milk-price comparison, and (for a baby calf) builds the milk-feeding
+    table. Presentation only — no engine value is changed. Returns a dict of the
+    shaped tables and display flags.
+    """
     animal_state = str(animal_requirements.get("An_StatePhys", "") or "").strip()
 
     profiles = {
@@ -1086,6 +1093,11 @@ def build_report_context(
     profile = profiles.get(animal_state, profiles["Lactating Cow"]).copy()
 
     def filter_display_df(df, row_order):
+        """Return df keeping only the ``row_order`` rows, in that order.
+
+        No-op when the frame is missing/empty, no row order is given, or it has no
+        ``Parameter`` column to filter on.
+        """
         if df is None or getattr(df, "empty", True) or not row_order or "Parameter" not in df.columns:
             return df
         filtered = df[df["Parameter"].isin(row_order)].copy()
