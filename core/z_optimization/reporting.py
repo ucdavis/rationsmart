@@ -559,7 +559,12 @@ def build_evaluation_response(
     # Create a mapping of feed_id to its index in the engine's f_nd results
     # The feeds list passed to evaluate_diet corresponds to f_nd order
     engine_feed_names = list(f_nd.get("Fd_Name", []))
-    
+
+    # Raw (unrounded) as-fed totals for the forage:concentrate ratio fallback, accumulated
+    # by type over the same feeds that make it into feed_breakdown.
+    fallback_forage_af = 0.0
+    fallback_concentrate_af = 0.0
+
     for item in feed_evaluation:
         feed_id = item.feed_id
         # feeds may be ORM objects or plain dicts (from dataclasses.asdict)
@@ -587,19 +592,25 @@ def build_evaluation_response(
                 "total_cost": round(float(ingredient_amounts_af[idx] * f_nd["Fd_Cost"][idx]), 2),
                 "contribution_percent": round((ingredient_amounts_af[idx] / sum(ingredient_amounts_af)) * 100, 2) if sum(ingredient_amounts_af) > 0 else 0
             })
+            af_raw = float(ingredient_amounts_af[idx])
+            if ftype == "Forage":
+                fallback_forage_af += af_raw
+            else:
+                fallback_concentrate_af += af_raw
         except (ValueError, IndexError):
             continue
 
     # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
-    # Prefer the engine's forage/concentrate proportion frames; fall back to feed_breakdown
-    # (forage = feed_type == "Forage"; concentrate side is everything else, incl. minerals).
+    # Prefer the engine's forage/concentrate proportion frames; fall back to the raw as-fed
+    # totals accumulated above (forage = feed_type == "Forage"; concentrate side is everything
+    # else, incl. minerals).
     forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(
         post_results.get('dt_proportions'), post_results.get('dt_forages')
     )
     if forage_concentrate_ratio is None and feed_breakdown:
-        forage_af = sum(r["quantity_as_fed_kg_per_day"] for r in feed_breakdown if r["feed_type"] == "Forage")
-        concentrate_af = sum(r["quantity_as_fed_kg_per_day"] for r in feed_breakdown if r["feed_type"] != "Forage")
-        forage_concentrate_ratio = compute_forage_concentrate_ratio(forage_af, concentrate_af)
+        forage_concentrate_ratio = compute_forage_concentrate_ratio(
+            fallback_forage_af, fallback_concentrate_af
+        )
 
     # 7. Evaluation Summary
     evaluation_summary = {
