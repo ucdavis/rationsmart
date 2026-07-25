@@ -85,8 +85,16 @@ async def fetch_simulation_details(
             }
         )
 
+    # Reports store animal_inputs with the ENGINE key `An_StatePhys`, but the
+    # simulations endpoint validates cattle_info against CattleInfo, whose field is
+    # `physiological_state` (required since the animal-category feature). Map it back
+    # so the model validates instead of raising "Field required" -> 500.
+    cattle_info: Dict[str, Any] = dict(report.animal_inputs or {})
+    if not cattle_info.get("physiological_state") and cattle_info.get("An_StatePhys"):
+        cattle_info["physiological_state"] = cattle_info["An_StatePhys"]
+
     return True, "Simulation details fetched", {
-        "cattle_info": report.animal_inputs or {},
+        "cattle_info": cattle_info,
         "feed_selection": enriched_feeds,
         "user_id": str(report.user_id),
         "country_name": country_name,
