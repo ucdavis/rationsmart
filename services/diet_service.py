@@ -109,7 +109,15 @@ async def get_feed_details(
     """Look up a feed by ID (standard or custom) with optional localized display fields.
 
     Returns a dict with nutrient fields + display_name/display_type/display_category, or None.
+
+    Nutrient columns are Postgres NUMERIC and may hold the literal value ``NaN``;
+    ``float(Decimal('NaN'))`` is ``nan``, which Starlette's JSONResponse rejects
+    (``allow_nan=False``) and turns into a 500. The result is passed through
+    ``ensure_json_safe`` (NaN/inf -> 0.0), matching how the recommendation/eval
+    responses are already sanitized.
     """
+    from core.z_optimization.utilities import ensure_json_safe
+
     repo = FeedRepository(db)
     user_repo = UserRepository(db)
 
@@ -133,7 +141,7 @@ async def get_feed_details(
         country = await user_repo.get_country_by_id(str(feed.fd_country_id))
         country_name = country.name if country else ""
 
-    return {
+    return ensure_json_safe({
         "feed_id": str(feed.id),
         "fd_code": getattr(feed, "fd_code", None),
         "fd_name": feed.fd_name,
@@ -162,7 +170,7 @@ async def get_feed_details(
         "fd_adin": float(feed.fd_adin or 0),
         "fd_ca": float(feed.fd_ca or 0),
         "fd_p": float(feed.fd_p or 0),
-    }
+    })
 
 
 async def search_feeds(
