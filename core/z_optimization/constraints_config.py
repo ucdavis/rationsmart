@@ -43,20 +43,22 @@ def _build_profile(base_profile: Dict, override_sections: Dict) -> Dict:
 
 # Base thresholds (Lactating Cow) and per-state overrides
 BASE_THRESHOLDS = {
-    "nel_balance_max":        2.0,
-    "mp_balance_max":         0.5,
+    # Constraints to be exposed in the UI
+    "nel_balance_max":        4.0,    # 2026-07-27: was 2.0
+    "mp_balance_max":         1.0,    # 2026-07-27: was 0.5
 
     "ndf_for_min":            0.20,
-    "ndf_max":                0.45, #Changed on 15/01/2026(from 0.40)
+    "ndf_max":                0.60,   # 2026-07-27: was 0.45
     "starch_max":             0.26,
     "ee_max":                 0.07,
     "ash_max":                0.15,
+    "conc_max":               0.80,   # 2026-07-27: was 0.60
 
-    "conc_max":               0.60,
-    "conc_byprod_max":        0.30,
-    "other_wet_ingr_max":     0.12, #Changed on 15/01/2026(from 0.30)
-    "moist_forage_min":       0.20,
-    "forage_straw_max":       0.15, #Changed on 15/01/2026(from 0.25)
+    # Backend ONLY constraints!!!!!!!!!!!!!
+    "conc_byprod_max":        0.60,   # 2026-07-27: was 0.30
+    "other_wet_ingr_max":     0.12,
+    "moist_forage_min":       0.10,   # 2026-07-27: was 0.20
+    "forage_straw_max":       0.50,   # 2026-07-27: was 0.15
     "forage_fibrous_max":     0.80,
     "molasses_max":           0.035,
     # Used for bound calculation in optimization_core.py
@@ -66,34 +68,53 @@ BASE_THRESHOLDS = {
 }
 
 DRY_THRESHOLDS_OVERRIDE = {
+    # Every key is stated explicitly rather than inherited from BASE_THRESHOLDS. Keys that
+    # were previously omitted fell through to the lactating base — which is how a dry cow
+    # ended up with conc_max 0.60 instead of 0.50.
+    # Constraints to be exposed in the UI
     "nel_balance_max":        1.5,
-    "ndf_for_min":            0.27,
+    "mp_balance_max":         0.7,    # 2026-07-27: restored (was inheriting BASE)
+    "ndf_for_min":            0.20,   # 2026-07-27: was 0.27
     "ndf_max":                0.90,
     "starch_max":             0.18,
     "ee_max":                 0.05,
-    "ash_max":                0.13,
+    "ash_max":                0.15,   # 2026-07-27: was 0.13
+    "conc_max":               0.50,   # 2026-07-27: restored (was inheriting BASE)
+
+    # Backend ONLY constraints!!!!!!!!!!!!!
     "conc_byprod_max":        0.25,
     "other_wet_ingr_max":     0.20,
     "moist_forage_min":       0.18,
     "forage_straw_max":       0.30,
     "forage_fibrous_max":     0.85,
+    "molasses_max":           0.03,   # 2026-07-27: restored (was inheriting BASE)
     "urea_max":               0.007,
+    "mineral_min":            0.050,  # 2026-07-27: restored (same value as BASE)
+    "mineral_max":            0.800,  # 2026-07-27: restored (same value as BASE)
 }
 
 HEIFER_THRESHOLDS_OVERRIDE = {
+    # As above: every key stated explicitly so none can drift with BASE_THRESHOLDS.
+    # Constraints to be exposed in the UI
+    "nel_balance_max":        2.0,    # 2026-07-27: restored (was inheriting BASE)
+    "mp_balance_max":         0.7,    # 2026-07-27: restored (was inheriting BASE)
     "ndf_for_min":            0.19,
     "ndf_max":                0.90,
     "starch_max":             0.20,
     "ee_max":                 0.05,
     "ash_max":                0.13,
     "conc_max":               0.50,
+
+    # Backend ONLY constraints!!!!!!!!!!!!!
     "conc_byprod_max":        0.25,
-    "other_wet_ingr_max":     0.20,
+    "other_wet_ingr_max":     0.25,   # 2026-07-27: was 0.20
     "moist_forage_min":       0.18,
     "forage_straw_max":       0.30,
     "forage_fibrous_max":     0.85,
     "molasses_max":           0.03,
     "urea_max":               0.007,
+    "mineral_min":            0.050,  # 2026-07-27: restored (same value as BASE)
+    "mineral_max":            0.800,  # 2026-07-27: restored (same value as BASE)
 }
 
 CONSTRAINT_ORDER = [
