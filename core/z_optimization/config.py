@@ -8,8 +8,14 @@ import os
 from typing import Any, Dict, Optional, Tuple
 
 # Allow full reports even when the optimizer cannot find a fully feasible diet.
-# Default False (production-safe). Set ALLOW_INFEASIBLE_REPORTS=true for dev/testing.
-ALLOW_INFEASIBLE_REPORTS: bool = os.getenv("ALLOW_INFEASIBLE_REPORTS", "false").lower() == "true"
+# Defaults to True: the JSON response already returns the diet and labels it
+# "Diet status: Below requirements / selected limits", so suppressing only the HTML/PDF
+# left the two inconsistent — the app showed a ration the user could not download.
+# Set ALLOW_INFEASIBLE_REPORTS=false to suppress reports for infeasible solutions.
+# Note this governs only the INFEASIBLE verdict (a best solution was found but violates
+# hard constraints). When no solution is found at all, nsga3_runner returns
+# allow_report=False regardless of this flag.
+ALLOW_INFEASIBLE_REPORTS: bool = os.getenv("ALLOW_INFEASIBLE_REPORTS", "true").lower() == "true"
 
 # Enable human-readable advice text when results are marginal/infeasible.
 ENABLE_ADVICE_ENGINE: bool = True

@@ -7,6 +7,8 @@ from __future__ import annotations
 import math
 from typing import Any, Dict, List, Optional, Set, Tuple
 
+import numpy as np
+
 from .config import ALLOW_INFEASIBLE_REPORTS
 from .constraints_config import CONSTRAINT_PROFILES, DEFAULT_SEVERITY_LABELS, get_constraint_profile
 from .constraints_adequacy import classify_deviation
@@ -19,11 +21,62 @@ from .constraints_adequacy import classify_deviation
 # Notes: Validates thresholds and target DMI; returns status with errors/warnings.
 # FUTURE VERSIONS MAY INDENTIFY/INTRODUCE MORE PRECHECKS TO AVOID UNNECESSARY OPTIMIZATION RUNS.
 
+_BOUND_TOL = 1e-9
+
+
+def _review_urea_safety(f_nd, categories, thr, target_dmi) -> List[Dict[str, Any]]:
+    """Block when a user's own inclusion minimums force urea past its hard safety cap.
+
+    Urea over-feeding is acutely toxic, so a request that *forces* more urea into the
+    ration than the cap allows is refused outright and the ingredient is named. This is
+    deliberately narrower than the general cap: an inclusion *maximum* above the cap is
+    harmless (`rsm_bounds_xlxu` clamps it down) and is reported as a warning instead —
+    only a forced minimum can actually endanger the animal.
+    """
+    urea_fraction = thr.get("urea_max")
+    if urea_fraction is None or not categories:
+        return []
+    mask = np.asarray(categories.get("mask_urea", []), dtype=bool)
+    if mask.size == 0 or not mask.any():
+        return []
+
+    n = mask.size
+    names = np.asarray(f_nd.get("Fd_Name", [""] * n), dtype=str)
+    min_dm = np.nan_to_num(
+        np.asarray(f_nd.get("Fd_MinDM", np.zeros(n)), dtype=float), nan=0.0
+    )
+    if min_dm.size != n:
+        return []
+
+    limit_dm = float(urea_fraction) * float(target_dmi)
+    forced_dm = float(np.sum(np.clip(min_dm[mask], 0.0, None)))
+    if forced_dm <= limit_dm + _BOUND_TOL:
+        return []
+
+    offenders = [str(names[i]) for i in np.where(mask & (min_dm > 0))[0]] or ["urea"]
+    return [
+        {
+            "constraint": "urea_max",
+            "severity": "error",
+            "kind": "hard_safety",
+            "supply": forced_dm,
+            "target": limit_dm,
+            "ratio": None,
+            "hint": (
+                f"{', '.join(offenders)}: the entered minimum forces "
+                f"{forced_dm:.3f} kg DM/day of urea, above the hard safety limit of "
+                f"{limit_dm:.3f} kg DM/day ({float(urea_fraction) * 100:.1f}% of dry matter "
+                f"intake). Reduce the minimum before optimizing."
+            ),
+        }
+    ]
+
+
 def feasibility_precheck(
     f_nd: Dict[str, Any],
     animal_requirements: Dict[str, Any],
     *,
-    categories=None,  # kept for interface compatibility
+    categories=None,
     thr=None,
     margins=None,
 ):
@@ -33,6 +86,7 @@ def feasibility_precheck(
     Blocks on:
     - Missing constraint thresholds for the animal state
     - Non-positive target DMI
+    - User inclusion minimums that force urea past its hard safety cap (B1)
 
     """
     # Select animal state
@@ -81,6 +135,16 @@ def feasibility_precheck(
                 }
             ],
             "warnings": [],
+        }
+
+    # BLOCKS ON A FORCED UREA MINIMUM ABOVE THE HARD SAFETY CAP
+    urea_errors = _review_urea_safety(f_nd, categories, thr, target_dmi)
+    if urea_errors:
+        return {
+            "status": "error",
+            "errors": urea_errors,
+            "warnings": [],
+            "context": {"state_phys": state_phys, "target_dmi": target_dmi},
         }
 
     return {
@@ -453,8 +517,9 @@ def feasibility_postcheck(
                     messages.append(f"{label}: {direction} ({w.get('magnitude_source')}={float(w.get('magnitude') or 0.0):.4g})")
             except Exception:
                 pass
-        if allow_report and dev:
-            messages.append("Dev mode report allowed.")
+        # No "dev mode" note here: emitting a report for an infeasible solution is the
+        # default behaviour now, not a debug affordance, and the messages above already
+        # tell the reader the diet is below requirements.
         return {
             "allow_report": allow_report,
             "status": "INFEASIBLE",

@@ -336,9 +336,13 @@ def build_diet_response(
             'violated_parameters': violated_params_list,
             'worst_constraints': post_results.get('worst_constraints', []),
             'recommendations': recommendations[:1]
-        }
+        },
+        # B2: safety caps that overrode a per-feed limit the user entered. Previously the
+        # clamp happened silently — a farmer could ask for 2 kg of an ingredient, receive
+        # 0.13 kg, and be told the diet was optimal.
+        'warnings': list(post_results.get('bound_warnings') or []),
     }
-    
+
     return ensure_json_safe(response_data)
 
 def build_calf_recommendation_response(

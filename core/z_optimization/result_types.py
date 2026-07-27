@@ -22,6 +22,10 @@ class OptimizationResult:
     messages: List[str]
     allow_report: bool
     error_message: Optional[str] = None
+    # True when the run was refused up front by a blocking pre-check (e.g. a user
+    # inclusion minimum that breaches a hard safety limit). The service layer maps this
+    # to HTTP 400; a plain ERROR without it stays a 200 with an empty diet.
+    blocking: bool = False
     simulation_id: Optional[str] = None
     report_id: Optional[str] = None
     quantities: Optional[Any] = None   # raw optimizer quantities, for debugging

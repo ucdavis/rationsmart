@@ -21,7 +21,6 @@ from pymoo.termination import get_termination
 from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
 from pymoo.core.sampling import Sampling
-from pymoo.operators.sampling.rnd import FloatRandomSampling
 from pymoo.core.repair import Repair
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
@@ -57,7 +56,8 @@ def _get_explicit_dm_bounds(f_nd, n):
 
 # Purpose: Compute decision variable bounds (xl/xu) including DMI and ingredient constraints.
 # Notes: Applies mineral/urea caps and category-based adjustments with safety checks.
-def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_thresholds=None):
+def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_thresholds=None,
+                    warnings_out=None):
     # Attribute lower (xl) and upper (xu) bounds for the decision variables
     # Initialize bounds
     n = len(f_nd["Fd_Name"])
@@ -81,6 +81,16 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
             xu[:n][explicit_max_mask],
             explicit_max_dm[explicit_max_mask] / trg,
         )
+
+    # B2: collect any place a safety cap overrides a bound the user actually entered, so
+    # the change is reported instead of applied silently. Appended to the caller's list;
+    # the (xl, xu) return contract is unchanged.
+    _B_TOL = 1e-12
+
+    def _warn(msg: str) -> None:
+        logger.warning("Bound override: %s", msg)
+        if warnings_out is not None:
+            warnings_out.append(msg)
 
     # Get constraint thresholds
     animal_state = animal_requirements.get("An_StatePhys", "Lactating Cow")
@@ -117,11 +127,21 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
         mineral_min_proportion = mineral_min_kg / trg
         mineral_max_proportion = mineral_max_kg / trg
         for idx in mineral_indices:
+            if explicit_max_mask[idx] and mineral_max_proportion < xu[idx] - _B_TOL:
+                _warn(
+                    f"{feed_names[idx]}: entered maximum {xu[idx] * trg:.3f} kg DM/day was "
+                    f"reduced to {mineral_max_kg:.3f} kg DM/day by the mineral safety limit."
+                )
             xu[idx] = min(xu[idx], mineral_max_proportion)
             xl[idx] = max(xl[idx], mineral_min_proportion)
             # Fix inconsistent mineral bounds
             if xl[idx] > xu[idx]:
                 logger.warning("Mineral bound conflict for %s, adjusting min to max", feed_names[idx])
+                _warn(
+                    f"{feed_names[idx]}: the required mineral minimum of "
+                    f"{mineral_min_kg:.3f} kg DM/day could not be met because the entered "
+                    f"maximum limits it to {xu[idx] * trg:.3f} kg DM/day."
+                )
                 xl[idx] = xu[idx]
             logger.debug("Mineral bounds: %s %.1f%% - %.1f%%", feed_names[idx], xl[idx]*100, xu[idx]*100)
     
@@ -129,11 +149,24 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
     if urea_indices.size:
         if "urea_max" not in thr:
             raise KeyError("Urea bounds requested but 'urea_max' missing in thresholds.")
-        # urea_max is stored as a proportion of total DMI (e.g., 0.01 = 1% of DM)
+        # urea_max is a proportion of TOTAL DMI, so the allowance is shared across every
+        # urea-bearing feed. Capping each feed at the full limit lets N feeds reach N x
+        # the limit — measured: two urea feeds reached 1.98% of DMI against a 1% cap,
+        # because urea is a cheap crude-protein source the optimizer will max out.
+        # Splitting the allowance keeps the total provably within the cap. It is mildly
+        # conservative when several urea feeds are offered, which is the right direction
+        # to err for a toxicity limit.
         urea_limit = thr["urea_max"]
+        per_feed_limit = urea_limit / float(urea_indices.size)
         for idx in urea_indices:
-            xu[idx] = min(xu[idx], urea_limit)
-            logger.debug("Urea cap: %s <= %.1f%%", feed_names[idx], urea_limit*100)
+            if explicit_max_mask[idx] and per_feed_limit < xu[idx] - _B_TOL:
+                _warn(
+                    f"{feed_names[idx]}: entered maximum {xu[idx] * trg:.3f} kg DM/day was "
+                    f"reduced to {per_feed_limit * trg:.3f} kg DM/day by the urea safety "
+                    f"limit (shared across {urea_indices.size} urea feed(s))."
+                )
+            xu[idx] = min(xu[idx], per_feed_limit)
+            logger.debug("Urea cap: %s <= %.2f%% of DMI", feed_names[idx], per_feed_limit * 100)
     
     # Fix inconsistent bounds
     inconsistent = xl > xu
@@ -510,13 +543,28 @@ class DietProblemCostOnly(Problem):
         mean_cost_dm = float(np.mean(self.feed_cost))
         self.cost_scale = max(mean_cost_dm * self.Trg_Dt_DMIn, self.eps)
 
-        if decision_mode.lower() == "proportion":
-            n_var = self.feed_count + 1
-            xl, xu = rsm_bounds_xlxu(f_nd, animal_requirements, categories=self.categories)
-        else:
-            n_var = self.feed_count
-            xl = np.zeros(n_var)
-            xu = np.full(n_var, self.Trg_Dt_DMIn * 1.05)
+        # Only proportion mode is implemented. The former "kg" path built bounds that
+        # ignored the per-feed inclusion limits and left the quantities' sum
+        # unconstrained, so it could return a diet that both breached a user's
+        # min/max and overshot Trg_Dt_DMIn. It was unreachable, so it is rejected
+        # rather than carried as a broken alternative.
+        if decision_mode.lower() != "proportion":
+            raise ValueError(
+                f"decision_mode={decision_mode!r} is not supported; "
+                f"only 'proportion' is implemented."
+            )
+        n_var = self.feed_count + 1
+        # Sole place the search-space bounds are computed. nsga3_optimization builds the
+        # sampling/repair operators from self.xl/self.xu rather than recomputing, so the
+        # box bounds and the operator bounds cannot drift apart.
+        self.bound_warnings: List[str] = []
+        xl, xu = rsm_bounds_xlxu(
+            f_nd,
+            animal_requirements,
+            categories=self.categories,
+            custom_thresholds=custom_thresholds,
+            warnings_out=self.bound_warnings,
+        )
 
         self.constraint_order = CONSTRAINT_ORDER
 
@@ -662,6 +710,15 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
     if "hard_switch_gen" not in cfg:
         raise KeyError("Missing required 'hard_switch_gen' in NSGA-3 config")
     hard_switch_gen = int(cfg["hard_switch_gen"])
+    # The run must reach hard_switch_gen, otherwise nel_balance_max/mp_balance_max are
+    # never promoted from soft penalties to hard constraints and an unbalanced diet is
+    # reported as feasible. Fail loudly rather than silently skipping the switch.
+    if hard_switch_gen >= int(cfg["generations"]):
+        raise ValueError(
+            f"hard_switch_gen ({hard_switch_gen}) must be below generations "
+            f"({cfg['generations']}); otherwise the balance constraints are never "
+            f"enforced as hard."
+        )
 
     # Prepare custom thresholds if provided and animal is Lactating Cow for precheck
     effective_thr = None
@@ -692,24 +749,13 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
     if precheck.get("status") == "error":
         return None, None, cfg
 
+    # See DietProblemCostOnly.__init__ — only proportion mode is implemented.
     decision_mode = str(cfg["decision_mode"]).lower()
-    if decision_mode == "proportion":
-        xl, xu = rsm_bounds_xlxu(
-            f_nd,
-            animal_requirements,
-            categories=categories,
-            custom_thresholds=custom_thresholds,
+    if decision_mode != "proportion":
+        raise ValueError(
+            f"decision_mode={decision_mode!r} is not supported; "
+            f"only 'proportion' is implemented."
         )
-        sampling_op = SimplexPlusDmiSampling(xl, xu)
-        repair_op = SimplexPlusDmiRepair(xl, xu)
-    else:
-        feed_count = len(f_nd["Fd_Name"])
-        target_dmi = float(animal_requirements["Trg_Dt_DMIn"])
-        xl = np.zeros(feed_count, dtype=float)
-        xu = np.full(feed_count, target_dmi * 1.05, dtype=float)
-        sampling_op = FloatRandomSampling()
-        repair_op = None
-
     problem = DietProblemCostOnly(
         f_nd=f_nd,
         animal_requirements=animal_requirements,
@@ -719,6 +765,12 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
         constraint_history_level=cfg.get("constraint_history_level", "summary"),
         custom_thresholds=custom_thresholds,
     )
+
+    # Derive the operator bounds from the problem instead of recomputing them. pymoo
+    # stores xl/xu verbatim, so this is the same array the box constraints use — the
+    # two cannot disagree, and rsm_bounds_xlxu runs once per optimization instead of twice.
+    sampling_op = SimplexPlusDmiSampling(problem.xl, problem.xu)
+    repair_op = SimplexPlusDmiRepair(problem.xl, problem.xu)
 
     ref_dirs = np.array([[1.0]])
 
@@ -736,14 +788,11 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
 
     combined_cb = MultiCallback([hard_switch_cb])
 
-    # Using 'soo' (Single Objective Optimization) termination 
-    # It stops if improvements in Cost or Constraints are below 1e-6 over 25 generations.
-    termination = get_termination(
-        "soo", 
-        ftol=1e-6, 
-        period=25, 
-        n_max_gen=cfg["generations"]
-    )
+    # Fixed generation count, deliberately: hard_switch_cb promotes the balance
+    # constraints to hard at hard_switch_gen, so the run must be guaranteed to reach
+    # that generation. pymoo's "soo" termination stops on whichever of xtol/cvtol/ftol
+    # /n_max_gen trips first, which cannot make that guarantee.
+    termination = get_termination("n_gen", cfg["generations"])
 
     start_time = time.time()
     try:

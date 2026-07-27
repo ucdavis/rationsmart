@@ -272,8 +272,13 @@ def classify_feed_categories(f_nd):
     mask_straw = mask_for & (dm_values > 85)
     mask_moist_forage = mask_for & (dm_values < 80)
     mask_lqf = mask_for & (cp_values < 7) & (ndf_values > 72) & (~mask_straw)
-    mask_wet_other = (~mask_for) & (dm_values < 21)
+    # Wet by-products: any feed marked as a by-product with low DM%.
     mask_wet_byprod = is_byprod & (dm_values < 30)
+    # Other wet ingredients: non-forage, very low DM%, explicitly excluding wet by-products
+    # so the same ingredient is not charged against both conc_byprod_max and
+    # other_wet_ingr_max. Without this clause a wet by-product consumes both budgets and
+    # is effectively capped by the tighter of the two.
+    mask_wet_other = (~mask_for) & (dm_values < 21) & (~mask_wet_byprod)
 
     fd_names_lower = np.char.strip(np.char.lower(np.asarray(names, dtype=str)))
     mask_urea = np.char.find(fd_names_lower, "urea") >= 0
