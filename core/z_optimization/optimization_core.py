@@ -149,16 +149,24 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
     if urea_indices.size:
         if "urea_max" not in thr:
             raise KeyError("Urea bounds requested but 'urea_max' missing in thresholds.")
-        # urea_max is stored as a proportion of total DMI (e.g., 0.01 = 1% of DM)
+        # urea_max is a proportion of TOTAL DMI, so the allowance is shared across every
+        # urea-bearing feed. Capping each feed at the full limit lets N feeds reach N x
+        # the limit — measured: two urea feeds reached 1.98% of DMI against a 1% cap,
+        # because urea is a cheap crude-protein source the optimizer will max out.
+        # Splitting the allowance keeps the total provably within the cap. It is mildly
+        # conservative when several urea feeds are offered, which is the right direction
+        # to err for a toxicity limit.
         urea_limit = thr["urea_max"]
+        per_feed_limit = urea_limit / float(urea_indices.size)
         for idx in urea_indices:
-            if explicit_max_mask[idx] and urea_limit < xu[idx] - _B_TOL:
+            if explicit_max_mask[idx] and per_feed_limit < xu[idx] - _B_TOL:
                 _warn(
                     f"{feed_names[idx]}: entered maximum {xu[idx] * trg:.3f} kg DM/day was "
-                    f"reduced to {urea_limit * trg:.3f} kg DM/day by the urea safety limit."
+                    f"reduced to {per_feed_limit * trg:.3f} kg DM/day by the urea safety "
+                    f"limit (shared across {urea_indices.size} urea feed(s))."
                 )
-            xu[idx] = min(xu[idx], urea_limit)
-            logger.debug("Urea cap: %s <= %.1f%%", feed_names[idx], urea_limit*100)
+            xu[idx] = min(xu[idx], per_feed_limit)
+            logger.debug("Urea cap: %s <= %.2f%% of DMI", feed_names[idx], per_feed_limit * 100)
     
     # Fix inconsistent bounds
     inconsistent = xl > xu
