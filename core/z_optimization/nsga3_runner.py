@@ -54,7 +54,15 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
     if precheck:
         precheck_status = precheck.get("status")
         if precheck_status == "error":
-            logger.error("Optimization skipped: pre-check found blocking issues.")
+            # Carry the precheck's own messages through: they name the offending
+            # ingredient and the limit it breached, which a generic string cannot.
+            # `blocking=True` lets the service layer map this to a 400 rather than a
+            # 200 with an empty diet (B1).
+            reasons = [m for m in (precheck.get("messages") or []) if m]
+            logger.error(
+                "Optimization skipped: pre-check found blocking issues. %s",
+                "; ".join(reasons) or "(no detail)",
+            )
             return OptimizationResult(
                 status="ERROR",
                 total_cost=0.0,
@@ -64,9 +72,10 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
                 methane_report={},
                 ration_evaluation={},
                 animal_requirements={},
-                messages=[],
+                messages=reasons,
                 allow_report=False,
-                error_message="Pre-check found blocking issues",
+                error_message=" ".join(reasons) or "Pre-check found blocking issues",
+                blocking=True,
             )
         if precheck_status == "warning":
             logger.warning("Pre-check warnings detected; continuing optimization.")
@@ -227,6 +236,9 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
         "methane_report": methane_report,
         "best_solution_result": q,
         "constraint_messages": constraint_messages,
+        # B2: safety caps that overrode a bound the user entered. Surfaced in the
+        # response's `warnings` so the change is visible rather than silent.
+        "bound_warnings": list(getattr(problem, "bound_warnings", []) or []),
     }
 
     return OptimizationResult(

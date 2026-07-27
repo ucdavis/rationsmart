@@ -439,6 +439,13 @@ async def run_diet_recommendation(
         ),
     )
 
+    # A blocking pre-check means the request itself is unsafe to optimize (e.g. an
+    # inclusion minimum that forces urea past its hard safety limit). Surface it as a
+    # 400 naming the offending ingredient rather than a 200 with an empty diet — the
+    # router maps ValueError to HTTP 400.
+    if getattr(result, "blocking", False):
+        raise ValueError(result.error_message or "Request rejected by pre-check.")
+
     # 4 — Build API response
     # reporting.py uses dict-access; convert OptimizationResult to a compat dict.
     report_id = f"rec-{_uuid_mod.uuid4().hex[:8]}"
