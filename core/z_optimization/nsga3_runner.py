@@ -82,6 +82,10 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
 
     if result is None or problem is None:
         logger.error("Optimization did not return a solution.")
+        # `problem` may exist even when `result` does not, in which case it already
+        # holds any bound overrides applied before the solve. Same reasoning as the
+        # best-is-None path below: those overrides may be the reason there is no result.
+        bound_warnings = list(getattr(problem, "bound_warnings", []) or [])
         return OptimizationResult(
             status="ERROR",
             total_cost=0.0,
@@ -91,9 +95,10 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
             methane_report={},
             ration_evaluation={},
             animal_requirements={},
-            messages=[],
+            messages=bound_warnings,
             allow_report=False,
             error_message="Optimization did not return a solution",
+            post_results={"bound_warnings": bound_warnings},
         )
 
     # Select best feasible-first solution
@@ -128,6 +133,10 @@ def z_optimization_main(animal_inputs, feed_data_list, simulation_id=None, user_
             "diet_supply_results": {},
             "water_intake": 0.0,
             "total_cost": 0.0,
+            # Carried on the failure path too: a safety cap that overrode the user's own
+            # inclusion limit may well be *why* no solution was found, so this is the
+            # case where the explanation matters most.
+            "bound_warnings": list(getattr(problem, "bound_warnings", []) or []),
         }
         return OptimizationResult(
             status="FAILED",
