@@ -435,13 +435,15 @@ export default function CattleInfoPage() {
         grazing: ci?.grazing ?? prev.grazing,
         distance_walked: ci?.distance != null ? String(ci.distance) : prev.distance_walked,
         topography: ci?.topography ?? prev.topography,
-        // Y3 §1.3 / §1.4 — restore Y3 fields from simulation when Maria's
-        // backend echoes them back on /fetch-simulation-details. Until
-        // then these reads will silently fall through to prev (unchanged).
-        // TODO(maria-y3): confirm response keys for milk_price + animal_category.
+        // Y3 §1.3 / §1.4 — restore Y3 fields from simulation when the
+        // backend echoes them back on /fetch-simulation-details. Reads that
+        // find nothing fall through to prev (unchanged).
         milk_price: ci?.milk_price != null ? String(ci.milk_price) : prev.milk_price,
+        // Wire key is `physiological_state`; prefer it, fall back to the
+        // legacy `animal_category` for older/echoed responses.
         animal_category:
-          (ci?.animal_category as AnimalCategory | undefined) ?? prev.animal_category,
+          ((ci?.physiological_state ?? ci?.animal_category) as AnimalCategory | undefined) ??
+          prev.animal_category,
         // i18n V2 — hydrate simulation_language from the restored
         // simulation. Priority chain:
         //   1. backend response's simulation_language (once shipped)
@@ -566,7 +568,11 @@ export default function CattleInfoPage() {
         distance: ci?.distance != null ? Number(ci.distance) : 0,
         topography: ci?.topography ?? "Flat",
         milk_price: ci?.milk_price != null ? Number(ci.milk_price) : null,
-        animal_category: (ci?.animal_category as AnimalCategory | undefined) ?? "Lactating Cow",
+        // Wire key is `physiological_state`; prefer it, fall back to legacy
+        // `animal_category`, then default.
+        animal_category:
+          ((ci?.physiological_state ?? ci?.animal_category) as AnimalCategory | undefined) ??
+          "Lactating Cow",
         simulation_language: restoredSimulationLanguage,
       });
 
@@ -1068,11 +1074,12 @@ export default function CattleInfoPage() {
               })()
             )}
 
-            {/* Y3 §1.4 — Animal Category selector. Sits in Simulation
+            {/* Y3 §1.4 — Physiological State selector. Sits in Simulation
                 Details (top of the form) because the choice gates
                 downstream sections (Milk Production hidden for
-                non-lactating) and §2.3 report sections. */}
-            <FieldLabel>{t("Animal Category *")}</FieldLabel>
+                non-lactating) and §2.3 report sections. Stored internally as
+                `animal_category`; sent to the backend as `physiological_state`. */}
+            <FieldLabel>{t("Physiological State *")}</FieldLabel>
             <SelectInput
               value={form.animal_category}
               onChange={(v) => set("animal_category")(v)}

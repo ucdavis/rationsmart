@@ -42,8 +42,12 @@ export interface CattleInfo {
   // Y3 §1.4 — drives report-side section gating (§2.3) and may also gate
   // form sections (Milk Production hidden for non-lactating). Default
   // "Lactating Cow" preserves existing behaviour.
-  // TODO(maria): confirm field name (animal_category vs state_phys) and
-  // exact string values when the backend contract lands.
+  //
+  // Internal store field name is `animal_category`; on the wire it is sent
+  // as `physiological_state` (the backend's CattleInfo schema field — a
+  // required string, one of the four AnimalCategory values). The rename
+  // happens only in toCattleInfoPayload; the store keeps `animal_category`
+  // so persisted simulations stay readable across the change.
   animal_category: AnimalCategory;
   // i18n V2 — per-simulation language override. null means "use the
   // user's profile language". When set, langProvider() returns this
@@ -125,11 +129,12 @@ export interface CattleInfoPayload {
   parity: number;
   temperature: number;
   topography: string;
-  // Y3 §1.3 / §1.4 — confirm exact backend field names with Maria.
-  // Placeholder snake_case names used here; renaming is a one-line patch.
-  // TODO(maria-y3): finalize field names + units (price per L? per Kg?).
+  // Y3 §1.3 — milk price (optional; null/undefined safely ignored by FastAPI).
   milk_price?: number | null;
-  animal_category?: string; // one of AnimalCategory string values
+  // Physiological state — the backend's required CattleInfo field. Value is
+  // one of the four AnimalCategory strings (Lactating Cow | Dry Cow | Heifer
+  // | Baby Calf/Heifer). Sourced from the store's `animal_category` field.
+  physiological_state: string;
 }
 
 // Backend has no field distinct from `simulation_id` for a "clean" display
@@ -169,10 +174,11 @@ export const DEFAULT_BASE_THRESHOLDS: DietLimits = {
 };
 
 export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
-  // Y3 §1.4 — `lactating` is now derived from the user's category choice
-  // instead of being hardcoded true. The Android app always sent `true`;
-  // once Maria's backend honours `animal_category` we may remove the
-  // legacy `lactating` field entirely.
+  // Y3 §1.4 — `lactating` is now derived from the user's physiological-state
+  // choice instead of being hardcoded true. The Android app always sent
+  // `true`. The backend now models the state directly via
+  // `physiological_state`; `lactating` is kept as a derived convenience
+  // signal (harmless extra field — FastAPI ignores keys it doesn't model).
   //
   // When the animal isn't a Lactating Cow we zero out the milk-side
   // fields at payload time rather than relying on the form to clear
@@ -202,11 +208,10 @@ export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
     parity: ci.parity,
     temperature: ci.average_temperature,
     topography: ci.grazing ? (ci.topography ?? "Flat") : "Flat",
-    // Y3 §1.3 / §1.4 — optional payload extras. null/undefined keys are
-    // safely ignored by FastAPI; once Maria confirms canonical names just
-    // rename these two keys here + in CattleInfoPayload.
     milk_price: isLactating ? (ci.milk_price ?? null) : null,
-    animal_category: ci.animal_category,
+    // Wire key is `physiological_state` (backend contract); value comes from
+    // the store's `animal_category` field.
+    physiological_state: ci.animal_category,
   };
 }
 

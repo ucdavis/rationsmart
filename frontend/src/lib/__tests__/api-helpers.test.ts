@@ -202,8 +202,8 @@ describe("toCattleInfoPayload — Lactating Cow (default)", () => {
     expect(p.milk_price).toBe(50);
   });
 
-  it("passes animal_category through as a string", () => {
-    expect(p.animal_category).toBe("Lactating Cow");
+  it("sends the store's animal_category on the wire as physiological_state", () => {
+    expect(p.physiological_state).toBe("Lactating Cow");
   });
 });
 
