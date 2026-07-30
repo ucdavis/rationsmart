@@ -9,7 +9,7 @@ import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
-import { IcBack } from "@/components/Icons";
+import { IcBack, IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 
 interface Country {
@@ -37,6 +37,9 @@ export default function RegisterPage() {
   const [language, setLanguage] = useState("en");
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
+  // Single reveal toggle for BOTH PIN + Confirm PIN so the user can verify
+  // what they typed. Defaults to hidden.
+  const [showPin, setShowPin] = useState(false);
   const [countries, setCountries] = useState<Country[]>([]);
   const [loadingCountries, setLoadingCountries] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -311,9 +314,28 @@ export default function RegisterPage() {
         </div>
 
         {/* PIN — disabled until country + email + name are valid */}
-        <p className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
-          {t("Enter PIN")}
-        </p>
+        <div className="flex items-center justify-between mt-3 ml-3 mr-3 mb-3">
+          <p className="text-xs font-bold uppercase tracking-wide" style={labelStyle}>
+            {t("Enter PIN")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowPin((s) => !s)}
+            disabled={!pinEnabled}
+            aria-label={showPin ? t("Hide PIN") : t("Show PIN")}
+            aria-pressed={showPin}
+            className="flex items-center justify-center"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: pinEnabled ? "pointer" : "not-allowed",
+              padding: 4,
+              opacity: pinEnabled ? 1 : 0.4,
+            }}
+          >
+            {showPin ? <IcEyeOff size={20} /> : <IcEye size={20} />}
+          </button>
+        </div>
         <PinInput
           value={pin}
           onChange={(v) => {
@@ -324,6 +346,7 @@ export default function RegisterPage() {
             }
           }}
           disabled={!pinEnabled}
+          reveal={showPin}
         />
 
         {/* Confirm PIN — disabled until PIN is complete */}
@@ -331,7 +354,12 @@ export default function RegisterPage() {
           <p className="text-xs uppercase tracking-wide mt-3 ml-3 mb-3" style={labelStyle}>
             {t("Confirm PIN")}
           </p>
-          <PinInput value={confirmPin} onChange={setConfirmPin} disabled={!confirmPinEnabled} />
+          <PinInput
+            value={confirmPin}
+            onChange={setConfirmPin}
+            disabled={!confirmPinEnabled}
+            reveal={showPin}
+          />
         </div>
 
         {confirmPin.length === 6 && pin !== confirmPin && (

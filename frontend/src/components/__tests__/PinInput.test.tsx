@@ -21,6 +21,13 @@ describe("PinInput", () => {
     });
   });
 
+  it("reveal=true switches every box to type=text (eye toggle on)", () => {
+    const { container } = render(<PinInput value="" onChange={() => {}} reveal />);
+    container.querySelectorAll("input").forEach((el) => {
+      expect(el).toHaveAttribute("type", "text");
+    });
+  });
+
   it("splits the controlled value across boxes", () => {
     const { container } = render(<PinInput value="12345" onChange={() => {}} />);
     const inputs = container.querySelectorAll("input");

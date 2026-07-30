@@ -9,6 +9,7 @@ import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
+import { IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 
 export default function LoginPage() {
@@ -19,6 +20,7 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [pin, setPin] = useState("");
+  const [showPin, setShowPin] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   // Reset-PIN bottom sheet state
@@ -219,14 +221,26 @@ export default function LoginPage() {
           />
         </div>
 
-        {/* PIN label */}
-        <p
-          className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-3"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-        >
-          {t("Enter PIN")}
-        </p>
-        <PinInput value={pin} onChange={setPin} />
+        {/* PIN label + reveal toggle */}
+        <div className="flex items-center justify-between mt-3 ml-3 mr-3 mb-3">
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
+            {t("Enter PIN")}
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowPin((s) => !s)}
+            aria-label={showPin ? t("Hide PIN") : t("Show PIN")}
+            aria-pressed={showPin}
+            className="flex items-center justify-center"
+            style={{ background: "none", border: "none", cursor: "pointer", padding: 4 }}
+          >
+            {showPin ? <IcEyeOff size={20} /> : <IcEye size={20} />}
+          </button>
+        </div>
+        <PinInput value={pin} onChange={setPin} reveal={showPin} />
 
         {/* Proceed button */}
         <div className="px-3 mt-5">

@@ -14,6 +14,13 @@ interface PinInputProps {
    * 4-digit PIN before choosing a new 6-digit one).
    */
   length?: number;
+  /**
+   * When true, digits are shown in clear text (type="text") instead of the
+   * masked default (type="password"). Driven by the eye/reveal toggle on the
+   * login + register screens so the user can verify what they typed. Defaults
+   * to false — masked entry stays the default everywhere else.
+   */
+  reveal?: boolean;
 }
 
 export default function PinInput({
@@ -22,6 +29,7 @@ export default function PinInput({
   onComplete,
   disabled = false,
   length = 6,
+  reveal = false,
 }: PinInputProps) {
   // The number of refs has to be stable across renders, so we allocate
   // up to 6 ref slots and slice the visible set below. This keeps the
@@ -93,7 +101,7 @@ export default function PinInput({
         <input
           key={index}
           ref={refs[index]}
-          type="password"
+          type={reveal ? "text" : "password"}
           inputMode="numeric"
           maxLength={1}
           value={(digits[index] ?? "").trim() || ""}
