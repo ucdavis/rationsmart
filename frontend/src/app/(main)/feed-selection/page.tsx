@@ -23,7 +23,7 @@ import {
 } from "@/lib/api";
 import type { FeedItem, DietLimits, FeedSearchResult, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
-import { IcAddFeed } from "@/components/Icons";
+import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 
 let idCounter = 0;
@@ -803,33 +803,66 @@ export default function FeedSelectionPage() {
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
 
-      {/* Custom buttons row */}
-      <div className="flex gap-3 px-4 pt-4">
-        <button
-          onClick={() => setShowLimitsModal(true)}
-          disabled={isEvaluation}
-          style={{
-            ...btnBase,
-            flex: 1,
-            backgroundColor: "transparent",
-            color: isEvaluation ? "#999999" : "#064E3B",
-            border: `2px solid ${isEvaluation ? "#D3D3D3" : "#064E3B"}`,
-          }}
+      {/* Optional tools row — these two are INDEPENDENT actions (each opens
+          its own tool), NOT a mode choice. Previously they were an equal
+          50/50 split with one filled + one outlined, which read as a
+          "selected vs unselected" toggle — especially sitting right above the
+          real Recommendation/Evaluation radio group. Now: same-weight soft
+          chips, sized to content and left-aligned (not a full-width split),
+          each with a decorative leading icon and a muted "Optional" caption,
+          so they read as optional tools rather than a pick-one control.
+          Icons are aria-hidden so each button's accessible name stays exactly
+          "Custom Diet Limits" / "Custom Feed" (tests + i18n depend on it). */}
+      <div className="px-4 pt-4">
+        <p
+          className="text-[11px] font-bold uppercase tracking-wide mb-2 ml-1"
+          style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
         >
-          {t("Custom Diet Limits")}
-        </button>
-        <button
-          onClick={openCustomFeedModal}
-          style={{
-            ...btnBase,
-            flex: 1,
-            backgroundColor: "#064E3B",
-            color: "white",
-            border: "none",
-          }}
-        >
-          {t("Custom Feed")}
-        </button>
+          {t("Optional")}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => setShowLimitsModal(true)}
+            disabled={isEvaluation}
+            style={{
+              ...btnBase,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 14,
+              padding: "8px 14px",
+              backgroundColor: isEvaluation ? "#EEF0F2" : "rgba(5,188,109,0.15)",
+              color: isEvaluation ? "#999999" : "#064E3B",
+              border: "none",
+              cursor: isEvaluation ? "not-allowed" : "pointer",
+              opacity: isEvaluation ? 0.7 : 1,
+            }}
+          >
+            <span aria-hidden="true" style={{ display: "inline-flex" }}>
+              <IcTune size={18} color={isEvaluation ? "#999999" : "#064E3B"} />
+            </span>
+            {t("Custom Diet Limits")}
+          </button>
+          <button
+            onClick={openCustomFeedModal}
+            style={{
+              ...btnBase,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontSize: 14,
+              padding: "8px 14px",
+              backgroundColor: "rgba(5,188,109,0.15)",
+              color: "#064E3B",
+              border: "none",
+            }}
+          >
+            <span aria-hidden="true" style={{ display: "inline-flex" }}>
+              <IcAddFeed size={18} color="#064E3B" />
+            </span>
+            {t("Custom Feed")}
+          </button>
+        </div>
       </div>
 
       {/* Radio group: Diet Recommendation | Diet Evaluation.
