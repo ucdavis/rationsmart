@@ -735,6 +735,10 @@ export default function FeedRow({
           const matched =
             newCats.find((c) => c.name === item.category_name) ??
             newCats.find((c) => norm(c.name) === norm(item.category_name));
+          // Set when we inject a synthetic category option below, so the
+          // !matched branch can SELECT it (dropdown value binds to
+          // category_id — injecting the option isn't enough on its own).
+          let syntheticCatId: number | null = null;
           // Non-ASCII stored category that doesn't match any freshly
           // fetched (English-only, see getFeedCategories) name — same
           // rationale as the feed-type stale-identity clear above. There's
@@ -758,14 +762,16 @@ export default function FeedRow({
             item.category_name &&
             (item.feed_uuid || item.category_id != null)
           ) {
-            // If the row's stored category isn't in the fetched list but
-            // the row has been actively used (feed_uuid picked earlier),
-            // inject a synthetic entry so the CustomSelect dropdown still
-            // renders the correct label. Without this the Category
-            // dropdown appears blank after a nav-back-and-forward even
-            // though item.category_name is intact in state.
+            // The row's stored category isn't in the fetched list but the
+            // row has been actively used (feed picked, or a nav round-trip).
+            // Inject a synthetic option so the CustomSelect can render the
+            // picked feed's category. Common cause: /search-feeds reports a
+            // category (e.g. "By-Product/Other-Forage") that
+            // /unique-feed-category doesn't return for that feed type — a
+            // backend inconsistency — leaving the fetched list without it.
+            syntheticCatId = item.category_id ?? -1;
             newCats.unshift({
-              id: item.category_id ?? -1,
+              id: syntheticCatId,
               name: item.category_name,
               display: item.category_name,
             });
@@ -788,6 +794,12 @@ export default function FeedRow({
                 feed_uuid: null,
               });
               setSubCategories([]);
+            } else if (syntheticCatId != null && item.category_id !== syntheticCatId) {
+              // SELECT the injected synthetic option. The Category dropdown
+              // binds its value to category_id, so injecting the option
+              // isn't enough — without setting category_id the picked feed's
+              // category renders as a blank "Select" placeholder.
+              onUpdate(item.id, { category_id: syntheticCatId });
             }
           } else if (matched.id !== item.category_id) {
             onUpdate(item.id, { category_id: matched.id });

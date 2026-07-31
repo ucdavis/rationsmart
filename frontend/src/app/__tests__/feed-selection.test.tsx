@@ -364,6 +364,54 @@ describe("feed-selection — search pick keeps Category (no cascade clobber)", (
   });
 });
 
+// ─── 3d. Category shows even when the category-list endpoint omits it ───────
+
+describe("feed-selection — picked feed's Category shows despite list mismatch", () => {
+  it("displays the category from a picked feed even if getFeedCategories omits it", async () => {
+    // Real backend inconsistency: /search-feeds reports the feed's category
+    // as "By-Product/Other-Forage", but /unique-feed-category for Forage does
+    // NOT return that exact string — so the cascade can't match it. The row
+    // still has a picked feed_uuid + category_name, so the Category dropdown
+    // must display it rather than going blank.
+    useStore.setState({ feedSelectionType: "evaluation", feedSelections: [] });
+    getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
+    getFeedCategories.mockReset().mockResolvedValue({
+      data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }],
+    });
+    getFeedSubCategories.mockReset().mockResolvedValue({
+      data: {
+        standard_feeds: [{ feed_id: "sugar-1", fd_name: "Sugarcane tops, Wet season" }],
+        custom_feeds: [],
+      },
+    });
+    searchFeeds.mockReset().mockResolvedValue({
+      data: [
+        {
+          feed_uuid: "sugar-1",
+          feed_name: "Sugarcane tops, Wet season",
+          feed_type: "Forage",
+          feed_category: "By-Product/Other-Forage",
+          display_name: "Sugarcane tops, Wet season",
+          display_type: "Forage",
+          display_category: "By-Product/Other-Forage",
+        },
+      ],
+    });
+
+    await renderReady();
+    const card1 = () => screen.getByText("FEED 1").closest('[id^="feed-card-"]') as HTMLElement;
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds|Search to fill/i), {
+      target: { value: "sugar" },
+    });
+    fireEvent.click(await screen.findByText("Sugarcane tops, Wet season"));
+
+    await waitFor(() =>
+      expect(within(card1()).queryByText("By-Product/Other-Forage")).toBeInTheDocument()
+    );
+  });
+});
+
 // ─── 4. Recommendation / Evaluation toggle reveals Quantity + Cost ──────────
 
 describe("feed-selection — mode toggle", () => {
