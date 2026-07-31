@@ -205,108 +205,25 @@ async def get_user_reports(
     return True, "Reports fetched successfully", items
 
 
-# ── Celery async PDF task (Task 4.5) ─────────────────────────────────────────
+# ── Background PDF/S3 generation ──────────────────────────────────────────────
 
-def trigger_pdf_generation(
-    optimization_result_dict: dict,
-    animal_info: dict,
-    report_id: str,
-    user_id: str,
-) -> None:
-    """
-    Dispatch PDF generation to a Celery worker. The payload is already JSON-safe
-    (no DataFrames) — callers must call ensure_json_safe() before passing here.
-    Silently skips when Celery is unavailable (e.g. in unit tests).
-    """
-    try:
-        from app.celery_app import celery_app
-        celery_app.send_task(
-            "generate_pdf_report",
-            kwargs={
-                "report_payload": optimization_result_dict,
-                "animal_info": animal_info,
-                "report_id": report_id,
-                "user_id": user_id,
-            },
-        )
-        logger.info("PDF task queued for report %s", report_id)
-    except Exception as exc:
-        logger.warning("Celery unavailable, PDF will not be generated: %s", exc)
+async def generate_and_upload_pdf(report_id: str, user_id: str) -> None:
+    """Convert a report's already-rendered HTML (Report.report_html) to PDF and
+    upload it to S3, setting bucket_url on success.
 
-
-# ── Background PDF/S3 orchestration (moved from core in Task 2.8) ─────────────
-
-def generate_background_reports(
-    db: AsyncSession,
-    optimization_results: Dict[str, Any],
-    user_id: str,
-    simulation_id: str,
-    report_id: str,
-    cattle_info: Any,
-    user_name: str = "User",
-    country_name: str = "Unknown",
-    currency: str = "$",
-    api_response_data: Optional[Dict[str, Any]] = None,
-) -> None:
+    Runs as a FastAPI BackgroundTask after /save-report commits. Opens its own
+    session — the request-scoped session is already closed by the time a
+    background task executes (mirrors services/feed_sync_tasks.py's pattern).
     """
-    Orchestrate recommendation PDF generation and S3 upload in a background task.
-    Intentionally sync: runs in a FastAPI BackgroundTask (not on the async event loop).
-    """
-    try:
-        from core.z_optimization.reporting import generate_background_reports as _core_gen
-        _core_gen(
-            optimization_results=optimization_results,
-            user_id=user_id,
-            simulation_id=simulation_id,
-            report_id=report_id,
-            cattle_info=cattle_info,
-            user_name=user_name,
-            country_name=country_name,
-            currency=currency,
-            db_session=db,
-            api_response_data=api_response_data,
-        )
-    except Exception as exc:
-        logger.error(
-            "generate_background_reports failed (simulation=%s): %s",
-            simulation_id, exc, exc_info=True,
-        )
+    from app.db.session import AsyncSessionLocal
+    from core.z_optimization.pdf_service import rec_pdf_report_generator_v2
 
-
-def generate_evaluation_background_reports(
-    db: AsyncSession,
-    evaluation_results: Dict[str, Any],
-    user_id: str,
-    simulation_id: str,
-    report_id: str,
-    cattle_info: Any,
-    currency: str = "$",
-    country_name: str = "Unknown",
-    feed_evaluation: List[Dict[str, Any]] = [],
-    feeds: List[Any] = [],
-    user_name: str = "User",
-) -> None:
-    """
-    Orchestrate evaluation PDF generation and S3 upload in a background task.
-    Intentionally sync: runs in a FastAPI BackgroundTask (not on the async event loop).
-    """
-    try:
-        from core.z_optimization.reporting import generate_evaluation_background_reports as _core_gen
-        _core_gen(
-            evaluation_results=evaluation_results,
-            user_id=user_id,
-            simulation_id=simulation_id,
-            report_id=report_id,
-            cattle_info=cattle_info,
-            currency=currency,
-            country_name=country_name,
-            feed_evaluation=feed_evaluation,
-            feeds=feeds,
-            user_name=user_name,
-            db_session=db,
-        )
-    except Exception as exc:
-        logger.error(
-            "generate_evaluation_background_reports failed (simulation=%s): %s",
-            simulation_id, exc, exc_info=True,
-        )
+    async with AsyncSessionLocal() as db:
+        repo = ReportRepository(db)
+        report = await repo.get_by_report_id(report_id, user_id)
+        if report is None or not report.report_html:
+            logger.error(
+                "No report_html found for report=%s — cannot generate PDF", report_id
+            )
+            return
+        await rec_pdf_report_generator_v2(report.report_html, user_id, report_id, db)

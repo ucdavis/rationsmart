@@ -22,6 +22,7 @@ from html.parser import HTMLParser
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -225,93 +226,78 @@ def eval_pdf_report_generator(
             pass
 
 
-# ── pdf_generator_v4: WeasyPrint HTML-to-PDF (merged in Task 2.11) ─────────────
+# ── pdf_service_v2: v2 DB-level PDF generator ──────────────────────────────────
 
-def generate_pdf_v4(html_file_path: str, output_pdf_path: Optional[str] = None) -> bytes:
-    """Convert a print-friendly HTML file to PDF bytes using WeasyPrint."""
-    try:
-        if not os.path.exists(html_file_path):
-            raise FileNotFoundError(f"HTML file not found at {html_file_path}")
-        logger.info("Generating PDF V4 from %s", html_file_path)
-        with open(html_file_path, "r", encoding="utf-8") as f:
-            html_content = f.read()
-        from weasyprint import HTML
-        html_obj = HTML(string=html_content, base_url=os.path.dirname(html_file_path))
-        pdf_bytes = html_obj.write_pdf(target=output_pdf_path)
-        logger.info("PDF V4 generated. Size: %s bytes", len(pdf_bytes) if pdf_bytes else "N/A")
-        return pdf_bytes
-    except Exception as e:
-        logger.error("Failed to generate PDF V4: %s", e)
-        raise
+# Icons in report_html are referenced by filename, not embedded (see
+# report_generation.py:rsm_generate_report_v2) — this base_url is where WeasyPrint
+# resolves them from at conversion time.
+REPORT_ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 
 
-# ── pdf_service_v2: v2 DB-level PDF generators (merged in Task 2.11) ───────────
-
-def generate_pdf_bytes(html_report_path: str) -> bytes:
-    """Pure function: convert an HTML file to PDF bytes."""
-    pdf_bytes = generate_pdf_v4(html_report_path)
-    if not pdf_bytes:
-        raise RuntimeError(f"HTML-to-PDF conversion failed for {html_report_path}")
-    return pdf_bytes
-
-
-def rec_pdf_report_generator_v2(
-    api_response: dict,
+async def rec_pdf_report_generator_v2(
+    html_content: str,
     user_id: str,
-    simulation_id: str,
     report_id: str,
-    db: Session,
-    user_name: str = "",
-) -> None:
-    """Generate a recommendation PDF from an already-written HTML file, upload to S3."""
+    db: AsyncSession,
+) -> bool:
+    """Convert already-rendered report HTML (Report.report_html) to PDF, upload to
+    S3, and update the Report row's bucket_url/saved_to_bucket. Returns True on
+    success.
+
+    Caller owns the session's lifecycle — a FastAPI request-scoped session is
+    already closed by the time a BackgroundTask runs, so this expects a fresh
+    session opened for the task (see services/report_service.py).
+    """
     try:
-        logger.info("V2 PDF report generation: simulation=%s report=%s", simulation_id, report_id)
-        html_report_path = f"result_html/diet-{report_id}.html"
-        pdf_output_path = f"result_html/diet-{report_id}.pdf"
-        pdf_bytes = generate_pdf_bytes(html_report_path)
-        with open(pdf_output_path, "wb") as f:
-            f.write(pdf_bytes)
+        logger.info("V2 PDF generation starting for report=%s", report_id)
+        from weasyprint import HTML
+        pdf_bytes = HTML(string=html_content, base_url=REPORT_ASSETS_DIR).write_pdf()
+        if not pdf_bytes:
+            raise RuntimeError("HTML-to-PDF conversion returned no bytes")
+
         from services.aws_service import aws_service
         success, bucket_url, error_message = aws_service.upload_pdf_to_s3(
             pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
         )
         if success:
-            db.execute(
+            await db.execute(
                 text(
-                    "UPDATE reports SET bucket_url=:url, json_result=:jr, "
-                    "saved_to_bucket=true, updated_at=:now WHERE report_id=:rid"
-                ),
-                {"url": bucket_url, "jr": api_response, "now": datetime.utcnow(), "rid": report_id},
-            )
-            logger.info("V2 PDF uploaded. report=%s url=%s", report_id, bucket_url)
-        else:
-            db.execute(
-                text(
-                    "UPDATE reports SET json_result=:jr, saved_to_bucket=false, "
+                    "UPDATE reports SET bucket_url=:url, saved_to_bucket=true, "
                     "updated_at=:now WHERE report_id=:rid"
                 ),
-                {"jr": api_response, "now": datetime.utcnow(), "rid": report_id},
+                {"url": bucket_url, "now": datetime.utcnow(), "rid": report_id},
             )
-            logger.error("V2 PDF upload failed for report=%s", report_id)
-        db.commit()
+            await db.commit()
+            logger.info("V2 PDF uploaded. report=%s url=%s", report_id, bucket_url)
+            return True
+        else:
+            await db.execute(
+                text(
+                    "UPDATE reports SET saved_to_bucket=false, updated_at=:now "
+                    "WHERE report_id=:rid"
+                ),
+                {"now": datetime.utcnow(), "rid": report_id},
+            )
+            await db.commit()
+            logger.error("V2 PDF upload failed for report=%s: %s", report_id, error_message)
+            return False
     except Exception as exc:
-        logger.error("V2 PDF generation/upload failed (simulation=%s): %s", simulation_id, exc, exc_info=True)
+        logger.error("V2 PDF generation/upload failed (report=%s): %s", report_id, exc, exc_info=True)
         try:
-            db.rollback()
+            await db.rollback()
         except Exception:
             pass
+        return False
 
 
-def eval_pdf_report_generator_v2(
-    api_response: dict,
+async def eval_pdf_report_generator_v2(
+    html_content: str,
     user_id: str,
-    simulation_id: str,
     report_id: str,
-    db: Session,
-    user_name: str = "",
-) -> None:
+    db: AsyncSession,
+) -> bool:
     """Evaluation variant — same HTML-to-PDF path as recommendation."""
-    rec_pdf_report_generator_v2(api_response, user_id, simulation_id, report_id, db, user_name)
+    return await rec_pdf_report_generator_v2(html_content, user_id, report_id, db)
 
 
 # ── pdf_generator: PDF helpers and recommendation/evaluation generators (merged) ─
