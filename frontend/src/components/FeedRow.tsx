@@ -822,8 +822,16 @@ export default function FeedRow({
     return () => {
       cancelled = true;
     };
+    // NOTE: category_name is a dep too. A search pick can set category_name
+    // WITHOUT changing feed_type_name (e.g. FEED 1 is already "Forage" and the
+    // user picks another Forage feed). Keying only off feed_type_name meant
+    // the cascade never re-ran, so category_id was never resolved and the
+    // Feed Category field stayed blank until a page refresh remounted the row.
+    // Re-running on category_name change matches (or injects+selects) the new
+    // category. The cascade only ever SETS category_id (never category_name),
+    // so this doesn't re-trigger itself.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.feed_type_name, user?.country_id, user?.id]);
+  }, [item.feed_type_name, item.category_name, user?.country_id, user?.id]);
 
   // Self-heal for category_name — same rationale as the feed_type_name
   // self-heal effect above. A row saved while unique-feed-category was

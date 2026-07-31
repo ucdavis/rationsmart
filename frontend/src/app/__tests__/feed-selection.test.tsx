@@ -373,7 +373,16 @@ describe("feed-selection — picked feed's Category shows despite list mismatch"
     // NOT return that exact string — so the cascade can't match it. The row
     // still has a picked feed_uuid + category_name, so the Category dropdown
     // must display it rather than going blank.
-    useStore.setState({ feedSelectionType: "evaluation", feedSelections: [] });
+    //
+    // CRUCIAL: seed the row with feed_type_name already "Forage" (as FEED 1
+    // shows in the real app). Picking a Forage feed then leaves feed_type_name
+    // UNCHANGED, so the category cascade (which keys off feed_type_name) must
+    // still re-run off the category_name change — otherwise category_id is
+    // never set and the field stays blank until a refresh.
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      feedSelections: [mkFeed({ feed_type_name: "Forage" })],
+    });
     getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
     getFeedCategories.mockReset().mockResolvedValue({
       data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }],
