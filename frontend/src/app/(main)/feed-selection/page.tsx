@@ -402,19 +402,20 @@ export default function FeedSelectionPage() {
   //   2. The first row whose feed_uuid is still null (empty row)
   //   3. Row 0 as the final fallback
   const applySearchResult = (result: FeedSearchResult) => {
-    let landedIdx = -1;
-    let usedFallback = false;
+    // Resolve the target row from CURRENT state BEFORE setItems. The setItems
+    // updater runs during React's render phase — i.e. AFTER the synchronous
+    // setActiveRowId / snackbar calls below — so anything computed inside it
+    // would still be stale here. Compute landedRowId/landedIdx up front.
+    let idx = activeRowId ? items.findIndex((r) => r.id === activeRowId) : -1;
+    const usedFallback = idx === -1;
+    if (idx === -1) idx = items.findIndex((r) => !r.feed_uuid);
+    if (idx === -1) idx = 0;
+    const landedIdx = idx;
+    const landedRowId = items[idx]?.id ?? null;
+
     setItems((prev) => {
-      let idx = -1;
-      if (activeRowId) idx = prev.findIndex((r) => r.id === activeRowId);
-      if (idx === -1) {
-        idx = prev.findIndex((r) => !r.feed_uuid);
-        usedFallback = true;
-      }
-      if (idx === -1) idx = 0;
-      landedIdx = idx;
-      const next = prev.map((row, i) =>
-        i === idx
+      const next = prev.map((row) =>
+        row.id === landedRowId
           ? {
               ...row,
               feed_type_name: result.feed_type,
@@ -437,13 +438,25 @@ export default function FeedSelectionPage() {
     });
     setSearchQuery("");
     setSearchOpen(false);
-    setActiveRowId(null);
+    // Keep the green focus ring on the card the feed just landed in, so the
+    // user can see WHICH card they filled. Previously this was cleared to
+    // null, so after a search the feed appeared in the card with no
+    // indication of where it went. The highlighted card also remains the
+    // active search target — tap another card to retarget. Scroll it into
+    // view so control visibly returns to the card once the panel closes.
+    setActiveRowId(landedRowId);
+    if (landedRowId) {
+      const rowId = landedRowId;
+      setTimeout(() => {
+        document
+          .getElementById(`feed-card-${rowId}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }, 100);
+    }
 
-    // When the user did NOT tap a card before searching, the result
-    // lands silently in the first empty row — which can confuse users
-    // who don't realise where it went. Confirm the destination via
-    // snackbar. (When a card was tapped, the green ring already told
-    // them where it would land, so we skip the toast.)
+    // When the user did NOT tap a card before searching, the result lands in
+    // the first empty row. The ring + scroll now point there too, but keep a
+    // confirming snackbar for that no-tap case.
     if (usedFallback && landedIdx >= 0) {
       showSnackbar(t("Added to FEED ${N}").replace("${N}", String(landedIdx + 1)), "success");
     }

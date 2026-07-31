@@ -250,6 +250,42 @@ describe("feed-selection — Custom Diet Limits gating", () => {
   });
 });
 
+// ─── 3b. Search result keeps the target card highlighted ────────────────────
+
+describe("feed-selection — search result highlights the filled card", () => {
+  it("leaves the landed card marked Selected (active ring) after picking a result", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    searchFeeds.mockReset().mockResolvedValue({
+      data: [
+        {
+          feed_uuid: "sugar-1",
+          feed_name: "Sugarcane tops, Wet season",
+          feed_type: "Forage",
+          feed_category: "By-Product/Other-Forage",
+          display_name: "Sugarcane tops, Wet season",
+          display_type: "Forage",
+          display_category: "By-Product/Other-Forage",
+        },
+      ],
+    });
+    await renderReady();
+
+    // No card is active to begin with — nothing shows "Selected".
+    expect(screen.queryByText("Selected")).not.toBeInTheDocument();
+
+    // Type a query; the debounced search resolves and a result appears.
+    const searchBox = screen.getByPlaceholderText(/Search feeds/i);
+    fireEvent.change(searchBox, { target: { value: "sugar" } });
+    const result = await screen.findByText("Sugarcane tops, Wet season");
+
+    // Pick it → it lands in a card, and that card must stay highlighted so
+    // the user can see where the feed went (regression: this used to clear
+    // the active row to null, leaving no indication).
+    fireEvent.click(result);
+    await waitFor(() => expect(screen.getByText("Selected")).toBeInTheDocument());
+  });
+});
+
 // ─── 4. Recommendation / Evaluation toggle reveals Quantity + Cost ──────────
 
 describe("feed-selection — mode toggle", () => {

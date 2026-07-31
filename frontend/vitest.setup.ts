@@ -50,6 +50,13 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+// jsdom does NOT implement scrollIntoView; app code calls it (e.g. the
+// feed-selection search-result flow scrolls the filled card back into view).
+// Stub it so those code paths don't throw "Not implemented" under test.
+if (typeof Element !== "undefined") {
+  Element.prototype.scrollIntoView = function scrollIntoView() {};
+}
+
 // jsdom does NOT implement matchMedia; some Next / library code touches it.
 beforeEach(() => {
   if (typeof window !== "undefined" && !window.matchMedia) {
