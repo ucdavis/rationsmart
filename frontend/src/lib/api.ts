@@ -1227,7 +1227,21 @@ export const searchFeeds = async (
       }
     }
     const normalized = raw.map(normalizeRow).filter((r): r is FeedSearchResult => r !== null);
-    return { data: normalized };
+
+    // Dedupe by feed_uuid. The backend's search endpoint can return the SAME
+    // feed many times over: a "sugarcane" query was observed returning 24
+    // rows, every one an identical feed_uuid / fd_code (a server-side JOIN
+    // without DISTINCT). A picker must never list the same feed twice —
+    // picking any copy resolves to the same feed_uuid and does the exact same
+    // thing. This is a client-side guard; the backend should also DISTINCT
+    // its query, but this keeps the UI correct regardless of that timeline.
+    const seen = new Set<string>();
+    const deduped = normalized.filter((f) => {
+      if (seen.has(f.feed_uuid)) return false;
+      seen.add(f.feed_uuid);
+      return true;
+    });
+    return { data: deduped };
   } catch (err) {
     console.warn("[searchFeeds] request failed", err);
     return { data: [] };

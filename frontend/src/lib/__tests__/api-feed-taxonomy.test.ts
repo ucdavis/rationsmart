@@ -240,6 +240,37 @@ describe("searchFeeds", () => {
     expect(res.data).toHaveLength(1);
   });
 
+  it("dedupes rows that share a feed_uuid (backend returns N identical copies)", async () => {
+    // Mirrors the real bug: a "sugarcane" search returned 24 rows, all the
+    // same feed_uuid / fd_code. The picker must collapse them to one entry.
+    const dupe = {
+      feed_uuid: "66acc192-9490-4ae1-9cd0-c22a1cb3fabf",
+      feed_name: "Sugarcane tops, Wet season",
+      feed_type: "Forage",
+      feed_category: "By-Product/Other-Forage",
+    };
+    mockApi.get.mockResolvedValueOnce({
+      data: { feeds: Array.from({ length: 24 }, () => ({ ...dupe })), total_count: 24 },
+    });
+    const res = await searchFeeds("sugarcane", "7", "u1");
+    expect(res.data).toHaveLength(1);
+    expect(res.data[0].feed_uuid).toBe("66acc192-9490-4ae1-9cd0-c22a1cb3fabf");
+  });
+
+  it("keeps distinct feeds that share a display name but differ by feed_uuid", async () => {
+    // Guard against over-deduping: same name, different uuid = real choices.
+    mockApi.get.mockResolvedValueOnce({
+      data: {
+        feeds: [
+          { feed_uuid: "a", feed_name: "Sugarcane tops", feed_type: "Forage" },
+          { feed_uuid: "b", feed_name: "Sugarcane tops", feed_type: "Forage" },
+        ],
+      },
+    });
+    const res = await searchFeeds("sugarcane", "7", "u1");
+    expect(res.data).toHaveLength(2);
+  });
+
   it("accepts a {results: [...]} wrapper", async () => {
     mockApi.get.mockResolvedValueOnce({
       data: { results: [{ feed_uuid: "u1", feed_name: "Maize" }] },

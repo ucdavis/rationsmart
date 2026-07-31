@@ -789,16 +789,6 @@ export default function FeedSelectionPage() {
     });
   };
 
-  const btnBase = {
-    fontFamily: "Nunito, sans-serif",
-    fontWeight: 700,
-    fontSize: 16,
-    borderRadius: 12,
-    padding: "10px 16px",
-    cursor: "pointer",
-    transition: "all 0.15s",
-  } as const;
-
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
       <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
@@ -821,44 +811,75 @@ export default function FeedSelectionPage() {
           {t("Optional")}
         </p>
         <div className="flex flex-wrap gap-2">
+          {/* Custom Diet Limits — white pill, mint icon-badge (SectionCard
+              aesthetic). Disabled + greyed in evaluation mode. */}
           <button
             onClick={() => setShowLimitsModal(true)}
             disabled={isEvaluation}
             style={{
-              ...btnBase,
+              fontFamily: "Nunito, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
               display: "inline-flex",
               alignItems: "center",
-              gap: 8,
-              fontSize: 14,
-              padding: "8px 14px",
-              backgroundColor: isEvaluation ? "#EEF0F2" : "rgba(5,188,109,0.15)",
+              gap: 10,
+              padding: "7px 16px 7px 7px",
+              borderRadius: 999,
+              backgroundColor: isEvaluation ? "#F1F5F9" : "#FFFFFF",
               color: isEvaluation ? "#999999" : "#064E3B",
-              border: "none",
+              border: `1.5px solid ${isEvaluation ? "#E2E8F0" : "#DCE0E4"}`,
+              boxShadow: isEvaluation ? "none" : "0 1px 2px rgba(6,40,30,0.06)",
               cursor: isEvaluation ? "not-allowed" : "pointer",
-              opacity: isEvaluation ? 0.7 : 1,
+              transition: "all 0.15s",
             }}
           >
-            <span aria-hidden="true" style={{ display: "inline-flex" }}>
-              <IcTune size={18} color={isEvaluation ? "#999999" : "#064E3B"} />
+            <span
+              aria-hidden="true"
+              className="flex items-center justify-center"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                backgroundColor: isEvaluation ? "#E8EBEE" : "#E4F7EF",
+                flexShrink: 0,
+              }}
+            >
+              <IcTune size={17} color={isEvaluation ? "#999999" : "#064E3B"} />
             </span>
             {t("Custom Diet Limits")}
           </button>
+          {/* Custom Feed — same white-pill treatment, always enabled. */}
           <button
             onClick={openCustomFeedModal}
             style={{
-              ...btnBase,
+              fontFamily: "Nunito, sans-serif",
+              fontWeight: 700,
+              fontSize: 14,
               display: "inline-flex",
               alignItems: "center",
-              gap: 8,
-              fontSize: 14,
-              padding: "8px 14px",
-              backgroundColor: "rgba(5,188,109,0.15)",
+              gap: 10,
+              padding: "7px 16px 7px 7px",
+              borderRadius: 999,
+              backgroundColor: "#FFFFFF",
               color: "#064E3B",
-              border: "none",
+              border: "1.5px solid #DCE0E4",
+              boxShadow: "0 1px 2px rgba(6,40,30,0.06)",
+              cursor: "pointer",
+              transition: "all 0.15s",
             }}
           >
-            <span aria-hidden="true" style={{ display: "inline-flex" }}>
-              <IcAddFeed size={18} color="#064E3B" />
+            <span
+              aria-hidden="true"
+              className="flex items-center justify-center"
+              style={{
+                width: 30,
+                height: 30,
+                borderRadius: "50%",
+                backgroundColor: "#E4F7EF",
+                flexShrink: 0,
+              }}
+            >
+              <IcAddFeed size={17} color="#064E3B" />
             </span>
             {t("Custom Feed")}
           </button>
