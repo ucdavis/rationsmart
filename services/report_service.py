@@ -218,12 +218,23 @@ async def generate_and_upload_pdf(report_id: str, user_id: str) -> None:
     from app.db.session import AsyncSessionLocal
     from core.z_optimization.pdf_service import rec_pdf_report_generator_v2
 
-    async with AsyncSessionLocal() as db:
-        repo = ReportRepository(db)
-        report = await repo.get_by_report_id(report_id, user_id)
-        if report is None or not report.report_html:
-            logger.error(
-                "No report_html found for report=%s — cannot generate PDF", report_id
-            )
-            return
-        await rec_pdf_report_generator_v2(report.report_html, user_id, report_id, db)
+    try:
+        async with AsyncSessionLocal() as db:
+            repo = ReportRepository(db)
+            report = await repo.get_by_report_id(report_id, user_id)
+            if report is None:
+                logger.error(
+                    "Report not found for report=%s user=%s — cannot generate PDF",
+                    report_id, user_id,
+                )
+                return
+            if not report.report_html:
+                logger.error(
+                    "report_html is empty for report=%s — cannot generate PDF", report_id
+                )
+                return
+            await rec_pdf_report_generator_v2(report.report_html, user_id, report_id, db)
+    except Exception:
+        logger.error(
+            "generate_and_upload_pdf failed unexpectedly (report=%s)", report_id, exc_info=True
+        )
