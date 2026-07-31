@@ -286,6 +286,84 @@ describe("feed-selection — search result highlights the filled card", () => {
   });
 });
 
+// ─── 3c. Concurrent cascade writes must not clobber Category ────────────────
+
+describe("feed-selection — search pick keeps Category (no cascade clobber)", () => {
+  it("keeps category_id after a picked feed's cascades resolve out of order", async () => {
+    // Root-cause regression: after a search pick, FeedRow's category cascade
+    // sets category_id, then the sub-category cascade resolves later and
+    // issues its own onUpdate. With updateItem built off a stale `items`
+    // closure, that later write rebuilt from a snapshot where category_id was
+    // still null and wiped it — so the Feed filled but Category went blank.
+    // Here the sub-category fetch resolves AFTER the category fetch and
+    // returns a slightly different feed name, forcing that second onUpdate.
+    useStore.setState({ feedSelectionType: "evaluation", feedSelections: [] });
+    getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
+    getFeedCategories.mockReset().mockImplementation((feedType: string) =>
+      Promise.resolve({
+        data:
+          feedType === "Forage"
+            ? [
+                {
+                  category_name: "By-Product/Other-Forage",
+                  display_category: "By-Product/Other-Forage",
+                },
+              ]
+            : [{ category_name: "Grain", display_category: "Grain" }],
+      })
+    );
+    getFeedSubCategories.mockReset().mockImplementation((feedType: string, category: string) => {
+      if (feedType === "Forage" && category === "By-Product/Other-Forage") {
+        // Resolve later than the category cascade, and return a name that
+        // differs from what search stored so the sub-category cascade fires
+        // its own onUpdate (the clobbering write under the old code).
+        return new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                data: {
+                  standard_feeds: [{ feed_id: "sugar-1", fd_name: "Sugarcane tops (Wet)" }],
+                  custom_feeds: [],
+                },
+              }),
+            30
+          )
+        );
+      }
+      return Promise.resolve({ data: { standard_feeds: [], custom_feeds: [] } });
+    });
+    searchFeeds.mockReset().mockResolvedValue({
+      data: [
+        {
+          feed_uuid: "sugar-1",
+          feed_name: "Sugarcane tops, Wet season",
+          feed_type: "Forage",
+          feed_category: "By-Product/Other-Forage",
+          display_name: "Sugarcane tops, Wet season",
+          display_type: "Forage",
+          display_category: "By-Product/Other-Forage",
+        },
+      ],
+    });
+
+    await renderReady();
+    const card1 = () => screen.getByText("FEED 1").closest('[id^="feed-card-"]') as HTMLElement;
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds|Search to fill/i), {
+      target: { value: "sugar" },
+    });
+    fireEvent.click(await screen.findByText("Sugarcane tops, Wet season"));
+
+    // Category must remain populated even after the late sub-category write.
+    await waitFor(() =>
+      expect(within(card1()).queryByText(/By-Product\/Other-Forage/)).toBeInTheDocument()
+    );
+    // And stay populated after the delayed cascade fully settles.
+    await new Promise((r) => setTimeout(r, 60));
+    expect(within(card1()).queryByText(/By-Product\/Other-Forage/)).toBeInTheDocument();
+  });
+});
+
 // ─── 4. Recommendation / Evaluation toggle reveals Quantity + Cost ──────────
 
 describe("feed-selection — mode toggle", () => {

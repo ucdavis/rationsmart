@@ -610,15 +610,30 @@ export default function FeedSelectionPage() {
   const isEvaluation = feedSelectionType === "evaluation";
 
   const addFeed = () => {
-    const updated = [...items, createFeedItem()];
-    setItems(updated);
-    setFeedSelections(updated);
+    // Functional updater — see updateItem for why (avoid clobbering a
+    // concurrent cascade write off a stale `items` snapshot).
+    setItems((prev) => {
+      const updated = [...prev, createFeedItem()];
+      setFeedSelections(updated);
+      return updated;
+    });
   };
 
   const updateItem = (id: string, updates: Partial<FeedItem>) => {
-    const updated = items.map((item) => (item.id === id ? { ...item, ...updates } : item));
-    setItems(updated);
-    setFeedSelections(updated);
+    // Functional updater — NOT `items.map(...)` off the render-time closure.
+    // FeedRow fires several cascade onUpdate()s asynchronously (feed_type_id,
+    // category_id, sub-category fields). Two resolving close together would
+    // each rebuild from the SAME stale `items` snapshot, so the later write
+    // silently clobbers the earlier one's field (observed: the category
+    // cascade sets category_id, then another cascade's write — built from a
+    // snapshot where category_id was still null — wipes it, leaving Category
+    // blank after a search pick). Deriving from `prev` makes every write see
+    // the latest state, so concurrent field updates compose instead of race.
+    setItems((prev) => {
+      const updated = prev.map((item) => (item.id === id ? { ...item, ...updates } : item));
+      setFeedSelections(updated);
+      return updated;
+    });
   };
 
   const deleteItem = (id: string) => {
@@ -626,9 +641,12 @@ export default function FeedSelectionPage() {
       showSnackbar(t("At least one feed item is required"), "info");
       return;
     }
-    const updated = items.filter((item) => item.id !== id);
-    setItems(updated);
-    setFeedSelections(updated);
+    // Functional updater — see updateItem.
+    setItems((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      setFeedSelections(updated);
+      return updated;
+    });
   };
 
   const isValid = () => {
