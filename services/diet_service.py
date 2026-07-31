@@ -288,6 +288,40 @@ def _neutralize_lactation_fields(animal_inputs: Dict[str, Any], physiological_st
     return animal_inputs
 
 
+def _render_report_html(
+    post_results: Dict[str, Any],
+    animal_requirements: Dict[str, Any],
+    *,
+    simulation_id: str,
+    report_id: str,
+    evaluation_mode: bool = False,
+    currency: str = "$",
+) -> Optional[str]:
+    """Render report HTML for Report.report_html at compute time.
+
+    The raw optimizer output (post_results DataFrames) only exists here, in
+    memory — it's never persisted, so this is the only point where the HTML can
+    be built (PDF conversion happens later, at save time, from this stored
+    string). Defensive: a bug in the report renderer must never break diet
+    computation — logs and returns None (report_html stays null; PDF generation
+    later just has nothing to convert) rather than raising.
+    """
+    try:
+        from core.z_optimization.report_generation import rsm_generate_report_v2
+
+        return rsm_generate_report_v2(
+            post_results=post_results,
+            animal_requirements=animal_requirements,
+            simulation_id=simulation_id,
+            report_id=report_id,
+            evaluation_mode=evaluation_mode,
+            currency=currency,
+        )
+    except Exception:
+        logger.error("Report HTML generation failed (report=%s)", report_id, exc_info=True)
+        return None
+
+
 async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id: str) -> Dict[str, Any]:
     """Baby Calf/Heifer recommendation: return the milk-feeding schedule directly.
 
@@ -297,7 +331,10 @@ async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id:
     build the calf response, persist a Report row, and return. Caller-facing behavior
     mirrors run_diet_recommendation (commits before returning).
     """
-    from core.z_optimization.animal_requirements import rsm_calculate_an_requirements
+    from core.z_optimization.animal_requirements import (
+        rsm_calculate_an_requirements,
+        rsm_create_animal_inputs_dataframe,
+    )
     from core.z_optimization.reporting import build_calf_recommendation_response
 
     cattle = request.cattle_info
@@ -329,6 +366,17 @@ async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id:
         report_id=report_id,
     )
 
+    # No ration was optimized (milk-only path) — build a minimal post_results with
+    # just the animal-inputs display table; everything else (dt_proportions,
+    # dt_forages, methane_report, etc.) is absent and rsm_generate_report_v2
+    # already handles that gracefully for the "Baby Calf/Heifer" profile (only
+    # the animal-inputs + calf-feeding-schedule tables get rendered for it).
+    post_results = {"animal_inputs": rsm_create_animal_inputs_dataframe(animal_requirements)}
+    report_html = _render_report_html(
+        post_results, animal_requirements,
+        simulation_id=request.simulation_id, report_id=report_id,
+    )
+
     report_repo = ReportRepository(db)
     await report_repo.delete_unsaved_for_user(user_id)
     new_report = Report(
@@ -341,6 +389,7 @@ async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id:
         feed_selection=[],
         custom_constraints=None,
         json_result=response,
+        report_html=report_html,
         save_report=False,
         saved_to_bucket=False,
     )
@@ -495,7 +544,13 @@ async def run_diet_recommendation(
         name_map=name_map,
     )
 
-    # 5 — Persist report record (no PDF yet — Task 2.8 adds that)
+    # 5 — Render report HTML (PDF generation happens later, at save time)
+    report_html = _render_report_html(
+        post_results, result.animal_requirements,
+        simulation_id=request.simulation_id, report_id=report_id, currency=currency,
+    )
+
+    # 6 — Persist report record
     country_id = request.country_id
     report_repo = ReportRepository(db)
     await report_repo.delete_unsaved_for_user(user_id)
@@ -513,6 +568,7 @@ async def run_diet_recommendation(
         ],
         custom_constraints=custom_thresholds,
         json_result=response,
+        report_html=report_html,
         save_report=False,
         saved_to_bucket=False,
     )
@@ -632,6 +688,12 @@ async def run_diet_evaluation(
         type_map=type_map,
     )
 
+    report_html = _render_report_html(
+        eval_result.get("post_results", {}), eval_result.get("animal_requirements", {}),
+        simulation_id=request.simulation_id, report_id=report_id,
+        evaluation_mode=True, currency=request.currency,
+    )
+
     report_repo = ReportRepository(db)
     await report_repo.delete_unsaved_for_user(user_id)
 
@@ -647,6 +709,7 @@ async def run_diet_evaluation(
             for f in feed_data_list
         ],
         json_result=response,
+        report_html=report_html,
         save_report=False,
         saved_to_bucket=False,
     )

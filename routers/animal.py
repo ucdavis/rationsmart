@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -483,6 +483,7 @@ async def delete_feed(
              summary="Persist a simulation result as a saved report")
 async def save_report(
     body: SaveReportRequest,
+    background_tasks: BackgroundTasks,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -494,6 +495,8 @@ async def save_report(
     **Mandatory body field:** `report_id` — the UUID of the simulation result to save.
 
     Returns the cloud storage URL (`bucket_url`) of the saved report, or `404` if the simulation is not found.
+    `bucket_url` is null in the response if the PDF isn't ready yet — it's generated
+    in the background (see `POST /v1/animal/reports/pdf` to check/retry).
     """
     success, message, bucket_url = await report_service.save_simulation(
         db, body.report_id, str(current_user.id)
@@ -501,6 +504,10 @@ async def save_report(
     if not success:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
     await db.commit()
+    if not bucket_url:
+        background_tasks.add_task(
+            report_service.generate_and_upload_pdf, body.report_id, str(current_user.id)
+        )
     return SaveReportResponse(success=True, message=message, bucket_url=bucket_url)
 
 
@@ -565,23 +572,50 @@ async def fetch_simulation_details(
 
 # ── PDF reports (diet_reports table) ─────────────────────────────────────────
 
-@router.post("/reports/pdf", summary="Generate a PDF report (not yet implemented)")
+@router.post("/reports/pdf", response_model=SaveReportResponse,
+             summary="Get (or generate on demand) the PDF for a saved report")
 async def generate_pdf_report(
-    body: dict,
+    body: SaveReportRequest,
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Generate and store a PDF version of a saved diet report.
+    Return the PDF URL for a saved report, generating it on demand if it isn't
+    ready yet — e.g. the background job from `POST /v1/animal/save-report`
+    hasn't finished, or a previous attempt failed (S3 hiccup, etc.).
 
     **Requires:** Bearer JWT.
 
-    **Status:** Not yet implemented — returns `501`. Scheduled for a future release.
+    Returns `404` if the report doesn't exist, or `409` if it hasn't been saved
+    yet (`POST /v1/animal/save-report` first) or has no renderable content.
     """
-    raise HTTPException(
-        status_code=status.HTTP_501_NOT_IMPLEMENTED,
-        detail="PDF generation is implemented in Task 2.8",
+    from core.z_optimization.pdf_service import rec_pdf_report_generator_v2
+
+    report_repo = ReportRepository(db)
+    report = await report_repo.get_by_report_id(body.report_id, str(current_user.id))
+    if not report:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Report not found")
+    if report.bucket_url:
+        return SaveReportResponse(success=True, message="PDF already available", bucket_url=report.bucket_url)
+    if not report.save_report:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Report has not been saved yet — call /save-report first",
+        )
+    if not report.report_html:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="No report content available to generate a PDF from",
+        )
+
+    ok = await rec_pdf_report_generator_v2(
+        report.report_html, str(current_user.id), body.report_id, db
     )
+    if not ok:
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="PDF generation failed")
+
+    refreshed = await report_repo.get_by_report_id(body.report_id, str(current_user.id))
+    return SaveReportResponse(success=True, message="PDF generated", bucket_url=refreshed.bucket_url)
 
 
 @router.get("/reports", summary="List saved reports for the authenticated user")

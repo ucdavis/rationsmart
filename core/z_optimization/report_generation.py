@@ -1139,20 +1139,20 @@ def build_report_context(
 def rsm_generate_report_v2(
     post_results,
     animal_requirements,
-    output_file="final_report_v2.html",
     user_name="User",
     simulation_id="N/A",
     report_id="N/A",
     evaluation_mode=False,
     country_name="Unknown",
     currency="$",
-    recommendations=None,
-    is_pdf_mode=False,
 ):
     """
     Enhanced HTML report generation with PDF-parity features (icon-based layout,
     print-friendly CSS, transposed tables for narrow screens / WeasyPrint).
-    Used by reporting.py for both recommendation and evaluation paths.
+
+    Returns the HTML content as a string (for Report.report_html) — icons are
+    referenced by filename, not embedded, so WeasyPrint must be given
+    base_url=pdf_service.REPORT_ASSETS_DIR when converting this to a PDF later.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     icon_header_path = os.path.join(current_dir, "assets", "report_header.png")
@@ -1169,19 +1169,23 @@ def rsm_generate_report_v2(
     icon_cost_liter_path = os.path.join(current_dir, "assets", "cost_per_liter.png")
     icon_water_path = os.path.join(current_dir, "assets", "bucket_6265910.png")
 
-    icon_header = get_image_base64(icon_header_path)
-    icon_summary = get_image_base64(icon_summary_path)
-    icon_animal = get_image_base64(icon_animal_path)
-    icon_diet = get_image_base64(icon_diet_path)
-    icon_env = get_image_base64(icon_env_path)
-    icon_req = get_image_base64(icon_req_path)
-    icon_prop = get_image_base64(icon_prop_path)
-    icon_forage = get_image_base64(icon_forage_path)
-    icon_concentrate = get_image_base64(icon_concentrate_path)
-    icon_prod = get_image_base64(icon_prod_path)
-    icon_daily_cost = get_image_base64(icon_daily_cost_path)
-    icon_cost_liter = get_image_base64(icon_cost_liter_path)
-    icon_water = get_image_base64(icon_water_path)
+    # Icons are referenced by filename (not embedded as base64) so the stored
+    # report_html stays small — WeasyPrint resolves these relative paths against
+    # `base_url=.../core/z_optimization/assets` at PDF-conversion time. See
+    # docs/dev_docs/reports/save_report_pdf_gap_implementation_plan.md.
+    icon_header = os.path.basename(icon_header_path)
+    icon_summary = os.path.basename(icon_summary_path)
+    icon_animal = os.path.basename(icon_animal_path)
+    icon_diet = os.path.basename(icon_diet_path)
+    icon_env = os.path.basename(icon_env_path)
+    icon_req = os.path.basename(icon_req_path)
+    icon_prop = os.path.basename(icon_prop_path)
+    icon_forage = os.path.basename(icon_forage_path)
+    icon_concentrate = os.path.basename(icon_concentrate_path)
+    icon_prod = os.path.basename(icon_prod_path)
+    icon_daily_cost = os.path.basename(icon_daily_cost_path)
+    icon_cost_liter = os.path.basename(icon_cost_liter_path)
+    icon_water = os.path.basename(icon_water_path)
 
     animal_inputs = ensure_df(post_results.get('animal_inputs'))
     dt_proportions = ensure_df(post_results.get('dt_proportions'))
@@ -1614,8 +1618,7 @@ def rsm_generate_report_v2(
     parts = head_parts + body_parts
 
     html_content = "\n".join(parts)
-    Path(output_file).write_text(html_content, encoding="utf-8")
-    return output_file
+    return html_content
 
 
 def generate_report_from_runner_results_v2(results, output_file="final_report_v2.html"):

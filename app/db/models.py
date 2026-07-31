@@ -240,6 +240,7 @@ class Report(Base):
     custom_constraints = Column(JSONB, nullable=True)
     country_id = Column(UUID(as_uuid=True), ForeignKey("country.id"), nullable=True)
     report_name = Column(String(255), nullable=True)
+    report_html = Column(Text, nullable=True)
 
     __table_args__ = (
         CheckConstraint("report_type IN ('rec', 'eval')", name="reports_report_type_check"),
