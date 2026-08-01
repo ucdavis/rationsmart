@@ -1045,7 +1045,7 @@ def build_report_context(
         "Lactating Cow": {
             "animal_input_rows": None,          # show all rows
             "requirements_rows": None,
-            "summary_label": "Target milk production",
+            "summary_label": "Milk Production",
             "summary_value": float(animal_requirements.get("Trg_MilkProd_L", 0) or 0),
             "summary_unit": "L",
             "summary_precision": 1,
@@ -1129,7 +1129,7 @@ def build_report_context(
         "animal_inputs": animal_inputs_display,
         "requirements": requirements_display,
         "summary_metric_value": summary_metric_value,
-        "summary_metric_label": profile.get("summary_label", "Target milk production"),
+        "summary_metric_label": profile.get("summary_label", "Milk Production"),
         "show_milk_price_comparison": bool(profile.get("show_milk_price_comparison")),
         "show_calf_feeding_summary": bool(profile.get("show_calf_feeding_summary")),
         "calf_feeding_table": calf_feeding_table,
@@ -1469,7 +1469,7 @@ def rsm_generate_report_v2(
       .summary-card { padding: 12px 10px; border-radius: 10px; background: #f0fdf4; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
       .summary-icon { width: 28px; height: 28px; margin: 0 auto 4px auto; display: block; object-fit: contain; }
       .summary-val { font-size: 1.15rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
-      .summary-lab { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .summary-lab { font-size: 0.65rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
       .margin-section { margin-top: 28px; }
       .margin-section-title { color: var(--primary-green); font-size: 1.05rem; font-weight: 700; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
       .margin-banner { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid; -webkit-print-color-adjust: exact; }
@@ -1591,7 +1591,7 @@ def rsm_generate_report_v2(
             "<div class='summary-grid'>",
             f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{report_context['summary_metric_label']}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
             f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
-            f"    <div class='summary-card'><img src='{icon_env}' class='summary-icon'><span class='summary-lab'>Methane Production</span><span class='summary-val'>{m_prod} g/day</span></div>",
+            f"    <div class='summary-card'><img src='{icon_env}' class='summary-icon'><span class='summary-lab'>Methane</span><span class='summary-val'>{m_prod} g/day</span></div>",
             f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
             fc_ratio_card,
             "</div>",
