@@ -1466,10 +1466,10 @@ def rsm_generate_report_v2(
       .classification-label { font-size: 0.95em; font-weight: 600; color: #64748b; }
       .classification-tag { background: #dcfce7 !important; color: #166534 !important; padding: 3px 10px; border-radius: 6px; font-size: 0.75em; font-weight: 700; border: 1px solid #bbf7d0; text-transform: uppercase; -webkit-print-color-adjust: exact; }
       .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 10px; margin-bottom: 20px; }
-      .summary-card { padding: 12px 10px; border-radius: 10px; background: #f0fdf4; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); display: flex; flex-direction: column; }
+      .summary-card { padding: 12px 10px; border-radius: 10px; background: #f0fdf4; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
       .summary-icon { width: 28px; height: 28px; margin: 0 auto 4px auto; display: block; object-fit: contain; }
-      .summary-val { font-size: 1.15rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 8px; }
-      .summary-lab { flex: 1; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; line-height: 1.25; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .summary-val { font-size: 1.15rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
+      .summary-lab { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
       .margin-section { margin-top: 28px; }
       .margin-section-title { color: var(--primary-green); font-size: 1.05rem; font-weight: 700; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
       .margin-banner { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid; -webkit-print-color-adjust: exact; }
@@ -1509,8 +1509,8 @@ def rsm_generate_report_v2(
         .margin-val { font-size: 1.0rem !important; }
         .margin-lab { font-size: 6pt !important; }
         .summary-icon { width: 22px !important; height: 22px !important; margin-bottom: 2px !important; }
-        .summary-val { font-size: 0.95rem !important; margin-top: 4px !important; }
-        .summary-lab { font-size: 6pt !important; line-height: 1.25 !important; }
+        .summary-val { font-size: 0.95rem !important; margin-top: 1px !important; }
+        .summary-lab { font-size: 6pt !important; }
         .section { page-break-inside: avoid !important; margin-bottom: 58px !important; }
         h2 { font-size: 1.3em !important; margin-bottom: 10px !important; }
         table { font-size: 13.2px !important; page-break-inside: avoid !important; }
