@@ -1045,7 +1045,7 @@ def build_report_context(
         "Lactating Cow": {
             "animal_input_rows": None,          # show all rows
             "requirements_rows": None,
-            "summary_label": "Target milk production",
+            "summary_label": "Milk Production",
             "summary_value": float(animal_requirements.get("Trg_MilkProd_L", 0) or 0),
             "summary_unit": "L",
             "summary_precision": 1,
@@ -1129,7 +1129,7 @@ def build_report_context(
         "animal_inputs": animal_inputs_display,
         "requirements": requirements_display,
         "summary_metric_value": summary_metric_value,
-        "summary_metric_label": profile.get("summary_label", "Target milk production"),
+        "summary_metric_label": profile.get("summary_label", "Milk Production"),
         "show_milk_price_comparison": bool(profile.get("show_milk_price_comparison")),
         "show_calf_feeding_summary": bool(profile.get("show_calf_feeding_summary")),
         "calf_feeding_table": calf_feeding_table,
@@ -1166,7 +1166,6 @@ def rsm_generate_report_v2(
     icon_concentrate_path = os.path.join(current_dir, "assets", "icons8-chemical-65.png")
     icon_prod_path = os.path.join(current_dir, "assets", "target_1790044.png")
     icon_daily_cost_path = os.path.join(current_dir, "assets", "daily_cost.png")
-    icon_cost_liter_path = os.path.join(current_dir, "assets", "cost_per_liter.png")
     icon_water_path = os.path.join(current_dir, "assets", "bucket_6265910.png")
 
     # Icons are referenced by filename (not embedded as base64) so the stored
@@ -1184,7 +1183,6 @@ def rsm_generate_report_v2(
     icon_concentrate = os.path.basename(icon_concentrate_path)
     icon_prod = os.path.basename(icon_prod_path)
     icon_daily_cost = os.path.basename(icon_daily_cost_path)
-    icon_cost_liter = os.path.basename(icon_cost_liter_path)
     icon_water = os.path.basename(icon_water_path)
 
     animal_inputs = ensure_df(post_results.get('animal_inputs'))
@@ -1277,7 +1275,7 @@ def rsm_generate_report_v2(
     forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(dt_proportions, dt_forages)
     fc_ratio_card = (
         f"    <div class='summary-card'><img src='{icon_forage}' class='summary-icon'>"
-        f"<span class='summary-lab'>Forage:Concentrate (as-fed)</span>"
+        f"<span class='summary-lab'>Forage:Concentrate</span>"
         f"<span class='summary-val'>{forage_concentrate_ratio.replace(':', ' : ')}</span></div>"
         if forage_concentrate_ratio else ""
     )
@@ -1357,6 +1355,8 @@ def rsm_generate_report_v2(
         else:
             verdict_text = "Cost per liter equals your milk rate — break-even"
         margin_banner_html = (
+            f"<div class='margin-section'>"
+            f"<h3 class='margin-section-title'>Milk Price Economics</h3>"
             f"<div class='margin-banner {margin_cls}'>"
             f"<div class='margin-cell'><span class='margin-lab'>Milk Price / Liter</span>"
             f"<span class='margin-val'>{currency_display}{milk_price:.2f}</span></div>"
@@ -1364,10 +1364,11 @@ def rsm_generate_report_v2(
             f"<span class='margin-val'>{currency_display}{cost_per_liter:.2f}</span></div>"
             f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Margin / Liter</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_margin:.2f}</span></div>"
-            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Daily Income Over Feed Cost</span>"
+            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Income Over Feed Cost</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_iofc:.2f}</span></div>"
             f"</div>"
             f"<div class='margin-verdict {margin_cls}'>{verdict_text}</div>"
+            f"</div>"
         )
 
     m_prod, m_yield, m_int, m_ym, m_class = 0.0, 0.0, 0.0, 0.0, "Unknown"
@@ -1467,19 +1468,21 @@ def rsm_generate_report_v2(
       .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 10px; margin-bottom: 20px; }
       .summary-card { padding: 12px 10px; border-radius: 10px; background: #f0fdf4; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
       .summary-icon { width: 28px; height: 28px; margin: 0 auto 4px auto; display: block; object-fit: contain; }
-      .summary-val { font-size: 1.15rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
-      .summary-lab { font-size: 0.65rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .summary-val { font-size: 1.0rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
+      .summary-lab { font-size: 0.6rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+      .margin-section { margin-top: 28px; }
+      .margin-section-title { color: var(--primary-green); font-size: 1.05rem; font-weight: 700; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
       .margin-banner { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid; -webkit-print-color-adjust: exact; }
       .margin-banner.margin-positive { background: #f0fdf4; border-color: #86efac; }
       .margin-banner.margin-negative { background: #fef2f2; border-color: #fca5a5; }
       .margin-cell { flex: 1 1 0px; min-width: 0; text-align: center; }
-      .margin-lab { display: block; font-size: 0.62rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-      .margin-val { display: block; margin-top: 3px; font-size: 1.2rem; font-weight: 800; color: #334155; }
+      .margin-lab { display: block; font-size: 0.58rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .margin-val { display: block; margin-top: 3px; font-size: 1.05rem; font-weight: 800; color: #334155; }
       .margin-positive .margin-highlight .margin-val { color: #15803d; }
-      .margin-negative .margin-highlight .margin-val { color: #b91c1c; }
-      .margin-verdict { margin-top: 6px; text-align: center; font-size: 0.72rem; font-weight: 700; }
+      .margin-negative .margin-highlight .margin-val { color: #5d4037; }
+      .margin-verdict { margin-top: 6px; text-align: left; font-size: 0.72rem; font-weight: 700; }
       .margin-verdict.margin-positive { color: #15803d; }
-      .margin-verdict.margin-negative { color: #b91c1c; }
+      .margin-verdict.margin-negative { color: #5d4037; }
       .transposed-only { display: none !important; }
       .wide-only { display: block !important; }
       @media print {
@@ -1497,15 +1500,17 @@ def rsm_generate_report_v2(
         .metric-label { font-size: 8.3pt !important; font-weight: bold !important; white-space: nowrap !important; }
         .summary-grid { display: flex !important; flex-wrap: nowrap !important; justify-content: space-between !important; gap: 8px !important; margin-top: 5px !important; margin-bottom: 15px !important; }
         .summary-card { flex: 1 1 0px !important; min-width: 0 !important; padding: 8px 4px !important; background: #f0fdf4 !important; -webkit-print-color-adjust: exact; }
+        .margin-section { margin-top: 16px !important; }
+        .margin-section-title { font-size: 0.9rem !important; margin-bottom: 8px !important; }
         .margin-banner { display: flex !important; flex-wrap: nowrap !important; gap: 8px !important; margin-top: 8px !important; padding: 10px 12px !important; -webkit-print-color-adjust: exact; }
         .margin-banner.margin-positive { background: #f0fdf4 !important; border-color: #86efac !important; }
         .margin-banner.margin-negative { background: #fef2f2 !important; border-color: #fca5a5 !important; }
         .margin-cell { flex: 1 1 0px !important; min-width: 0 !important; }
-        .margin-val { font-size: 1.0rem !important; }
-        .margin-lab { font-size: 6pt !important; }
+        .margin-val { font-size: 0.9rem !important; }
+        .margin-lab { font-size: 5.5pt !important; }
         .summary-icon { width: 22px !important; height: 22px !important; margin-bottom: 2px !important; }
-        .summary-val { font-size: 0.95rem !important; margin-top: 1px !important; }
-        .summary-lab { font-size: 6pt !important; }
+        .summary-val { font-size: 0.85rem !important; margin-top: 1px !important; }
+        .summary-lab { font-size: 5.5pt !important; }
         .section { page-break-inside: avoid !important; margin-bottom: 58px !important; }
         h2 { font-size: 1.3em !important; margin-bottom: 10px !important; }
         table { font-size: 13.2px !important; page-break-inside: avoid !important; }
@@ -1586,7 +1591,7 @@ def rsm_generate_report_v2(
             "<div class='summary-grid'>",
             f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{report_context['summary_metric_label']}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
             f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
-            f"    <div class='summary-card'><img src='{icon_cost_liter}' class='summary-icon'><span class='summary-lab'>Cost / Liter</span><span class='summary-val'>{f'{currency_display}{cost_per_liter:.2f}' if cost_per_liter is not None else '—'}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_env}' class='summary-icon'><span class='summary-lab'>Methane</span><span class='summary-val'>{m_prod} g/day</span></div>",
             f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
             fc_ratio_card,
             "</div>",
