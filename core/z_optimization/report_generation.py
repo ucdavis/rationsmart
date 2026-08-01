@@ -1364,7 +1364,7 @@ def rsm_generate_report_v2(
             f"<span class='margin-val'>{currency_display}{cost_per_liter:.2f}</span></div>"
             f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Margin / Liter</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_margin:.2f}</span></div>"
-            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Daily Income Over Feed Cost</span>"
+            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Income Over Feed Cost</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_iofc:.2f}</span></div>"
             f"</div>"
             f"<div class='margin-verdict {margin_cls}'>{verdict_text}</div>"
@@ -1468,16 +1468,16 @@ def rsm_generate_report_v2(
       .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 10px; margin-bottom: 20px; }
       .summary-card { padding: 12px 10px; border-radius: 10px; background: #f0fdf4; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
       .summary-icon { width: 28px; height: 28px; margin: 0 auto 4px auto; display: block; object-fit: contain; }
-      .summary-val { font-size: 1.15rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
-      .summary-lab { font-size: 0.65rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
+      .summary-val { font-size: 1.0rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
+      .summary-lab { font-size: 0.6rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
       .margin-section { margin-top: 28px; }
       .margin-section-title { color: var(--primary-green); font-size: 1.05rem; font-weight: 700; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
       .margin-banner { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid; -webkit-print-color-adjust: exact; }
       .margin-banner.margin-positive { background: #f0fdf4; border-color: #86efac; }
       .margin-banner.margin-negative { background: #fef2f2; border-color: #fca5a5; }
       .margin-cell { flex: 1 1 0px; min-width: 0; text-align: center; }
-      .margin-lab { display: block; font-size: 0.62rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-      .margin-val { display: block; margin-top: 3px; font-size: 1.2rem; font-weight: 800; color: #334155; }
+      .margin-lab { display: block; font-size: 0.58rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+      .margin-val { display: block; margin-top: 3px; font-size: 1.05rem; font-weight: 800; color: #334155; }
       .margin-positive .margin-highlight .margin-val { color: #15803d; }
       .margin-negative .margin-highlight .margin-val { color: #5d4037; }
       .margin-verdict { margin-top: 6px; text-align: left; font-size: 0.72rem; font-weight: 700; }
@@ -1506,11 +1506,11 @@ def rsm_generate_report_v2(
         .margin-banner.margin-positive { background: #f0fdf4 !important; border-color: #86efac !important; }
         .margin-banner.margin-negative { background: #fef2f2 !important; border-color: #fca5a5 !important; }
         .margin-cell { flex: 1 1 0px !important; min-width: 0 !important; }
-        .margin-val { font-size: 1.0rem !important; }
-        .margin-lab { font-size: 6pt !important; }
+        .margin-val { font-size: 0.9rem !important; }
+        .margin-lab { font-size: 5.5pt !important; }
         .summary-icon { width: 22px !important; height: 22px !important; margin-bottom: 2px !important; }
-        .summary-val { font-size: 0.95rem !important; margin-top: 1px !important; }
-        .summary-lab { font-size: 6pt !important; }
+        .summary-val { font-size: 0.85rem !important; margin-top: 1px !important; }
+        .summary-lab { font-size: 5.5pt !important; }
         .section { page-break-inside: avoid !important; margin-bottom: 58px !important; }
         h2 { font-size: 1.3em !important; margin-bottom: 10px !important; }
         table { font-size: 13.2px !important; page-break-inside: avoid !important; }
