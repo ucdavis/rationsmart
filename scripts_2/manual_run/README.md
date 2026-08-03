@@ -117,8 +117,9 @@ Everything the runners read comes from one workbook:
 `scripts_2/manual_run/RFT_FD_Lib_Y2test.xlsx`. Open it in Excel and edit:
 
 - **`Fd_selected`** sheet — the feed library (feed names, nutrient values,
-  cost per kg, optional min/max inclusion). Column A = field name, column B
-  = value, one column per feed.
+  cost per kg, optional min/max inclusion). Row 1 holds the field names
+  (`fd_name`, `fd_cost`, `fd_cp`, ...) as column headers; each row after
+  that is one feed.
 - **`Animal`** sheet — a single animal's characteristics (breed, body
   weight, days in milk, milk production target, etc.) for `--mode single`.
 - **`BulkAnimals`** sheet — same fields as `Animal`, but one animal/scenario

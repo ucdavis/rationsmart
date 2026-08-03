@@ -41,6 +41,7 @@ from core.z_optimization.evaluation import evaluate_diet, report_diet_eval  # no
 from core.z_optimization.pdf_service import REPORT_ASSETS_DIR  # noqa: E402
 from core.z_optimization.report_generation import rsm_generate_report_v2  # noqa: E402
 from scripts_2.animal_inputs_loader import (  # noqa: E402
+    inject_asset_base,
     load_bulk_animals,
     load_single_animal,
     safe_animal_id,
@@ -52,19 +53,6 @@ logger = logging.getLogger("run_evaluation")
 DEFAULT_FILE = ROOT / "scripts_2" / "manual_run" / "RFT_FD_Lib_Y2test.xlsx"
 DEFAULT_OUTPUT_DIR = ROOT / "scripts_2" / "manual_run" / "results"
 FEED_SHEET = "Fd_selected"
-
-
-def _inject_asset_base(html: str) -> str:
-    """Point the report's relative icon <img> src at the real assets dir.
-
-    rsm_generate_report_v2 references icons by bare filename (e.g.
-    'report_header.png'), relying on WeasyPrint's base_url=REPORT_ASSETS_DIR
-    to resolve them at PDF-conversion time. A browser opening this HTML file
-    directly has no such base_url, so we add an explicit <base> tag pointing
-    at the same assets directory the PDF path uses.
-    """
-    base_tag = f'<base href="file://{REPORT_ASSETS_DIR}/">'
-    return html.replace("<head>", f"<head>{base_tag}", 1)
 
 
 def _run_for_animal(record, feed_list, output_dir: Path, ts: str) -> None:
@@ -100,7 +88,7 @@ def _run_for_animal(record, feed_list, output_dir: Path, ts: str) -> None:
         evaluation_mode=True,
     )
     out = output_dir / f"diet_evaluation_{safe_animal_id(animal_id)}_{ts}.html"
-    out.write_text(_inject_asset_base(html), encoding="utf-8")
+    out.write_text(inject_asset_base(html, REPORT_ASSETS_DIR), encoding="utf-8")
     logger.info("report: %s", out)
 
 

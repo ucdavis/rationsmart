@@ -18,6 +18,7 @@ located by column-A label, not by fixed row numbers.
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
@@ -49,6 +50,24 @@ def safe_animal_id(animal_id: Any) -> str:
     """Filesystem-safe token for report filenames."""
     s = str(animal_id).strip().replace(" ", "_")
     return "".join(c for c in s if c.isalnum() or c in ("_", "-")) or "animal"
+
+
+def inject_asset_base(html: str, assets_dir: str) -> str:
+    """Insert a <base> tag so the report's bare-filename <img src> tags resolve.
+
+    rsm_generate_report_v2 references icons by bare filename (e.g.
+    'report_header.png'), relying on WeasyPrint's base_url=assets_dir to
+    resolve them at PDF-conversion time. A browser opening this HTML file
+    directly has no such base_url, so this inserts an explicit <base> tag
+    pointing at the same assets directory the PDF path uses.
+
+    Uses Path.as_uri() rather than raw f-string interpolation of the path:
+    a plain f"file://{assets_dir}/" produces an invalid/unusable URL on
+    Windows (drive letters, backslashes) and doesn't percent-encode spaces
+    or other reserved characters that can appear in a checkout path.
+    """
+    base_tag = f'<base href="{Path(assets_dir).as_uri()}/">'
+    return html.replace("<head>", f"<head>{base_tag}", 1)
 
 
 def _clean(value: Any) -> Any:
@@ -188,4 +207,22 @@ def load_bulk_animals(
         )
         if record is not None:
             animals.append(record)
+
+    # Two columns can carry the same ID (or IDs that merely *look* different,
+    # e.g. "cow 1" vs "cow_1" both become "cow_1"). The runners build each
+    # report's filename/report_id from safe_animal_id(animal_id) plus one
+    # timestamp computed once per run, so a colliding token means the second
+    # animal's report silently overwrites the first's with no warning.
+    by_token: Dict[str, List[str]] = {}
+    for a in animals:
+        by_token.setdefault(safe_animal_id(a["animal_id"]), []).append(a["animal_id"])
+    collisions = {token: ids for token, ids in by_token.items() if len(ids) > 1}
+    if collisions:
+        detail = "; ".join(f"{ids} both -> {token!r}" for token, ids in collisions.items())
+        raise ValueError(
+            f"Sheet '{sheet}': animal IDs collide once cleaned for use in a filename "
+            f"({detail}). Rename the colliding column headers so each animal has a "
+            f"distinct ID."
+        )
+
     return animals
