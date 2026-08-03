@@ -64,6 +64,21 @@ def _is_ingredient_label(label: Any) -> bool:
     return isinstance(label, str) and label.strip().lower().startswith(INGREDIENT_PREFIX)
 
 
+def _is_number(value: Any) -> bool:
+    """True for real int/float values, including NumPy scalars, excluding bools.
+
+    pandas/openpyxl can hand back either native Python numbers or NumPy
+    scalars (e.g. np.int64, np.float64) depending on a column's inferred
+    dtype. Under NumPy 2.0, np.int64 is not a subclass of Python's int, so a
+    plain `isinstance(value, (int, float))` check incorrectly rejects valid
+    numeric cells from an integer-typed column. bool/np.bool_ are excluded
+    explicitly since bool is a subclass of int but isn't a real amount here.
+    """
+    if isinstance(value, (bool, np.bool_)):
+        return False
+    return isinstance(value, (int, float, np.integer, np.floating))
+
+
 def _ingredient_amounts(
     df: pd.DataFrame, value_col: int, n_feeds: int, sheet: str, animal_id: str
 ) -> np.ndarray:
@@ -77,7 +92,7 @@ def _ingredient_amounts(
     amounts: List[float] = []
     for i in rows[:n_feeds]:
         raw = _clean(df.iat[i, value_col])
-        if isinstance(raw, bool) or not isinstance(raw, (int, float)):
+        if not _is_number(raw):
             raise ValueError(
                 f"Sheet '{sheet}', animal '{animal_id}': ingredient row {i + 1} "
                 f"(column {value_col + 1}) is not a number: {df.iat[i, value_col]!r}."
@@ -115,7 +130,7 @@ def _build_record(
         )
 
     milk_price = raw.get("milk_price_per_liter")
-    if isinstance(milk_price, bool) or not isinstance(milk_price, (int, float)) or float(milk_price) < 0:
+    if not _is_number(milk_price) or float(milk_price) < 0:
         raise ValueError(
             f"Sheet '{sheet}', animal '{animal_id}': 'milk_price_per_liter' must be a "
             f"non-negative number (0 allowed); got {milk_price!r}."
