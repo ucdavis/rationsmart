@@ -1,9 +1,9 @@
 import logging
 import math
 from datetime import datetime, timezone
-from typing import Optional
+from typing import List, Optional, Tuple
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,6 +14,8 @@ from app.schemas.auth import (
     AdminUserListResponse,
     AdminUserToggleRequest,
     AdminUserToggleResponse,
+    AdminUserRoleToggleRequest,
+    AdminUserRoleToggleResponse,
     AdminUserListItem,
     AdminCountryToggleRequest,
     AdminCountryToggleResponse,
@@ -72,7 +74,7 @@ from repositories.feed_sync_repository import FeedSyncRepository
 from repositories.language_repository import LanguageRepository
 from repositories.report_repository import ReportRepository
 from repositories.user_repository import UserRepository
-from services import feed_service, feed_sync_service, report_service, translation_service
+from services import email_service, feed_service, feed_sync_service, report_service, translation_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
@@ -169,6 +171,98 @@ async def toggle_user_status(
         message=f"User {body.action}d successfully",
         user_id=user_id,
         new_status="active" if active else "inactive",
+        user_name=user.name or "",
+        user_email=user.email_id or "",
+    )
+
+
+async def _notify_admin_granted(
+    promoted_email: str, promoted_name: str, granted_by: str, admin_emails: List[Tuple[str, str]],
+) -> None:
+    """Fire-and-forget notification for an admin grant. Runs in a BackgroundTasks worker
+    after the DB commit, so SMTP failures never affect the promotion itself — just logged."""
+    sent, err = await email_service.send_admin_granted_email(
+        to_email=promoted_email, user_name=promoted_name, granted_by=granted_by,
+    )
+    if not sent:
+        logger.warning("Admin-grant email to promoted user %s failed: %s", promoted_email, err)
+
+    for admin_email, admin_name in admin_emails:
+        sent, err = await email_service.send_admin_notification_email(
+            to_email=admin_email, admin_name=admin_name or "",
+            promoted_name=promoted_name, promoted_email=promoted_email, granted_by=granted_by,
+        )
+        if not sent:
+            logger.warning("Admin-grant notification to %s failed: %s", admin_email, err)
+
+
+@router.put("/users/{user_id}/toggle-admin", response_model=AdminUserRoleToggleResponse,
+            summary="Grant or revoke Admin privileges for a user (admin)")
+async def toggle_user_admin(
+    user_id: str,
+    body: AdminUserRoleToggleRequest,
+    background_tasks: BackgroundTasks,
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Grant or revoke Admin privileges for a user. Admin only.
+
+    **Requires:** Bearer JWT with admin privileges.
+
+    **Path parameter:** `user_id` — UUID of the target user.
+
+    **Mandatory body field:** `action` — `"grant"` to promote to Admin, `"revoke"` to demote.
+
+    An admin cannot change their own admin status. Returns `400` if attempting self-modification,
+    `404` if the user is not found.
+
+    If the user is already in the requested state (e.g. `grant` on an existing admin), this is a
+    no-op — no DB write and no email is sent, so retries/double-clicks can't re-trigger the
+    notification fan-out below.
+
+    On `grant`, the promoted user and every existing admin (including the one performing the
+    action) receive an email notification. This is sent in the background after the change is
+    committed, so a failure to send email never blocks or fails the grant itself.
+    """
+    if user_id == str(admin_user.id):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot change your own admin status")
+    repo = UserRepository(db)
+    user = await repo.get_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    grant = body.action == "grant"
+
+    if user.is_admin == grant:
+        return AdminUserRoleToggleResponse(
+            success=True,
+            message=f"User is already {'an admin' if grant else 'not an admin'}",
+            user_id=user_id,
+            new_admin_status="admin" if grant else "user",
+            user_name=user.name or "",
+            user_email=user.email_id or "",
+        )
+
+    await repo.toggle_admin(user, grant)
+    await db.commit()
+
+    if grant:
+        admins = await repo.list_admins()
+        admin_emails = [(a.email_id, a.name) for a in admins if a.id != user.id]
+        background_tasks.add_task(
+            _notify_admin_granted,
+            promoted_email=user.email_id or "",
+            promoted_name=user.name or "",
+            granted_by=admin_user.name or admin_user.email_id or "an admin",
+            admin_emails=admin_emails,
+        )
+
+    return AdminUserRoleToggleResponse(
+        success=True,
+        message=f"Admin privileges {'granted' if grant else 'revoked'} successfully",
+        user_id=user_id,
+        new_admin_status="admin" if grant else "user",
         user_name=user.name or "",
         user_email=user.email_id or "",
     )

@@ -308,6 +308,26 @@ class AdminUserToggleResponse(BaseModel):
     user_email: str
 
 
+class AdminUserRoleToggleRequest(BaseModel):
+    action: str = Field(..., description="'grant' or 'revoke'")
+
+    @field_validator('action', mode='before')
+    @classmethod
+    def validate_action(cls, v):
+        if v.lower() not in ('grant', 'revoke'):
+            raise ValueError('action must be "grant" or "revoke"')
+        return v.lower()
+
+
+class AdminUserRoleToggleResponse(BaseModel):
+    success: bool
+    message: str
+    user_id: str
+    new_admin_status: str = Field(..., description="'admin' or 'user'")
+    user_name: str
+    user_email: str
+
+
 class AdminCountryToggleRequest(BaseModel):
     action: str = Field(..., description="'enable' or 'disable'")
 

@@ -2,6 +2,7 @@
 Email service for RationSmart v4.0.
 Reads SMTP config from settings (not os.getenv) so it respects the .env file.
 """
+import html
 import logging
 import smtplib
 from datetime import datetime, timezone
@@ -70,6 +71,57 @@ class EmailService:
 </div>
 </body></html>"""
 
+    def _admin_granted_html(self, user_name: str, granted_by: str) -> str:
+        ts = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+        user_name = html.escape(user_name)
+        granted_by = html.escape(granted_by)
+        return f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+<div style="background:#fff;border-radius:8px;padding:30px;box-shadow:0 2px 6px rgba(0,0,0,.1)">
+  <h2 style="color:#2c5aa0">Hello {user_name},</h2>
+  <p>You have been granted <strong>Admin</strong> privileges on RationSmart by {granted_by}.</p>
+  <p>You can now access the admin dashboard for user, feed, and content management.</p>
+  <p style="color:#856404;background:#fff3cd;padding:12px;border-radius:6px">
+    <strong>Security notice:</strong> If you did not expect this change, contact another admin or support immediately.
+  </p>
+  <p style="color:#666;font-size:13px">Granted on {ts}.</p>
+</div>
+</body></html>"""
+
+    def _admin_granted_text(self, user_name: str, granted_by: str) -> str:
+        ts = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+        return (
+            f"Hello {user_name},\n\n"
+            f"You have been granted Admin privileges on RationSmart by {granted_by}.\n\n"
+            f"If you did not expect this change, contact another admin or support immediately.\n\n"
+            f"Granted on {ts}.\n\n-- RationSmart"
+        )
+
+    def _admin_notification_html(self, admin_name: str, promoted_name: str, promoted_email: str, granted_by: str) -> str:
+        ts = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+        admin_name = html.escape(admin_name)
+        promoted_name = html.escape(promoted_name)
+        promoted_email = html.escape(promoted_email)
+        granted_by = html.escape(granted_by)
+        return f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
+<div style="background:#fff;border-radius:8px;padding:30px;box-shadow:0 2px 6px rgba(0,0,0,.1)">
+  <h2 style="color:#2c5aa0">Hello {admin_name},</h2>
+  <p><strong>{promoted_name}</strong> ({promoted_email}) was just granted <strong>Admin</strong> privileges on RationSmart by {granted_by}.</p>
+  <p style="color:#856404;background:#fff3cd;padding:12px;border-radius:6px">
+    <strong>Security notice:</strong> If you did not expect this change, please review it and contact support if it looks unauthorized.
+  </p>
+  <p style="color:#666;font-size:13px">Granted on {ts}.</p>
+</div>
+</body></html>"""
+
+    def _admin_notification_text(self, admin_name: str, promoted_name: str, promoted_email: str, granted_by: str) -> str:
+        ts = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+        return (
+            f"Hello {admin_name},\n\n"
+            f"{promoted_name} ({promoted_email}) was just granted Admin privileges on RationSmart by {granted_by}.\n\n"
+            f"If you did not expect this change, please review it and contact support if it looks unauthorized.\n\n"
+            f"Granted on {ts}.\n\n-- RationSmart"
+        )
+
     # ── Send helper ───────────────────────────────────────────────────────────
 
     def _send(self, to_email: str, subject: str, text: str, html: str) -> Tuple[bool, Optional[str]]:
@@ -130,6 +182,26 @@ class EmailService:
         text = f"Hello {user_name},\n\nWelcome to RationSmart! Your account is ready.\n\n-- RationSmart"
         html = f"<p>Hello <strong>{user_name}</strong>,</p><p>Welcome to RationSmart! Your account is ready.</p>"
         return self._send(to_email, subject="Welcome to RationSmart", text=text, html=html)
+
+    async def send_admin_granted_email(
+        self, to_email: str, user_name: str, granted_by: str
+    ) -> Tuple[bool, Optional[str]]:
+        return self._send(
+            to_email,
+            subject="You've been made a RationSmart Admin",
+            text=self._admin_granted_text(user_name, granted_by),
+            html=self._admin_granted_html(user_name, granted_by),
+        )
+
+    async def send_admin_notification_email(
+        self, to_email: str, admin_name: str, promoted_name: str, promoted_email: str, granted_by: str
+    ) -> Tuple[bool, Optional[str]]:
+        return self._send(
+            to_email,
+            subject="New RationSmart Admin granted",
+            text=self._admin_notification_text(admin_name, promoted_name, promoted_email, granted_by),
+            html=self._admin_notification_html(admin_name, promoted_name, promoted_email, granted_by),
+        )
 
     def get_email_config(self) -> dict:
         base = {
