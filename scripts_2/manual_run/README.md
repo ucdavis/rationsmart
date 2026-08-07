@@ -10,6 +10,46 @@ brings everything you need — no extra files to be handed separately.
 
 ---
 
+## Quick start
+
+The commands below, run in order from a terminal, are everything needed to
+go from nothing to a viewed report. Details, explanations, and
+troubleshooting for each step are in the numbered sections further down —
+read those if a command here doesn't behave as expected.
+
+```bash
+# 1. Clone the repo (use whatever URL/branch you were told to use)
+git clone <repo-url> rationsmart
+cd rationsmart
+
+# 2. Set up Python 3.11
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# 3. Install dependencies (just what these two scripts need)
+pip install numpy==2.0.2 pandas==2.2.3 scipy==1.13.1 pymoo==0.6.1.3 openpyxl==3.1.2 sqlalchemy
+
+# 4. Run Diet Recommendation (single animal)
+python -m scripts_2.manual_run.run_optimization --mode single
+
+# 5. Run Diet Evaluation (single animal)
+python -m scripts_2.manual_run.run_evaluation --mode single
+
+# 6. Open the reports just written (macOS `open`; on Linux use `xdg-open`,
+#    on Windows just double-click the files in File Explorer)
+open scripts_2/manual_run/results/*.html
+```
+
+That's the "single animal" happy path. Once that works, also try the bulk
+variants (every animal/scenario in one workbook, see step 4 below):
+
+```bash
+python -m scripts_2.manual_run.run_optimization --mode bulk
+python -m scripts_2.manual_run.run_evaluation --mode bulk
+```
+
+---
+
 ## 1. Clone the repo
 
 ```bash
