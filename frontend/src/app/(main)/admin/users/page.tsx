@@ -47,9 +47,16 @@ export default function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
-  const [countryFilter, setCountryFilter] = useState("");
+  // Default the country filter to the signed-in admin's own country so the
+  // page opens already scoped to their country's users. They can still switch
+  // to "All Countries" or any other country from the dropdown.
+  const [countryFilter, setCountryFilter] = useState<string>(
+    () => useStore.getState().user?.country ?? ""
+  );
   const [countries, setCountries] = useState<Country[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
+  // Admin-toggle confirmation — holds the user awaiting a grant/revoke confirm.
+  const [confirmAdmin, setConfirmAdmin] = useState<AdminUser | null>(null);
 
   const load = async (country = countryFilter, s = statusFilter, q = search) => {
     if (!user?.id) return;
@@ -655,8 +662,10 @@ export default function AdminUsersPage() {
 
             {/* Administrator Access card — grant/revoke the admin role.
                 Hidden entirely for inactive accounts (an inactive user has no
-                sign-in access, so promoting them to admin is meaningless). */}
-            {selectedUser.is_active && (
+                sign-in access, so promoting them to admin is meaningless).
+                Also gated on the current user being an admin — only an admin
+                can grant/revoke another user's admin role. */}
+            {selectedUser.is_active && user?.is_admin && (
               <div
                 className="bg-white flex items-center justify-between"
                 style={{
@@ -687,7 +696,7 @@ export default function AdminUsersPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handleToggleAdmin(selectedUser)}
+                  onClick={() => setConfirmAdmin(selectedUser)}
                   disabled={
                     adminTogglingId === selectedUser.id || selectedUser.id === user?.id
                   }
@@ -772,6 +781,91 @@ export default function AdminUsersPage() {
             >
               {t("Cancel")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Admin grant/revoke confirmation — a second, explicit yes/no in the UI
+          before the user's role actually changes (sits above the detail
+          sheet). */}
+      {confirmAdmin && (
+        <div
+          className="fixed top-0 h-full flex items-center justify-center px-6"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 60,
+          }}
+          onClick={() => setConfirmAdmin(null)}
+        >
+          <div
+            className="bg-white rounded-2xl w-full"
+            style={{ padding: 20 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              className="font-bold"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
+              {confirmAdmin.is_admin ? t("Revoke admin access?") : t("Make this user an admin?")}
+            </p>
+            <p
+              style={{
+                color: "#6D6D6D",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 14,
+                marginTop: 8,
+                lineHeight: 1.4,
+              }}
+            >
+              <span className="font-bold" style={{ color: "#231F20" }}>
+                {confirmAdmin.name}
+              </span>{" "}
+              {confirmAdmin.is_admin
+                ? t("will lose administrator access and become a regular user.")
+                : t("will be granted full administrator access to manage users, feeds and settings.")}
+            </p>
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button
+                onClick={() => setConfirmAdmin(null)}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 12,
+                  border: "2px solid #064E3B",
+                  backgroundColor: "white",
+                  color: "#064E3B",
+                  cursor: "pointer",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 15,
+                }}
+              >
+                {t("Cancel")}
+              </button>
+              <button
+                onClick={() => {
+                  const target = confirmAdmin;
+                  setConfirmAdmin(null);
+                  handleToggleAdmin(target);
+                }}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 12,
+                  border: "none",
+                  backgroundColor: confirmAdmin.is_admin ? "#E44A4A" : "#064E3B",
+                  color: "white",
+                  cursor: "pointer",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 15,
+                }}
+              >
+                {confirmAdmin.is_admin ? t("Revoke") : t("Make Admin")}
+              </button>
+            </div>
           </div>
         </div>
       )}
