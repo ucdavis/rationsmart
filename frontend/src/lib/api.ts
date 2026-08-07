@@ -873,13 +873,13 @@ export const getAdminUsers = (
 
 // PUT /v1/admin/users/{user_id}/toggle-status — JWT-derived admin.
 // v1 body shape is AdminUserToggleRequest { action: string }, NOT
-// { is_active: bool } like legacy. The `action` value drives whether the
-// user is enabled or disabled. We pass "activate" / "deactivate" — the
-// other naming variant the server might prefer is "enable"/"disable";
-// swap if the backend rejects.
+// { is_active: bool } like legacy. The backend validates the value against
+// "enable"/"disable" (it rejects "activate"/"deactivate" with
+// "Value error, action must be 'enable' or 'disable'") — matching the
+// sibling toggleCountryStatus / toggleFeedSyncScheduler endpoints.
 export const toggleUserStatus = (user_id: string, _admin_user_id: string, is_active: boolean) =>
   api.put(`/v1/admin/users/${user_id}/toggle-status`, {
-    action: is_active ? "activate" : "deactivate",
+    action: is_active ? "enable" : "disable",
   });
 
 export const getAdminFeedTypes = (_admin_user_id: string) => api.get("/v1/admin/list-feed-types");

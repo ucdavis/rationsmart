@@ -79,19 +79,19 @@ describe("getAdminUsers", () => {
 });
 
 describe("toggleUserStatus", () => {
-  it("PUTs {action: 'activate'} when enabling a user", async () => {
+  it("PUTs {action: 'enable'} when enabling a user", async () => {
     mockApi.put.mockResolvedValueOnce({ data: {} });
     await toggleUserStatus("user-1", "admin-1", true);
     expect(mockApi.put).toHaveBeenCalledWith("/v1/admin/users/user-1/toggle-status", {
-      action: "activate",
+      action: "enable",
     });
   });
 
-  it("PUTs {action: 'deactivate'} when disabling a user", async () => {
+  it("PUTs {action: 'disable'} when disabling a user", async () => {
     mockApi.put.mockResolvedValueOnce({ data: {} });
     await toggleUserStatus("user-1", "admin-1", false);
     expect(mockApi.put).toHaveBeenCalledWith("/v1/admin/users/user-1/toggle-status", {
-      action: "deactivate",
+      action: "disable",
     });
   });
 });
