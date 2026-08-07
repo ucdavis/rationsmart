@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { getAdminUsers, toggleUserStatus } from "@/lib/api";
+import { getAdminUsers, toggleUserStatus, toggleUserAdmin, getCountries, type Country } from "@/lib/api";
 import { formatTotalUsers } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
+import CustomSelect from "@/components/CustomSelect";
 
 interface AdminUser {
   id: string;
@@ -42,18 +43,22 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [togglingId, setTogglingId] = useState<string | null>(null);
+  const [adminTogglingId, setAdminTogglingId] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"" | "active" | "inactive">("");
+  const [countryFilter, setCountryFilter] = useState("");
+  const [countries, setCountries] = useState<Country[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
-  const load = async (q = search, s = statusFilter) => {
+  const load = async (country = countryFilter, s = statusFilter, q = search) => {
     if (!user?.id) return;
     setIsLoading(true);
     // Backend response shape: { users, total_count, page, page_size, total_pages }.
     // Backend caps page_size at 100, so for admins with > 100 users we fetch
-    // every page in sequence and concatenate. Android handles this via the
-    // Paging library + infinite scroll; we materialize it client-side instead.
+    // every page in sequence and concatenate. Server-side filters (country /
+    // status / search) are applied by the endpoint, so with a filter set only
+    // the matching users come back and the loop stays short.
     const PAGE_SIZE = 100;
     try {
       const all: AdminUser[] = [];
@@ -61,7 +66,7 @@ export default function AdminUsersPage() {
       let totalCount = 0;
       let totalPages = 1;
       do {
-        const res = await getAdminUsers(user.id, page, PAGE_SIZE, "", s, q);
+        const res = await getAdminUsers(user.id, page, PAGE_SIZE, country, s, q);
         const data = res.data;
         const list: AdminUser[] = Array.isArray(data) ? data : (data?.users ?? data?.items ?? []);
         all.push(...list);
@@ -79,9 +84,24 @@ export default function AdminUsersPage() {
     }
   };
 
+  // Country list for the filter dropdown.
   useEffect(() => {
-    load();
-  }, [user?.id]);
+    getCountries()
+      .then((res) => setCountries(Array.isArray(res.data) ? res.data : []))
+      .catch(() => {});
+  }, []);
+
+  // Re-query the server whenever a filter changes. Debounced so typing in the
+  // search box (and rapid pill/dropdown changes) doesn't fire a request per
+  // keystroke.
+  useEffect(() => {
+    if (!user?.id) return;
+    const timer = setTimeout(() => {
+      load(countryFilter, statusFilter, search);
+    }, 350);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, countryFilter, statusFilter, search]);
 
   const handleToggle = async (u: AdminUser) => {
     if (!user?.id) return;
@@ -95,6 +115,29 @@ export default function AdminUsersPage() {
       showSnackbar(msg, "error");
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  const handleToggleAdmin = async (u: AdminUser) => {
+    if (!user?.id) return;
+    // Guard against an admin changing their own role (would risk self-lockout);
+    // the backend also rejects this, but we block it client-side too.
+    if (u.id === user.id) {
+      showSnackbar(t("You can't change your own admin role"), "error");
+      return;
+    }
+    const next = !u.is_admin;
+    setAdminTogglingId(u.id);
+    try {
+      await toggleUserAdmin(u.id, user.id, next);
+      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_admin: next } : x)));
+      setSelectedUser((prev) => (prev && prev.id === u.id ? { ...prev, is_admin: next } : prev));
+      showSnackbar(next ? t("User granted admin access") : t("Admin access revoked"), "success");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t("Could not update admin role");
+      showSnackbar(msg, "error");
+    } finally {
+      setAdminTogglingId(null);
     }
   };
 
@@ -154,6 +197,99 @@ export default function AdminUsersPage() {
       >
         {t("Users")}
       </p>
+
+      {/* Filter bar — country dropdown + search + status pills. All three map
+          to server-side query params on GET /v1/admin/users (country / search
+          / status), so selecting a country returns only that country's users. */}
+      <div className="mx-3 mt-2 space-y-2">
+        {/* Country dropdown */}
+        <CustomSelect
+          value={countryFilter}
+          onChange={setCountryFilter}
+          options={[
+            { value: "", label: t("All Countries") },
+            ...countries.map((c) => ({ value: c.name, label: c.name })),
+          ]}
+          placeholder={t("All Countries")}
+          style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: 14,
+            border: "none",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+          }}
+        />
+
+        {/* Search box */}
+        <div
+          className="flex items-center bg-white"
+          style={{ borderRadius: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", padding: "0 12px" }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#6D6D6D" style={{ flexShrink: 0 }}>
+            <path d="M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("Search by name or email")}
+            style={{
+              flex: 1,
+              border: "none",
+              outline: "none",
+              background: "transparent",
+              padding: "11px 8px",
+              fontFamily: "Nunito, sans-serif",
+              fontSize: 14,
+              color: "#231F20",
+            }}
+          />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              aria-label={t("Clear search")}
+              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4, lineHeight: 0 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#6D6D6D">
+                <path d="M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z" />
+              </svg>
+            </button>
+          )}
+        </div>
+
+        {/* Status pills */}
+        <div className="flex gap-2">
+          {(
+            [
+              { v: "", l: t("All") },
+              { v: "active", l: t("Active") },
+              { v: "inactive", l: t("Inactive") },
+            ] as const
+          ).map((p) => {
+            const active = statusFilter === p.v;
+            return (
+              <button
+                key={p.v}
+                onClick={() => setStatusFilter(p.v as "" | "active" | "inactive")}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "8px 0",
+                  borderRadius: 12,
+                  border: `1px solid ${active ? "#064E3B" : "rgba(5,188,109,0.20)"}`,
+                  backgroundColor: active ? "#064E3B" : "#FFFFFF",
+                  color: active ? "#FFFFFF" : "#064E3B",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 13,
+                  cursor: "pointer",
+                  transition: "background-color 0.15s",
+                }}
+              >
+                {p.l}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {isLoading ? (
@@ -516,6 +652,80 @@ export default function AdminUsersPage() {
                 />
               </button>
             </div>
+
+            {/* Administrator Access card — grant/revoke the admin role.
+                Hidden entirely for inactive accounts (an inactive user has no
+                sign-in access, so promoting them to admin is meaningless). */}
+            {selectedUser.is_active && (
+              <div
+                className="bg-white flex items-center justify-between"
+                style={{
+                  margin: "16px 12px 0",
+                  borderRadius: 20,
+                  border: "1px solid rgba(5,188,109,0.15)",
+                  padding: 12,
+                }}
+              >
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="font-bold"
+                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                  >
+                    {t("Administrator Access")}
+                  </p>
+                  <p
+                    style={{
+                      color: "#231F20",
+                      fontFamily: "Nunito, sans-serif",
+                      fontSize: 14,
+                      marginTop: 2,
+                    }}
+                  >
+                    {selectedUser.id === user?.id
+                      ? t("You can't change your own role")
+                      : t("Grant or revoke admin rights")}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleToggleAdmin(selectedUser)}
+                  disabled={
+                    adminTogglingId === selectedUser.id || selectedUser.id === user?.id
+                  }
+                  aria-label={
+                    selectedUser.is_admin ? t("Revoke admin access") : t("Grant admin access")
+                  }
+                  style={{
+                    width: 52,
+                    height: 32,
+                    borderRadius: 16,
+                    backgroundColor: selectedUser.is_admin ? "#064E3B" : "#CBD5E1",
+                    border: "none",
+                    position: "relative",
+                    cursor:
+                      adminTogglingId === selectedUser.id || selectedUser.id === user?.id
+                        ? "not-allowed"
+                        : "pointer",
+                    transition: "background-color 0.18s",
+                    flexShrink: 0,
+                    opacity: selectedUser.id === user?.id ? 0.5 : 1,
+                  }}
+                >
+                  <span
+                    style={{
+                      position: "absolute",
+                      top: 4,
+                      left: selectedUser.is_admin ? 24 : 4,
+                      width: 24,
+                      height: 24,
+                      borderRadius: "50%",
+                      backgroundColor: "#FFFFFF",
+                      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                      transition: "left 0.18s",
+                    }}
+                  />
+                </button>
+              </div>
+            )}
 
             {/* Save + Cancel buttons (Android btn_save filled green,
                 btn_cancel outlined). Save toggles status via existing handler. */}

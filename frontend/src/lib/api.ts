@@ -882,6 +882,15 @@ export const toggleUserStatus = (user_id: string, _admin_user_id: string, is_act
     action: is_active ? "enable" : "disable",
   });
 
+// PUT /v1/admin/users/{user_id}/toggle-admin — JWT-derived admin.
+// Body shape is AdminUserRoleToggleRequest { action: "grant" | "revoke" }.
+// `make_admin=true` grants the admin role, false revokes it. Mirrors the
+// toggle-status contract (which uses "enable"/"disable").
+export const toggleUserAdmin = (user_id: string, _admin_user_id: string, make_admin: boolean) =>
+  api.put(`/v1/admin/users/${user_id}/toggle-admin`, {
+    action: make_admin ? "grant" : "revoke",
+  });
+
 export const getAdminFeedTypes = (_admin_user_id: string) => api.get("/v1/admin/list-feed-types");
 
 export const getAdminFeedCategories = (_admin_user_id: string) =>
