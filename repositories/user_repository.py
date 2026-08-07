@@ -136,6 +136,18 @@ class UserRepository:
         user.updated_at = datetime.utcnow()
         await self.db.flush()
 
+    async def toggle_admin(self, user: UserInformationModel, is_admin: bool) -> None:
+        user.is_admin = is_admin
+        user.updated_at = datetime.utcnow()
+        await self.db.flush()
+
+    async def list_admins(self) -> List[UserInformationModel]:
+        """All users currently flagged as admin. Used to fan out the admin-grant notification."""
+        result = await self.db.execute(
+            select(UserInformationModel).where(UserInformationModel.is_admin == True)  # noqa: E712
+        )
+        return result.scalars().all()
+
     # ── List (admin) ──────────────────────────────────────────────────────────
 
     async def list_all(
