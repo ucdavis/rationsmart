@@ -209,27 +209,30 @@ export default function AdminUsersPage() {
           to server-side query params on GET /v1/admin/users (country / search
           / status), so selecting a country returns only that country's users. */}
       <div className="mx-3 mt-2 space-y-2">
-        {/* Country dropdown */}
-        <CustomSelect
-          value={countryFilter}
-          onChange={setCountryFilter}
-          options={[
-            { value: "", label: t("All Countries") },
-            ...countries.map((c) => ({ value: c.name, label: c.name })),
-          ]}
-          placeholder={t("All Countries")}
-          style={{
-            backgroundColor: "#FFFFFF",
-            borderRadius: 14,
-            border: "none",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
-          }}
-        />
+        {/* Country dropdown — same chrome as the app's standard dropdowns
+            (cattle-info SelectInput): a rounded-2xl padded pill wrapping a
+            transparent-trigger CustomSelect, so the pill supplies the box and
+            CustomSelect just renders the label + chevron + zebra popup. */}
+        <div
+          className="bg-white rounded-2xl px-4 py-3"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+        >
+          <CustomSelect
+            transparentTrigger
+            value={countryFilter}
+            onChange={setCountryFilter}
+            options={[
+              { value: "", label: t("All Countries") },
+              ...countries.map((c) => ({ value: c.name, label: c.name })),
+            ]}
+            placeholder={t("All Countries")}
+          />
+        </div>
 
         {/* Search box */}
         <div
-          className="flex items-center bg-white"
-          style={{ borderRadius: 14, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", padding: "0 12px" }}
+          className="flex items-center bg-white rounded-2xl"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)", padding: "0 16px" }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="#6D6D6D" style={{ flexShrink: 0 }}>
             <path d="M15.5,14h-0.79l-0.28,-0.27C15.41,12.59 16,11.11 16,9.5 16,5.91 13.09,3 9.5,3S3,5.91 3,9.5 5.91,16 9.5,16c1.61,0 3.09,-0.59 4.23,-1.57l0.27,0.28v0.79l5,4.99L20.49,19l-4.99,-5zM9.5,14C7.01,14 5,11.99 5,9.5S7.01,5 9.5,5 14,7.01 14,9.5 11.99,14 9.5,14z" />
