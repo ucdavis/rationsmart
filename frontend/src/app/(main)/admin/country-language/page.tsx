@@ -35,7 +35,7 @@
 // translation status is hydrated in parallel afterward (listFeedTranslations
 // per feed), not sequentially and not lazily.
 
-import { useEffect, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import Toolbar from "@/components/Toolbar";
@@ -308,7 +308,8 @@ export default function AdminCountryLanguagePage() {
         <CountriesLanguagesTab
           countries={countries}
           allLanguages={allLanguages}
-          reload={reload}
+          setCountries={setCountries}
+          setAllLanguages={setAllLanguages}
           showSnackbar={showSnackbar}
           askConfirm={askConfirm}
         />
@@ -383,13 +384,15 @@ export default function AdminCountryLanguagePage() {
 function CountriesLanguagesTab({
   countries,
   allLanguages,
-  reload,
+  setCountries,
+  setAllLanguages,
   showSnackbar,
   askConfirm,
 }: {
   countries: CountryRow[];
   allLanguages: SystemLanguage[];
-  reload: () => void;
+  setCountries: Dispatch<SetStateAction<CountryRow[]>>;
+  setAllLanguages: Dispatch<SetStateAction<SystemLanguage[]>>;
   showSnackbar: (msg: string, type?: "success" | "error" | "info") => void;
   askConfirm: (
     title: string,
@@ -431,7 +434,23 @@ function CountriesLanguagesTab({
       await toggleCountryStatus(c.id, "enable");
       showSnackbar(`${c.name} activated`, "success");
       setShowActivate(false);
-      reload();
+      // Optimistic: a freshly-activated country appears with no local
+      // languages yet. Re-reading immediately can return stale data
+      // (HTTP cache / read-replica lag), so update local state directly.
+      setCountries((prev) =>
+        prev.some((x) => x.id === c.id)
+          ? prev
+          : [
+              ...prev,
+              {
+                id: c.id,
+                name: c.name,
+                country_code: c.country_code,
+                is_active: true,
+                languages: [],
+              },
+            ].sort((a, b) => a.name.localeCompare(b.name))
+      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not activate country";
       showSnackbar(msg, "error");
@@ -451,7 +470,8 @@ function CountriesLanguagesTab({
         try {
           await toggleCountryStatus(c.id, "disable");
           showSnackbar(`${c.name} deactivated`, "success");
-          reload();
+          // Optimistic: drop it from the enabled list immediately.
+          setCountries((prev) => prev.filter((x) => x.id !== c.id));
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Could not deactivate country";
           showSnackbar(msg, "error");
@@ -480,7 +500,14 @@ function CountriesLanguagesTab({
         try {
           await unassignLanguageFromCountry(c.id, code);
           showSnackbar(`${langName} removed from ${c.name}`, "success");
-          reload();
+          // Optimistic: drop the chip from this country immediately.
+          setCountries((prev) =>
+            prev.map((x) =>
+              x.id === c.id
+                ? { ...x, languages: x.languages.filter((g) => g !== code) }
+                : x
+            )
+          );
         } catch (err: unknown) {
           const msg = err instanceof Error ? err.message : "Could not remove language";
           showSnackbar(msg, "error");
@@ -502,8 +529,15 @@ function CountriesLanguagesTab({
     try {
       await assignLanguageToCountry(assocFor.id, code);
       showSnackbar(`${langName} associated with ${assocFor.name}`, "success");
+      // Optimistic: add the chip to this country immediately.
+      setCountries((prev) =>
+        prev.map((x) =>
+          x.id === assocFor.id && !x.languages.includes(code)
+            ? { ...x, languages: [...x.languages, code] }
+            : x
+        )
+      );
       setAssocFor(null);
-      reload();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not associate language";
       showSnackbar(msg, "error");
@@ -520,7 +554,10 @@ function CountriesLanguagesTab({
       try {
         await patchLanguage(l.code, { is_active: !l.is_active });
         showSnackbar(`${l.name} ${l.is_active ? "deactivated" : "activated"}`, "success");
-        reload();
+        // Optimistic: flip the row's active state immediately.
+        setAllLanguages((prev) =>
+          prev.map((x) => (x.code === l.code ? { ...x, is_active: !l.is_active } : x))
+        );
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : "Could not update language";
         showSnackbar(msg, "error");
@@ -552,13 +589,17 @@ function CountriesLanguagesTab({
       return;
     }
     setIsRegistering(true);
+    const name = regName.trim();
     try {
-      await createLanguage({ code, name: regName.trim() });
-      showSnackbar(`${regName.trim()} registered`, "success");
+      await createLanguage({ code, name });
+      showSnackbar(`${name} registered`, "success");
       setShowRegister(false);
       setRegName("");
       setRegCode("");
-      reload();
+      // Optimistic: add the new language to the catalog immediately.
+      setAllLanguages((prev) =>
+        prev.some((x) => x.code === code) ? prev : [...prev, { code, name, is_active: true }]
+      );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not register language";
       showSnackbar(msg, "error");
