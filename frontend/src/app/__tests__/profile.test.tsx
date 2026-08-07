@@ -236,15 +236,27 @@ describe("Profile — Update Profile disabled by default", () => {
     expect(update).toBeDisabled();
   });
 
-  it("empty name blocks Save even with country change", async () => {
+  it("empty name enables Update (it's a change) but the guard blocks the request", async () => {
     await renderReady();
     const nameInput = screen.getAllByRole("textbox")[0] as HTMLInputElement;
     fireEvent.change(nameInput, { target: { value: "" } });
-    const combos = screen.getAllByRole("combobox");
-    fireEvent.change(combos[0], { target: { value: "2" } });
-    // canSave requires non-empty name
+    // Clearing the name is a change, so Update enables — this is what makes
+    // the "Name cannot be empty" guard reachable (PROFILE-002-N1).
     const update = screen.getByRole("button", { name: /Update Profile/ });
-    expect(update).toBeDisabled();
+    await waitFor(() => expect(update).not.toBeDisabled());
+    fireEvent.click(update);
+    // Guard blocks it: no PUT is sent for an empty name.
+    expect(updateUserProfile).not.toHaveBeenCalled();
+  });
+
+  it("whitespace-only name is treated as empty — Update enabled, request blocked", async () => {
+    await renderReady();
+    const nameInput = screen.getAllByRole("textbox")[0] as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "   " } });
+    const update = screen.getByRole("button", { name: /Update Profile/ });
+    await waitFor(() => expect(update).not.toBeDisabled());
+    fireEvent.click(update);
+    expect(updateUserProfile).not.toHaveBeenCalled();
   });
 });
 

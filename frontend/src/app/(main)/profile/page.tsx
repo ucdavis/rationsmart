@@ -271,12 +271,17 @@ export default function ProfilePage() {
     }
   };
 
+  // Enable Save whenever a field has CHANGED — including a cleared/whitespace
+  // name. We intentionally do NOT gate on `name.trim() !== ""` here: doing so
+  // left the empty-name case with a permanently-disabled button, so the
+  // "Name cannot be empty" guard in handleSave() was unreachable dead code.
+  // Enabling on change lets that guard fire (error snackbar, no request sent),
+  // matching the documented behaviour.
   const canSave =
-    name.trim() !== "" &&
-    (name.trim() !== user.name ||
-      String(selectedCountryId) !== String(user.country_id) ||
-      // i18n V2 — Save enables when language changed too.
-      (showLangSelector && selectedLang !== (user.preferred_language ?? "en")));
+    name.trim() !== user.name ||
+    String(selectedCountryId) !== String(user.country_id) ||
+    // i18n V2 — Save enables when language changed too.
+    (showLangSelector && selectedLang !== (user.preferred_language ?? "en"));
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
