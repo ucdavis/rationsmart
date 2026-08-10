@@ -152,29 +152,51 @@ export default function AdminReportsPage() {
                       {r.user_name || r.user_email || t("N/A")}
                     </p>
                   </div>
-                  {/* cv_view_report: themed bg, "View Report" + ic_view_report drawableEnd */}
-                  <button
-                    onClick={() => viewReport(r)}
-                    className="flex items-center font-bold flex-shrink-0"
-                    style={{
-                      backgroundColor: themed.bg,
-                      borderRadius: 60,
-                      padding: "8px 12px",
-                      gap: 8,
-                      border: "none",
-                      cursor: "pointer",
-                      color: themed.text,
-                      fontFamily: "Nunito, sans-serif",
-                      fontSize: 12,
-                      marginLeft: 8,
-                    }}
-                  >
-                    {t("View Report")}
-                    {/* ic_view_report — circle with right-arrow inside */}
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill={themed.text}>
-                      <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
-                    </svg>
-                  </button>
+                  {/* cv_view_report: themed bg, "View Report" + ic_view_report drawableEnd.
+                      When the report has no PDF yet (bucket_url/report_url absent —
+                      the PDF-generation job hasn't finished / isn't implemented),
+                      show a distinct "PDF Pending" pill instead of a button that
+                      would just fire a "Report URL not available" error on tap
+                      (matches the end-user Feed Reports screen). */}
+                  {r.bucket_url || r.report_url ? (
+                    <button
+                      onClick={() => viewReport(r)}
+                      className="flex items-center font-bold flex-shrink-0"
+                      style={{
+                        backgroundColor: themed.bg,
+                        borderRadius: 60,
+                        padding: "8px 12px",
+                        gap: 8,
+                        border: "none",
+                        cursor: "pointer",
+                        color: themed.text,
+                        fontFamily: "Nunito, sans-serif",
+                        fontSize: 12,
+                        marginLeft: 8,
+                      }}
+                    >
+                      {t("View Report")}
+                      {/* ic_view_report — circle with right-arrow inside */}
+                      <svg width="20" height="20" viewBox="0 0 20 20" fill={themed.text}>
+                        <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <span
+                      className="font-bold flex-shrink-0"
+                      style={{
+                        backgroundColor: "#FFF4E5",
+                        borderRadius: 60,
+                        padding: "8px 14px",
+                        color: "#FF9800",
+                        fontFamily: "Nunito, sans-serif",
+                        fontSize: 12,
+                        marginLeft: 8,
+                      }}
+                    >
+                      {t("PDF Pending")}
+                    </span>
+                  )}
                 </div>
 
                 {/* Simulation ID + Report Type (Android tv_title_simulation_id /

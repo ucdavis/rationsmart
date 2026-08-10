@@ -546,7 +546,18 @@ api.interceptors.response.use(
     // rejected promise flow through so call sites can still their own
     // fallback UI if they want. Guard with a module-level flag so
     // multiple in-flight requests don't stack duplicate redirects.
-    if (status === 401 && unauthorizedHandler) {
+    //
+    // BUT: a 401 from a PUBLIC auth-flow endpoint (login, register, forgot/
+    // set PIN, resend/verify) means the *submitted credentials* were rejected
+    // — e.g. a wrong PIN on the login screen — NOT that an existing session
+    // expired. Firing the session-expiry handler there would wrongly clear
+    // and log out a user who is already signed in (an admin re-opening the
+    // login form, say). Only treat 401s from authenticated endpoints as a
+    // dead session.
+    const reqUrl: string = error?.config?.url ?? "";
+    const isPublicAuthFlow =
+      /\/auth\/(login|register|forgot-pin|set-new-pin|resend|verify)/i.test(reqUrl);
+    if (status === 401 && unauthorizedHandler && !isPublicAuthFlow) {
       unauthorizedHandler();
     }
 
