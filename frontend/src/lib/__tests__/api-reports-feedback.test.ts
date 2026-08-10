@@ -113,13 +113,16 @@ describe("getSavedReports", () => {
     expect(res.data.reports).toHaveLength(1);
   });
 
-  it("both endpoints failing resolves to an empty list instead of throwing", async () => {
+  it("throws when BOTH endpoints fail so the page can show an error (REPORTS-006)", async () => {
+    // Previously this resolved success:true with an empty list, making the
+    // reports page's .catch dead code — a total load failure looked identical
+    // to "no reports yet". Now a genuine both-fail rejects so the page surfaces
+    // the "Could not load reports" snackbar. A single-endpoint failure still
+    // resolves (covered by the fallback test above).
     mockApi.get.mockRejectedValueOnce(new Error("down"));
     mockApi.get.mockRejectedValueOnce(new Error("also down"));
 
-    const res = await getSavedReports("u1");
-
-    expect(res.data).toEqual({ reports: [], success: true, message: null });
+    await expect(getSavedReports("u1")).rejects.toThrow("Could not load reports");
   });
 });
 
@@ -206,33 +209,66 @@ describe("checkInsertOrUpdate", () => {
   });
 });
 
+// The v1 backend reads custom-feed fields FLAT at the top level (verified
+// live): feed_name→fd_name, country_name→fd_country_name, taxonomy as
+// fd_type/fd_category. The legacy {country_id,user_id,feed_insert,feed_details}
+// envelope and the legacy feed_type/feed_category dupes are dropped, and
+// country_code is stripped because sending it 500s the backend.
 describe("insertCustomFeed", () => {
-  it("POSTs the full body to /v1/animal/custom-feeds", async () => {
+  it("flattens feed_details into the top-level v1 wire body", async () => {
     const body = {
       country_id: "1",
       user_id: "u1",
       feed_insert: true,
-      feed_details: { fd_name: "X" },
+      feed_details: {
+        feed_name: "My Feed",
+        country_name: "India",
+        feed_type: "Forage",
+        feed_category: "Grass/Legume Forage",
+        country_code: "IND",
+        fd_type: "Forage",
+        fd_category: "Grass/Legume Forage",
+        fd_dm: 90,
+      },
     };
     mockApi.post.mockResolvedValueOnce({ data: {} });
     await insertCustomFeed(body);
-    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/custom-feeds", body);
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/custom-feeds", {
+      fd_type: "Forage",
+      fd_category: "Grass/Legume Forage",
+      fd_dm: 90,
+      fd_name: "My Feed",
+      fd_country_name: "India",
+    });
   });
 });
 
 describe("updateCustomFeed", () => {
-  it("PUTs the body to /v1/animal/custom-feeds AND repeats feed_id as a query param", async () => {
+  it("PUTs the flattened body to /v1/animal/custom-feeds with feed_id as a query param", async () => {
     const body = {
       country_id: "1",
       user_id: "u1",
       feed_id: "feed-uuid-1",
       feed_insert: false,
-      feed_details: { fd_name: "X" },
+      feed_details: {
+        feed_name: "My Feed",
+        country_name: "India",
+        country_code: "IND",
+        fd_type: "Forage",
+        fd_category: "Grass/Legume Forage",
+      },
     };
     mockApi.put.mockResolvedValueOnce({ data: {} });
     await updateCustomFeed(body);
-    expect(mockApi.put).toHaveBeenCalledWith("/v1/animal/custom-feeds", body, {
-      params: { feed_id: "feed-uuid-1" },
-    });
+    expect(mockApi.put).toHaveBeenCalledWith(
+      "/v1/animal/custom-feeds",
+      {
+        fd_type: "Forage",
+        fd_category: "Grass/Legume Forage",
+        fd_name: "My Feed",
+        fd_country_name: "India",
+      },
+      { params: { feed_id: "feed-uuid-1" } }
+    );
   });
 });

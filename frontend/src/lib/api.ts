@@ -813,13 +813,15 @@ function extractReportsList(data: unknown): FeedReport[] {
         : [];
 }
 
-async function fetchReportsFrom(path: string): Promise<FeedReport[]> {
+async function fetchReportsFrom(
+  path: string
+): Promise<{ ok: boolean; list: FeedReport[] }> {
   try {
     const res = await api.get(path);
-    return extractReportsList(res.data);
+    return { ok: true, list: extractReportsList(res.data) };
   } catch (err) {
     console.warn(`[getSavedReports] ${path} failed`, err);
-    return [];
+    return { ok: false, list: [] };
   }
 }
 
@@ -839,8 +841,17 @@ export const getSavedReports = async (_user_id?: string) => {
     fetchReportsFrom("/v1/animal/user-reports"),
   ]);
 
+  // Only a genuine both-endpoints-failed state is an error worth showing the
+  // user. If either responded (even with an empty list) that's a valid "no
+  // reports yet" — a toast then would be a false alarm. Throwing here lets the
+  // reports page's .catch surface the "Could not load reports" snackbar
+  // (REPORTS-006: previously both-fail resolved success:true → dead catch).
+  if (!primary.ok && !fallback.ok) {
+    throw new Error("Could not load reports");
+  }
+
   const merged = new Map<string, FeedReport>();
-  [...primary, ...fallback].forEach((r, i) => {
+  [...primary.list, ...fallback.list].forEach((r, i) => {
     merged.set(r.report_id ?? r.simulation_id ?? `__idx_${i}`, r);
   });
 

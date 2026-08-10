@@ -1849,7 +1849,7 @@ export default function FeedSelectionPage() {
                   identity word, so the dictionary intentionally keeps it
                   untranslated (see the Hindi cell — still reads "Forage"). */}
               {t(
-                "Add at least one Forage feed before generating a ${mode} recommendation. Forages are the backbone of a balanced ration — the optimizer needs one to produce a sensible result."
+                "Add at least one Forage feed before generating a ${mode}. Forages are the backbone of a balanced ration — the optimizer needs one to produce a sensible result."
               ).replace("${mode}", isEvaluation ? "diet evaluation" : "recommendation")}
             </p>
             <button

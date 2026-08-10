@@ -9,6 +9,7 @@ const {
   updateCustomFeed,
   insertCustomFeed,
   checkInsertOrUpdate,
+  getFeedDetails,
 } = vi.hoisted(() => ({
   getFeedTypes: vi.fn(),
   getFeedCategories: vi.fn(),
@@ -16,6 +17,7 @@ const {
   updateCustomFeed: vi.fn(),
   insertCustomFeed: vi.fn(),
   checkInsertOrUpdate: vi.fn(),
+  getFeedDetails: vi.fn(),
 }));
 
 vi.mock("@/lib/api", async () => {
@@ -28,6 +30,7 @@ vi.mock("@/lib/api", async () => {
     updateCustomFeed,
     insertCustomFeed,
     checkInsertOrUpdate,
+    getFeedDetails,
   };
 });
 
@@ -82,7 +85,8 @@ beforeEach(() => {
   getFeedTypes.mockResolvedValue({ data: [] });
   getFeedCategories.mockResolvedValue({ data: [] });
   getFeedSubCategories.mockResolvedValue({ data: { standard_feeds: [], custom_feeds: [] } });
-  checkInsertOrUpdate.mockResolvedValue({ data: { insert_feed: false, feed_details: {} } });
+  checkInsertOrUpdate.mockResolvedValue({ data: { action: "update", feed_id: "u1" } });
+  getFeedDetails.mockResolvedValue({ data: {} });
   insertCustomFeed.mockResolvedValue({ data: { feed_details: {} } });
   updateCustomFeed.mockResolvedValue({ data: {} });
 
@@ -434,9 +438,9 @@ describe("edit dialog — feed name prefix logic", () => {
       category_name: "Green Fodder",
       feed_uuid: "u1",
     });
-    checkInsertOrUpdate.mockResolvedValueOnce({
-      data: { insert_feed: false, feed_details: { feed_name: "John-MyFeed-Extra" } },
-    });
+    checkInsertOrUpdate.mockResolvedValueOnce({ data: { action: "update", feed_id: "u1" } });
+    // Name now prefills from getFeedDetails (fd_name), not the check response.
+    getFeedDetails.mockResolvedValueOnce({ data: { fd_name: "John-MyFeed-Extra" } });
     const { container } = render(
       <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
     );
@@ -461,9 +465,8 @@ describe("edit dialog — feed name prefix logic", () => {
       category_name: "Green Fodder",
       feed_uuid: "u1",
     });
-    checkInsertOrUpdate.mockResolvedValueOnce({
-      data: { insert_feed: false, feed_details: { feed_name: "PlainName" } },
-    });
+    checkInsertOrUpdate.mockResolvedValueOnce({ data: { action: "update", feed_id: "u1" } });
+    getFeedDetails.mockResolvedValueOnce({ data: { fd_name: "PlainName" } });
     const { container } = render(
       <FeedRow item={item} index={1} showQuantity={false} onUpdate={vi.fn()} onDelete={vi.fn()} />
     );
