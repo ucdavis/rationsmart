@@ -392,6 +392,11 @@ export default function FeedRow({
           : `${editNamePrefix}${editFeedName.trim()}`,
         feed_type: item.feed_type_name ?? "",
         feed_category: item.category_name ?? "",
+        // v1 backend requires fd_type/fd_category (or *_id) on custom-feed
+        // insert/update; legacy (Android) accepted feed_type/feed_category.
+        // Send both key sets using the English-source identity names.
+        fd_type: item.feed_type_name ?? "",
+        fd_category: item.category_name ?? "",
         country_code: user.country_code ?? "",
         country_name: user.country ?? "",
         fd_dm: toNum(editForm.fd_dm),

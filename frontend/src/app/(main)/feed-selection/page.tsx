@@ -548,6 +548,14 @@ export default function FeedSelectionPage() {
         feed_name: customFeedForm.feed_name.trim(),
         feed_type: customFeedForm.feed_type,
         feed_category: customFeedForm.feed_category,
+        // v1 backend requires fd_type/fd_category (or the *_id variants) on
+        // custom-feed insert/update. The legacy backend (which Android targets
+        // via InsertFeedDetails: feed_type/feed_category) did not, so Android
+        // parity alone isn't enough here — we send BOTH the English-source
+        // identity names under each key set. Values are the English source
+        // (from getFeedTypes/getFeedCategories with lang=en), never display_*.
+        fd_type: customFeedForm.feed_type,
+        fd_category: customFeedForm.feed_category,
         country_code: user.country_code ?? "",
         country_name: user.country ?? "",
         fd_dm: toNum(customFeedForm.fd_dm),
