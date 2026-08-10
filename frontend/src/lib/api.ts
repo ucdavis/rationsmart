@@ -708,6 +708,13 @@ export const getFeedSubCategories = (
     params: { country_id, feed_type, category: feed_category, lang: "en" },
   });
 
+// GET /v1/animal/feed-details/{feed_id} — full nutritional detail for a single
+// feed (fd_name, fd_type, fd_category, fd_dm, fd_cp, …). The custom-feeds/check
+// endpoint no longer returns nutrients, so the FeedRow edit dialog uses this to
+// prefill the form. Works for both standard and user-owned custom feeds.
+export const getFeedDetails = (feed_id: string) =>
+  api.get(`/v1/animal/feed-details/${feed_id}`);
+
 // i18n V2 — client-side translation dictionary for Feed Type + Category
 // labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
 // only return the identity string, so we can't localize their labels

@@ -10,6 +10,7 @@ import {
   updateCustomFeed,
   insertCustomFeed,
   checkInsertOrUpdate,
+  getFeedDetails,
 } from "@/lib/api";
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
@@ -331,12 +332,19 @@ export default function FeedRow({
       fd_p: "",
     });
     try {
-      const res = await checkInsertOrUpdate(user.country_id, item.feed_uuid, user.id);
-      const data = res.data as {
+      // Two calls: check (insert-vs-update) + feed-details (nutrient prefill).
+      // The v1 check endpoint no longer returns nutrients, so we fetch them
+      // from /feed-details separately. allSettled → details is best-effort;
+      // a failed prefill just opens the form blank rather than aborting.
+      const [checkRes, detailsRes] = await Promise.allSettled([
+        checkInsertOrUpdate(user.country_id, item.feed_uuid, user.id),
+        getFeedDetails(item.feed_uuid),
+      ]);
+      if (checkRes.status === "rejected") throw checkRes.reason;
+      const data = checkRes.value.data as {
         action?: "insert" | "update";
         is_insert?: boolean;
         insert_feed?: boolean;
-        feed_details?: Record<string, unknown> & { feed_name?: string };
       };
       // v1 check endpoint returns { action, feed_id }: a non-owned (standard)
       // feed UUID → "insert" (editing creates a user-owned derivative), an
@@ -345,9 +353,10 @@ export default function FeedRow({
       const isInsert = data?.action
         ? data.action === "insert"
         : (data?.is_insert ?? data?.insert_feed ?? false);
-      // The v1 check response carries no nutrient details, so the edit form
-      // opens with blank nutrients (was prefilled on the legacy backend).
-      const details = data?.feed_details ?? {};
+      // feed-details returns the English identity name as `fd_name`.
+      const details = (
+        detailsRes.status === "fulfilled" ? (detailsRes.value.data ?? {}) : {}
+      ) as Record<string, unknown> & { fd_name?: string; feed_name?: string };
       setEditIsInsert(isInsert);
       // Prefill nutrient fields from response (zeros render as "0")
       setEditForm({
@@ -368,7 +377,11 @@ export default function FeedRow({
       // Name prefix logic from Android DialogFeedDetails:
       // isInsert=false + name contains "-" → prefix = "firstPart-", value = secondPart
       // else → prefix = user name prefix (first word of full name)
-      const fullName = (details.feed_name as string) ?? item.sub_category_name ?? "";
+      const fullName =
+        (details.fd_name as string) ??
+        (details.feed_name as string) ??
+        item.sub_category_name ??
+        "";
       const userPrefix = user.name ? `${user.name.split(" ")[0]}-` : "";
       if (!isInsert && fullName.includes("-")) {
         const idx = fullName.indexOf("-");
