@@ -1013,15 +1013,53 @@ export const exportCustomFeeds = (_admin_user_id: string) =>
 //     → PUT  /v1/animal/custom-feeds?feed_id=... (note method + query param!)
 // user_id derived from JWT in all three.
 
+// Response shape (verified live against <DEV_BACKEND_IP> on 2026-08-10):
+//   { action: "insert" | "update", feed_id: string }
+// It is UUID-based: an owned custom-feed UUID → "update"; a non-owned
+// (standard) feed UUID *or* a plain name string → "insert". The legacy
+// { insert_feed, feed_details:{ feed_id } } shape no longer exists — callers
+// must key off `action` / `feed_id`.
 export const checkInsertOrUpdate = (_country_id: string, feed_id: string, _user_id: string) =>
   api.post("/v1/animal/custom-feeds/check", null, { params: { feed_id } });
+
+// The v1 backend reads custom-feed fields FLAT at the top level of the body:
+// fd_name, fd_country_name, a taxonomy selection (feed_type_id +
+// feed_category_id, or legacy fd_type + fd_category text which the server
+// canonicalizes), and fd_* nutrients. Verified live on 2026-08-10 — burying
+// these under a `feed_details` envelope made the server reply
+// "feed_type_id + feed_category_id (or fd_type + fd_category) are required".
+// The legacy envelope keys (country_id, user_id, feed_insert) are ignored
+// (user is JWT-derived), so we hoist feed_details to the top level and rename
+// feed_name → fd_name, country_name → fd_country_name. Both call sites keep
+// building the same structured `feed_details`; this is the one place that
+// knows the wire format.
+const toCustomFeedWire = (feed_details: Record<string, unknown>) => {
+  // Drop the legacy text dupes (feed_type/feed_category) — the backend wants
+  // fd_type/fd_category, which the call sites already include. Also drop
+  // country_code: sending it made the v1 backend return 500 (verified live
+  // 2026-08-10); it wants fd_country_name only. Keep fd_type/fd_category and
+  // the fd_* nutrients.
+  const {
+    feed_name,
+    country_name,
+    feed_type: _ft,
+    feed_category: _fc,
+    country_code: _cc,
+    ...rest
+  } = feed_details;
+  return {
+    ...rest,
+    ...(feed_name != null ? { fd_name: feed_name } : {}),
+    ...(country_name != null ? { fd_country_name: country_name } : {}),
+  };
+};
 
 export const insertCustomFeed = (body: {
   country_id: string;
   user_id: string;
   feed_insert: boolean;
   feed_details: Record<string, unknown>;
-}) => api.post("/v1/animal/custom-feeds", body);
+}) => api.post("/v1/animal/custom-feeds", toCustomFeedWire(body.feed_details));
 
 export const updateCustomFeed = (body: {
   country_id: string;
@@ -1029,7 +1067,10 @@ export const updateCustomFeed = (body: {
   feed_id: string;
   feed_insert: boolean;
   feed_details: Record<string, unknown>;
-}) => api.put("/v1/animal/custom-feeds", body, { params: { feed_id: body.feed_id } });
+}) =>
+  api.put("/v1/animal/custom-feeds", toCustomFeedWire(body.feed_details), {
+    params: { feed_id: body.feed_id },
+  });
 
 // GET /v1/feed-classification/structure (JWT-protected)
 export const getFeedClassification = () => api.get("/v1/feed-classification/structure");

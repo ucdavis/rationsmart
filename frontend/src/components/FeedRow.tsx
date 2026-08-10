@@ -333,11 +333,20 @@ export default function FeedRow({
     try {
       const res = await checkInsertOrUpdate(user.country_id, item.feed_uuid, user.id);
       const data = res.data as {
+        action?: "insert" | "update";
         is_insert?: boolean;
         insert_feed?: boolean;
         feed_details?: Record<string, unknown> & { feed_name?: string };
       };
-      const isInsert = data?.is_insert ?? data?.insert_feed ?? false;
+      // v1 check endpoint returns { action, feed_id }: a non-owned (standard)
+      // feed UUID → "insert" (editing creates a user-owned derivative), an
+      // owned custom-feed UUID → "update". Fall back to the legacy booleans
+      // for older backends.
+      const isInsert = data?.action
+        ? data.action === "insert"
+        : (data?.is_insert ?? data?.insert_feed ?? false);
+      // The v1 check response carries no nutrient details, so the edit form
+      // opens with blank nutrients (was prefilled on the legacy backend).
       const details = data?.feed_details ?? {};
       setEditIsInsert(isInsert);
       // Prefill nutrient fields from response (zeros render as "0")

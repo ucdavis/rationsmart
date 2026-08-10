@@ -582,9 +582,12 @@ export default function FeedSelectionPage() {
           customFeedForm.feed_name.trim(),
           user.id
         );
+        // v1 check endpoint returns { action: "insert"|"update", feed_id }.
+        // It's UUID-based, so a name string (what we pass here) always yields
+        // "insert" — the sheet is an add-flow, so that's the intended path.
         const checkData = checkRes.data;
-        isUpdate = !(checkData?.insert_feed ?? true);
-        existingFeedId = checkData?.feed_details?.feed_id ?? "";
+        isUpdate = checkData?.action === "update";
+        existingFeedId = checkData?.feed_id ?? "";
       } catch {
         // assume new feed
       }
