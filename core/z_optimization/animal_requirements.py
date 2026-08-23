@@ -17,6 +17,16 @@ import numpy as np
 # Import utilities
 from .utilities import adjust_dmi_temperature
 
+# Requirements-table intake-row labels. A Baby Calf/Heifer is fed milk only (see
+# rsm_create_animal_requirements_dataframe below), so its DMI-equivalent row is
+# labeled differently from the solid-feed row used for every other state.
+# report_generation.py's per-state `requirements_rows` filter must match whichever
+# of these strings is used here exactly, or the row silently disappears from the
+# report (filter_display_df logs a warning if that happens) — import these
+# constants there rather than re-typing the literal so the two can't drift apart.
+CALF_INTAKE_LABEL = "Milk intake (as fed)"
+DEFAULT_INTAKE_LABEL = "Dry matter intake"
+
 # Animal input mapping from API (lowercase) to Engine (CamelCase)
 ANIMAL_INPUT_MAPPING = {
     "body_weight": "An_BW",
@@ -775,7 +785,7 @@ def rsm_create_animal_requirements_dataframe(animal_requirements, diet_supply_re
     Dt_DMIn_BW = (Trg_Dt_DMIn / An_BW * 100) if An_BW > 0 else 0
 
     is_calf = animal_requirements.get("An_StatePhys") == "Baby Calf/Heifer"
-    intake_label = "Milk intake (as fed)" if is_calf else "Dry matter intake"
+    intake_label = CALF_INTAKE_LABEL if is_calf else DEFAULT_INTAKE_LABEL
 
     # Extract all requirements with proper defaults
     requirements_data = {

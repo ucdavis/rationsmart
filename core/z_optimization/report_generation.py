@@ -19,7 +19,7 @@ from pathlib import Path
 logger = logging.getLogger(__name__)
 
 # Import from animal_requirements for table creation
-from .animal_requirements import rsm_create_animal_requirements_dataframe
+from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_INTAKE_LABEL
 
 # Import from utilities
 from .utilities import rename_variable, replace_na_and_negatives
@@ -1082,7 +1082,7 @@ def build_report_context(
             "animal_input_rows": ["Breed", "Animal Type", "Animal Weight"],
             # Water Intake intentionally omitted for the calf (never computed — the calf
             # skips the post-optimization diet step; see the animal-category plan).
-            "requirements_rows": ["Milk intake (as fed)", "Intake (%Body Weight)"],
+            "requirements_rows": [CALF_INTAKE_LABEL, "Intake (%Body Weight)"],
             "summary_label": "Daily milk allowance",
             "summary_value": float(animal_requirements.get("milk_total", 0) or 0),
             "summary_unit": "L",
@@ -1097,11 +1097,23 @@ def build_report_context(
         """Return df keeping only the ``row_order`` rows, in that order.
 
         No-op when the frame is missing/empty, no row order is given, or it has no
-        ``Parameter`` column to filter on.
+        ``Parameter`` column to filter on. Logs a warning (does not raise) if a
+        requested label in ``row_order`` matches no row — this is how a label
+        renamed on one side (e.g. the Parameter text built in
+        animal_requirements.py) and not the other (this profile's
+        ``requirements_rows``) would otherwise fail: the row just silently
+        disappears from the report instead of erroring.
         """
         if df is None or getattr(df, "empty", True) or not row_order or "Parameter" not in df.columns:
             return df
         filtered = df[df["Parameter"].isin(row_order)].copy()
+        missing = [label for label in row_order if label not in set(filtered["Parameter"])]
+        if missing:
+            logger.warning(
+                "filter_display_df: %d requested row label(s) matched nothing in the "
+                "Parameter column and will be missing from the report: %s",
+                len(missing), missing,
+            )
         filtered["_row_order"] = pd.Categorical(filtered["Parameter"], categories=row_order, ordered=True)
         filtered = filtered.sort_values("_row_order").drop(columns="_row_order")
         return filtered
