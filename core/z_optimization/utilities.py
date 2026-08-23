@@ -269,9 +269,17 @@ def classify_feed_categories(f_nd):
     mask_minerals = feed_category == "minerals"
     mask_conc_all = ~mask_for & (~mask_minerals)
 
-    mask_straw = mask_for & (dm_values > 85)
-    mask_moist_forage = mask_for & (dm_values < 80)
-    mask_lqf = mask_for & (cp_values < 7) & (ndf_values > 72) & (~mask_straw)
+    cat_grass_legume = (np.char.find(feed_category, "grass") >= 0) | \
+                       (np.char.find(feed_category, "legume") >= 0)
+    mask_lqf = mask_for & ~cat_grass_legume & (cp_values < 7) & (ndf_values > 65)
+
+    # Forage tree/shrub — tree legumes (leucaena, moringa, indigofera, sesbania,
+    # pigeon pea).
+    mask_tree_legume = mask_for & (
+        (np.char.find(feed_category, "tree") >= 0)
+        | (np.char.find(feed_category, "shrub") >= 0)
+    )
+    
     # Wet by-products: any feed marked as a by-product with low DM%.
     mask_wet_byprod = is_byprod & (dm_values < 30)
     # Other wet ingredients: non-forage, very low DM%, explicitly excluding wet by-products
@@ -281,29 +289,36 @@ def classify_feed_categories(f_nd):
     mask_wet_other = (~mask_for) & (dm_values < 21) & (~mask_wet_byprod)
 
     fd_names_lower = np.char.strip(np.char.lower(np.asarray(names, dtype=str)))
-    mask_urea = np.char.find(fd_names_lower, "urea") >= 0
     mask_molasses = np.char.find(fd_names_lower, "molasses") >= 0
+    
+    # Pure NPN sources are caught by CP alone: no true feedstuff exceeds 100% CP
+    # (N x 6.25), while urea itself reads ~281% — this catches a pure-urea/NPN
+    # feed regardless of how it's named. The name check is kept alongside it as a
+    # safety net for blended/diluted urea products (urea-molasses licks,
+    # urea-treated straw): their CP is far under 100 despite containing urea, so
+    # CP alone would silently drop them from the per-feed urea cap in
+    # optimization_core.py:159 (calibrated for pure urea; sharing that same cap
+    # across "any urea-bearing feed" is exactly why both signals are needed here).
+    mask_urea = (cp_values > 100) | (np.char.find(fd_names_lower, "urea") >= 0)
 
     categories = {
         # Masks
         "mask_forage": mask_for,
         "mask_conc_all": mask_conc_all,
         "mask_minerals": mask_minerals,
-        "mask_straw": mask_straw,
-        "mask_moist_forage": mask_moist_forage,
         "mask_lqf": mask_lqf,
+        "mask_tree_legume": mask_tree_legume,
         "mask_wet_other": mask_wet_other,
         "mask_wet_byprod": mask_wet_byprod,
         "mask_urea": mask_urea,
         "mask_molasses": mask_molasses,
         # Summary flags
-        "has_straw": bool(np.any(mask_straw)),
-        "has_moist_forage": bool(np.any(mask_moist_forage)),
         "has_lqf": bool(np.any(mask_lqf)),
         "has_wet_byprod": bool(np.any(mask_wet_byprod)),
         "has_wet_other": bool(np.any(mask_wet_other)),
         "has_concentrate": bool(np.any(mask_conc_all)),
         "has_minerals": bool(np.any(mask_minerals)),
+        "has_tree_legume": bool(np.any(mask_tree_legume)),
         "has_urea": bool(np.any(mask_urea)),
         "has_molasses": bool(np.any(mask_molasses)),
     }

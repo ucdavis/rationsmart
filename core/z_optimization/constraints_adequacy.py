@@ -308,7 +308,6 @@ def compute_adequacy(
 
         # Optimization: Only calculate clean text if masks are missing from categories
         fd_type_lower = None
-        fd_dm = None
         fd_name_lower = None
 
         if "mask_conc_all" in categories:
@@ -316,14 +315,6 @@ def compute_adequacy(
         else:
             fd_type_lower = np.char.strip(np.char.lower(np.array(f_nd.get("Fd_Type", [""] * len(quantities_arr)), dtype=str)))
             mask_conc = fd_type_lower == "concentrate"
-
-        if "mask_moist_forage" in categories:
-            mask_moist = categories["mask_moist_forage"]
-        else:
-            if fd_type_lower is None:
-                fd_type_lower = np.char.strip(np.char.lower(np.array(f_nd.get("Fd_Type", [""] * len(quantities_arr)), dtype=str)))
-            fd_dm = np.array(f_nd.get("Fd_DM", np.zeros_like(quantities_arr)))
-            mask_moist = (fd_type_lower == "forage") & (fd_dm < 80)
 
         if "mask_molasses" in categories:
             mask_molasses = categories["mask_molasses"]
@@ -333,16 +324,15 @@ def compute_adequacy(
 
         mask_byprod = _mask_or(categories, "mask_wet_byprod", np.zeros_like(quantities_arr, dtype=bool))
         mask_wet_other = _mask_or(categories, "mask_wet_other", np.zeros_like(quantities_arr, dtype=bool))
-        mask_straw = _mask_or(categories, "mask_straw", np.zeros_like(quantities_arr, dtype=bool))
         mask_lqf = _mask_or(categories, "mask_lqf", np.zeros_like(quantities_arr, dtype=bool))
+        mask_tree_legume = _mask_or(categories, "mask_tree_legume", np.zeros_like(quantities_arr, dtype=bool))
 
         conc_kg = float(np.sum(quantities_arr[mask_conc])) if np.any(mask_conc) else 0.0
-        moist_kg = float(np.sum(quantities_arr[mask_moist])) if np.any(mask_moist) else 0.0
         molasses_kg = float(np.sum(quantities_arr[mask_molasses])) if np.any(mask_molasses) else 0.0
         byprod_kg = float(np.sum(quantities_arr[mask_byprod])) if np.any(mask_byprod) else 0.0
         wet_other_kg = float(np.sum(quantities_arr[mask_wet_other])) if np.any(mask_wet_other) else 0.0
-        straw_kg = float(np.sum(quantities_arr[mask_straw])) if np.any(mask_straw) else 0.0
         lqf_kg = float(np.sum(quantities_arr[mask_lqf])) if np.any(mask_lqf) else 0.0
+        tree_legume_kg = float(np.sum(quantities_arr[mask_tree_legume])) if np.any(mask_tree_legume) else 0.0
 
         try:
             ndf_for_target = thr["ndf_for_min"] * dmi_supply
@@ -353,9 +343,8 @@ def compute_adequacy(
             conc_limit = thr["conc_max"] * dmi_supply
             conc_byprod_limit = thr["conc_byprod_max"] * dmi_supply
             other_wet_limit = thr["other_wet_ingr_max"] * dmi_supply
-            straw_limit = thr["forage_straw_max"] * dmi_supply
             fibrous_limit = thr["forage_fibrous_max"] * dmi_supply
-            moist_forage_target = thr["moist_forage_min"] * dmi_supply
+            tree_legume_limit = thr["tree_legume_max"] * dmi_supply
             molasses_limit = thr["molasses_max"] * dmi_supply
             nel_balance_limit = thr["nel_balance_max"]
             mp_balance_limit = thr["mp_balance_max"]
@@ -375,12 +364,11 @@ def compute_adequacy(
             "conc_max": (conc_kg, conc_limit),
             "conc_byprod_max": (byprod_kg, conc_byprod_limit),
             "other_wet_ingr_max": (wet_other_kg, other_wet_limit),
-            "forage_straw_max": (straw_kg, straw_limit),
             "forage_fibrous_max": (lqf_kg, fibrous_limit),
-            "moist_forage_min": (moist_kg, moist_forage_target),
             "nel_balance_max": (nel_balance, nel_balance_limit),
             "mp_balance_max": (mp_balance, mp_balance_limit),
             "molasses_max": (molasses_kg, molasses_limit),
+            "tree_legume_max": (tree_legume_kg, tree_legume_limit),
         }
 
     if hard_constraints is not None:

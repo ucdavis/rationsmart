@@ -4,7 +4,7 @@ Optimization core module.
 This module contains the core optimization engine for diet formulation:
 - Optimization problem definition (DietOptimizationProblem)
 - Custom sampling and repair operators for constrained optimization
-- NSGA-II multi-objective optimization implementation
+- NSGA-III used as a single-objective (least-cost) optimizer — see DietProblemCostOnly
 - Diet supply calculations and nutritional evaluation
 - Bounds calculation and feasibility checking
 """
@@ -420,7 +420,9 @@ class EpsilonUpdateCallback:
 ########################################################
 
 class DietProblemCostOnly(Problem):
-    """Single-objective (cost) NSGA-III diet formulation problem."""
+    """Single-objective (cost) diet formulation problem, solved with NSGA-III. 
+    
+    Awaiting refactor based on trial results and user experience."""
 
     # Purpose: Initialize the cost-only problem with bounds, weights, and constraint config.
     # Notes: Validates required thresholds/weights and prepares category masks and cost vectors.
@@ -477,9 +479,8 @@ class DietProblemCostOnly(Problem):
             "conc_max",
             "conc_byprod_max",
             "other_wet_ingr_max",
-            "forage_straw_max",
             "forage_fibrous_max",
-            "moist_forage_min",
+            "tree_legume_max",
         ]
         missing_thr = [k for k in required_thr if k not in self.thr]
         if missing_thr:
@@ -500,9 +501,8 @@ class DietProblemCostOnly(Problem):
             "conc_max",
             "conc_byprod_max",
             "other_wet_ingr_max",
-            "forage_straw_max",
             "forage_fibrous_max",
-            "moist_forage_min",
+            "tree_legume_max",
         ]
         missing_weights = [k for k in required_weight_keys if k not in self.constraint_weights]
         if missing_weights:
@@ -515,7 +515,9 @@ class DietProblemCostOnly(Problem):
             "starch_max",
             "ee_max",
             "conc_max",
-            "moist_forage_min",
+            "forage_fibrous_max",
+            "tree_legume_max",
+            "other_wet_ingr_max",
             "nel_balance_max",
             "mp_balance_max",
         ]
@@ -528,10 +530,6 @@ class DietProblemCostOnly(Problem):
         self.penalty_scale = 200.0
 
         self.feed_count = len(f_nd["Fd_Name"])
-        self.fd_types = np.array(f_nd.get("Fd_Type", [""] * self.feed_count))
-        self.fd_dm = np.array(f_nd.get("Fd_DM", np.zeros(self.feed_count)))
-        self.conc_mask = self.fd_types != "Forage"
-        self.moist_mask = (self.fd_types == "Forage") & (self.fd_dm < 80)
         self.categories = classify_feed_categories(self.f_nd)
         self.eps = float(eps)
         if self.eps <= 0.0:

@@ -19,9 +19,7 @@ from typing import List, Dict, Any
 #     "starch_max": "Starch content is too high, which increases the risk of acidosis. Try reducing cereal grains and increasing fiber-rich forages.",
 #     "ee_max": "Fat (EE) content is too high. High fat levels can interfere with digestion. Reduce oil-rich seeds or supplements.",
 #     "ash_max": "Ash content is high, which often indicates soil contamination or low-quality ingredients. Check the quality of your forages.",
-#     "moist_forage_min": "Fresh forage (green fodder) is below the minimum requirement. Consider adding more green grass or silage to the selection.",
 #     "conc_max": "The proportion of concentrates is too high. This can be expensive and unhealthy. Try increasing forages to balance the diet.",
-#     "forage_straw_max": "The diet contains too much straw or stover, which is low in nutrition. Try replacing some straw with higher-quality green fodder.",
 #     "forage_fibrous_max": "Low-quality fibrous forages are too high. Consider improving the forage quality with more legumes or silage.",
 # }
 
@@ -37,10 +35,10 @@ CONSTRAINT_ADVICE = {
     "starch_max": "Starch content is a bit high. To maintain a healthy rumen, try slightly reducing cereal grains and increasing fiber-rich forages.",
     "ee_max": "The fat (EE) content is higher than the recommended limit. Reducing oil-rich seeds or supplements will help maintain optimal digestion.",
     "ash_max": "Ash content is a bit high. Checking the quality and cleanliness of your forages can help reduce this to ideal levels.",
-    "moist_forage_min": "Adding more green grass or silage to your selection would help reach the ideal goal for fresh forage inclusion.",
     "conc_max": "To maintain a cost-effective and healthy balance, you might consider slightly increasing the forage proportion relative to concentrates.",
-    "forage_straw_max": "Replacing some straw or stover with higher-quality green fodder would improve the overall nutritional value of the diet.",
     "forage_fibrous_max": "Consider improving the forage quality by adding more legumes or silage to reach a more optimal balance.",
+    "other_wet_ingr_max": "Very wet ingredients make up more of the diet than ideal. Replacing part of them with a drier alternative will help dry matter intake and keep the ration stable.",
+    "tree_legume_max": "Tree and shrub forages are important for a balanced diet. Consider increasing their proportion to improve nutritional quality.",
 }
 
 def get_recommendations(worst_constraints: List[Dict[str, Any]], feed_data: List[Dict[str, Any]]) -> List[str]:

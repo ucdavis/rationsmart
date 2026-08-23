@@ -56,10 +56,9 @@ BASE_THRESHOLDS = {
 
     # Backend ONLY constraints!!!!!!!!!!!!!
     "conc_byprod_max":        0.60,   # 2026-07-27: was 0.30
-    "other_wet_ingr_max":     0.12,
-    "moist_forage_min":       0.10,   # 2026-07-27: was 0.20
-    "forage_straw_max":       0.50,   # 2026-07-27: was 0.15
-    "forage_fibrous_max":     0.80,
+    "other_wet_ingr_max":     0.12,   # kept until feed library consolidation
+    "forage_fibrous_max":     0.20,
+    "tree_legume_max":        0.30,  
     "molasses_max":           0.035,
     # Used for bound calculation in optimization_core.py
     "urea_max":               0.01,   # proportion of total DMI (e.g., 1% of DM)
@@ -84,9 +83,8 @@ DRY_THRESHOLDS_OVERRIDE = {
     # Backend ONLY constraints!!!!!!!!!!!!!
     "conc_byprod_max":        0.25,
     "other_wet_ingr_max":     0.20,
-    "moist_forage_min":       0.18,
-    "forage_straw_max":       0.30,
-    "forage_fibrous_max":     0.85,
+    "forage_fibrous_max":     0.50,
+    "tree_legume_max":        0.30,
     "molasses_max":           0.03,   # 2026-07-27: restored (was inheriting BASE)
     "urea_max":               0.007,
     "mineral_min":            0.050,  # 2026-07-27: restored (same value as BASE)
@@ -108,9 +106,8 @@ HEIFER_THRESHOLDS_OVERRIDE = {
     # Backend ONLY constraints!!!!!!!!!!!!!
     "conc_byprod_max":        0.25,
     "other_wet_ingr_max":     0.25,   # 2026-07-27: was 0.20
-    "moist_forage_min":       0.18,
-    "forage_straw_max":       0.30,
-    "forage_fibrous_max":     0.85,
+    "forage_fibrous_max":     0.45,
+    "tree_legume_max":        0.30,
     "molasses_max":           0.03,
     "urea_max":               0.007,
     "mineral_min":            0.050,  # 2026-07-27: restored (same value as BASE)
@@ -130,10 +127,9 @@ CONSTRAINT_ORDER = [
     "conc_max",
     "conc_byprod_max",
     "other_wet_ingr_max",
-    "forage_straw_max",
     "forage_fibrous_max",
+    "tree_legume_max",
     "molasses_max",
-    "moist_forage_min",
     "nel_balance_max",
     "mp_balance_max",
 ]
@@ -162,10 +158,9 @@ BASE_WEIGHTS = {
     "conc_max": 1.0,
     "conc_byprod_max": 1.0,
     "other_wet_ingr_max": 1.0,
-    "forage_straw_max": 1.0,
     "forage_fibrous_max": 1.0,
-    "moist_forage_min": 0.8,
     "molasses_max": 1.0,
+    "tree_legume_max": 1.0,
 }
 
 DRY_WEIGHTS_OVERRIDE = {
@@ -183,10 +178,12 @@ SOFT_CONSTRAINT_PENALTIES_BASE = {
     "ndf_max": {"weight": 1.0, "exp": 2},
     "starch_max": {"weight": 1.0, "exp": 2},
     "ee_max": {"weight": 1.0, "exp": 2},
-    "conc_max": {"weight": 0.5, "exp": 2},  
-    "moist_forage_min": {"weight": 1.5, "exp": 2},
+    "conc_max": {"weight": 0.5, "exp": 2},
+    "forage_fibrous_max": {"weight": 1.0, "exp": 2},
+    "other_wet_ingr_max": {"weight": 0.5, "exp": 2},
     "nel_balance_max": {"weight": 1.0, "exp": 2},
     "mp_balance_max": {"weight": 1.0, "exp": 2},
+    "tree_legume_max": {"weight": 1.0, "exp": 2},
 }
 
 # Explicitly define which constraints are hard vs soft by default.
@@ -198,9 +195,6 @@ HARD_CONSTRAINTS = [
     "ash_max",
     "conc_max",
     "conc_byprod_max",
-    "other_wet_ingr_max",
-    "forage_straw_max",
-    "forage_fibrous_max",
     "molasses_max",
 ]
 
@@ -367,38 +361,25 @@ CONSTRAINT_INFO_BASE = {
         "marginal": (5, 10),
         "infeasible": (10, 1e9)
     },
-    "forage_straw_max": {
-        "basis": "limit",
-        "display_name": "Straw/Stover Content",
-        "short_name": "Straw",
-        "unit": "kg/day",
-        "perfect": (0, 1e-9),        # Straw: no slack for perfect
-        "good": (1e-9, 2),
-        "marginal": (2, 5),
-        "infeasible": (5, 1e9)
-    },
     "forage_fibrous_max": {
         "basis": "limit",
         "display_name": "Low-Quality Forage",
         "short_name": "Low-Quality Forage",
         "unit": "kg/day",
-        "perfect": (0, 1e-9),        # Low-quality forage: no slack for perfect
-        "good": (1e-9, 2),
-        "marginal": (2, 5),
-        "infeasible": (5, 1e9)
+        "perfect": (0, 2),
+        "good": (2, 5),
+        "marginal": (5, 15),
+        "infeasible": (15, 1e9)
     },
-
-    # FORAGE MINIMUMS & SPECIAL CAPS (min-type vs TARGET)
-    "moist_forage_min": {
-        "basis": "target",
-        "tolerance_type": "minimum",
-        "display_name": "Fresh Forage",
-        "short_name": "Fresh Forage",
+    "tree_legume_max": {
+        "basis": "limit",
+        "display_name": "Forage Tree/Shrub",
+        "short_name": "Tree Legume",
         "unit": "kg/day",
-        "perfect": (0, 5),        # Allow minor shortfall for perfect
-        "good": (5, 10),
-        "marginal": (10, 20),
-        "infeasible": (20, 100)
+        "perfect": (0, 2),
+        "good": (2, 5),
+        "marginal": (5, 15),
+        "infeasible": (15, 1e9)
     },
     "molasses_max": {
         "basis": "limit",

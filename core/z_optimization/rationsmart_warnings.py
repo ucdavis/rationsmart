@@ -85,9 +85,8 @@ def post_feasibility_warnings(
         "conc_max",
         "conc_byprod_max",
         "other_wet_ingr_max",
-        "forage_straw_max",
         "forage_fibrous_max",
-        "moist_forage_min",
+        "tree_legume_max",
         "molasses_max",
     }
 
