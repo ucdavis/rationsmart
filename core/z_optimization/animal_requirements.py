@@ -156,7 +156,6 @@ def rsm_calculate_an_requirements(animal_inputs):
     An_GestDay = 0 if An_GestDay > An_GestLength + 10 else An_GestDay             # Gestation day cannot be greater than gestation length + 10 days
     An_PrePartDay = An_GestDay - An_GestLength                                    # Prepartum day
     An_PrePartWk = An_PrePartDay / 7                                              # Prepartum week
-    An_PostPartDay = max(0, min(An_LactDay, 100))                                 # Postpartum day, clipped to [0, 100]
     An_PrePartWklim = -3 if An_PrePartWk < -3 else 0 if An_PrePartWk > 0 else An_PrePartWk # Prepartum week limit
     An_PrePartWkDurat = An_PrePartWklim * 2                                        # Prepartum week duration
     
