@@ -291,10 +291,15 @@ def classify_feed_categories(f_nd):
     fd_names_lower = np.char.strip(np.char.lower(np.asarray(names, dtype=str)))
     mask_molasses = np.char.find(fd_names_lower, "molasses") >= 0
     
-    # Pure NPN sources only. No true feedstuff exceeds 100% CP (N x 6.25) (urea is 281%).
-    # Mixtures (urea-molasses licks, urea-treated straw) are deliberately not caught:
-    # the kg cap in optimization_core.py:159 is calibrated for pure urea.
-    mask_urea = cp_values > 100
+    # Pure NPN sources are caught by CP alone: no true feedstuff exceeds 100% CP
+    # (N x 6.25), while urea itself reads ~281% — this catches a pure-urea/NPN
+    # feed regardless of how it's named. The name check is kept alongside it as a
+    # safety net for blended/diluted urea products (urea-molasses licks,
+    # urea-treated straw): their CP is far under 100 despite containing urea, so
+    # CP alone would silently drop them from the per-feed urea cap in
+    # optimization_core.py:159 (calibrated for pure urea; sharing that same cap
+    # across "any urea-bearing feed" is exactly why both signals are needed here).
+    mask_urea = (cp_values > 100) | (np.char.find(fd_names_lower, "urea") >= 0)
 
     categories = {
         # Masks
