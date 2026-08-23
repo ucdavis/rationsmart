@@ -133,7 +133,7 @@ def rsm_calculate_an_requirements(animal_inputs):
     # ANIMAL INPUTS PROCESSING
     # ===================================================================
     
-    An_BW_mature = 600 if An_Breed in ["Holstein", "Crossbred"] else 550          # Mature body weight
+    An_BW_mature = 600 if An_Breed in ["Holstein", "Crossbred"] else 550          # Mature body weight (else = Indigenous)
     An_MBW = An_BW ** 0.75                                                        # Metabolic body weight
     An_BWgain = Trg_FrmGain + Trg_RsrvGain                                        # Body weight gain in kg/day
     Trg_BWgain_g = An_BWgain * 1000                                               # Body weight gain in grams/day
@@ -146,8 +146,7 @@ def rsm_calculate_an_requirements(animal_inputs):
     An_GestDay = 0 if An_GestDay > An_GestLength + 10 else An_GestDay             # Gestation day cannot be greater than gestation length + 10 days
     An_PrePartDay = An_GestDay - An_GestLength                                    # Prepartum day
     An_PrePartWk = An_PrePartDay / 7                                              # Prepartum week
-    An_PostPartDay = 0 if An_LactDay <= 0 else An_LactDay                          # Postpartum day
-    An_PostPartDay = 100 if An_LactDay > 100 else An_LactDay                      # Postpartum day cannot be greater than 100 days
+    An_PostPartDay = max(0, min(An_LactDay, 100))                                 # Postpartum day, clipped to [0, 100]
     An_PrePartWklim = -3 if An_PrePartWk < -3 else 0 if An_PrePartWk > 0 else An_PrePartWk # Prepartum week limit
     An_PrePartWkDurat = An_PrePartWklim * 2                                        # Prepartum week duration
     
@@ -174,15 +173,15 @@ def rsm_calculate_an_requirements(animal_inputs):
         Dt_DMIn_BR = (0.4762 * FCM + 0.07219 * An_MBW) * (1 - np.exp(-0.03202 * (An_LactDay + 24.9576)))       # Souza et al., 2014
         Dt_DMIn = adjust_dmi_temperature(Dt_DMIn_BR, Env_TempCurr)                                # selected eq + adjust DMI based on temperature
 
-    elif An_StatePhys == "Dry Cow":                                                             
+    elif An_StatePhys == "Dry Cow":         # from Hayirli et al., 2003 JDS                                                    
         Dt_DMIn_DryCow_AdjGest = An_BW * (-0.756 * np.exp(0.154 * (An_GestDay - An_GestLength))) / 100
         Dt_DMIn_DryCow_AdjGest = 0 if (An_GestDay - An_GestLength) < -21 else Dt_DMIn_DryCow_AdjGest
         Dt_DMIn = An_BW * 1.979 / 100 + Dt_DMIn_DryCow_AdjGest
 
-    elif An_StatePhys == "Heifer":
+    elif An_StatePhys == "Heifer":       # NASEM 2021 breed-specific intake
         if An_Breed == "Holstein":
             Dt_DMIn = 15.36 * (1 - np.exp(-0.0022 * An_BW))
-        else:  # Crossbred or others
+        else:                             # Crossbred / Indigenous (lower intake)
             Dt_DMIn = 12.91 * (1 - np.exp(-0.00295 * An_BW))
 
     elif An_StatePhys == "Baby Calf/Heifer":
@@ -196,9 +195,10 @@ def rsm_calculate_an_requirements(animal_inputs):
     # Feed recomendation end here and report can be displayed as following:
 
     if An_StatePhys == "Baby Calf/Heifer":
-        milk_total = round(Trg_Dt_DMIn)  
-        milk_morning = round(milk_total / 2, 1)
-        milk_evening = round(milk_total / 2, 1)
+        # Round each feeding up to 0.1 L so the calf is never fed below target.
+        milk_morning = float(np.ceil(Trg_Dt_DMIn / 2 * 10) / 10)
+        milk_evening = milk_morning
+        milk_total = round(milk_morning + milk_evening, 1)
     else:
         milk_total = milk_morning = milk_evening = 0
 
@@ -410,7 +410,7 @@ def rsm_calculate_an_requirements(animal_inputs):
     Frm_MEgain = Frm_NEgain / Kf_ME_RE
     Rsrv_MEgain = Rsrv_NEgain / Kr_ME_RE
     An_MEgain = Frm_MEgain + Rsrv_MEgain
-    An_NELgain = An_MEgain * Kf_ME_RE if An_StatePhys == "Heifer" else Kl_ME_NE #NEL equivalent
+    An_NELgain = An_MEgain * Kf_ME_RE if An_StatePhys == "Heifer" else An_MEgain * Kl_ME_NE #NEL equivalent
 
     An_ME = An_ME_m + An_MEgest + An_MEgain # Only for heifers
 
@@ -773,11 +773,14 @@ def rsm_create_animal_requirements_dataframe(animal_requirements, diet_supply_re
     Trg_Dt_DMIn = animal_requirements.get("Trg_Dt_DMIn", 0)
     An_BW = animal_requirements.get("An_BW", 0)
     Dt_DMIn_BW = (Trg_Dt_DMIn / An_BW * 100) if An_BW > 0 else 0
-    
+
+    is_calf = animal_requirements.get("An_StatePhys") == "Baby Calf/Heifer"
+    intake_label = "Milk intake (as fed)" if is_calf else "Dry matter intake"
+
     # Extract all requirements with proper defaults
     requirements_data = {
         "Parameter": [
-            "Dry matter intake", 
+            intake_label, 
             "Intake (%Body Weight)", 
             energy_name, 
             "Metabolizable protein (MP)",

@@ -443,7 +443,8 @@ def rsm_calculate_methane_emissions(Dt, Dt_DMInSum, f_nd, animal_requirements, b
     else:
         CH4 = 0  # Default for unknown animal types
 
-    # Methane Intensity
+    # Methane Intensity - Methane intensity is for lactating cows only. 
+    # It should not be present in the dry cows or heifers reports.
     CH4_intensity = -0.101 - 0.215 * Dt_DMInSum - 0.118 * CP_diet - 0.323 * EE_diet + 0.120 * NDF_diet - 0.253 * Trg_MilkFatp + 3.44 * Trg_MilkTPp + 0.00947 * An_BW
 
     # Methane metrics

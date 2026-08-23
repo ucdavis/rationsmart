@@ -1082,7 +1082,7 @@ def build_report_context(
             "animal_input_rows": ["Breed", "Animal Type", "Animal Weight"],
             # Water Intake intentionally omitted for the calf (never computed — the calf
             # skips the post-optimization diet step; see the animal-category plan).
-            "requirements_rows": ["Dry matter intake", "Intake (%Body Weight)"],
+            "requirements_rows": ["Milk intake (as fed)", "Intake (%Body Weight)"],
             "summary_label": "Daily milk allowance",
             "summary_value": float(animal_requirements.get("milk_total", 0) or 0),
             "summary_unit": "L",
