@@ -40,7 +40,17 @@ from services.feed_service import (
 logger = logging.getLogger(__name__)
 
 # File-level mandatory headers (D14): missing any one aborts the whole run.
-MANDATORY_COLUMNS = {"fd_code", "fd_name", "fd_country_name", "fd_language_cd"}
+#
+# fd_type/fd_category joined this set after D18 (taxonomy validation) made them
+# required per row: every row is skipped without them, so a file omitting the
+# columns entirely is a malformed file, not a data-quality problem. Guarding
+# them here turns "success, every row skipped, nothing imported" into a failure
+# that names the missing column. Cell-level blanks remain a row-level skip
+# (D18) — this checks only that the columns exist.
+MANDATORY_COLUMNS = {
+    "fd_code", "fd_name", "fd_country_name", "fd_language_cd",
+    "fd_type", "fd_category",
+}
 
 # D17: ISO 639-1 two-letter codes only (post trim/lowercase).
 _LANG_CODE_RE = re.compile(r"^[a-z]{2}$")
