@@ -50,7 +50,7 @@ boto3==1.40.15
 asgiref==3.8.1
 
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
-weasyprint==63.1
+weasyprint==70.0
 tinycss2==1.4.0
 tinyhtml5==2.0.0
 cssselect2==0.7.0
