@@ -786,21 +786,26 @@ export default function FeedSelectionPage() {
           feed_selection: validItems.map((item) => {
             // Y3 §1.1.2 — only include bounds when the toggle is ON AND
             // the corresponding side has a value. Blank min → omit min;
-            // blank max → omit max; toggle off → omit both. Backend
-            // §2.4 reads these and overrides default constraints.
-            // TODO(maria-y3): confirm canonical key names.
+            // blank max → omit max; toggle off → omit both.
+            //
+            // Wire names are min_kg_asfed / max_kg_asfed per FeedWithPrice
+            // in the v1 spec. We previously sent min_kg_per_day /
+            // max_kg_per_day, which Pydantic dropped as unknown keys — the
+            // optimizer never received the user's inclusion limits and the
+            // run silently came back unconstrained. The store keeps the
+            // *_per_day names; the rename happens here at the wire edge.
             const base: {
               feed_id: string;
               price_per_kg: number;
-              min_kg_per_day?: number;
-              max_kg_per_day?: number;
+              min_kg_asfed?: number;
+              max_kg_asfed?: number;
             } = {
               feed_id: item.feed_uuid!,
               price_per_kg: item.price_per_kg!,
             };
             if (item.inclusion_limits_enabled) {
-              if (item.min_kg_per_day != null) base.min_kg_per_day = item.min_kg_per_day;
-              if (item.max_kg_per_day != null) base.max_kg_per_day = item.max_kg_per_day;
+              if (item.min_kg_per_day != null) base.min_kg_asfed = item.min_kg_per_day;
+              if (item.max_kg_per_day != null) base.max_kg_asfed = item.max_kg_per_day;
             }
             return base;
           }),

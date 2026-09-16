@@ -241,9 +241,13 @@ export interface RecommendationRequest {
     // Y3 §1.1.2 — optional per-feed inclusion bounds (kg/day, as-fed).
     // Omitted entirely when the toggle is off. Either bound can also be
     // null when the toggle is on but the user left that side blank.
-    // TODO(maria-y3): confirm canonical field names; backend §2.4 reads these.
-    min_kg_per_day?: number | null;
-    max_kg_per_day?: number | null;
+    // Wire names are min_kg_asfed / max_kg_asfed — confirmed against
+    // FeedWithPrice in the v1 OpenAPI spec. They deliberately differ from
+    // the store's min_kg_per_day / max_kg_per_day; map at this boundary
+    // only. Pydantic drops unknown keys silently, so a mismatch here
+    // means the optimizer never sees the user's limits.
+    min_kg_asfed?: number | null;
+    max_kg_asfed?: number | null;
   }>;
   base_thresholds: DietLimits; // Android always sends this — never omit
 }
