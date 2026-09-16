@@ -13,7 +13,7 @@ import {
   isLactating,
   labelForLanguage,
 } from "@/lib/api";
-import type { AnimalCategory } from "@/lib/api";
+import type { AnimalCategory, DietLimits } from "@/lib/api";
 import { useT } from "@/lib/i18n-ui";
 import {
   containsMultipleDecimalPoints,
@@ -271,9 +271,11 @@ export default function CattleInfoPage() {
     setReportData,
     setFeedSelections,
     setFeedSelectionType,
+    setDietLimits,
   } = useStore((s) => ({
     setFeedSelections: s.setFeedSelections,
     setFeedSelectionType: s.setFeedSelectionType,
+    setDietLimits: s.setDietLimits,
     cattleInfo: s.cattleInfo,
     setCattleInfo: s.setCattleInfo,
     user: s.user,
@@ -561,6 +563,29 @@ export default function CattleInfoPage() {
       } else {
         // Empty simulation — reset so we don't carry over a previous case.
         setFeedSelections([]);
+      }
+
+      // Custom Diet Limits. The backend returns these as `custom_constraints`
+      // on the simulation detail, keyed exactly like DietLimits/BaseThresholds
+      // (ash_max / ee_max / ndf_max / starch_max). We never read it before,
+      // so restoring a simulation silently dropped the limits it was run
+      // with and the next run fell back to DEFAULT_BASE_THRESHOLDS. Only
+      // finite numbers are taken, so a partial or junk object can't poison
+      // the merge in feed-selection's generateReport.
+      const constraints = data?.custom_constraints as Record<string, unknown> | null | undefined;
+      if (constraints && typeof constraints === "object") {
+        const restoredLimits: Partial<DietLimits> = {};
+        (["ash_max", "ee_max", "ndf_max", "starch_max"] as const).forEach((key) => {
+          const raw = constraints[key];
+          if (raw === null || raw === undefined || raw === "") return;
+          const n = Number(raw);
+          if (Number.isFinite(n)) restoredLimits[key] = n;
+        });
+        setDietLimits(restoredLimits);
+      } else {
+        // No constraints on this simulation — clear any carried over from
+        // the previously loaded case rather than leaking them into this one.
+        setDietLimits({});
       }
 
       // Scenario 4 — push the restored values to the store's cattleInfo
