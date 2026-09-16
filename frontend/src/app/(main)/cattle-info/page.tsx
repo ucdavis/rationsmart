@@ -55,12 +55,14 @@ const MILK_PROTEIN_OPTIONS = [
   "3.5",
   "3.6",
 ];
-// Both dropdowns open on a sensible mid-range value instead of a "Select"
-// placeholder, matching every other dropdown on this screen (Breed,
-// Parity). These are also the values submitted when the user never opens
-// the dropdown at all.
-const DEFAULT_MILK_PROTEIN = "3.0";
-const DEFAULT_MILK_FAT = "3.5";
+// Both dropdowns open on their FIRST option instead of a "Select"
+// placeholder, matching every other dropdown on this screen (Breed →
+// Holstein, Parity → 1). Derived from the lists rather than hardcoded so
+// reordering or re-sourcing the options can't leave a default stranded
+// off-list. These are also the values submitted when the user never
+// opens the dropdown at all.
+const DEFAULT_MILK_PROTEIN = MILK_PROTEIN_OPTIONS[0];
+const DEFAULT_MILK_FAT = MILK_FAT_OPTIONS[0];
 
 // Stored/restored values come back as numbers, so 3.0 round-trips to the
 // string "3" — which matches no entry in the option lists and would send
