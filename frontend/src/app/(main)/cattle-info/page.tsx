@@ -55,6 +55,23 @@ const MILK_PROTEIN_OPTIONS = [
   "3.5",
   "3.6",
 ];
+// Both dropdowns open on a sensible mid-range value instead of a "Select"
+// placeholder, matching every other dropdown on this screen (Breed,
+// Parity). These are also the values submitted when the user never opens
+// the dropdown at all.
+const DEFAULT_MILK_PROTEIN = "3.0";
+const DEFAULT_MILK_FAT = "3.5";
+
+// Stored/restored values come back as numbers, so 3.0 round-trips to the
+// string "3" — which matches no entry in the option lists and would send
+// CustomSelect back to its "Select" placeholder. Compare numerically and
+// hand back the exact option string (or the default when nothing matches).
+function toMilkOption(value: unknown, options: string[], fallback: string): string {
+  if (value === null || value === undefined || value === "") return fallback;
+  const n = Number(value);
+  if (Number.isNaN(n)) return fallback;
+  return options.find((o) => parseFloat(o) === n) ?? fallback;
+}
 
 interface Country {
   id: string | number;
@@ -127,12 +144,8 @@ const EMPTY_FORM: FormState = {
   days_of_pregnancy: "40",
   parity: "1",
   milk_production: "15",
-  // Defaults removed so the asterisk on Milk Protein % / Milk Fat %
-  // actually gates the Continue button. The legacy build pre-filled
-  // "3.0" / "3.5" which made the fields look mandatory but always
-  // pass validation. User reported the mismatch.
-  milk_protein_percent: "",
-  milk_fat_percent: "",
+  milk_protein_percent: DEFAULT_MILK_PROTEIN,
+  milk_fat_percent: DEFAULT_MILK_FAT,
   average_temperature: "25",
   grazing: false,
   distance_walked: "",
@@ -285,10 +298,16 @@ export default function CattleInfoPage() {
           cattleInfo.days_of_pregnancy !== undefined ? String(cattleInfo.days_of_pregnancy) : "",
         parity: cattleInfo.parity !== undefined ? String(cattleInfo.parity) : "",
         milk_production: cattleInfo.milk_production ? String(cattleInfo.milk_production) : "",
-        milk_protein_percent: cattleInfo.milk_protein_percent
-          ? String(cattleInfo.milk_protein_percent)
-          : "",
-        milk_fat_percent: cattleInfo.milk_fat_percent ? String(cattleInfo.milk_fat_percent) : "",
+        milk_protein_percent: toMilkOption(
+          cattleInfo.milk_protein_percent,
+          MILK_PROTEIN_OPTIONS,
+          DEFAULT_MILK_PROTEIN
+        ),
+        milk_fat_percent: toMilkOption(
+          cattleInfo.milk_fat_percent,
+          MILK_FAT_OPTIONS,
+          DEFAULT_MILK_FAT
+        ),
         average_temperature: cattleInfo.average_temperature
           ? String(cattleInfo.average_temperature)
           : "",
@@ -428,8 +447,14 @@ export default function CattleInfoPage() {
         parity: ci?.parity != null ? String(ci.parity) : prev.parity,
         milk_production:
           ci?.milk_production != null ? String(ci.milk_production) : prev.milk_production,
-        milk_protein_percent: ci?.tp_milk != null ? String(ci.tp_milk) : prev.milk_protein_percent,
-        milk_fat_percent: ci?.fat_milk != null ? String(ci.fat_milk) : prev.milk_fat_percent,
+        milk_protein_percent:
+          ci?.tp_milk != null
+            ? toMilkOption(ci.tp_milk, MILK_PROTEIN_OPTIONS, prev.milk_protein_percent)
+            : prev.milk_protein_percent,
+        milk_fat_percent:
+          ci?.fat_milk != null
+            ? toMilkOption(ci.fat_milk, MILK_FAT_OPTIONS, prev.milk_fat_percent)
+            : prev.milk_fat_percent,
         average_temperature:
           ci?.temperature != null ? String(ci.temperature) : prev.average_temperature,
         grazing: ci?.grazing ?? prev.grazing,
@@ -561,8 +586,11 @@ export default function CattleInfoPage() {
         days_of_pregnancy: ci?.days_of_pregnancy != null ? Number(ci.days_of_pregnancy) : 0,
         parity: ci?.parity != null ? Number(ci.parity) : 1,
         milk_production: ci?.milk_production != null ? Number(ci.milk_production) : 0,
-        milk_protein_percent: ci?.tp_milk != null ? Number(ci.tp_milk) : 0,
-        milk_fat_percent: ci?.fat_milk != null ? Number(ci.fat_milk) : 0,
+        // Keep the store in step with the form above, which falls back to
+        // the dropdown defaults when the restored simulation omits these.
+        milk_protein_percent:
+          ci?.tp_milk != null ? Number(ci.tp_milk) : Number(DEFAULT_MILK_PROTEIN),
+        milk_fat_percent: ci?.fat_milk != null ? Number(ci.fat_milk) : Number(DEFAULT_MILK_FAT),
         average_temperature: ci?.temperature != null ? Number(ci.temperature) : 25,
         grazing: ci?.grazing ?? false,
         distance: ci?.distance != null ? Number(ci.distance) : 0,
@@ -799,25 +827,6 @@ export default function CattleInfoPage() {
     (!form.grazing || (parseFloat(form.distance_walked) >= 1 && form.topography !== "")) &&
     !hasFieldErrors;
 
-  // Diagnostic — print which gating sub-expression is letting Continue
-  // be enabled when the user expects it disabled. Remove after the
-  // milk-protein-select-but-button-enabled bug is confirmed fixed.
-  if (typeof window !== "undefined") {
-    console.log("[cattle-info gating]", {
-      requiredFilled,
-      animal_category: form.animal_category,
-      showMilkSection,
-      milkFieldsValid,
-      milk_production: form.milk_production,
-      milk_protein_percent: form.milk_protein_percent,
-      milk_fat_percent: form.milk_fat_percent,
-      simulation_name: form.simulation_name,
-      breed: form.breed,
-      parity: form.parity,
-      hasFieldErrors,
-    });
-  }
-
   const handleContinue = () => {
     if (!requiredFilled) return;
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
@@ -852,8 +861,9 @@ export default function CattleInfoPage() {
       days_of_pregnancy: Number(form.days_of_pregnancy),
       parity: Number(form.parity),
       milk_production: Number(form.milk_production),
-      milk_protein_percent: form.milk_protein_percent ? Number(form.milk_protein_percent) : 0,
-      milk_fat_percent: Number(form.milk_fat_percent),
+      // Untouched dropdown still submits the default rather than 0.
+      milk_protein_percent: Number(form.milk_protein_percent || DEFAULT_MILK_PROTEIN),
+      milk_fat_percent: Number(form.milk_fat_percent || DEFAULT_MILK_FAT),
       average_temperature: form.average_temperature ? Number(form.average_temperature) : 25,
       grazing: form.grazing,
       distance: form.grazing && form.distance_walked ? Number(form.distance_walked) : 0,
