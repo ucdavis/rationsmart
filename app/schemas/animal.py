@@ -4,6 +4,11 @@ from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from core.z_optimization.constraints_config import (
+    UI_THRESHOLD_SPEC,
+    UI_THRESHOLD_UNIT_LABELS,
+)
+
 
 # ── Basic animal characteristics (legacy endpoint) ───────────────────────────
 
@@ -163,21 +168,67 @@ class FeedWithPrice(BaseModel):
 
 # ── Diet thresholds ──────────────────────────────────────────────────────────
 
+# Purpose: Range-check one user-supplied threshold and convert it to engine units.
+# Notes: Conversion is driven by the key's unit, never applied uniformly -- see
+#        UI_THRESHOLD_SPEC for why nel_balance_max/mp_balance_max must not be scaled.
+def _normalise_threshold(key: str, value: Any) -> Optional[float]:
+    if value is None:
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        raise ValueError(f"{key} must be a number")
+
+    spec = UI_THRESHOLD_SPEC[key]
+    low, high = spec["min"], spec["max"]
+    if not low <= numeric <= high:
+        unit = UI_THRESHOLD_UNIT_LABELS[spec["unit"]]
+        raise ValueError(f"{key} must be between {low:g} and {high:g} {unit}")
+
+    if spec["unit"] == "pct_dm":
+        return round(numeric / 100.0, 4)
+    return round(numeric, 4)
+
+
 class BaseThresholds(BaseModel):
-    ndf_max: Optional[float] = Field(None, description="Max Fiber % diet DM")
-    starch_max: Optional[float] = Field(None, description="Max Starch % diet DM")
-    ee_max: Optional[float] = Field(None, description="Max Fat % diet DM")
-    ash_max: Optional[float] = Field(None, description="Max Ash % diet DM")
+    """Caller overrides for the diet-wide nutrient limits.
+
+    Values arrive as PERCENTAGES of dietary DM (15 means 15%) and are stored as the
+    fractions the optimizer expects, because compute_adequacy compares
+    `threshold * dmi_supply` against the diet total. Sending 15 unconverted would
+    produce a 15 x DMI limit -- roughly 100x too loose, which silently disables the
+    constraint rather than tightening it.
+
+    An omitted field is not the same as a zero. Omitted means "keep the profile
+    default for this animal's physiological state"; zero is rejected, because a zero
+    limit makes compute_adequacy raise, which _evaluate swallows into a 1e6 penalty
+    for every individual -- the solve degenerates and returns an arbitrary diet.
+    """
+
+    ndf_max: Optional[float] = Field(
+        None, description="Max total fibre (NDF), % of diet DM (e.g. 60 for 60%)")
+    starch_max: Optional[float] = Field(
+        None, description="Max starch, % of diet DM (e.g. 26 for 26%)")
+    ee_max: Optional[float] = Field(
+        None, description="Max fat (ether extract), % of diet DM (e.g. 7 for 7%)")
+    ash_max: Optional[float] = Field(
+        None, description="Max ash, % of diet DM (e.g. 15 for 15%)")
 
     @field_validator('ndf_max', 'starch_max', 'ee_max', 'ash_max', mode='before')
     @classmethod
-    def round_floats(cls, v):
-        if v is None:
-            return None
-        return round(float(v), 2)
+    def normalise(cls, v, info):
+        return _normalise_threshold(info.field_name, v)
 
 
 # ── Diet recommendation ──────────────────────────────────────────────────────
+
+# Names that look like `base_thresholds` but are not. Pydantic ignores unknown keys, so
+# without this guard a body using one of them returned 200 with the engine defaults
+# silently applied and nothing in the response to say the limits had been dropped.
+# extra="forbid" is not usable here: callers legitimately send annotation keys such as
+# `_comment` and `_feed`.
+_THRESHOLD_FIELD_ALIASES = ("thresholds", "base_threshold", "custom_thresholds")
+
 
 class DietRecommendationRequest(BaseModel):
     simulation_id: str
@@ -186,6 +237,18 @@ class DietRecommendationRequest(BaseModel):
     cattle_info: CattleInfo
     feed_selection: List[FeedWithPrice] = Field(..., description="Feeds with prices")
     base_thresholds: Optional[BaseThresholds] = None
+
+    @model_validator(mode='before')
+    @classmethod
+    def reject_threshold_aliases(cls, data):
+        if isinstance(data, dict):
+            wrong = [k for k in _THRESHOLD_FIELD_ALIASES if k in data]
+            if wrong:
+                raise ValueError(
+                    f"unknown field(s): {', '.join(wrong)}. Nutrient limit overrides go in "
+                    f"'base_thresholds'"
+                )
+        return data
 
     @field_validator('user_id', mode='before')
     @classmethod

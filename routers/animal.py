@@ -251,10 +251,15 @@ async def diet_recommendation(
 
     **Mandatory body fields:**
     - `cattle_info` — animal details (breed, body weight, milk yield, lactation stage, parity).
-    - `feeds` — list of candidate feeds with local price per kg and optional inclusion constraints.
+    - `feed_selection` — candidate feeds with local price per kg and optional inclusion limits.
     - `country_id` — UUID of the country (determines unit and feed availability).
+    - `simulation_id`, `user_id` — identifiers for this run.
 
-    **Optional body fields:** `thresholds` — override default nutrient requirement thresholds.
+    **Optional body fields:** `base_thresholds` — override the diet-wide nutrient limits
+    (`ndf_max`, `starch_max`, `ee_max`, `ash_max`), each as a **percentage of dietary DM**
+    (e.g. `15` for 15%). These are whole-ration limits, not per-feed ones. Every field is
+    optional; an omitted field keeps the engine default for the animal's physiological state.
+    Currently applied only to a `Lactating Cow`. Out-of-range values return `422`.
 
     Returns ranked Pareto-front diet solutions with cost, nutrient balance, and feed breakdown.
     Returns `400` for invalid inputs (e.g. no feasible feed combination).
@@ -554,7 +559,9 @@ async def fetch_simulation_details(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Fetch the complete result data for a single simulation run, including diet solutions, nutrient breakdown, and cost analysis.
+    Fetch the stored **inputs** of a single simulation so they can be reloaded into the UI: the animal details, the feeds and prices it was run with, and any custom diet limits (`custom_constraints`).
+
+    This does **not** return the diet solution, nutrient breakdown or cost analysis — those come from the original recommendation response and the saved report.
 
     **Requires:** Bearer JWT.
 
