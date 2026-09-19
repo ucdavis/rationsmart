@@ -114,6 +114,57 @@ HEIFER_THRESHOLDS_OVERRIDE = {
     "mineral_max":            0.800,  # 2026-07-27: restored (same value as BASE)
 }
 
+# ===================================================================
+# User-editable threshold specification (API surface)
+# ===================================================================
+
+# The single definition of what a caller may send for each UI-exposed threshold.
+# Consumed by app.schemas.animal.BaseThresholds for validation and conversion, so the
+# form's range and the server's validation cannot drift apart.
+#
+# unit:
+#   "pct_dm"   proportion of total dietary DM. Entered as a percentage (15 means 15%)
+#              and divided by 100 before it reaches the engine, which compares
+#              `threshold * dmi_supply` against the diet total.
+#   "mcal_day" absolute daily energy surplus, in Mcal/day.
+#   "kg_day"   absolute daily mass, in kg/day.
+#
+# nel_balance_max and mp_balance_max are NOT proportions. compute_adequacy compares
+# them raw -- they are the only two limits in that block without a `* dmi_supply`,
+# because the values they bound are `nel_diet - An_NEL` and
+# `mp_ger - total_mp_requirement_kg`, which are already absolute. Dividing them by 100
+# would turn the 4.0 Mcal/day default into 0.04, which an ordinary 3 Mcal surplus
+# overshoots by 75x; both become hard constraints at hard_switch_gen, so every diet
+# would come back infeasible. Any percent conversion must therefore be driven off this
+# `unit` key and never applied field-by-field.
+#
+# min/max are a PROVISIONAL safety envelope, not nutritional guidance. The maxima match
+# the ceilings the web dialog already offers, so no input the UI can currently produce
+# starts failing validation; the minima exist only to keep a zero or negative limit out
+# of the optimizer. A nutritionist sets the real values -- see
+# docs/defects/custom-diet-limits-implementation-plan.md (T9).
+UI_THRESHOLD_SPEC: Dict[str, Dict] = {
+    # Reachable over the API today
+    "ash_max":         {"unit": "pct_dm",   "min":  1.0, "max":  15.0},
+    "ee_max":          {"unit": "pct_dm",   "min":  1.0, "max":   7.0},
+    # ndf_for_min is 0.20, so an ndf_max below 20% contradicts the forage-NDF floor.
+    "ndf_max":         {"unit": "pct_dm",   "min": 20.0, "max": 100.0},
+    "starch_max":      {"unit": "pct_dm",   "min":  1.0, "max":  30.0},
+    # Defined now so the next change is purely additive; not yet accepted by the API.
+    "ndf_for_min":     {"unit": "pct_dm",   "min":  5.0, "max":  40.0},
+    "conc_max":        {"unit": "pct_dm",   "min": 10.0, "max":  90.0},
+    "nel_balance_max": {"unit": "mcal_day", "min":  0.5, "max":   8.0},
+    "mp_balance_max":  {"unit": "kg_day",   "min":  0.1, "max":   2.0},
+}
+
+# Human-readable unit suffix for validation messages.
+UI_THRESHOLD_UNIT_LABELS = {
+    "pct_dm": "% of diet DM",
+    "mcal_day": "Mcal/day",
+    "kg_day": "kg/day",
+}
+
+
 CONSTRAINT_ORDER = [
     "energy_req",
     "mp_req",
