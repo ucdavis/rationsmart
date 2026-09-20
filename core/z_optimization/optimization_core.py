@@ -98,8 +98,9 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
         profile = get_constraint_profile(animal_state, profiles=CONSTRAINT_PROFILES)
         thr = profile.get("thresholds", {}).copy()
         
-        # Apply custom thresholds only for Lactating Cow
-        if custom_thresholds and animal_state == "Lactating Cow":
+        # Caller overrides apply to every optimizer-eligible state. `profile` above is
+        # already resolved from animal_state, so the overlay lands on the right defaults.
+        if custom_thresholds:
             for key, val in custom_thresholds.items():
                 if key in thr:
                     thr[key] = val
@@ -457,8 +458,9 @@ class DietProblemCostOnly(Problem):
             # Create a shallow copy of thresholds to avoid modifying the global profile
             self.thr = self.profile.get("thresholds", {}).copy()
             
-            # Apply custom thresholds only for Lactating Cow if provided
-            if custom_thresholds and self.An_StatePhys == "Lactating Cow":
+            # Caller overrides apply to every optimizer-eligible state. self.profile is
+            # resolved from self.An_StatePhys, so the overlay lands on the right defaults.
+            if custom_thresholds:
                 for key, val in custom_thresholds.items():
                     if key in self.thr:
                         self.thr[key] = val
@@ -718,15 +720,31 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
             f"enforced as hard."
         )
 
-    # Prepare custom thresholds if provided and animal is Lactating Cow for precheck
+    # Overlay the caller's thresholds for the pre-check, so it judges feasibility against
+    # exactly what the solver will enforce.
+    #
+    # The base profile MUST come from the request's own state. It was previously hardcoded
+    # to "Lactating Cow", which was harmless only because the overlay was also gated to
+    # that state. With the gate lifted, a hardcoded lookup would have the pre-check judge a
+    # Dry Cow against lactating limits: overriding only ash_max, five of six thresholds
+    # would diverge from the solver (ndf_max .60 vs .90, starch .26 vs .18, ee .07 vs .05,
+    # conc .80 vs .50, nel_balance 4.0 vs 1.5).
     effective_thr = None
-    if custom_thresholds and animal_requirements.get("An_StatePhys") == "Lactating Cow":
-        from core.z_optimization.constraints_config import get_constraint_profile, CONSTRAINT_PROFILES
-        base_thr = get_constraint_profile("Lactating Cow", profiles=CONSTRAINT_PROFILES).get("thresholds", {})
-        effective_thr = base_thr.copy()
-        for k, v in custom_thresholds.items():
-            if k in effective_thr:
-                effective_thr[k] = v
+    if custom_thresholds:
+        state_phys = animal_requirements.get("An_StatePhys")
+        try:
+            base_thr = get_constraint_profile(state_phys, profiles=CONSTRAINT_PROFILES).get("thresholds", {})
+        except KeyError:
+            # No profile for this state (Baby Calf/Heifer). The API rejects thresholds for
+            # it, so this is only reachable from a direct engine call. Leave effective_thr
+            # as None and let feasibility_precheck resolve and report it through its own
+            # structured config error rather than raising out of here.
+            base_thr = None
+        if base_thr:
+            effective_thr = base_thr.copy()
+            for k, v in custom_thresholds.items():
+                if k in effective_thr:
+                    effective_thr[k] = v
 
     # Pre-optimization feasibility check (delegate threshold lookup to the precheck helper)
     precheck_raw = feasibility_precheck(

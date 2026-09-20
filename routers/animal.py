@@ -11,8 +11,17 @@ from app.db.models import FeedAnalytics, UserInformationModel
 from app.schemas.animal import (
     DietEvaluationRequest,
     DietRecommendationRequest,
+    DietThresholdsResponse,
     FeedAnalyticsCreate,
     FeedAnalyticsResponse,
+    normalise_physiological_state,
+)
+from core.z_optimization.constraints_config import (
+    UI_THRESHOLD_SPEC,
+    get_constraint_profile,
+    to_wire_units,
+    ui_threshold_bounds,
+    ui_threshold_enforcement,
 )
 from app.schemas.report import (
     FetchAllSimulationsResponse,
@@ -233,6 +242,65 @@ async def get_feed(
 
 # ── Diet recommendation & evaluation ─────────────────────────────────────────
 
+@router.get("/diet-thresholds", response_model=DietThresholdsResponse,
+            summary="Discover the editable diet limits for a physiological state")
+async def diet_thresholds(
+    physiological_state: str,
+    current_user: UserInformationModel = Depends(get_current_user),
+):
+    """
+    List the nutrient limits a client may override in `base_thresholds`, with each one's
+    default, accepted range, unit and how strictly the optimizer enforces it.
+
+    **Requires:** Bearer JWT.
+
+    **Query parameter:** `physiological_state` — `Lactating Cow`, `Dry Cow` or `Heifer`
+    (aliases such as `lactating` and `dry` are accepted).
+
+    Bind the form to this response rather than hardcoding ranges: the limits differ per
+    physiological state, and they are retuned from time to time.
+
+    - `unit` — `pct_dm` values are percentages of dietary DM; `mcal_day` and `kg_day` are
+      **absolute daily amounts** and must be sent unscaled.
+    - Limits may only be **tightened**, never loosened. For a ceiling (`direction: "max"`)
+      that means `max` equals the animal's own default; for a floor (`direction: "min"`,
+      i.e. `ndf_for_min`) it is `min` that equals the default, because tightening a floor
+      raises it.
+    - `enforcement` — tightening a `hard` limit can return no diet at all (`INFEASIBLE`).
+
+    Returns `422` for an unknown state, or for `Baby Calf/Heifer`, which is answered with a
+    milk-feeding schedule rather than a formulated ration and so has no limits to edit.
+    """
+    try:
+        state = normalise_physiological_state(physiological_state)
+        profile = get_constraint_profile(state)
+    except (ValueError, KeyError):
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=("physiological_state must be one of: Lactating Cow, Dry Cow, Heifer. "
+                    "Baby Calf/Heifer is fed a milk schedule and has no editable diet limits."),
+        )
+
+    defaults = profile["thresholds"]
+
+    def _spec(key, spec):
+        low, high = ui_threshold_bounds(key, state)
+        return {
+            "key": key,
+            "default": to_wire_units(key, defaults[key]),
+            "min": low,
+            "max": high,
+            "unit": spec["unit"],
+            "direction": spec["direction"],
+            "enforcement": ui_threshold_enforcement(key, state),
+        }
+
+    return DietThresholdsResponse(
+        physiological_state=state,
+        thresholds=[_spec(key, spec) for key, spec in UI_THRESHOLD_SPEC.items()],
+    )
+
+
 @router.post("/diet-recommendation", summary="Run NSGA-III optimization for a least-cost cattle diet")
 @limiter.limit("30/minute")
 async def diet_recommendation(
@@ -255,11 +323,22 @@ async def diet_recommendation(
     - `country_id` — UUID of the country (determines unit and feed availability).
     - `simulation_id`, `user_id` — identifiers for this run.
 
-    **Optional body fields:** `base_thresholds` — override the diet-wide nutrient limits
-    (`ndf_max`, `starch_max`, `ee_max`, `ash_max`), each as a **percentage of dietary DM**
-    (e.g. `15` for 15%). These are whole-ration limits, not per-feed ones. Every field is
-    optional; an omitted field keeps the engine default for the animal's physiological state.
-    Currently applied only to a `Lactating Cow`. Out-of-range values return `422`.
+    **Optional body fields:** `base_thresholds` — override the diet-wide nutrient limits.
+    These are whole-ration limits, not per-feed ones, and apply to `Lactating Cow`,
+    `Dry Cow` and `Heifer` alike. Every field is optional; an omitted field keeps the
+    engine default for that animal's physiological state.
+
+    Eight limits are accepted. Six are **percentages of dietary DM** (`ndf_max`,
+    `starch_max`, `ee_max`, `ash_max`, `conc_max`, `ndf_for_min` — e.g. `15` for 15%), and
+    two are **absolute daily amounts**: `nel_balance_max` in **Mcal/day** and
+    `mp_balance_max` in **kg/day**. Do not scale the last two.
+
+    Limits may only be **tightened**, never loosened past the animal's own default, and the
+    accepted range therefore differs per physiological state. Call
+    `GET /v1/animal/diet-thresholds` for the exact range, default and unit rather than
+    hardcoding them. Out-of-range values return `422`; so does any value sent for a
+    `Baby Calf/Heifer`, which is answered with a milk-feeding schedule and has no ration to
+    constrain.
 
     Returns ranked Pareto-front diet solutions with cost, nutrient balance, and feed breakdown.
     Returns `400` for invalid inputs (e.g. no feasible feed combination).

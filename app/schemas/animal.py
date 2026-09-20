@@ -5,9 +5,36 @@ from typing import Annotated, Any, Dict, List, Optional, Union
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from core.z_optimization.constraints_config import (
+    CONSTRAINT_PROFILES,
     UI_THRESHOLD_SPEC,
     UI_THRESHOLD_UNIT_LABELS,
+    to_engine_units,
+    to_wire_units,
+    ui_threshold_bounds,
+    ui_threshold_widest_bounds,
 )
+
+
+# Canonical physiological states plus the aliases callers are allowed to use. Shared by
+# CattleInfo and by GET /v1/animal/diet-thresholds so the two accept the same spellings.
+PHYSIOLOGICAL_STATE_ALIASES = {
+    "lactating cow": "Lactating Cow", "lactating": "Lactating Cow",
+    "dry cow": "Dry Cow", "dry": "Dry Cow",
+    "heifer": "Heifer",
+    "baby calf/heifer": "Baby Calf/Heifer", "baby calf": "Baby Calf/Heifer",
+    "calf": "Baby Calf/Heifer",
+}
+
+
+# Purpose: Map a caller-supplied physiological state onto its canonical spelling.
+# Notes: Raises ValueError naming the four valid categories.
+def normalise_physiological_state(value: Any) -> str:
+    canonical = PHYSIOLOGICAL_STATE_ALIASES.get(str(value).strip().lower())
+    if canonical is None:
+        raise ValueError(
+            "physiological_state must be one of: Lactating Cow, Dry Cow, Heifer, Baby Calf/Heifer"
+        )
+    return canonical
 
 
 # ── Basic animal characteristics (legacy endpoint) ───────────────────────────
@@ -77,19 +104,7 @@ class CattleInfo(BaseModel):
         Accepts the canonical names case-insensitively plus common aliases
         (e.g. "lactating", "dry", "calf"); raises ValueError on anything else.
         """
-        aliases = {
-            "lactating cow": "Lactating Cow", "lactating": "Lactating Cow",
-            "dry cow": "Dry Cow", "dry": "Dry Cow",
-            "heifer": "Heifer",
-            "baby calf/heifer": "Baby Calf/Heifer", "baby calf": "Baby Calf/Heifer",
-            "calf": "Baby Calf/Heifer",
-        }
-        key = str(v).strip().lower()
-        if key not in aliases:
-            raise ValueError(
-                "physiological_state must be one of: Lactating Cow, Dry Cow, Heifer, Baby Calf/Heifer"
-            )
-        return aliases[key]
+        return normalise_physiological_state(v)
 
     @model_validator(mode='after')
     def _require_lactation_fields(self):
@@ -186,15 +201,15 @@ def _normalise_threshold(key: str, value: Any) -> Optional[float]:
     except (TypeError, ValueError):
         raise ValueError(f"{key} must be a number")
 
-    spec = UI_THRESHOLD_SPEC[key]
-    low, high = spec["min"], spec["max"]
+    # State-independent sanity bound: the widest range in use across every state.
+    # BaseThresholds is nested and cannot see cattle_info, so the real per-animal bound
+    # is applied by DietRecommendationRequest.enforce_state_bounds once the state is known.
+    low, high = ui_threshold_widest_bounds(key)
     if not low <= numeric <= high:
-        unit = UI_THRESHOLD_UNIT_LABELS[spec["unit"]]
+        unit = UI_THRESHOLD_UNIT_LABELS[UI_THRESHOLD_SPEC[key]["unit"]]
         raise ValueError(f"{key} must be between {low:g} and {high:g} {unit}")
 
-    if spec["unit"] == "pct_dm":
-        return round(numeric / 100.0, 4)
-    return round(numeric, 4)
+    return to_engine_units(key, numeric)
 
 
 class BaseThresholds(BaseModel):
@@ -220,6 +235,14 @@ class BaseThresholds(BaseModel):
         None, description="Max fat (ether extract), % of diet DM (e.g. 7 for 7%)")
     ash_max: Optional[float] = Field(
         None, description="Max ash, % of diet DM (e.g. 15 for 15%)")
+    ndf_for_min: Optional[float] = Field(
+        None, description="MINIMUM forage fibre (NDF from forage), % of diet DM (e.g. 20 for 20%)")
+    conc_max: Optional[float] = Field(
+        None, description="Max total concentrates, % of diet DM (e.g. 80 for 80%)")
+    nel_balance_max: Optional[float] = Field(
+        None, description="Max energy surplus over requirement, **Mcal/day** (e.g. 4.0) - not a percentage")
+    mp_balance_max: Optional[float] = Field(
+        None, description="Max metabolizable-protein surplus over requirement, **kg/day** (e.g. 1.0) - not a percentage")
 
     # A misspelled limit (`ash_maks`) would otherwise be dropped by Pydantic's default
     # `ignore`, and the diet would be solved against the default cap with nothing in the
@@ -229,11 +252,53 @@ class BaseThresholds(BaseModel):
     # base_thresholds.
     model_config = ConfigDict(extra="forbid")
 
-    @field_validator('ndf_max', 'starch_max', 'ee_max', 'ash_max', mode='before')
+    @field_validator(*UI_THRESHOLD_SPEC, mode='before')
     @classmethod
     def normalise(cls, v, info):
         """Convert each supplied limit from its wire unit to the engine's."""
         return _normalise_threshold(info.field_name, v)
+
+    @model_validator(mode='after')
+    def forage_fibre_floor_below_total_fibre(self):
+        """A forage-NDF minimum above the total-NDF maximum is unsatisfiable.
+
+        Reachable: ndf_for_min may be raised as far as ndf_max's *default* while ndf_max
+        itself may be lowered to its floor, so a caller can ask for more forage fibre than
+        total fibre. The result would be a diet that cannot exist.
+        """
+        if self.ndf_for_min is not None and self.ndf_max is not None:
+            if self.ndf_for_min > self.ndf_max:
+                raise ValueError(
+                    "ndf_for_min (minimum forage fibre) cannot exceed ndf_max "
+                    "(maximum total fibre)"
+                )
+        return self
+
+
+# ── Diet threshold discovery (GET /v1/animal/diet-thresholds) ────────────────
+
+class DietThresholdSpec(BaseModel):
+    """One user-editable limit, described well enough for a client to render it."""
+
+    key: str = Field(..., description="Field name to send inside `base_thresholds`")
+    default: float = Field(..., description="Engine default for this animal, in `unit`")
+    min: float = Field(
+        ..., description="Smallest accepted value; equals `default` when `direction` is 'min'")
+    max: float = Field(
+        ..., description="Largest accepted value; equals `default` when `direction` is 'max'")
+    unit: str = Field(..., description="pct_dm (% of diet DM) | mcal_day | kg_day")
+    direction: str = Field(..., description="'max' for a ceiling, 'min' for a floor")
+    enforcement: str = Field(
+        ...,
+        description=("hard = tightening may return no diet (INFEASIBLE); "
+                     "soft = only penalised in the cost objective; "
+                     "hard_after_switch = soft early in the solve, enforced as hard at the end"),
+    )
+
+
+class DietThresholdsResponse(BaseModel):
+    physiological_state: str
+    thresholds: List[DietThresholdSpec]
 
 
 # ── Diet recommendation ──────────────────────────────────────────────────────
@@ -253,6 +318,70 @@ class DietRecommendationRequest(BaseModel):
     cattle_info: CattleInfo
     feed_selection: List[FeedWithPrice] = Field(..., description="Feeds with prices")
     base_thresholds: Optional[BaseThresholds] = None
+
+    @model_validator(mode='after')
+    def enforce_state_bounds(self):
+        """Hold each supplied limit to the TIGHTEN-ONLY bound for this animal's state.
+
+        `BaseThresholds` can only range-check against the widest range in use across every
+        state, because a nested model cannot see `cattle_info`. Here the state is known, so
+        each limit is held to that animal's own default -- a Heifer's ash ceiling is 13%
+        where a Lactating Cow's is 15%.
+
+        Direction matters: for a ceiling the default is the maximum, but for a floor such
+        as `ndf_for_min` it is the *minimum*, because tightening a floor raises it.
+        """
+        supplied = {} if self.base_thresholds is None else {
+            k: v for k, v in self.base_thresholds.model_dump().items() if v is not None
+        }
+        if not supplied:
+            # An absent or empty object overrides nothing, so there is nothing to check --
+            # and nothing to complain about, even for a calf.
+            return self
+
+        state = self.cattle_info.physiological_state
+        if state not in CONSTRAINT_PROFILES:
+            # Baby Calf/Heifer has no constraint profile by design -- it is answered with a
+            # milk-feeding schedule before the optimizer runs, so nutrient limits mean
+            # nothing for it. Say so rather than accepting values that would be dropped.
+            raise ValueError(
+                f"base_thresholds is not applicable to '{state}'; it is fed a milk "
+                f"schedule rather than a formulated ration"
+            )
+
+        for key, engine_value in supplied.items():
+            wire_value = to_wire_units(key, engine_value)
+            low, high = ui_threshold_bounds(key, state)
+            if low <= wire_value <= high:
+                continue
+            # Each end means something different, so name it accurately: only the
+            # tighten-only end is this key's own default. Branch on direction explicitly --
+            # `ceiling_key` exists only on floors, and a condensed form here was misread in
+            # review as reaching it for a ceiling.
+            spec = UI_THRESHOLD_SPEC[key]
+            unit = UI_THRESHOLD_UNIT_LABELS[spec["unit"]]
+            tighten_only = "custom limits may only tighten a limit, not loosen it"
+
+            if spec["direction"] == "min":
+                # A floor. Its own default is the minimum; the most it can be is the
+                # ceiling_key default, which it cannot physically exceed.
+                if wire_value < low:
+                    why = f"its default for a {state}; {tighten_only}"
+                    bound, word = low, "at least"
+                else:
+                    why = f"the {spec['ceiling_key']} default for a {state}, which it cannot exceed"
+                    bound, word = high, "at most"
+            else:
+                # A ceiling. Its own default is the maximum; the floor is a fixed safety
+                # guard, identical for every state and already applied by BaseThresholds.
+                if wire_value > high:
+                    why = f"its default for a {state}; {tighten_only}"
+                    bound, word = high, "at most"
+                else:
+                    why = "the lowest value the optimizer can work with"
+                    bound, word = low, "at least"
+            raise ValueError(f"{key} must be {word} {bound:g} {unit} - {why}")
+        return self
 
     @model_validator(mode='before')
     @classmethod
