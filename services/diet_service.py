@@ -204,8 +204,14 @@ async def search_feeds(
 
     q_lower = query.strip().lower()
 
-    def _rank(name: str, is_custom: bool) -> tuple:
-        return (0 if is_custom else 1, 0 if name.lower().startswith(q_lower) else 1, name.lower())
+    def _rank(result: Dict[str, Any]) -> tuple:
+        # Rank on whichever searched name actually matched. The repository matches the
+        # English fd_name as well as the translated one, so scoring only the localized
+        # display_name sent an exact English prefix match below mid-string matches —
+        # for localized users, i.e. the ones this feature exists for.
+        names = (result["feed_name"], result["feed_name_en"])
+        is_prefix = any(n and n.lower().startswith(q_lower) for n in names)
+        return (0 if result["is_custom"] else 1, 0 if is_prefix else 1, result["feed_name"].lower())
 
     results = []
     for f in custom_feeds:
@@ -230,7 +236,7 @@ async def search_feeds(
             "is_custom": False,
         })
 
-    results.sort(key=lambda r: _rank(r["feed_name"], r["is_custom"]))
+    results.sort(key=_rank)
     return results[:limit], total_count
 
 
