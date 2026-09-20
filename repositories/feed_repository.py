@@ -1,7 +1,7 @@
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, case, false, func, or_, select, union
+from sqlalchemy import and_, case, false, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
@@ -14,6 +14,26 @@ from app.db.models import (
     FeedTranslation,
     VocabularyTranslation,
 )
+
+
+# Backslash, so it needs doubling in the Python literal and again for SQL's LIKE.
+_LIKE_ESCAPE = "\\"
+
+
+def _escape_like(term: str) -> str:
+    """Neutralise LIKE metacharacters in user input.
+
+    `%` and `_` are wildcards to ILIKE but literal characters to the Python-side
+    ranking in diet_service.search_feeds. Unescaped, a query such as "50%" or "a_b"
+    would make SQL match more feeds than the user asked for while _rank scored the
+    same string literally — the two halves of the search disagreeing about what was
+    typed. Escape the escape character first, or it doubles the others.
+    """
+    return (
+        term.replace(_LIKE_ESCAPE, _LIKE_ESCAPE * 2)
+        .replace("%", _LIKE_ESCAPE + "%")
+        .replace("_", _LIKE_ESCAPE + "_")
+    )
 
 
 def _uuid_or_none(value: Any) -> Optional[uuid.UUID]:
@@ -300,7 +320,8 @@ class FeedRepository:
         std_rows: Row(Feed, display_name, display_type, display_category)
         custom_feeds: List[CustomFeed] (custom feeds are not translated — I5/out-of-scope)
         """
-        pattern = f"%{query}%"
+        escaped = _escape_like(query)
+        pattern = f"%{escaped}%"
 
         def _name_matches(pat: str):
             """True when either searched name matches `pat`.
@@ -319,12 +340,12 @@ class FeedRepository:
             re-spring the same trap.
             """
             return or_(
-                Feed.fd_name.ilike(pat),
+                Feed.fd_name.ilike(pat, escape=_LIKE_ESCAPE),
                 select(FeedTranslation.id)
                 .where(
                     FeedTranslation.feed_id == Feed.id,
                     FeedTranslation.language == lang,
-                    FeedTranslation.name.ilike(pat),
+                    FeedTranslation.name.ilike(pat, escape=_LIKE_ESCAPE),
                 )
                 .exists(),
             )
@@ -341,11 +362,11 @@ class FeedRepository:
         # set has to be chosen by the same criterion the caller ranks by, or a prefix match
         # that sorts late by fd_name is never fetched and cannot be promoted. Order prefix
         # matches first, then alphabetically, mirroring diet_service.search_feeds._rank.
-        prefix_first = case((_name_matches(f"{query}%"), 0), else_=1)
+        prefix_first = case((_name_matches(f"{escaped}%"), 0), else_=1)
         cq = select(CustomFeed).where(
             CustomFeed.fd_country_id == country_id,
             CustomFeed.user_id == uuid.UUID(str(user_id)),
-            CustomFeed.fd_name.ilike(pattern),
+            CustomFeed.fd_name.ilike(pattern, escape=_LIKE_ESCAPE),
         )
 
         std_count = (await self.db.execute(select(func.count()).select_from(sq.subquery()))).scalar_one()
