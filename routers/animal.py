@@ -98,7 +98,19 @@ async def search_feeds(
 
     Results are ranked: custom feeds first, then prefix matches before mid-string matches, then alphabetical.
     Queries shorter than 2 characters return `{feeds: [], total_count: 0}` with no DB hit.
-    feed_name/feed_type/feed_category are localized when `?lang=` or preferred_language is set.
+
+    **What is searched:** the feed's English name, plus its translated name in the language
+    this request resolved to — and nothing else. A term in a *third* language does not match,
+    so a user whose profile is Hindi but who has selected English for this simulation will not
+    match Hindi names. English is always searched because it is mandatory on every feed, while
+    a translated name is optional; searching it unconditionally keeps coverage complete.
+
+    `feed_name`/`feed_type`/`feed_category` are localized when `?lang=` or preferred_language
+    is set. `feed_name_en` is always present and carries the untranslated source name — equal
+    to `feed_name` when the request is in English. Use it to show why a result matched when
+    the match came from the English name but the display is localized, e.g.
+    `मक्का का पौधा (Corn plant)`. For a custom feed it is whatever the user typed, which is
+    not necessarily English, since custom feeds are never translated.
     """
     clamped_limit = min(max(limit, 1), 100)
     feeds, total_count = await diet_service.search_feeds(

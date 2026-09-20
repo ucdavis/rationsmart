@@ -186,7 +186,9 @@ async def search_feeds(
     Returns (feed_list, total_count).
     Short queries (< 2 chars) return ([], 0) with no DB hit.
     Ranking: custom feeds first, then prefix matches, then alphabetical.
-    feed_name / feed_type / feed_category are the localized display values (I2).
+    feed_name / feed_type / feed_category are the localized display values (I2);
+    feed_name_en carries the untranslated source name so a caller can show why a
+    result matched when the match came from English but the display is localized.
     """
     if len(query.strip()) < 2:
         return [], 0
@@ -210,6 +212,8 @@ async def search_feeds(
         results.append({
             "feed_uuid": str(f.id),
             "feed_name": f.fd_name,
+            # Custom feeds are never translated (I5), so the source name is the only name.
+            "feed_name_en": f.fd_name,
             "feed_type": f.fd_type or "",
             "feed_category": f.fd_category or "",
             "fd_code": getattr(f, "fd_code", None),
@@ -219,6 +223,7 @@ async def search_feeds(
         results.append({
             "feed_uuid": str(row.Feed.id),
             "feed_name": row.display_name,
+            "feed_name_en": row.Feed.fd_name,
             "feed_type": row.display_type or "",
             "feed_category": row.display_category or "",
             "fd_code": row.Feed.fd_code,
