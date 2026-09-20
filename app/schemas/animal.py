@@ -168,10 +168,17 @@ class FeedWithPrice(BaseModel):
 
 # ── Diet thresholds ──────────────────────────────────────────────────────────
 
-# Purpose: Range-check one user-supplied threshold and convert it to engine units.
-# Notes: Conversion is driven by the key's unit, never applied uniformly -- see
-#        UI_THRESHOLD_SPEC for why nel_balance_max/mp_balance_max must not be scaled.
 def _normalise_threshold(key: str, value: Any) -> Optional[float]:
+    """Range-check one user-supplied threshold and convert it to engine units.
+
+    The conversion is driven by the key's `unit` in UI_THRESHOLD_SPEC and is never
+    applied uniformly: `pct_dm` values are divided by 100, while `mcal_day` and
+    `kg_day` values are absolute and pass through. See UI_THRESHOLD_SPEC for why
+    scaling nel_balance_max/mp_balance_max would make every diet infeasible.
+
+    Returns None for an omitted field, which leaves the engine's profile default in
+    place. Raises ValueError for a non-number or an out-of-range value.
+    """
     if value is None:
         return None
     try:
@@ -214,9 +221,18 @@ class BaseThresholds(BaseModel):
     ash_max: Optional[float] = Field(
         None, description="Max ash, % of diet DM (e.g. 15 for 15%)")
 
+    # A misspelled limit (`ash_maks`) would otherwise be dropped by Pydantic's default
+    # `ignore`, and the diet would be solved against the default cap with nothing in the
+    # response to say so -- the same silent failure as the `thresholds` alias below.
+    # Forbidding extras is safe *here* and not on the enclosing models: callers send
+    # annotation keys such as `_comment` and `_feed` at those levels, but never inside
+    # base_thresholds.
+    model_config = ConfigDict(extra="forbid")
+
     @field_validator('ndf_max', 'starch_max', 'ee_max', 'ash_max', mode='before')
     @classmethod
     def normalise(cls, v, info):
+        """Convert each supplied limit from its wire unit to the engine's."""
         return _normalise_threshold(info.field_name, v)
 
 
@@ -241,6 +257,7 @@ class DietRecommendationRequest(BaseModel):
     @model_validator(mode='before')
     @classmethod
     def reject_threshold_aliases(cls, data):
+        """Fail on a misnamed thresholds key rather than silently ignoring it."""
         if isinstance(data, dict):
             wrong = [k for k in _THRESHOLD_FIELD_ALIASES if k in data]
             if wrong:
