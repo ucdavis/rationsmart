@@ -354,24 +354,32 @@ class DietRecommendationRequest(BaseModel):
             low, high = ui_threshold_bounds(key, state)
             if low <= wire_value <= high:
                 continue
+            # Each end means something different, so name it accurately: only the
+            # tighten-only end is this key's own default. Branch on direction explicitly --
+            # `ceiling_key` exists only on floors, and a condensed form here was misread in
+            # review as reaching it for a ceiling.
             spec = UI_THRESHOLD_SPEC[key]
             unit = UI_THRESHOLD_UNIT_LABELS[spec["unit"]]
-            below = wire_value < low
-            bound, word = (low, "at least") if below else (high, "at most")
+            tighten_only = "custom limits may only tighten a limit, not loosen it"
 
-            # Each end means something different, so name it accurately. Only the
-            # tighten-only end is this key's own default: for a ceiling that is the top,
-            # for a floor the bottom. The opposite end is either the fixed safety floor or,
-            # for ndf_for_min, the limit it cannot physically exceed.
-            if below == (spec["direction"] == "min"):
-                why = (f"its default for a {state}; custom limits may only tighten a "
-                       f"limit, not loosen it")
-            elif below:
-                # Defensive: a ceiling below its safety floor is already rejected by
-                # BaseThresholds, whose floor is the same for every state.
-                why = "the lowest value the optimizer can work with"
+            if spec["direction"] == "min":
+                # A floor. Its own default is the minimum; the most it can be is the
+                # ceiling_key default, which it cannot physically exceed.
+                if wire_value < low:
+                    why = f"its default for a {state}; {tighten_only}"
+                    bound, word = low, "at least"
+                else:
+                    why = f"the {spec['ceiling_key']} default for a {state}, which it cannot exceed"
+                    bound, word = high, "at most"
             else:
-                why = f"the {spec['ceiling_key']} default for a {state}, which it cannot exceed"
+                # A ceiling. Its own default is the maximum; the floor is a fixed safety
+                # guard, identical for every state and already applied by BaseThresholds.
+                if wire_value > high:
+                    why = f"its default for a {state}; {tighten_only}"
+                    bound, word = high, "at most"
+                else:
+                    why = "the lowest value the optimizer can work with"
+                    bound, word = low, "at least"
             raise ValueError(f"{key} must be {word} {bound:g} {unit} - {why}")
         return self
 
