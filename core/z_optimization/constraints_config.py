@@ -119,8 +119,9 @@ HEIFER_THRESHOLDS_OVERRIDE = {
 # ===================================================================
 
 # The single definition of what a caller may send for each UI-exposed threshold.
-# Consumed by app.schemas.animal.BaseThresholds for validation and conversion, so the
-# form's range and the server's validation cannot drift apart.
+# Consumed by app.schemas.animal for validation and unit conversion, and served by
+# GET /v1/animal/diet-thresholds, so the form's range and the server's validation
+# cannot drift apart.
 #
 # unit:
 #   "pct_dm"   proportion of total dietary DM. Entered as a percentage (15 means 15%)
@@ -135,26 +136,33 @@ HEIFER_THRESHOLDS_OVERRIDE = {
 # `mp_ger - total_mp_requirement_kg`, which are already absolute. Dividing them by 100
 # would turn the 4.0 Mcal/day default into 0.04, which an ordinary 3 Mcal surplus
 # overshoots by 75x; both become hard constraints at hard_switch_gen, so every diet
-# would come back infeasible. Any percent conversion must therefore be driven off this
-# `unit` key and never applied field-by-field.
+# would come back infeasible. Any percent conversion must be driven off `unit` and
+# never applied field-by-field.
 #
-# min/max are a PROVISIONAL safety envelope, not nutritional guidance. The maxima match
-# the ceilings the web dialog already offers, so no input the UI can currently produce
-# starts failing validation; the minima exist only to keep a zero or negative limit out
-# of the optimizer. A nutritionist sets the real values -- see
-# docs/defects/custom-diet-limits-implementation-plan.md (T9).
+# direction decides which way "tighten" runs, and the two are NOT symmetric:
+#   "max" (a ceiling): tightening LOWERS it.  Range = [floor, that state's default].
+#                      `floor` exists only to keep a zero or negative limit out of the
+#                      optimizer -- a zero target makes compute_adequacy raise, which
+#                      _evaluate swallows into a 1e6 penalty for every individual.
+#   "min" (a floor):   tightening RAISES it.  Range = [that state's default, the default
+#                      of `ceiling_key`]. Applying the "max" rule to a floor inverts it:
+#                      it would permit ndf_for_min 20% -> 5%, weakening a hard forage-fibre
+#                      constraint fourfold, while rejecting a genuine tightening.
+#
+# In both cases the bound that does the real work is DERIVED from the animal's own
+# default, never stored here -- storing it would duplicate a number that already exists
+# in the profiles and let the two drift.
 UI_THRESHOLD_SPEC: Dict[str, Dict] = {
-    # Reachable over the API today
-    "ash_max":         {"unit": "pct_dm",   "min":  1.0, "max":  15.0},
-    "ee_max":          {"unit": "pct_dm",   "min":  1.0, "max":   7.0},
-    # ndf_for_min is 0.20, so an ndf_max below 20% contradicts the forage-NDF floor.
-    "ndf_max":         {"unit": "pct_dm",   "min": 20.0, "max": 100.0},
-    "starch_max":      {"unit": "pct_dm",   "min":  1.0, "max":  30.0},
-    # Defined now so the next change is purely additive; not yet accepted by the API.
-    "ndf_for_min":     {"unit": "pct_dm",   "min":  5.0, "max":  40.0},
-    "conc_max":        {"unit": "pct_dm",   "min": 10.0, "max":  90.0},
-    "nel_balance_max": {"unit": "mcal_day", "min":  0.5, "max":   8.0},
-    "mp_balance_max":  {"unit": "kg_day",   "min":  0.1, "max":   2.0},
+    "ash_max":         {"unit": "pct_dm",   "direction": "max", "floor":  1.0},
+    "ee_max":          {"unit": "pct_dm",   "direction": "max", "floor":  1.0},
+    "ndf_max":         {"unit": "pct_dm",   "direction": "max", "floor": 20.0},
+    "starch_max":      {"unit": "pct_dm",   "direction": "max", "floor":  1.0},
+    "conc_max":        {"unit": "pct_dm",   "direction": "max", "floor": 10.0},
+    "nel_balance_max": {"unit": "mcal_day", "direction": "max", "floor":  0.5},
+    "mp_balance_max":  {"unit": "kg_day",   "direction": "max", "floor":  0.1},
+    # The only floor in the set. Forage NDF is a subset of total NDF, so ndf_max is its
+    # natural ceiling -- physically derived rather than chosen.
+    "ndf_for_min":     {"unit": "pct_dm",   "direction": "min", "ceiling_key": "ndf_max"},
 }
 
 # Human-readable unit suffix for validation messages.
@@ -163,6 +171,52 @@ UI_THRESHOLD_UNIT_LABELS = {
     "mcal_day": "Mcal/day",
     "kg_day": "kg/day",
 }
+
+
+# Purpose: Convert an engine-side threshold value into the unit the API accepts.
+# Notes: Only pct_dm keys are scaled; absolute keys (Mcal/day, kg/day) pass through.
+def to_wire_units(key: str, engine_value: float) -> float:
+    return round(engine_value * 100.0, 4) if UI_THRESHOLD_SPEC[key]["unit"] == "pct_dm" else float(engine_value)
+
+
+# Purpose: Convert a caller-supplied threshold into the unit the engine expects.
+# Notes: Inverse of to_wire_units; same unit-driven rule.
+def to_engine_units(key: str, wire_value: float) -> float:
+    return round(wire_value / 100.0, 6) if UI_THRESHOLD_SPEC[key]["unit"] == "pct_dm" else float(wire_value)
+
+
+# Purpose: The (min, max) a caller may send for `key` and `state`, in wire units.
+# Notes: TIGHTEN-ONLY. For a ceiling the animal's default is the maximum; for a floor it
+#        is the minimum. Raises KeyError for a state with no profile (Baby Calf/Heifer).
+def ui_threshold_bounds(key: str, state: str, *, profiles: Dict[str, Dict] = None):
+    spec = UI_THRESHOLD_SPEC[key]
+    thresholds = get_constraint_profile(state, profiles=profiles or CONSTRAINT_PROFILES)["thresholds"]
+    own_default = to_wire_units(key, thresholds[key])
+    if spec["direction"] == "min":
+        return own_default, to_wire_units(spec["ceiling_key"], thresholds[spec["ceiling_key"]])
+    return spec["floor"], own_default
+
+
+# Purpose: The widest (min, max) across every physiological state, in wire units.
+# Notes: A state-independent sanity bound for validators that cannot see the animal
+#        (BaseThresholds is a nested model with no access to cattle_info). The real,
+#        per-state bound is applied on the request model once the state is known.
+def ui_threshold_widest_bounds(key: str, *, profiles: Dict[str, Dict] = None):
+    profiles = profiles or CONSTRAINT_PROFILES
+    per_state = [ui_threshold_bounds(key, state, profiles=profiles) for state in profiles]
+    return min(lo for lo, _ in per_state), max(hi for _, hi in per_state)
+
+
+# Purpose: How strictly the optimizer treats a UI-exposed constraint.
+# Notes: "hard" enters pymoo's constraint vector and can make a run INFEASIBLE; "soft"
+#        only adds a cost penalty; the two balance limits start soft and are promoted to
+#        hard at hard_switch_gen, so they behave as hard in the final answer. Callers use
+#        this to warn that tightening a hard limit may return no diet at all.
+def ui_threshold_enforcement(key: str, state: str, *, profiles: Dict[str, Dict] = None) -> str:
+    if key in ("nel_balance_max", "mp_balance_max"):
+        return "hard_after_switch"
+    profile = get_constraint_profile(state, profiles=profiles or CONSTRAINT_PROFILES)
+    return "hard" if key in (profile.get("hard_constraints") or HARD_CONSTRAINTS) else "soft"
 
 
 CONSTRAINT_ORDER = [

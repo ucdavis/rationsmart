@@ -418,6 +418,7 @@ async def run_diet_recommendation(
     """
     import asyncio
 
+    from core.z_optimization.constraints_config import to_wire_units
     from core.z_optimization.nsga3_runner import z_optimization_main
     from core.z_optimization.reporting import build_diet_response
 
@@ -460,17 +461,25 @@ async def run_diet_recommendation(
     # default cannot leak in (see _neutralize_lactation_fields).
     _neutralize_lactation_fields(animal_inputs, cattle.physiological_state)
 
+    # Every field BaseThresholds exposes, minus the ones the caller left out. Values are
+    # already in engine units -- the schema converted them on the way in. Derived from
+    # model_dump() rather than listed by hand so a new limit cannot be added to the
+    # schema and silently dropped here.
     custom_thresholds = None
+    persisted_thresholds = None
     if request.base_thresholds:
-        t = request.base_thresholds
         custom_thresholds = {
-            k: v for k, v in {
-                "ndf_max": t.ndf_max,
-                "starch_max": t.starch_max,
-                "ee_max": t.ee_max,
-                "ash_max": t.ash_max,
-            }.items() if v is not None
-        }
+            k: v for k, v in request.base_thresholds.model_dump().items() if v is not None
+        } or None
+        # Persist what the CALLER sent, not what the engine ran. reports.custom_constraints
+        # is served by GET /simulations/{report_id}, which exists to reload a simulation
+        # back into the form -- so it has to be in the same units the form posts. Storing
+        # engine units made that payload un-resubmittable: 0.06 comes back for a 6% ash
+        # entry and then fails validation as below the 1% floor.
+        if custom_thresholds:
+            persisted_thresholds = {
+                k: to_wire_units(k, v) for k, v in custom_thresholds.items()
+            }
 
     # 3 — Run optimizer in process pool.
     # NOTE: bind with functools.partial so custom_thresholds reaches its real
@@ -566,7 +575,7 @@ async def run_diet_recommendation(
             {"feed_id": f["feed_id"], "price_per_kg": f["price_per_kg"]}
             for f in feed_data_list
         ],
-        custom_constraints=custom_thresholds,
+        custom_constraints=persisted_thresholds,
         json_result=response,
         report_html=report_html,
         save_report=False,
