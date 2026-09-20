@@ -301,13 +301,31 @@ class FeedRepository:
         custom_feeds: List[CustomFeed] (custom feeds are not translated — I5/out-of-scope)
         """
         pattern = f"%{query}%"
-        ft = aliased(FeedTranslation)
+
+        # Match the English fd_name plus this request's translated name, and nothing else.
+        #
+        # The translated half MUST be a correlated EXISTS, not a reference to the alias
+        # _localized_feed_select joins internally: that alias is local to it, so naming a
+        # fresh aliased(FeedTranslation) here produced an unjoined FROM entry — a cartesian
+        # product that returned one feed once per row of feed_translations, and inflated
+        # total_count with it. EXISTS also keeps this predicate independent of how the base
+        # SELECT happens to build its joins, so adding a search field later cannot re-spring
+        # the same trap.
+        translated_match = (
+            select(FeedTranslation.id)
+            .where(
+                FeedTranslation.feed_id == Feed.id,
+                FeedTranslation.language == lang,
+                FeedTranslation.name.ilike(pattern),
+            )
+            .exists()
+        )
 
         sq = (
             self._localized_feed_select(lang)
             .where(
                 Feed.fd_country_id == country_id,
-                or_(Feed.fd_name.ilike(pattern), ft.name.ilike(pattern)),
+                or_(Feed.fd_name.ilike(pattern), translated_match),
             )
         )
         cq = select(CustomFeed).where(
