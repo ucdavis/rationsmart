@@ -739,3 +739,31 @@ describe("Report — Diet Limit Notes (top-level warnings)", () => {
     expect(screen.queryByText("Diet Limit Notes")).not.toBeInTheDocument();
   });
 });
+
+// ─── Methane Intensity is lactation-only (QA row 12) ───────────────────────
+// Intensity is g CH4 per kg of ENERGY-CORRECTED MILK. A dry cow, heifer or
+// calf produces none, so the figure is meaningless for them. Per the backend
+// owner: the engine still calculates it, it just must not be displayed.
+// Production / yield / Ym are per-day or per-kg-DMI and stay visible.
+describe("Report — Methane Intensity is shown only for a Lactating Cow", () => {
+  it("shows it for a Lactating Cow", () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ animal_category: "Lactating Cow" }),
+      reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Methane Intensity")).toBeInTheDocument();
+  });
+
+  it.each(["Dry Cow", "Heifer", "Baby Calf/Heifer"] as const)("hides it for %s", (category) => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ animal_category: category }),
+      reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
+    });
+    render(<ReportPage />);
+    expect(screen.queryByText("Methane Intensity")).not.toBeInTheDocument();
+    // The other three methane metrics are not milk-relative, so they stay.
+    expect(screen.getByText("Methane Production")).toBeInTheDocument();
+    expect(screen.getByText("Methane Yield")).toBeInTheDocument();
+  });
+});

@@ -863,9 +863,9 @@ export default function CattleInfoPage() {
     !isNaN(bcs) &&
     bcs >= 1 &&
     bcs <= 5 &&
-    !isNaN(dim) &&
-    dim >= 0 &&
-    dim <= 400 &&
+    // Days in Milk only applies to a lactating animal — see the field's
+    // render gate. Not shown, not required.
+    (!showMilkSection || (!isNaN(dim) && dim >= 0 && dim <= 400)) &&
     !isNaN(dop) &&
     dop >= 0 &&
     dop <= 280 &&
@@ -1201,7 +1201,13 @@ export default function CattleInfoPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 mt-1">
-              <div>
+              {/* Days in Milk is a lactation input, so it only applies to a
+                  Lactating Cow (QA row 9 — it was being offered under Heifer).
+                  When hidden, Body Condition Score takes the full width and
+                  the field drops out of requiredFilled; toCattleInfoPayload
+                  already sends days_in_milk: 0 for every non-lactating state,
+                  so the wire payload is unchanged. */}
+              <div className={showMilkSection ? undefined : "col-span-2"}>
                 <FieldLabel>{t("Body Condition Score *")}</FieldLabel>
                 <input
                   type="number"
@@ -1216,21 +1222,23 @@ export default function CattleInfoPage() {
                 />
                 <FieldError message={errors.body_condition_score} />
               </div>
-              <div>
-                <FieldLabel>{t("Days in Milk *")}</FieldLabel>
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  value={form.days_in_milk}
-                  onChange={(e) => handleDaysInMilk(e.target.value)}
-                  {...loadingFieldProps(
-                    loadingCountries,
-                    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
-                    inputStyle
-                  )}
-                />
-                <FieldError message={errors.days_in_milk} />
-              </div>
+              {showMilkSection && (
+                <div>
+                  <FieldLabel>{t("Days in Milk *")}</FieldLabel>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={form.days_in_milk}
+                    onChange={(e) => handleDaysInMilk(e.target.value)}
+                    {...loadingFieldProps(
+                      loadingCountries,
+                      "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
+                      inputStyle
+                    )}
+                  />
+                  <FieldError message={errors.days_in_milk} />
+                </div>
+              )}
             </div>
           </div>
         </SectionCard>

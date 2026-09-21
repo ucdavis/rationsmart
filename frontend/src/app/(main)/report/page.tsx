@@ -25,6 +25,14 @@ type ReportContext = {
   showMilkCostMarginCard: boolean;
   showSolutionSummaryMilk: boolean;
   showCalfMilkFeedingSection: boolean;
+  /**
+   * Methane INTENSITY is g of CH4 per kg of energy-corrected milk. A dry
+   * cow, heifer or calf produces no milk, so the figure has no meaning for
+   * them. Per the backend owner (QA row 12): the engine still calculates it
+   * for non-lactating animals, but it must not be DISPLAYED for them.
+   * Production / yield / Ym are per-day or per-kg-DMI and stay visible.
+   */
+  showMethaneIntensity: boolean;
 };
 function buildReportContext(category?: AnimalCategory | string | null): ReportContext {
   const cat = (category ?? "").trim();
@@ -35,6 +43,7 @@ function buildReportContext(category?: AnimalCategory | string | null): ReportCo
     showMilkCostMarginCard: isLactating,
     showSolutionSummaryMilk: isLactating,
     showCalfMilkFeedingSection: isCalf,
+    showMethaneIntensity: isLactating,
   };
 }
 import {
@@ -1805,11 +1814,17 @@ export default function ReportPage() {
                     value={`${fmt(evalReport.methane_analysis.methane_production_g_per_day, 1)}`}
                     unit={t("g/day")}
                   />
-                  <MetricTile
-                    label={t("CH₄ Intensity")}
-                    value={`${fmt(evalReport.methane_analysis.methane_intensity_g_per_kg_ecm, 2)}`}
-                    unit={t("g/kg ECM")}
-                  />
+                  {/* Per kg of ENERGY-CORRECTED MILK — meaningless without
+                      milk, so hidden for every non-lactating state (QA row
+                      12). The engine still computes it; we just don't show
+                      it. */}
+                  {reportCtx.showMethaneIntensity && (
+                    <MetricTile
+                      label={t("CH₄ Intensity")}
+                      value={`${fmt(evalReport.methane_analysis.methane_intensity_g_per_kg_ecm, 2)}`}
+                      unit={t("g/kg ECM")}
+                    />
+                  )}
                   <MetricTile
                     label={t("CH₄ Yield")}
                     value={`${fmt(evalReport.methane_analysis.methane_yield_g_per_kg_dmi, 3)}`}
@@ -2214,25 +2229,40 @@ export default function ReportPage() {
                     </div>
                     <MethaneBar progress={calcPct(yieldVal, MAX_METHANE_YIELD)} color="#064E3B" />
 
-                    {/* Methane Intensity */}
-                    <div className="flex items-center justify-between mt-4">
-                      <p
-                        className="font-bold uppercase"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-                      >
-                        {t("Methane Intensity")}
-                      </p>
-                      <p
-                        className="font-bold"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
-                        {fmt(intensityVal, 2)} {t("g/kg ECM")}
-                      </p>
-                    </div>
-                    <MethaneBar
-                      progress={calcPct(intensityVal, MAX_METHANE_INTENSITY)}
-                      color="#296CD3"
-                    />
+                    {/* Methane Intensity — per kg of ENERGY-CORRECTED MILK,
+                        so it is only shown for a Lactating Cow (QA row 12).
+                        The engine still calculates it for the other states;
+                        it just isn't displayed for them. */}
+                    {reportCtx.showMethaneIntensity && (
+                      <>
+                        <div className="flex items-center justify-between mt-4">
+                          <p
+                            className="font-bold uppercase"
+                            style={{
+                              color: "#6D6D6D",
+                              fontFamily: "Nunito, sans-serif",
+                              fontSize: 12,
+                            }}
+                          >
+                            {t("Methane Intensity")}
+                          </p>
+                          <p
+                            className="font-bold"
+                            style={{
+                              color: "#231F20",
+                              fontFamily: "Nunito, sans-serif",
+                              fontSize: 16,
+                            }}
+                          >
+                            {fmt(intensityVal, 2)} {t("g/kg ECM")}
+                          </p>
+                        </div>
+                        <MethaneBar
+                          progress={calcPct(intensityVal, MAX_METHANE_INTENSITY)}
+                          color="#296CD3"
+                        />
+                      </>
+                    )}
 
                     {/* Methane Conversion Rate (Ym %) */}
                     <div className="flex items-center justify-between mt-4">

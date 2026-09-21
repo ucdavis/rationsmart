@@ -928,3 +928,43 @@ describe("Cattle Info — UI-label i18n (own simulation_language, not just profi
     expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
   });
 });
+
+// ─── Days in Milk is lactation-only (QA row 9) ────────────────────────────
+// It was rendered (and required) for every animal category, so a Heifer was
+// being asked for a lactation input. toCattleInfoPayload already sends 0 for
+// non-lactating states, so hiding it changes the form, not the wire payload.
+describe("Cattle Info — Days in Milk only applies to a Lactating Cow", () => {
+  async function pickCategory(label: string) {
+    const wrapper = await openDropdown("Physiological State");
+    await chooseOption(wrapper, label);
+  }
+
+  it("is shown for a Lactating Cow", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+    // FieldLabel splits the trailing " *" into its own span, so match the
+    // label text without it.
+    expect(screen.getByText("Days in Milk")).toBeInTheDocument();
+  });
+
+  it("disappears for a Heifer and stops gating Continue", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    fillSimulationName();
+    await selectCountry("India");
+    await pickCategory("Heifers");
+
+    expect(screen.queryByText("Days in Milk")).not.toBeInTheDocument();
+    // Milk Protein / Milk Fat aren't asked for either, so Continue must be
+    // reachable without them — proving Days in Milk left requiredFilled too.
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+
+    fireEvent.click(continueBtn);
+    expect(useStore.getState().cattleInfo?.animal_category).toBe("Heifer");
+  });
+});
