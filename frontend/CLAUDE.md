@@ -410,10 +410,10 @@ true (see §10.1).
     note the key is the **feed NAME** here, not feed_uuid. If
     `insert_feed=false` (server says a feed of this name already exists
     for this user), call `updateCustomFeed`; else call `insertCustomFeed`.
-- **Custom Diet Limits modal:** edits `Partial<DietLimits>` (ash, ee,
-  ndf, starch maxes). Empty input deletes the key. Saved values flow
-  into `recommendDiet`'s `base_thresholds`, merged over
-  `DEFAULT_BASE_THRESHOLDS`.
+- **Custom Diet Limits modal:** edits `Partial<DietLimits>`. Empty input
+  deletes the key. Saved values flow into `recommendDiet`'s
+  `base_thresholds` **as-is — never merged over any client-side default**
+  (see §19).
 - `handleGenerateClick` — pre-flight: any row that has partial selection
   (type or category started) but missing required pieces (feed_uuid,
   price_per_kg, quantity when evaluation) is shown in an "Incomplete
@@ -700,7 +700,7 @@ FastAPI). axios instance has a response error interceptor that extracts
 | Function | Method · Path | Notes |
 |---|---|---|
 | `evaluateDiet(EvaluationRequest)` | POST `/diet-evaluation-working` | |
-| `recommendDiet(RecommendationRequest)` | POST `/diet-recommendation-working` | **Always send `base_thresholds`** (Android does this unconditionally) — merge user limits over `DEFAULT_BASE_THRESHOLDS` (ash=10, ee=7, ndf=45, starch=26) |
+| `recommendDiet(RecommendationRequest)` | POST `/diet-recommendation-working` | **Send `base_thresholds` only when the user set at least one limit**, and send only the keys they set. Omitting the object = "use the engine's per-state defaults". Superseded the old always-send-merged-over-`DEFAULT_BASE_THRESHOLDS` rule on 2026-09-21 — see §19 |
 
 ### Reports
 | Function | Method · Path |

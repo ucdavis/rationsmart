@@ -53,7 +53,6 @@ vi.mock("@/lib/api", async () => {
 import FeedSelectionPage from "@/app/(main)/feed-selection/page";
 import { useStore, type User } from "@/lib/store";
 import {
-  DEFAULT_BASE_THRESHOLDS,
   toCattleInfoPayload,
   type CattleInfo,
   type FeedItem,
@@ -523,7 +522,12 @@ describe("feed-selection — generateReport payloads", () => {
     expect(useStore.getState().reportData).toEqual({ report_id: "EVAL-1", mode: "evaluation" });
   });
 
-  it("recommendation mode ALWAYS sends base_thresholds merged over DEFAULT_BASE_THRESHOLDS", async () => {
+  // CONTRACT CHANGE 2026-09-21: we no longer merge a hardcoded copy of
+  // Android's defaults under the user's limits. The backend now converts
+  // percent → fraction and enforces a per-physiological-state range, so
+  // those constants started binding (over-constraining lactating diets,
+  // 422-ing Dry Cow / Heifer ones). Only user-set keys go on the wire.
+  it("recommendation mode sends ONLY the limits the user actually set", async () => {
     recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-1" } });
     const cattleInfo = mkCattleInfo();
     const validRow = mkValidForageRow();
@@ -545,14 +549,14 @@ describe("feed-selection — generateReport payloads", () => {
       simulation_id: `${cattleInfo.simulation_name} (Recommendation)`,
       cattle_info: toCattleInfoPayload(cattleInfo),
       feed_selection: [{ feed_id: "uuid-forage-1", price_per_kg: 10 }],
-      base_thresholds: { ...DEFAULT_BASE_THRESHOLDS, ash_max: 12 },
+      base_thresholds: { ash_max: 12 },
     });
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/report"));
     expect(useStore.getState().reportData).toEqual({ report_id: "REC-1", mode: "recommendation" });
   });
 
-  it("recommendation mode sends the bare DEFAULT_BASE_THRESHOLDS when no custom limits are set", async () => {
+  it("recommendation mode OMITS base_thresholds entirely when no custom limits are set", async () => {
     recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-2" } });
     useStore.setState({
       feedSelectionType: "recommendation",
@@ -565,7 +569,10 @@ describe("feed-selection — generateReport payloads", () => {
 
     await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
     const payload = recommendDiet.mock.calls[0][0];
-    expect(payload.base_thresholds).toEqual(DEFAULT_BASE_THRESHOLDS);
+    // An omitted key is the ONLY way to say "use the engine defaults for
+    // this animal's physiological state" — {} would be a no-op object and
+    // 0 would be rejected with a 422.
+    expect("base_thresholds" in payload).toBe(false);
   });
 });
 

@@ -16,7 +16,6 @@ import {
   checkInsertOrUpdate,
   updateCustomFeed,
   toCattleInfoPayload,
-  DEFAULT_BASE_THRESHOLDS,
   searchFeeds,
   fetchFeedTaxonomyLabels,
   buildDietSimulationId,
@@ -809,8 +808,16 @@ export default function FeedSelectionPage() {
             }
             return base;
           }),
-          // Android always sends base_thresholds; merge user limits over defaults
-          base_thresholds: { ...DEFAULT_BASE_THRESHOLDS, ...limits },
+          // Send ONLY the limits the user actually typed, and omit the key
+          // entirely when they typed none. We used to merge a hardcoded
+          // DEFAULT_BASE_THRESHOLDS copy of Android's defaults underneath
+          // `limits` and send it on every run. The backend now converts
+          // percent → fraction and enforces a per-physiological-state range,
+          // so those constants started binding: they over-constrained every
+          // lactating diet and 422'd every Dry Cow / Heifer one. The engine
+          // holds the correct per-state defaults — an omitted key is how we
+          // ask for them.
+          ...(Object.keys(limits).length > 0 ? { base_thresholds: limits } : {}),
         });
         setReportData({ ...res.data, mode: "recommendation" });
       }

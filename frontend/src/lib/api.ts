@@ -102,12 +102,33 @@ export interface FeedItem {
   max_kg_per_day: number | null;
 }
 
-// Matches Android BaseThresholds — single max value per nutrient
+// The diet-wide nutrient limits the backend accepts as caller overrides
+// (`base_thresholds` on POST /v1/animal/diet-recommendation).
+//
+// CONTRACT — all eight keys are OPTIONAL and every one of them is sent
+// only when the user actually typed a value:
+//   * an OMITTED key means "keep the engine default for this animal's
+//     physiological state". That is the only way to say "no override".
+//   * `0` is NOT "unset" — the backend rejects it with a 422, because a
+//     zero limit degenerates the solve. Never coerce a typed 0 into an
+//     omitted key either; that silently discards what the user asked for.
+//   * limits may only be TIGHTENED, never loosened. The accepted range
+//     is per physiological state and is served by getDietThresholds();
+//     never hardcode it.
+//   * `ash_max`/`ee_max`/`ndf_max`/`starch_max`/`conc_max`/`ndf_for_min`
+//     are percentages of diet DM — sent as entered (15 means 15%); the
+//     backend divides by 100. `nel_balance_max` (Mcal/day) and
+//     `mp_balance_max` (kg/day) are ABSOLUTE daily amounts and must never
+//     be scaled.
 export interface DietLimits {
   ash_max: number;
   ee_max: number; // Ether Extract (fat)
   ndf_max: number; // Neutral Detergent Fiber
   starch_max: number;
+  conc_max: number; // total concentrates
+  ndf_for_min: number; // MINIMUM forage NDF — a floor, not a ceiling
+  nel_balance_max: number; // Mcal/day — absolute, NOT a percentage
+  mp_balance_max: number; // kg/day — absolute, NOT a percentage
 }
 
 // ─── API Cattle Info payload (matches Android CattleInfo @SerializedName keys) ─
@@ -165,13 +186,19 @@ export function stripDietModeSuffix(name: string): string {
   return name;
 }
 
-// Android default BaseThresholds (ash=10, fat/ee=7, ndf=45, starch=26)
-export const DEFAULT_BASE_THRESHOLDS: DietLimits = {
-  ash_max: 10,
-  ee_max: 7,
-  ndf_max: 45,
-  starch_max: 26,
-};
+// DEFAULT_BASE_THRESHOLDS (ash=10, ee=7, ndf=45, starch=26) was REMOVED on
+// 2026-09-21 and must not come back. It was a copy of Android's defaults that
+// the client merged under the user's limits and sent on EVERY recommendation.
+// That was harmless only while the backend mis-read the values as fractions
+// (45 meant 4500% of DM — no constraint at all). The backend now converts
+// percent → fraction and validates the range per physiological state, so those
+// constants began BINDING: ash 10 and ndf 45 silently over-constrained every
+// lactating diet (engine defaults are 15 and 60), and ee 7 / starch 26 exceed
+// the Dry Cow and Heifer ceilings (5 / 18 and 5 / 20) — a hard 422 on every
+// non-lactating recommendation.
+//
+// The engine already holds the correct per-state defaults. Send ONLY the keys
+// the user set, and omit `base_thresholds` entirely when they set none.
 
 export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
   // Y3 §1.4 — `lactating` is now derived from the user's physiological-state
@@ -249,7 +276,11 @@ export interface RecommendationRequest {
     min_kg_asfed?: number | null;
     max_kg_asfed?: number | null;
   }>;
-  base_thresholds: DietLimits; // Android always sends this — never omit
+  // OPTIONAL — send only the limits the user actually set, and omit the key
+  // entirely when they set none (see the DietLimits contract above). An
+  // omitted object means "use the engine defaults for this physiological
+  // state"; sending a full object overrides them.
+  base_thresholds?: Partial<DietLimits>;
 }
 
 // ─── Evaluation Response Types (matches Android FeedEvaluationResponse) ───────

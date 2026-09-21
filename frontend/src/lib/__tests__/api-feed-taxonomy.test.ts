@@ -25,7 +25,6 @@ import {
   getFeedClassification,
   searchFeeds,
   setLangProvider,
-  DEFAULT_BASE_THRESHOLDS,
   type EvaluationRequest,
   type RecommendationRequest,
 } from "@/lib/api";
@@ -177,15 +176,16 @@ describe("recommendDiet", () => {
       simulation_id: "s1",
       cattle_info: {},
       feed_selection: [],
-      base_thresholds: { ...DEFAULT_BASE_THRESHOLDS, ash_max: 12 },
+      base_thresholds: { ash_max: 12 },
     } as unknown as RecommendationRequest;
     mockApi.post.mockResolvedValueOnce({ data: { mode: "recommendation" } });
     await recommendDiet(req);
     expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/diet-recommendation", req);
     // The helper does not merge/mutate base_thresholds — that's the caller's job
-    // (see feed-selection page). Verify it isn't silently replaced with defaults.
+    // (see feed-selection page). Verify it forwards exactly what it was given
+    // and never injects defaults of its own.
     const sentBody = mockApi.post.mock.calls[0][1] as RecommendationRequest;
-    expect(sentBody.base_thresholds).toEqual({ ...DEFAULT_BASE_THRESHOLDS, ash_max: 12 });
+    expect(sentBody.base_thresholds).toEqual({ ash_max: 12 });
   });
 });
 

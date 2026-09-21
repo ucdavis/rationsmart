@@ -9,7 +9,6 @@ import {
   isLactating,
   ANIMAL_CATEGORIES,
   ANIMAL_CATEGORY_LABELS,
-  DEFAULT_BASE_THRESHOLDS,
   buildDietSimulationId,
   stripDietModeSuffix,
   type CattleInfo,
@@ -90,19 +89,6 @@ describe("animal category helpers", () => {
     expect(isLactating("Dry Cow")).toBe(false);
     expect(isLactating("Heifer")).toBe(false);
     expect(isLactating("Baby Calf/Heifer")).toBe(false);
-  });
-});
-
-// ─── DEFAULT_BASE_THRESHOLDS ──────────────────────────────────────────
-
-describe("DEFAULT_BASE_THRESHOLDS", () => {
-  it("matches the Android defaults exactly", () => {
-    expect(DEFAULT_BASE_THRESHOLDS).toEqual({
-      ash_max: 10,
-      ee_max: 7,
-      ndf_max: 45,
-      starch_max: 26,
-    });
   });
 });
 
