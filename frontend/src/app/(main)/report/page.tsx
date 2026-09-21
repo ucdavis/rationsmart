@@ -371,8 +371,17 @@ export default function ReportPage() {
   // 4-state enum (Lactating Cow / Dry Cow / Heifer / Baby Calf/Heifer).
   const serverCtx = (reportData as { report_context?: Partial<ReportContext> } | null)
     ?.report_context;
+  // Undefined keys are stripped before the spread: a server report_context
+  // that merely *mentions* a flag without a value would otherwise overwrite
+  // the locally-computed one with `undefined` and hide a section that should
+  // be visible (e.g. Methane Intensity for a lactating cow).
   const reportCtx: ReportContext = serverCtx
-    ? { ...buildReportContext(cattleInfo?.animal_category), ...serverCtx }
+    ? {
+        ...buildReportContext(cattleInfo?.animal_category),
+        ...(Object.fromEntries(
+          Object.entries(serverCtx).filter(([, v]) => v !== undefined)
+        ) as Partial<ReportContext>),
+      }
     : buildReportContext(cattleInfo?.animal_category);
 
   // Use the user's / report's currency CODE (PHP / INR / VND / …)

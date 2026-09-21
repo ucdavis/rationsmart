@@ -195,6 +195,30 @@ describe("normal (non-redirected) response", () => {
     await callHandler(mod, reqWithQuery, ["admin", "users"]);
     expect(httpMock.calls[1].path).toBe("/admin/users/?page=1&page_size=100");
   });
+
+  // The two diet endpoints carry ?lang= in the URL even though they are
+  // POSTs: `lang` is a query parameter server-side, and a `lang` key in the
+  // JSON body is ignored SILENTLY (the backend falls back to the account's
+  // profile language and still returns 200). The backend also renders and
+  // PERSISTS report_html in whichever language the request resolved to, so a
+  // query string dropped here would freeze reports in the wrong language
+  // with nothing anywhere reporting an error.
+  it("forwards the querystring on a POST, alongside the body", async () => {
+    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+    httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
+
+    const body = JSON.stringify({ user_id: "abc-123" });
+    const req = makeRequest(["v1", "animal", "diet-recommendation"], {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      search: "?lang=hi",
+      body,
+    });
+    await callHandler(mod, req, ["v1", "animal", "diet-recommendation"]);
+
+    expect(httpMock.calls[0].path).toBe("/v1/animal/diet-recommendation/?lang=hi");
+    expect(Buffer.concat(httpMock.writes[0]).toString()).toBe(body);
+  });
 });
 
 // ─── 2. Hop-by-hop header stripping + host overwrite ────────────────────
