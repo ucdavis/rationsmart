@@ -301,6 +301,14 @@ def build_diet_response(
             if clean_msg:
                 violated_params_list.append(clean_msg)
 
+    # B4: soft-limit breaches, surfaced in `warnings` below. violated_parameters has
+    # carried these all along, but only as text nested under additional_information.
+    advisory_warnings = (
+        list(violated_params_list)
+        if str(messages_obj.get('status', '')).lower() == 'advisory'
+        else []
+    )
+
     # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
     forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(
         post_results.get('dt_proportions'), post_results.get('dt_forages')
@@ -337,10 +345,18 @@ def build_diet_response(
             'worst_constraints': post_results.get('worst_constraints', []),
             'recommendations': recommendations[:1]
         },
-        # B2: safety caps that overrode a per-feed limit the user entered. Previously the
-        # clamp happened silently — a farmer could ask for 2 kg of an ingredient, receive
-        # 0.13 kg, and be told the diet was optimal.
-        'warnings': list(post_results.get('bound_warnings') or []),
+        # Two kinds of "we could not fully honour what you asked for", both of which used
+        # to be invisible to a caller that only read `status`:
+        #  - B2: safety caps that overrode a per-feed limit the user entered. Previously
+        #    the clamp happened silently — a farmer could ask for 2 kg of an ingredient,
+        #    receive 0.13 kg, and be told the diet was optimal.
+        #  - B4: a soft whole-ration limit the optimizer minimised but still exceeded
+        #    (ndf_max / starch_max / ee_max are cost penalties, not hard constraints), so
+        #    `status` stays SUCCESS while the diet sits above the caller's own ceiling.
+        # Only *advisory* breaches belong here. post_feasibility_warnings marks a breach
+        # `critical` when a hard constraint failed; those already drive diet_status and
+        # allow_report, and repeating them as warnings would read as duplicate errors.
+        'warnings': list(post_results.get('bound_warnings') or []) + advisory_warnings,
     }
 
     return ensure_json_safe(response_data)
