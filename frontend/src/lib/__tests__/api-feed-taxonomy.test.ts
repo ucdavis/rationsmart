@@ -164,7 +164,13 @@ describe("evaluateDiet", () => {
     const req = { user_id: "u1", country_id: "1", currency: "INR" } as unknown as EvaluationRequest;
     mockApi.post.mockResolvedValueOnce({ data: { mode: "evaluation" } });
     await evaluateDiet(req);
-    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/evaluate-diet", req);
+    // `lang` is a QUERY param on this POST, never a body field — the backend
+    // renders and PERSISTS report_html in whichever language the request
+    // resolved to, so omitting it freezes the report in the account's profile
+    // language even when the simulation ran in another.
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/evaluate-diet", req, {
+      params: { lang: "en" },
+    });
   });
 });
 
@@ -180,7 +186,9 @@ describe("recommendDiet", () => {
     } as unknown as RecommendationRequest;
     mockApi.post.mockResolvedValueOnce({ data: { mode: "recommendation" } });
     await recommendDiet(req);
-    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/diet-recommendation", req);
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/diet-recommendation", req, {
+      params: { lang: "en" },
+    });
     // The helper does not merge/mutate base_thresholds — that's the caller's job
     // (see feed-selection page). Verify it forwards exactly what it was given
     // and never injects defaults of its own.

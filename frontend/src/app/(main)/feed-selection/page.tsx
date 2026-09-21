@@ -1389,9 +1389,23 @@ export default function FeedSelectionPage() {
                     fontFamily: "Nunito, sans-serif",
                   }}
                 >
-                  {/* i18n V2 — render display_* (translated, English fallback). */}
+                  {/* i18n V2 — render display_* (translated, English fallback).
+                      The English source name is appended in parentheses when
+                      it differs, because the backend ALWAYS searches the
+                      English name on top of the active language: a Hindi user
+                      typing "corn" gets a row whose displayed name contains
+                      none of the characters they typed. Showing the English
+                      makes the match explain itself. Suppressed when the two
+                      are equal (the English-selected case, and every custom
+                      feed — those are never translated). */}
                   <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>
                     {r.display_name ?? r.feed_name}
+                    {r.feed_name_en && r.feed_name_en !== (r.display_name ?? r.feed_name) && (
+                      <span style={{ color: "#6D6D6D", fontSize: 12, fontWeight: 400 }}>
+                        {" "}
+                        ({r.feed_name_en})
+                      </span>
+                    )}
                   </p>
                   <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>
                     {r.display_type ?? r.feed_type} · {r.display_category ?? r.feed_category}

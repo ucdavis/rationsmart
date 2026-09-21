@@ -881,11 +881,21 @@ export const DIET_LIMIT_UNIT_LABELS: Record<DietThresholdSpec["unit"], string> =
 };
 
 // ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────
+// i18n V2 — `lang` is a QUERY parameter on these two POSTs, never a body
+// field (a `lang` key inside the JSON is silently ignored, and the backend
+// then falls back to the account's profile language with no error). It
+// matters more here than anywhere else: the backend renders and PERSISTS
+// `report_html` at creation time in whichever language the request resolved
+// to, and the PDF reuses that stored HTML — so omitting it freezes the report
+// in the profile language for a simulation the user ran in another one.
+// langParam() resolves cattleInfo.simulation_language first, which is exactly
+// the per-simulation LANGUAGE picked on Cattle Info.
 
-export const evaluateDiet = (data: EvaluationRequest) => api.post("/v1/animal/evaluate-diet", data);
+export const evaluateDiet = (data: EvaluationRequest) =>
+  api.post("/v1/animal/evaluate-diet", data, { params: { ...langParam() } });
 
 export const recommendDiet = (data: RecommendationRequest) =>
-  api.post("/v1/animal/diet-recommendation", data);
+  api.post("/v1/animal/diet-recommendation", data, { params: { ...langParam() } });
 
 // ─── Reports (JWT-protected) ────────────────────────────────────────────────
 
@@ -1330,6 +1340,19 @@ export interface FeedSearchResult {
   feed_name: string; // English source — stable; used to talk to backend
   feed_type: string; // English source
   feed_category: string; // English source
+  // The untranslated source name, always present on the v1 response and equal
+  // to feed_name when the request resolved to English.
+  //
+  // Why it exists: the backend searches the English name UNCONDITIONALLY plus
+  // the request's own language. So a Hindi-operating user can type "corn",
+  // match the English name, and get back a row displayed as
+  // "मक्का का पौधा" — containing none of the characters they typed. Correct,
+  // but it reads as a bug unless we show why it matched.
+  //
+  // For a custom feed this is whatever the user typed and may not be English;
+  // the "only render when it differs" rule hides that case, since custom
+  // feeds are never translated.
+  feed_name_en?: string;
   // i18n V2 — translated strings for display only. Server falls back to the
   // English source when no translation exists, so these are always populated.
   // Renderers MUST use display_* fields; identifier comparisons MUST use
@@ -1346,6 +1369,7 @@ type RawFeed = {
   feed_id?: string;
   id?: string;
   feed_name?: string;
+  feed_name_en?: string;
   fd_name?: string;
   name?: string;
   feed_type?: string;
@@ -1369,6 +1393,7 @@ function normalizeRow(r: RawFeed): FeedSearchResult | null {
     feed_name,
     feed_type,
     feed_category,
+    feed_name_en: r.feed_name_en ?? feed_name,
     // display_* always falls back to its English source so callers can use
     // display_name unconditionally without an extra ?? in JSX.
     display_name: r.display_name ?? feed_name,
