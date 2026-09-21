@@ -418,6 +418,18 @@ export interface SolutionSummary {
 
 export interface RecommendationResponse {
   mode: "recommendation";
+  // Top-level advisory notes about limits the diet did not meet, e.g.
+  // "Fat Content: above maximum (result = 2.66% of DM; target = 2.00% of DM)".
+  //
+  // `ndf_max`, `starch_max` and `ee_max` are SOFT: the optimizer minimises the
+  // breach in the cost objective but may still exceed them, by design. The run
+  // is a success and the report is still valid, so these render as advisory
+  // notes and NEVER as errors.
+  //
+  // Optional: the backend change that populates this (T4 of the ingredient-
+  // inclusion-limits plan) was not deployed as of 2026-09-21, so the key is
+  // simply absent on today's responses and nothing renders.
+  warnings?: string[] | null;
   additional_information: AdditionalInformation;
   least_cost_diet: CostEffectiveDiet[];
   environmental_impact: EnvironmentalImpact | null;
@@ -590,8 +602,9 @@ api.interceptors.response.use(
     // login form, say). Only treat 401s from authenticated endpoints as a
     // dead session.
     const reqUrl: string = error?.config?.url ?? "";
-    const isPublicAuthFlow =
-      /\/auth\/(login|register|forgot-pin|set-new-pin|resend|verify)/i.test(reqUrl);
+    const isPublicAuthFlow = /\/auth\/(login|register|forgot-pin|set-new-pin|resend|verify)/i.test(
+      reqUrl
+    );
     if (status === 401 && unauthorizedHandler && !isPublicAuthFlow) {
       unauthorizedHandler();
     }
@@ -747,8 +760,7 @@ export const getFeedSubCategories = (
 // feed (fd_name, fd_type, fd_category, fd_dm, fd_cp, …). The custom-feeds/check
 // endpoint no longer returns nutrients, so the FeedRow edit dialog uses this to
 // prefill the form. Works for both standard and user-owned custom feeds.
-export const getFeedDetails = (feed_id: string) =>
-  api.get(`/v1/animal/feed-details/${feed_id}`);
+export const getFeedDetails = (feed_id: string) => api.get(`/v1/animal/feed-details/${feed_id}`);
 
 // i18n V2 — client-side translation dictionary for Feed Type + Category
 // labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
@@ -912,9 +924,7 @@ function extractReportsList(data: unknown): FeedReport[] {
         : [];
 }
 
-async function fetchReportsFrom(
-  path: string
-): Promise<{ ok: boolean; list: FeedReport[] }> {
+async function fetchReportsFrom(path: string): Promise<{ ok: boolean; list: FeedReport[] }> {
   try {
     const res = await api.get(path);
     return { ok: true, list: extractReportsList(res.data) };

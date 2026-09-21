@@ -630,6 +630,16 @@ export default function ReportPage() {
   const rwPoints = [...recommendationsRaw, ...warningsRaw];
   const rwDisplay = rwPoints.length === 0 ? [t("No recommendation/warnings available!")] : rwPoints;
 
+  // Top-level `warnings` — advisory notes about limits the diet did not meet.
+  // Distinct from additional_information.warnings above: these come from the
+  // SOFT limits (ndf_max / starch_max / ee_max), which the optimizer only
+  // penalises in the cost objective and may legitimately exceed. The run
+  // succeeds and the report stays valid, so they get their own advisory card
+  // rather than joining the Notes card — the Notes card is hidden precisely
+  // when the rating is OPTIMAL, which is exactly when a soft breach is
+  // reported.
+  const softLimitNotes = (recReport?.warnings ?? []).filter((w) => w && w.trim().length > 0);
+
   // Total cost sums for footers
   const recTotalCost = recReport?.least_cost_diet
     ? recReport.least_cost_diet.reduce(
@@ -1845,6 +1855,33 @@ export default function ReportPage() {
         {/* ─── RECOMMENDATION SECTIONS ─── */}
         {!isEval && recReport && (
           <>
+            {/* Diet Limit Notes — the backend's top-level `warnings`.
+                Advisory, never an error: a soft limit is a TARGET the
+                optimizer minimises the breach of, so exceeding it is a
+                legitimate outcome and the report is still valid. Shown
+                above the solution so the numbers below are read in context.
+                Renders nothing when the key is absent or empty. */}
+            {softLimitNotes.length > 0 && (
+              <SCard
+                title={t("Diet Limit Notes")}
+                icon={
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF9800">
+                    <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 15a1.25 1.25 0 110-2.5A1.25 1.25 0 0112 17zm1-4.75a1 1 0 01-2 0V7a1 1 0 012 0z" />
+                  </svg>
+                }
+              >
+                <p
+                  className="text-xs mb-2"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {t(
+                    "These limits are targets. The diet is still valid — the optimizer kept the difference as small as cost allowed."
+                  )}
+                </p>
+                <BulletList items={softLimitNotes} color="#FF9800" />
+              </SCard>
+            )}
+
             {/* Solution Summary — icons sourced directly from Android
                 drawables (ic_solution_summary, ic_daily_cost,
                 ic_milk_production_20, ic_dm_intake). Hidden when diet

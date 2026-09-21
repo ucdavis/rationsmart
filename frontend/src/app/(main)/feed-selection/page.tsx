@@ -32,6 +32,7 @@ import type {
   FeedTaxonomyLabels,
 } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
+import { inclusionBoundIsInvalid } from "@/lib/validators";
 import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 
@@ -802,6 +803,27 @@ export default function FeedSelectionPage() {
       setShowNoForageDialog(true);
       return;
     }
+    // Y3 §1.1.2 — a typed 0 in an inclusion bound is rejected by the
+    // backend (`exclusiveMinimum: 0` on min_kg_asfed / max_kg_asfed). Catch
+    // it here with the message that says what to do instead. We do NOT
+    // coerce it to an omitted key: that would silently throw away what the
+    // user asked for, which is the defect, not the fix.
+    if (
+      !isEvaluation &&
+      items.some(
+        (it) =>
+          it.inclusion_limits_enabled &&
+          (inclusionBoundIsInvalid(it.min_kg_per_day) || inclusionBoundIsInvalid(it.max_kg_per_day))
+      )
+    ) {
+      showSnackbar(
+        t(
+          "Enter a value greater than 0, or leave the field empty for no limit. To exclude a feed, remove it from the selection."
+        ),
+        "error"
+      );
+      return;
+    }
     // Custom Diet Limits are persisted across simulations, but the accepted
     // range is per physiological state — so a limit saved for a Lactating Cow
     // can be out of range once the user switches to a Dry Cow, and the
@@ -966,44 +988,44 @@ export default function FeedSelectionPage() {
               when they couldn't be fetched at all. Not rendered AT ALL for a
               Baby Calf/Heifer, which has no editable limits. */}
           {limitsApplyToAnimal && (
-          <button
-            onClick={() => setShowLimitsModal(true)}
-            disabled={limitsDisabled}
-            style={{
-              fontFamily: "Nunito, sans-serif",
-              fontWeight: 700,
-              fontSize: 14,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 10,
-              padding: "7px 16px 7px 7px",
-              borderRadius: 999,
-              backgroundColor: limitsDisabled ? "#F1F5F9" : "#FFFFFF",
-              color: limitsDisabled ? "#999999" : "#064E3B",
-              border: `1.5px solid ${limitsDisabled ? "#E2E8F0" : "#DCE0E4"}`,
-              boxShadow: limitsDisabled ? "none" : "0 1px 2px rgba(6,40,30,0.06)",
-              cursor: limitsDisabled ? "not-allowed" : "pointer",
-              transition: "all 0.15s",
-            }}
-          >
-            <span
-              aria-hidden="true"
-              className="flex items-center justify-center"
+            <button
+              onClick={() => setShowLimitsModal(true)}
+              disabled={limitsDisabled}
               style={{
-                width: 30,
-                height: 30,
-                borderRadius: "50%",
-                backgroundColor: limitsDisabled ? "#E8EBEE" : "#E4F7EF",
-                flexShrink: 0,
+                fontFamily: "Nunito, sans-serif",
+                fontWeight: 700,
+                fontSize: 14,
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 10,
+                padding: "7px 16px 7px 7px",
+                borderRadius: 999,
+                backgroundColor: limitsDisabled ? "#F1F5F9" : "#FFFFFF",
+                color: limitsDisabled ? "#999999" : "#064E3B",
+                border: `1.5px solid ${limitsDisabled ? "#E2E8F0" : "#DCE0E4"}`,
+                boxShadow: limitsDisabled ? "none" : "0 1px 2px rgba(6,40,30,0.06)",
+                cursor: limitsDisabled ? "not-allowed" : "pointer",
+                transition: "all 0.15s",
               }}
             >
-              <IcTune size={17} color={limitsDisabled ? "#999999" : "#064E3B"} />
-            </span>
-            {/* Label never changes — it's the button's accessible name and a
+              <span
+                aria-hidden="true"
+                className="flex items-center justify-center"
+                style={{
+                  width: 30,
+                  height: 30,
+                  borderRadius: "50%",
+                  backgroundColor: limitsDisabled ? "#E8EBEE" : "#E4F7EF",
+                  flexShrink: 0,
+                }}
+              >
+                <IcTune size={17} color={limitsDisabled ? "#999999" : "#064E3B"} />
+              </span>
+              {/* Label never changes — it's the button's accessible name and a
                 translated string. Loading/unavailable is conveyed by the
                 disabled state and the caption below. */}
-            {t("Custom Diet Limits")}
-          </button>
+              {t("Custom Diet Limits")}
+            </button>
           )}
           {/* Custom Feed — same white-pill treatment, always enabled. */}
           <button
@@ -2111,7 +2133,9 @@ export default function FeedSelectionPage() {
                           : // `default` is this animal's engine value and is
                             // also the tighten-only bound, so the hint doubles
                             // as an explanation of why the range stops there.
-                            t("Range ${min} – ${max} ${unit} · leave blank for the default ${default}")
+                            t(
+                              "Range ${min} – ${max} ${unit} · leave blank for the default ${default}"
+                            )
                               .replace("${min}", String(min))
                               .replace("${max}", String(max))
                               .replace("${unit}", unitLabel)

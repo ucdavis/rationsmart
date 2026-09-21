@@ -55,11 +55,7 @@ vi.mock("@/lib/api", async () => {
 
 import FeedSelectionPage from "@/app/(main)/feed-selection/page";
 import { useStore, type User } from "@/lib/store";
-import {
-  toCattleInfoPayload,
-  type CattleInfo,
-  type FeedItem,
-} from "@/lib/api";
+import { toCattleInfoPayload, type CattleInfo, type FeedItem } from "@/lib/api";
 
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
@@ -145,14 +141,78 @@ function seedUser(overrides: Partial<User> = {}): User {
 // Lactating Cow: `max` equals the animal's own default (tighten-only), the
 // floor sits above zero, and `ndf_for_min` is the one `direction: "min"` key.
 const LACTATING_THRESHOLDS = [
-  { key: "ash_max", default: 15, min: 1, max: 15, unit: "pct_dm", direction: "max", enforcement: "hard" },
-  { key: "ee_max", default: 7, min: 1, max: 7, unit: "pct_dm", direction: "max", enforcement: "soft" },
-  { key: "ndf_max", default: 60, min: 20, max: 60, unit: "pct_dm", direction: "max", enforcement: "soft" },
-  { key: "starch_max", default: 26, min: 1, max: 26, unit: "pct_dm", direction: "max", enforcement: "soft" },
-  { key: "conc_max", default: 80, min: 10, max: 80, unit: "pct_dm", direction: "max", enforcement: "hard" },
-  { key: "ndf_for_min", default: 20, min: 20, max: 60, unit: "pct_dm", direction: "min", enforcement: "hard" },
-  { key: "nel_balance_max", default: 4, min: 0.5, max: 4, unit: "mcal_day", direction: "max", enforcement: "hard_after_switch" },
-  { key: "mp_balance_max", default: 1, min: 0.1, max: 1, unit: "kg_day", direction: "max", enforcement: "hard_after_switch" },
+  {
+    key: "ash_max",
+    default: 15,
+    min: 1,
+    max: 15,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "hard",
+  },
+  {
+    key: "ee_max",
+    default: 7,
+    min: 1,
+    max: 7,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "soft",
+  },
+  {
+    key: "ndf_max",
+    default: 60,
+    min: 20,
+    max: 60,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "soft",
+  },
+  {
+    key: "starch_max",
+    default: 26,
+    min: 1,
+    max: 26,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "soft",
+  },
+  {
+    key: "conc_max",
+    default: 80,
+    min: 10,
+    max: 80,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "hard",
+  },
+  {
+    key: "ndf_for_min",
+    default: 20,
+    min: 20,
+    max: 60,
+    unit: "pct_dm",
+    direction: "min",
+    enforcement: "hard",
+  },
+  {
+    key: "nel_balance_max",
+    default: 4,
+    min: 0.5,
+    max: 4,
+    unit: "mcal_day",
+    direction: "max",
+    enforcement: "hard_after_switch",
+  },
+  {
+    key: "mp_balance_max",
+    default: 1,
+    min: 0.1,
+    max: 1,
+    unit: "kg_day",
+    direction: "max",
+    enforcement: "hard_after_switch",
+  },
 ];
 
 beforeEach(() => {
@@ -316,9 +376,7 @@ describe("feed-selection — Custom Diet Limits gating", () => {
     expect(screen.getByText("Energy Surplus Max (Mcal/day)")).toBeInTheDocument();
     expect(screen.getByText("Protein Surplus Max (kg/day)")).toBeInTheDocument();
     // Range comes from the response, not from a client-side constant.
-    expect(
-      screen.getByText("Range 1 – 15 % · leave blank for the default 15")
-    ).toBeInTheDocument();
+    expect(screen.getByText("Range 1 – 15 % · leave blank for the default 15")).toBeInTheDocument();
   });
 
   it("blocks Generate when a saved limit is out of range for the current animal", async () => {
@@ -342,10 +400,54 @@ describe("feed-selection — Custom Diet Limits gating", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
 
+    await waitFor(() => expect(useStore.getState().snackbar?.message).toContain("out of range"));
+    expect(recommendDiet).not.toHaveBeenCalled();
+  });
+});
+
+// ─── 3a. Per-feed inclusion limits — a typed 0 is not "no limit" ───────────
+// min_kg_asfed / max_kg_asfed are `exclusiveMinimum: 0` in the v1 schema, so
+// a 0 comes back as a 422. Omitting the key is how you say "no bound", which
+// means a 0 can only be something the user actively typed. Flag it and block
+// Generate — never coerce it to an omitted key, because silently discarding
+// what the user asked for is the defect, not the fix.
+describe("feed-selection — inclusion limits reject a typed 0", () => {
+  it("blocks Generate and explains what to do instead", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow({ inclusion_limits_enabled: true, max_kg_per_day: 0 })],
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
     await waitFor(() =>
-      expect(useStore.getState().snackbar?.message).toContain("out of range")
+      expect(useStore.getState().snackbar?.message).toBe(
+        "Enter a value greater than 0, or leave the field empty for no limit. To exclude a feed, remove it from the selection."
+      )
     );
     expect(recommendDiet).not.toHaveBeenCalled();
+    // The 0 stays on screen — it is not rewritten or dropped behind the
+    // user's back.
+    expect(useStore.getState().feedSelections[0].max_kg_per_day).toBe(0);
+  });
+
+  it("still sends a legitimate positive bound", async () => {
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-3" } });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow({ inclusion_limits_enabled: true, max_kg_per_day: 2.5 })],
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+    expect(recommendDiet.mock.calls[0][0].feed_selection[0]).toEqual({
+      feed_id: "uuid-forage-1",
+      price_per_kg: 10,
+      max_kg_asfed: 2.5,
+    });
   });
 });
 

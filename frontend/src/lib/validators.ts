@@ -158,3 +158,19 @@ export function cleanNameInput(input: string): string {
 export function formatTotalUsers(n: number): string {
   return new Intl.NumberFormat("en-US", { useGrouping: true }).format(n);
 }
+
+/**
+ * A per-feed inclusion bound (`min_kg_asfed` / `max_kg_asfed`) that the
+ * backend will reject.
+ *
+ * The v1 schema declares both as `exclusiveMinimum: 0`, so a 0 (or a
+ * negative) comes back as a 422. Omitting the key is how you say "no bound";
+ * a 0 can therefore only mean the user actively typed one — usually trying to
+ * exclude a feed, which is done by removing the row instead.
+ *
+ * Deliberately NOT "coerce 0 to null": silently discarding what the user
+ * typed is the defect this check exists to prevent, not the fix for it.
+ */
+export function inclusionBoundIsInvalid(value: number | null | undefined): boolean {
+  return value != null && value <= 0;
+}

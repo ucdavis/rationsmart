@@ -709,3 +709,33 @@ describe("Report — StatusBadge color mapping", () => {
     expect(screen.getByText("Evaluation")).toHaveStyle({ backgroundColor: hexToRgb("#FF9800") });
   });
 });
+
+// ─── Diet Limit Notes — the backend's top-level `warnings` ──────────────────
+// Soft limits (ndf_max / starch_max / ee_max) are only penalised in the cost
+// objective, so the diet can exceed them and still be a valid, successful
+// run. The engine reports the breach in a top-level `warnings` array. It must
+// read as advisory, and it must survive the OPTIMAL case — which is exactly
+// when the Notes card is hidden, so it cannot live inside that card.
+describe("Report — Diet Limit Notes (top-level warnings)", () => {
+  it("renders the advisory card even when the rating is OPTIMAL", () => {
+    useStore.setState({
+      reportData: makeRecResponse({
+        warnings: ["Fat Content: above maximum (result = 2.66% of DM; target = 2.00% of DM)"],
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Diet Limit Notes")).toBeInTheDocument();
+    expect(
+      screen.getByText("Fat Content: above maximum (result = 2.66% of DM; target = 2.00% of DM)")
+    ).toBeInTheDocument();
+    // The Notes card is hidden on OPTIMAL — proving the advisory can't be
+    // folded into it.
+    expect(screen.queryByText("Notes")).not.toBeInTheDocument();
+  });
+
+  it("renders nothing when the backend omits `warnings` (not yet deployed)", () => {
+    useStore.setState({ reportData: makeRecResponse() });
+    render(<ReportPage />);
+    expect(screen.queryByText("Diet Limit Notes")).not.toBeInTheDocument();
+  });
+});

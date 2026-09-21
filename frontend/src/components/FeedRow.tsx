@@ -15,7 +15,7 @@ import {
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useStore } from "@/lib/store";
-import { calculateCost } from "@/lib/validators";
+import { calculateCost, inclusionBoundIsInvalid } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
 import { useT } from "@/lib/i18n-ui";
@@ -159,12 +159,17 @@ function FieldBox({
   disabled,
   optional,
   loading = false,
+  invalid = false,
   children,
 }: {
   label: string;
   hasValue: boolean;
   disabled?: boolean;
   optional?: boolean;
+  // Paints the outline + label red. Used by the inclusion-limit fields,
+  // where a typed 0 is rejected by the backend and must be visible as an
+  // error rather than quietly dropped.
+  invalid?: boolean;
   // Same box (dimensions, border-radius, label cutout) shimmers in
   // place instead of being swapped for separate skeleton markup — see
   // the cattle-info page's identical pattern for the rationale.
@@ -179,7 +184,7 @@ function FieldBox({
         borderRadius: 16,
         border: loading
           ? "1.5px solid transparent"
-          : `1.5px solid ${hasValue ? "#064E3B" : "#DCE0E4"}`,
+          : `1.5px solid ${invalid ? "#E44A4A" : hasValue ? "#064E3B" : "#DCE0E4"}`,
         padding: "16px 12px 12px",
         position: "relative",
         opacity: disabled && !loading ? 0.55 : 1,
@@ -200,7 +205,7 @@ function FieldBox({
             left: 12,
             backgroundColor: "#FFFFFF",
             padding: "0 6px",
-            color: hasValue ? "#064E3B" : "#6D6D6D",
+            color: invalid ? "#E44A4A" : hasValue ? "#064E3B" : "#6D6D6D",
             fontFamily: "Nunito, sans-serif",
             fontSize: 12,
           }}
@@ -1087,6 +1092,10 @@ export default function FeedRow({
   // shimmering siblings, the same "mixed ready/loading" look already
   // fixed for Type/Category/Feed and for cattle-info.
   const rowLoading = loadingTypes || loadingCats || loadingSubs;
+  // A typed 0 in either inclusion bound is a 422 waiting to happen — see
+  // inclusionBoundIsInvalid. Flagged here and blocked on Generate.
+  const minIsZero = inclusionBoundIsInvalid(item.min_kg_per_day);
+  const maxIsZero = inclusionBoundIsInvalid(item.max_kg_per_day);
 
   const colGap = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } as const;
 
@@ -1453,52 +1462,75 @@ export default function FeedRow({
         </div>
 
         {item.inclusion_limits_enabled && (
-          <div style={{ ...colGap, marginTop: 8 }}>
-            <FieldBox
-              label={t("Min (kg/day)")}
-              hasValue={item.min_kg_per_day != null}
-              disabled={false}
-              loading={rowLoading}
-              optional
-            >
-              <input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step={0.01}
-                placeholder={t("NA")}
-                value={item.min_kg_per_day ?? ""}
-                onChange={(e) =>
-                  onUpdate(item.id, {
-                    min_kg_per_day: e.target.value ? Number(e.target.value) : null,
-                  })
-                }
-                {...cascadeLoadingProps(rowLoading, innerInputStyle)}
-              />
-            </FieldBox>
-            <FieldBox
-              label={t("Max (kg/day)")}
-              loading={rowLoading}
-              hasValue={item.max_kg_per_day != null}
-              disabled={false}
-              optional
-            >
-              <input
-                type="number"
-                inputMode="decimal"
-                min={0}
-                step={0.01}
-                placeholder={t("No upper bound")}
-                value={item.max_kg_per_day ?? ""}
-                onChange={(e) =>
-                  onUpdate(item.id, {
-                    max_kg_per_day: e.target.value ? Number(e.target.value) : null,
-                  })
-                }
-                {...cascadeLoadingProps(rowLoading, innerInputStyle)}
-              />
-            </FieldBox>
-          </div>
+          <>
+            <div style={{ ...colGap, marginTop: 8 }}>
+              <FieldBox
+                label={t("Min (kg/day)")}
+                hasValue={item.min_kg_per_day != null}
+                disabled={false}
+                loading={rowLoading}
+                invalid={minIsZero}
+                optional
+              >
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.01}
+                  placeholder={t("NA")}
+                  value={item.min_kg_per_day ?? ""}
+                  onChange={(e) =>
+                    onUpdate(item.id, {
+                      min_kg_per_day: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  {...cascadeLoadingProps(rowLoading, innerInputStyle)}
+                />
+              </FieldBox>
+              <FieldBox
+                label={t("Max (kg/day)")}
+                loading={rowLoading}
+                hasValue={item.max_kg_per_day != null}
+                disabled={false}
+                invalid={maxIsZero}
+                optional
+              >
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min={0}
+                  step={0.01}
+                  placeholder={t("No upper bound")}
+                  value={item.max_kg_per_day ?? ""}
+                  onChange={(e) =>
+                    onUpdate(item.id, {
+                      max_kg_per_day: e.target.value ? Number(e.target.value) : null,
+                    })
+                  }
+                  {...cascadeLoadingProps(rowLoading, innerInputStyle)}
+                />
+              </FieldBox>
+            </div>
+            {/* A typed 0 is NOT "no limit" — the backend rejects it with a 422
+              (a zero bound degenerates the solve). We must not turn it into
+              an omitted key either: silently discarding what the user asked
+              for is the original defect this whole area exists to fix. So
+              keep the 0 on screen, flag it, and block Generate. */}
+            {(minIsZero || maxIsZero) && (
+              <p
+                style={{
+                  color: "#E44A4A",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 11,
+                  margin: "6px 2px 0",
+                }}
+              >
+                {t(
+                  "Enter a value greater than 0, or leave the field empty for no limit. To exclude a feed, remove it from the selection."
+                )}
+              </p>
+            )}
+          </>
         )}
       </div>
 
