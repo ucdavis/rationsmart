@@ -19,8 +19,18 @@ import {
   searchFeeds,
   fetchFeedTaxonomyLabels,
   buildDietSimulationId,
+  getDietThresholds,
+  ANIMAL_CATEGORY_LABELS,
+  DIET_LIMIT_LABELS,
+  DIET_LIMIT_UNIT_LABELS,
 } from "@/lib/api";
-import type { FeedItem, DietLimits, FeedSearchResult, FeedTaxonomyLabels } from "@/lib/api";
+import type {
+  FeedItem,
+  DietLimits,
+  DietThresholdSpec,
+  FeedSearchResult,
+  FeedTaxonomyLabels,
+} from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
 import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
@@ -43,16 +53,18 @@ const createFeedItem = (): FeedItem => ({
   max_kg_per_day: null,
 });
 
-// Matches Android BaseThresholds — single max value per nutrient
-// Custom Diet Limits — Y3 QA matrix specifies ranges per nutrient.
-// Values outside these bounds are clamped and a hint appears below
-// the field. min is always 0; max varies per nutrient.
-const LIMIT_ROWS: { label: string; key: keyof DietLimits; min: number; max: number }[] = [
-  { label: "Ash Max (%)", key: "ash_max", min: 0, max: 15 },
-  { label: "EE Max (%) — Fat", key: "ee_max", min: 0, max: 7 },
-  { label: "NDF Max (%) — Fiber", key: "ndf_max", min: 0, max: 100 },
-  { label: "Starch Max (%)", key: "starch_max", min: 0, max: 30 },
-];
+// Custom Diet Limits rows are NOT hardcoded any more. They are built from
+// GET /v1/animal/diet-thresholds for the simulation's physiological state,
+// which returns each limit's default, accepted range, unit, direction and
+// enforcement. The old hardcoded table (ash 0–15, ee 0–7, ndf 0–100,
+// starch 0–30) is gone for three reasons:
+//   * min 0 is now rejected with a 422 — a zero limit degenerates the solve.
+//   * ndf 100 / starch 30 exceed the lactating ceilings (60 / 26), so the
+//     dialog was offering values the backend refuses.
+//   * the ranges differ per state and get retuned; a copy in the client
+//     drifts silently, which is the exact failure this endpoint fixes.
+// When the endpoint can't be reached we DISABLE the dialog rather than fall
+// back to a guess — we'd only be offering ranges we know to be wrong.
 
 // Custom feed form — keys mirror Android FeedDetailsViewModel fields.
 // Android DialogFeedDetails only shows the 13 nutrients listed below
@@ -300,6 +312,11 @@ export default function FeedSelectionPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showLimitsModal, setShowLimitsModal] = useState(false);
   const [limits, setLimits] = useState<Partial<DietLimits>>(dietLimits);
+  // Custom Diet Limits specs, fetched per physiological state. `null` while
+  // in flight; `[]` never happens on success (the endpoint always returns all
+  // eight). `limitSpecsError` holds the reason the dialog is unavailable.
+  const [limitSpecs, setLimitSpecs] = useState<DietThresholdSpec[] | null>(null);
+  const [limitSpecsError, setLimitSpecsError] = useState<string | null>(null);
   const [showIncompleteFeedsDialog, setShowIncompleteFeedsDialog] = useState(false);
   // Y3 — diet optimization / evaluation requires at least one Forage
   // ingredient. The block fires before generate when none is present.
@@ -619,6 +636,65 @@ export default function FeedSelectionPage() {
 
   const isEvaluation = feedSelectionType === "evaluation";
 
+  // ─── Custom Diet Limits — discover what this animal may override ─────────
+  // A "Baby Calf/Heifer" is answered with a milk-feeding schedule rather than
+  // a formulated ration, so it has no editable limits at all and the endpoint
+  // returns 422 for it. Hide the whole control rather than offering one that
+  // can only fail.
+  const animalCategory = cattleInfo?.animal_category ?? "Lactating Cow";
+  const limitsApplyToAnimal = animalCategory !== "Baby Calf/Heifer";
+
+  useEffect(() => {
+    if (!limitsApplyToAnimal || !user?.token) {
+      setLimitSpecs(null);
+      setLimitSpecsError(null);
+      return;
+    }
+    let cancelled = false;
+    setLimitSpecs(null);
+    setLimitSpecsError(null);
+    getDietThresholds(animalCategory)
+      .then((res) => {
+        if (cancelled) return;
+        const specs = res.data?.thresholds;
+        if (Array.isArray(specs) && specs.length > 0) {
+          setLimitSpecs(specs);
+        } else {
+          setLimitSpecsError("Limits unavailable");
+        }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        // Deliberately NO hardcoded fallback. The ranges are per-state and
+        // are retuned server-side; a client-side copy would let the user
+        // enter a value the backend rejects, or silently over-constrain the
+        // diet. Better to say the tool is unavailable.
+        setLimitSpecsError("Limits unavailable");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [animalCategory, limitsApplyToAnimal, user?.token]);
+
+  const limitSpecsLoading = limitsApplyToAnimal && !limitSpecs && !limitSpecsError;
+  // Evaluation doesn't run the optimizer, so limits have nothing to act on.
+  const limitsDisabled = isEvaluation || !limitSpecs;
+
+  // Range check for one limit. The endpoint gives an explicit min AND max for
+  // both directions (for a ceiling `max` is the animal's own default, for the
+  // `ndf_for_min` floor it's `min`), so one inclusive check covers both — and
+  // it rejects 0 automatically, since every floor sits above zero.
+  const limitOutOfRange = (spec: DietThresholdSpec): boolean => {
+    const v = limits[spec.key];
+    return v != null && (v < spec.min || v > spec.max);
+  };
+
+  // Cross-field rule the backend enforces on the model: forage NDF is part of
+  // total NDF, so a floor above the ceiling is unsatisfiable by construction.
+  // Only checked when the user set BOTH, matching the server-side validator.
+  const ndfFloorAboveCeiling =
+    limits.ndf_for_min != null && limits.ndf_max != null && limits.ndf_for_min > limits.ndf_max;
+
   const addFeed = () => {
     // Functional updater — see updateItem for why (avoid clobbering a
     // concurrent cascade write off a stale `items` snapshot).
@@ -725,6 +801,25 @@ export default function FeedSelectionPage() {
     if (!hasForage) {
       setShowNoForageDialog(true);
       return;
+    }
+    // Custom Diet Limits are persisted across simulations, but the accepted
+    // range is per physiological state — so a limit saved for a Lactating Cow
+    // can be out of range once the user switches to a Dry Cow, and the
+    // backend would reject the whole request with a 422. Say so here instead
+    // of silently dropping the value (dropping it is the original defect) or
+    // letting a raw validation error through.
+    if (!isEvaluation && limitSpecs) {
+      const invalid = limitSpecs.filter(limitOutOfRange).map((sp) => t(DIET_LIMIT_LABELS[sp.key]));
+      if (invalid.length > 0 || ndfFloorAboveCeiling) {
+        showSnackbar(
+          t("Custom Diet Limits are out of range for ${animal} — open them and adjust.").replace(
+            "${animal}",
+            t(ANIMAL_CATEGORY_LABELS[animalCategory])
+          ),
+          "error"
+        );
+        return;
+      }
     }
     generateReport();
   };
@@ -866,10 +961,14 @@ export default function FeedSelectionPage() {
         </p>
         <div className="flex flex-wrap gap-2">
           {/* Custom Diet Limits — white pill, mint icon-badge (SectionCard
-              aesthetic). Disabled + greyed in evaluation mode. */}
+              aesthetic). Greyed out in evaluation mode (no optimizer to
+              constrain), while the per-state ranges are still loading, and
+              when they couldn't be fetched at all. Not rendered AT ALL for a
+              Baby Calf/Heifer, which has no editable limits. */}
+          {limitsApplyToAnimal && (
           <button
             onClick={() => setShowLimitsModal(true)}
-            disabled={isEvaluation}
+            disabled={limitsDisabled}
             style={{
               fontFamily: "Nunito, sans-serif",
               fontWeight: 700,
@@ -879,11 +978,11 @@ export default function FeedSelectionPage() {
               gap: 10,
               padding: "7px 16px 7px 7px",
               borderRadius: 999,
-              backgroundColor: isEvaluation ? "#F1F5F9" : "#FFFFFF",
-              color: isEvaluation ? "#999999" : "#064E3B",
-              border: `1.5px solid ${isEvaluation ? "#E2E8F0" : "#DCE0E4"}`,
-              boxShadow: isEvaluation ? "none" : "0 1px 2px rgba(6,40,30,0.06)",
-              cursor: isEvaluation ? "not-allowed" : "pointer",
+              backgroundColor: limitsDisabled ? "#F1F5F9" : "#FFFFFF",
+              color: limitsDisabled ? "#999999" : "#064E3B",
+              border: `1.5px solid ${limitsDisabled ? "#E2E8F0" : "#DCE0E4"}`,
+              boxShadow: limitsDisabled ? "none" : "0 1px 2px rgba(6,40,30,0.06)",
+              cursor: limitsDisabled ? "not-allowed" : "pointer",
               transition: "all 0.15s",
             }}
           >
@@ -894,14 +993,18 @@ export default function FeedSelectionPage() {
                 width: 30,
                 height: 30,
                 borderRadius: "50%",
-                backgroundColor: isEvaluation ? "#E8EBEE" : "#E4F7EF",
+                backgroundColor: limitsDisabled ? "#E8EBEE" : "#E4F7EF",
                 flexShrink: 0,
               }}
             >
-              <IcTune size={17} color={isEvaluation ? "#999999" : "#064E3B"} />
+              <IcTune size={17} color={limitsDisabled ? "#999999" : "#064E3B"} />
             </span>
+            {/* Label never changes — it's the button's accessible name and a
+                translated string. Loading/unavailable is conveyed by the
+                disabled state and the caption below. */}
             {t("Custom Diet Limits")}
           </button>
+          )}
           {/* Custom Feed — same white-pill treatment, always enabled. */}
           <button
             onClick={openCustomFeedModal}
@@ -938,6 +1041,17 @@ export default function FeedSelectionPage() {
             {t("Custom Feed")}
           </button>
         </div>
+        {/* Say WHY the tool is unavailable instead of leaving a dead pill.
+            Only shown for the fetch failure — evaluation mode already reads
+            as "not applicable here" from the radio group right below. */}
+        {limitsApplyToAnimal && !isEvaluation && limitSpecsError && (
+          <p
+            className="text-[11px] mt-1.5 ml-1"
+            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          >
+            {t("Diet limits unavailable — check your connection and reopen this screen.")}
+          </p>
+        )}
       </div>
 
       {/* Radio group: Diet Recommendation | Diet Evaluation.
@@ -1927,67 +2041,108 @@ export default function FeedSelectionPage() {
               </button>
             </div>
 
-            {LIMIT_ROWS.map(({ label, key, min, max }) => {
-              const val = limits[key];
-              const outOfRange = val != null && (val < min || val > max);
-              return (
-                <div key={key} className="mb-4">
-                  <p
-                    className="text-xs font-bold uppercase mb-2"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                  >
-                    {t(label)}
-                  </p>
-                  <input
-                    type="number"
-                    inputMode="decimal"
-                    placeholder="—"
-                    min={min}
-                    max={max}
-                    step="0.1"
-                    value={val ?? ""}
-                    onChange={(e) => updateLimit(key, e.target.value)}
-                    className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                    style={{
-                      backgroundColor: outOfRange ? "#FEC5BB" : "#F1F5F9",
-                      color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
-                    }}
-                  />
-                  <p
-                    className="text-xs mt-1 ml-1"
-                    style={{
-                      color: outOfRange ? "#E44A4A" : "#6D6D6D",
-                      fontFamily: "Nunito, sans-serif",
-                    }}
-                  >
-                    {outOfRange
-                      ? t("Value must be between ${min} and ${max}")
-                          .replace("${min}", String(min))
-                          .replace("${max}", String(max))
-                      : t("Range ${min} – ${max}")
-                          .replace("${min}", String(min))
-                          .replace("${max}", String(max))}
-                  </p>
-                </div>
-              );
-            })}
+            {/* Scrollable — eight limits don't fit a bottom sheet otherwise. */}
+            <div style={{ maxHeight: "58vh", overflowY: "auto", marginRight: -4, paddingRight: 4 }}>
+              {(limitSpecs ?? []).map((spec) => {
+                const { key, min, max, unit, direction, enforcement } = spec;
+                const val = limits[key];
+                const outOfRange = limitOutOfRange(spec);
+                const unitLabel = t(DIET_LIMIT_UNIT_LABELS[unit] ?? unit);
+                // A `soft` limit is only penalised in the cost objective, so
+                // the optimizer may exceed it. Calling that a "Limit" is what
+                // made QA read a legitimate overshoot as the engine ignoring
+                // the input — it's a target.
+                const isSoft = enforcement === "soft";
+                const badge = isSoft ? t("Target") : t("Limit");
+                const ndfConflict = key === "ndf_for_min" && ndfFloorAboveCeiling;
+                const invalid = outOfRange || ndfConflict;
+                return (
+                  <div key={key} className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p
+                        className="text-xs font-bold uppercase"
+                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                      >
+                        {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
+                      </p>
+                      <span
+                        className="text-[10px] font-bold uppercase"
+                        style={{
+                          fontFamily: "Nunito, sans-serif",
+                          color: isSoft ? "#FF9800" : "#064E3B",
+                          backgroundColor: isSoft ? "#FFF4E5" : "#E4F7EF",
+                          borderRadius: 999,
+                          padding: "2px 8px",
+                          flexShrink: 0,
+                        }}
+                      >
+                        {badge}
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      inputMode="decimal"
+                      placeholder={String(spec.default)}
+                      min={min}
+                      max={max}
+                      step="0.1"
+                      value={val ?? ""}
+                      onChange={(e) => updateLimit(key, e.target.value)}
+                      className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
+                      style={{
+                        backgroundColor: invalid ? "#FEC5BB" : "#F1F5F9",
+                        color: "#231F20",
+                        fontFamily: "Nunito, sans-serif",
+                      }}
+                    />
+                    <p
+                      className="text-xs mt-1 ml-1"
+                      style={{
+                        color: invalid ? "#E44A4A" : "#6D6D6D",
+                        fontFamily: "Nunito, sans-serif",
+                      }}
+                    >
+                      {ndfConflict
+                        ? t("Forage NDF Min cannot exceed NDF Max")
+                        : outOfRange
+                          ? t("Value must be between ${min} and ${max}")
+                              .replace("${min}", String(min))
+                              .replace("${max}", String(max))
+                          : // `default` is this animal's engine value and is
+                            // also the tighten-only bound, so the hint doubles
+                            // as an explanation of why the range stops there.
+                            t("Range ${min} – ${max} ${unit} · leave blank for the default ${default}")
+                              .replace("${min}", String(min))
+                              .replace("${max}", String(max))
+                              .replace("${unit}", unitLabel)
+                              .replace("${default}", String(spec.default))}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Limits may only be tightened — say so once rather than on
+                every row. Blank is a first-class state, NOT zero: blank means
+                "use this animal's default", and 0 is rejected outright. */}
+            <p
+              className="text-[11px] mb-3 mt-1 ml-1"
+              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+            >
+              {t(
+                "Limits can only be tightened, never loosened. Leave a field blank to use the default. Tightening a hard limit can return no diet at all."
+              )}
+            </p>
 
             {(() => {
-              // Y3 QA matrix: block Apply Limits when any field is out
-              // of its declared range OR when every field is empty (the
-              // modal exists to *set* at least one custom limit — if the
-              // user submits with nothing filled, the call is pointless).
-              const anyOutOfRange = LIMIT_ROWS.some(({ key, min, max }) => {
-                const v = limits[key];
-                return v != null && (v < min || v > max);
-              });
-              const anyFilled = LIMIT_ROWS.some(({ key }) => limits[key] != null);
-              const cantApply = anyOutOfRange || !anyFilled;
+              const specs = limitSpecs ?? [];
+              const anyOutOfRange = specs.some(limitOutOfRange);
+              const anyFilled = specs.some(({ key }) => limits[key] != null);
+              const cantApply = anyOutOfRange || ndfFloorAboveCeiling || !anyFilled;
               return (
                 <button
                   onClick={() => {
-                    if (anyOutOfRange) {
+                    if (anyOutOfRange || ndfFloorAboveCeiling) {
                       showSnackbar(
                         t("Please correct out-of-range values before applying"),
                         "error"

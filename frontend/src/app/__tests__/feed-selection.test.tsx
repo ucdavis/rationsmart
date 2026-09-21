@@ -14,6 +14,7 @@ const {
   insertCustomFeed,
   updateCustomFeed,
   checkInsertOrUpdate,
+  getDietThresholds,
 } = vi.hoisted(() => ({
   push: vi.fn(),
   back: vi.fn(),
@@ -27,6 +28,7 @@ const {
   insertCustomFeed: vi.fn(),
   updateCustomFeed: vi.fn(),
   checkInsertOrUpdate: vi.fn(),
+  getDietThresholds: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -47,6 +49,7 @@ vi.mock("@/lib/api", async () => {
     insertCustomFeed,
     updateCustomFeed,
     checkInsertOrUpdate,
+    getDietThresholds,
   };
 });
 
@@ -138,6 +141,20 @@ function seedUser(overrides: Partial<User> = {}): User {
   };
 }
 
+// A trimmed but faithful slice of GET /v1/animal/diet-thresholds for a
+// Lactating Cow: `max` equals the animal's own default (tighten-only), the
+// floor sits above zero, and `ndf_for_min` is the one `direction: "min"` key.
+const LACTATING_THRESHOLDS = [
+  { key: "ash_max", default: 15, min: 1, max: 15, unit: "pct_dm", direction: "max", enforcement: "hard" },
+  { key: "ee_max", default: 7, min: 1, max: 7, unit: "pct_dm", direction: "max", enforcement: "soft" },
+  { key: "ndf_max", default: 60, min: 20, max: 60, unit: "pct_dm", direction: "max", enforcement: "soft" },
+  { key: "starch_max", default: 26, min: 1, max: 26, unit: "pct_dm", direction: "max", enforcement: "soft" },
+  { key: "conc_max", default: 80, min: 10, max: 80, unit: "pct_dm", direction: "max", enforcement: "hard" },
+  { key: "ndf_for_min", default: 20, min: 20, max: 60, unit: "pct_dm", direction: "min", enforcement: "hard" },
+  { key: "nel_balance_max", default: 4, min: 0.5, max: 4, unit: "mcal_day", direction: "max", enforcement: "hard_after_switch" },
+  { key: "mp_balance_max", default: 1, min: 0.1, max: 1, unit: "kg_day", direction: "max", enforcement: "hard_after_switch" },
+];
+
 beforeEach(() => {
   push.mockClear();
   back.mockClear();
@@ -154,6 +171,12 @@ beforeEach(() => {
   insertCustomFeed.mockReset();
   updateCustomFeed.mockReset();
   checkInsertOrUpdate.mockReset();
+  // Custom Diet Limits ranges come from the backend per physiological state
+  // (GET /v1/animal/diet-thresholds) — the dialog is disabled until they
+  // arrive, so every render needs this resolved.
+  getDietThresholds.mockReset().mockResolvedValue({
+    data: { physiological_state: "Lactating Cow", thresholds: LACTATING_THRESHOLDS },
+  });
 
   useStore.setState({
     user: seedUser(),
@@ -242,10 +265,87 @@ describe("feed-selection — Custom Diet Limits gating", () => {
     useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
     await renderReady();
     const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
-    expect(btn).not.toBeDisabled();
+    await waitFor(() => expect(btn).not.toBeDisabled());
 
     fireEvent.click(screen.getByRole("button", { name: "Diet Evaluation" }));
     await waitFor(() => expect(btn).toBeDisabled());
+  });
+
+  it("asks the backend for THIS animal's ranges, not a hardcoded table", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [],
+      cattleInfo: mkCattleInfo({ animal_category: "Dry Cow" }),
+    });
+    await renderReady();
+    await waitFor(() => expect(getDietThresholds).toHaveBeenCalledWith("Dry Cow"));
+  });
+
+  it("stays disabled when the ranges can't be fetched — no hardcoded fallback", async () => {
+    getDietThresholds.mockReset().mockRejectedValue(new Error("offline"));
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).toBeDisabled());
+    expect(
+      screen.getByText("Diet limits unavailable — check your connection and reopen this screen.")
+    ).toBeInTheDocument();
+  });
+
+  it("is not offered at all for a Baby Calf/Heifer, which has no editable limits", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [],
+      cattleInfo: mkCattleInfo({ animal_category: "Baby Calf/Heifer" }),
+    });
+    await renderReady();
+    expect(screen.queryByRole("button", { name: "Custom Diet Limits" })).not.toBeInTheDocument();
+    expect(getDietThresholds).not.toHaveBeenCalled();
+  });
+
+  it("renders every limit the endpoint returns, with its unit and per-state range", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+
+    // A percentage key and both absolute-unit keys, so a future blanket
+    // "divide everything by 100" can't slip through unnoticed.
+    expect(await screen.findByText("Ash Max (%)")).toBeInTheDocument();
+    expect(screen.getByText("Energy Surplus Max (Mcal/day)")).toBeInTheDocument();
+    expect(screen.getByText("Protein Surplus Max (kg/day)")).toBeInTheDocument();
+    // Range comes from the response, not from a client-side constant.
+    expect(
+      screen.getByText("Range 1 – 15 % · leave blank for the default 15")
+    ).toBeInTheDocument();
+  });
+
+  it("blocks Generate when a saved limit is out of range for the current animal", async () => {
+    // starch_max 26 is legal for a Lactating Cow but above a Dry Cow's 18.
+    getDietThresholds.mockReset().mockResolvedValue({
+      data: {
+        physiological_state: "Dry Cow",
+        thresholds: LACTATING_THRESHOLDS.map((sp) =>
+          sp.key === "starch_max" ? { ...sp, default: 18, max: 18 } : sp
+        ),
+      },
+    });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      cattleInfo: mkCattleInfo({ animal_category: "Dry Cow" }),
+      feedSelections: [mkValidForageRow()],
+      dietLimits: { starch_max: 26 },
+    });
+    await renderReady();
+    await waitFor(() => expect(getDietThresholds).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toContain("out of range")
+    );
+    expect(recommendDiet).not.toHaveBeenCalled();
   });
 });
 

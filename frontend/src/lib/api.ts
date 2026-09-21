@@ -804,6 +804,70 @@ export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedT
   return { types, categories, feeds: feedNames };
 }
 
+// ─── Custom Diet Limits discovery (JWT-protected) ───────────────────────────
+// GET /v1/animal/diet-thresholds?physiological_state=Lactating%20Cow
+//
+// The ONLY source of truth for what the Custom Diet Limits dialog may offer.
+// Do NOT hardcode ranges next to it: the accepted range differs per
+// physiological state and the engine's values are retuned from time to time
+// (a 2026-07-27 retune shipped without the frontend noticing, which is why
+// this endpoint exists). Returns 422 for an unknown state and for
+// "Baby Calf/Heifer", which is answered with a milk-feeding schedule rather
+// than a formulated ration and therefore has no limits to edit.
+export interface DietThresholdSpec {
+  key: keyof DietLimits;
+  /** Engine default for THIS animal, expressed in `unit`. */
+  default: number;
+  /** Smallest accepted value. Equals `default` when direction is "min". */
+  min: number;
+  /** Largest accepted value. Equals `default` when direction is "max". */
+  max: number;
+  /** pct_dm = % of diet DM · mcal_day / kg_day = absolute, never scaled. */
+  unit: "pct_dm" | "mcal_day" | "kg_day";
+  /** "max" = a ceiling (tightening lowers it) · "min" = a floor (tightening raises it). */
+  direction: "max" | "min";
+  /**
+   * hard               — tightening can return no diet at all (INFEASIBLE)
+   * soft               — only penalised in the cost objective, so the diet
+   *                      may exceed it; render these as a TARGET, not a limit
+   * hard_after_switch  — soft early in the solve, enforced hard at the end
+   */
+  enforcement: "hard" | "soft" | "hard_after_switch";
+}
+
+export interface DietThresholdsResponse {
+  physiological_state: string;
+  thresholds: DietThresholdSpec[];
+}
+
+export const getDietThresholds = (physiological_state: string) =>
+  api.get<DietThresholdsResponse>("/v1/animal/diet-thresholds", {
+    params: { physiological_state },
+  });
+
+// Human labels for the eight keys. The endpoint returns the key, the range and
+// the unit, but no display name — these stay client-side so they can go
+// through the UI-label i18n dictionary like every other string.
+export const DIET_LIMIT_LABELS: Record<keyof DietLimits, string> = {
+  ash_max: "Ash Max",
+  ee_max: "EE Max — Fat",
+  ndf_max: "NDF Max — Fiber",
+  starch_max: "Starch Max",
+  conc_max: "Concentrate Max",
+  ndf_for_min: "Forage NDF Min",
+  nel_balance_max: "Energy Surplus Max",
+  mp_balance_max: "Protein Surplus Max",
+};
+
+// Unit suffix shown beside the label and in the range hint. `pct_dm` values are
+// percentages of diet DM; the other two are ABSOLUTE daily amounts and are sent
+// exactly as entered — see the DietLimits contract.
+export const DIET_LIMIT_UNIT_LABELS: Record<DietThresholdSpec["unit"], string> = {
+  pct_dm: "%",
+  mcal_day: "Mcal/day",
+  kg_day: "kg/day",
+};
+
 // ─── Evaluation & Recommendation (JWT-protected) ────────────────────────────
 
 export const evaluateDiet = (data: EvaluationRequest) => api.post("/v1/animal/evaluate-diet", data);

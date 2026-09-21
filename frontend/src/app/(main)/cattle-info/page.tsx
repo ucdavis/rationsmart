@@ -566,16 +566,38 @@ export default function CattleInfoPage() {
       }
 
       // Custom Diet Limits. The backend returns these as `custom_constraints`
-      // on the simulation detail, keyed exactly like DietLimits/BaseThresholds
-      // (ash_max / ee_max / ndf_max / starch_max). We never read it before,
-      // so restoring a simulation silently dropped the limits it was run
-      // with and the next run fell back to DEFAULT_BASE_THRESHOLDS. Only
-      // finite numbers are taken, so a partial or junk object can't poison
-      // the merge in feed-selection's generateReport.
+      // on the simulation detail, keyed exactly like DietLimits/BaseThresholds.
+      // We never read it before, so restoring a simulation silently dropped
+      // the limits it was run with. Only finite numbers are taken, so a
+      // partial or junk object can't poison the payload in feed-selection's
+      // generateReport.
+      //
+      // All EIGHT keys now, not just the original four — the backend accepts
+      // conc_max / ndf_for_min / nel_balance_max / mp_balance_max as well.
+      //
+      // UNVERIFIED (2026-09-21): the backend converts pct_dm limits from
+      // percent to fraction in the request validator, and `custom_constraints`
+      // is persisted downstream of that — so a restored `ash_max` may come
+      // back as 0.06 rather than 6. We deliberately do NOT rescale on a hunch.
+      // A fraction-scale value falls below the accepted minimum, and
+      // feed-selection's pre-flight check catches it before submit and tells
+      // the user to open Custom Diet Limits and adjust — rather than either
+      // guessing at the scale or letting a raw 422 through.
       const constraints = data?.custom_constraints as Record<string, unknown> | null | undefined;
       if (constraints && typeof constraints === "object") {
         const restoredLimits: Partial<DietLimits> = {};
-        (["ash_max", "ee_max", "ndf_max", "starch_max"] as const).forEach((key) => {
+        (
+          [
+            "ash_max",
+            "ee_max",
+            "ndf_max",
+            "starch_max",
+            "conc_max",
+            "ndf_for_min",
+            "nel_balance_max",
+            "mp_balance_max",
+          ] as const
+        ).forEach((key) => {
           const raw = constraints[key];
           if (raw === null || raw === undefined || raw === "") return;
           const n = Number(raw);
