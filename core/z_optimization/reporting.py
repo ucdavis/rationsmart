@@ -174,10 +174,15 @@ def build_diet_response(
         if methane_dict:
             methane_lookup = {row['Metric']: row['Value'] for row in methane_dict}
             short_class = methane_lookup.get('Classification', 'Average')
+            # Methane Intensity is None for a non-lactating state (rsm_calculate_methane_
+            # emissions omits it — see the gate and rationale there) and must stay None
+            # here rather than fall back to 0.0, which would read as "zero emissions"
+            # instead of "not applicable to this animal".
+            m_intensity_raw = methane_lookup.get('Methane Intensity (g/kg ECM)')
             environmental_impact = {
                 'methane_production_grams_per_day': round(float(methane_lookup.get('Methane Production (g/day)', 0.0)), 2) if 'Methane Production (g/day)' in methane_lookup else 0.0,
                 'methane_yield_grams_per_kg_dmi': round(float(methane_lookup.get('Methane Yield (g/kg DMI)', 0.0)), 2) if 'Methane Yield (g/kg DMI)' in methane_lookup else 0.0,
-                'methane_intensity_grams_per_kg_ecm': round(float(methane_lookup.get('Methane Intensity (g/kg ECM)', 0.0)), 2) if 'Methane Intensity (g/kg ECM)' in methane_lookup else 0.0,
+                'methane_intensity_grams_per_kg_ecm': round(float(m_intensity_raw), 2) if m_intensity_raw is not None else None,
                 'Ym (%)': round(float(methane_lookup.get('Ym (%)', 0.0)), 2) if 'Ym (%)' in methane_lookup else 0.0,
                 'classification': short_class
             }
@@ -500,11 +505,15 @@ def build_evaluation_response(
 
     # 4. Methane Analysis
     methane_report = evaluation_results.get("methane_report", {})
+    # None for a non-lactating state (evaluate_diet's own CH4_intensity gate, mirroring
+    # rsm_calculate_methane_emissions) -- kept None rather than defaulted to 0.0, which
+    # would read as "zero emissions" instead of "not applicable to this animal".
+    _ch4_intensity_raw = milk_support.get("CH4_intensity")
     methane_analysis = {
         "methane_emission_mj_per_day": round(milk_support.get("CH4_MJ", 0.0), 2),
         "methane_production_g_per_day": round(milk_support.get("CH4_grams", 0.0), 2),
         "methane_yield_g_per_kg_dmi": round(milk_support.get("CH4_grams_per_kg_DMI", 0.0), 2),
-        "methane_intensity_g_per_kg_ecm": round(milk_support.get("CH4_intensity", 0.0), 2),
+        "methane_intensity_g_per_kg_ecm": round(_ch4_intensity_raw, 2) if _ch4_intensity_raw is not None else None,
         "Ym (%)": round(milk_support.get("MCR", 0.0), 2),
         "classification": "Normal",
         "warnings": [],
@@ -530,7 +539,8 @@ def build_evaluation_response(
             # Update with engine values for consistency
             methane_analysis["methane_production_g_per_day"] = round(float(methane_lookup.get('Methane Production (g/day)', 0.0)), 2)
             methane_analysis["methane_yield_g_per_kg_dmi"] = round(float(methane_lookup.get('Methane Yield (g/kg DMI)', 0.0)), 2)
-            methane_analysis["methane_intensity_g_per_kg_ecm"] = round(float(methane_lookup.get('Methane Intensity (g/kg ECM)', 0.0)), 2)
+            m_intensity_raw = methane_lookup.get('Methane Intensity (g/kg ECM)')
+            methane_analysis["methane_intensity_g_per_kg_ecm"] = round(float(m_intensity_raw), 2) if m_intensity_raw is not None else None
             methane_analysis["Ym (%)"] = round(float(methane_lookup.get('Ym (%)', 0.0)), 2)
             methane_analysis["classification"] = short_class
     else:

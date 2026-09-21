@@ -578,7 +578,10 @@ class MethaneAnalysis(BaseModel):
     methane_emission_mj_per_day: float
     methane_production_g_per_day: float
     methane_yield_g_per_kg_dmi: float
-    methane_intensity_g_per_kg_ecm: float
+    # None for a non-lactating state -- the metric is undefined for an animal with no
+    # ECM (energy-corrected milk), not merely "not calculated". See
+    # docs/defects/methane-intensity-non-lactating-implementation-plan.md.
+    methane_intensity_g_per_kg_ecm: Optional[float] = None
     ym_percent: float = Field(..., alias="Ym (%)")
     classification: str
     warnings: List[str] = Field(default_factory=list)
