@@ -99,8 +99,14 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
     else:
         CH4 = 0  # Default for unknown animal types
     
-    # Methane Intensity
-    CH4_intensity = -0.101 - 0.215 * Dt_DMInSum - 0.118 * CP_diet - 0.323 * EE_diet + 0.120 * NDF_diet - 0.253 * Trg_MilkFatp + 3.44 * Trg_MilkTPp + 0.00947 * An_BW
+    # Methane Intensity - lactating cows only (see the identical gate and rationale in
+    # diet_tables.rsm_calculate_methane_emissions). This is a near-duplicate formula fed
+    # into milk_support["CH4_intensity"], which build_evaluation_response reads before
+    # methane_report is consulted, so it needs the same gate independently.
+    if An_StatePhys == "Lactating Cow":
+        CH4_intensity = -0.101 - 0.215 * Dt_DMInSum - 0.118 * CP_diet - 0.323 * EE_diet + 0.120 * NDF_diet - 0.253 * Trg_MilkFatp + 3.44 * Trg_MilkTPp + 0.00947 * An_BW
+    else:
+        CH4_intensity = None
 
     # Methane metrics
     CH4_MJ = CH4 * 55.5/1000  # convert from g to MJ
@@ -126,7 +132,7 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
         "CH4_MJ": round(CH4_MJ, 2),
         "CH4_grams": round(CH4, 2),
         "CH4_grams_per_kg_DMI": round(CH4_grams_per_kg_DMI, 2),
-        "CH4_intensity": round(CH4_intensity, 2),
+        "CH4_intensity": round(CH4_intensity, 2) if CH4_intensity is not None else None,
         "MCR": round(MCR, 2)
     }
 
