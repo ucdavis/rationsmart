@@ -455,9 +455,17 @@ def rsm_calculate_methane_emissions(Dt, Dt_DMInSum, f_nd, animal_requirements, b
     else:
         CH4 = 0  # Default for unknown animal types
 
-    # Methane Intensity - Methane intensity is for lactating cows only. 
-    # It should not be present in the dry cows or heifers reports.
-    CH4_intensity = -0.101 - 0.215 * Dt_DMInSum - 0.118 * CP_diet - 0.323 * EE_diet + 0.120 * NDF_diet - 0.253 * Trg_MilkFatp + 3.44 * Trg_MilkTPp + 0.00947 * An_BW
+    # Methane Intensity - Methane intensity is for lactating cows only.
+    # It should not be present in the dry cows or heifers reports. For those states
+    # Trg_MilkFatp/Trg_MilkTPp are zeroed upstream (_neutralize_lactation_fields), but
+    # the other terms (DMI, CP%, EE%, NDF%, body weight) are not, so the formula still
+    # returns a real, finite number labeled "g/kg ECM" for an animal whose ECM is zero —
+    # a plausible-looking wrong answer rather than an absent one. None here is the single
+    # source of truth every downstream consumer (JSON + HTML/PDF) reads to suppress it.
+    if An_StatePhys == "Lactating Cow":
+        CH4_intensity = -0.101 - 0.215 * Dt_DMInSum - 0.118 * CP_diet - 0.323 * EE_diet + 0.120 * NDF_diet - 0.253 * Trg_MilkFatp + 3.44 * Trg_MilkTPp + 0.00947 * An_BW
+    else:
+        CH4_intensity = None
 
     # Methane metrics
     CH4_MJ = CH4 * 55.5/1000  # convert from g to MJ
@@ -491,7 +499,7 @@ def rsm_calculate_methane_emissions(Dt, Dt_DMInSum, f_nd, animal_requirements, b
         "Value": [
             round(CH4, 2),
             round(CH4_grams_per_kg_DMI, 2),
-            round(CH4_intensity, 2),
+            round(CH4_intensity, 2) if CH4_intensity is not None else None,
             round(MCR, 2),
             MCR_range
         ]
