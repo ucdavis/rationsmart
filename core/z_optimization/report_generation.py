@@ -1051,6 +1051,7 @@ def build_report_context(
             "summary_precision": 1,
             "show_milk_price_comparison": True,
             "show_calf_feeding_summary": False,
+            "show_methane_intensity": True,
         },
         "Dry Cow": {
             "animal_input_rows": [
@@ -1064,6 +1065,7 @@ def build_report_context(
             "summary_precision": 2,
             "show_milk_price_comparison": False,
             "show_calf_feeding_summary": False,
+            "show_methane_intensity": False,
         },
         "Heifer": {
             "animal_input_rows": [
@@ -1077,6 +1079,7 @@ def build_report_context(
             "summary_precision": 2,
             "show_milk_price_comparison": False,
             "show_calf_feeding_summary": False,
+            "show_methane_intensity": False,
         },
         "Baby Calf/Heifer": {
             "animal_input_rows": ["Breed", "Animal Type", "Animal Weight"],
@@ -1089,6 +1092,7 @@ def build_report_context(
             "summary_precision": 1,
             "show_milk_price_comparison": False,
             "show_calf_feeding_summary": True,
+            "show_methane_intensity": False,
         },
     }
     profile = profiles.get(animal_state, profiles["Lactating Cow"]).copy()
@@ -1144,6 +1148,7 @@ def build_report_context(
         "summary_metric_label": profile.get("summary_label", "Milk Production"),
         "show_milk_price_comparison": bool(profile.get("show_milk_price_comparison")),
         "show_calf_feeding_summary": bool(profile.get("show_calf_feeding_summary")),
+        "show_methane_intensity": bool(profile.get("show_methane_intensity")),
         "calf_feeding_table": calf_feeding_table,
     }
 
@@ -1324,6 +1329,7 @@ def rsm_generate_report_v2(
     animal_inputs = report_context["animal_inputs"]
     An_Requirements = report_context["requirements"]
     calf_feeding_table = report_context["calf_feeding_table"]
+    show_methane_intensity = report_context["show_methane_intensity"]
 
     dfs = [animal_inputs, An_Requirements, dt_results, dt_proportions, dt_forages, dt_concentrates, methane_report, ration_evaluation]
     for df in dfs:
@@ -1394,8 +1400,21 @@ def rsm_generate_report_v2(
 
     w_prod = min(100, (float(m_prod) / 800) * 100) if m_prod else 0
     w_yield = min(100, (float(m_yield) / 35) * 100) if m_yield else 0
-    w_int = min(100, (float(m_int) / 25) * 100) if m_int else 0
     w_ym = min(100, (float(m_ym) / 12) * 100) if m_ym else 0
+
+    # Methane Intensity (g/kg ECM) is undefined for a non-lactating animal — ECM (energy-
+    # corrected milk) is zero, and rsm_calculate_methane_emissions returns None for the
+    # metric rather than a real-looking number for it (see build_report_context /
+    # show_methane_intensity, and the plan doc this implements). Build the row as its own
+    # fragment so a suppressed metric is an absent row, not a rendered "None g/kg ECM".
+    methane_intensity_row_html = ""
+    if show_methane_intensity and m_int is not None:
+        w_int = min(100, (float(m_int) / 25) * 100) if m_int else 0
+        methane_intensity_row_html = f"""
+            <div class='profile-row'>
+                <div class='profile-info'><span>Methane Intensity</span><span>{m_int} g/kg ECM</span></div>
+                <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_int}%; background: #ef4444;'></div></div>
+            </div>"""
 
     env_impact_html = f"""
     <div class='section'>
@@ -1408,11 +1427,7 @@ def rsm_generate_report_v2(
             <div class='profile-row'>
                 <div class='profile-info'><span>Methane Yield</span><span>{m_yield} g/kg DMI</span></div>
                 <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_yield}%; background: #eab308;'></div></div>
-            </div>
-            <div class='profile-row'>
-                <div class='profile-info'><span>Methane Intensity</span><span>{m_int} g/kg ECM</span></div>
-                <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_int}%; background: #ef4444;'></div></div>
-            </div>
+            </div>{methane_intensity_row_html}
             <div class='profile-row'>
                 <div class='profile-info'><span>Methane Conversion Rate (Ym)</span><span>{m_ym} %</span></div>
                 <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_ym}%; background: #3b82f6;'></div></div>
