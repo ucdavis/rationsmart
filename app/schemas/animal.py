@@ -151,8 +151,8 @@ class CattleInfo(BaseModel):
 class FeedWithPrice(BaseModel):
     feed_id: str = Field(..., description="Feed UUID")
     price_per_kg: float = Field(..., ge=0, description="Price per kg in local currency")
-    min_kg_asfed: Optional[float] = Field(None, ge=0, description="Min inclusion kg/day as-fed (None = no lower bound)")
-    max_kg_asfed: Optional[float] = Field(None, ge=0, description="Max inclusion kg/day as-fed (None = no upper bound)")
+    min_kg_asfed: Optional[float] = Field(None, gt=0, description="Min inclusion kg/day as-fed (omit for no lower bound)")
+    max_kg_asfed: Optional[float] = Field(None, gt=0, description="Max inclusion kg/day as-fed (omit for no upper bound)")
 
     @field_validator('price_per_kg', mode='before')
     @classmethod
@@ -173,7 +173,20 @@ class FeedWithPrice(BaseModel):
     def round_bounds(cls, v):
         if v is None:
             return None
-        return round(float(v), 3)
+        rounded = round(float(v), 3)
+        # Zero is not "no limit". rsm_bounds_xlxu masks on `> 0`, so a zero bound is
+        # dropped and the diet is solved as though the field had never been sent -- a
+        # user who enters max 0 to exclude a feed gets that feed at full inclusion, with
+        # nothing in the response to say so. Omitting the key is how "no limit" is
+        # expressed; a zero can only be something the user typed, so reject it.
+        #
+        # Checked AFTER rounding, deliberately: 0.0004 passes a pre-rounding check and
+        # then rounds to 0.0 on its way to the engine, which is the same silent bug.
+        if rounded == 0:
+            raise ValueError(
+                'enter a value greater than 0, or omit the field for no limit'
+            )
+        return rounded
 
     def model_post_init(self, __context: Any) -> None:
         if self.min_kg_asfed is not None and self.max_kg_asfed is not None:
