@@ -1460,6 +1460,104 @@ make backend endpoints consume it.
 
 ---
 
+---
+
+## 19. Backend API changes absorbed 2026-09-21 (defect round)
+
+Source: `~/Downloads/defects/` — four backend reports. All of the
+custom-diet-limits and search-feeds work is **deployed** on
+`<DEV_BACKEND_IP>:8000`; verify anything here against
+`http://<DEV_BACKEND_IP>:8000/openapi.json` rather than from memory.
+
+### 19.1 `base_thresholds` — send only what the user set
+
+**Never merge a client-side default underneath the user's limits.** The
+old rule ("always send `base_thresholds`, merged over
+`DEFAULT_BASE_THRESHOLDS`") was Android parity and was harmless only
+while the backend mis-read percentages as fractions. The backend now:
+
+- divides `pct_dm` keys by 100 (so the client keeps sending percent),
+- validates every key against a **per-physiological-state, tighten-only**
+  range,
+- rejects `0` and anything out of range with a raw FastAPI 422.
+
+`DEFAULT_BASE_THRESHOLDS` (ash 10, ee 7, ndf 45, starch 26) was deleted
+and **must not come back** — those values over-constrained lactating
+diets and 422'd every Dry Cow / Heifer run. An **omitted key** is the
+only way to say "use the engine's default for this animal".
+
+### 19.2 `GET /v1/animal/diet-thresholds?physiological_state=` is the source of truth
+
+The Custom Diet Limits dialog binds its rows to this endpoint — range,
+default, unit, direction and enforcement all come from the response.
+**Do not hardcode ranges beside it**; they differ per state and are
+retuned server-side.
+
+- Eight keys. Six are `pct_dm`; `nel_balance_max` (Mcal/day) and
+  `mp_balance_max` (kg/day) are **absolute and must never be scaled**.
+- `direction: "min"` (only `ndf_for_min`) is a floor — tightening raises
+  it, so its `min` equals the default, not its `max`.
+- `enforcement: "soft"` (`ndf_max` / `starch_max` / `ee_max`) means the
+  optimizer only penalises the breach and may exceed it — render these
+  as **"Target"**, not "Limit".
+- Returns 422 for `Baby Calf/Heifer`; the dialog isn't rendered for it.
+- If the fetch fails the dialog stays **disabled**. No hardcoded
+  fallback — that's the drift this endpoint exists to remove.
+
+### 19.3 Per-feed inclusion limits reject a typed `0`
+
+`min_kg_asfed` / `max_kg_asfed` are `exclusiveMinimum: 0`. Omitting the
+key means "no bound". A `0` can only be user-typed, so it's flagged in
+the field and blocks Generate (`inclusionBoundIsInvalid` in
+validators.ts). **Never coerce a typed 0 into an omitted key** —
+silently discarding the user's input is the defect, not the fix.
+
+### 19.4 `?lang=` is a QUERY param on the two diet POSTs
+
+`POST /v1/animal/diet-recommendation?lang=` and `/evaluate-diet?lang=`.
+A `lang` key in the JSON body is ignored **silently**. The backend
+renders and persists `report_html` at creation time in the resolved
+language and the PDF reuses it, so omitting it freezes the report in the
+profile language permanently.
+
+### 19.5 Feed Category must be filtered client-side
+
+`GET /v1/animal/unique-feed-category` accepts only `country_id` and
+`lang` — the `feed_type` the client sends is **dropped**, which is why
+Concentrate categories appeared under Forage. `getFeedCategories()`
+intersects that country list with
+`GET /v1/feed-classification/get-categories/{type_id}` (type id from
+`/v1/feed-classification/get-feed-types`, no auth needed). Every failure
+path falls back to the unfiltered list — an empty dropdown is a dead
+end.
+
+### 19.6 `feed_name_en` on search results
+
+`/v1/animal/search-feeds` searches the English name **unconditionally**
+plus the request's language, so a match can display in a script the user
+didn't type. `feed_name_en` is rendered in parentheses when it differs
+from the display name.
+
+### 19.7 Lactation-only surfaces
+
+- **Days in Milk** renders (and is required) only for `Lactating Cow`.
+- **Methane Intensity** (g/kg ECM) is displayed only for
+  `Lactating Cow` — the engine still calculates it for other states.
+
+### 19.8 Still blocked
+
+- QA rows 7 / 8 / 9(full map): need the `Fd_Cat&Type` and
+  `Input_display` tabs of `RFT_FD_Lib_Y2test.xlsx`, which aren't in the
+  copy we have.
+- QA row 2 (language switching on Cattle Info): needs Maria's screen
+  recording — see the notes in that row.
+- Restored `custom_constraints` may be persisted as **fractions**
+  (0.06) rather than percent (6); unverified. We deliberately don't
+  rescale on a hunch — feed-selection's pre-flight catches an
+  out-of-range restored limit and tells the user to adjust it.
+
+---
+
 If you (a future Claude session) are about to do something this document
 discourages — pause, re-read the relevant section, then either follow the
 documented pattern or surface the deviation to the user before proceeding.
