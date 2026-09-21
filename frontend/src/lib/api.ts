@@ -725,8 +725,129 @@ export const getFeedTypes = (country_id: string, _user_id?: string) =>
 
 export const getFeedTypesLocalized = getFeedTypes;
 
-export const getFeedCategories = (feed_type: string, country_id: string, _user_id?: string) =>
-  api.get("/v1/animal/unique-feed-category", { params: { country_id, feed_type, lang: "en" } });
+// QA row 5/6 — "after selecting a Feed Type, the Feed Category menu should
+// show only the categories applicable to that type".
+//
+// ROOT CAUSE: `/v1/animal/unique-feed-category` accepts ONLY `country_id`
+// and `lang` (confirmed against the v1 OpenAPI spec). The `feed_type` we
+// have always sent is not a parameter of that endpoint, so FastAPI drops it
+// and the response is every category in the country — Concentrate categories
+// offered under Forage and vice versa.
+//
+// The type→category mapping lives on the feed-classification endpoints
+// (no auth required):
+//   GET /v1/feed-classification/get-feed-types           → [{ id, type_name }]
+//   GET /v1/feed-classification/get-categories/{type_id} → [{ category_name }]
+//
+// We use that pair to FILTER the country list rather than to replace it. The
+// country call is what guarantees a category actually has feeds available
+// here; the classification call is what guarantees it belongs to this type.
+// Both matter, so we intersect.
+//
+// Every failure path degrades to "no filtering" — the pre-existing behaviour.
+// A taxonomy mismatch must never empty the dropdown: an over-broad list is a
+// nuisance, an empty one is a dead end ("just the arrows, nothing loads").
+type FeedClassificationType = { id?: string; type_name?: string };
+type FeedClassificationCategory = { category_name?: string; name?: string };
+
+const normalizeTaxonomyName = (v: unknown): string =>
+  String(v ?? "")
+    .trim()
+    .toLowerCase();
+
+let feedTypeCatalogPromise: Promise<FeedClassificationType[]> | null = null;
+const categoryNamesByTypeId = new Map<string, Promise<string[]>>();
+
+async function allowedCategoryNamesForType(feed_type: string): Promise<Set<string> | null> {
+  if (!feed_type) return null;
+  try {
+    if (!feedTypeCatalogPromise) {
+      feedTypeCatalogPromise = api
+        .get("/v1/feed-classification/get-feed-types", { params: { lang: "en" } })
+        .then((r) => (Array.isArray(r.data) ? (r.data as FeedClassificationType[]) : []))
+        .catch((err) => {
+          // Don't let one transient failure poison the cache for the session.
+          feedTypeCatalogPromise = null;
+          throw err;
+        });
+    }
+    const catalog = await feedTypeCatalogPromise;
+    const typeId = catalog.find(
+      (t) => normalizeTaxonomyName(t.type_name) === normalizeTaxonomyName(feed_type)
+    )?.id;
+    // A country-specific type with no classification entry: leave it alone
+    // rather than filtering it down to nothing.
+    if (!typeId) return null;
+
+    let namesPromise = categoryNamesByTypeId.get(typeId);
+    if (!namesPromise) {
+      namesPromise = api
+        .get(`/v1/feed-classification/get-categories/${typeId}`, { params: { lang: "en" } })
+        .then((r) =>
+          (Array.isArray(r.data) ? (r.data as FeedClassificationCategory[]) : [])
+            .map((c) => c.category_name ?? c.name ?? "")
+            .filter(Boolean)
+        )
+        .catch((err) => {
+          categoryNamesByTypeId.delete(typeId);
+          throw err;
+        });
+      categoryNamesByTypeId.set(typeId, namesPromise);
+    }
+    const names = await namesPromise;
+    return names.length > 0 ? new Set(names.map(normalizeTaxonomyName)) : null;
+  } catch {
+    return null;
+  }
+}
+
+// Pulls the category rows out of whichever wrapper the backend used, without
+// changing the rows themselves — callers still parse them as they always did.
+function unwrapCategoryRows(data: unknown): unknown[] | null {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === "object") {
+    const o = data as Record<string, unknown>;
+    for (const key of ["categories", "unique_feed_categories", "feed_categories"]) {
+      if (Array.isArray(o[key])) return o[key] as unknown[];
+    }
+  }
+  return null;
+}
+
+const categoryRowName = (row: unknown): string => {
+  if (typeof row === "string") return row;
+  const o = row as { category_name?: string; name?: string };
+  return o?.category_name ?? o?.name ?? "";
+};
+
+/**
+ * Clears the feed-classification caches above. Exists for tests only — the
+ * type→category mapping is static per deployment, so nothing in the app
+ * needs to invalidate it.
+ */
+export function __resetFeedClassificationCache(): void {
+  feedTypeCatalogPromise = null;
+  categoryNamesByTypeId.clear();
+}
+
+export const getFeedCategories = async (
+  feed_type: string,
+  country_id: string,
+  _user_id?: string
+) => {
+  const res = await api.get("/v1/animal/unique-feed-category", {
+    params: { country_id, feed_type, lang: "en" },
+  });
+  const rows = unwrapCategoryRows(res.data);
+  if (!rows) return res; // unrecognized shape — hand it back untouched
+  const allowed = await allowedCategoryNamesForType(feed_type);
+  if (!allowed) return res;
+  const filtered = rows.filter((row) => allowed.has(normalizeTaxonomyName(categoryRowName(row))));
+  // Empty intersection means the two vocabularies disagree, not that the type
+  // has no categories. Keep the unfiltered list.
+  if (filtered.length === 0) return res;
+  return { ...res, data: filtered };
+};
 
 export const getFeedCategoriesLocalized = (feed_type: string, country_id: string) =>
   getFeedCategories(feed_type, country_id);

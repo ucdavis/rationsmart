@@ -25,6 +25,7 @@ import {
   getFeedClassification,
   searchFeeds,
   setLangProvider,
+  __resetFeedClassificationCache,
   type EvaluationRequest,
   type RecommendationRequest,
 } from "@/lib/api";
@@ -36,6 +37,7 @@ beforeEach(() => {
   mockApi.delete.mockReset();
   mockApi.patch.mockReset();
   setLangProvider(() => "en");
+  __resetFeedClassificationCache();
 });
 
 // ─── Feed taxonomy ──────────────────────────────────────────────────────────
@@ -71,6 +73,77 @@ describe("getFeedCategories", () => {
     expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/unique-feed-category", {
       params: { country_id: "7", feed_type: "Concentrate", lang: "en" },
     });
+  });
+
+  // QA row 5/6. /v1/animal/unique-feed-category takes only country_id + lang,
+  // so the feed_type we send is dropped and every category in the country
+  // comes back — Concentrate categories offered under Forage. We intersect
+  // with the feed-classification type→category mapping to fix that.
+  const CLASSIFICATION_TYPES = [
+    { id: "type-forage", type_name: "Forage" },
+    { id: "type-conc", type_name: "Concentrate" },
+  ];
+  const routeGet = (
+    countryCategories: unknown,
+    perType: Record<string, unknown[]> = {},
+    opts: { typesFail?: boolean } = {}
+  ) =>
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/v1/animal/unique-feed-category")
+        return Promise.resolve({ data: countryCategories });
+      if (url === "/v1/feed-classification/get-feed-types")
+        return opts.typesFail
+          ? Promise.reject(new Error("offline"))
+          : Promise.resolve({ data: CLASSIFICATION_TYPES });
+      const m = url.match(/^\/v1\/feed-classification\/get-categories\/(.+)$/);
+      if (m) return Promise.resolve({ data: perType[m[1]] ?? [] });
+      return Promise.reject(new Error(`unexpected ${url}`));
+    });
+
+  it("keeps only the categories that belong to the selected feed type", async () => {
+    routeGet(
+      [
+        { category_name: "Grass/Legume Forage", display_category: "Grass/Legume Forage" },
+        { category_name: "Energy Source", display_category: "Energy Source" },
+        { category_name: "Minerals", display_category: "Minerals" },
+      ],
+      { "type-forage": [{ category_name: "Grass/Legume Forage" }] }
+    );
+    const res = await getFeedCategories("Forage", "7");
+    expect(res.data).toEqual([
+      { category_name: "Grass/Legume Forage", display_category: "Grass/Legume Forage" },
+    ]);
+  });
+
+  it("matches the type name case- and whitespace-insensitively", async () => {
+    routeGet(["Energy Source", "Grass/Legume Forage"], {
+      "type-conc": [{ category_name: "energy source" }],
+    });
+    const res = await getFeedCategories(" concentrate ", "7");
+    expect(res.data).toEqual(["Energy Source"]);
+  });
+
+  it("does not filter when the classification lookup fails", async () => {
+    routeGet(["Energy Source", "Grass/Legume Forage"], {}, { typesFail: true });
+    const res = await getFeedCategories("Forage", "7");
+    expect(res.data).toEqual(["Energy Source", "Grass/Legume Forage"]);
+  });
+
+  it("does not filter a feed type the classification API doesn't know", async () => {
+    routeGet(["Energy Source", "Grass/Legume Forage"], {});
+    const res = await getFeedCategories("Roughage", "7");
+    expect(res.data).toEqual(["Energy Source", "Grass/Legume Forage"]);
+  });
+
+  // An empty intersection means the two vocabularies disagree, not that the
+  // type has no categories. An over-broad dropdown is a nuisance; an empty
+  // one is a dead end.
+  it("falls back to the unfiltered list when nothing intersects", async () => {
+    routeGet(["Some Country Only Category"], {
+      "type-forage": [{ category_name: "Grass/Legume Forage" }],
+    });
+    const res = await getFeedCategories("Forage", "7");
+    expect(res.data).toEqual(["Some Country Only Category"]);
   });
 });
 
