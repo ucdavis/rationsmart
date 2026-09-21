@@ -258,11 +258,27 @@ async def _build_feed_data_list(
 
     feed_data_list = []
     missing = []
+    unusable = []
     for item in feed_selection:
         fid = item.feed_id
         feed = std_map.get(fid) or cust_map.get(fid)
         if feed is None:
             missing.append(fid)
+            continue
+
+        # A feed with no dry matter cannot be formulated against: every nutrient is
+        # expressed per kg of DM, the as-fed conversion divides by it, and the
+        # per-ingredient inclusion bounds are scaled by it -- so a zero-DM feed silently
+        # loses the min/max the user entered and reports `inf` kg. Roughly half the feed
+        # library still has fd_dm NULL (a CLIMDES import carries name + taxonomy but not
+        # always nutrients) and nothing upstream rejects those rows, so refuse them here
+        # by name instead of returning a ration built on zeros.
+        try:
+            dm = float(feed.fd_dm) if feed.fd_dm is not None else 0.0
+        except (TypeError, ValueError):
+            dm = 0.0
+        if dm <= 0:
+            unusable.append(feed.fd_name or fid)
             continue
 
         country_name = ""
@@ -277,6 +293,14 @@ async def _build_feed_data_list(
             fd_max=getattr(item, 'max_kg_asfed', None),
         )
         feed_data_list.append(dataclasses.asdict(rec))
+
+    if unusable:
+        raise ValueError(
+            "These feeds have no dry-matter value recorded and cannot be used in a "
+            f"ration: {', '.join(unusable)}. Remove them from the selection, or ask an "
+            "administrator to complete their nutrient data."
+        )
+
     return feed_data_list, missing
 
 

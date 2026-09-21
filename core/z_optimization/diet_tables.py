@@ -23,7 +23,19 @@ def rsm_create_diet_table(best_solution_vector, f_nd, zero_cost_mask=None):
 
     # Calculate the inclusion in As-Fed
     inclusion_DM_kg = best_solution_vector
-    inclusion_AF_kg = inclusion_DM_kg / (f_nd["Fd_DM"] / 100)
+    # A feed row with no dry matter (Fd_DM 0 or NULL) would divide by zero here and put
+    # `inf` into the diet table, the report and the JSON payload. diet_service rejects
+    # such feeds at the API boundary, but the engine also runs straight from Excel via
+    # scripts_2/manual_run, so guard here rather than rely on the caller. Zero-DM rows
+    # contribute nothing, so zero is the honest quantity to report for them.
+    dm_fraction = np.asarray(f_nd["Fd_DM"], dtype=float) / 100.0
+    inclusion_DM_kg_arr = np.asarray(inclusion_DM_kg, dtype=float)
+    inclusion_AF_kg = np.divide(
+        inclusion_DM_kg_arr,
+        dm_fraction,
+        out=np.zeros_like(inclusion_DM_kg_arr),
+        where=dm_fraction > 0,
+    )
 
     # Round AF amounts to 2 decimals 
     inclusion_AF_kg_rounded = np.round(inclusion_AF_kg, 2)
