@@ -375,8 +375,45 @@ describe("feed-selection — Custom Diet Limits gating", () => {
     expect(await screen.findByText("Ash Max (%)")).toBeInTheDocument();
     expect(screen.getByText("Energy Surplus Max (Mcal/day)")).toBeInTheDocument();
     expect(screen.getByText("Protein Surplus Max (kg/day)")).toBeInTheDocument();
-    // Range comes from the response, not from a client-side constant.
-    expect(screen.getByText("Range 1 – 15 % · leave blank for the default 15")).toBeInTheDocument();
+    // Range comes from the response, not from a client-side constant, and the
+    // engine default is stated in brackets (the per-row "leave blank" wording
+    // moved to the one line under the sheet title on 2026-09-22).
+    expect(screen.getByText("Range 1 – 15 % (Default 15)")).toBeInTheDocument();
+    expect(screen.getByText("Default value will be applied if left blank")).toBeInTheDocument();
+    // All eight are limits — the hard/soft TARGET/LIMIT badges were removed.
+    expect(screen.queryByText("Target")).not.toBeInTheDocument();
+    expect(screen.queryByText("Limit")).not.toBeInTheDocument();
+  });
+
+  it("orders the limits as specified, not as the endpoint returned them", async () => {
+    // LACTATING_THRESHOLDS deliberately arrives in the engine's own order
+    // (ash, ee, ndf, starch, conc, ndf_for_min, nel, mp) — nothing here
+    // passes unless the client re-sorts it.
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+    await screen.findByText("Ash Max (%)");
+
+    const expected = [
+      "Forage NDF Min (%)",
+      "NDF Max — Fiber (%)",
+      "Starch Max (%)",
+      "Concentrate Max (%)",
+      "EE Max — Fat (%)",
+      "Ash Max (%)",
+      "Energy Surplus Max (Mcal/day)",
+      "Protein Surplus Max (kg/day)",
+    ];
+    const rendered = expected
+      .map((label) => screen.getByText(label))
+      .map((node) => ({ node, label: node.textContent }));
+    // Document order of the label nodes must match `expected` exactly.
+    const inDocOrder = [...rendered].sort((a, b) =>
+      a.node.compareDocumentPosition(b.node) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+    );
+    expect(inDocOrder.map((r) => r.label)).toEqual(expected);
   });
 
   it("blocks Generate when a saved limit is out of range for the current animal", async () => {

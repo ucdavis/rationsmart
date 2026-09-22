@@ -962,8 +962,15 @@ export interface DietThresholdSpec {
   /**
    * hard               — tightening can return no diet at all (INFEASIBLE)
    * soft               — only penalised in the cost objective, so the diet
-   *                      may exceed it; render these as a TARGET, not a limit
+   *                      may exceed it
    * hard_after_switch  — soft early in the solve, enforced hard at the end
+   *
+   * NOT surfaced in the UI. An earlier build rendered `soft` rows as a
+   * "Target" badge and the rest as "Limit"; on 2026-09-22 the user
+   * (Maria + Satish) ruled that all eight are limits and the hard/soft
+   * split is an engine detail — the badge was removed. The field stays on
+   * the type because the payload contract and future engine-side work
+   * still depend on it; don't reintroduce the badge.
    */
   enforcement: "hard" | "soft" | "hard_after_switch";
 }
@@ -991,6 +998,30 @@ export const DIET_LIMIT_LABELS: Record<keyof DietLimits, string> = {
   nel_balance_max: "Energy Surplus Max",
   mp_balance_max: "Protein Surplus Max",
 };
+
+// Display order for the Custom Diet Limits dialog, specified by Maria on
+// 2026-09-22: most-adjusted first, the two absolute-unit surplus keys last.
+// The backend returns `thresholds` in its own (engine) order, so the dialog
+// sorts with this table. A key the backend adds later that isn't listed here
+// still renders — it lands after the known eight rather than disappearing.
+export const DIET_LIMIT_DISPLAY_ORDER: (keyof DietLimits)[] = [
+  "ndf_for_min",
+  "ndf_max",
+  "starch_max",
+  "conc_max",
+  "ee_max",
+  "ash_max",
+  "nel_balance_max",
+  "mp_balance_max",
+];
+
+export function sortDietThresholds(specs: DietThresholdSpec[]): DietThresholdSpec[] {
+  const rank = (key: keyof DietLimits) => {
+    const i = DIET_LIMIT_DISPLAY_ORDER.indexOf(key);
+    return i === -1 ? DIET_LIMIT_DISPLAY_ORDER.length : i;
+  };
+  return [...specs].sort((a, b) => rank(a.key) - rank(b.key));
+}
 
 // Unit suffix shown beside the label and in the range hint. `pct_dm` values are
 // percentages of diet DM; the other two are ABSOLUTE daily amounts and are sent

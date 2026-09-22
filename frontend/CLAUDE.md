@@ -1498,11 +1498,27 @@ retuned server-side.
 - `direction: "min"` (only `ndf_for_min`) is a floor — tightening raises
   it, so its `min` equals the default, not its `max`.
 - `enforcement: "soft"` (`ndf_max` / `starch_max` / `ee_max`) means the
-  optimizer only penalises the breach and may exceed it — render these
-  as **"Target"**, not "Limit".
+  optimizer only penalises the breach and may exceed it. This is an
+  ENGINE detail and is **not surfaced in the UI**. An earlier build
+  showed soft rows as a "Target" badge and the rest as "Limit"; on
+  2026-09-22 Maria and Satish ruled that all eight are limits and had
+  the badges removed. `enforcement` stays on `DietThresholdSpec` (the
+  payload contract still carries it) — **don't reintroduce the badge**.
 - Returns 422 for `Baby Calf/Heifer`; the dialog isn't rendered for it.
 - If the fetch fails the dialog stays **disabled**. No hardcoded
   fallback — that's the drift this endpoint exists to remove.
+- **Row order is client-side and fixed.** The endpoint returns the
+  engine's order; the dialog re-sorts with `DIET_LIMIT_DISPLAY_ORDER` /
+  `sortDietThresholds()` in api.ts (Forage NDF Min, NDF Max, Starch Max,
+  Concentrate Max, EE Max, Ash Max, Energy Surplus Max, Protein Surplus
+  Max — Maria's importance order, 2026-09-22). An unlisted key the
+  backend adds later still renders, after the known eight. Covered by
+  the "orders the limits as specified" test in
+  `src/app/__tests__/feed-selection.test.tsx`.
+- **Default-value copy.** "Default value will be applied if left blank"
+  sits once under the sheet title; each row's hint reads
+  `Range <min> – <max> <unit> (Default <default>)`. The old per-row
+  "leave blank for the default N" phrasing was replaced on 2026-09-22.
 
 ### 19.3 Per-feed inclusion limits reject a typed `0`
 

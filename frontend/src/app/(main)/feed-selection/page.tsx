@@ -23,6 +23,7 @@ import {
   ANIMAL_CATEGORY_LABELS,
   DIET_LIMIT_LABELS,
   DIET_LIMIT_UNIT_LABELS,
+  sortDietThresholds,
 } from "@/lib/api";
 import type {
   FeedItem,
@@ -659,7 +660,9 @@ export default function FeedSelectionPage() {
         if (cancelled) return;
         const specs = res.data?.thresholds;
         if (Array.isArray(specs) && specs.length > 0) {
-          setLimitSpecs(specs);
+          // Sorted once, here, so the dialog rows and the pre-flight
+          // out-of-range list read in the same (Maria's) order.
+          setLimitSpecs(sortDietThresholds(specs));
         } else {
           setLimitSpecsError("Limits unavailable");
         }
@@ -2054,13 +2057,24 @@ export default function FeedSelectionPage() {
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
-            <div className="flex items-center justify-between mb-5">
-              <h3
-                className="text-base font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-              >
-                {t("Custom Diet Limits")}
-              </h3>
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h3
+                  className="text-base font-bold"
+                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {t("Custom Diet Limits")}
+                </h3>
+                {/* Blank is a first-class state, NOT zero: blank means "use
+                    this animal's engine default", and a typed 0 is rejected
+                    outright. Stated once here instead of on all eight rows. */}
+                <p
+                  className="text-xs mt-1"
+                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                >
+                  {t("Default value will be applied if left blank")}
+                </p>
+              </div>
               <button
                 onClick={() => setShowLimitsModal(false)}
                 style={{ background: "none", border: "none", cursor: "pointer" }}
@@ -2080,41 +2094,27 @@ export default function FeedSelectionPage() {
             {/* Scrollable — eight limits don't fit a bottom sheet otherwise. */}
             <div style={{ maxHeight: "58vh", overflowY: "auto", marginRight: -4, paddingRight: 4 }}>
               {(limitSpecs ?? []).map((spec) => {
-                const { key, min, max, unit, direction, enforcement } = spec;
+                const { key, min, max, unit } = spec;
                 const val = limits[key];
                 const outOfRange = limitOutOfRange(spec);
                 const unitLabel = t(DIET_LIMIT_UNIT_LABELS[unit] ?? unit);
-                // A `soft` limit is only penalised in the cost objective, so
-                // the optimizer may exceed it. Calling that a "Limit" is what
-                // made QA read a legitimate overshoot as the engine ignoring
-                // the input — it's a target.
-                const isSoft = enforcement === "soft";
-                const badge = isSoft ? t("Target") : t("Limit");
+                // No TARGET / LIMIT badge. `enforcement: "soft"` rows used to
+                // render as "Target" because QA had read a legitimate
+                // overshoot as the engine ignoring the input — but on
+                // 2026-09-22 Maria and Satish ruled that all eight ARE
+                // limits and the hard/soft distinction is an engine detail
+                // the user shouldn't have to reason about. `spec.enforcement`
+                // is still read elsewhere; don't put the badge back.
                 const ndfConflict = key === "ndf_for_min" && ndfFloorAboveCeiling;
                 const invalid = outOfRange || ndfConflict;
                 return (
                   <div key={key} className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <p
-                        className="text-xs font-bold uppercase"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                      >
-                        {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
-                      </p>
-                      <span
-                        className="text-[10px] font-bold uppercase"
-                        style={{
-                          fontFamily: "Nunito, sans-serif",
-                          color: isSoft ? "#FF9800" : "#064E3B",
-                          backgroundColor: isSoft ? "#FFF4E5" : "#E4F7EF",
-                          borderRadius: 999,
-                          padding: "2px 8px",
-                          flexShrink: 0,
-                        }}
-                      >
-                        {badge}
-                      </span>
-                    </div>
+                    <p
+                      className="text-xs font-bold uppercase mb-2"
+                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                    >
+                      {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
+                    </p>
                     <input
                       type="number"
                       inputMode="decimal"
@@ -2147,9 +2147,10 @@ export default function FeedSelectionPage() {
                           : // `default` is this animal's engine value and is
                             // also the tighten-only bound, so the hint doubles
                             // as an explanation of why the range stops there.
-                            t(
-                              "Range ${min} – ${max} ${unit} · leave blank for the default ${default}"
-                            )
+                            // The per-field "leave blank" wording moved to the
+                            // one line under the sheet title (2026-09-22) —
+                            // here the default is just stated in brackets.
+                            t("Range ${min} – ${max} ${unit} (Default ${default})")
                               .replace("${min}", String(min))
                               .replace("${max}", String(max))
                               .replace("${unit}", unitLabel)
@@ -2161,14 +2162,14 @@ export default function FeedSelectionPage() {
             </div>
 
             {/* Limits may only be tightened — say so once rather than on
-                every row. Blank is a first-class state, NOT zero: blank means
-                "use this animal's default", and 0 is rejected outright. */}
+                every row. The "leave blank" half of this sentence now lives
+                under the sheet title. */}
             <p
               className="text-[11px] mb-3 mt-1 ml-1"
               style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
             >
               {t(
-                "Limits can only be tightened, never loosened. Leave a field blank to use the default. Tightening a hard limit can return no diet at all."
+                "Limits can only be tightened, never loosened. Tightening a limit too far can return no diet at all."
               )}
             </p>
 
