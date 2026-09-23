@@ -4,6 +4,13 @@ from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from app.schemas.animal_field_spec import (
+    FIELD_META,
+    FIELD_ORDER,
+    GRAZING_MIN_DISTANCE_KM,
+    field_bounds,
+    field_visible,
+)
 from core.z_optimization.constraints_config import (
     CONSTRAINT_PROFILES,
     UI_THRESHOLD_SPEC,
@@ -141,9 +148,60 @@ class CattleInfo(BaseModel):
             raise ValueError("topography must be one of: Flat, Hilly, Mountainous")
         return canonical
 
-    def model_post_init(self, __context: Any) -> None:
-        if self.grazing and self.distance < 1:
-            raise ValueError('distance must be >= 1 km when grazing is enabled')
+    @model_validator(mode='after')
+    def _enforce_state_field_bounds(self):
+        """Hold every displayed field to this animal's own accepted range.
+
+        These ranges are new: until now every numeric field here was a bare `float` with no
+        bound at all, so the form and the API could disagree about what was acceptable and
+        only the form was enforcing anything. `animal_field_spec` is the same table
+        GET /v1/animal/cattle-info-fields hands the client, so what the form offers and what
+        the API accepts cannot drift apart.
+
+        Two things are deliberately NOT checked.
+
+        Fields the sheet HIDES for this state: a client that keeps sending a neutralized
+        field it no longer renders (a Dry Cow still posting `days_in_milk: 0`) must not be
+        rejected for it -- `_neutralize_lactation_fields` zeroes those server-side
+        regardless, and rejecting them would break every caller that has not yet moved to
+        the per-state form.
+
+        Fields the caller OMITTED: the value then came from this model's own defaults, and
+        rejecting a caller for a default we chose ourselves is never right. `parity` is the
+        live example -- it defaults to 0 here so non-lactating states may omit it, while the
+        sheet's range for a Lactating Cow is 1-11. Conforming clients submit every field
+        (the endpoint's D4 contract), so they are fully checked; only legacy callers fall
+        back to the defaults, and the engine already normalises those. Same `model_fields_set`
+        test `_require_lactation_fields` above uses.
+        """
+        state = self.physiological_state
+        for key in FIELD_ORDER:
+            if not field_visible(key, state) or key not in self.model_fields_set:
+                continue
+            value = getattr(self, key, None)
+            if value is None or isinstance(value, bool):
+                continue
+
+            low, high = field_bounds(key, state)
+            # `distance` is the one conditional bound: the floor rises to 1 km once the
+            # animal is grazing, because a grazing animal that walks nowhere is a
+            # contradiction the engine cannot cost. Advertised to clients as
+            # `when_grazing_on` on the same field.
+            grazing_floor = key == "distance" and self.grazing
+            if grazing_floor:
+                low = GRAZING_MIN_DISTANCE_KM
+            if low is None and high is None:
+                continue
+
+            if (low is not None and value < low) or (high is not None and value > high):
+                unit = FIELD_META[key]["unit"]
+                suffix = f" {unit}" if unit else ""
+                qualifier = " when grazing is enabled" if grazing_floor else ""
+                raise ValueError(
+                    f"{key} must be between {low} and {high}{suffix} for a {state}"
+                    f"{qualifier} (got {value})"
+                )
+        return self
 
 
 # ── Feed with price (diet recommendation input) ──────────────────────────────
@@ -312,6 +370,43 @@ class DietThresholdSpec(BaseModel):
 class DietThresholdsResponse(BaseModel):
     physiological_state: str
     thresholds: List[DietThresholdSpec]
+
+
+# ── Cattle Info form specification ───────────────────────────────────────────
+
+class GrazingDistanceOverride(BaseModel):
+    """The `distance` bounds that replace the defaults once grazing is switched on."""
+
+    default: float
+    min: float
+
+
+class CattleInfoFieldSpec(BaseModel):
+    """One Cattle Info input, described well enough for a client to render and submit it."""
+
+    key: str = Field(..., description="Field name to send inside `cattle_info`")
+    label: str = Field(..., description="English label, for reference; clients own rendering")
+    unit: Optional[str] = Field(None, description="English unit, for reference")
+    visible: bool = Field(
+        ...,
+        description=("Whether to render this field for this state. Hidden fields are still "
+                     "submitted, using `default` -- see the endpoint description"),
+    )
+    type: str = Field(..., description="number | enum | boolean")
+    default: Optional[Any] = Field(None, description="Value to prefill, and to submit when hidden")
+    min: Optional[float] = Field(None, description="Smallest accepted value; null when unbounded")
+    max: Optional[float] = Field(None, description="Largest accepted value; null when unbounded")
+    options: Optional[List[str]] = Field(None, description="Allowed values when `type` is enum")
+    when_grazing_on: Optional[GrazingDistanceOverride] = Field(
+        None,
+        description=("Present on `distance` only: the default and minimum to apply while "
+                     "`grazing` is true"),
+    )
+
+
+class CattleInfoFieldsResponse(BaseModel):
+    physiological_state: str
+    fields: List[CattleInfoFieldSpec]
 
 
 # ── Diet recommendation ──────────────────────────────────────────────────────
