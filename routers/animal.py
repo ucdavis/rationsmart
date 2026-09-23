@@ -9,6 +9,7 @@ from app.limiter import limiter
 from app.dependencies import get_current_user, get_db, get_language_authenticated
 from app.db.models import FeedAnalytics, UserInformationModel
 from app.schemas.animal import (
+    CattleInfoFieldsResponse,
     DietEvaluationRequest,
     DietRecommendationRequest,
     DietThresholdsResponse,
@@ -16,6 +17,7 @@ from app.schemas.animal import (
     FeedAnalyticsResponse,
     normalise_physiological_state,
 )
+from app.schemas.animal_field_spec import field_spec_for_state
 from core.z_optimization.constraints_config import (
     UI_THRESHOLD_SPEC,
     get_constraint_profile,
@@ -313,6 +315,52 @@ async def diet_thresholds(
     )
 
 
+@router.get("/cattle-info-fields", response_model=CattleInfoFieldsResponse,
+            summary="Discover the Cattle Info form layout for a physiological state")
+async def cattle_info_fields(
+    physiological_state: str,
+    current_user: UserInformationModel = Depends(get_current_user),
+):
+    """
+    Describe every Cattle Info input for one physiological state: whether to show it, what to
+    prefill, and the range the API will accept.
+
+    **Requires:** Bearer JWT.
+
+    **Query parameter:** `physiological_state` — `Lactating Cow`, `Dry Cow`, `Heifer` or
+    `Baby Calf/Heifer` (aliases such as `lactating` and `calf` are accepted).
+
+    Bind the form to this response rather than hardcoding anything: visibility, defaults and
+    ranges all differ per state, and they are retuned from time to time. Call it again
+    whenever the physiological state changes.
+
+    - All fields are returned every time. **`visible` controls rendering only — submit every
+      field, hidden ones included, using its `default`.** That is what lets
+      `Baby Calf/Heifer` render a single input while the request body stays complete.
+    - `min` / `max` are the same bounds `cattle_info` is validated against, so a value this
+      endpoint rejects is a `422` on the diet endpoints too.
+    - `distance` carries `when_grazing_on`: its default and minimum both rise to 1 km while
+      `grazing` is true, because a grazing animal that walks nowhere cannot be costed.
+    - `label` and `unit` are English reference strings. Clients own rendering — the form is
+      localized and these are not translated.
+
+    Returns `422` for an unknown state.
+    """
+    try:
+        state = normalise_physiological_state(physiological_state)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=("physiological_state must be one of: Lactating Cow, Dry Cow, Heifer, "
+                    "Baby Calf/Heifer."),
+        )
+
+    return CattleInfoFieldsResponse(
+        physiological_state=state,
+        fields=field_spec_for_state(state),
+    )
+
+
 @router.post("/diet-recommendation", summary="Run NSGA-III optimization for a least-cost cattle diet")
 @limiter.limit("30/minute")
 async def diet_recommendation(
@@ -334,6 +382,11 @@ async def diet_recommendation(
     - `feed_selection` — candidate feeds with local price per kg and optional inclusion limits.
     - `country_id` — UUID of the country (determines unit and feed availability).
     - `simulation_id`, `user_id` — identifiers for this run.
+
+    Which `cattle_info` fields apply, what to prefill them with and the range each one
+    accepts all depend on `physiological_state`. Call
+    `GET /v1/animal/cattle-info-fields` for that state's layout rather than hardcoding it;
+    a value outside the advertised range is a `422`.
 
     **Optional body fields:** `base_thresholds` — override the diet-wide nutrient limits.
     These are whole-ration limits, not per-feed ones, and apply to `Lactating Cow`,
