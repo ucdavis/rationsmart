@@ -985,6 +985,62 @@ export const getDietThresholds = (physiological_state: string) =>
     params: { physiological_state },
   });
 
+// ─── Cattle Info form layout discovery (JWT-protected) ──────────────────────
+// GET /v1/animal/cattle-info-fields?physiological_state=Lactating%20Cow
+//
+// The ONLY source of truth for what the Cattle Info form shows, prefills and
+// accepts. Visibility, defaults and ranges all differ per physiological state
+// and are retuned server-side, and the SAME table validates `cattle_info` on
+// the two diet POSTs — a value outside [min, max] is a 422 there. Do NOT
+// hardcode any of it beside this call (same rule as getDietThresholds).
+//
+// Contract: every field is always returned. RENDER on `visible`, but SUBMIT
+// every field — a hidden one goes out as its `default`. That is how
+// "Baby Calf/Heifer" renders a single input while the body stays complete.
+// `label` / `unit` are English reference strings only; the form owns (and
+// translates) its own labels.
+export interface CattleInfoFieldSpec {
+  key: CattleInfoFieldKey;
+  label: string;
+  unit: string | null;
+  visible: boolean;
+  type: "number" | "enum" | "boolean";
+  default: number | string | boolean | null;
+  min: number | null;
+  max: number | null;
+  options: string[] | null;
+  /** Present on `distance` only — replaces default/min while grazing is ON. */
+  when_grazing_on?: { default: number; min: number } | null;
+}
+
+export interface CattleInfoFieldsResponse {
+  physiological_state: string;
+  fields: CattleInfoFieldSpec[];
+}
+
+/** Wire keys inside `cattle_info` (see CattleInfoPayload). */
+export type CattleInfoFieldKey =
+  | "breed"
+  | "body_weight"
+  | "bw_gain"
+  | "bc_score"
+  | "days_in_milk"
+  | "milk_production"
+  | "tp_milk"
+  | "fat_milk"
+  | "parity"
+  | "days_of_pregnancy"
+  | "temperature"
+  | "grazing"
+  | "distance"
+  | "topography"
+  | "milk_price";
+
+export const getCattleInfoFields = (physiological_state: string) =>
+  api.get<CattleInfoFieldsResponse>("/v1/animal/cattle-info-fields", {
+    params: { physiological_state },
+  });
+
 // Human labels for the eight keys. The endpoint returns the key, the range and
 // the unit, but no display name — these stay client-side so they can go
 // through the UI-label i18n dictionary like every other string.
