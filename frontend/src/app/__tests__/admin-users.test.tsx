@@ -92,9 +92,11 @@ describe("Admin Users — pagination (fetch-until-exhausted)", () => {
 
     await waitFor(() => expect(getAdminUsers).toHaveBeenCalledTimes(2));
 
-    // Sequential calls: admin_user_id, page, page_size(=100), country="", status="", search=""
-    expect(getAdminUsers).toHaveBeenNthCalledWith(1, "admin-1", 1, 100, "", "", "");
-    expect(getAdminUsers).toHaveBeenNthCalledWith(2, "admin-1", 2, 100, "", "", "");
+    // Sequential calls: admin_user_id, page, page_size(=100), country, status, search.
+    // Country defaults to the signed-in admin's own country.
+    const country = seedAdmin().country;
+    expect(getAdminUsers).toHaveBeenNthCalledWith(1, "admin-1", 1, 100, country, "", "");
+    expect(getAdminUsers).toHaveBeenNthCalledWith(2, "admin-1", 2, 100, country, "", "");
 
     // Every user from BOTH pages is rendered — proves the lists were concatenated.
     await waitFor(() => expect(screen.getByText("User 0")).toBeInTheDocument());
@@ -150,39 +152,28 @@ describe("Admin Users — total count chip", () => {
   });
 });
 
-describe("Admin Users — search box / status filter pills (documented gap)", () => {
-  // CLAUDE.md §5 describes a search box (name/email) and status filter pills
-  // (All / Active / Inactive) on this page. The `search` and `statusFilter`
-  // React state in src/app/(main)/admin/users/page.tsx exist and ARE wired
-  // into the getAdminUsers() call (`load(q = search, s = statusFilter)`),
-  // but there is NO input, button, or pill in the rendered JSX that ever
-  // calls setSearch / setStatusFilter — grep confirms zero <input> elements
-  // and the only <button>s on the page are the status-toggle badge and the
-  // detail-sheet controls. So today, search/status are permanently "" and
-  // this functionality is unreachable from the UI. These tests pin down
-  // that current (likely unintended) behavior rather than assert a UI that
-  // doesn't exist.
-  it("renders no search textbox and no All/Active/Inactive filter pills", async () => {
-    getAdminUsers.mockResolvedValueOnce({
+describe("Admin Users — search box", () => {
+  it("sends the typed search term (debounced) to the backend", async () => {
+    getAdminUsers.mockResolvedValue({
       data: { users: [mkUser()], total_count: 1, total_pages: 1 },
     });
 
     render(<AdminUsersPage />);
     await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
 
-    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
-    expect(screen.queryByRole("button", { name: /^All$/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Active$/ })).toBeNull();
-    expect(screen.queryByRole("button", { name: /^Inactive$/i })).toBeNull();
-  });
-
-  it("always requests with empty country/status/search — filtering can't be triggered from this UI", async () => {
-    getAdminUsers.mockResolvedValueOnce({
-      data: { users: [mkUser()], total_count: 1, total_pages: 1 },
+    fireEvent.change(screen.getByPlaceholderText("Search by name or email"), {
+      target: { value: "jane" },
     });
-
-    render(<AdminUsersPage />);
-    await waitFor(() => expect(getAdminUsers).toHaveBeenCalledWith("admin-1", 1, 100, "", "", ""));
+    await waitFor(() =>
+      expect(getAdminUsers).toHaveBeenLastCalledWith(
+        "admin-1",
+        1,
+        100,
+        seedAdmin().country,
+        "",
+        "jane"
+      )
+    );
   });
 });
 
@@ -278,7 +269,9 @@ describe("Admin Users — status safeguards (audit A-13 / B-02)", () => {
     await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "ACTIVE" }));
     expect(toggleUserStatus).not.toHaveBeenCalled();
-    expect(useStore.getState().snackbar?.type).toBe("error");
+    expect(useStore.getState().snackbar).toEqual(
+      expect.objectContaining({ type: "error", message: "You can't deactivate your own account" })
+    );
   });
 
   it("Save in the user sheet does not change status when the switch wasn't touched", async () => {

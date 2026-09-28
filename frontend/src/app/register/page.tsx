@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { register as registerApi, getCountries, labelForLanguage } from "@/lib/api";
-import { isEmailAddressValid, cleanNameInput } from "@/lib/validators";
+import { isEmailAddressValid, cleanNameInput, PIN_LENGTH } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
@@ -76,10 +76,10 @@ export default function RegisterPage() {
     countryId !== "" && name.trim().length > 0 && isEmailAddressValid(email.trim());
 
   // Android: confirm PIN enabled only when all 4 PIN digits are filled
-  const confirmPinEnabled = pin.length === 6;
+  const confirmPinEnabled = pin.length === PIN_LENGTH;
 
   // Android: button enabled when all fields valid + PINs match
-  const isReady = pinEnabled && pin.length === 6 && confirmPin.length === 6;
+  const isReady = pinEnabled && pin.length === PIN_LENGTH && confirmPin.length === PIN_LENGTH;
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleaned = cleanNameInput(e.target.value);
@@ -355,6 +355,7 @@ export default function RegisterPage() {
             {t("Confirm PIN")}
           </p>
           <PinInput
+            label="Confirm PIN"
             value={confirmPin}
             onChange={setConfirmPin}
             disabled={!confirmPinEnabled}
@@ -362,7 +363,7 @@ export default function RegisterPage() {
           />
         </div>
 
-        {confirmPin.length === 6 && pin !== confirmPin && (
+        {confirmPin.length === PIN_LENGTH && pin !== confirmPin && (
           <p
             className="text-xs font-bold text-center mt-2"
             style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}

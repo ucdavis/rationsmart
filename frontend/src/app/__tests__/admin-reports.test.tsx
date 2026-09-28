@@ -223,8 +223,7 @@ describe("Admin reports — View Report action", () => {
     openSpy.mockRestore();
   });
 
-  it("shows an error snackbar and does not open a tab when no URL is available", async () => {
-    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+  it("hides View Report when the report has no URL", async () => {
     getAdminReports.mockResolvedValueOnce({
       data: {
         reports: [
@@ -239,8 +238,28 @@ describe("Admin reports — View Report action", () => {
       },
     });
     render(<AdminReportsPage />);
-    const chip = await screen.findByRole("button", { name: /View Report/ });
-    fireEvent.click(chip);
+    await screen.findByText("No URL");
+    expect(screen.queryByRole("button", { name: /View Report/ })).toBeNull();
+  });
+
+  it("refuses to open a non-http(s) report URL (audit A-07)", async () => {
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    getAdminReports.mockResolvedValueOnce({
+      data: {
+        reports: [
+          {
+            report_id: "r-5",
+            simulation_id: "sim-5",
+            user_name: "Bad URL",
+            created_at: "2026-06-04T10:30:00Z",
+            report_type: "Evaluation",
+            bucket_url: "javascript:alert(1)",
+          },
+        ],
+      },
+    });
+    render(<AdminReportsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: /View Report/ }));
 
     expect(openSpy).not.toHaveBeenCalled();
     await waitFor(() => {

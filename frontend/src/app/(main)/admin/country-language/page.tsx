@@ -56,7 +56,11 @@ import {
   deleteFeedTranslation,
   labelForLanguage,
 } from "@/lib/api";
-import { contentDispositionOf, filenameFromContentDisposition } from "@/lib/download";
+import {
+  contentDispositionOf,
+  filenameFromContentDisposition,
+  uploadFileProblem,
+} from "@/lib/download";
 
 interface SystemLanguage {
   code: string;
@@ -1483,7 +1487,16 @@ function FeedNamesTab({
           <input
             type="file"
             accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)}
+            onChange={(e) => {
+              const file = e.target.files?.[0] ?? null;
+              const problem = file && uploadFileProblem(file, [".xlsx", ".xls"]);
+              if (problem) {
+                e.target.value = "";
+                showSnackbar(problem, "error");
+                return;
+              }
+              setUploadFile(file);
+            }}
             className="block w-full text-sm"
             style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
           />

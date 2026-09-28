@@ -43,12 +43,26 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 const keepConsole =
   process.env.KEEP_CONSOLE === "true" || process.env.NEXT_PUBLIC_DEBUG_API === "true";
 
-// Security response headers. Kept intentionally conservative: no strict CSP
-// because the app uses inline styles/Android-exact pixel values everywhere,
-// which a default CSP would break. These four are universally safe and cover
-// the common audit checks (MIME sniffing, clickjacking, referrer leakage,
-// unused browser features).
+// Security response headers.
+//
+// AUDIT A-04 (partly deferred): the CSP below only locks down the directives
+// that can't affect how the app renders — framing, <base>, plugins and form
+// targets. A full script/style CSP is not enforced yet: Next 14 App Router
+// emits inline bootstrap scripts that need per-request nonces (middleware +
+// dynamic rendering for every page), and every component uses inline style
+// attributes, so `style-src 'self'` would blank the UI. The real fix for the
+// token-theft risk is moving the JWT from localStorage into an httpOnly
+// cookie set by the proxy, which needs backend coordination.
+const contentSecurityPolicy = [
+  "frame-ancestors 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "form-action 'self'",
+].join("; ");
+
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: contentSecurityPolicy },
+  { key: "Cross-Origin-Opener-Policy", value: "same-origin" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

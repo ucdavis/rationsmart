@@ -4,6 +4,7 @@ import { type NextRequest, NextResponse } from "next/server";
 // in front of it yet. Switching to node:https is a one-line change here once
 // the backend team puts a TLS terminator (ALB / reverse proxy) in front.
 import http from "node:http";
+import { UPSTREAM_TIMEOUT_MS } from "@/lib/timeouts";
 
 // Backend location comes ONLY from the environment (see .env.example). There
 // is deliberately no hardcoded IP fallback: a deploy with missing env vars
@@ -14,12 +15,11 @@ const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
 // request (dev | prod | custom) without exposing the host itself.
 const BACKEND_ENV = process.env.BACKEND_ENV ?? "custom";
 
-// Upstream request timeout. Without this, a backend that accepts the
-// connection but never responds keeps the serverless function (and its
-// socket) alive until the platform's hard limit — a resource-exhaustion
-// vector. Kept just above the axios client's timeout so the browser gives up
-// first under normal conditions.
-const UPSTREAM_TIMEOUT_MS = 65_000;
+// Upstream request timeout (UPSTREAM_TIMEOUT_MS, src/lib/timeouts.ts). Without
+// it, a backend that accepts the connection but never responds keeps the
+// serverless function (and its socket) alive until the platform's hard limit.
+// Note it is an idle-socket timeout, not a total-duration cap; Vercel's
+// function max duration bounds the total.
 
 // Largest request body we'll buffer and forward (bulk-upload spreadsheets are
 // the biggest payloads). Vercel caps function bodies at 4.5 MB anyway.

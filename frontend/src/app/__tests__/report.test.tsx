@@ -392,15 +392,11 @@ describe("Report — Notes card content", () => {
 });
 
 // ─── 6. Currency rendering — raw code suffix, never Intl currency style ────
-// NB: the ACTUAL priority in src/app/(main)/report/page.tsx is
-// `user?.currency || reportCurrency || ""` where reportCurrency itself is
-// `cost_analysis.currency ?? currency`. That means user.currency wins
-// FIRST when present — which is the OPPOSITE priority order documented in
-// CLAUDE.md §5 ("cost_analysis.currency (evaluation), then currency, then
-// user.currency"). These tests lock in the real, current behavior; the
-// doc/code mismatch is flagged in the final report.
+// Priority (CLAUDE.md §5, audit B-05): cost_analysis.currency, then the
+// response's top-level currency, then user.currency. A restored report keeps
+// the currency it was priced in even after the profile's country changes.
 describe("Report — currency rendering (raw suffix, real priority order)", () => {
-  it("user.currency wins over cost_analysis.currency when both are present", () => {
+  it("cost_analysis.currency wins over user.currency when both are present", () => {
     useStore.setState({
       user: seedUser({ currency: "VND" }),
       reportData: makeEvalResponse({
@@ -414,11 +410,11 @@ describe("Report — currency rendering (raw suffix, real priority order)", () =
       }),
     });
     render(<ReportPage />);
-    expect(screen.getByText("120.50 VND")).toBeInTheDocument();
-    expect(screen.queryByText(/PHP/)).toBeNull();
+    expect(screen.getByText("120.50 PHP")).toBeInTheDocument();
+    expect(screen.queryByText(/VND/)).toBeNull();
   });
 
-  it("falls back to cost_analysis.currency when user.currency is empty", () => {
+  it("uses cost_analysis.currency when user.currency is empty", () => {
     useStore.setState({
       user: seedUser({ currency: "" }),
       reportData: makeEvalResponse({
@@ -441,8 +437,8 @@ describe("Report — currency rendering (raw suffix, real priority order)", () =
       reportData: makeEvalResponse(),
     });
     render(<ReportPage />);
-    expect(screen.queryByText(/₫/)).toBeNull();
-    expect(screen.getByText("120.50 VND")).toBeInTheDocument();
+    expect(screen.queryByText(/₫|₱/)).toBeNull();
+    expect(screen.getByText("120.50 PHP")).toBeInTheDocument();
   });
 });
 

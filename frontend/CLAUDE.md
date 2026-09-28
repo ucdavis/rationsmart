@@ -149,8 +149,9 @@ prod** until the prod backend is migrated. Don't merge `testing` →
   4-6 digits (legacy accounts can still sign in once, then are routed to
   `/set-new-pin`).
 - **`requires_pin_reset` migration.** When `POST /v1/auth/login` returns
-  `requires_pin_reset: true`, `/login` redirects to
-  `/set-new-pin?email=&old_pin=` and that screen calls
+  `requires_pin_reset: true`, `/login` stores `{email, oldPin}` in the
+  memory-only `pendingPinReset` store slice and redirects to `/set-new-pin`
+  (**never** put the PIN in the URL — audit A-03, §20). That screen calls
   `POST /v1/auth/set-new-pin` with `{email_id, old_pin (4-digit), new_pin (6-digit)}`.
 - **Param renames in api.ts.** `feed_category` → `category` on the
   `feed-name` query; `country_filter` → `country`, `status_filter` →
@@ -179,7 +180,13 @@ worktree pattern in §13.
 
 ### Env-var scoping — read carefully
 
-The proxy at `src/app/api/proxy/[...path]/route.ts` reads:
+> **Superseded 2026-09-28 (§20):** the proxy no longer has a hardcoded
+> backend fallback — it fails closed with a 500 when `BACKEND_HOST` is
+> unset, the `x-backend-host` header is gone, and `x-backend-env` comes
+> from the `BACKEND_ENV` env var. The `rationsmart-pwa` project this
+> subsection describes was deleted on 2026-06-16. Kept below for history.
+
+The proxy at `src/app/api/proxy/[...path]/route.ts` used to read:
 ```ts
 const BACKEND_HOST = process.env.BACKEND_HOST ?? "<DEV_BACKEND_IP>";
 const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
@@ -206,13 +213,12 @@ Every proxied response carries debug headers (emitted on both the
 normal-response and the 307-redirect-follow branches):
 
 ```bash
-$ curl -sI https://rationsmart-pwa.vercel.app/api/proxy/auth/countries
+$ curl -sI https://rationsmart-testing.vercel.app/api/proxy/v1/auth/countries
 x-backend-env: dev
-x-backend-host: <DEV_BACKEND_IP>:8000
 
 $ curl -sI https://rationsmart.vercel.app/api/proxy/auth/countries
 x-backend-env: prod
-x-backend-host: <PROD_BACKEND_IP>:8000
+x-backend-host: <PROD_BACKEND_IP>:8000   # main branch still emits this
 ```
 
 `x-backend-env` is computed from `BACKEND_HOST` — `dev` for `<DEV_BACKEND_IP>`,
@@ -941,12 +947,12 @@ silence the "could not load X" toast when `item.feed_type_name` /
 `item.category_name` is already populated (simulation-restore case).
 
 ### 10.11 Proxy headers on the redirect-follow path
-FastAPI 307-redirects any path without a trailing slash. The proxy at
-`src/app/api/proxy/[...path]/route.ts` follows the redirect server-side
-and **must emit `x-backend-host` / `x-backend-env` on BOTH the normal
-and redirect branches** — otherwise most calls (auth/countries,
-fetch-simulation-details, etc.) never expose the upstream host to the
-browser.
+The proxy follows backend 307/308 redirects server-side and **must emit
+`x-backend-env` on BOTH the normal and redirect branches**. Since
+2026-09-28 it no longer appends a trailing slash (all but one v1 route is
+slash-less, so the 307 round trip is gone), it never returns
+`x-backend-host`, and both branches share `buildResponse()` with a
+response-header allowlist — see §20.
 
 ### 10.12 PWA install bug — stale auth across reinstall
 Android only removes the home-screen shortcut on uninstall — it does NOT
@@ -954,7 +960,12 @@ clear localStorage. `InstallPrompt` listens for `appinstalled` (Chrome's
 post-install event) and `localStorage.removeItem("rationsmart-storage")`
 so a freshly installed PWA always opens to login.
 
-### 10.13 Dev URL relies on hardcoded proxy defaults
+### 10.13 Dev URL relies on hardcoded proxy defaults — SUPERSEDED (§20)
+The fallback below was removed on 2026-09-28: the proxy now requires
+`BACKEND_HOST` (fails closed). `rationsmart-testing` has it set for
+Production; local dev reads it from the untracked `.env.development`
+(copy `.env.example`). Historical note follows.
+
 The `rationsmart-pwa` (dev) Vercel project only has `BACKEND_HOST` and
 `BACKEND_PORT` scoped to the `Development` environment. Production
 deploys read NO env vars and rely on the hardcoded fallback in
@@ -996,7 +1007,9 @@ about this rollout; it was removed in the revert.
 
 ### 10.16 Auto-deploy stays OFF
 The GH-Actions workflow `.github/workflows/deploy-testing.yml`
-exists but is `disabled_manually`. Re-enabling it without the user's
+exists but is `disabled_manually`, and since 2026-09-28 its trigger is
+`workflow_dispatch` only (no `push`), so it can't fire even in a repo copy
+where it isn't disabled. Re-enabling it without the user's
 explicit ask will get pushed back. Reason: a string of silent
 "successful" deploys that didn't actually update the live alias
 during the early Y3 work — manual `vercel deploy --prod --yes` +
@@ -1574,6 +1587,63 @@ from the display name.
   (0.06) rather than percent (6); unverified. We deliberately don't
   rescale on a hunch — feed-selection's pre-flight catches an
   out-of-range restored limit and tells the user to adjust it.
+
+---
+
+## 20. Security & quality audit hardening (2026-09-28)
+
+Source: an external CodeRabbit-style audit (kept OUT of the repo — never
+commit it; the full per-item response with won't-fix reasons lives in the
+untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
+
+- **No infra details in tracked files.** Backend IPs, Vercel IDs, account
+  slugs and local paths go in the untracked `CLAUDE.local.md` /
+  `.env.development`, never in code, comments, tests or this file.
+  `docs/backend-security-brief.html` and `docs/SESSION_HANDOFF.md` are
+  gitignored — don't re-add them.
+- **Proxy** (`src/app/api/proxy/[...path]/route.ts`): env-only backend
+  config (fails closed); request AND response header allowlists; no
+  `x-backend-host`; `x-backend-env` from `BACKEND_ENV`; no trailing slash;
+  dot segments rejected; 5 MB body cap; 301/302/303 followed only for
+  GET/HEAD. The testing project needs `BACKEND_ENV=dev` set.
+- **No logging of bodies, tokens or PII.** Tracing is opt-in via
+  `NEXT_PUBLIC_DEBUG_API=true` (never `/auth/*` bodies). Console
+  stripping is no longer disabled by `DISABLE_PWA`. `no-console` is a
+  lint warning. Never `console.*(err)` an axios error — its config holds
+  the `Authorization` header.
+- **Old PIN never in a URL.** `/login` → `/set-new-pin` uses the
+  memory-only `pendingPinReset` slice (not persisted).
+- **SW never caches `/api/proxy/*`** (first Workbox rule is NetworkOnly);
+  `logout()` deletes the `runtime-cache`. The SW kill-switch script in
+  the root layout renders only when `DISABLE_PWA=true`.
+- **Backend-supplied URLs go through `safeExternalUrl()` /
+  `openExternalUrl()`** (`src/lib/safe-url.ts`) before `window.open` or
+  `<a href>`. Filenames from Content-Disposition go through
+  `filenameFromContentDisposition()`; uploads through
+  `uploadFileProblem()` (`src/lib/download.ts`).
+- **Admin guard lives in `admin/layout.tsx`** for every admin route. It's
+  UX only; the backend must 403 `/v1/admin/*` for non-admins.
+- **Admin feed edit echoes `fd_code` / `fd_orginin` / `fd_season` /
+  `fd_ipb_local_lab`** from the loaded record (`""` only on add). This
+  refines §10.15: the field is still always SENT, just no longer wiped.
+- **Admin users:** deactivating asks for confirmation; an admin can't
+  deactivate themselves; the sheet's Save only commits a changed switch.
+- **Report currency order** is `cost_analysis.currency` → `currency` →
+  `user.currency` (§5 was right; the code had it inverted).
+- **Custom Diet Limits:** only keys present in the fetched spec are sent;
+  if the spec couldn't load, none are sent and the user is told.
+- **`/admin/country-languages` redirects to `/admin/country-language`**
+  (the live screen). `/admin/languages` is unlinked legacy.
+- **Shared constants:** `PIN_LENGTH` / `LEGACY_PIN_LENGTH`
+  (validators.ts), `API_TIMEOUT_MS` / `UPSTREAM_TIMEOUT_MS` (timeouts.ts).
+- **CI:** actions pinned by SHA, `permissions: contents: read`, deploy
+  workflow is `workflow_dispatch`-only with the token passed via env.
+
+Deliberately NOT changed (reasons in `docs/AUDIT_RESPONSE.local.md`):
+backend-dependent items (TLS to the backend, httpOnly-cookie session,
+server-side admin/role enforcement, token revocation, rate limits,
+generic auth messages), a full script/style CSP, pinch-zoom, persisted
+`reportData`, the large-file refactors and colour-token migration.
 
 ---
 

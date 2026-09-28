@@ -393,7 +393,10 @@ export default function ReportPage() {
       (reportData as EvaluationResponse)?.cost_analysis?.currency ??
       (reportData as EvaluationResponse)?.currency ??
       null;
-    return user?.currency || reportCurrency || "";
+    // The report's own currency wins: a restored report was priced in the
+    // currency it was generated with, which may differ from the profile's
+    // current one (audit B-05, and CLAUDE.md §5 order).
+    return reportCurrency || user?.currency || "";
   })();
   const currencySuffix = currencySymbol ? ` ${currencySymbol}` : "";
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, KeyboardEvent, ClipboardEvent } from "react";
+import { LEGACY_PIN_LENGTH, PIN_LENGTH } from "@/lib/validators";
 
 interface PinInputProps {
   value: string;
@@ -21,6 +22,8 @@ interface PinInputProps {
    * to false — masked entry stays the default everywhere else.
    */
   reveal?: boolean;
+  /** Accessible name for the group, e.g. "PIN" or "Confirm PIN". Each box is announced as "<label> digit N of M". */
+  label?: string;
 }
 
 export default function PinInput({
@@ -28,8 +31,9 @@ export default function PinInput({
   onChange,
   onComplete,
   disabled = false,
-  length = 6,
+  length = PIN_LENGTH,
   reveal = false,
+  label = "PIN",
 }: PinInputProps) {
   // The number of refs has to be stable across renders, so we allocate
   // up to 6 ref slots and slice the visible set below. This keeps the
@@ -92,17 +96,20 @@ export default function PinInput({
   // 6 boxes is the new default; the row is narrower per box so the strip
   // still fits the same 480-px column without overflow. The 4-box legacy
   // variant keeps the old generous spacing.
-  const gapClass = length === 4 ? "gap-3" : "gap-2";
-  const boxMaxWidth = length === 4 ? 72 : 52;
+  const gapClass = length === LEGACY_PIN_LENGTH ? "gap-3" : "gap-2";
+  const boxMaxWidth = length === LEGACY_PIN_LENGTH ? 72 : 52;
 
   return (
-    <div className={`flex ${gapClass} justify-between px-3`}>
+    <div role="group" aria-label={label} className={`flex ${gapClass} justify-between px-3`}>
       {indices.map((index) => (
         <input
           key={index}
           ref={refs[index]}
           type={reveal ? "text" : "password"}
           inputMode="numeric"
+          // Single digits must not be offered to password managers to save.
+          autoComplete="off"
+          aria-label={`${label} digit ${index + 1} of ${length}`}
           maxLength={1}
           value={(digits[index] ?? "").trim() || ""}
           onChange={(e) => handleChange(index, e.target.value)}

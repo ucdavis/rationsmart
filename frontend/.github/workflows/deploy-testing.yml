@@ -16,11 +16,16 @@
 #   VERCEL_ORG_ID                — Vercel team id (see Vercel dashboard)
 #   VERCEL_TESTING_PROJECT_ID    — rationsmart-testing project id
 
+# Auto-deploy is OFF on purpose (CLAUDE.md §10.16): releases are manual
+# `vercel deploy --prod` + `vercel alias set`. The trigger is therefore
+# manual-only, so the job can never fire on a push — including in a copy of
+# this repo where the workflow hasn't been disabled in the Actions UI.
 name: Deploy testing branch
 on:
-  push:
-    branches:
-      - testing
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   deploy:
@@ -28,30 +33,33 @@ jobs:
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_TESTING_PROJECT_ID }}
+      # The CLI reads the token from the environment, which keeps it off
+      # the command line (and out of process listings / debug logs).
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 20
 
       - name: Install Vercel CLI
-        run: npm install --global vercel@latest
+        run: npm install --global vercel@53.2.0
 
       - name: Pull Vercel environment
-        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel pull --yes --environment=production
 
       - name: Build with Vercel
-        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+        run: vercel build --prod
 
       - name: Deploy as Production
         id: deploy
         run: |
-          url=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+          url=$(vercel deploy --prebuilt --prod)
           echo "url=$url" >> "$GITHUB_OUTPUT"
           echo "Deployed: $url"
 
       - name: Alias to rationsmart-testing.vercel.app
         run: |
           url="${{ steps.deploy.outputs.url }}"
-          vercel alias set "$url" rationsmart-testing.vercel.app --token=${{ secrets.VERCEL_TOKEN }}
+          vercel alias set "$url" rationsmart-testing.vercel.app

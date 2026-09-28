@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { login, getUserProfile, getCountries, resetPin } from "@/lib/api";
-import { isEmailAddressValid } from "@/lib/validators";
+import { isEmailAddressValid, PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
@@ -31,7 +31,10 @@ export default function LoginPage() {
   // v1 backend accepts both legacy 4-digit and new 6-digit PINs at login —
   // if the user has a legacy 4-digit PIN, the response will carry
   // `requires_pin_reset: true` and we route them to /set-new-pin to upgrade.
-  const isReady = isEmailAddressValid(email.trim()) && pin.length >= 4 && pin.length <= 6;
+  const isReady =
+    isEmailAddressValid(email.trim()) &&
+    pin.length >= LEGACY_PIN_LENGTH &&
+    pin.length <= PIN_LENGTH;
   const isResetReady = isEmailAddressValid(resetEmail.trim());
 
   const handleResetSend = async () => {

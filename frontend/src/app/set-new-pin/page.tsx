@@ -25,6 +25,7 @@ import PinInput from "@/components/ui/PinInput";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
+import { PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 
 function SetNewPinInner() {
   const router = useRouter();
@@ -50,9 +51,9 @@ function SetNewPinInner() {
 
   const isReady =
     email.trim().length > 0 &&
-    oldPin.length === 4 &&
-    newPin.length === 6 &&
-    confirmPin.length === 6;
+    oldPin.length === LEGACY_PIN_LENGTH &&
+    newPin.length === PIN_LENGTH &&
+    confirmPin.length === PIN_LENGTH;
 
   const handleSubmit = async () => {
     if (!isReady || isSubmitting) return;
@@ -205,7 +206,12 @@ function SetNewPinInner() {
             >
               {t("Current 4-digit PIN")}
             </p>
-            <PinInput value={oldPin} onChange={setOldPin} length={4} />
+            <PinInput
+              label="Old PIN"
+              value={oldPin}
+              onChange={setOldPin}
+              length={LEGACY_PIN_LENGTH}
+            />
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
@@ -214,10 +220,11 @@ function SetNewPinInner() {
               {t("New 6-digit PIN")}
             </p>
             <PinInput
+              label="New PIN"
               value={newPin}
               onChange={setNewPin_}
               length={6}
-              disabled={oldPin.length !== 4}
+              disabled={oldPin.length !== LEGACY_PIN_LENGTH}
             />
 
             <p
@@ -227,13 +234,14 @@ function SetNewPinInner() {
               {t("Confirm New PIN")}
             </p>
             <PinInput
+              label="Confirm new PIN"
               value={confirmPin}
               onChange={setConfirmPin}
               length={6}
-              disabled={newPin.length !== 6}
+              disabled={newPin.length !== PIN_LENGTH}
             />
 
-            {confirmPin.length === 6 && newPin !== confirmPin && (
+            {confirmPin.length === PIN_LENGTH && newPin !== confirmPin && (
               <p
                 className="text-xs font-bold text-center mt-2"
                 style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}

@@ -1,3 +1,4 @@
+import { API_TIMEOUT_MS } from "./timeouts";
 import axios from "axios";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -487,7 +488,7 @@ export const labelForLanguage = (code: string): string =>
 
 const api = axios.create({
   baseURL: "/api/proxy",
-  timeout: 60000, // Android uses 60s connect/read/write timeouts
+  timeout: API_TIMEOUT_MS,
   headers: {
     "Content-Type": "application/json",
   },
@@ -1133,8 +1134,9 @@ async function fetchReportsFrom(path: string): Promise<{ ok: boolean; list: Feed
   try {
     const res = await api.get(path);
     return { ok: true, list: extractReportsList(res.data) };
-  } catch (err) {
-    console.warn(`[getSavedReports] ${path} failed`, err);
+  } catch {
+    // The axios error interceptor already logged status + URL. Don't log
+    // `err` itself: its config carries the Authorization header (the JWT).
     return { ok: false, list: [] };
   }
 }
@@ -1636,8 +1638,8 @@ export const searchFeeds = async (
     }
     const normalized = raw.map(normalizeRow).filter((r): r is FeedSearchResult => r !== null);
     return { data: normalized };
-  } catch (err) {
-    console.warn("[searchFeeds] request failed", err);
+  } catch {
+    // Logged (status + URL only) by the axios error interceptor.
     return { data: [] };
   }
 };

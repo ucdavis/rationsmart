@@ -1,6 +1,13 @@
 {
   "extends": "next/core-web-vitals",
   "rules": {
-    "@next/next/no-img-element": "off"
-  }
+    "@next/next/no-img-element": "off",
+    "no-console": ["warn", { "allow": ["error", "debug"] }]
+  },
+  "overrides": [
+    {
+      "files": ["**/__tests__/**", "*.test.ts", "*.test.tsx"],
+      "rules": { "no-console": "off" }
+    }
+  ]
 }

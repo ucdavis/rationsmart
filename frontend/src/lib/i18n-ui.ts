@@ -66,10 +66,18 @@ function loadDict(lang: UiLangCode): Promise<LangDict> {
   if (cached) return Promise.resolve(cached);
   let promise = loadingPromises.get(lang);
   if (!promise) {
-    promise = LANG_LOADERS[lang]().then((mod) => {
-      dictCache.set(lang, mod.default);
-      return mod.default;
-    });
+    promise = LANG_LOADERS[lang]().then(
+      (mod) => {
+        dictCache.set(lang, mod.default);
+        return mod.default;
+      },
+      (err) => {
+        // A failed chunk load (flaky network) must not be cached as a
+        // rejected promise forever — drop it so the next render retries.
+        loadingPromises.delete(lang);
+        throw err;
+      }
+    );
     loadingPromises.set(lang, promise);
   }
   return promise;
@@ -134,9 +142,13 @@ export function useT(langOverride?: string): (source: string) => string {
   useEffect(() => {
     if (lang === "en" || !isUiLangCode(lang) || dictCache.has(lang)) return;
     let cancelled = false;
-    loadDict(lang).then(() => {
-      if (!cancelled) setLoadedTick((n) => n + 1);
-    });
+    loadDict(lang)
+      .then(() => {
+        if (!cancelled) setLoadedTick((n) => n + 1);
+      })
+      .catch(() => {
+        // Labels stay in English until a later render retries the load.
+      });
     return () => {
       cancelled = true;
     };

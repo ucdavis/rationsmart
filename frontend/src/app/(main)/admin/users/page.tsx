@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import {
@@ -104,11 +104,17 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Country list for the filter dropdown.
+  // Country list for the filter dropdown. Mount-only fetch: `t` is read
+  // through a ref because useT() returns a new function every render.
+  const tRef = useRef(t);
+  tRef.current = t;
   useEffect(() => {
     getCountries()
       .then((res) => setCountries(Array.isArray(res.data) ? res.data : []))
-      .catch(() => {});
+      // The list still loads; only the Country filter dropdown is affected.
+      .catch(() =>
+        useStore.getState().showSnackbar(tRef.current("Could not load countries"), "error")
+      );
   }, []);
 
   // Re-query the server whenever a filter changes. Debounced so typing in the

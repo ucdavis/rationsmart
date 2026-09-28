@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import {
@@ -11,7 +11,7 @@ import {
   changePin,
   labelForLanguage,
 } from "@/lib/api";
-import { isEmailAddressValid } from "@/lib/validators";
+import { isEmailAddressValid, PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
@@ -104,6 +104,8 @@ export default function ProfilePage() {
   // Falls back to "en" until the backend has populated the user's record.
   const [selectedLang, setSelectedLang] = useState(user?.preferred_language ?? "en");
 
+  const tRef = useRef(t);
+  tRef.current = t;
   useEffect(() => {
     getCountries()
       .then((res) => {
@@ -119,7 +121,10 @@ export default function ProfilePage() {
         );
       })
       .catch(() => {
-        // silently ignore — dropdown will just be empty
+        // Say why the Country dropdown is empty instead of failing silently.
+        // `t` via a ref: this is a mount-only effect and useT() returns a
+        // new function every render.
+        useStore.getState().showSnackbar(tRef.current("Could not load countries"), "error");
       })
       .finally(() => setCountriesLoading(false));
   }, []);
@@ -181,7 +186,7 @@ export default function ProfilePage() {
   };
 
   const handleDelete = async () => {
-    if (deletePin.length !== 6) {
+    if (deletePin.length !== PIN_LENGTH) {
       showSnackbar("Enter your 6-digit PIN to confirm", "error");
       return;
     }
@@ -220,10 +225,10 @@ export default function ProfilePage() {
   };
 
   const isChangePinReady =
-    currentPin.length >= 4 &&
-    currentPin.length <= 6 &&
-    newPin.length === 6 &&
-    confirmNewPin.length === 6 &&
+    currentPin.length >= LEGACY_PIN_LENGTH &&
+    currentPin.length <= PIN_LENGTH &&
+    newPin.length === PIN_LENGTH &&
+    confirmNewPin.length === PIN_LENGTH &&
     newPin === confirmNewPin;
 
   const handleChangePin = async () => {
@@ -872,14 +877,16 @@ export default function ProfilePage() {
             <div className="mt-5">
               <button
                 onClick={handleDelete}
-                disabled={deletePin.length !== 6 || isDeleting}
+                disabled={deletePin.length !== PIN_LENGTH || isDeleting}
                 className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: deletePin.length === 6 && !isDeleting ? "#064E3B" : "#D3D3D3",
-                  color: deletePin.length === 6 && !isDeleting ? "white" : "#999999",
+                  backgroundColor:
+                    deletePin.length === PIN_LENGTH && !isDeleting ? "#064E3B" : "#D3D3D3",
+                  color: deletePin.length === PIN_LENGTH && !isDeleting ? "white" : "#999999",
                   border: "none",
                   fontFamily: "Nunito, sans-serif",
-                  cursor: deletePin.length === 6 && !isDeleting ? "pointer" : "not-allowed",
+                  cursor:
+                    deletePin.length === PIN_LENGTH && !isDeleting ? "pointer" : "not-allowed",
                   transition: "background-color 0.2s",
                 }}
               >
@@ -968,6 +975,7 @@ export default function ProfilePage() {
               {t("Current PIN")}
             </p>
             <PinInput
+              label="Current PIN"
               value={currentPin}
               onChange={setCurrentPin}
               length={6}
@@ -981,10 +989,15 @@ export default function ProfilePage() {
               {t("New 6-digit PIN")}
             </p>
             <PinInput
+              label="New PIN"
               value={newPin}
               onChange={setNewPin}
               length={6}
-              disabled={isChangingPin || currentPin.length < 4 || currentPin.length > 6}
+              disabled={
+                isChangingPin ||
+                currentPin.length < LEGACY_PIN_LENGTH ||
+                currentPin.length > PIN_LENGTH
+              }
             />
 
             <p
@@ -994,13 +1007,14 @@ export default function ProfilePage() {
               {t("Confirm New PIN")}
             </p>
             <PinInput
+              label="Confirm new PIN"
               value={confirmNewPin}
               onChange={setConfirmNewPin}
               length={6}
-              disabled={isChangingPin || newPin.length !== 6}
+              disabled={isChangingPin || newPin.length !== PIN_LENGTH}
             />
 
-            {confirmNewPin.length === 6 && newPin !== confirmNewPin && (
+            {confirmNewPin.length === PIN_LENGTH && newPin !== confirmNewPin && (
               <p
                 className="text-xs font-bold text-center mt-2"
                 style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}

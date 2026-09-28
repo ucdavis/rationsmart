@@ -210,6 +210,14 @@ export default function FeedSelectionPage() {
     while (stored.length < 3) stored.push(createFeedItem());
     return stored;
   });
+  // Mirror row edits into the persisted store. Done here rather than inside
+  // the setItems updaters: updaters must be pure (StrictMode runs them twice)
+  // and a store write there is a side effect (audit B-08). The initial,
+  // padded-to-3 list is skipped so merely opening the screen doesn't write.
+  const initialItems = useRef(items);
+  useEffect(() => {
+    if (items !== initialItems.current) setFeedSelections(items);
+  }, [items, setFeedSelections]);
 
   // i18n V2 — translation dictionary for Feed Type + Feed Category
   // labels. Backend `/v1/animal/unique-feed-*` endpoints only return
@@ -370,15 +378,25 @@ export default function FeedSelectionPage() {
       return;
     }
     setIsSearching(true);
+    // `stale` flips when the query changes: a slow earlier response must not
+    // overwrite the results for what the user has typed since (audit B-07).
+    let stale = false;
     const timer = setTimeout(() => {
       searchFeeds(searchQuery.trim(), user.country_id, user.id)
         .then((res) => {
-          setSearchResults(res.data ?? []);
+          if (!stale) setSearchResults(res.data ?? []);
         })
-        .catch(() => setSearchResults([]))
-        .finally(() => setIsSearching(false));
+        .catch(() => {
+          if (!stale) setSearchResults([]);
+        })
+        .finally(() => {
+          if (!stale) setIsSearching(false);
+        });
     }, 250);
-    return () => clearTimeout(timer);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
   }, [searchQuery, user?.id, user?.country_id]);
 
   // Close result dropdown on outside click.
@@ -429,7 +447,6 @@ export default function FeedSelectionPage() {
             }
           : row
       );
-      setFeedSelections(next);
       return next;
     });
     setSearchQuery("");
@@ -680,11 +697,7 @@ export default function FeedSelectionPage() {
   const addFeed = () => {
     // Functional updater — see updateItem for why (avoid clobbering a
     // concurrent cascade write off a stale `items` snapshot).
-    setItems((prev) => {
-      const updated = [...prev, createFeedItem()];
-      setFeedSelections(updated);
-      return updated;
-    });
+    setItems((prev) => [...prev, createFeedItem()]);
   };
 
   const updateItem = (id: string, updates: Partial<FeedItem>) => {
@@ -697,11 +710,7 @@ export default function FeedSelectionPage() {
     // snapshot where category_id was still null — wipes it, leaving Category
     // blank after a search pick). Deriving from `prev` makes every write see
     // the latest state, so concurrent field updates compose instead of race.
-    setItems((prev) => {
-      const updated = prev.map((item) => (item.id === id ? { ...item, ...updates } : item));
-      setFeedSelections(updated);
-      return updated;
-    });
+    setItems((prev) => prev.map((item) => (item.id === id ? { ...item, ...updates } : item)));
   };
 
   const deleteItem = (id: string) => {
@@ -710,11 +719,7 @@ export default function FeedSelectionPage() {
       return;
     }
     // Functional updater — see updateItem.
-    setItems((prev) => {
-      const updated = prev.filter((item) => item.id !== id);
-      setFeedSelections(updated);
-      return updated;
-    });
+    setItems((prev) => prev.filter((item) => item.id !== id));
   };
 
   const isValid = () => {
@@ -859,11 +864,26 @@ export default function FeedSelectionPage() {
       // suffix every time ("Sim 1 (Recommendation) (Recommendation)").
       const simulationId = buildDietSimulationId(cattleInfo.simulation_name, isEvaluation);
       const cattlePayload = toCattleInfoPayload(cattleInfo);
+      // Only send limits that were range-checked against the current state's
+      // spec (audit B-06). Keys the spec doesn't list (stale, from an older
+      // build) can't even be seen in the dialog, so they're dropped. If the
+      // spec couldn't be loaded, nothing was checked: send none (the engine
+      // uses its per-state defaults) and say so rather than risk a raw 422.
+      // The saved limits themselves are kept for the next run.
+      const specKeys = new Set((limitSpecs ?? []).map((sp) => sp.key));
+      const limitsToSend: Partial<DietLimits> = Object.fromEntries(
+        Object.entries(limits).filter(([k]) => specKeys.has(k as keyof DietLimits))
+      );
+      const limitsSkipped = !limitSpecs && Object.keys(limits).length > 0;
 
       if (isEvaluation) {
         res = await evaluateDiet({
           user_id: user.id,
           country_id: cattleInfo.country_id,
+          // AUDIT D-03 (kept): "USD" only covers accounts persisted before
+          // currency was stored on the user; every login / country change
+          // sets it (CLAUDE.md §10.9). Blocking the request instead would
+          // strand those users with no way to fix it from this screen.
           currency: user.currency || "USD",
           simulation_id: simulationId,
           cattle_info: cattlePayload,
@@ -915,8 +935,14 @@ export default function FeedSelectionPage() {
           // lactating diet and 422'd every Dry Cow / Heifer one. The engine
           // holds the correct per-state defaults — an omitted key is how we
           // ask for them.
-          ...(Object.keys(limits).length > 0 ? { base_thresholds: limits } : {}),
+          ...(Object.keys(limitsToSend).length > 0 ? { base_thresholds: limitsToSend } : {}),
         });
+        if (limitsSkipped) {
+          showSnackbar(
+            t("Diet limits unavailable — report generated with the default limits."),
+            "info"
+          );
+        }
         setReportData({ ...res.data, mode: "recommendation" });
       }
       setDietLimits(limits);

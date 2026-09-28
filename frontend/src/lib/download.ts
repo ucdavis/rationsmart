@@ -24,3 +24,19 @@ export function filenameFromContentDisposition(header: unknown, fallback: string
 export function contentDispositionOf(headers: Record<string, unknown>): unknown {
   return headers["content-disposition"] ?? headers["Content-Disposition"];
 }
+
+// Upload guard — `accept=` on a file input is only a hint to the picker, so
+// check the extension and size before sending anything. 4 MB stays under the
+// 4.5 MB Vercel function body limit the proxy runs behind.
+export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
+
+/** Returns an error message for an unacceptable file, or null when it's fine. */
+export function uploadFileProblem(file: File, allowedExtensions: readonly string[]): string | null {
+  const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+  if (!allowedExtensions.includes(ext)) {
+    return `Please choose a ${allowedExtensions.join(" / ")} file`;
+  }
+  if (file.size > MAX_UPLOAD_BYTES) return "File is too large (max 4 MB)";
+  if (file.size === 0) return "File is empty";
+  return null;
+}

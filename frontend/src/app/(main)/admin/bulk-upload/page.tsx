@@ -7,7 +7,11 @@ import { bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds } from "@/lib/api"
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
 import { isSameOrigin, safeExternalUrl } from "@/lib/safe-url";
-import { contentDispositionOf, filenameFromContentDisposition } from "@/lib/download";
+import {
+  contentDispositionOf,
+  filenameFromContentDisposition,
+  uploadFileProblem,
+} from "@/lib/download";
 
 // Fills `${key}` placeholder tokens in a translated template. Only used
 // for the two messages on this page whose dictionary entries carry
@@ -71,6 +75,13 @@ export default function BulkUploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
+    const problem = uploadFileProblem(file, [".csv", ".xlsx", ".xls"]);
+    if (problem) {
+      e.target.value = "";
+      setUploadStatus("failed");
+      setUploadMessage(t(problem));
+      return;
+    }
     setSelectedFile(file);
     // Reset any prior upload status when a new file is picked
     setUploadStatus("idle");

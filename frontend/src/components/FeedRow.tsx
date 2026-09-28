@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   getFeedTypes,
   getFeedTypesLocalized,
@@ -1029,10 +1029,18 @@ export default function FeedRow({
   // category, or the cascade above invalidated the stored feed_uuid), the
   // inclusion-limits toggle and any stored Min/Max numbers must also reset.
   // Otherwise the new feed inherits stale bounds from the previous one,
-  // and the toggle stays "on" against no feed at all.
+  // and the toggle stays "on" against no feed at all. The same applies when
+  // one feed is swapped DIRECTLY for another (a search pick over a filled
+  // row never passes through null — audit B-12). The first render is
+  // skipped so a restored simulation keeps its saved bounds.
+  // Price is deliberately NOT reset: neither the dropdown nor the search
+  // path ever cleared it, and users re-pick feeds expecting the price to stay.
+  const prevFeedUuid = useRef(item.feed_uuid);
   useEffect(() => {
+    const swapped = prevFeedUuid.current !== item.feed_uuid;
+    prevFeedUuid.current = item.feed_uuid;
     if (
-      !item.feed_uuid &&
+      swapped &&
       (item.inclusion_limits_enabled || item.min_kg_per_day != null || item.max_kg_per_day != null)
     ) {
       onUpdate(item.id, {

@@ -176,6 +176,9 @@ function deepLinkForReason(reason: string): { label: string; href: string } | nu
   return null;
 }
 
+// Longest a manual sync is polled for before the page stops waiting.
+const SYNC_POLL_MAX_MS = 30 * 60 * 1000;
+
 function csvEscape(v: unknown): string {
   let s = v === null || v === undefined ? "" : String(v);
   // Cells come from the external CLIMDES feed. A leading = + - @ (or tab /
@@ -274,6 +277,8 @@ export default function AdminFeedSyncPage() {
     const id = setInterval(() => {
       getFeedSyncSchedulerStatus()
         .then((res) => setStatus(res.data))
+        // Background refresh on an interval: a missed tick is retried on
+        // the next one, so there's nothing useful to tell the admin.
         .catch(() => {});
     }, 60000);
     return () => clearInterval(id);
@@ -501,7 +506,7 @@ function SyncSettingsTab({
             reload();
           }
         })
-        .catch(() => {});
+        .catch(() => {}); // transient — the next 5-s tick retries
     }, 5000);
     return () => {
       if (statusPollRef.current) clearInterval(statusPollRef.current);
@@ -574,7 +579,19 @@ function SyncSettingsTab({
 
   const startPolling = (logId: string) => {
     if (pollRef.current) clearInterval(pollRef.current);
+    // Upper bound so a run the backend never finalises (worker crash) can't
+    // poll forever. The run keeps going server-side; the history table
+    // below still shows its final status on the next reload.
+    const deadline = Date.now() + SYNC_POLL_MAX_MS;
     pollRef.current = setInterval(async () => {
+      if (Date.now() > deadline) {
+        if (pollRef.current) clearInterval(pollRef.current);
+        pollRef.current = null;
+        setRunningLogId(null);
+        reload();
+        showSnackbar("Sync is taking longer than expected — check Sync History later", "info");
+        return;
+      }
       try {
         const res = await getFeedSyncLog(logId);
         const log: FeedSyncLogDetail = res.data;

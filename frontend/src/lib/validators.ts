@@ -95,3 +95,8 @@ export function formatTotalUsers(n: number): string {
 export function inclusionBoundIsInvalid(value: number | null | undefined): boolean {
   return value != null && value <= 0;
 }
+
+// PIN lengths. The v1 backend issues 6-digit PINs; legacy 4-digit PINs are
+// accepted at login only, which then routes to /set-new-pin to upgrade.
+export const PIN_LENGTH = 6;
+export const LEGACY_PIN_LENGTH = 4;

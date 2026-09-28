@@ -68,6 +68,9 @@ export default function Snackbar() {
 
   return (
     <div
+      // Announced by screen readers without moving focus; errors interrupt.
+      role={snackbar.type === "error" ? "alert" : "status"}
+      aria-live={snackbar.type === "error" ? "assertive" : "polite"}
       className={exiting ? "snackbar-exit" : "snackbar-enter"}
       style={{
         // Android: gravity = TOP | CENTER_HORIZONTAL (snackbar shows at top)
