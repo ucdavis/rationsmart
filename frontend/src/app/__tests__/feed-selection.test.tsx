@@ -15,6 +15,7 @@ const {
   updateCustomFeed,
   checkInsertOrUpdate,
   getDietThresholds,
+  getCountries,
 } = vi.hoisted(() => ({
   push: vi.fn(),
   back: vi.fn(),
@@ -29,6 +30,7 @@ const {
   updateCustomFeed: vi.fn(),
   checkInsertOrUpdate: vi.fn(),
   getDietThresholds: vi.fn(),
+  getCountries: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -50,6 +52,7 @@ vi.mock("@/lib/api", async () => {
     updateCustomFeed,
     checkInsertOrUpdate,
     getDietThresholds,
+    getCountries,
   };
 });
 
@@ -771,6 +774,39 @@ describe("feed-selection — generateReport payloads", () => {
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/report"));
     expect(useStore.getState().reportData).toEqual({ report_id: "EVAL-1", mode: "evaluation" });
+  });
+
+  it("derives a missing currency from the simulation's country (audit D-03)", async () => {
+    evaluateDiet.mockResolvedValueOnce({ data: { report_id: "EVAL-2" } });
+    const cattleInfo = mkCattleInfo();
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: cattleInfo.country_id, name: "X", currency: "KES" }],
+    });
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo,
+      feedSelections: [mkValidForageRow({ quantity_kg: 3 })],
+      user: seedUser({ currency: "" }),
+    });
+    await renderReady();
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
+    expect(evaluateDiet.mock.calls[0][0].currency).toBe("KES");
+    expect(useStore.getState().user?.currency).toBe("KES");
+  });
+
+  it("refuses to price the diet when no currency can be found — never silently USD", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo: mkCattleInfo(),
+      feedSelections: [mkValidForageRow({ quantity_kg: 3 })],
+      user: seedUser({ currency: "" }),
+    });
+    await renderReady();
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+    await waitFor(() => expect(useStore.getState().snackbar?.type).toBe("error"));
+    expect(evaluateDiet).not.toHaveBeenCalled();
   });
 
   // CONTRACT CHANGE 2026-09-21: we no longer merge a hardcoded copy of

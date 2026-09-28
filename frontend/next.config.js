@@ -45,15 +45,26 @@ const keepConsole =
 
 // Security response headers.
 //
-// AUDIT A-04 (partly deferred): the CSP below only locks down the directives
-// that can't affect how the app renders — framing, <base>, plugins and form
-// targets. A full script/style CSP is not enforced yet: Next 14 App Router
-// emits inline bootstrap scripts that need per-request nonces (middleware +
-// dynamic rendering for every page), and every component uses inline style
-// attributes, so `style-src 'self'` would blank the UI. The real fix for the
-// token-theft risk is moving the JWT from localStorage into an httpOnly
-// cookie set by the proxy, which needs backend coordination.
+// Content-Security-Policy (audit A-04). The app loads nothing from other
+// origins except Google Fonts, so everything else is pinned to 'self':
+// - connect-src 'self': XHR/fetch/WebSocket can only reach this origin, so a
+//   script that did get injected couldn't send the JWT anywhere else;
+// - img-src 'self' data: blob: — no third-party image beacons either.
+// script-src still needs 'unsafe-inline': Next 14 App Router emits inline
+// bootstrap scripts, and giving them nonces would force every page to render
+// dynamically (no static pages, no SW precache). style-src needs it for the
+// inline style attributes used throughout. Moving the JWT to an httpOnly
+// cookie (needs the backend) is what fully removes the token-theft risk.
 const contentSecurityPolicy = [
+  "default-src 'self'",
+  // `next dev` (React Refresh) needs eval; production never gets it.
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+  "font-src 'self' data: https://fonts.gstatic.com",
+  "img-src 'self' data: blob:",
+  "connect-src 'self'",
+  "worker-src 'self'",
+  "manifest-src 'self'",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "object-src 'none'",

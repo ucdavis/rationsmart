@@ -196,3 +196,15 @@ select option:checked {
   animation: shimmer 1.6s infinite;
 }
 .toggle-slider.shimmer::before { opacity: 0; }
+
+/* iOS Safari zooms the page into any focused input whose text is under
+   16 px. Pinch-zoom is enabled for accessibility (audit B-35), so give
+   inputs 16 px text on iOS only (-webkit-touch-callout is iOS-specific).
+   !important beats the inline 14 px Android sizes. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

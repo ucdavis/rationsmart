@@ -54,11 +54,9 @@ export function buildEvaluationRequest(
   return {
     user_id: user.id,
     country_id: cattleInfo.country_id,
-    // AUDIT D-03 (kept): "USD" only covers accounts persisted before
-    // currency was stored on the user; every login / country change sets it
-    // (CLAUDE.md §10.9). Blocking the request instead would strand those
-    // users with no way to fix it from this screen.
-    currency: user.currency || "USD",
+    // The caller resolves the currency (profile, else the selected country)
+    // and refuses to send without one — no silent "USD" (audit D-03).
+    currency: user.currency ?? "",
     simulation_id: buildDietSimulationId(cattleInfo.simulation_name, true),
     cattle_info: toCattleInfoPayload(cattleInfo),
     feed_evaluation: sendableFeeds(items).map((item) => ({

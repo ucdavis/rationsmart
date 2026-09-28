@@ -34,12 +34,9 @@ const SW_DISABLED = process.env.DISABLE_PWA === "true";
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // AUDIT B-35 (kept): pinch-zoom stays disabled for Android-app parity and
-  // because iOS Safari auto-zooms into any focused input under 16 px — every
-  // form field here uses Android's 14 px text, so allowing scale would make
-  // the page jump on each tap. Revisit together with a 16 px input type scale.
-  maximumScale: 1,
-  userScalable: false,
+  // Pinch-zoom is allowed (audit B-35 / WCAG 1.4.4). iOS Safari would
+  // auto-zoom into any focused field under 16 px, so globals.css bumps input
+  // text to 16 px on iOS only; Android keeps its 14 px exactly.
   // White status bar / Android system bar to match the Android app
   themeColor: COLORS.white,
   viewportFit: "cover",

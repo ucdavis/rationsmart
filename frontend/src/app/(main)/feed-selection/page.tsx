@@ -16,6 +16,7 @@ import {
   checkInsertOrUpdate,
   updateCustomFeed,
   searchFeeds,
+  getCountries,
   fetchFeedTaxonomyLabels,
   getDietThresholds,
   ANIMAL_CATEGORY_LABELS,
@@ -191,6 +192,7 @@ export default function FeedSelectionPage() {
     dietLimits,
     setDietLimits,
     showSnackbar,
+    setUser,
   } = useStore((s) => ({
     user: s.user,
     cattleInfo: s.cattleInfo,
@@ -201,6 +203,7 @@ export default function FeedSelectionPage() {
     setReportData: s.setReportData,
     dietLimits: s.dietLimits,
     setDietLimits: s.setDietLimits,
+    setUser: s.setUser,
     showSnackbar: s.showSnackbar,
   }));
 
@@ -872,7 +875,32 @@ export default function FeedSelectionPage() {
         limitsApplyToAnimal && !!limitSpecsError && Object.keys(limits).length > 0;
 
       if (isEvaluation) {
-        const res = await evaluateDiet(buildEvaluationRequest(user, cattleInfo, items));
+        // Evaluation prices the diet, so it needs a currency. Accounts
+        // persisted before currency was stored have none: derive it from
+        // the simulation's country (and remember it), or stop and say so
+        // rather than silently pricing in USD (audit D-03).
+        let currency = user.currency;
+        if (!currency) {
+          try {
+            const res = await getCountries();
+            currency =
+              (res.data ?? []).find((c) => String(c.id) === String(cattleInfo.country_id))
+                ?.currency ?? "";
+            if (currency) setUser({ ...user, currency });
+          } catch {
+            currency = "";
+          }
+        }
+        if (!currency) {
+          showSnackbar(
+            t("Your country's currency is unknown — pick your country in Profile, then try again."),
+            "error"
+          );
+          return;
+        }
+        const res = await evaluateDiet(
+          buildEvaluationRequest({ ...user, currency }, cattleInfo, items)
+        );
         setReportData({ ...res.data, mode: "evaluation" });
       } else {
         const res = await recommendDiet(
