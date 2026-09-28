@@ -11,7 +11,7 @@ the PDF layout/content exactly.
 Local dev tooling only: lives under the scripts_2/ tree, is never imported by
 the app, and cannot affect the server, deployment, or the FE/BE.
 
-Usage (from the rationsmart/ project root):
+Usage (from the rationsmart/backend/ folder):
     python -m scripts_2.manual_run.run_optimization                 # single animal ("Animal" sheet)
     python -m scripts_2.manual_run.run_optimization --mode bulk     # every column in "BulkAnimals"
     python -m scripts_2.manual_run.run_optimization --file path.xlsx --output-dir some/dir
