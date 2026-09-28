@@ -6,7 +6,9 @@ httptools>=0.6.0
 python-multipart>=0.0.12
 
 # ── Database ──────────────────────────────────────────────────────────────────
-SQLAlchemy>=2.0
+# <2.1: SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), which is not
+# installed — Alembic (settings.database_url, sync) then fails on every deploy.
+SQLAlchemy>=2.0,<2.1
 asyncpg>=0.29
 psycopg2==2.9.10
 alembic>=1.13.0
