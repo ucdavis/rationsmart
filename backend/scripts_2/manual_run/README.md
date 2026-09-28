@@ -80,8 +80,9 @@ rationsmart/
 
 Requires **Python 3.11** (check with `python3 --version`).
 
+Run these from the `rationsmart/backend` folder you moved into in step 1.
+
 ```bash
-cd rationsmart/backend
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 ```
