@@ -1125,7 +1125,7 @@ export default function FeedRow({
         backgroundColor: "#fff",
         borderRadius: 20,
         boxShadow: isActive
-          ? "0 0 0 2px #064E3B, 0 4px 14px rgba(6,78,59,0.18)"
+          ? `0 0 0 2px ${COLORS.darkAquamarineGreen}, 0 4px 14px rgba(6,78,59,0.18)`
           : "0 2px 8px rgba(0,0,0,0.07)",
         transition: "box-shadow 0.18s, border-color 0.18s",
         cursor: onActivate ? "pointer" : "default",
@@ -1262,7 +1262,7 @@ export default function FeedRow({
                     width: 20,
                     height: 20,
                     borderRadius: "50%",
-                    border: "2px solid #E2E8F0",
+                    border: `2px solid ${COLORS.webDivider}`,
                     flexShrink: 0,
                   }}
                 />

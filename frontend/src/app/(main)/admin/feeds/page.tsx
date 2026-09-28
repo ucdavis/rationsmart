@@ -22,7 +22,7 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import Spinner from "@/components/ui/Spinner";
-import { COLORS } from "@/lib/colors";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -511,10 +511,7 @@ export default function AdminFeedsPage() {
   // ─── LANDING: 3 nav cards ──────────────────────────────────────────────────
   if (section === "landing") {
     return (
-      <div
-        className="flex flex-col min-h-screen"
-        style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
-      >
+      <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
         <Toolbar type="back" title={t("Feed Management")} onBack={() => router.back()} />
 
         <div className="ml-3 mt-5">
@@ -599,10 +596,7 @@ export default function AdminFeedsPage() {
   }
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
       <Toolbar type="back" title={sectionTitle} onBack={() => setSection("landing")} />
 
       {/* MANAGEMENT subheader (matches Android list screens) */}
@@ -1734,7 +1728,7 @@ export default function AdminFeedsPage() {
                 onClick={() => setConfirmDeleteFeed(null)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
@@ -1827,7 +1821,7 @@ export default function AdminFeedsPage() {
                 onClick={() => setConfirmDeleteType(null)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
@@ -1920,7 +1914,7 @@ export default function AdminFeedsPage() {
                 onClick={() => setConfirmDeleteCat(null)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",

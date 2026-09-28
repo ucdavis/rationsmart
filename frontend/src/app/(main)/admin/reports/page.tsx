@@ -9,7 +9,7 @@ import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import { openExternalUrl } from "@/lib/safe-url";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
-import { COLORS } from "@/lib/colors";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
 // Critically, the "View Report" button opens bucket_url (a PDF URL),
@@ -67,10 +67,7 @@ export default function AdminReportsPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
       <Toolbar type="back" title={t("Feed Reports")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">

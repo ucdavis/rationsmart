@@ -14,7 +14,7 @@ import {
 } from "@/lib/download";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
-import { COLORS } from "@/lib/colors";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
 // Upload template. The filename's "tempate" misspelling is the real object
 // name (Android downloads the same file). It is a public static asset, so
@@ -421,10 +421,7 @@ export default function BulkUploadPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
       <Toolbar type="back" title={t("Feed Management")} onBack={() => router.back()} />
 
       {/* Page header — matches Android tv_title_data_sync / tv_title_feed_export_upload */}
@@ -449,7 +446,7 @@ export default function BulkUploadPage() {
             disabled={uploadStatus === "uploading"}
             className="w-full flex flex-col items-center justify-center rounded-2xl"
             style={{
-              border: "2px dashed #007BFF",
+              border: `2px dashed ${COLORS.azure}`,
               backgroundColor: COLORS.ghostWhite,
               padding: "32px 16px",
               cursor: uploadStatus === "uploading" ? "not-allowed" : "pointer",
@@ -700,7 +697,7 @@ export default function BulkUploadPage() {
               className="flex flex-col items-start rounded-2xl px-4 py-5"
               style={{
                 backgroundColor: COLORS.aestheticWhite,
-                border: "1px solid #FFF3E0",
+                border: `1px solid ${COLORS.sazerac}`,
                 cursor: downloadStatus === "downloading" ? "not-allowed" : "pointer",
                 opacity: downloadStatus === "downloading" ? 0.7 : 1,
               }}
@@ -823,7 +820,7 @@ export default function BulkUploadPage() {
           disabled={isDownloadingTemplate}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-bold text-base text-white"
           style={{
-            background: "linear-gradient(180deg, #1CA069 0%, #064E3B 100%)",
+            background: `linear-gradient(180deg, ${COLORS.crayolaGreen} 0%, ${COLORS.darkAquamarineGreen} 100%)`,
             border: "none",
             cursor: isDownloadingTemplate ? "not-allowed" : "pointer",
             boxShadow: "0 4px 14px rgba(6,78,59,0.28)",

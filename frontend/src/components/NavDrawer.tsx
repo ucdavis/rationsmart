@@ -338,7 +338,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                 onClick={() => setShowLogoutConfirm(false)}
                 className="w-full py-3 rounded-full font-bold"
                 style={{
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",

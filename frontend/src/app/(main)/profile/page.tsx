@@ -296,7 +296,7 @@ export default function ProfilePage() {
           {/* Avatar + Name + Email — horizontal row */}
           <div
             className="flex items-center gap-3 mb-4 pb-4"
-            style={{ borderBottom: "1px solid #F1F5F9" }}
+            style={{ borderBottom: `1px solid ${COLORS.americanDiamond}` }}
           >
             <div
               className="flex items-center justify-center flex-shrink-0"
@@ -555,7 +555,7 @@ export default function ProfilePage() {
             onClick={openChangePinSheet}
             className="w-full py-3.5 text-base flex items-center justify-center gap-2"
             style={{
-              border: "2px solid #064E3B",
+              border: `2px solid ${COLORS.darkAquamarineGreen}`,
               color: COLORS.darkAquamarineGreen,
               backgroundColor: "white",
               cursor: "pointer",
@@ -770,7 +770,7 @@ export default function ProfilePage() {
                 onClick={() => setShowDeleteDialog(false)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
                 style={{
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",

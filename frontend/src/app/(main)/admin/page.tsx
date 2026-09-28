@@ -12,7 +12,7 @@ import {
   IcReportNav,
   IcBulkUpload,
 } from "@/components/Icons";
-import { COLORS } from "@/lib/colors";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
 interface AdminCard {
   title: string;
@@ -162,10 +162,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
       <Toolbar type="back" title={t("Admin")} onBack={() => router.back()} />
 
       {/* WELCOME / name greeting */}

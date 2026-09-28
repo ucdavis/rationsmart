@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { COLORS } from "@/lib/colors";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
 // Admin section layout.
 // 1. Paints the sage→mint gradient *inside* the centred 480-px column
@@ -50,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         style={{
           position: "absolute",
           inset: 0,
-          background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)",
+          background: ADMIN_BACKGROUND,
           pointerEvents: "none",
           zIndex: -1,
         }}

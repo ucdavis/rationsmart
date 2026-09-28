@@ -67,3 +67,6 @@ export const COLORS = {
   /** Neutral border. */
   webBorder: "#E8EBEE",
 } as const;
+
+/** Admin screens' sage → mint background (Android bg_admin). */
+export const ADMIN_BACKGROUND = `linear-gradient(135deg, ${COLORS.sageBreeze} 0%, ${COLORS.mintWhisper} 100%)`;

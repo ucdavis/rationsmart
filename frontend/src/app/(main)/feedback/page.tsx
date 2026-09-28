@@ -200,7 +200,7 @@ export default function FeedbackPage() {
               backgroundColor: COLORS.americanDiamond,
               color: COLORS.raisinBlack,
               borderRadius: 18,
-              border: "1px solid #E2E8F0",
+              border: `1px solid ${COLORS.webDivider}`,
               minHeight: 140,
             }}
           />

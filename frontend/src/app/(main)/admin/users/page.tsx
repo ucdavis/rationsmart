@@ -17,7 +17,7 @@ import CustomSelect from "@/components/CustomSelect";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
-import { COLORS } from "@/lib/colors";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
 interface AdminUser {
   id: string;
@@ -194,10 +194,7 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div
-      className="flex flex-col min-h-screen"
-      style={{ background: "linear-gradient(135deg, #C8E6C9 0%, #E8F5E9 100%)" }}
-    >
+    <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
       <Toolbar type="back" title={t("User Management")} onBack={() => router.back()} />
 
       {/* Stats card — TOTAL USERS uppercase, matches Android cv_aggregated_view */}
@@ -828,7 +825,7 @@ export default function AdminUsersPage() {
                 padding: "12px 0",
                 backgroundColor: "white",
                 color: COLORS.darkAquamarineGreen,
-                border: "2px solid #064E3B",
+                border: `2px solid ${COLORS.darkAquamarineGreen}`,
                 borderRadius: 12,
                 cursor: "pointer",
                 fontSize: 16,
@@ -883,7 +880,7 @@ export default function AdminUsersPage() {
                   flex: 1,
                   padding: "10px 0",
                   borderRadius: 12,
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   backgroundColor: "white",
                   color: COLORS.darkAquamarineGreen,
                   cursor: "pointer",
@@ -966,7 +963,7 @@ export default function AdminUsersPage() {
                   flex: 1,
                   padding: "10px 0",
                   borderRadius: 12,
-                  border: "2px solid #064E3B",
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   backgroundColor: "white",
                   color: COLORS.darkAquamarineGreen,
                   cursor: "pointer",

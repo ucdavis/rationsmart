@@ -1018,7 +1018,7 @@ export default function FeedSelectionPage() {
               borderRadius: 999,
               backgroundColor: COLORS.white,
               color: COLORS.darkAquamarineGreen,
-              border: "1.5px solid #DCE0E4",
+              border: `1.5px solid ${COLORS.gainsboro}`,
               boxShadow: "0 1px 2px rgba(6,40,30,0.06)",
               cursor: "pointer",
               transition: "all 0.15s",
@@ -1147,7 +1147,7 @@ export default function FeedSelectionPage() {
                 padding: "7px 14px",
                 borderRadius: 60,
                 letterSpacing: 0.2,
-                border: "1.5px solid #1CA069",
+                border: `1.5px solid ${COLORS.crayolaGreen}`,
                 cursor: "pointer",
                 minHeight: 32,
                 display: "inline-flex",
@@ -1321,7 +1321,7 @@ export default function FeedSelectionPage() {
               maxHeight: 320,
               overflowY: "auto",
               zIndex: 50,
-              border: "1px solid #E4F7EF",
+              border: `1px solid ${COLORS.brightGrayNew}`,
             }}
           >
             {isSearching ? (
@@ -1418,7 +1418,7 @@ export default function FeedSelectionPage() {
           onClick={addFeed}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl mt-3 mb-3"
           style={{
-            border: "2px dashed #064E3B",
+            border: `2px dashed ${COLORS.darkAquamarineGreen}`,
             backgroundColor: "transparent",
             color: COLORS.darkAquamarineGreen,
             fontWeight: 700,
@@ -1442,7 +1442,7 @@ export default function FeedSelectionPage() {
           width: "100%",
           maxWidth: COLUMN_WIDTH,
           backgroundColor: COLORS.white,
-          borderTop: "1px solid #E2E8F0",
+          borderTop: `1px solid ${COLORS.webDivider}`,
           zIndex: 30,
         }}
       >

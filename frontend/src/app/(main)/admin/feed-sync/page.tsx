@@ -412,7 +412,7 @@ export default function AdminFeedSyncPage() {
                 style={{
                   backgroundColor: "transparent",
                   color: COLORS.darkAquamarineGreen,
-                  border: "1.5px solid #064E3B",
+                  border: `1.5px solid ${COLORS.darkAquamarineGreen}`,
                   cursor: "pointer",
                 }}
               >
@@ -699,7 +699,10 @@ function SyncSettingsTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide"
@@ -792,7 +795,10 @@ function SyncSettingsTab({
             </p>
           </div>
 
-          <div className="space-y-2 pt-1" style={{ borderTop: "1px solid #F1F5F9" }}>
+          <div
+            className="space-y-2 pt-1"
+            style={{ borderTop: `1px solid ${COLORS.americanDiamond}` }}
+          >
             <div className="flex justify-between text-sm pt-2">
               <span style={{ color: COLORS.darkSilver }}>Next scheduled sync</span>
               <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
@@ -854,7 +860,7 @@ function SyncSettingsTab({
             style={{
               backgroundColor:
                 lastResult.status === "success" ? "rgba(28,160,105,0.12)" : "rgba(228,74,74,0.12)",
-              borderBottom: "1px solid #F1F5F9",
+              borderBottom: `1px solid ${COLORS.americanDiamond}`,
             }}
           >
             <p
@@ -907,7 +913,10 @@ function SyncSettingsTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center gap-2 px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
@@ -1038,7 +1047,7 @@ function SyncSettingsTab({
                     style={{
                       backgroundColor: "transparent",
                       color: COLORS.darkAquamarineGreen,
-                      border: "1.5px solid #064E3B",
+                      border: `1.5px solid ${COLORS.darkAquamarineGreen}`,
                       cursor: "pointer",
                     }}
                   >
@@ -1073,7 +1082,7 @@ function SyncSettingsTab({
                 style={{
                   backgroundColor: "transparent",
                   color: COLORS.darkAquamarineGreen,
-                  border: "1.5px solid #064E3B",
+                  border: `1.5px solid ${COLORS.darkAquamarineGreen}`,
                   cursor: "pointer",
                 }}
               >
@@ -1211,7 +1220,10 @@ function RunHistoryTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center justify-between px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide"
@@ -1230,7 +1242,7 @@ function RunHistoryTab({
               <div
                 key={i}
                 className="px-4 py-3 space-y-2"
-                style={{ borderTop: "1px solid #F8FAF9" }}
+                style={{ borderTop: `1px solid ${COLORS.authenticWhite}` }}
               >
                 <div className="h-4 w-40 rounded-full shimmer" />
                 <div className="h-3 w-56 rounded-full shimmer" />
@@ -1248,7 +1260,7 @@ function RunHistoryTab({
               onClick={() => openDetail(log.id)}
               className="w-full text-left px-4 py-3"
               style={{
-                borderTop: "1px solid #F8FAF9",
+                borderTop: `1px solid ${COLORS.authenticWhite}`,
                 background: "none",
                 border: "none",
                 borderTopWidth: 1,
@@ -1285,7 +1297,7 @@ function RunHistoryTab({
         {totalPages > 1 && (
           <div
             className="flex items-center justify-between px-4 py-3"
-            style={{ borderTop: "1px solid #F8FAF9" }}
+            style={{ borderTop: `1px solid ${COLORS.authenticWhite}` }}
           >
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -1486,7 +1498,7 @@ function RunHistoryTab({
                               key={i}
                               className="text-xs px-2 py-1.5"
                               style={{
-                                borderBottom: "1px solid #F1F5F9",
+                                borderBottom: `1px solid ${COLORS.americanDiamond}`,
                                 color: COLORS.raisinBlack,
                               }}
                             >

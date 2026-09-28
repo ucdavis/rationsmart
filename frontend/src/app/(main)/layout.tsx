@@ -51,7 +51,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
         <div
           className="w-9 h-9 rounded-full animate-spin"
           style={{
-            border: "3px solid #F0FDF4",
+            border: `3px solid ${COLORS.honeydew}`,
             borderTopColor: COLORS.darkAquamarineGreen,
           }}
         />

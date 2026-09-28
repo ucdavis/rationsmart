@@ -364,7 +364,7 @@ function FieldError({ message }: { message?: string }) {
 }
 
 // Amber ring + note on a value that was pulled into range on restore.
-const ADJUSTED_RING: React.CSSProperties = { boxShadow: "0 0 0 2px #FF9800" };
+const ADJUSTED_RING: React.CSSProperties = { boxShadow: `0 0 0 2px ${COLORS.vividGamboge}` };
 
 function AdjustedNote({ from, label }: { from?: string; label: string }) {
   if (from === undefined) return null;
@@ -1790,7 +1790,7 @@ export default function CattleInfoPage() {
           width: "100%",
           maxWidth: COLUMN_WIDTH,
           backgroundColor: COLORS.white,
-          borderTop: "1px solid #E2E8F0",
+          borderTop: `1px solid ${COLORS.webDivider}`,
           zIndex: 30,
         }}
       >
@@ -1799,7 +1799,7 @@ export default function CattleInfoPage() {
           disabled={isResetting}
           className="py-3.5 rounded-2xl font-bold text-base inline-flex items-center justify-center gap-2"
           style={{
-            border: "2px solid #064E3B",
+            border: `2px solid ${COLORS.darkAquamarineGreen}`,
             color: isResetting ? COLORS.darkSilver : COLORS.darkAquamarineGreen,
             background: isResetting ? COLORS.americanDiamond : "white",
             paddingLeft: isResetting ? 24 : 40,

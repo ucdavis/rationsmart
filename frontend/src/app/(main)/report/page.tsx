@@ -793,7 +793,10 @@ export default function ReportPage() {
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div
                   className="rounded-xl p-3"
-                  style={{ backgroundColor: COLORS.authenticWhite, border: "1px solid #E2E8F0" }}
+                  style={{
+                    backgroundColor: COLORS.authenticWhite,
+                    border: `1px solid ${COLORS.webDivider}`,
+                  }}
                 >
                   <p
                     className="font-bold uppercase mb-1"
@@ -814,7 +817,10 @@ export default function ReportPage() {
                 </div>
                 <div
                   className="rounded-xl p-3"
-                  style={{ backgroundColor: COLORS.authenticWhite, border: "1px solid #E2E8F0" }}
+                  style={{
+                    backgroundColor: COLORS.authenticWhite,
+                    border: `1px solid ${COLORS.webDivider}`,
+                  }}
                 >
                   <p
                     className="font-bold uppercase mb-1"
@@ -1986,7 +1992,7 @@ export default function ReportPage() {
                     style={{
                       gridTemplateColumns:
                         "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
-                      borderBottom: "1px solid #E2E8F0",
+                      borderBottom: `1px solid ${COLORS.webDivider}`,
                     }}
                   >
                     <span
@@ -2037,7 +2043,7 @@ export default function ReportPage() {
                       style={{
                         gridTemplateColumns:
                           "minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)",
-                        borderBottom: "1px solid #F1F5F9",
+                        borderBottom: `1px solid ${COLORS.americanDiamond}`,
                       }}
                     >
                       <span
@@ -2399,7 +2405,7 @@ export default function ReportPage() {
           width: "100%",
           maxWidth: COLUMN_WIDTH,
           backgroundColor: COLORS.white,
-          borderTop: "1px solid #E2E8F0",
+          borderTop: `1px solid ${COLORS.webDivider}`,
           zIndex: 30,
         }}
       >
@@ -2428,7 +2434,7 @@ export default function ReportPage() {
               style={{
                 backgroundColor: COLORS.honeydew,
                 color: COLORS.darkAquamarineGreen,
-                border: "1px solid #064E3B",
+                border: `1px solid ${COLORS.darkAquamarineGreen}`,
                 cursor: "pointer",
               }}
             >
@@ -2519,7 +2525,7 @@ export default function ReportPage() {
             }}
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
             style={{
-              border: "2px solid #064E3B",
+              border: `2px solid ${COLORS.darkAquamarineGreen}`,
               color: COLORS.darkAquamarineGreen,
               background: "white",
               cursor: "pointer",

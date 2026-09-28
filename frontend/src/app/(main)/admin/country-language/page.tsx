@@ -138,7 +138,10 @@ function SkeletonCardShell({ title, children }: { title: string; children: React
     <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
       <div
         className="px-4 py-3"
-        style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+        style={{
+          backgroundColor: COLORS.brightGrayNew,
+          borderBottom: `1px solid ${COLORS.americanDiamond}`,
+        }}
       >
         <p
           className="text-xs font-bold uppercase tracking-wide"
@@ -154,7 +157,7 @@ function SkeletonCardShell({ title, children }: { title: string; children: React
 
 function SkeletonCountryRow() {
   return (
-    <div className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+    <div className="px-4 py-3" style={{ borderTop: `1px solid ${COLORS.authenticWhite}` }}>
       <div className="flex items-center gap-3">
         <div className="min-w-0 flex-1 space-y-2">
           <div className="h-4 w-28 rounded-full shimmer" />
@@ -172,7 +175,10 @@ function SkeletonCountryRow() {
 
 function SkeletonLanguageRow() {
   return (
-    <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+    <div
+      className="flex items-center gap-3 px-4 py-3"
+      style={{ borderTop: `1px solid ${COLORS.authenticWhite}` }}
+    >
       <div className="min-w-0 flex-1 space-y-2">
         <div className="h-4 w-24 rounded-full shimmer" />
         <div className="h-3 w-32 rounded-full shimmer" />
@@ -186,7 +192,7 @@ function SkeletonPickerRow() {
   return (
     <div
       className="flex items-center justify-between px-3 py-2.5 rounded-xl"
-      style={{ border: "1px solid #DCE0E4" }}
+      style={{ border: `1px solid ${COLORS.gainsboro}` }}
     >
       <div className="h-4 w-28 rounded-full shimmer" />
       <div className="h-3 w-14 rounded-full shimmer" />
@@ -196,7 +202,10 @@ function SkeletonPickerRow() {
 
 function SkeletonFeedRow() {
   return (
-    <div className="flex items-center gap-3 px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+    <div
+      className="flex items-center gap-3 px-4 py-3"
+      style={{ borderTop: `1px solid ${COLORS.authenticWhite}` }}
+    >
       <div className="min-w-0 flex-1 space-y-2">
         <div className="h-4 w-32 rounded-full shimmer" />
         <div className="h-3 w-20 rounded-full shimmer" />
@@ -354,7 +363,7 @@ export default function AdminCountryLanguagePage() {
                 style={{
                   backgroundColor: "transparent",
                   color: COLORS.darkAquamarineGreen,
-                  border: "1.5px solid #064E3B",
+                  border: `1.5px solid ${COLORS.darkAquamarineGreen}`,
                   cursor: "pointer",
                 }}
               >
@@ -620,7 +629,10 @@ function CountriesLanguagesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center gap-2 px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
@@ -657,7 +669,11 @@ function CountriesLanguagesTab({
             const extraLangs = c.languages.filter((x) => x !== "en");
             const isPending = pendingKey.has(`country:${c.id}`);
             return (
-              <div key={c.id} className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
+              <div
+                key={c.id}
+                className="px-4 py-3"
+                style={{ borderTop: `1px solid ${COLORS.authenticWhite}` }}
+              >
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
                     <p className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
@@ -742,7 +758,10 @@ function CountriesLanguagesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center gap-2 px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
@@ -778,7 +797,10 @@ function CountriesLanguagesTab({
             <div
               key={l.code}
               className="flex items-center gap-3 px-4 py-3"
-              style={{ borderTop: "1px solid #F8FAF9", opacity: l.is_active ? 1 : 0.6 }}
+              style={{
+                borderTop: `1px solid ${COLORS.authenticWhite}`,
+                opacity: l.is_active ? 1 : 0.6,
+              }}
             >
               <div className="min-w-0 flex-1">
                 <p className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
@@ -871,7 +893,7 @@ function CountriesLanguagesTab({
                     onClick={() => handleActivateCountry(c)}
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
                     style={{
-                      border: "1px solid #DCE0E4",
+                      border: `1px solid ${COLORS.gainsboro}`,
                       background: COLORS.white,
                       cursor: "pointer",
                     }}
@@ -947,7 +969,7 @@ function CountriesLanguagesTab({
                         disabled={isAssociating}
                         className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
                         style={{
-                          border: "1px solid #DCE0E4",
+                          border: `1px solid ${COLORS.gainsboro}`,
                           background: COLORS.white,
                           cursor: isAssociating ? "wait" : "pointer",
                         }}
@@ -1269,7 +1291,10 @@ function FeedNamesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide"
@@ -1289,7 +1314,10 @@ function FeedNamesTab({
               }}
               className="flex-shrink-0 px-3 py-2 rounded-full text-sm font-bold whitespace-nowrap"
               style={{
-                border: selCountry?.id === c.id ? "1.5px solid #064E3B" : "1.5px solid #DCE0E4",
+                border:
+                  selCountry?.id === c.id
+                    ? `1.5px solid ${COLORS.darkAquamarineGreen}`
+                    : `1.5px solid ${COLORS.gainsboro}`,
                 backgroundColor:
                   selCountry?.id === c.id ? COLORS.darkAquamarineGreen : COLORS.white,
                 color: selCountry?.id === c.id ? COLORS.white : COLORS.raisinBlack,
@@ -1311,7 +1339,10 @@ function FeedNamesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide"
@@ -1328,7 +1359,10 @@ function FeedNamesTab({
                 onClick={() => setSelLang(code)}
                 className="flex-shrink-0 px-3 py-2 rounded-full text-sm font-bold whitespace-nowrap"
                 style={{
-                  border: selLang === code ? "1.5px solid #064E3B" : "1.5px solid #DCE0E4",
+                  border:
+                    selLang === code
+                      ? `1.5px solid ${COLORS.darkAquamarineGreen}`
+                      : `1.5px solid ${COLORS.gainsboro}`,
                   backgroundColor: selLang === code ? COLORS.darkAquamarineGreen : COLORS.white,
                   color: selLang === code ? COLORS.white : COLORS.raisinBlack,
                   cursor: "pointer",
@@ -1352,7 +1386,10 @@ function FeedNamesTab({
         <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
           <div
             className="flex items-center gap-2 px-4 py-3"
-            style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+            style={{
+              backgroundColor: COLORS.brightGrayNew,
+              borderBottom: `1px solid ${COLORS.americanDiamond}`,
+            }}
           >
             <p
               className="text-xs font-bold uppercase tracking-wide flex-1"
@@ -1380,7 +1417,7 @@ function FeedNamesTab({
                   onClick={() => openFeedEdit(f)}
                   className="w-full flex items-center gap-3 px-4 py-3 text-left"
                   style={{
-                    borderTop: "1px solid #F8FAF9",
+                    borderTop: `1px solid ${COLORS.authenticWhite}`,
                     background: "none",
                     border: "none",
                     cursor: "pointer",
@@ -1419,7 +1456,10 @@ function FeedNamesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
+          style={{
+            backgroundColor: COLORS.brightGrayNew,
+            borderBottom: `1px solid ${COLORS.americanDiamond}`,
+          }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide"
@@ -1441,7 +1481,7 @@ function FeedNamesTab({
               style={{
                 backgroundColor: "transparent",
                 color: COLORS.darkAquamarineGreen,
-                border: "1.5px solid #064E3B",
+                border: `1.5px solid ${COLORS.darkAquamarineGreen}`,
                 cursor: isDownloading || !selCountry ? "not-allowed" : "pointer",
                 opacity: !selCountry ? 0.5 : 1,
               }}
