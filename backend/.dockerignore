@@ -2,9 +2,15 @@
 # everything in this folder — tracked or not — including the server's .env.
 # Patterns are relative to backend/ (the build context), so `scripts` does not match scripts_2.
 
-# Secrets — settings reach the container through compose's env_file, never from a file in the image
+# Secrets — settings reach the container through compose's env_file, never from a file in the image.
+# Covers backup copies too (.env.bak, .env.old, .env.local ...) at any depth; the template is re-included.
 .env
 *.env
+.env.*
+**/.env
+**/.env.*
+**/*.env
+!.env.example
 
 # Local-only folders (gitignored, but present on disk)
 tests

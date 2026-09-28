@@ -55,9 +55,24 @@ logs/
 # Deployment helpers — contain live credentials and server details
 /backend/imp_files/
 
+# The same folders at the repo root — where they lived before the backend/ move. Git never moves
+# ignored files, so an existing clone keeps them at the root after pulling; without these lines
+# they would show as untracked (imp_files/ holds credentials). backups/ is the Test server's
+# pre-deploy pg_dump folder at the root of its checkout.
+/tests/
+/docs/
+/scripts/
+/imp_files/
+/temp/
+/temp_work/
+/backups/
+
 # CLIMDES feed-library exports — keep locally for reference, never commit
 climdes_product_export_digitalgreen*.xlsx
 
-# Claude files
+# Personal editor workspace files
+*.code-workspace
+
+# Claude files — personal; anchored to the root so a future frontend/.claude/ is not hidden
 CLAUDE.local.md
-.claude
+/.claude/

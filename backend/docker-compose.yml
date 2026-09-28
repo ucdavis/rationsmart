@@ -5,6 +5,7 @@
 # Pinned project name: compose would otherwise name the project after this folder
 # ("backend"), and on the server that starts a second set of containers beside the
 # running rationsmart-* ones instead of replacing them, plus a new empty Redis volume.
+# For an isolated second copy on the same machine, override it: docker compose -p <name> ...
 name: rationsmart
 
 services:
