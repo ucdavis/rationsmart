@@ -6,6 +6,7 @@ import { useT } from "@/lib/i18n-ui";
 import { useStore } from "@/lib/store";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { INSTALL_PROMPT_DELAY_MS } from "@/lib/ui-timings";
 
 // A fresh install must open to login. Removing the localStorage key alone
 // isn't enough: the in-memory store re-persists user + token on its next
@@ -85,7 +86,7 @@ export default function InstallPrompt() {
   useEffect(() => {
     if (pathname === "/") return;
     if (isStandaloneAnyPlatform()) return;
-    const t = setTimeout(() => setVisible(true), 1500);
+    const t = setTimeout(() => setVisible(true), INSTALL_PROMPT_DELAY_MS);
     return () => clearTimeout(t);
   }, [pathname]);
 

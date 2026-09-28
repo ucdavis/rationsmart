@@ -39,6 +39,11 @@ import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
+import {
+  FOCUS_AFTER_SCROLL_MS,
+  SCROLL_AFTER_RENDER_MS,
+  SEARCH_DEBOUNCE_MS,
+} from "@/lib/ui-timings";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -376,7 +381,7 @@ export default function FeedSelectionPage() {
     searchContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     // Focus after scroll so iOS Safari's virtual keyboard pops up at
     // the bottom rather than mid-page.
-    setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), 300);
+    setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), FOCUS_AFTER_SCROLL_MS);
   }, []);
 
   // Debounced search — 250 ms after last keystroke.
@@ -400,7 +405,7 @@ export default function FeedSelectionPage() {
         .finally(() => {
           if (!stale) setIsSearching(false);
         });
-    }, 250);
+    }, SEARCH_DEBOUNCE_MS);
     return () => {
       stale = true;
       clearTimeout(timer);
@@ -472,7 +477,7 @@ export default function FeedSelectionPage() {
         document
           .getElementById(`feed-card-${rowId}`)
           ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 100);
+      }, SCROLL_AFTER_RENDER_MS);
     }
 
     // When the user did NOT tap a card before searching, the result lands in

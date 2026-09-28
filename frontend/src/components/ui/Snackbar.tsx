@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
+import { SNACKBAR_EXIT_MS, SNACKBAR_REMOVE_MS, SNACKBAR_VISIBLE_MS } from "@/lib/ui-timings";
 
 export default function Snackbar() {
   const snackbar = useStore((s) => s.snackbar);
@@ -14,12 +15,12 @@ export default function Snackbar() {
 
     const dismissTimer = setTimeout(() => {
       setExiting(true);
-    }, 2800);
+    }, SNACKBAR_VISIBLE_MS);
 
     const removeTimer = setTimeout(() => {
       hideSnackbar();
       setExiting(false);
-    }, 3100);
+    }, SNACKBAR_REMOVE_MS);
 
     return () => {
       clearTimeout(dismissTimer);
@@ -100,7 +101,7 @@ export default function Snackbar() {
       <button
         onClick={() => {
           setExiting(true);
-          setTimeout(() => hideSnackbar(), 220);
+          setTimeout(() => hideSnackbar(), SNACKBAR_EXIT_MS);
         }}
         style={{
           background: "#FFFFFF",

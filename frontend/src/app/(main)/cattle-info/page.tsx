@@ -36,6 +36,7 @@ import {
 } from "@/components/Icons";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
@@ -1059,7 +1060,7 @@ export default function CattleInfoPage() {
     setTimeout(() => {
       setIsResetting(false);
       showSnackbar(t("Form reset"), "success");
-    }, 500);
+    }, ACTION_FEEDBACK_MS);
   };
 
   const INPUT_CLASS =

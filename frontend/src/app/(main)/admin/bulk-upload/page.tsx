@@ -13,6 +13,7 @@ import {
   uploadFileProblem,
 } from "@/lib/download";
 import { COLUMN_WIDTH } from "@/lib/column";
+import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 
 // Upload template. The filename's "tempate" misspelling is the real object
 // name (Android downloads the same file). It is a public static asset, so
@@ -135,7 +136,7 @@ export default function BulkUploadPage() {
     setTimeout(() => {
       setIsDownloadingTemplate(false);
       showSnackbar(t("Template opened in a new tab"), "success");
-    }, 500);
+    }, ACTION_FEEDBACK_MS);
   };
 
   const triggerDownload = (url: string, filename: string) => {
