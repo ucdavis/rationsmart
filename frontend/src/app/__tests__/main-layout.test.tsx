@@ -61,9 +61,9 @@ describe("(main) layout — persist hydration gate (CLAUDE.md §10.1)", () => {
   });
 
   it("redirects to /welcome once hydration finishes and there is still no user", async () => {
-    let fireHydrated: (() => void) | undefined;
+    let fireHydrated: ((state: ReturnType<typeof useStore.getState>) => void) | undefined;
     vi.spyOn(useStore.persist, "hasHydrated").mockReturnValue(false);
-    vi.spyOn(useStore.persist, "onFinishHydration").mockImplementation((cb: () => void) => {
+    vi.spyOn(useStore.persist, "onFinishHydration").mockImplementation((cb) => {
       fireHydrated = cb;
       return () => {};
     });
@@ -78,7 +78,7 @@ describe("(main) layout — persist hydration gate (CLAUDE.md §10.1)", () => {
 
     // Simulate the persist middleware finishing rehydration with no
     // persisted user (fresh browser / logged-out session).
-    fireHydrated?.();
+    fireHydrated?.(useStore.getState());
 
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/welcome"));
     expect(screen.queryByText("protected content")).not.toBeInTheDocument();

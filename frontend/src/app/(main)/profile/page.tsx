@@ -16,6 +16,8 @@ import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import { useT } from "@/lib/i18n-ui";
+import { authErrorMessage } from "@/lib/errors";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
@@ -264,12 +266,7 @@ export default function ProfilePage() {
       showSnackbar(successMsg ?? "PIN reset email sent. Please check your inbox.", "success");
       setShowResetSheet(false);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message && err.message !== "Network Error"
-          ? err.message
-          : err instanceof Error && err.message === "Network Error"
-            ? "Please make sure your device has internet connectivity."
-            : "Failed to send reset email. Please try again.";
+      const message = authErrorMessage(err, "Failed to send reset email. Please try again.", t);
       showSnackbar(message, "error");
     } finally {
       setIsSendingReset(false);
@@ -607,8 +604,8 @@ export default function ProfilePage() {
           <div
             className="fixed top-0 h-full z-50"
             style={{
-              left: "max(0px, calc((100vw - 480px) / 2))",
-              width: "min(100vw, 480px)",
+              left: COLUMN_LEFT,
+              width: COLUMN_WIDTH,
               backgroundColor: "rgba(0,0,0,0.45)",
             }}
             onClick={() => !isSendingReset && setShowResetSheet(false)}
@@ -617,7 +614,7 @@ export default function ProfilePage() {
           <div
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
-              maxWidth: "min(100vw, 480px)",
+              maxWidth: COLUMN_WIDTH,
               width: "100%",
               zIndex: 51,
               borderTopLeftRadius: 24,
@@ -733,8 +730,8 @@ export default function ProfilePage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
           onClick={(e) => {
@@ -840,8 +837,8 @@ export default function ProfilePage() {
         <div
           className="fixed top-0 h-full z-50 flex items-end justify-center"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
           onClick={(e) => {
@@ -931,8 +928,8 @@ export default function ProfilePage() {
           <div
             className="fixed top-0 h-full z-50"
             style={{
-              left: "max(0px, calc((100vw - 480px) / 2))",
-              width: "min(100vw, 480px)",
+              left: COLUMN_LEFT,
+              width: COLUMN_WIDTH,
               backgroundColor: "rgba(0,0,0,0.45)",
             }}
             onClick={() => !isChangingPin && setShowChangePinSheet(false)}
@@ -940,7 +937,7 @@ export default function ProfilePage() {
           <div
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
-              maxWidth: "min(100vw, 480px)",
+              maxWidth: COLUMN_WIDTH,
               width: "100%",
               zIndex: 51,
               borderTopLeftRadius: 24,

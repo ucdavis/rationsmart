@@ -11,6 +11,7 @@ import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack, IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
+import { authErrorMessage } from "@/lib/errors";
 
 interface Country {
   id: string | number;
@@ -75,7 +76,7 @@ export default function RegisterPage() {
   const pinEnabled =
     countryId !== "" && name.trim().length > 0 && isEmailAddressValid(email.trim());
 
-  // Android: confirm PIN enabled only when all 4 PIN digits are filled
+  // Android: confirm PIN enabled only when every PIN digit is filled
   const confirmPinEnabled = pin.length === PIN_LENGTH;
 
   // Android: button enabled when all fields valid + PINs match
@@ -121,12 +122,11 @@ export default function RegisterPage() {
       router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err: unknown) {
       // Android fallback for non-400, non-network errors
-      const message =
-        err instanceof Error && err.message && err.message !== "Network Error"
-          ? err.message
-          : err instanceof Error && err.message === "Network Error"
-            ? t("Please make sure you're device has internet connectivity.")
-            : t("Unexpected error: failed to register. Please, try again!");
+      const message = authErrorMessage(
+        err,
+        "Unexpected error: failed to register. Please, try again!",
+        t
+      );
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);

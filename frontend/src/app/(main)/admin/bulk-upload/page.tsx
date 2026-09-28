@@ -12,6 +12,15 @@ import {
   filenameFromContentDisposition,
   uploadFileProblem,
 } from "@/lib/download";
+import { COLUMN_WIDTH } from "@/lib/column";
+
+// Upload template. The filename's "tempate" misspelling is the real object
+// name (Android downloads the same file). It is a public static asset, so
+// NEXT_PUBLIC_FEED_TEMPLATE_URL only exists to let another environment point
+// at its own copy; the default keeps today's behaviour.
+const FEED_TEMPLATE_URL =
+  process.env.NEXT_PUBLIC_FEED_TEMPLATE_URL ||
+  "https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx";
 
 // Fills `${key}` placeholder tokens in a translated template. Only used
 // for the two messages on this page whose dictionary entries carry
@@ -115,9 +124,6 @@ export default function BulkUploadPage() {
     }
   };
 
-  const TEMPLATE_URL =
-    "https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx";
-
   const handleDownloadTemplate = () => {
     setIsDownloadingTemplate(true);
     // Template lives on S3 — cross-origin, so the `download` attribute
@@ -125,7 +131,7 @@ export default function BulkUploadPage() {
     // routes cross-origin URLs through window.open. S3 returns
     // Content-Disposition: attachment for this object so the browser
     // saves it instead of rendering.
-    triggerDownload(TEMPLATE_URL, "feeds_table_template.xlsx");
+    triggerDownload(FEED_TEMPLATE_URL, "feeds_table_template.xlsx");
     setTimeout(() => {
       setIsDownloadingTemplate(false);
       showSnackbar(t("Template opened in a new tab"), "success");
@@ -821,7 +827,7 @@ export default function BulkUploadPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "min(100vw, 480px)",
+          maxWidth: COLUMN_WIDTH,
           backgroundColor: "transparent",
           zIndex: 30,
         }}

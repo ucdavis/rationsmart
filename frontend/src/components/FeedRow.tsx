@@ -19,6 +19,7 @@ import { calculateCost, inclusionBoundIsInvalid } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
 import { useT } from "@/lib/i18n-ui";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 // Match Android DialogFeedDetails: layout chosen by feedCategory.
 type NutrientLayout = "additive" | "mineral" | "general";
@@ -1680,8 +1681,8 @@ export default function FeedRow({
             <div
               className="fixed top-0 h-full z-50 flex flex-col justify-end"
               style={{
-                left: "max(0px, calc((100vw - 480px) / 2))",
-                width: "min(100vw, 480px)",
+                left: COLUMN_LEFT,
+                width: COLUMN_WIDTH,
                 backgroundColor: "rgba(0,0,0,0.45)",
               }}
               onClick={(e) => {

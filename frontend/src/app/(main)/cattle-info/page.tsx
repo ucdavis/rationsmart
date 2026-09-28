@@ -34,6 +34,7 @@ import {
   IcEnvironment,
   IcActiveGrazing,
 } from "@/components/Icons";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
@@ -1049,7 +1050,7 @@ export default function CattleInfoPage() {
     setFeedSelections([]);
     setFeedSelectionType("recommendation");
     setCattleInfo(null);
-    setReportData(null as never);
+    setReportData(null);
     // 500ms is the sweet spot per Nielsen — long enough for the eye to
     // register the transition, short enough that the button doesn't
     // feel unresponsive.
@@ -1739,7 +1740,7 @@ export default function CattleInfoPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "min(100vw, 480px)",
+          maxWidth: COLUMN_WIDTH,
           backgroundColor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
@@ -1812,8 +1813,8 @@ export default function CattleInfoPage() {
           <div
             className="fixed top-0 h-full z-50"
             style={{
-              left: "max(0px, calc((100vw - 480px) / 2))",
-              width: "min(100vw, 480px)",
+              left: COLUMN_LEFT,
+              width: COLUMN_WIDTH,
               backgroundColor: "rgba(0,0,0,0.4)",
             }}
             onClick={() => setShowHistoryModal(false)}
@@ -1821,7 +1822,7 @@ export default function CattleInfoPage() {
           {/* Sheet */}
           <div
             className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full rounded-t-3xl bg-white pb-8 overflow-y-auto"
-            style={{ maxWidth: "min(100vw, 480px)", maxHeight: "80vh", zIndex: 51 }}
+            style={{ maxWidth: COLUMN_WIDTH, maxHeight: "80vh", zIndex: 51 }}
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-4 mb-5">

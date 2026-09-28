@@ -157,6 +157,7 @@ function makeCattleInfo(over: Partial<CattleInfo> = {}): CattleInfo {
     topography: "Flat",
     milk_price: 50,
     animal_category: "Lactating Cow",
+    simulation_language: null,
     ...over,
   };
 }

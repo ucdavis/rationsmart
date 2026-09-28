@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n-ui";
 import { useStore } from "@/lib/store";
+import { COLUMN_WIDTH } from "@/lib/column";
 
 // A fresh install must open to login. Removing the localStorage key alone
 // isn't enough: the in-memory store re-persists user + token on its next
@@ -125,7 +126,7 @@ export default function InstallPrompt() {
             borderRadius: "16px 16px 0 0",
             padding: "24px 24px 40px",
             width: "100%",
-            maxWidth: "min(100vw, 480px)",
+            maxWidth: COLUMN_WIDTH,
             boxShadow: "0 -4px 24px rgba(0,0,0,0.15)",
           }}
           onClick={(e) => e.stopPropagation()}
@@ -339,7 +340,7 @@ export default function InstallPrompt() {
       <div
         style={{
           width: "100%",
-          maxWidth: "min(100vw, 480px)",
+          maxWidth: COLUMN_WIDTH,
           padding: "0 12px 16px",
           pointerEvents: "auto",
         }}

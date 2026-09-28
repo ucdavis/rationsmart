@@ -85,7 +85,8 @@ interface AppState {
   setCattleInfo: (info: CattleInfo | null) => void;
   setFeedSelectionType: (type: "recommendation" | "evaluation") => void;
   setFeedSelections: (items: FeedItem[]) => void;
-  setReportData: (data: EvaluationResponse | RecommendationResponse) => void;
+  // null clears the report (Reset on Cattle Info).
+  setReportData: (data: EvaluationResponse | RecommendationResponse | null) => void;
   setDietLimits: (limits: Partial<DietLimits>) => void;
   showSnackbar: (message: string, type?: "success" | "error" | "info") => void;
   hideSnackbar: () => void;

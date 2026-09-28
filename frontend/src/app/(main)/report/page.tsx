@@ -54,6 +54,7 @@ import {
   IcSimulationDetails,
 } from "@/components/Icons";
 import { safeExternalUrl } from "@/lib/safe-url";
+import { COLUMN_WIDTH } from "@/lib/column";
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; text: string }> = {
@@ -2506,7 +2507,7 @@ export default function ReportPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "min(100vw, 480px)",
+          maxWidth: COLUMN_WIDTH,
           backgroundColor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 // English source strings stay as the identity/lookup key (see i18n-ui.ts)
 // — item.title is passed through t() at render time, not translated here.
@@ -18,7 +19,7 @@ const items = [
   {
     title: "Contact Us",
     onPress: () => {
-      window.location.href = "mailto:admin@digitalgreen.org";
+      window.location.href = `mailto:${SUPPORT_EMAIL}`;
     },
   },
 ];

@@ -19,7 +19,7 @@ import { useT } from "@/lib/i18n-ui";
 // - Anywhere else: hide immediately after mount. We don't want a 2s
 //   splash to interrupt a hard refresh on /cattle-info or an in-app
 //   navigation.
-const SPLASH_DURATION_MS = 2000;
+export const SPLASH_DURATION_MS = 2000;
 
 export default function SplashOverlay() {
   const pathname = usePathname();

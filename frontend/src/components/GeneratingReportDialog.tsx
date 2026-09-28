@@ -2,6 +2,7 @@
 
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n-ui";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 // Mirrors Android dialog_generating_report.xml — a centred, non-cancellable
 // dialog with a green-tinted ic_generating_report icon, "Generating your
@@ -22,8 +23,8 @@ export default function GeneratingReportDialog() {
     <div
       className="fixed top-0 h-full z-[110] flex items-center justify-center px-6"
       style={{
-        left: "max(0px, calc((100vw - 480px) / 2))",
-        width: "min(100vw, 480px)",
+        left: COLUMN_LEFT,
+        width: COLUMN_WIDTH,
         backgroundColor: "rgba(0,0,0,0.5)",
       }}
     >

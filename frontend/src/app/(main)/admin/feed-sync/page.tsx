@@ -42,6 +42,7 @@ import {
   getFeedSyncLogs,
   getFeedSyncLog,
 } from "@/lib/api";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 interface SchedulerStatus {
   scheduler_enabled: boolean;
@@ -215,8 +216,8 @@ const inputStyle = {
   fontFamily: "Nunito, sans-serif",
 };
 const sheetOverlayStyle = {
-  left: "max(0px, calc((100vw - 480px) / 2))",
-  width: "min(100vw, 480px)",
+  left: COLUMN_LEFT,
+  width: COLUMN_WIDTH,
   backgroundColor: "rgba(0,0,0,0.65)",
 };
 
@@ -378,8 +379,8 @@ export default function AdminFeedSyncPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
+import { SPLASH_DURATION_MS } from "@/components/SplashOverlay";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -21,7 +22,7 @@ export default function SplashScreen() {
       } else {
         router.replace("/welcome");
       }
-    }, 2000);
+    }, SPLASH_DURATION_MS);
     return () => clearTimeout(timer);
   }, [user, router]);
 

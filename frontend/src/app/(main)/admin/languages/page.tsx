@@ -42,6 +42,7 @@ import {
   unassignLanguageFromCountry,
   labelForLanguage,
 } from "@/lib/api";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 interface SystemLanguage {
   code: string;
@@ -1089,8 +1090,8 @@ export default function AdminLanguageCatalogPage() {
             <div
               className="fixed top-0 h-full z-50 flex flex-col justify-end"
               style={{
-                left: "max(0px, calc((100vw - 480px) / 2))",
-                width: "min(100vw, 480px)",
+                left: COLUMN_LEFT,
+                width: COLUMN_WIDTH,
                 backgroundColor: "rgba(0,0,0,0.65)",
               }}
               onClick={(e) => {
@@ -1224,8 +1225,8 @@ export default function AdminLanguageCatalogPage() {
         <div
           className="fixed top-0 h-full z-50 flex flex-col justify-end"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.65)",
           }}
           onClick={(e) => {

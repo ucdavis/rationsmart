@@ -73,7 +73,7 @@ describe("Help & Support page", () => {
     fireEvent.click(row);
     expect(window.location.href).toBe("mailto:admin@digitalgreen.org");
 
-    window.location = originalLocation;
+    window.location = originalLocation as string & Location;
   });
 
   it("User Manual has no handler yet (TODO) — clicking does nothing and does not throw", () => {
@@ -111,6 +111,6 @@ describe("Help & Support page", () => {
     fireEvent.click(row);
     expect(window.location.href).toBe("mailto:admin@digitalgreen.org");
 
-    window.location = originalLocation;
+    window.location = originalLocation as string & Location;
   });
 });

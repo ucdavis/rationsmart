@@ -6,6 +6,7 @@ import SplashGuard from "@/components/SplashGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import SplashOverlay from "@/components/SplashOverlay";
 import NumberInputGuard from "@/components/NumberInputGuard";
+import { COLUMN_WIDTH } from "@/lib/column";
 
 export const metadata: Metadata = {
   title: "RationSmart",
@@ -88,7 +89,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           className="app-column"
           style={{
             width: "100%",
-            maxWidth: "min(100vw, 480px)",
+            maxWidth: COLUMN_WIDTH,
             margin: "0 auto",
             // 100dvh (dynamic viewport height) includes the system gesture
             // / nav bar area on Android, so a page's min-h-screen background

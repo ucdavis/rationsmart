@@ -11,6 +11,8 @@ import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
+import { authErrorMessage } from "@/lib/errors";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -49,12 +51,11 @@ export default function LoginPage() {
       setResetEmail("");
     } catch (err: unknown) {
       // Android fallback for non-404, non-network errors
-      const message =
-        err instanceof Error && err.message && err.message !== "Network Error"
-          ? err.message
-          : err instanceof Error && err.message === "Network Error"
-            ? t("Please make sure you're device has internet connectivity.")
-            : t("Unexpected error: failed to generate PIN. Please, try again!");
+      const message = authErrorMessage(
+        err,
+        "Unexpected error: failed to generate PIN. Please, try again!",
+        t
+      );
       showSnackbar(message, "error");
     } finally {
       setIsSendingReset(false);
@@ -177,12 +178,11 @@ export default function LoginPage() {
       router.replace("/cattle-info");
     } catch (err: unknown) {
       // Android fallback when not a 401/detail error
-      const message =
-        err instanceof Error && err.message && err.message !== "Network Error"
-          ? err.message
-          : err instanceof Error && err.message === "Network Error"
-            ? t("Please make sure you're device has internet connectivity.")
-            : t("Unexpected error: failed to login. Please, try again!");
+      const message = authErrorMessage(
+        err,
+        "Unexpected error: failed to login. Please, try again!",
+        t
+      );
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);
@@ -346,8 +346,8 @@ export default function LoginPage() {
           <div
             className="fixed top-0 h-full z-50"
             style={{
-              left: "max(0px, calc((100vw - 480px) / 2))",
-              width: "min(100vw, 480px)",
+              left: COLUMN_LEFT,
+              width: COLUMN_WIDTH,
               backgroundColor: "rgba(0,0,0,0.45)",
             }}
             onClick={() => !isSendingReset && setShowResetSheet(false)}
@@ -356,7 +356,7 @@ export default function LoginPage() {
           <div
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
-              maxWidth: "min(100vw, 480px)",
+              maxWidth: COLUMN_WIDTH,
               width: "100%",
               zIndex: 51,
               borderTopLeftRadius: 24,

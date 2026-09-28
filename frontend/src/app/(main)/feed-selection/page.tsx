@@ -36,6 +36,7 @@ import { isForageType } from "@/lib/feed-type-aliases";
 import { inclusionBoundIsInvalid } from "@/lib/validators";
 import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -1483,7 +1484,7 @@ export default function FeedSelectionPage() {
           left: "50%",
           transform: "translateX(-50%)",
           width: "100%",
-          maxWidth: "min(100vw, 480px)",
+          maxWidth: COLUMN_WIDTH,
           backgroundColor: "#FFFFFF",
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
@@ -1535,8 +1536,8 @@ export default function FeedSelectionPage() {
         <div
           className="fixed top-0 h-full z-50 flex flex-col justify-end"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.45)",
           }}
           onClick={(e) => {
@@ -1825,8 +1826,8 @@ export default function FeedSelectionPage() {
         <div
           className="fixed top-0 h-full z-[100] flex items-center justify-center px-4"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
@@ -1970,8 +1971,8 @@ export default function FeedSelectionPage() {
         <div
           className="fixed top-0 h-full z-[100] flex items-center justify-center px-4"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
@@ -2056,8 +2057,8 @@ export default function FeedSelectionPage() {
         <div
           className="fixed top-0 h-full z-50 flex flex-col justify-end"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.45)",
           }}
           onClick={(e) => {

@@ -58,7 +58,7 @@ const seedUser = (over: Partial<User> = {}): User => ({
   ...over,
 });
 
-const baseStatus = {
+const baseStatus: Record<string, unknown> & { next_scheduled_run: string | null } = {
   success: true,
   scheduler_enabled: true,
   sync_day_of_week: "wednesday",
@@ -68,7 +68,11 @@ const baseStatus = {
   running: false,
 };
 
-const baseConfig = {
+const baseConfig: Record<string, unknown> & {
+  endpoint_url: string | null;
+  auth_header_name: string | null;
+  auth_token_masked: string | null;
+} = {
   success: true,
   endpoint_url: "https://api.msu.climdesdata.com/api/v1/product/export/digital_green",
   auth_type: "none",
@@ -140,7 +144,7 @@ describe("Admin Feed Library Sync — Sync & Settings tab", () => {
     // 2026" (en-US, CI). Accept both so the assertion isn't machine-locale
     // dependent.
     expect(screen.getByText(/Wed,\s*(22 Jul|Jul 22),?\s*2026/)).toBeInTheDocument();
-    expect(screen.getByText(baseConfig.endpoint_url)).toBeInTheDocument();
+    expect(screen.getByText(baseConfig.endpoint_url!)).toBeInTheDocument();
   });
 
   it("does not redirect a non-admin user and renders nothing", () => {

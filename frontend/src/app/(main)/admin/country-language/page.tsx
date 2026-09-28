@@ -61,6 +61,7 @@ import {
   filenameFromContentDisposition,
   uploadFileProblem,
 } from "@/lib/download";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 interface SystemLanguage {
   code: string;
@@ -121,8 +122,8 @@ const inputStyle = {
 };
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 const sheetOverlayStyle = {
-  left: "max(0px, calc((100vw - 480px) / 2))",
-  width: "min(100vw, 480px)",
+  left: COLUMN_LEFT,
+  width: COLUMN_WIDTH,
   backgroundColor: "rgba(0,0,0,0.65)",
 };
 
@@ -326,8 +327,8 @@ export default function AdminCountryLanguagePage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >

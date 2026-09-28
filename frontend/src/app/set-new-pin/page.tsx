@@ -26,6 +26,7 @@ import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
+import { authErrorMessage } from "@/lib/errors";
 
 function SetNewPinInner() {
   const router = useRouter();
@@ -68,12 +69,11 @@ function SetNewPinInner() {
       if (msg) showSnackbar(msg, "success");
       setDone(true);
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message && err.message !== "Network Error"
-          ? err.message
-          : err instanceof Error && err.message === "Network Error"
-            ? t("Please make sure you're device has internet connectivity.")
-            : t("Unexpected error: failed to update PIN. Please try again.");
+      const message = authErrorMessage(
+        err,
+        "Unexpected error: failed to update PIN. Please try again.",
+        t
+      );
       showSnackbar(message, "error");
     } finally {
       setIsSubmitting(false);

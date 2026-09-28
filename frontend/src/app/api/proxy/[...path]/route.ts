@@ -71,10 +71,11 @@ function isFollowableRedirect(status: number, method: string): boolean {
   );
 }
 
-async function handler(
-  req: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
-): Promise<NextResponse> {
+// Next 14 passes `params` as a plain object; Next 15 passes a Promise.
+// Accept both so `await params` is correct either way.
+type RouteContext = { params: { path: string[] } | Promise<{ path: string[] }> };
+
+async function handler(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   if (!BACKEND_HOST) {
     console.error("[proxy] BACKEND_HOST is not set — refusing to proxy");
     return NextResponse.json({ detail: "Backend not configured" }, { status: 500 });
@@ -115,7 +116,22 @@ async function handler(
     forwardHeaders["content-length"] = String(bodyBuffer.byteLength);
   }
 
-  return new Promise<NextResponse>((resolve) => {
+  return new Promise<NextResponse>((resolveOnce) => {
+    // `timeout` below only fires on an idle socket. A backend that trickles
+    // bytes forever would never trip it, so also cap the total duration.
+    let settled = false;
+    const inFlight: http.ClientRequest[] = [];
+    const deadline = setTimeout(() => {
+      inFlight.forEach((r) => r.destroy());
+      resolve(NextResponse.json({ detail: "Upstream timeout" }, { status: 504 }));
+    }, UPSTREAM_TIMEOUT_MS);
+    const resolve = (res: NextResponse) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      resolveOnce(res);
+    };
+
     const options: http.RequestOptions = {
       hostname: BACKEND_HOST,
       port: BACKEND_PORT,
@@ -151,6 +167,7 @@ async function handler(
           );
         });
 
+        inFlight.push(redirectReq);
         redirectReq.on("error", () =>
           resolve(NextResponse.json({ detail: "Redirect request error" }, { status: 502 }))
         );
@@ -175,6 +192,7 @@ async function handler(
       );
     });
 
+    inFlight.push(proxyReq);
     proxyReq.on("error", (err) => {
       // Log the real cause server-side (Vercel function logs) but return a
       // generic message so upstream/connection internals aren't echoed to

@@ -14,6 +14,7 @@ import { formatTotalUsers } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import CustomSelect from "@/components/CustomSelect";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 interface AdminUser {
   id: string;
@@ -486,8 +487,8 @@ export default function AdminUsersPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-end justify-center"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.4)",
           }}
           onClick={() => setSelectedUser(null)}
@@ -495,7 +496,7 @@ export default function AdminUsersPage() {
           <div
             className="w-full rounded-t-3xl bg-white"
             style={{
-              maxWidth: "min(100vw, 480px)",
+              maxWidth: COLUMN_WIDTH,
               maxHeight: "92vh",
               overflowY: "auto",
               paddingBottom: 20,
@@ -833,8 +834,8 @@ export default function AdminUsersPage() {
         <div
           className="fixed top-0 h-full flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
             zIndex: 60,
           }}
@@ -918,8 +919,8 @@ export default function AdminUsersPage() {
         <div
           className="fixed top-0 h-full flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
             zIndex: 60,
           }}

@@ -17,6 +17,7 @@ import {
   IcLogoutNav,
   IcArrowRight,
 } from "@/components/Icons";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 interface NavDrawerProps {
   open: boolean;
@@ -81,8 +82,8 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
   // not the full viewport — otherwise on desktop the drawer slides out from
   // the far left of the browser window while the content sits in a centered
   // 480px column, creating a big visual disconnect.
-  const containerLeft = "max(0px, calc((100vw - 480px) / 2))";
-  const containerWidth = "min(100vw, 480px)";
+  const containerLeft = COLUMN_LEFT;
+  const containerWidth = COLUMN_WIDTH;
   // When closed, the drawer must move left by 100% of its own width PLUS
   // the centered-column offset, otherwise on desktop translateX(-100%)
   // only shifts it 340px and it's still visible to the left of the content.
@@ -229,8 +230,8 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
         <div
           className="fixed top-0 h-full z-[100] flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
           onClick={(e) => {

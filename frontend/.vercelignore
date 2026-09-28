@@ -13,6 +13,6 @@ docs/*.local.md
 docs/backend-security-brief.html
 docs/SESSION_HANDOFF.md
 Code_Audit_Report*.md
-tsconfig.tsbuildinfo
+*.tsbuildinfo
 public/sw.js
 public/workbox-*.js

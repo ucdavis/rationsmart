@@ -10,6 +10,7 @@ import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
+import { authErrorMessage } from "@/lib/errors";
 
 export default function ForgotPinPage() {
   const router = useRouter();
@@ -31,12 +32,11 @@ export default function ForgotPinPage() {
       if (successMsg) showSnackbar(successMsg, "success");
     } catch (err: unknown) {
       // Android fallback for non-404, non-network errors
-      const message =
-        err instanceof Error && err.message && err.message !== "Network Error"
-          ? err.message
-          : err instanceof Error && err.message === "Network Error"
-            ? t("Please make sure you're device has internet connectivity.")
-            : t("Unexpected error: failed to generate PIN. Please, try again!");
+      const message = authErrorMessage(
+        err,
+        "Unexpected error: failed to generate PIN. Please, try again!",
+        t
+      );
       showSnackbar(message, "error");
     } finally {
       setIsLoading(false);

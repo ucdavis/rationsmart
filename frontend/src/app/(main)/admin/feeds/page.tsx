@@ -18,6 +18,7 @@ import {
   getCountries,
 } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -999,8 +1000,8 @@ export default function AdminFeedsPage() {
         <div
           className="fixed top-0 h-full z-50 flex flex-col justify-end"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
           onClick={(e) => {
@@ -1422,8 +1423,8 @@ export default function AdminFeedsPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
@@ -1565,8 +1566,8 @@ export default function AdminFeedsPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
@@ -1758,8 +1759,8 @@ export default function AdminFeedsPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
@@ -1854,8 +1855,8 @@ export default function AdminFeedsPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
@@ -1950,8 +1951,8 @@ export default function AdminFeedsPage() {
         <div
           className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
           style={{
-            left: "max(0px, calc((100vw - 480px) / 2))",
-            width: "min(100vw, 480px)",
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
