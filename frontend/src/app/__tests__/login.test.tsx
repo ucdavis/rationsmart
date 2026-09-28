@@ -242,3 +242,71 @@ describe("Login — error path", () => {
     expect(replace).not.toHaveBeenCalled();
   });
 });
+
+describe("Login — role, language and expiry from the login response (audit A-08 / A-14)", () => {
+  it("uses is_admin + preferred_language from the login user and skips the public profile lookup", async () => {
+    getCountries.mockResolvedValue({ data: [] });
+    login.mockResolvedValueOnce({
+      data: {
+        user: {
+          id: "u9",
+          name: "A",
+          email_id: "a@dg.org",
+          is_admin: true,
+          preferred_language: "hi",
+        },
+        token: { access_token: "jwt-1", token_type: "bearer", expires_in: 3600 },
+      },
+    });
+    render(<LoginPage />);
+    await fillForm("a@dg.org");
+    const before = Date.now();
+    fireEvent.click(screen.getByRole("button", { name: /Proceed/ }));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/cattle-info"));
+
+    expect(getUserProfile).not.toHaveBeenCalled();
+    const u = useStore.getState().user!;
+    expect(u.is_admin).toBe(true);
+    expect(u.preferred_language).toBe("hi");
+    expect(u.token_expires_at).toBeGreaterThanOrEqual(before + 3_600_000);
+  });
+});
+
+describe("Login — no account enumeration (audit A-19)", () => {
+  it("shows the same generic message for an unknown email and a wrong PIN", async () => {
+    for (const detail of [
+      "User not found. Please check the email address entered.",
+      "Invalid PIN",
+    ]) {
+      const err = Object.assign(new Error(detail), { status: 401 });
+      login.mockRejectedValueOnce(err);
+      const { unmount } = render(<LoginPage />);
+      await fillForm("who@dg.org");
+      fireEvent.click(screen.getByRole("button", { name: /Proceed/ }));
+      await waitFor(() =>
+        expect(useStore.getState().snackbar?.message).toBe("Email or PIN is incorrect.")
+      );
+      unmount();
+    }
+  });
+
+  it("answers an unknown email on Forgot PIN like a successful send", async () => {
+    resetPin.mockRejectedValueOnce(
+      Object.assign(new Error("Email address not found in our system."), { status: 404 })
+    );
+    render(<LoginPage />);
+    fireEvent.click(screen.getByText(/Tap here/));
+    const inputs = screen.getAllByRole("textbox");
+    fireEvent.change(inputs[inputs.length - 1], { target: { value: "who@dg.org" } });
+    const buttons = screen.getAllByRole("button", { name: /Reset PIN|Proceed|Send/ });
+    fireEvent.click(buttons[buttons.length - 1]);
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toEqual(
+        expect.objectContaining({
+          type: "success",
+          message: "If an account exists for this email, a PIN reset link has been sent.",
+        })
+      )
+    );
+  });
+});

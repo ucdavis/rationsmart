@@ -27,6 +27,7 @@ import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
+import { cooldownSecondsLeft, markEmailSent } from "@/lib/email-cooldown";
 
 function VerifyEmailInner() {
   const router = useRouter();
@@ -41,9 +42,21 @@ function VerifyEmailInner() {
 
   const handleResend = async () => {
     if (!isResendReady || isResending) return;
+    const wait = cooldownSecondsLeft("resend-verification", email);
+    if (wait > 0) {
+      showSnackbar(
+        t("Please wait ${seconds} s before requesting another email.").replace(
+          "${seconds}",
+          String(wait)
+        ),
+        "info"
+      );
+      return;
+    }
     setIsResending(true);
     try {
       const res = await resendVerification(email.trim());
+      markEmailSent("resend-verification", email);
       const msg = (res.data as { message?: string })?.message;
       showSnackbar(msg ?? t("Verification email resent — check your inbox"), "success");
     } catch (err: unknown) {

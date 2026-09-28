@@ -7,11 +7,17 @@ import {
 } from "@/lib/download";
 
 describe("safeExternalUrl (audit A-07)", () => {
-  it("accepts https and http URLs", () => {
+  it("accepts https URLs and refuses plain-http third-party ones", () => {
     expect(safeExternalUrl("https://bucket.example.com/r.pdf")?.href).toBe(
       "https://bucket.example.com/r.pdf"
     );
-    expect(safeExternalUrl("http://bucket.example.com/r.pdf")).not.toBeNull();
+    expect(safeExternalUrl("http://bucket.example.com/r.pdf")).toBeNull();
+  });
+
+  it("upgrades http S3 links to https", () => {
+    expect(safeExternalUrl("http://b.s3.ap-southeast-2.amazonaws.com/r.pdf")?.href).toBe(
+      "https://b.s3.ap-southeast-2.amazonaws.com/r.pdf"
+    );
   });
 
   it("rejects script-bearing and non-web schemes", () => {
@@ -33,8 +39,8 @@ describe("safeExternalUrl (audit A-07)", () => {
 
   it("compares origins exactly, not by prefix", () => {
     // Starts with this origin's scheme + host, but is a different host.
-    const { protocol, hostname } = window.location;
-    const lookalike = safeExternalUrl(`${protocol}//${hostname}.evil.example/x`)!;
+    const { hostname } = window.location;
+    const lookalike = safeExternalUrl(`https://${hostname}.evil.example/x`)!;
     expect(isSameOrigin(lookalike)).toBe(false);
     expect(isSameOrigin(safeExternalUrl("/files/x.xlsx")!)).toBe(true);
   });

@@ -11,7 +11,7 @@ import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
-import { authErrorMessage } from "@/lib/errors";
+import { loginErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
@@ -78,6 +78,8 @@ export default function LoginPage() {
           country?: string | { name?: string; id?: string; country_code?: string } | null;
           country_id?: string;
           country_code?: string;
+          is_admin?: boolean;
+          preferred_language?: string;
         };
         token?: { access_token?: string; token_type?: string; expires_in?: number } | string | null;
         requires_pin_reset?: boolean;
@@ -98,25 +100,28 @@ export default function LoginPage() {
       const u = body.user ?? {};
       const emailId: string = (u.email_id as string | undefined) ?? email.trim();
 
-      // fetch profile + countries in parallel (non-critical)
-      let is_admin = false;
+      // The login response's UserResponse carries is_admin + preferred_language
+      // (audit A-08): use them directly. The public GET /auth/user/{email}
+      // lookup is only a fallback for older backends that omit them.
+      const loginHasRole = typeof u.is_admin === "boolean";
+      let is_admin = u.is_admin ?? false;
       let currency = "";
       // i18n V2 — read whatever the backend has as the user's current
       // language. Profile-side changes persist to the backend, so this
       // is the user's LATEST chosen language, not a registration-time
       // baseline. Falls back to registered_language (for backends that
       // still expose it) then "en" for older API versions.
-      let preferred_language = "en";
+      let preferred_language = u.preferred_language ?? "en";
       try {
         const country = u.country;
         const countryId = String(
           u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""
         );
         const [profileRes, countriesRes] = await Promise.allSettled([
-          getUserProfile(emailId),
+          loginHasRole ? Promise.resolve(null) : getUserProfile(emailId),
           getCountries(),
         ]);
-        if (profileRes.status === "fulfilled") {
+        if (profileRes.status === "fulfilled" && profileRes.value) {
           const d = profileRes.value.data as {
             is_admin?: boolean;
             preferred_language?: string;
@@ -160,6 +165,12 @@ export default function LoginPage() {
         // the JWT itself is in `access_token`. (We also handle the case
         // where the backend ever returns a bare string, defensively.)
         token: typeof body.token === "string" ? body.token : (body.token?.access_token ?? null),
+        // Absolute expiry so the client can end the session itself (audit
+        // A-14) instead of discovering it from a 401 mid-flow.
+        token_expires_at:
+          typeof body.token === "object" && body.token?.expires_in
+            ? Date.now() + body.token.expires_in * 1000
+            : undefined,
         // Single source of truth: preferred_language read from the
         // backend. registered_language is kept on the model as an
         // optional legacy field, populated to the same value for
@@ -172,7 +183,7 @@ export default function LoginPage() {
       router.replace("/cattle-info");
     } catch (err: unknown) {
       // Android fallback when not a 401/detail error
-      const message = authErrorMessage(
+      const message = loginErrorMessage(
         err,
         "Unexpected error: failed to login. Please, try again!",
         t

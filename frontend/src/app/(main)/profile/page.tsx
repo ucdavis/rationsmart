@@ -69,7 +69,6 @@ export default function ProfilePage() {
   // Previously the button hit /auth/forgot-pin with user.email directly,
   // which surprised users who registered with a different address.
   const [showResetSheet, setShowResetSheet] = useState(false);
-  const [resetEmail, setResetEmail] = useState("");
   const { isSending: isSendingReset, send: sendReset } = useResetPin({
     translate: t,
     fallbackError: "Failed to send reset email. Please try again.",
@@ -222,12 +221,10 @@ export default function ProfilePage() {
     }
   };
 
-  // Open the email-confirmation sheet instead of firing the API
-  // immediately. Pre-fill with the signed-in user's email — they can
-  // tweak it if they registered with a different address.
+  // Open the confirmation sheet instead of firing the API immediately. The
+  // sheet shows the signed-in user's own email, read-only (audit A-20).
   const handleResetPin = () => {
     if (!user) return;
-    setResetEmail(user.email ?? "");
     setShowResetSheet(true);
   };
 
@@ -267,11 +264,11 @@ export default function ProfilePage() {
     }
   };
 
-  const isResetReady = isEmailAddressValid(resetEmail.trim());
+  const isResetReady = isEmailAddressValid((user.email ?? "").trim());
 
   const handleResetSend = async () => {
     if (!isResetReady) return;
-    await sendReset(resetEmail);
+    await sendReset(user.email ?? "");
   };
 
   // Enable Save whenever a field has CHANGED — including a cleared/whitespace
@@ -652,8 +649,10 @@ export default function ProfilePage() {
                 type="email"
                 inputMode="email"
                 autoComplete="email"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
+                // Locked to the signed-in account (audit A-20): a signed-in user
+                // must not be able to send PIN-reset emails to other people.
+                value={user.email ?? ""}
+                readOnly
                 className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                 style={{
                   backgroundColor: COLORS.americanDiamond,

@@ -139,7 +139,11 @@ api.interceptors.response.use(
     } else {
       message = error?.response?.data?.message ?? error?.message ?? "An unexpected error occurred";
     }
-    return Promise.reject(new Error(message));
+    // Keep the HTTP status on the error so screens can pick a safe message
+    // (e.g. auth flows that must not reveal whether an account exists).
+    const e = new Error(message) as Error & { status?: number };
+    e.status = status;
+    return Promise.reject(e);
   }
 );
 

@@ -12,19 +12,30 @@ import { cleanup } from "@testing-library/react";
 function installStorageShim(): Storage {
   const backing = new Map<string, string>();
   const shim: Storage = {
-    get length() { return backing.size; },
-    key(i) { return Array.from(backing.keys())[i] ?? null; },
-    getItem(k) { return backing.has(k) ? (backing.get(k) as string) : null; },
-    setItem(k, v) { backing.set(String(k), String(v)); },
-    removeItem(k) { backing.delete(k); },
-    clear() { backing.clear(); },
+    get length() {
+      return backing.size;
+    },
+    key(i) {
+      return Array.from(backing.keys())[i] ?? null;
+    },
+    getItem(k) {
+      return backing.has(k) ? (backing.get(k) as string) : null;
+    },
+    setItem(k, v) {
+      backing.set(String(k), String(v));
+    },
+    removeItem(k) {
+      backing.delete(k);
+    },
+    clear() {
+      backing.clear();
+    },
   };
   return shim;
 }
 
 if (typeof window !== "undefined") {
-  const needsShim =
-    !window.localStorage || typeof window.localStorage.setItem !== "function";
+  const needsShim = !window.localStorage || typeof window.localStorage.setItem !== "function";
   if (needsShim) {
     Object.defineProperty(window, "localStorage", {
       value: installStorageShim(),
@@ -44,8 +55,12 @@ if (typeof window !== "undefined") {
 afterEach(() => {
   cleanup();
   if (typeof window !== "undefined") {
-    try { window.localStorage?.clear?.(); } catch {}
-    try { window.sessionStorage?.clear?.(); } catch {}
+    try {
+      window.localStorage?.clear?.();
+    } catch {}
+    try {
+      window.sessionStorage?.clear?.();
+    } catch {}
   }
   vi.restoreAllMocks();
 });
@@ -75,3 +90,8 @@ beforeEach(() => {
     });
   }
 });
+
+// Email-action cooldowns (audit A-20) are module-level; reset them so one
+// test's successful send doesn't block the next test's.
+import { resetEmailCooldowns } from "./src/lib/email-cooldown";
+beforeEach(() => resetEmailCooldowns());

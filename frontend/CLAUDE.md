@@ -492,9 +492,11 @@ true (see §10.1).
   - On country change, `setUser(...)` propagates the new `currency`,
     `country`, `country_id`, `country_code` from the country list (matches
     cattle-info pattern).
-- "Reset PIN" → bottom sheet asking for email (NOT the user's own email
-  — they can request reset for any email; matches Android — and there's a
-  drag handle in `go_green_15` mint).
+- "Reset PIN" → bottom sheet showing the signed-in user's email,
+  **read-only** (2026-09-28, audit A-20 — this deliberately diverges from
+  Android, which lets any address be typed). Drag handle in `go_green_15`.
+  Forgot-PIN / resend-verification have a 60 s per-address cooldown
+  (`src/lib/email-cooldown.ts`).
 - "Delete Account" → confirmation dialog (icon `ic_additional_information`,
   Cancel + Delete buttons with `ic_cancel` / `ic_delete_account`) → if
   confirmed opens "Submit PIN" sheet → `deleteAccount(user.id, pin)` →

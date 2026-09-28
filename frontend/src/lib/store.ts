@@ -26,6 +26,8 @@ export interface User {
   // setTokenProvider() below wires the api.ts axios instance to read the
   // latest token on every request.
   token: string | null;
+  /** Epoch ms when `token` expires (from TokenResponse.expires_in). Falls back to the JWT `exp` claim. */
+  token_expires_at?: number;
   // i18n V2 — language fields. Two separate concepts; do not conflate.
   //
   // registered_language — set ONCE at registration and stored on the
@@ -203,7 +205,17 @@ export const useStore = create<AppState>()(
 // can read the latest JWT from the store on every request. Done as a
 // callback (not an import in api.ts) so we don't introduce a circular
 // dependency between api.ts and store.ts.
-setTokenProvider(() => useStore.getState().user?.token ?? null);
+setTokenProvider(() => {
+  const u = useStore.getState().user;
+  if (!u?.token) return null;
+  // An expired token is never sent: end the session now (same path as a
+  // 401) rather than letting the next screen half-load (audit A-14).
+  if (isSessionExpired(u)) {
+    expireSession();
+    return null;
+  }
+  return u.token;
+});
 // i18n V2 — wire the active language to api.ts so every feed-related
 // helper can spread ?lang= via langParam() without reaching into the store.
 // Priority (top wins):
@@ -215,11 +227,31 @@ setLangProvider(() => {
   return s.cattleInfo?.simulation_language ?? s.user?.preferred_language ?? "en";
 });
 
+/** Reads the `exp` claim (seconds) of a JWT, in ms. Null when it can't be read. */
+export function jwtExpiryMs(token: string | null | undefined): number | null {
+  if (!token) return null;
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+    const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof json.exp === "number" ? json.exp * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+/** True when the signed-in user's token is past its expiry. */
+export function isSessionExpired(u: Pick<User, "token" | "token_expires_at">, now = Date.now()) {
+  const exp = u.token_expires_at ?? jwtExpiryMs(u.token);
+  return exp != null && now >= exp;
+}
+
 // v1: when ANY authenticated call comes back 401 (Token expired /
 // invalid), wipe the session + redirect to /login. Guarded so many
 // in-flight requests don't stack repeated redirects.
 let redirectingOn401 = false;
-setUnauthorizedHandler(() => {
+export const expireSession = () => sessionExpiredHandler();
+const sessionExpiredHandler = () => {
   if (redirectingOn401) return;
   redirectingOn401 = true;
   try {
@@ -236,4 +268,5 @@ setUnauthorizedHandler(() => {
     // tree here and the current route may be an auth-gated one.
     window.location.href = "/login";
   }
-});
+};
+setUnauthorizedHandler(sessionExpiredHandler);

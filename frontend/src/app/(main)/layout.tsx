@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { expireSession, isSessionExpired, useStore } from "@/lib/store";
 import NavDrawer from "@/components/NavDrawer";
 import { DrawerContext } from "@/lib/DrawerContext";
 import { COLORS } from "@/lib/colors";
@@ -35,6 +35,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
       router.replace("/welcome");
     }
   }, [hydrated, user, router]);
+
+  // Reopening the app with a token that expired while it was closed ends the
+  // session straight away instead of rendering screens whose calls will 401.
+  useEffect(() => {
+    if (hydrated && user && isSessionExpired(user)) expireSession();
+  }, [hydrated, user]);
 
   if (!hydrated || !user) {
     return (

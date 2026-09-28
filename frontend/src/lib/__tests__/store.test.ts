@@ -280,3 +280,21 @@ describe("pendingPinReset (audit A-03)", () => {
     expect(useStore.getState().pendingPinReset).toBeNull();
   });
 });
+
+describe("session expiry (audit A-14)", () => {
+  const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, "");
+  const jwt = (exp: number) => `${b64({ alg: "HS256" })}.${b64({ exp })}.sig`;
+
+  it("reads the JWT exp claim", async () => {
+    const { jwtExpiryMs } = await import("@/lib/store");
+    expect(jwtExpiryMs(jwt(1_000))).toBe(1_000_000);
+    expect(jwtExpiryMs("not-a-jwt")).toBeNull();
+  });
+
+  it("prefers token_expires_at, falls back to the JWT exp", async () => {
+    const { isSessionExpired } = await import("@/lib/store");
+    expect(isSessionExpired({ token: jwt(10), token_expires_at: 50_000 }, 20_000)).toBe(false);
+    expect(isSessionExpired({ token: jwt(10), token_expires_at: undefined }, 20_000)).toBe(true);
+    expect(isSessionExpired({ token: "opaque", token_expires_at: undefined }, 20_000)).toBe(false);
+  });
+});
