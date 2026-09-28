@@ -26,6 +26,7 @@ import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 function VerifyEmailInner() {
   const router = useRouter();
@@ -57,7 +58,7 @@ function VerifyEmailInner() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       {/* Toolbar */}
       <div
         className="flex items-center px-3 py-3 gap-3"
@@ -75,12 +76,12 @@ function VerifyEmailInner() {
           }}
           aria-label={t("Back")}
         >
-          <IcBack size={20} color="#064E3B" />
+          <IcBack size={20} color={COLORS.darkAquamarineGreen} />
         </button>
         <h1
           className="flex-1 text-center"
           style={{
-            color: "#042F23",
+            color: COLORS.webDeepGreen,
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -100,12 +101,12 @@ function VerifyEmailInner() {
         <div className="flex justify-center mt-6">
           <div
             className="flex items-center justify-center rounded-full"
-            style={{ width: 90, height: 90, backgroundColor: "#F0FDF4" }}
+            style={{ width: 90, height: 90, backgroundColor: COLORS.honeydew }}
           >
             <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
               <path
                 d="M6 12l16 12L38 12M6 12h32v22H6V12Z"
-                stroke="#064E3B"
+                stroke={COLORS.darkAquamarineGreen}
                 strokeWidth="2"
                 strokeLinejoin="round"
               />
@@ -113,10 +114,16 @@ function VerifyEmailInner() {
           </div>
         </div>
 
-        <h2 className="text-center font-bold mt-5" style={{ color: "#064E3B", fontSize: 22 }}>
+        <h2
+          className="text-center font-bold mt-5"
+          style={{ color: COLORS.darkAquamarineGreen, fontSize: 22 }}
+        >
           {t("Check Your Email")}
         </h2>
-        <p className="text-center text-sm mt-2 px-4" style={{ color: "#6D6D6D", lineHeight: 1.6 }}>
+        <p
+          className="text-center text-sm mt-2 px-4"
+          style={{ color: COLORS.darkSilver, lineHeight: 1.6 }}
+        >
           {t(
             "We've sent a verification link to your email address. Tap the link to activate your\n          account, then sign in."
           )}
@@ -125,7 +132,7 @@ function VerifyEmailInner() {
         {/* Email field — pre-filled, editable so user can correct typos */}
         <p
           className="text-xs font-bold uppercase tracking-wide mt-6 mb-1.5 ml-1"
-          style={{ color: "#6D6D6D" }}
+          style={{ color: COLORS.darkSilver }}
         >
           {t("Email Address")}
           <RequiredAsterisk />
@@ -138,7 +145,7 @@ function VerifyEmailInner() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-          style={{ backgroundColor: "#F1F5F9", color: "#231F20" }}
+          style={{ backgroundColor: COLORS.americanDiamond, color: COLORS.raisinBlack }}
         />
 
         {/* Resend button */}
@@ -148,8 +155,8 @@ function VerifyEmailInner() {
           className="w-full mt-5 py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
           style={{
             backgroundColor: "transparent",
-            color: isResendReady && !isResending ? "#064E3B" : "#999999",
-            border: `2px solid ${isResendReady && !isResending ? "#064E3B" : "#D3D3D3"}`,
+            color: isResendReady && !isResending ? COLORS.darkAquamarineGreen : COLORS.spanishGray,
+            border: `2px solid ${isResendReady && !isResending ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew}`,
             cursor: isResendReady && !isResending ? "pointer" : "not-allowed",
           }}
         >
@@ -168,7 +175,7 @@ function VerifyEmailInner() {
           onClick={() => router.replace("/login")}
           className="w-full mt-3 py-4 rounded-full font-bold text-base flex items-center justify-center gap-2 text-white"
           style={{
-            backgroundColor: "#064E3B",
+            backgroundColor: COLORS.darkAquamarineGreen,
             border: "none",
             cursor: "pointer",
           }}

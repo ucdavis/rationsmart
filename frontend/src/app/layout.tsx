@@ -8,6 +8,7 @@ import SplashOverlay from "@/components/SplashOverlay";
 import NumberInputGuard from "@/components/NumberInputGuard";
 import DialogFocusTrap from "@/components/DialogFocusTrap";
 import { COLUMN_WIDTH } from "@/lib/column";
+import { COLORS } from "@/lib/colors";
 
 export const metadata: Metadata = {
   title: "RationSmart",
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
   },
   other: {
     "mobile-web-app-capable": "yes",
-    "msapplication-TileColor": "#FFFFFF",
+    "msapplication-TileColor": COLORS.white,
   },
 };
 
@@ -40,7 +41,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   // White status bar / Android system bar to match the Android app
-  themeColor: "#FFFFFF",
+  themeColor: COLORS.white,
   viewportFit: "cover",
 };
 
@@ -60,7 +61,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body
         style={{
-          backgroundColor: "#F8FAF9",
+          backgroundColor: COLORS.authenticWhite,
           margin: 0,
           padding: 0,
         }}

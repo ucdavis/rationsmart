@@ -9,6 +9,7 @@ import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
 import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 interface FeedbackItem {
   id: number;
@@ -54,7 +55,7 @@ function StarRating({
           <IcStar
             size={size}
             filled={star <= (hovered || rating)}
-            color={star <= (hovered || rating) ? "#E3B505" : "#C2C2C2"}
+            color={star <= (hovered || rating) ? COLORS.mustardYellow : COLORS.silverSand}
           />
         </button>
       ))}
@@ -64,11 +65,11 @@ function StarRating({
 
 const categoryBadgeStyle = (cat: string): React.CSSProperties => {
   const map: Record<string, { bg: string; color: string }> = {
-    General: { bg: "rgba(5,188,109,0.15)", color: "#064E3B" },
-    "Feature Request": { bg: "rgba(30,64,175,0.15)", color: "#1E40AF" },
-    Defect: { bg: "rgba(228,74,74,0.2)", color: "#E44A4A" },
+    General: { bg: "rgba(5,188,109,0.15)", color: COLORS.darkAquamarineGreen },
+    "Feature Request": { bg: "rgba(30,64,175,0.15)", color: COLORS.ultramarine },
+    Defect: { bg: "rgba(228,74,74,0.2)", color: COLORS.carminePink },
   };
-  const colors = map[cat] ?? { bg: "#F1F5F9", color: "#6D6D6D" };
+  const colors = map[cat] ?? { bg: COLORS.americanDiamond, color: COLORS.darkSilver };
   return {
     backgroundColor: colors.bg,
     color: colors.color,
@@ -142,12 +143,15 @@ export default function FeedbackPage() {
   const canSubmit = text.trim().length > 0 || rating > 0;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title={t("Feedback")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Rating title */}
-        <p className="text-center font-bold mt-5" style={{ color: "#231F20", fontSize: 18 }}>
+        <p
+          className="text-center font-bold mt-5"
+          style={{ color: COLORS.raisinBlack, fontSize: 18 }}
+        >
           {t("Rate The App")}
         </p>
 
@@ -157,7 +161,7 @@ export default function FeedbackPage() {
         </div>
 
         {/* Category label */}
-        <p className="font-bold mt-5 ml-3" style={{ color: "#6D6D6D", fontSize: 14 }}>
+        <p className="font-bold mt-5 ml-3" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
           {t("Feedback Category")}
         </p>
 
@@ -171,9 +175,14 @@ export default function FeedbackPage() {
                 value={c}
                 checked={category === c}
                 onChange={() => setCategory(c)}
-                style={{ accentColor: "#064E3B", width: 18, height: 18, cursor: "pointer" }}
+                style={{
+                  accentColor: COLORS.darkAquamarineGreen,
+                  width: 18,
+                  height: 18,
+                  cursor: "pointer",
+                }}
               />
-              <span style={{ color: "#231F20", fontSize: 14 }}>{t(c)}</span>
+              <span style={{ color: COLORS.raisinBlack, fontSize: 14 }}>{t(c)}</span>
             </label>
           ))}
         </div>
@@ -188,14 +197,14 @@ export default function FeedbackPage() {
             placeholder={t("Tell us how we can improve...")}
             className="w-full px-3 py-3 text-base focus:outline-none resize-none"
             style={{
-              backgroundColor: "#F1F5F9",
-              color: "#231F20",
+              backgroundColor: COLORS.americanDiamond,
+              color: COLORS.raisinBlack,
               borderRadius: 18,
               border: "1px solid #E2E8F0",
               minHeight: 140,
             }}
           />
-          <p className="text-xs text-right mt-1" style={{ color: "#999999" }}>
+          <p className="text-xs text-right mt-1" style={{ color: COLORS.spanishGray }}>
             {text.length} / 1000
           </p>
         </div>
@@ -207,8 +216,9 @@ export default function FeedbackPage() {
             disabled={!canSubmit || isSubmitting}
             className="w-full py-4 font-bold text-base flex items-center justify-center gap-2"
             style={{
-              backgroundColor: canSubmit && !isSubmitting ? "#064E3B" : "#D3D3D3",
-              color: canSubmit && !isSubmitting ? "#FFFFFF" : "#999999",
+              backgroundColor:
+                canSubmit && !isSubmitting ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+              color: canSubmit && !isSubmitting ? COLORS.white : COLORS.spanishGray,
               border: "none",
               borderRadius: 14,
               cursor: canSubmit && !isSubmitting ? "pointer" : "not-allowed",
@@ -237,13 +247,13 @@ export default function FeedbackPage() {
         {/* My Feedback History */}
         <div className="mx-3 mt-5">
           <div className="flex items-center justify-between mb-3">
-            <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 14 }}>
+            <p className="font-bold" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
               {t("Your Feedbacks")}
             </p>
             <span
               style={{
-                backgroundColor: "#F0FDF4",
-                color: "#064E3B",
+                backgroundColor: COLORS.honeydew,
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 12,
                 paddingLeft: 10,
                 paddingRight: 10,
@@ -275,7 +285,7 @@ export default function FeedbackPage() {
               className="rounded-2xl bg-white p-8 text-center"
               style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
             >
-              <p className="text-sm" style={{ color: "#999999" }}>
+              <p className="text-sm" style={{ color: COLORS.spanishGray }}>
                 {t("No feedback submitted yet")}
               </p>
             </div>
@@ -310,7 +320,7 @@ export default function FeedbackPage() {
                 {/* Row 1: Stars (left) + Date (right) */}
                 <div className="flex items-center justify-between mb-3">
                   <StarRating rating={item.overall_rating} readOnly size={24} />
-                  <span className="font-bold" style={{ color: "#6D6D6D", fontSize: 12 }}>
+                  <span className="font-bold" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
                     {new Date(item.created_at).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
@@ -329,7 +339,7 @@ export default function FeedbackPage() {
                   className="text-sm"
                   style={
                     {
-                      color: "#231F20",
+                      color: COLORS.raisinBlack,
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical",

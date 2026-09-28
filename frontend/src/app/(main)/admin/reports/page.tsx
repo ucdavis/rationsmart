@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import { openExternalUrl } from "@/lib/safe-url";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
+import { COLORS } from "@/lib/colors";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
 // Critically, the "View Report" button opens bucket_url (a PDF URL),
@@ -89,7 +90,7 @@ export default function AdminReportsPage() {
           ))
         ) : reports.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center px-6">
-            <p className="text-base" style={{ color: "#999999" }}>
+            <p className="text-base" style={{ color: COLORS.spanishGray }}>
               {t("No reports found")}
             </p>
           </div>
@@ -111,10 +112,10 @@ export default function AdminReportsPage() {
             // t() for display.
             const themed =
               reportType === "Evaluation"
-                ? { bg: "rgba(255,159,28,0.15)", text: "#FF9F1C" } // vivid_gamboge_15 / vivid_gamboge
+                ? { bg: "rgba(255,159,28,0.15)", text: COLORS.webOrange } // vivid_gamboge_15 / vivid_gamboge
                 : reportType === "Recommendation"
-                  ? { bg: "rgba(41,108,211,0.15)", text: "#296CD3" } // celtic_blue_15 / celtic_blue
-                  : { bg: "#E4F7EF", text: "#064E3B" }; // bright_gray_new / dark_aquamarine_green
+                  ? { bg: "rgba(41,108,211,0.15)", text: COLORS.celticBlue } // celtic_blue_15 / celtic_blue
+                  : { bg: COLORS.brightGrayNew, text: COLORS.darkAquamarineGreen }; // bright_gray_new / dark_aquamarine_green
             const key = r.report_id ?? r.simulation_id ?? String(idx);
             return (
               <div
@@ -142,14 +143,19 @@ export default function AdminReportsPage() {
                         padding: 6,
                       }}
                     >
-                      <svg width="24" height="24" viewBox="0 0 960 960" fill="#064E3B">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 960 960"
+                        fill={COLORS.darkAquamarineGreen}
+                      >
                         <path d="M360,720h240q17,0 28.5,-11.5T640,680q0,-17 -11.5,-28.5T600,640L360,640q-17,0 -28.5,11.5T320,680q0,17 11.5,28.5T360,720ZM360,560h240q17,0 28.5,-11.5T640,520q0,-17 -11.5,-28.5T600,480L360,480q-17,0 -28.5,11.5T320,520q0,17 11.5,28.5T360,560ZM240,880q-33,0 -56.5,-23.5T160,800v-640q0,-33 23.5,-56.5T240,80h287q16,0 30.5,6t25.5,17l194,194q11,11 17,25.5t6,30.5v447q0,33 -23.5,56.5T720,880L240,880ZM520,320v-160L240,160v640h480v-440L560,360q-17,0 -28.5,-11.5T520,320Z" />
                       </svg>
                     </div>
                     {/* tv_user_name: crayola_green (#1CA069), bold, font_16 */}
                     <p
                       className="font-bold truncate flex-1 min-w-0"
-                      style={{ color: "#1CA069", fontSize: 16 }}
+                      style={{ color: COLORS.crayolaGreen, fontSize: 16 }}
                     >
                       {r.user_name || r.user_email || t("N/A")}
                     </p>
@@ -186,10 +192,10 @@ export default function AdminReportsPage() {
                     <span
                       className="font-bold flex-shrink-0"
                       style={{
-                        backgroundColor: "#FFF4E5",
+                        backgroundColor: COLORS.webWarningBg,
                         borderRadius: 60,
                         padding: "8px 14px",
-                        color: "#FF9800",
+                        color: COLORS.vividGamboge,
                         fontSize: 12,
                         marginLeft: 8,
                       }}
@@ -204,11 +210,11 @@ export default function AdminReportsPage() {
                     values are bold, raisin_black) */}
                 <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Simulation ID")}</p>
+                    <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{t("Simulation ID")}</p>
                     <p
                       className="font-bold"
                       style={{
-                        color: "#231F20",
+                        color: COLORS.raisinBlack,
                         fontSize: 14,
                         marginTop: 4,
                       }}
@@ -217,11 +223,11 @@ export default function AdminReportsPage() {
                     </p>
                   </div>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Report Type")}</p>
+                    <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{t("Report Type")}</p>
                     <p
                       className="font-bold"
                       style={{
-                        color: "#231F20",
+                        color: COLORS.raisinBlack,
                         fontSize: 14,
                         marginTop: 4,
                       }}
@@ -233,11 +239,11 @@ export default function AdminReportsPage() {
 
                 {/* Date */}
                 <div style={{ padding: "10px 10px 0" }}>
-                  <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Date")}</p>
+                  <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{t("Date")}</p>
                   <p
                     className="font-bold"
                     style={{
-                      color: "#231F20",
+                      color: COLORS.raisinBlack,
                       fontSize: 14,
                       marginTop: 4,
                     }}

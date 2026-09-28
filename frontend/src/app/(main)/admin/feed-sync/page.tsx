@@ -44,6 +44,7 @@ import {
 } from "@/lib/api";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { COLORS } from "@/lib/colors";
 
 interface SchedulerStatus {
   scheduler_enabled: boolean;
@@ -220,8 +221,8 @@ function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
 
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 const inputStyle = {
-  backgroundColor: "#F1F5F9",
-  color: "#231F20",
+  backgroundColor: COLORS.americanDiamond,
+  color: COLORS.raisinBlack,
 };
 const sheetOverlayStyle = {
   left: COLUMN_LEFT,
@@ -233,10 +234,10 @@ function StatusChip({ status }: { status: string }) {
   const s = status.toLowerCase();
   const cfg =
     s === "success"
-      ? { bg: "rgba(28,160,105,0.12)", fg: "#1CA069", label: "Success" }
+      ? { bg: "rgba(28,160,105,0.12)", fg: COLORS.crayolaGreen, label: "Success" }
       : s === "failed"
-        ? { bg: "rgba(228,74,74,0.12)", fg: "#E44A4A", label: "Failed" }
-        : { bg: "rgba(255,152,0,0.14)", fg: "#B4690E", label: "Running" };
+        ? { bg: "rgba(228,74,74,0.12)", fg: COLORS.carminePink, label: "Failed" }
+        : { bg: "rgba(255,152,0,0.14)", fg: COLORS.webAmberText, label: "Running" };
   return (
     <span
       className={`text-xs font-bold px-2 py-0.5 rounded-full ${s === "running" ? "animate-pulse" : ""}`}
@@ -321,11 +322,11 @@ export default function AdminFeedSyncPage() {
   if (!user?.is_admin) return null;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title="Feed Library Sync" onBack={() => router.back()} />
 
       <div className="px-3 pt-3">
-        <div className="flex rounded-2xl p-1" style={{ backgroundColor: "#E4F7EF" }}>
+        <div className="flex rounded-2xl p-1" style={{ backgroundColor: COLORS.brightGrayNew }}>
           {(
             [
               { key: "sync", label: "Sync & Settings" },
@@ -337,8 +338,8 @@ export default function AdminFeedSyncPage() {
               onClick={() => setTab(t.key)}
               className="flex-1 py-2.5 rounded-xl font-bold text-sm"
               style={{
-                backgroundColor: tab === t.key ? "#064E3B" : "transparent",
-                color: tab === t.key ? "#FFFFFF" : "#064E3B",
+                backgroundColor: tab === t.key ? COLORS.darkAquamarineGreen : "transparent",
+                color: tab === t.key ? COLORS.white : COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: "pointer",
                 transition: "background-color 0.15s",
@@ -398,10 +399,10 @@ export default function AdminFeedSyncPage() {
             className="bg-white rounded-2xl w-full px-5 py-5"
             style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
           >
-            <p className="font-bold mb-2" style={{ color: "#231F20", fontSize: 15 }}>
+            <p className="font-bold mb-2" style={{ color: COLORS.raisinBlack, fontSize: 15 }}>
               {confirm.title}
             </p>
-            <p className="text-sm mb-4" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
+            <p className="text-sm mb-4" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
               {confirm.body}
             </p>
             <div className="flex gap-3">
@@ -410,7 +411,7 @@ export default function AdminFeedSyncPage() {
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
                 style={{
                   backgroundColor: "transparent",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   border: "1.5px solid #064E3B",
                   cursor: "pointer",
                 }}
@@ -421,8 +422,8 @@ export default function AdminFeedSyncPage() {
                 onClick={confirm.onConfirm}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
                 style={{
-                  backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B",
-                  color: "#FFFFFF",
+                  backgroundColor: confirm.danger ? COLORS.carminePink : COLORS.darkAquamarineGreen,
+                  color: COLORS.white,
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -698,9 +699,12 @@ function SyncSettingsTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: COLORS.darkAquamarineGreen }}
+          >
             Automatic Sync
           </p>
         </div>
@@ -710,7 +714,7 @@ function SyncSettingsTab({
               className="rounded-xl px-3 py-2 text-xs font-bold"
               style={{
                 backgroundColor: "rgba(255,152,0,0.14)",
-                color: "#B4690E",
+                color: COLORS.webAmberText,
               }}
             >
               Last sync overdue — check Run History
@@ -719,21 +723,21 @@ function SyncSettingsTab({
 
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="font-bold text-sm" style={{ color: "#231F20" }}>
+              <p className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
                 Automatic Scheduler
               </p>
-              <p className="text-xs mt-0.5" style={{ color: "#6D6D6D" }}>
+              <p className="text-xs mt-0.5" style={{ color: COLORS.darkSilver }}>
                 {status.scheduler_enabled
                   ? `Syncs automatically every ${capitalize(status.sync_day_of_week)} at 00:00 UTC.`
                   : "Automatic sync is off. You can still sync manually."}
               </p>
               {!canEnable && !status.scheduler_enabled && (
-                <p className="text-xs mt-0.5 font-bold" style={{ color: "#B4690E" }}>
+                <p className="text-xs mt-0.5 font-bold" style={{ color: COLORS.webAmberText }}>
                   Configure the CLIMDES endpoint first
                 </p>
               )}
               {config.scheduler_toggled_by && (
-                <p className="text-xs mt-1" style={{ color: "#999999" }}>
+                <p className="text-xs mt-1" style={{ color: COLORS.spanishGray }}>
                   Last changed by {config.scheduler_toggled_by.slice(0, 8)}… on{" "}
                   {formatDateTime(config.scheduler_toggled_at)}
                 </p>
@@ -767,7 +771,7 @@ function SyncSettingsTab({
           <div>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               Sync day
             </p>
@@ -776,9 +780,13 @@ function SyncSettingsTab({
               onChange={handleDayChange}
               options={DAY_OPTIONS}
               disabled={isSavingDay}
-              style={{ backgroundColor: "#F1F5F9", borderRadius: 14, padding: "10px 12px" }}
+              style={{
+                backgroundColor: COLORS.americanDiamond,
+                borderRadius: 14,
+                padding: "10px 12px",
+              }}
             />
-            <p className="text-xs mt-1" style={{ color: "#999999" }}>
+            <p className="text-xs mt-1" style={{ color: COLORS.spanishGray }}>
               Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate
               refresh.
             </p>
@@ -786,26 +794,26 @@ function SyncSettingsTab({
 
           <div className="space-y-2 pt-1" style={{ borderTop: "1px solid #F1F5F9" }}>
             <div className="flex justify-between text-sm pt-2">
-              <span style={{ color: "#6D6D6D" }}>Next scheduled sync</span>
-              <span className="font-bold" style={{ color: "#231F20" }}>
+              <span style={{ color: COLORS.darkSilver }}>Next scheduled sync</span>
+              <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                 {formatNextRun(status.next_scheduled_run)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: "#6D6D6D" }}>Last run</span>
+              <span style={{ color: COLORS.darkSilver }}>Last run</span>
               <span
                 className="font-bold"
-                style={{ color: "#231F20" }}
+                style={{ color: COLORS.raisinBlack }}
                 title={status.last_run_at ?? undefined}
               >
                 {formatDateTime(status.last_run_at)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: "#6D6D6D" }}>Last successful sync</span>
+              <span style={{ color: COLORS.darkSilver }}>Last successful sync</span>
               <span
                 className="font-bold"
-                style={{ color: "#231F20" }}
+                style={{ color: COLORS.raisinBlack }}
                 title={status.last_success_at ?? undefined}
               >
                 {formatDateTime(status.last_success_at)}
@@ -819,8 +827,9 @@ function SyncSettingsTab({
               disabled={isDispatching || isRunning}
               className="py-2.5 px-5 rounded-xl font-bold text-sm flex-shrink-0"
               style={{
-                backgroundColor: isDispatching || isRunning ? "#D3D3D3" : "#064E3B",
-                color: "#FFFFFF",
+                backgroundColor:
+                  isDispatching || isRunning ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
+                color: COLORS.white,
                 border: "none",
                 cursor: isDispatching || isRunning ? "not-allowed" : "pointer",
               }}
@@ -829,7 +838,7 @@ function SyncSettingsTab({
             </button>
             <span
               className="text-xs font-bold"
-              style={{ color: isRunning ? "#B4690E" : "#6D6D6D" }}
+              style={{ color: isRunning ? COLORS.webAmberText : COLORS.darkSilver }}
             >
               status: {isRunning ? "running…" : "idle"}
             </span>
@@ -851,14 +860,14 @@ function SyncSettingsTab({
             <p
               className="font-bold text-sm"
               style={{
-                color: lastResult.status === "success" ? "#1CA069" : "#E44A4A",
+                color: lastResult.status === "success" ? COLORS.crayolaGreen : COLORS.carminePink,
               }}
             >
               {lastResult.status === "success" ? "✅ Sync complete" : "❌ Sync failed"} —{" "}
               {formatDateTime(lastResult.finished_at)}
             </p>
           </div>
-          <div className="px-4 py-3 space-y-1 text-sm" style={{ color: "#231F20" }}>
+          <div className="px-4 py-3 space-y-1 text-sm" style={{ color: COLORS.raisinBlack }}>
             {lastResult.status === "success" ? (
               <>
                 <p>{lastResult.total_rows.toLocaleString()} rows processed</p>
@@ -873,7 +882,7 @@ function SyncSettingsTab({
                 </p>
               </>
             ) : (
-              <p style={{ color: "#E44A4A" }}>
+              <p style={{ color: COLORS.carminePink }}>
                 {lastResult.error_message ?? "An unexpected error occurred."}
               </p>
             )}
@@ -883,7 +892,7 @@ function SyncSettingsTab({
               style={{
                 background: "none",
                 border: "none",
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 cursor: "pointer",
                 padding: 0,
               }}
@@ -898,11 +907,11 @@ function SyncSettingsTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center gap-2 px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
-            style={{ color: "#064E3B" }}
+            style={{ color: COLORS.darkAquamarineGreen }}
           >
             Connection Settings
           </p>
@@ -911,8 +920,8 @@ function SyncSettingsTab({
               onClick={openSettingsEditor}
               className="text-xs font-bold px-3 py-1 rounded-full"
               style={{
-                backgroundColor: "#064E3B",
-                color: "#FFFFFF",
+                backgroundColor: COLORS.darkAquamarineGreen,
+                color: COLORS.white,
                 border: "none",
                 cursor: "pointer",
               }}
@@ -925,29 +934,32 @@ function SyncSettingsTab({
         {!isEditingSettings ? (
           <div className="px-4 py-4 space-y-3 text-sm">
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D" }}>Endpoint URL</span>
-              <span className="font-bold text-right break-all" style={{ color: "#231F20" }}>
+              <span style={{ color: COLORS.darkSilver }}>Endpoint URL</span>
+              <span
+                className="font-bold text-right break-all"
+                style={{ color: COLORS.raisinBlack }}
+              >
                 {config.endpoint_url || "Not configured"}
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D" }}>Auth type</span>
-              <span className="font-bold" style={{ color: "#231F20" }}>
+              <span style={{ color: COLORS.darkSilver }}>Auth type</span>
+              <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                 {AUTH_TYPE_OPTIONS.find((o) => o.value === config.auth_type)?.label ??
                   capitalize(config.auth_type)}
               </span>
             </div>
             {config.auth_type === "api_key" && (
               <div className="flex justify-between gap-3">
-                <span style={{ color: "#6D6D6D" }}>Header name</span>
-                <span className="font-bold" style={{ color: "#231F20" }}>
+                <span style={{ color: COLORS.darkSilver }}>Header name</span>
+                <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                   {config.auth_header_name || "—"}
                 </span>
               </div>
             )}
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D" }}>Token</span>
-              <span className="font-bold" style={{ color: "#231F20" }}>
+              <span style={{ color: COLORS.darkSilver }}>Token</span>
+              <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                 {config.auth_token_masked || "Not set"}
               </span>
             </div>
@@ -957,7 +969,7 @@ function SyncSettingsTab({
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-wide mb-1"
-                style={{ color: "#6D6D6D" }}
+                style={{ color: COLORS.darkSilver }}
               >
                 Endpoint URL
               </p>
@@ -974,7 +986,7 @@ function SyncSettingsTab({
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-wide mb-1"
-                style={{ color: "#6D6D6D" }}
+                style={{ color: COLORS.darkSilver }}
               >
                 Auth type
               </p>
@@ -982,14 +994,18 @@ function SyncSettingsTab({
                 value={formAuthType}
                 onChange={setFormAuthType}
                 options={AUTH_TYPE_OPTIONS}
-                style={{ backgroundColor: "#F1F5F9", borderRadius: 14, padding: "10px 12px" }}
+                style={{
+                  backgroundColor: COLORS.americanDiamond,
+                  borderRadius: 14,
+                  padding: "10px 12px",
+                }}
               />
             </div>
             {formAuthType === "api_key" && (
               <div>
                 <p
                   className="text-xs font-bold uppercase tracking-wide mb-1"
-                  style={{ color: "#6D6D6D" }}
+                  style={{ color: COLORS.darkSilver }}
                 >
                   Header name
                 </p>
@@ -1007,7 +1023,7 @@ function SyncSettingsTab({
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-wide mb-1"
-                style={{ color: "#6D6D6D" }}
+                style={{ color: COLORS.darkSilver }}
               >
                 Token
               </p>
@@ -1021,7 +1037,7 @@ function SyncSettingsTab({
                     className="text-xs font-bold px-3 py-2 rounded-xl flex-shrink-0"
                     style={{
                       backgroundColor: "transparent",
-                      color: "#064E3B",
+                      color: COLORS.darkAquamarineGreen,
                       border: "1.5px solid #064E3B",
                       cursor: "pointer",
                     }}
@@ -1044,7 +1060,7 @@ function SyncSettingsTab({
             </div>
 
             {settingsError && (
-              <p className="text-xs font-bold" style={{ color: "#E44A4A" }}>
+              <p className="text-xs font-bold" style={{ color: COLORS.carminePink }}>
                 {settingsError}
               </p>
             )}
@@ -1056,7 +1072,7 @@ function SyncSettingsTab({
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
                 style={{
                   backgroundColor: "transparent",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   border: "1.5px solid #064E3B",
                   cursor: "pointer",
                 }}
@@ -1068,8 +1084,10 @@ function SyncSettingsTab({
                 disabled={isSavingSettings}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
                 style={{
-                  backgroundColor: isSavingSettings ? "#D3D3D3" : "#064E3B",
-                  color: "#FFFFFF",
+                  backgroundColor: isSavingSettings
+                    ? COLORS.lightGrayNew
+                    : COLORS.darkAquamarineGreen,
+                  color: COLORS.white,
                   border: "none",
                   cursor: isSavingSettings ? "not-allowed" : "pointer",
                 }}
@@ -1193,12 +1211,15 @@ function RunHistoryTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center justify-between px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: COLORS.darkAquamarineGreen }}
+          >
             Run History
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D" }}>
+          <p className="text-xs" style={{ color: COLORS.darkSilver }}>
             {totalCount} runs
           </p>
         </div>
@@ -1217,7 +1238,7 @@ function RunHistoryTab({
             ))}
           </div>
         ) : logs.length === 0 ? (
-          <p className="text-sm text-center py-6" style={{ color: "#6D6D6D" }}>
+          <p className="text-sm text-center py-6" style={{ color: COLORS.darkSilver }}>
             No sync runs yet.
           </p>
         ) : (
@@ -1232,21 +1253,21 @@ function RunHistoryTab({
                 border: "none",
                 borderTopWidth: 1,
                 borderTopStyle: "solid",
-                borderTopColor: "#F8FAF9",
+                borderTopColor: COLORS.authenticWhite,
                 cursor: "pointer",
               }}
             >
               <div className="flex items-center justify-between gap-2">
                 <p
                   className="font-bold text-sm"
-                  style={{ color: "#231F20" }}
+                  style={{ color: COLORS.raisinBlack }}
                   title={log.started_at ?? undefined}
                 >
                   {formatDateTime(log.started_at)}
                 </p>
                 <StatusChip status={log.status} />
               </div>
-              <p className="text-xs mt-1" style={{ color: "#6D6D6D" }}>
+              <p className="text-xs mt-1" style={{ color: COLORS.darkSilver }}>
                 {capitalize(log.trigger_type)}
                 {log.status !== "running" && (
                   <>
@@ -1272,14 +1293,14 @@ function RunHistoryTab({
               className="text-sm font-bold px-3 py-1.5 rounded-lg"
               style={{
                 backgroundColor: "transparent",
-                color: page <= 1 ? "#C2C2C2" : "#064E3B",
+                color: page <= 1 ? COLORS.silverSand : COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: page <= 1 ? "not-allowed" : "pointer",
               }}
             >
               ‹ Prev
             </button>
-            <p className="text-xs" style={{ color: "#6D6D6D" }}>
+            <p className="text-xs" style={{ color: COLORS.darkSilver }}>
               Page {page} of {totalPages}
             </p>
             <button
@@ -1288,7 +1309,7 @@ function RunHistoryTab({
               className="text-sm font-bold px-3 py-1.5 rounded-lg"
               style={{
                 backgroundColor: "transparent",
-                color: page >= totalPages ? "#C2C2C2" : "#064E3B",
+                color: page >= totalPages ? COLORS.silverSand : COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: page >= totalPages ? "not-allowed" : "pointer",
               }}
@@ -1315,7 +1336,14 @@ function RunHistoryTab({
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)", maxHeight: "88vh" }}
           >
             <div className="flex justify-center mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
 
             {isLoadingDetail || !openLog ? (
@@ -1329,14 +1357,14 @@ function RunHistoryTab({
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <p
                     className="font-bold"
-                    style={{ color: "#231F20", fontSize: 16 }}
+                    style={{ color: COLORS.raisinBlack, fontSize: 16 }}
                     title={openLog.started_at ?? undefined}
                   >
                     Run {formatDateTime(openLog.started_at)}
                   </p>
                   <StatusChip status={openLog.status} />
                 </div>
-                <p className="text-xs mb-4" style={{ color: "#6D6D6D" }}>
+                <p className="text-xs mb-4" style={{ color: COLORS.darkSilver }}>
                   {capitalize(openLog.trigger_type)} · Duration{" "}
                   {formatDuration(openLog.started_at, openLog.finished_at)}
                   {openLog.http_status ? ` · HTTP ${openLog.http_status}` : ""}
@@ -1346,8 +1374,8 @@ function RunHistoryTab({
                   <div
                     className="rounded-xl px-3 py-2 mb-4 text-sm"
                     style={{
-                      backgroundColor: "#FEC5BB",
-                      color: "#E44A4A",
+                      backgroundColor: COLORS.peachyPink,
+                      color: COLORS.carminePink,
                     }}
                   >
                     {openLog.error_message}
@@ -1355,37 +1383,43 @@ function RunHistoryTab({
                 )}
 
                 <div className="grid grid-cols-2 gap-3 mb-4">
-                  <div className="rounded-xl p-3" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div
+                    className="rounded-xl p-3"
+                    style={{ backgroundColor: COLORS.authenticWhite }}
+                  >
                     <p
                       className="text-xs font-bold uppercase tracking-wide mb-2"
-                      style={{ color: "#064E3B" }}
+                      style={{ color: COLORS.darkAquamarineGreen }}
                     >
                       Feeds
                     </p>
-                    <p className="text-sm" style={{ color: "#231F20" }}>
+                    <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
                       {openLog.inserted.toLocaleString()} added
                     </p>
-                    <p className="text-sm" style={{ color: "#231F20" }}>
+                    <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
                       {openLog.updated.toLocaleString()} updated
                     </p>
-                    <p className="text-sm" style={{ color: "#231F20" }}>
+                    <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
                       {openLog.skipped.toLocaleString()} rows skipped
                     </p>
                   </div>
-                  <div className="rounded-xl p-3" style={{ backgroundColor: "#F8FAF9" }}>
+                  <div
+                    className="rounded-xl p-3"
+                    style={{ backgroundColor: COLORS.authenticWhite }}
+                  >
                     <p
                       className="text-xs font-bold uppercase tracking-wide mb-2"
-                      style={{ color: "#064E3B" }}
+                      style={{ color: COLORS.darkAquamarineGreen }}
                     >
                       Local names
                     </p>
-                    <p className="text-sm" style={{ color: "#231F20" }}>
+                    <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
                       {(
                         openLog.translations_inserted + openLog.translations_updated
                       ).toLocaleString()}{" "}
                       saved
                     </p>
-                    <p className="text-sm" style={{ color: "#231F20" }}>
+                    <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
                       {openLog.translations_skipped.toLocaleString()} skipped
                     </p>
                   </div>
@@ -1405,7 +1439,10 @@ function RunHistoryTab({
                           padding: 0,
                         }}
                       >
-                        <p className="font-bold text-sm" style={{ color: "#064E3B" }}>
+                        <p
+                          className="font-bold text-sm"
+                          style={{ color: COLORS.darkAquamarineGreen }}
+                        >
                           {rowsExpanded ? "▾" : "▸"} Skipped rows (
                           {openLog.failed_rows.length.toLocaleString()})
                         </p>
@@ -1420,8 +1457,8 @@ function RunHistoryTab({
                         }
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
                         style={{
-                          backgroundColor: "#E4F7EF",
-                          color: "#064E3B",
+                          backgroundColor: COLORS.brightGrayNew,
+                          color: COLORS.darkAquamarineGreen,
                           border: "none",
                           cursor: "pointer",
                         }}
@@ -1450,7 +1487,7 @@ function RunHistoryTab({
                               className="text-xs px-2 py-1.5"
                               style={{
                                 borderBottom: "1px solid #F1F5F9",
-                                color: "#231F20",
+                                color: COLORS.raisinBlack,
                               }}
                             >
                               <span className="font-bold">row {r.row ?? "—"}</span>
@@ -1458,7 +1495,10 @@ function RunHistoryTab({
                             </div>
                           ))}
                           {filteredFailedRows.length === 0 && (
-                            <p className="text-xs py-3 text-center" style={{ color: "#6D6D6D" }}>
+                            <p
+                              className="text-xs py-3 text-center"
+                              style={{ color: COLORS.darkSilver }}
+                            >
                               No matching rows.
                             </p>
                           )}
@@ -1470,7 +1510,7 @@ function RunHistoryTab({
                             style={{
                               background: "none",
                               border: "none",
-                              color: "#064E3B",
+                              color: COLORS.darkAquamarineGreen,
                               cursor: "pointer",
                               padding: 0,
                             }}
@@ -1498,7 +1538,10 @@ function RunHistoryTab({
                           padding: 0,
                         }}
                       >
-                        <p className="font-bold text-sm" style={{ color: "#064E3B" }}>
+                        <p
+                          className="font-bold text-sm"
+                          style={{ color: COLORS.darkAquamarineGreen }}
+                        >
                           {transExpanded ? "▾" : "▸"} Skipped local names (
                           {openLog.skipped_translations.length.toLocaleString()}) — grouped by
                           reason
@@ -1514,8 +1557,8 @@ function RunHistoryTab({
                         }
                         className="text-xs font-bold px-2 py-1 rounded-full flex-shrink-0"
                         style={{
-                          backgroundColor: "#E4F7EF",
-                          color: "#064E3B",
+                          backgroundColor: COLORS.brightGrayNew,
+                          color: COLORS.darkAquamarineGreen,
                           border: "none",
                           cursor: "pointer",
                         }}
@@ -1531,16 +1574,16 @@ function RunHistoryTab({
                             <div
                               key={reason}
                               className="flex items-center justify-between gap-2 rounded-xl px-3 py-2"
-                              style={{ backgroundColor: "#F8FAF9" }}
+                              style={{ backgroundColor: COLORS.authenticWhite }}
                             >
-                              <p className="text-xs flex-1" style={{ color: "#231F20" }}>
+                              <p className="text-xs flex-1" style={{ color: COLORS.raisinBlack }}>
                                 {reason} <span className="font-bold">({items.length})</span>
                               </p>
                               {link && (
                                 <a
                                   href={link.href}
                                   className="text-xs font-bold flex-shrink-0"
-                                  style={{ color: "#064E3B" }}
+                                  style={{ color: COLORS.darkAquamarineGreen }}
                                 >
                                   {link.label}
                                 </a>

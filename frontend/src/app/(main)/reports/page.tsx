@@ -8,6 +8,7 @@ import type { FeedReport } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
 import { openExternalUrl } from "@/lib/safe-url";
+import { COLORS } from "@/lib/colors";
 
 function SkeletonCard() {
   return (
@@ -16,16 +17,22 @@ function SkeletonCard() {
       style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)", marginTop: 16 }}
     >
       <div className="flex items-center justify-between" style={{ padding: "10px 10px 0 10px" }}>
-        <div className="h-9 w-9 rounded-full shimmer" style={{ backgroundColor: "#E2E8F0" }} />
-        <div className="h-8 w-28 rounded-full shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+        <div
+          className="h-9 w-9 rounded-full shimmer"
+          style={{ backgroundColor: COLORS.webDivider }}
+        />
+        <div
+          className="h-8 w-28 rounded-full shimmer"
+          style={{ backgroundColor: COLORS.webDivider }}
+        />
       </div>
       <div style={{ padding: "20px 10px 0 10px" }}>
-        <div className="h-3 w-24 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+        <div className="h-3 w-24 rounded shimmer" style={{ backgroundColor: COLORS.webDivider }} />
       </div>
       <div style={{ padding: "4px 10px 10px 10px" }}>
-        <div className="h-5 w-44 rounded shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+        <div className="h-5 w-44 rounded shimmer" style={{ backgroundColor: COLORS.webDivider }} />
       </div>
-      <div className="h-10 shimmer" style={{ backgroundColor: "#E2E8F0" }} />
+      <div className="h-10 shimmer" style={{ backgroundColor: COLORS.webDivider }} />
     </div>
   );
 }
@@ -78,7 +85,7 @@ export default function ReportsPage() {
   const pagedReports = reports.slice(page * REPORTS_PER_PAGE, (page + 1) * REPORTS_PER_PAGE);
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title={t("Feed Reports")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
@@ -92,29 +99,37 @@ export default function ReportsPage() {
           <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
             <div
               className="flex items-center justify-center rounded-full mb-5"
-              style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}
+              style={{ width: 80, height: 80, backgroundColor: COLORS.honeydew }}
             >
               <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-                <rect x="5" y="4" width="26" height="28" rx="3" stroke="#064E3B" strokeWidth="2" />
+                <rect
+                  x="5"
+                  y="4"
+                  width="26"
+                  height="28"
+                  rx="3"
+                  stroke={COLORS.darkAquamarineGreen}
+                  strokeWidth="2"
+                />
                 <path
                   d="M11 12H25M11 17H22M11 22H17"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                   strokeLinecap="round"
                 />
               </svg>
             </div>
-            <p className="text-lg font-bold mb-2" style={{ color: "#064E3B" }}>
+            <p className="text-lg font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen }}>
               {t("No saved reports")}
             </p>
-            <p className="text-sm mb-8" style={{ color: "#6D6D6D" }}>
+            <p className="text-sm mb-8" style={{ color: COLORS.darkSilver }}>
               {t('Generate a ration report and tap "Save Report" to see it here')}
             </p>
             <button
               onClick={() => router.push("/cattle-info")}
               className="px-8 py-4 rounded-xl font-bold text-base text-white"
               style={{
-                backgroundColor: "#064E3B",
+                backgroundColor: COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: "pointer",
               }}
@@ -153,7 +168,12 @@ export default function ReportsPage() {
                     >
                       {/* ic_report_nav — Material Symbols "description" (filled
                           document with corner notch and inset lines) */}
-                      <svg width="24" height="24" viewBox="0 0 960 960" fill="#064E3B">
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 960 960"
+                        fill={COLORS.darkAquamarineGreen}
+                      >
                         <path d="M360,720h240q17,0 28.5,-11.5T640,680q0,-17 -11.5,-28.5T600,640L360,640q-17,0 -28.5,11.5T320,680q0,17 11.5,28.5T360,720ZM360,560h240q17,0 28.5,-11.5T640,520q0,-17 -11.5,-28.5T600,480L360,480q-17,0 -28.5,11.5T320,520q0,17 11.5,28.5T360,560ZM240,880q-33,0 -56.5,-23.5T160,800v-640q0,-33 23.5,-56.5T240,80h287q16,0 30.5,6t25.5,17l194,194q11,11 17,25.5t6,30.5v447q0,33 -23.5,56.5T720,880L240,880ZM520,320v-160L240,160v640h480v-440L560,360q-17,0 -28.5,-11.5T520,320Z" />
                       </svg>
                     </div>
@@ -163,17 +183,22 @@ export default function ReportsPage() {
                         className="flex items-center font-bold"
                         style={{
                           borderRadius: 60,
-                          backgroundColor: "#E4F7EF", // bright_gray_new
+                          backgroundColor: COLORS.brightGrayNew, // bright_gray_new
                           padding: "8px 14px",
                           gap: 8,
                           border: "none",
                           cursor: "pointer",
-                          color: "#064E3B", // dark_aquamarine_green
+                          color: COLORS.darkAquamarineGreen, // dark_aquamarine_green
                           fontSize: 12, // font_12 (matches Android)
                         }}
                       >
                         {t("View Report")}
-                        <svg width="20" height="20" viewBox="0 0 20 20" fill="#064E3B">
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 20 20"
+                          fill={COLORS.darkAquamarineGreen}
+                        >
                           <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
                         </svg>
                       </button>
@@ -188,9 +213,9 @@ export default function ReportsPage() {
                         className="font-bold"
                         style={{
                           borderRadius: 60,
-                          backgroundColor: "#FFF4E5",
+                          backgroundColor: COLORS.webWarningBg,
                           padding: "8px 14px",
-                          color: "#FF9800",
+                          color: COLORS.vividGamboge,
                           fontSize: 12,
                         }}
                       >
@@ -203,7 +228,7 @@ export default function ReportsPage() {
                       and tv_simulation_id visible at all times). */}
                   <p
                     style={{
-                      color: "#6D6D6D",
+                      color: COLORS.darkSilver,
                       fontSize: 12,
                       marginTop: 20,
                       marginLeft: 10,
@@ -214,7 +239,7 @@ export default function ReportsPage() {
                   <p
                     className="font-bold"
                     style={{
-                      color: "#231F20",
+                      color: COLORS.raisinBlack,
                       fontSize: 16,
                       margin: "4px 10px 0 10px",
                     }}
@@ -229,7 +254,7 @@ export default function ReportsPage() {
                         <div>
                           <p
                             style={{
-                              color: "#6D6D6D",
+                              color: COLORS.darkSilver,
                               fontSize: 12,
                             }}
                           >
@@ -238,7 +263,7 @@ export default function ReportsPage() {
                           <p
                             className="font-bold"
                             style={{
-                              color: "#231F20",
+                              color: COLORS.raisinBlack,
                               fontSize: 16,
                               marginTop: 4,
                             }}
@@ -249,7 +274,7 @@ export default function ReportsPage() {
                         <div>
                           <p
                             style={{
-                              color: "#6D6D6D",
+                              color: COLORS.darkSilver,
                               fontSize: 12,
                             }}
                           >
@@ -258,7 +283,7 @@ export default function ReportsPage() {
                           <p
                             className="font-bold"
                             style={{
-                              color: "#231F20",
+                              color: COLORS.raisinBlack,
                               fontSize: 16,
                               marginTop: 4,
                             }}
@@ -269,7 +294,7 @@ export default function ReportsPage() {
                       </div>
                       <p
                         style={{
-                          color: "#6D6D6D",
+                          color: COLORS.darkSilver,
                           fontSize: 12,
                           marginTop: 10,
                         }}
@@ -279,7 +304,7 @@ export default function ReportsPage() {
                       <p
                         className="font-bold"
                         style={{
-                          color: "#231F20",
+                          color: COLORS.raisinBlack,
                           fontSize: 16,
                           marginTop: 4,
                         }}
@@ -311,7 +336,7 @@ export default function ReportsPage() {
                       width="24"
                       height="24"
                       viewBox="0 0 960 960"
-                      fill="#064E3B"
+                      fill={COLORS.darkAquamarineGreen}
                       style={{
                         transform: isExpanded ? "rotate(180deg)" : "none",
                         transition: "transform 0.3s linear",
@@ -333,8 +358,8 @@ export default function ReportsPage() {
                   className="flex items-center gap-1.5 font-bold"
                   style={{
                     borderRadius: 60,
-                    backgroundColor: "#E4F7EF",
-                    color: "#064E3B",
+                    backgroundColor: COLORS.brightGrayNew,
+                    color: COLORS.darkAquamarineGreen,
                     border: "none",
                     padding: "8px 16px",
                     fontSize: 13,
@@ -345,14 +370,17 @@ export default function ReportsPage() {
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path
                       d="M9 3L5 7L9 11"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                   </svg>
                 </button>
-                <span className="font-bold" style={{ color: "#064E3B", fontSize: 14 }}>
+                <span
+                  className="font-bold"
+                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 14 }}
+                >
                   {page + 1}
                 </span>
                 <button
@@ -361,8 +389,8 @@ export default function ReportsPage() {
                   className="flex items-center gap-1.5 font-bold"
                   style={{
                     borderRadius: 60,
-                    backgroundColor: "#E4F7EF",
-                    color: "#064E3B",
+                    backgroundColor: COLORS.brightGrayNew,
+                    color: COLORS.darkAquamarineGreen,
                     border: "none",
                     padding: "8px 16px",
                     fontSize: 13,
@@ -373,7 +401,7 @@ export default function ReportsPage() {
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                     <path
                       d="M5 3L9 7L5 11"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"

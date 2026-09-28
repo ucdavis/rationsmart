@@ -10,6 +10,7 @@ import Toolbar from "@/components/Toolbar";
 import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
+import { COLORS } from "@/lib/colors";
 
 interface AdminFeedback {
   id: number;
@@ -42,13 +43,13 @@ type CategoryStyle = {
 
 const categoryStyle = (cat: string): CategoryStyle => {
   // White icon stroked
-  const w = "#FFFFFF";
+  const w = COLORS.white;
   switch (cat) {
     case "Defect":
       return {
-        iconBg: "#E44A4A", // carmine_pink
+        iconBg: COLORS.carminePink, // carmine_pink
         badgeBg: "rgba(228,74,74,0.2)",
-        badgeText: "#FC2E20", // red_ryb
+        badgeText: COLORS.redRyb, // red_ryb
         // ic_bug
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -64,9 +65,9 @@ const categoryStyle = (cat: string): CategoryStyle => {
       };
     case "Feature Request":
       return {
-        iconBg: "#1E40AF", // ultramarine
+        iconBg: COLORS.ultramarine, // ultramarine
         badgeBg: "rgba(30,64,175,0.15)",
-        badgeText: "#1E40AF",
+        badgeText: COLORS.ultramarine,
         // ic_idea (lightbulb)
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -83,9 +84,9 @@ const categoryStyle = (cat: string): CategoryStyle => {
     default:
       // "General"
       return {
-        iconBg: "#064E3B", // dark_aquamarine_green
+        iconBg: COLORS.darkAquamarineGreen, // dark_aquamarine_green
         badgeBg: "rgba(5,188,109,0.15)",
-        badgeText: "#064E3B",
+        badgeText: COLORS.darkAquamarineGreen,
         // ic_feedback_nav (chat bubble)
         icon: (
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -111,7 +112,7 @@ function StarRow({ rating }: { rating: number }) {
           key={s}
           size={16}
           filled={s <= rating}
-          color={s <= rating ? "#FFDB58" : "#C2C2C2"}
+          color={s <= rating ? COLORS.mustard : COLORS.silverSand}
         />
       ))}
     </div>
@@ -165,7 +166,7 @@ export default function AdminFeedbackPage() {
             <p
               className="font-bold"
               style={{
-                color: "#231F20",
+                color: COLORS.raisinBlack,
                 fontSize: 16,
                 margin: "14px 10px 0",
               }}
@@ -177,10 +178,13 @@ export default function AdminFeedbackPage() {
                 className="flex-1 bg-white p-2.5"
                 style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
               >
-                <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 14 }}>
+                <p className="font-bold" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
                   {t("Total Feedbacks")}
                 </p>
-                <p className="font-bold" style={{ color: "#064E3B", fontSize: 28 }}>
+                <p
+                  className="font-bold"
+                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 28 }}
+                >
                   {stats.total_feedbacks ?? feedbacks.length}
                 </p>
               </div>
@@ -188,12 +192,15 @@ export default function AdminFeedbackPage() {
                 className="flex-1 bg-white p-2.5"
                 style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
               >
-                <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 14 }}>
+                <p className="font-bold" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
                   {t("Overall Rating")}
                 </p>
                 {/* Match Android tv_overall_rating: 2 decimal places (e.g. 3.83, 3.95).
                     The previous .toFixed(1) was rounding 3.95 to "4.0". */}
-                <p className="font-bold" style={{ color: "#064E3B", fontSize: 28 }}>
+                <p
+                  className="font-bold"
+                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 28 }}
+                >
                   {(stats.overall_rating ?? stats.average_rating)?.toFixed(2) ?? "—"}
                 </p>
               </div>
@@ -204,7 +211,7 @@ export default function AdminFeedbackPage() {
         <p
           className="font-bold"
           style={{
-            color: "#231F20",
+            color: COLORS.raisinBlack,
             fontSize: 16,
             margin: "10px 12px 4px",
           }}
@@ -226,7 +233,7 @@ export default function AdminFeedbackPage() {
           ))
         ) : feedbacks.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center px-6">
-            <p className="text-base" style={{ color: "#999999" }}>
+            <p className="text-base" style={{ color: COLORS.spanishGray }}>
               {t("No feedbacks found")}
             </p>
           </div>
@@ -286,10 +293,13 @@ export default function AdminFeedbackPage() {
                         matches AdminFeedbackListAdapter.kt:81+79 which sets both
                         unconditionally via toStringOrNA(). */}
                     <div className="min-w-0">
-                      <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 16 }}>
+                      <p
+                        className="font-bold truncate"
+                        style={{ color: COLORS.raisinBlack, fontSize: 16 }}
+                      >
                         {fb.user_name || t("N/A")}
                       </p>
-                      <p className="truncate" style={{ color: "#231F20", fontSize: 12 }}>
+                      <p className="truncate" style={{ color: COLORS.raisinBlack, fontSize: 12 }}>
                         {fb.user_email || t("N/A")}
                       </p>
                     </div>
@@ -317,7 +327,7 @@ export default function AdminFeedbackPage() {
                   className="text-sm"
                   style={
                     {
-                      color: "#231F20",
+                      color: COLORS.raisinBlack,
                       margin: "14px 12px 0",
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
@@ -331,7 +341,7 @@ export default function AdminFeedbackPage() {
                 {/* Date */}
                 <p
                   style={{
-                    color: "#6D6D6D",
+                    color: COLORS.darkSilver,
                     fontSize: 12,
                     margin: "10px 12px 0",
                   }}

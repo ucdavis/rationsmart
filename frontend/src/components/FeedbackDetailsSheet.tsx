@@ -19,6 +19,7 @@
 import { toFeedReportDisplayDate } from "@/lib/validators";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { COLORS } from "@/lib/colors";
 
 export interface FeedbackDetails {
   rating: number;
@@ -61,11 +62,16 @@ export default function FeedbackDetailsSheet({
       >
         {/* Drag handle */}
         <div className="flex justify-center mb-3">
-          <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+          <div
+            style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: COLORS.sageBreeze }}
+          />
         </div>
 
         {/* Your Rating heading */}
-        <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
+        <p
+          className="text-center font-bold"
+          style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+        >
           Your Rating
         </p>
 
@@ -77,7 +83,7 @@ export default function FeedbackDetailsSheet({
               width="32"
               height="32"
               viewBox="0 0 24 24"
-              fill={n <= rating ? "#FFDB58" : "#C2C2C2"}
+              fill={n <= rating ? COLORS.mustard : COLORS.silverSand}
               aria-hidden
             >
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -98,12 +104,12 @@ export default function FeedbackDetailsSheet({
                   width="17"
                   height="16"
                   rx="2"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                 />
                 <path
                   d="M3.5 10h17M8 3v4M16 3v4"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                   strokeLinecap="round"
                 />
@@ -121,7 +127,7 @@ export default function FeedbackDetailsSheet({
                   width="7"
                   height="7"
                   rx="1.5"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                 />
                 <rect
@@ -130,7 +136,7 @@ export default function FeedbackDetailsSheet({
                   width="7"
                   height="7"
                   rx="1.5"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                 />
                 <rect
@@ -139,7 +145,7 @@ export default function FeedbackDetailsSheet({
                   width="7"
                   height="7"
                   rx="1.5"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                 />
                 <rect
@@ -148,7 +154,7 @@ export default function FeedbackDetailsSheet({
                   width="7"
                   height="7"
                   rx="1.5"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="1.8"
                 />
               </svg>
@@ -160,7 +166,7 @@ export default function FeedbackDetailsSheet({
         <p
           className="font-bold mt-6"
           style={{
-            color: "#6D6D6D",
+            color: COLORS.darkSilver,
             fontSize: 14,
             marginLeft: 4,
           }}
@@ -170,11 +176,14 @@ export default function FeedbackDetailsSheet({
         <div
           className="mt-2 rounded-2xl px-4 py-4"
           style={{
-            backgroundColor: "#F0FDF4",
+            backgroundColor: COLORS.honeydew,
             border: "1px solid rgba(5,188,109,0.15)",
           }}
         >
-          <p className="font-bold text-base" style={{ color: "#064E3B", lineHeight: 1.5 }}>
+          <p
+            className="font-bold text-base"
+            style={{ color: COLORS.darkAquamarineGreen, lineHeight: 1.5 }}
+          >
             {details.text?.trim() || "Feedback not provided!"}
           </p>
         </div>
@@ -184,8 +193,8 @@ export default function FeedbackDetailsSheet({
           onClick={onClose}
           className="w-full mt-6 py-3 rounded-xl font-bold"
           style={{
-            backgroundColor: "#064E3B",
-            color: "#FFFFFF",
+            backgroundColor: COLORS.darkAquamarineGreen,
+            color: COLORS.white,
             border: "none",
             cursor: "pointer",
           }}
@@ -201,21 +210,25 @@ function InfoTile({ label, value, icon }: { label: string; value: string; icon: 
   return (
     <div
       className="flex-1 flex items-center gap-2 rounded-2xl px-3 py-3"
-      style={{ backgroundColor: "#F0FDF4" }}
+      style={{ backgroundColor: COLORS.honeydew }}
     >
       <div className="flex-shrink-0">{icon}</div>
       <div className="min-w-0">
         <p
           className="uppercase"
           style={{
-            color: "#6D6D6D",
+            color: COLORS.darkSilver,
             fontSize: 11,
             letterSpacing: 0.4,
           }}
         >
           {label}
         </p>
-        <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 14 }} title={value}>
+        <p
+          className="font-bold truncate"
+          style={{ color: COLORS.raisinBlack, fontSize: 14 }}
+          title={value}
+        >
           {value}
         </p>
       </div>

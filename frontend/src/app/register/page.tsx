@@ -13,6 +13,7 @@ import { IcBack, IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 interface Country {
   id: string | number;
@@ -135,16 +136,16 @@ export default function RegisterPage() {
   };
 
   const inputStyle = {
-    backgroundColor: "#F1F5F9",
-    color: "#231F20",
+    backgroundColor: COLORS.americanDiamond,
+    color: COLORS.raisinBlack,
   };
 
   const labelStyle = {
-    color: "#6D6D6D",
+    color: COLORS.darkSilver,
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
@@ -167,12 +168,12 @@ export default function RegisterPage() {
           }}
           aria-label={t("Back")}
         >
-          <IcBack size={20} color="#064E3B" />
+          <IcBack size={20} color={COLORS.darkAquamarineGreen} />
         </button>
         <h1
           className="flex-1 text-center"
           style={{
-            color: "#042F23",
+            color: COLORS.webDeepGreen,
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -248,7 +249,7 @@ export default function RegisterPage() {
             className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none pr-10"
             style={{
               ...inputStyle,
-              color: countryId ? "#231F20" : "#6D6D6D",
+              color: countryId ? COLORS.raisinBlack : COLORS.darkSilver,
               opacity: loadingCountries ? 0.6 : 1,
             }}
           >
@@ -263,7 +264,7 @@ export default function RegisterPage() {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M4 6L8 10L12 6"
-                stroke="#6D6D6D"
+                stroke={COLORS.darkSilver}
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -291,7 +292,7 @@ export default function RegisterPage() {
             className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark appearance-none pr-10"
             style={{
               ...inputStyle,
-              color: "#231F20",
+              color: COLORS.raisinBlack,
               opacity: loadingCountries ? 0.6 : 1,
             }}
           >
@@ -305,7 +306,7 @@ export default function RegisterPage() {
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
               <path
                 d="M4 6L8 10L12 6"
-                stroke="#6D6D6D"
+                stroke={COLORS.darkSilver}
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -365,7 +366,7 @@ export default function RegisterPage() {
         </div>
 
         {confirmPin.length === PIN_LENGTH && pin !== confirmPin && (
-          <p className="text-xs font-bold text-center mt-2" style={{ color: "#E44A4A" }}>
+          <p className="text-xs font-bold text-center mt-2" style={{ color: COLORS.carminePink }}>
             {t("PINs do not match")}
           </p>
         )}
@@ -378,8 +379,9 @@ export default function RegisterPage() {
           disabled={!isReady || isLoading}
           className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
           style={{
-            backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
-            color: isReady && !isLoading ? "#FFFFFF" : "#999999",
+            backgroundColor:
+              isReady && !isLoading ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+            color: isReady && !isLoading ? COLORS.white : COLORS.spanishGray,
             border: "none",
             cursor: isReady && !isLoading ? "pointer" : "not-allowed",
             transition: "background-color 0.2s, color 0.2s",

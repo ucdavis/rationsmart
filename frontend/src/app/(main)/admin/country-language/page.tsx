@@ -65,6 +65,7 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { allSettledLimited } from "@/lib/concurrency";
 import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
+import { COLORS } from "@/lib/colors";
 
 interface SystemLanguage {
   code: string;
@@ -119,8 +120,8 @@ type ConfirmState = {
 } | null;
 
 const inputStyle = {
-  backgroundColor: "#F1F5F9",
-  color: "#231F20",
+  backgroundColor: COLORS.americanDiamond,
+  color: COLORS.raisinBlack,
 };
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 const sheetOverlayStyle = {
@@ -137,11 +138,11 @@ function SkeletonCardShell({ title, children }: { title: string; children: React
     <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
       <div
         className="px-4 py-3"
-        style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+        style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
       >
         <p
           className="text-xs font-bold uppercase tracking-wide"
-          style={{ color: "#064E3B", opacity: 0.5 }}
+          style={{ color: COLORS.darkAquamarineGreen, opacity: 0.5 }}
         >
           {title}
         </p>
@@ -270,11 +271,11 @@ export default function AdminCountryLanguagePage() {
   if (!user?.is_admin) return null;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title="Country / Language" onBack={() => router.back()} />
 
       <div className="px-3 pt-3">
-        <div className="flex rounded-2xl p-1" style={{ backgroundColor: "#E4F7EF" }}>
+        <div className="flex rounded-2xl p-1" style={{ backgroundColor: COLORS.brightGrayNew }}>
           {(
             [
               { key: "countries", label: "Countries & Languages" },
@@ -286,8 +287,8 @@ export default function AdminCountryLanguagePage() {
               onClick={() => setTab(t.key)}
               className="flex-1 py-2.5 rounded-xl font-bold text-sm"
               style={{
-                backgroundColor: tab === t.key ? "#064E3B" : "transparent",
-                color: tab === t.key ? "#FFFFFF" : "#064E3B",
+                backgroundColor: tab === t.key ? COLORS.darkAquamarineGreen : "transparent",
+                color: tab === t.key ? COLORS.white : COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: "pointer",
                 transition: "background-color 0.15s",
@@ -340,10 +341,10 @@ export default function AdminCountryLanguagePage() {
             className="bg-white rounded-2xl w-full px-5 py-5"
             style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
           >
-            <p className="font-bold mb-2" style={{ color: "#231F20", fontSize: 15 }}>
+            <p className="font-bold mb-2" style={{ color: COLORS.raisinBlack, fontSize: 15 }}>
               {confirm.title}
             </p>
-            <p className="text-sm mb-4" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
+            <p className="text-sm mb-4" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
               {confirm.body}
             </p>
             <div className="flex gap-3">
@@ -352,7 +353,7 @@ export default function AdminCountryLanguagePage() {
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
                 style={{
                   backgroundColor: "transparent",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   border: "1.5px solid #064E3B",
                   cursor: "pointer",
                 }}
@@ -363,8 +364,8 @@ export default function AdminCountryLanguagePage() {
                 onClick={confirm.onConfirm}
                 className="flex-1 py-2.5 rounded-xl font-bold text-sm"
                 style={{
-                  backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B",
-                  color: "#FFFFFF",
+                  backgroundColor: confirm.danger ? COLORS.carminePink : COLORS.darkAquamarineGreen,
+                  color: COLORS.white,
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -619,15 +620,15 @@ function CountriesLanguagesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center gap-2 px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
-            style={{ color: "#064E3B" }}
+            style={{ color: COLORS.darkAquamarineGreen }}
           >
             Enabled Countries / Languages
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D" }}>
+          <p className="text-xs" style={{ color: COLORS.darkSilver }}>
             {countries.length} enabled
           </p>
           <button
@@ -637,8 +638,8 @@ function CountriesLanguagesTab({
             style={{
               width: 24,
               height: 24,
-              backgroundColor: "#064E3B",
-              color: "#FFFFFF",
+              backgroundColor: COLORS.darkAquamarineGreen,
+              color: COLORS.white,
               border: "none",
               cursor: "pointer",
               fontSize: 14,
@@ -648,7 +649,7 @@ function CountriesLanguagesTab({
           </button>
         </div>
         {countries.length === 0 ? (
-          <p className="text-sm text-center py-6" style={{ color: "#6D6D6D" }}>
+          <p className="text-sm text-center py-6" style={{ color: COLORS.darkSilver }}>
             No countries enabled yet.
           </p>
         ) : (
@@ -659,10 +660,10 @@ function CountriesLanguagesTab({
               <div key={c.id} className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm" style={{ color: "#231F20" }}>
+                    <p className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
                       {c.name}
                     </p>
-                    <p className="text-xs" style={{ color: "#6D6D6D" }}>
+                    <p className="text-xs" style={{ color: COLORS.darkSilver }}>
                       {extraLangs.length} local language{extraLangs.length === 1 ? "" : "s"}
                     </p>
                   </div>
@@ -693,8 +694,8 @@ function CountriesLanguagesTab({
                         key={code}
                         className="flex items-center gap-1.5 text-xs font-bold pl-2.5 pr-1 py-1 rounded-full"
                         style={{
-                          backgroundColor: "#F1F5F9",
-                          color: "#064E3B",
+                          backgroundColor: COLORS.americanDiamond,
+                          color: COLORS.darkAquamarineGreen,
                         }}
                       >
                         {langName}
@@ -710,7 +711,7 @@ function CountriesLanguagesTab({
                             border: "none",
                             cursor: pendingKey.has(key) ? "wait" : "pointer",
                             fontSize: 9,
-                            color: "#064E3B",
+                            color: COLORS.darkAquamarineGreen,
                           }}
                         >
                           ✕
@@ -723,7 +724,7 @@ function CountriesLanguagesTab({
                     className="text-xs font-bold px-2.5 py-1 rounded-full"
                     style={{
                       backgroundColor: "transparent",
-                      color: "#064E3B",
+                      color: COLORS.darkAquamarineGreen,
                       border: "1.5px dashed rgba(5,188,109,0.5)",
                       cursor: "pointer",
                     }}
@@ -741,15 +742,15 @@ function CountriesLanguagesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="flex items-center gap-2 px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
-            style={{ color: "#064E3B" }}
+            style={{ color: COLORS.darkAquamarineGreen }}
           >
             Registered Languages
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D" }}>
+          <p className="text-xs" style={{ color: COLORS.darkSilver }}>
             {activeLangCount} active
           </p>
           <button
@@ -759,8 +760,8 @@ function CountriesLanguagesTab({
             style={{
               width: 24,
               height: 24,
-              backgroundColor: "#064E3B",
-              color: "#FFFFFF",
+              backgroundColor: COLORS.darkAquamarineGreen,
+              color: COLORS.white,
               border: "none",
               cursor: "pointer",
               fontSize: 14,
@@ -780,10 +781,10 @@ function CountriesLanguagesTab({
               style={{ borderTop: "1px solid #F8FAF9", opacity: l.is_active ? 1 : 0.6 }}
             >
               <div className="min-w-0 flex-1">
-                <p className="font-bold text-sm" style={{ color: "#231F20" }}>
+                <p className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
                   {labelForLanguage(l.code)}
                 </p>
-                <p className="text-xs" style={{ color: "#6D6D6D" }}>
+                <p className="text-xs" style={{ color: COLORS.darkSilver }}>
                   {l.name} · {l.code}
                   {!l.is_active && " · inactive"}
                 </p>
@@ -792,8 +793,8 @@ function CountriesLanguagesTab({
                 <span
                   className="text-xs font-bold px-2 py-1 rounded flex-shrink-0"
                   style={{
-                    backgroundColor: "#E4F7EF",
-                    color: "#064E3B",
+                    backgroundColor: COLORS.brightGrayNew,
+                    color: COLORS.darkAquamarineGreen,
                   }}
                 >
                   locked 🔒
@@ -834,12 +835,22 @@ function CountriesLanguagesTab({
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
             <div className="flex justify-center mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
-            <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontSize: 18 }}>
+            <h3
+              className="text-center font-bold mb-1"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
+            >
               Activate a country
             </h3>
-            <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D" }}>
+            <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
               RationSmart becomes available to farmers in the activated country.
             </p>
             {isLoadingInactive ? (
@@ -849,7 +860,7 @@ function CountriesLanguagesTab({
                 ))}
               </div>
             ) : inactiveCountries.length === 0 ? (
-              <p className="text-sm text-center" style={{ color: "#6D6D6D" }}>
+              <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>
                 All registered countries are already enabled.
               </p>
             ) : (
@@ -861,14 +872,17 @@ function CountriesLanguagesTab({
                     className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
                     style={{
                       border: "1px solid #DCE0E4",
-                      background: "#FFFFFF",
+                      background: COLORS.white,
                       cursor: "pointer",
                     }}
                   >
-                    <span className="font-bold text-sm" style={{ color: "#231F20" }}>
+                    <span className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
                       {c.name}
                     </span>
-                    <span className="text-xs font-bold" style={{ color: "#064E3B" }}>
+                    <span
+                      className="text-xs font-bold"
+                      style={{ color: COLORS.darkAquamarineGreen }}
+                    >
                       Activate →
                     </span>
                   </button>
@@ -901,21 +915,26 @@ function CountriesLanguagesTab({
               >
                 <div className="flex justify-center mb-3">
                   <div
-                    style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }}
+                    style={{
+                      width: 40,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: COLORS.sageBreeze,
+                    }}
                   />
                 </div>
                 <h3
                   className="text-center font-bold mb-1"
-                  style={{ color: "#064E3B", fontSize: 18 }}
+                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
                 >
                   Associate a language — {assocFor.name}
                 </h3>
-                <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D" }}>
+                <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
                   The combination will appear in the Cattle Info screen for farmers in{" "}
                   {assocFor.name}.
                 </p>
                 {available.length === 0 ? (
-                  <p className="text-sm text-center" style={{ color: "#6D6D6D" }}>
+                  <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>
                     All active languages are already associated. Register or activate a language
                     first.
                   </p>
@@ -929,15 +948,20 @@ function CountriesLanguagesTab({
                         className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
                         style={{
                           border: "1px solid #DCE0E4",
-                          background: "#FFFFFF",
+                          background: COLORS.white,
                           cursor: isAssociating ? "wait" : "pointer",
                         }}
                       >
-                        <span className="font-bold text-sm" style={{ color: "#231F20" }}>
+                        <span className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
                           {labelForLanguage(l.code)}{" "}
-                          <span style={{ color: "#6D6D6D", fontWeight: 400 }}>· {l.name}</span>
+                          <span style={{ color: COLORS.darkSilver, fontWeight: 400 }}>
+                            · {l.name}
+                          </span>
                         </span>
-                        <span className="text-xs font-bold" style={{ color: "#064E3B" }}>
+                        <span
+                          className="text-xs font-bold"
+                          style={{ color: COLORS.darkAquamarineGreen }}
+                        >
                           Associate →
                         </span>
                       </button>
@@ -967,14 +991,24 @@ function CountriesLanguagesTab({
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
             <div className="flex justify-center mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontSize: 18 }}>
+            <h3
+              className="text-center font-bold mb-4"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
+            >
               Register a new language
             </h3>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               Language name (English)
             </p>
@@ -990,7 +1024,7 @@ function CountriesLanguagesTab({
             />
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               ISO code
             </p>
@@ -1009,8 +1043,8 @@ function CountriesLanguagesTab({
               disabled={isRegistering}
               className="w-full py-3 rounded-xl font-bold"
               style={{
-                backgroundColor: isRegistering ? "#D3D3D3" : "#064E3B",
-                color: "#FFFFFF",
+                backgroundColor: isRegistering ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
+                color: COLORS.white,
                 border: "none",
                 cursor: isRegistering ? "not-allowed" : "pointer",
               }}
@@ -1235,9 +1269,12 @@ function FeedNamesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: COLORS.darkAquamarineGreen }}
+          >
             1 · Pick a country
           </p>
         </div>
@@ -1253,8 +1290,9 @@ function FeedNamesTab({
               className="flex-shrink-0 px-3 py-2 rounded-full text-sm font-bold whitespace-nowrap"
               style={{
                 border: selCountry?.id === c.id ? "1.5px solid #064E3B" : "1.5px solid #DCE0E4",
-                backgroundColor: selCountry?.id === c.id ? "#064E3B" : "#FFFFFF",
-                color: selCountry?.id === c.id ? "#FFFFFF" : "#231F20",
+                backgroundColor:
+                  selCountry?.id === c.id ? COLORS.darkAquamarineGreen : COLORS.white,
+                color: selCountry?.id === c.id ? COLORS.white : COLORS.raisinBlack,
                 cursor: "pointer",
               }}
             >
@@ -1262,7 +1300,7 @@ function FeedNamesTab({
             </button>
           ))}
           {countries.length === 0 && (
-            <p className="text-sm" style={{ color: "#6D6D6D" }}>
+            <p className="text-sm" style={{ color: COLORS.darkSilver }}>
               No countries enabled.
             </p>
           )}
@@ -1273,9 +1311,12 @@ function FeedNamesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: COLORS.darkAquamarineGreen }}
+          >
             2 · Pick a language
           </p>
         </div>
@@ -1288,8 +1329,8 @@ function FeedNamesTab({
                 className="flex-shrink-0 px-3 py-2 rounded-full text-sm font-bold whitespace-nowrap"
                 style={{
                   border: selLang === code ? "1.5px solid #064E3B" : "1.5px solid #DCE0E4",
-                  backgroundColor: selLang === code ? "#064E3B" : "#FFFFFF",
-                  color: selLang === code ? "#FFFFFF" : "#231F20",
+                  backgroundColor: selLang === code ? COLORS.darkAquamarineGreen : COLORS.white,
+                  color: selLang === code ? COLORS.white : COLORS.raisinBlack,
                   cursor: "pointer",
                 }}
               >
@@ -1298,7 +1339,7 @@ function FeedNamesTab({
             ))}
           </div>
           {selCountry && localLangs.length === 0 && (
-            <p className="text-sm mt-1" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
+            <p className="text-sm mt-1" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
               No local language is associated with this country yet — associate one on the Countries
               &amp; Languages screen.
             </p>
@@ -1311,16 +1352,16 @@ function FeedNamesTab({
         <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
           <div
             className="flex items-center gap-2 px-4 py-3"
-            style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+            style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
           >
             <p
               className="text-xs font-bold uppercase tracking-wide flex-1"
-              style={{ color: "#064E3B" }}
+              style={{ color: COLORS.darkAquamarineGreen }}
             >
               3 · Feed names in {selLang ? labelForLanguage(selLang).toUpperCase() : ""}
             </p>
             {!isLoadingFeeds && (
-              <p className="text-xs" style={{ color: "#6D6D6D" }}>
+              <p className="text-xs" style={{ color: COLORS.darkSilver }}>
                 {doneCount} of {feeds.length} named
               </p>
             )}
@@ -1346,11 +1387,11 @@ function FeedNamesTab({
                   }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm truncate" style={{ color: "#231F20" }}>
+                    <p className="font-bold text-sm truncate" style={{ color: COLORS.raisinBlack }}>
                       {f.fd_name}
                     </p>
                     {f.translation && (
-                      <p className="text-xs truncate" style={{ color: "#1CA069" }}>
+                      <p className="text-xs truncate" style={{ color: COLORS.crayolaGreen }}>
                         {f.translation.name}
                       </p>
                     )}
@@ -1360,13 +1401,13 @@ function FeedNamesTab({
                       className="text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0"
                       style={{
                         backgroundColor: "rgba(255,152,0,0.12)",
-                        color: "#B4690E",
+                        color: COLORS.webAmberText,
                       }}
                     >
                       + Add name
                     </span>
                   )}
-                  <span style={{ color: "#6D6D6D" }}>›</span>
+                  <span style={{ color: COLORS.darkSilver }}>›</span>
                 </button>
               ))}
             </div>
@@ -1378,14 +1419,17 @@ function FeedNamesTab({
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
         <div
           className="px-4 py-3"
-          style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
+          style={{ backgroundColor: COLORS.brightGrayNew, borderBottom: "1px solid #F1F5F9" }}
         >
-          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
+          <p
+            className="text-xs font-bold uppercase tracking-wide"
+            style={{ color: COLORS.darkAquamarineGreen }}
+          >
             Bulk upsert via workbook
           </p>
         </div>
         <div className="px-4 py-3">
-          <p className="text-xs mb-3" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
+          <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
             Export all feed names across languages for {selCountry?.name ?? "the selected country"}{" "}
             as a workbook, edit offline, then import to upsert in bulk.
           </p>
@@ -1396,7 +1440,7 @@ function FeedNamesTab({
               className="flex-1 py-2.5 rounded-xl font-bold text-sm"
               style={{
                 backgroundColor: "transparent",
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 border: "1.5px solid #064E3B",
                 cursor: isDownloading || !selCountry ? "not-allowed" : "pointer",
                 opacity: !selCountry ? 0.5 : 1,
@@ -1409,8 +1453,11 @@ function FeedNamesTab({
               disabled={isUploading || !uploadFile || !selCountry}
               className="flex-1 py-2.5 rounded-xl font-bold text-sm"
               style={{
-                backgroundColor: isUploading || !uploadFile || !selCountry ? "#D3D3D3" : "#064E3B",
-                color: "#FFFFFF",
+                backgroundColor:
+                  isUploading || !uploadFile || !selCountry
+                    ? COLORS.lightGrayNew
+                    : COLORS.darkAquamarineGreen,
+                color: COLORS.white,
                 border: "none",
                 cursor: isUploading || !uploadFile || !selCountry ? "not-allowed" : "pointer",
               }}
@@ -1432,25 +1479,29 @@ function FeedNamesTab({
               setUploadFile(file);
             }}
             className="block w-full text-sm"
-            style={{ color: "#231F20" }}
+            style={{ color: COLORS.raisinBlack }}
           />
           {uploadSummary && (
             <div
               className="mt-3 rounded-xl px-3 py-3"
               style={{
-                backgroundColor: uploadSummary.success === false ? "#FEC5BB" : "#F0FDF4",
+                backgroundColor:
+                  uploadSummary.success === false ? COLORS.peachyPink : COLORS.honeydew,
                 border: `1px solid ${uploadSummary.success === false ? "rgba(228,74,74,0.25)" : "rgba(5,188,109,0.20)"}`,
               }}
             >
               <p
                 className="font-bold text-sm mb-1"
                 style={{
-                  color: uploadSummary.success === false ? "#E44A4A" : "#064E3B",
+                  color:
+                    uploadSummary.success === false
+                      ? COLORS.carminePink
+                      : COLORS.darkAquamarineGreen,
                 }}
               >
                 {uploadSummary.success === false ? "Import failed" : "Import summary"}
               </p>
-              <div className="text-xs space-y-0.5" style={{ color: "#231F20" }}>
+              <div className="text-xs space-y-0.5" style={{ color: COLORS.raisinBlack }}>
                 <p>
                   Feeds — {uploadSummary.feeds_inserted ?? 0} added ·{" "}
                   {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0}{" "}
@@ -1478,17 +1529,24 @@ function FeedNamesTab({
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
             <div className="flex justify-center mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
-            <p className="text-xs font-bold" style={{ color: "#6D6D6D" }}>
+            <p className="text-xs font-bold" style={{ color: COLORS.darkSilver }}>
               {selCountry?.name} · {labelForLanguage(selLang)}
             </p>
-            <h3 className="font-bold mb-4" style={{ color: "#231F20", fontSize: 17 }}>
+            <h3 className="font-bold mb-4" style={{ color: COLORS.raisinBlack, fontSize: 17 }}>
               {editingFeed.fd_name}
             </h3>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               Name in {labelForLanguage(selLang)}
             </p>
@@ -1507,8 +1565,8 @@ function FeedNamesTab({
               disabled={isSaving}
               className="w-full py-3 rounded-xl font-bold mb-2"
               style={{
-                backgroundColor: isSaving ? "#D3D3D3" : "#064E3B",
-                color: "#FFFFFF",
+                backgroundColor: isSaving ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
+                color: COLORS.white,
                 border: "none",
                 cursor: isSaving ? "not-allowed" : "pointer",
               }}
@@ -1522,7 +1580,7 @@ function FeedNamesTab({
                 className="w-full py-2.5 rounded-xl font-bold"
                 style={{
                   backgroundColor: "transparent",
-                  color: "#E44A4A",
+                  color: COLORS.carminePink,
                   border: "1.5px solid rgba(228,74,74,0.4)",
                   cursor: isDeleting ? "not-allowed" : "pointer",
                 }}

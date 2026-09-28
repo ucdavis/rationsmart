@@ -2,6 +2,7 @@
 
 import { useRef, KeyboardEvent, ClipboardEvent } from "react";
 import { LEGACY_PIN_LENGTH, PIN_LENGTH } from "@/lib/validators";
+import { COLORS } from "@/lib/colors";
 
 interface PinInputProps {
   value: string;
@@ -119,8 +120,8 @@ export default function PinInput({
           disabled={disabled}
           className="flex-1 h-14 text-center text-lg font-bold rounded-2xl border-none focus:outline-none focus:ring-2 focus:ring-primary-dark transition-all"
           style={{
-            backgroundColor: disabled ? "#EBEAEA" : "#F1F5F9",
-            color: disabled ? "#999999" : "#231F20",
+            backgroundColor: disabled ? COLORS.brightGray : COLORS.americanDiamond,
+            color: disabled ? COLORS.spanishGray : COLORS.raisinBlack,
             opacity: disabled ? 0.55 : 1,
             cursor: disabled ? "not-allowed" : "text",
             maxWidth: boxMaxWidth,

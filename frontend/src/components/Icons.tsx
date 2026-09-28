@@ -1,3 +1,4 @@
+import { COLORS } from "@/lib/colors";
 // All icons converted 1:1 from Android vector drawables
 // viewportWidth/Height → viewBox, android:pathData → d, android:fillColor → fill
 
@@ -7,7 +8,11 @@ interface IconProps {
   className?: string;
 }
 
-export const IcHamburger = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcHamburger = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -23,7 +28,11 @@ export const IcHamburger = ({ size = 24, color = "#064E3B", className = "" }: Ic
   </svg>
 );
 
-export const IcBack = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcBack = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -39,7 +48,11 @@ export const IcBack = ({ size = 24, color = "#064E3B", className = "" }: IconPro
   </svg>
 );
 
-export const IcForward = ({ size = 24, color = "#1CA069", className = "" }: IconProps) => (
+export const IcForward = ({
+  size = 24,
+  color = COLORS.crayolaGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -55,7 +68,7 @@ export const IcForward = ({ size = 24, color = "#1CA069", className = "" }: Icon
   </svg>
 );
 
-export const IcArrowRight = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcArrowRight = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -71,7 +84,11 @@ export const IcArrowRight = ({ size = 24, color = "#FFFFFF", className = "" }: I
   </svg>
 );
 
-export const IcClose = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcClose = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -87,7 +104,11 @@ export const IcClose = ({ size = 24, color = "#064E3B", className = "" }: IconPr
   </svg>
 );
 
-export const IcUser = ({ size = 40, color = "#064E3B", className = "" }: IconProps) => (
+export const IcUser = ({
+  size = 40,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -105,7 +126,7 @@ export const IcUser = ({ size = 40, color = "#064E3B", className = "" }: IconPro
 
 export const IcAnimalCharacteristics = ({
   size = 24,
-  color = "#064E3B",
+  color = COLORS.darkAquamarineGreen,
   className = "",
 }: IconProps) => (
   <svg
@@ -123,7 +144,11 @@ export const IcAnimalCharacteristics = ({
   </svg>
 );
 
-export const IcReproductiveData = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcReproductiveData = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -143,7 +168,11 @@ export const IcReproductiveData = ({ size = 24, color = "#064E3B", className = "
   </svg>
 );
 
-export const IcMilkProduction = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcMilkProduction = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -161,7 +190,7 @@ export const IcMilkProduction = ({ size = 24, color = "#064E3B", className = "" 
 
 export const IcSimulationDetails = ({
   size = 24,
-  color = "#064E3B",
+  color = COLORS.darkAquamarineGreen,
   className = "",
 }: IconProps) => (
   <svg
@@ -179,7 +208,11 @@ export const IcSimulationDetails = ({
   </svg>
 );
 
-export const IcEnvironment = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcEnvironment = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -195,7 +228,11 @@ export const IcEnvironment = ({ size = 24, color = "#064E3B", className = "" }: 
   </svg>
 );
 
-export const IcActiveGrazing = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcActiveGrazing = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -213,7 +250,7 @@ export const IcActiveGrazing = ({ size = 24, color = "#064E3B", className = "" }
 
 export const IcSimulationHistory = ({
   size = 24,
-  color = "#064E3B",
+  color = COLORS.darkAquamarineGreen,
   className = "",
 }: IconProps) => (
   <svg
@@ -231,7 +268,7 @@ export const IcSimulationHistory = ({
   </svg>
 );
 
-export const IcProfileNav = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcProfileNav = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -247,7 +284,7 @@ export const IcProfileNav = ({ size = 24, color = "#FFFFFF", className = "" }: I
   </svg>
 );
 
-export const IcReportNav = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcReportNav = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -263,7 +300,7 @@ export const IcReportNav = ({ size = 24, color = "#FFFFFF", className = "" }: Ic
   </svg>
 );
 
-export const IcFeedbackNav = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcFeedbackNav = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -279,7 +316,7 @@ export const IcFeedbackNav = ({ size = 24, color = "#FFFFFF", className = "" }: 
   </svg>
 );
 
-export const IcAdminNav = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcAdminNav = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -295,7 +332,11 @@ export const IcAdminNav = ({ size = 24, color = "#FFFFFF", className = "" }: Ico
   </svg>
 );
 
-export const IcLogoutNav = ({ size = 24, color = "#EF6464", className = "" }: IconProps) => (
+export const IcLogoutNav = ({
+  size = 24,
+  color = COLORS.lightCarminePink,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -311,7 +352,7 @@ export const IcLogoutNav = ({ size = 24, color = "#EF6464", className = "" }: Ic
   </svg>
 );
 
-export const IcHelpSupport = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcHelpSupport = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -327,7 +368,7 @@ export const IcHelpSupport = ({ size = 24, color = "#FFFFFF", className = "" }: 
   </svg>
 );
 
-export const IcTerms = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcTerms = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -343,7 +384,11 @@ export const IcTerms = ({ size = 24, color = "#FFFFFF", className = "" }: IconPr
   </svg>
 );
 
-export const IcAddFeed = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcAddFeed = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -359,7 +404,11 @@ export const IcAddFeed = ({ size = 24, color = "#064E3B", className = "" }: Icon
   </svg>
 );
 
-export const IcDelete = ({ size = 20, color = "#EF6464", className = "" }: IconProps) => (
+export const IcDelete = ({
+  size = 20,
+  color = COLORS.lightCarminePink,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -378,7 +427,7 @@ export const IcDelete = ({ size = 20, color = "#EF6464", className = "" }: IconP
 export const IcStar = ({
   size = 24,
   filled = false,
-  color = "#064E3B",
+  color = COLORS.darkAquamarineGreen,
   className = "",
 }: IconProps & { filled?: boolean }) => (
   <svg
@@ -405,7 +454,7 @@ export const IcStar = ({
   </svg>
 );
 
-export const IcSave = ({ size = 24, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcSave = ({ size = 24, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -421,7 +470,11 @@ export const IcSave = ({ size = 24, color = "#FFFFFF", className = "" }: IconPro
   </svg>
 );
 
-export const IcNewCase = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcNewCase = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -437,7 +490,11 @@ export const IcNewCase = ({ size = 24, color = "#064E3B", className = "" }: Icon
   </svg>
 );
 
-export const IcAdmin = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcAdmin = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -457,7 +514,11 @@ export const IcAdmin = ({ size = 24, color = "#064E3B", className = "" }: IconPr
   </svg>
 );
 
-export const IcUserManagement = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcUserManagement = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -480,7 +541,7 @@ export const IcUserManagement = ({ size = 24, color = "#064E3B", className = "" 
 
 export const IcFeedbackManagement = ({
   size = 24,
-  color = "#064E3B",
+  color = COLORS.darkAquamarineGreen,
   className = "",
 }: IconProps) => (
   <svg
@@ -498,7 +559,11 @@ export const IcFeedbackManagement = ({
   </svg>
 );
 
-export const IcBulkUpload = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcBulkUpload = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -514,7 +579,11 @@ export const IcBulkUpload = ({ size = 24, color = "#064E3B", className = "" }: I
   </svg>
 );
 
-export const IcFeedManagement = ({ size = 24, color = "#064E3B", className = "" }: IconProps) => (
+export const IcFeedManagement = ({
+  size = 24,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -530,7 +599,7 @@ export const IcFeedManagement = ({ size = 24, color = "#064E3B", className = "" 
   </svg>
 );
 
-export const IcInfo = ({ size = 20, color = "#FFFFFF", className = "" }: IconProps) => (
+export const IcInfo = ({ size = 20, color = COLORS.white, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -546,7 +615,11 @@ export const IcInfo = ({ size = 20, color = "#FFFFFF", className = "" }: IconPro
   </svg>
 );
 
-export const IcDropdown = ({ size = 24, color = "#999999", className = "" }: IconProps) => (
+export const IcDropdown = ({
+  size = 24,
+  color = COLORS.spanishGray,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -561,7 +634,7 @@ export const IcDropdown = ({ size = 24, color = "#999999", className = "" }: Ico
 
 // Password/PIN reveal toggle — standard 24×24 Material Symbols
 // (visibility / visibility_off). Used by the login + register PIN fields.
-export const IcEye = ({ size = 22, color = "#6D6D6D", className = "" }: IconProps) => (
+export const IcEye = ({ size = 22, color = COLORS.darkSilver, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -577,7 +650,7 @@ export const IcEye = ({ size = 22, color = "#6D6D6D", className = "" }: IconProp
   </svg>
 );
 
-export const IcEyeOff = ({ size = 22, color = "#6D6D6D", className = "" }: IconProps) => (
+export const IcEyeOff = ({ size = 22, color = COLORS.darkSilver, className = "" }: IconProps) => (
   <svg
     width={size}
     height={size}
@@ -595,7 +668,11 @@ export const IcEyeOff = ({ size = 22, color = "#6D6D6D", className = "" }: IconP
 
 // Sliders / "tune" — used to signal the Custom Diet Limits tool (adjusting
 // nutrient thresholds). Standard 24×24 Material "tune" glyph.
-export const IcTune = ({ size = 20, color = "#064E3B", className = "" }: IconProps) => (
+export const IcTune = ({
+  size = 20,
+  color = COLORS.darkAquamarineGreen,
+  className = "",
+}: IconProps) => (
   <svg
     width={size}
     height={size}

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import NavDrawer from "@/components/NavDrawer";
 import { DrawerContext } from "@/lib/DrawerContext";
+import { COLORS } from "@/lib/colors";
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -39,13 +40,13 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
     return (
       <div
         className="flex items-center justify-center min-h-screen"
-        style={{ backgroundColor: "#F8FAF9" }}
+        style={{ backgroundColor: COLORS.authenticWhite }}
       >
         <div
           className="w-9 h-9 rounded-full animate-spin"
           style={{
             border: "3px solid #F0FDF4",
-            borderTopColor: "#064E3B",
+            borderTopColor: COLORS.darkAquamarineGreen,
           }}
         />
       </div>
@@ -54,7 +55,10 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <DrawerContext.Provider value={{ openDrawer: () => setDrawerOpen(true) }}>
-      <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+      <div
+        className="flex flex-col min-h-screen"
+        style={{ backgroundColor: COLORS.authenticWhite }}
+      >
         <NavDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>

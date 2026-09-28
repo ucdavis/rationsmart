@@ -10,6 +10,7 @@ import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
+import { COLORS } from "@/lib/colors";
 
 export default function ForgotPinPage() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export default function ForgotPinPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
@@ -53,12 +54,12 @@ export default function ForgotPinPage() {
           }}
           aria-label={t("Back")}
         >
-          <IcBack size={20} color="#064E3B" />
+          <IcBack size={20} color={COLORS.darkAquamarineGreen} />
         </button>
         <h1
           className="flex-1 text-center"
           style={{
-            color: "#042F23",
+            color: COLORS.webDeepGreen,
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -81,21 +82,21 @@ export default function ForgotPinPage() {
           <div className="flex flex-col items-center justify-center flex-1 px-6 text-center">
             <div
               className="flex items-center justify-center rounded-full mb-6"
-              style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}
+              style={{ width: 80, height: 80, backgroundColor: COLORS.honeydew }}
             >
               <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
                 <path
                   d="M5 10L19 22L33 10M5 10h28v20H5V10Z"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="2"
                   strokeLinejoin="round"
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "#064E3B" }}>
+            <h2 className="text-xl font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen }}>
               {t("Check Your Email")}
             </h2>
-            <p className="text-sm mb-8" style={{ color: "#6D6D6D", lineHeight: 1.6 }}>
+            <p className="text-sm mb-8" style={{ color: COLORS.darkSilver, lineHeight: 1.6 }}>
               {t(
                 "We've sent PIN reset instructions to your email address. Please check your inbox."
               )}
@@ -104,7 +105,7 @@ export default function ForgotPinPage() {
               onClick={() => router.push("/login")}
               className="px-8 py-4 rounded-full font-bold text-base text-white"
               style={{
-                backgroundColor: "#064E3B",
+                backgroundColor: COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: "pointer",
               }}
@@ -115,15 +116,18 @@ export default function ForgotPinPage() {
         ) : (
           /* Form state */
           <div className="px-3">
-            <p className="text-center font-bold mt-5" style={{ color: "#064E3B", fontSize: 20 }}>
+            <p
+              className="text-center font-bold mt-5"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Reset Your PIN")}
             </p>
-            <p className="text-center text-sm mt-1" style={{ color: "#6D6D6D" }}>
+            <p className="text-center text-sm mt-1" style={{ color: COLORS.darkSilver }}>
               {t("Enter your registered email to receive a reset link")}
             </p>
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
@@ -137,8 +141,8 @@ export default function ForgotPinPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={{
-                backgroundColor: "#F1F5F9",
-                color: "#231F20",
+                backgroundColor: COLORS.americanDiamond,
+                color: COLORS.raisinBlack,
               }}
             />
 
@@ -147,8 +151,9 @@ export default function ForgotPinPage() {
               disabled={!isReady || isLoading}
               className="w-full mt-7 py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
               style={{
-                backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
-                color: isReady && !isLoading ? "#FFFFFF" : "#999999",
+                backgroundColor:
+                  isReady && !isLoading ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+                color: isReady && !isLoading ? COLORS.white : COLORS.spanishGray,
                 border: "none",
                 cursor: isReady && !isLoading ? "pointer" : "not-allowed",
                 transition: "background-color 0.2s",

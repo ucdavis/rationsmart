@@ -22,6 +22,7 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -111,7 +112,7 @@ function NutrientInput({
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
+      <p className="text-xs font-bold uppercase mb-1" style={{ color: COLORS.darkSilver }}>
         {label}
         {required && " *"}
       </p>
@@ -123,7 +124,7 @@ function NutrientInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder="0.00"
         className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-        style={{ backgroundColor: "#F1F5F9", color: "#231F20" }}
+        style={{ backgroundColor: COLORS.americanDiamond, color: COLORS.raisinBlack }}
       />
     </div>
   );
@@ -517,10 +518,10 @@ export default function AdminFeedsPage() {
         <Toolbar type="back" title={t("Feed Management")} onBack={() => router.back()} />
 
         <div className="ml-3 mt-5">
-          <p style={{ color: "#6D6D6D", fontSize: 14 }}>{t("Administration")}</p>
+          <p style={{ color: COLORS.darkSilver, fontSize: 14 }}>{t("Administration")}</p>
           <p
             style={{
-              color: "#231F20",
+              color: COLORS.raisinBlack,
               fontSize: 20,
               fontWeight: 700,
             }}
@@ -558,13 +559,13 @@ export default function AdminFeedsPage() {
                   bottom: 12,
                   width: 4,
                   borderRadius: 2,
-                  backgroundColor: "#064E3B",
+                  backgroundColor: COLORS.darkAquamarineGreen,
                 }}
               />
               <span
                 className="font-bold"
                 style={{
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   fontSize: 16,
                   paddingLeft: 8,
                 }}
@@ -573,12 +574,17 @@ export default function AdminFeedsPage() {
               </span>
               <span
                 className="flex items-center justify-center"
-                style={{ width: 28, height: 28, borderRadius: "50%", backgroundColor: "#E4F7EF" }}
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  backgroundColor: COLORS.brightGrayNew,
+                }}
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
                     d="M5 3l4 4-4 4"
-                    stroke="#064E3B"
+                    stroke={COLORS.darkAquamarineGreen}
                     strokeWidth="1.8"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -602,7 +608,7 @@ export default function AdminFeedsPage() {
       {/* MANAGEMENT subheader (matches Android list screens) */}
       <p
         className="font-bold uppercase tracking-wide mt-5 ml-3 mb-2"
-        style={{ color: "#064E3B", fontSize: 14 }}
+        style={{ color: COLORS.darkAquamarineGreen, fontSize: 14 }}
       >
         {t("Management")}
       </p>
@@ -616,16 +622,16 @@ export default function AdminFeedsPage() {
             <div
               className="flex items-center"
               style={{
-                backgroundColor: "#F1F5F9",
+                backgroundColor: COLORS.americanDiamond,
                 borderRadius: 16,
                 padding: "10px 14px",
               }}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-                <circle cx="11" cy="11" r="7" stroke="#6D6D6D" strokeWidth="2" />
+                <circle cx="11" cy="11" r="7" stroke={COLORS.darkSilver} strokeWidth="2" />
                 <path
                   d="M21 21l-4.35-4.35"
-                  stroke="#6D6D6D"
+                  stroke={COLORS.darkSilver}
                   strokeWidth="2"
                   strokeLinecap="round"
                 />
@@ -637,7 +643,7 @@ export default function AdminFeedsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("Search by feed name")}
                 className="flex-1 bg-transparent border-none focus:outline-none ml-2"
-                style={{ color: "#231F20", fontSize: 14 }}
+                style={{ color: COLORS.raisinBlack, fontSize: 14 }}
               />
             </div>
           </div>
@@ -647,7 +653,7 @@ export default function AdminFeedsPage() {
               [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)
             ) : filteredFeeds.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p className="text-base" style={{ color: "#999999" }}>
+                <p className="text-base" style={{ color: COLORS.spanishGray }}>
                   {searchQuery ? t("No feeds match your search") : t("No feeds found")}
                 </p>
               </div>
@@ -660,13 +666,16 @@ export default function AdminFeedsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0" style={{ marginRight: 10 }}>
-                      <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 20 }}>
+                      <p
+                        className="font-bold truncate"
+                        style={{ color: COLORS.raisinBlack, fontSize: 20 }}
+                      >
                         {f.fd_name || t("N/A")}
                       </p>
                       <p
                         className="uppercase"
                         style={{
-                          color: "#064E3B",
+                          color: COLORS.darkAquamarineGreen,
                           fontSize: 14,
                           marginTop: 10,
                         }}
@@ -675,7 +684,7 @@ export default function AdminFeedsPage() {
                       </p>
                       <p
                         style={{
-                          color: "#6D6D6D",
+                          color: COLORS.darkSilver,
                           fontSize: 14,
                           marginTop: 10,
                         }}
@@ -698,7 +707,12 @@ export default function AdminFeedsPage() {
                         }}
                         aria-label={t("Edit feed")}
                       >
-                        <svg width="20" height="20" viewBox="0 0 960 960" fill="#064E3B">
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 960 960"
+                          fill={COLORS.darkAquamarineGreen}
+                        >
                           <path d="M216,744h51l375,-375 -51,-51 -375,375v51ZM180.18,816q-15.18,0 -25.68,-10.3 -10.5,-10.29 -10.5,-25.52v-86.85q0,-14.33 5,-27.33 5,-13 16,-24l477,-477q11,-11 23.84,-16 12.83,-5 27,-5 14.16,0 27.16,5t24,16l51,51q11,11 16,24t5,26.54q0,14.45 -5.02,27.54T795,318L318,795q-11,11 -23.95,16t-27.24,5h-86.63ZM744,267l-51,-51 51,51ZM616.05,343.95L591,318l51,51 -25.95,-25.05Z" />
                         </svg>
                       </button>
@@ -717,7 +731,7 @@ export default function AdminFeedsPage() {
                         }}
                         aria-label={t("Delete feed")}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.redRyb}>
                           <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
                         </svg>
                       </button>
@@ -740,7 +754,7 @@ export default function AdminFeedsPage() {
               width: 56,
               height: 56,
               borderRadius: 28,
-              backgroundColor: "#064E3B",
+              backgroundColor: COLORS.darkAquamarineGreen,
               border: "none",
               cursor: "pointer",
               boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
@@ -750,7 +764,7 @@ export default function AdminFeedsPage() {
               zIndex: 20,
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 960 960" fill="#FFFFFF">
+            <svg width="24" height="24" viewBox="0 0 960 960" fill={COLORS.white}>
               <path d="M440,520L240,520q-17,0 -28.5,-11.5T200,480q0,-17 11.5,-28.5T240,440h200v-200q0,-17 11.5,-28.5T480,200q17,0 28.5,11.5T520,240v200h200q17,0 28.5,11.5T760,480q0,17 -11.5,28.5T720,520L520,520v200q0,17 -11.5,28.5T480,760q-17,0 -28.5,-11.5T440,720v-200Z" />
             </svg>
           </button>
@@ -767,7 +781,7 @@ export default function AdminFeedsPage() {
               [0, 1, 2].map((i) => <SkeletonCard key={i} />)
             ) : feedTypes.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p style={{ color: "#999999" }}>{t("No feed types found")}</p>
+                <p style={{ color: COLORS.spanishGray }}>{t("No feed types found")}</p>
               </div>
             ) : (
               feedTypes.map((ft) => {
@@ -785,7 +799,7 @@ export default function AdminFeedsPage() {
                         <p
                           className="font-bold truncate"
                           style={{
-                            color: "#231F20",
+                            color: COLORS.raisinBlack,
                             fontSize: 20,
                           }}
                         >
@@ -794,8 +808,8 @@ export default function AdminFeedsPage() {
                         <span
                           className="font-bold uppercase flex-shrink-0"
                           style={{
-                            backgroundColor: isActive ? "#F0FDF4" : "#FEC5BB",
-                            color: isActive ? "#064E3B" : "#E44A4A",
+                            backgroundColor: isActive ? COLORS.honeydew : COLORS.peachyPink,
+                            color: isActive ? COLORS.darkAquamarineGreen : COLORS.carminePink,
                             border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
                             fontSize: 10,
                             padding: "2px 10px",
@@ -820,12 +834,12 @@ export default function AdminFeedsPage() {
                         }}
                         aria-label={t("Delete type")}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.redRyb}>
                           <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
                         </svg>
                       </button>
                     </div>
-                    <p className="mt-2" style={{ color: "#6D6D6D", fontSize: 14 }}>
+                    <p className="mt-2" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
                       {ft.description || t("N/A")}
                     </p>
                   </div>
@@ -845,7 +859,7 @@ export default function AdminFeedsPage() {
               width: 56,
               height: 56,
               borderRadius: 28,
-              backgroundColor: "#064E3B",
+              backgroundColor: COLORS.darkAquamarineGreen,
               border: "none",
               cursor: "pointer",
               boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
@@ -855,7 +869,7 @@ export default function AdminFeedsPage() {
               zIndex: 20,
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 960 960" fill="#FFFFFF">
+            <svg width="24" height="24" viewBox="0 0 960 960" fill={COLORS.white}>
               <path d="M440,520L240,520q-17,0 -28.5,-11.5T200,480q0,-17 11.5,-28.5T240,440h200v-200q0,-17 11.5,-28.5T480,200q17,0 28.5,11.5T520,240v200h200q17,0 28.5,11.5T760,480q0,17 -11.5,28.5T720,520L520,520v200q0,17 -11.5,28.5T480,760q-17,0 -28.5,-11.5T440,720v-200Z" />
             </svg>
           </button>
@@ -872,7 +886,7 @@ export default function AdminFeedsPage() {
               [0, 1, 2].map((i) => <SkeletonCard key={i} />)
             ) : feedCategories.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p style={{ color: "#999999" }}>{t("No categories found")}</p>
+                <p style={{ color: COLORS.spanishGray }}>{t("No categories found")}</p>
               </div>
             ) : (
               feedCategories.map((fc) => {
@@ -886,15 +900,15 @@ export default function AdminFeedsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <p
                         className="font-bold flex-1 min-w-0"
-                        style={{ color: "#231F20", fontSize: 20 }}
+                        style={{ color: COLORS.raisinBlack, fontSize: 20 }}
                       >
                         {getCatName(fc) || t("N/A")}
                       </p>
                       <span
                         className="font-bold uppercase flex-shrink-0"
                         style={{
-                          backgroundColor: isActive ? "#F0FDF4" : "#FEC5BB",
-                          color: isActive ? "#064E3B" : "#E44A4A",
+                          backgroundColor: isActive ? COLORS.honeydew : COLORS.peachyPink,
+                          color: isActive ? COLORS.darkAquamarineGreen : COLORS.carminePink,
                           border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
                           fontSize: 10,
                           padding: "2px 10px",
@@ -905,11 +919,17 @@ export default function AdminFeedsPage() {
                         {isActive ? t("ACTIVE") : t("INACTIVE")}
                       </span>
                     </div>
-                    <p className="uppercase mt-2" style={{ color: "#064E3B", fontSize: 14 }}>
+                    <p
+                      className="uppercase mt-2"
+                      style={{ color: COLORS.darkAquamarineGreen, fontSize: 14 }}
+                    >
                       {getFeedTypeName(fc) || t("N/A")}
                     </p>
                     <div className="flex items-end justify-between gap-3 mt-2">
-                      <p className="flex-1 min-w-0" style={{ color: "#231F20", fontSize: 14 }}>
+                      <p
+                        className="flex-1 min-w-0"
+                        style={{ color: COLORS.raisinBlack, fontSize: 14 }}
+                      >
                         {fc.description || t("N/A")}
                       </p>
                       {/* Delete — Android ic_delete inside circular pill */}
@@ -926,7 +946,7 @@ export default function AdminFeedsPage() {
                         }}
                         aria-label={t("Delete category")}
                       >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#FC2E20">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.redRyb}>
                           <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2L18,9c0,-1.1 -0.9,-2 -2,-2L8,7c-1.1,0 -2,0.9 -2,2v10zM9,9h6c0.55,0 1,0.45 1,1v8c0,0.55 -0.45,1 -1,1L9,19c-0.55,0 -1,-0.45 -1,-1v-8c0,-0.55 0.45,-1 1,-1zM15.5,4l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29L9.91,3c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4L6,4c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1h-2.5z" />
                         </svg>
                       </button>
@@ -948,7 +968,7 @@ export default function AdminFeedsPage() {
               width: 56,
               height: 56,
               borderRadius: 28,
-              backgroundColor: "#064E3B",
+              backgroundColor: COLORS.darkAquamarineGreen,
               border: "none",
               cursor: "pointer",
               boxShadow: "0 4px 12px rgba(0,0,0,0.18)",
@@ -958,7 +978,7 @@ export default function AdminFeedsPage() {
               zIndex: 20,
             }}
           >
-            <svg width="24" height="24" viewBox="0 0 960 960" fill="#FFFFFF">
+            <svg width="24" height="24" viewBox="0 0 960 960" fill={COLORS.white}>
               <path d="M440,520L240,520q-17,0 -28.5,-11.5T200,480q0,-17 11.5,-28.5T240,440h200v-200q0,-17 11.5,-28.5T480,200q17,0 28.5,11.5T520,240v200h200q17,0 28.5,11.5T760,480q0,17 -11.5,28.5T720,520L520,520v200q0,17 -11.5,28.5T480,760q-17,0 -28.5,-11.5T440,720v-200Z" />
             </svg>
           </button>
@@ -990,7 +1010,7 @@ export default function AdminFeedsPage() {
               <div className="flex items-center justify-between mb-5">
                 <h3
                   style={{
-                    color: "#231F20",
+                    color: COLORS.raisinBlack,
                     fontSize: 16,
                     fontWeight: 400,
                   }}
@@ -1004,7 +1024,7 @@ export default function AdminFeedsPage() {
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path
                       d="M5 5L15 15M15 5L5 15"
-                      stroke="#6D6D6D"
+                      stroke={COLORS.darkSilver}
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
@@ -1013,7 +1033,10 @@ export default function AdminFeedsPage() {
               </div>
             ) : (
               <div className="relative mb-5">
-                <h3 className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
+                <h3
+                  className="text-center font-bold"
+                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+                >
                   {t("Add Feed")}
                 </h3>
                 <button
@@ -1031,7 +1054,7 @@ export default function AdminFeedsPage() {
                   <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                     <path
                       d="M5 5L15 15M15 5L5 15"
-                      stroke="#6D6D6D"
+                      stroke={COLORS.darkSilver}
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
@@ -1047,8 +1070,8 @@ export default function AdminFeedsPage() {
               const isEdit = !!editingFeed;
               const inputStyle = (disabled: boolean) =>
                 ({
-                  backgroundColor: disabled ? "#EBEAEA" : "#F1F5F9",
-                  color: "#231F20",
+                  backgroundColor: disabled ? COLORS.brightGray : COLORS.americanDiamond,
+                  color: COLORS.raisinBlack,
                   borderRadius: 16,
                   padding: "12px 14px",
                   fontSize: 14,
@@ -1064,10 +1087,10 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontSize: 12 }}
+                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
                     >
                       {t("Country")}
-                      <span style={{ color: "#FC2E20" }}> *</span>
+                      <span style={{ color: COLORS.redRyb }}> *</span>
                     </p>
                     {isEdit ? (
                       <div style={inputStyle(true)}>{feedForm.fd_country_name || t("N/A")}</div>
@@ -1090,7 +1113,7 @@ export default function AdminFeedsPage() {
                           className="appearance-none focus:outline-none pr-8"
                           style={{
                             ...inputStyle(false),
-                            color: feedForm.fd_country_name ? "#231F20" : "#999",
+                            color: feedForm.fd_country_name ? COLORS.raisinBlack : "#999",
                           }}
                         >
                           <option value="">{t("Select country")}</option>
@@ -1104,7 +1127,7 @@ export default function AdminFeedsPage() {
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <path
                               d="M3 5L7 9L11 5"
-                              stroke="#6D6D6D"
+                              stroke={COLORS.darkSilver}
                               strokeWidth="1.5"
                               strokeLinecap="round"
                             />
@@ -1118,10 +1141,10 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontSize: 12 }}
+                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
                     >
                       {t("Feed Type")}
-                      <span style={{ color: "#FC2E20" }}> *</span>
+                      <span style={{ color: COLORS.redRyb }}> *</span>
                     </p>
                     {isEdit ? (
                       <div style={inputStyle(true)}>{feedForm.fd_type || t("N/A")}</div>
@@ -1141,7 +1164,7 @@ export default function AdminFeedsPage() {
                           className="appearance-none focus:outline-none pr-8"
                           style={{
                             ...inputStyle(!feedForm.fd_country_name),
-                            color: feedForm.fd_type ? "#231F20" : "#999",
+                            color: feedForm.fd_type ? COLORS.raisinBlack : "#999",
                           }}
                         >
                           <option value="">
@@ -1159,7 +1182,7 @@ export default function AdminFeedsPage() {
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <path
                               d="M3 5L7 9L11 5"
-                              stroke="#6D6D6D"
+                              stroke={COLORS.darkSilver}
                               strokeWidth="1.5"
                               strokeLinecap="round"
                             />
@@ -1173,10 +1196,10 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontSize: 12 }}
+                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
                     >
                       {t("Feed Category")}
-                      <span style={{ color: "#FC2E20" }}> *</span>
+                      <span style={{ color: COLORS.redRyb }}> *</span>
                     </p>
                     {isEdit ? (
                       <div style={inputStyle(true)}>{feedForm.fd_category || t("N/A")}</div>
@@ -1191,7 +1214,7 @@ export default function AdminFeedsPage() {
                           className="appearance-none focus:outline-none pr-8"
                           style={{
                             ...inputStyle(!feedForm.fd_type),
-                            color: feedForm.fd_category ? "#231F20" : "#999",
+                            color: feedForm.fd_category ? COLORS.raisinBlack : "#999",
                           }}
                         >
                           <option value="">
@@ -1211,7 +1234,7 @@ export default function AdminFeedsPage() {
                           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                             <path
                               d="M3 5L7 9L11 5"
-                              stroke="#6D6D6D"
+                              stroke={COLORS.darkSilver}
                               strokeWidth="1.5"
                               strokeLinecap="round"
                             />
@@ -1225,10 +1248,10 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontSize: 12 }}
+                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
                     >
                       {t("Feed Name")}
-                      <span style={{ color: "#FC2E20" }}> *</span>
+                      <span style={{ color: COLORS.redRyb }}> *</span>
                     </p>
                     {isEdit ? (
                       <div style={inputStyle(true)}>{feedForm.fd_name || t("N/A")}</div>
@@ -1254,7 +1277,10 @@ export default function AdminFeedsPage() {
             })()}
 
             {/* Nutrient fields — 17 fields matching Android layout_nutrient_info.xml */}
-            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B" }}>
+            <p
+              className="text-xs font-bold uppercase mb-3"
+              style={{ color: COLORS.darkAquamarineGreen }}
+            >
               {t("Nutrient Composition (%)")}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -1350,7 +1376,10 @@ export default function AdminFeedsPage() {
               disabled={!isFeedFormValid || isSavingFeed}
               className="w-full mt-5 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
               style={{
-                backgroundColor: isFeedFormValid && !isSavingFeed ? "#064E3B" : "#D3D3D3",
+                backgroundColor:
+                  isFeedFormValid && !isSavingFeed
+                    ? COLORS.darkAquamarineGreen
+                    : COLORS.lightGrayNew,
                 color: isFeedFormValid && !isSavingFeed ? "white" : "#999",
                 border: "none",
                 cursor: isFeedFormValid && !isSavingFeed ? "pointer" : "not-allowed",
@@ -1382,7 +1411,7 @@ export default function AdminFeedsPage() {
             <h3
               className="text-center font-bold"
               style={{
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 20,
                 marginBottom: 20,
               }}
@@ -1391,9 +1420,12 @@ export default function AdminFeedsPage() {
             </h3>
 
             {/* FEED TYPE * label + input */}
-            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: COLORS.darkSilver, fontSize: 12 }}
+            >
               {t("Feed Type")}
-              <span style={{ color: "#FC2E20" }}> *</span>
+              <span style={{ color: COLORS.redRyb }}> *</span>
             </p>
             <input
               aria-label={t("Feed Type")}
@@ -1403,8 +1435,8 @@ export default function AdminFeedsPage() {
               placeholder={t("e.g. Forage")}
               className="w-full focus:outline-none mb-3"
               style={{
-                backgroundColor: "#F1F5F9",
-                color: "#231F20",
+                backgroundColor: COLORS.americanDiamond,
+                color: COLORS.raisinBlack,
                 borderRadius: 16,
                 padding: "12px 14px",
                 fontSize: 14,
@@ -1413,7 +1445,10 @@ export default function AdminFeedsPage() {
             />
 
             {/* DESCRIPTION label + multiline textarea (4:1 aspect, max 100 chars) */}
-            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: COLORS.darkSilver, fontSize: 12 }}
+            >
               {t("Description")}
             </p>
             <textarea
@@ -1423,8 +1458,8 @@ export default function AdminFeedsPage() {
               placeholder={t("Short description")}
               className="w-full focus:outline-none mb-5"
               style={{
-                backgroundColor: "#F1F5F9",
-                color: "#231F20",
+                backgroundColor: COLORS.americanDiamond,
+                color: COLORS.raisinBlack,
                 borderRadius: 16,
                 padding: "12px 14px",
                 fontSize: 14,
@@ -1442,7 +1477,10 @@ export default function AdminFeedsPage() {
               disabled={!newTypeName.trim() || isSavingType}
               className="w-full font-bold flex items-center justify-center gap-2"
               style={{
-                backgroundColor: newTypeName.trim() && !isSavingType ? "#064E3B" : "#D3D3D3",
+                backgroundColor:
+                  newTypeName.trim() && !isSavingType
+                    ? COLORS.darkAquamarineGreen
+                    : COLORS.lightGrayNew,
                 color: newTypeName.trim() && !isSavingType ? "white" : "#999",
                 border: "none",
                 cursor: newTypeName.trim() && !isSavingType ? "pointer" : "not-allowed",
@@ -1465,7 +1503,7 @@ export default function AdminFeedsPage() {
               style={{
                 background: "none",
                 border: "none",
-                color: "#6D6D6D",
+                color: COLORS.darkSilver,
                 fontSize: 14,
                 cursor: "pointer",
               }}
@@ -1495,7 +1533,7 @@ export default function AdminFeedsPage() {
             <h3
               className="text-center font-bold"
               style={{
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 20,
                 marginBottom: 20,
               }}
@@ -1504,9 +1542,12 @@ export default function AdminFeedsPage() {
             </h3>
 
             {/* FEED TYPE * dropdown (required) */}
-            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: COLORS.darkSilver, fontSize: 12 }}
+            >
               {t("Feed Type")}
-              <span style={{ color: "#FC2E20" }}> *</span>
+              <span style={{ color: COLORS.redRyb }}> *</span>
             </p>
             <div className="relative mb-3">
               <select
@@ -1518,8 +1559,8 @@ export default function AdminFeedsPage() {
                 }}
                 className="w-full focus:outline-none appearance-none pr-8"
                 style={{
-                  backgroundColor: "#F1F5F9",
-                  color: newCatTypeId ? "#231F20" : "#999",
+                  backgroundColor: COLORS.americanDiamond,
+                  color: newCatTypeId ? COLORS.raisinBlack : "#999",
                   borderRadius: 16,
                   padding: "12px 14px",
                   fontSize: 14,
@@ -1537,7 +1578,7 @@ export default function AdminFeedsPage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
                     d="M3 5L7 9L11 5"
-                    stroke="#6D6D6D"
+                    stroke={COLORS.darkSilver}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                   />
@@ -1547,9 +1588,12 @@ export default function AdminFeedsPage() {
 
             {/* FEED CATEGORY * input — disabled until type selected
                 (bright_gray bg when disabled). */}
-            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: COLORS.darkSilver, fontSize: 12 }}
+            >
               {t("Feed Category")}
-              <span style={{ color: "#FC2E20" }}> *</span>
+              <span style={{ color: COLORS.redRyb }}> *</span>
             </p>
             <input
               aria-label={t("Feed Category")}
@@ -1560,8 +1604,8 @@ export default function AdminFeedsPage() {
               placeholder={!newCatTypeId ? t("Select feed type first") : t("e.g. Cereal Grains")}
               className="w-full focus:outline-none mb-3"
               style={{
-                backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
-                color: "#231F20",
+                backgroundColor: newCatTypeId ? COLORS.americanDiamond : COLORS.brightGray,
+                color: COLORS.raisinBlack,
                 opacity: !newCatTypeId ? 0.6 : 1,
                 borderRadius: 16,
                 padding: "12px 14px",
@@ -1571,7 +1615,10 @@ export default function AdminFeedsPage() {
             />
 
             {/* DESCRIPTION multiline — disabled until type selected */}
-            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
+            <p
+              className="font-bold uppercase mb-1"
+              style={{ color: COLORS.darkSilver, fontSize: 12 }}
+            >
               {t("Description")}
             </p>
             <textarea
@@ -1582,8 +1629,8 @@ export default function AdminFeedsPage() {
               placeholder={!newCatTypeId ? t("Select feed type first") : t("Short description")}
               className="w-full focus:outline-none mb-5"
               style={{
-                backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
-                color: "#231F20",
+                backgroundColor: newCatTypeId ? COLORS.americanDiamond : COLORS.brightGray,
+                color: COLORS.raisinBlack,
                 opacity: !newCatTypeId ? 0.6 : 1,
                 borderRadius: 16,
                 padding: "12px 14px",
@@ -1601,7 +1648,9 @@ export default function AdminFeedsPage() {
               className="w-full font-bold flex items-center justify-center gap-2"
               style={{
                 backgroundColor:
-                  newCatName.trim() && newCatTypeId && !isSavingCat ? "#064E3B" : "#D3D3D3",
+                  newCatName.trim() && newCatTypeId && !isSavingCat
+                    ? COLORS.darkAquamarineGreen
+                    : COLORS.lightGrayNew,
                 color: newCatName.trim() && newCatTypeId && !isSavingCat ? "white" : "#999",
                 border: "none",
                 cursor:
@@ -1625,7 +1674,7 @@ export default function AdminFeedsPage() {
               style={{
                 background: "none",
                 border: "none",
-                color: "#6D6D6D",
+                color: COLORS.darkSilver,
                 fontSize: 14,
                 cursor: "pointer",
               }}
@@ -1658,10 +1707,10 @@ export default function AdminFeedsPage() {
                 style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="#FC2E20" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="10" stroke={COLORS.redRyb} strokeWidth="2" />
                   <path
                     d="M12 7v5M12 16v1"
-                    stroke="#FC2E20"
+                    stroke={COLORS.redRyb}
                     strokeWidth="2.2"
                     strokeLinecap="round"
                   />
@@ -1670,11 +1719,11 @@ export default function AdminFeedsPage() {
             </div>
             <h3
               className="text-center font-bold mb-4 px-3"
-              style={{ color: "#064E3B", fontSize: 20 }}
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
             >
               {t("Are you sure you want to delete feed?")}
             </h3>
-            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D" }}>
+            <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
               {t('"${fd_name}" will be permanently deleted. This action cannot be undone.').replace(
                 "${fd_name}",
                 confirmDeleteFeed.fd_name ?? ""
@@ -1686,7 +1735,7 @@ export default function AdminFeedsPage() {
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
                   border: "2px solid #064E3B",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
                   borderRadius: 16,
@@ -1695,7 +1744,7 @@ export default function AdminFeedsPage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
                     d="M1 1l12 12M13 1L1 13"
-                    stroke="#064E3B"
+                    stroke={COLORS.darkAquamarineGreen}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -1706,7 +1755,7 @@ export default function AdminFeedsPage() {
                 onClick={() => handleDeleteFeed(confirmDeleteFeed)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
-                  backgroundColor: "#E44A4A",
+                  backgroundColor: COLORS.carminePink,
                   color: "white",
                   border: "none",
                   cursor: "pointer",
@@ -1751,20 +1800,23 @@ export default function AdminFeedsPage() {
                 style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="#FC2E20" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="10" stroke={COLORS.redRyb} strokeWidth="2" />
                   <path
                     d="M12 7v5M12 16v1"
-                    stroke="#FC2E20"
+                    stroke={COLORS.redRyb}
                     strokeWidth="2.2"
                     strokeLinecap="round"
                   />
                 </svg>
               </div>
             </div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontSize: 20 }}>
+            <h3
+              className="text-center font-bold mb-4"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Are you sure you want to delete type?")}
             </h3>
-            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D" }}>
+            <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
               {t('"${name}" will be permanently deleted. This action cannot be undone.').replace(
                 "${name}",
                 getName(confirmDeleteType)
@@ -1776,7 +1828,7 @@ export default function AdminFeedsPage() {
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
                   border: "2px solid #064E3B",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
                   borderRadius: 16,
@@ -1785,7 +1837,7 @@ export default function AdminFeedsPage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
                     d="M1 1l12 12M13 1L1 13"
-                    stroke="#064E3B"
+                    stroke={COLORS.darkAquamarineGreen}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -1796,7 +1848,7 @@ export default function AdminFeedsPage() {
                 onClick={() => handleDeleteType(confirmDeleteType)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
-                  backgroundColor: "#E44A4A",
+                  backgroundColor: COLORS.carminePink,
                   color: "white",
                   border: "none",
                   cursor: "pointer",
@@ -1841,20 +1893,23 @@ export default function AdminFeedsPage() {
                 style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}
               >
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="#FC2E20" strokeWidth="2" />
+                  <circle cx="12" cy="12" r="10" stroke={COLORS.redRyb} strokeWidth="2" />
                   <path
                     d="M12 7v5M12 16v1"
-                    stroke="#FC2E20"
+                    stroke={COLORS.redRyb}
                     strokeWidth="2.2"
                     strokeLinecap="round"
                   />
                 </svg>
               </div>
             </div>
-            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontSize: 20 }}>
+            <h3
+              className="text-center font-bold mb-4"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Are you sure you want to delete category?")}
             </h3>
-            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D" }}>
+            <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
               {t('"${name}" will be permanently deleted. This action cannot be undone.').replace(
                 "${name}",
                 getCatName(confirmDeleteCat)
@@ -1866,7 +1921,7 @@ export default function AdminFeedsPage() {
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
                   border: "2px solid #064E3B",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
                   borderRadius: 16,
@@ -1875,7 +1930,7 @@ export default function AdminFeedsPage() {
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
                   <path
                     d="M1 1l12 12M13 1L1 13"
-                    stroke="#064E3B"
+                    stroke={COLORS.darkAquamarineGreen}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -1886,7 +1941,7 @@ export default function AdminFeedsPage() {
                 onClick={() => handleDeleteCategory(confirmDeleteCat)}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
                 style={{
-                  backgroundColor: "#E44A4A",
+                  backgroundColor: COLORS.carminePink,
                   color: "white",
                   border: "none",
                   cursor: "pointer",

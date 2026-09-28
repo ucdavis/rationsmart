@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n-ui";
+import { COLORS } from "@/lib/colors";
 
 // Pre-hydration splash overlay. SSR renders it so the user sees
 // branded RationSmart content the moment the HTML reaches the browser
@@ -43,7 +44,7 @@ export default function SplashOverlay() {
         position: "fixed",
         inset: 0,
         zIndex: 9999,
-        backgroundColor: "#FFFFFF",
+        backgroundColor: COLORS.white,
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -73,7 +74,7 @@ export default function SplashOverlay() {
         </div>
         <p
           style={{
-            color: "#064E3B",
+            color: COLORS.darkAquamarineGreen,
             fontWeight: 700,
             fontSize: 20,
             margin: "12px 0 0",
@@ -83,10 +84,10 @@ export default function SplashOverlay() {
         </p>
       </div>
       <div style={{ textAlign: "center" }}>
-        <p style={{ color: "#6D6D6D", fontSize: 14, margin: 0 }}>{t("POWERED BY")}</p>
+        <p style={{ color: COLORS.darkSilver, fontSize: 14, margin: 0 }}>{t("POWERED BY")}</p>
         <p
           style={{
-            color: "#064E3B",
+            color: COLORS.darkAquamarineGreen,
             fontSize: 14,
             margin: "2px 0 0",
           }}

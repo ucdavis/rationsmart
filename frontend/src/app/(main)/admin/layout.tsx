@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { COLORS } from "@/lib/colors";
 
 // Admin section layout.
 // 1. Paints the sage→mint gradient *inside* the centred 480-px column
@@ -22,8 +23,8 @@ import { useStore } from "@/lib/store";
 //    This is a UX gate only — `is_admin` lives in client storage and can be
 //    edited, so the backend must (and is expected to) 403 every
 //    /v1/admin/* call for non-admins. Audit A-06.
-const ADMIN_THEME = "#C8E6C9"; // sage_breeze — first stop of bg_admin
-const DEFAULT_THEME = "#FFFFFF";
+const ADMIN_THEME = COLORS.sageBreeze; // sage_breeze — first stop of bg_admin
+const DEFAULT_THEME = COLORS.white;
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();

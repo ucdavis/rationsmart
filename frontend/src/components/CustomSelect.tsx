@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { COLORS } from "@/lib/colors";
 
 // Mirrors Android DropdownListAdapter.setTextBackgroundColor:
 // position 0 → white (top-rounded), odd positions → bright_gray_new
@@ -133,9 +134,9 @@ export default function CustomSelect({
 
   // Android DropdownListAdapter background-color rules.
   const rowBg = (idx: number, last: number) => {
-    if (idx === 0) return "#FFFFFF";
-    if (idx === last) return idx % 2 === 0 ? "#FFFFFF" : "#E4F7EF";
-    return idx % 2 === 0 ? "#FFFFFF" : "#E4F7EF";
+    if (idx === 0) return COLORS.white;
+    if (idx === last) return idx % 2 === 0 ? COLORS.white : COLORS.brightGrayNew;
+    return idx % 2 === 0 ? COLORS.white : COLORS.brightGrayNew;
   };
   const rowRadius = (idx: number, last: number) => {
     if (idx === 0 && idx === last) return "10px";
@@ -161,7 +162,7 @@ export default function CustomSelect({
           background: transparentTrigger ? "transparent" : undefined,
           border: "none",
           padding: 0,
-          color: loading ? "transparent" : value ? "#231F20" : "#9CA3AF",
+          color: loading ? "transparent" : value ? COLORS.raisinBlack : COLORS.webPlaceholder,
           fontSize: 14,
           cursor: loading ? "default" : disabled ? "not-allowed" : "pointer",
           width: "100%",
@@ -188,7 +189,7 @@ export default function CustomSelect({
           >
             <path
               d="M3 5L7 9L11 5"
-              stroke="#6D6D6D"
+              stroke={COLORS.darkSilver}
               strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -207,7 +208,7 @@ export default function CustomSelect({
             top: "calc(100% + 6px)",
             left: 0,
             right: 0,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: COLORS.white,
             borderRadius: 10,
             boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
             overflow: "hidden",
@@ -221,7 +222,7 @@ export default function CustomSelect({
               style={{
                 padding: "10px 12px",
                 fontSize: 14,
-                color: "#999999",
+                color: COLORS.spanishGray,
                 borderRadius: 10,
               }}
             >
@@ -252,7 +253,7 @@ export default function CustomSelect({
                   border: "none",
                   padding: "10px 12px",
                   fontSize: 14,
-                  color: "#231F20",
+                  color: COLORS.raisinBlack,
                   cursor: "pointer",
                   display: "block",
                   width: "100%",

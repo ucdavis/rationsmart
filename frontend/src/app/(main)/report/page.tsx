@@ -56,20 +56,21 @@ import {
 import { safeExternalUrl } from "@/lib/safe-url";
 import { COLUMN_WIDTH } from "@/lib/column";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; text: string }> = {
-    Optimized: { bg: "#05BC6D", text: "#fff" },
-    Optimised: { bg: "#05BC6D", text: "#fff" },
-    "Not Optimized": { bg: "#E44A4A", text: "#fff" },
-    "Not Feasible": { bg: "#E44A4A", text: "#fff" },
-    Evaluation: { bg: "#FF9800", text: "#fff" },
-    Evaluated: { bg: "#FF9800", text: "#fff" },
-    ADVISORY: { bg: "#FF9800", text: "#fff" },
-    INFEASIBLE: { bg: "#E44A4A", text: "#fff" },
-    OPTIMAL: { bg: "#05BC6D", text: "#fff" },
+    Optimized: { bg: COLORS.goGreen, text: "#fff" },
+    Optimised: { bg: COLORS.goGreen, text: "#fff" },
+    "Not Optimized": { bg: COLORS.carminePink, text: "#fff" },
+    "Not Feasible": { bg: COLORS.carminePink, text: "#fff" },
+    Evaluation: { bg: COLORS.vividGamboge, text: "#fff" },
+    Evaluated: { bg: COLORS.vividGamboge, text: "#fff" },
+    ADVISORY: { bg: COLORS.vividGamboge, text: "#fff" },
+    INFEASIBLE: { bg: COLORS.carminePink, text: "#fff" },
+    OPTIMAL: { bg: COLORS.goGreen, text: "#fff" },
   };
-  const colors = map[status] ?? { bg: "#E2E8F0", text: "#231F20" };
+  const colors = map[status] ?? { bg: COLORS.webDivider, text: COLORS.raisinBlack };
   return (
     <span
       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
@@ -110,7 +111,7 @@ function SCard({
               {icon}
             </div>
           )}
-          <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
+          <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16 }}>
             {title}
           </p>
         </div>
@@ -127,10 +128,10 @@ function SCard({
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
+      <p className="font-bold uppercase" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
         {label}
       </p>
-      <p className="font-bold" style={{ color: "#231F20", fontSize: 16, marginTop: 4 }}>
+      <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16, marginTop: 4 }}>
         {value}
       </p>
     </div>
@@ -204,15 +205,15 @@ const calcPct = (v: number | string | null | undefined, max: number) => {
 
 function MetricTile({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="flex-1 rounded-xl p-3 text-center" style={{ backgroundColor: "#F0FDF4" }}>
-      <p className="text-xs font-bold" style={{ color: "#6D6D6D" }}>
+    <div className="flex-1 rounded-xl p-3 text-center" style={{ backgroundColor: COLORS.honeydew }}>
+      <p className="text-xs font-bold" style={{ color: COLORS.darkSilver }}>
         {label}
       </p>
-      <p className="text-lg font-bold mt-0.5" style={{ color: "#064E3B" }}>
+      <p className="text-lg font-bold mt-0.5" style={{ color: COLORS.darkAquamarineGreen }}>
         {value}
       </p>
       {unit && (
-        <p className="text-xs" style={{ color: "#6D6D6D" }}>
+        <p className="text-xs" style={{ color: COLORS.darkSilver }}>
           {unit}
         </p>
       )}
@@ -234,12 +235,15 @@ function BalanceRow({
   return (
     <div
       className="flex items-center justify-between py-2.5 border-b last:border-0"
-      style={{ borderColor: "#F1F5F9" }}
+      style={{ borderColor: COLORS.americanDiamond }}
     >
-      <span className="text-sm font-bold" style={{ color: "#231F20" }}>
+      <span className="text-sm font-bold" style={{ color: COLORS.raisinBlack }}>
         {label}
       </span>
-      <span className="text-sm font-bold" style={{ color: isPositive ? "#05BC6D" : "#E44A4A" }}>
+      <span
+        className="text-sm font-bold"
+        style={{ color: isPositive ? COLORS.goGreen : COLORS.carminePink }}
+      >
         {isPositive ? "+" : ""}
         {Number(value).toFixed(3)} {unit}
       </span>
@@ -257,7 +261,7 @@ function BulletList({ items, color }: { items: string[]; color: string }) {
             className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full"
             style={{ backgroundColor: color }}
           />
-          <span className="text-sm" style={{ color: "#231F20", lineHeight: 1.5 }}>
+          <span className="text-sm" style={{ color: COLORS.raisinBlack, lineHeight: 1.5 }}>
             {item}
           </span>
         </li>
@@ -270,12 +274,12 @@ function TotalCostFooter({ label, value }: { label: string; value: string }) {
   return (
     <div
       className="flex items-center justify-between"
-      style={{ backgroundColor: "#F0FDF4", paddingInline: 10, paddingBlock: 12 }}
+      style={{ backgroundColor: COLORS.honeydew, paddingInline: 10, paddingBlock: 12 }}
     >
-      <span className="text-xs font-bold" style={{ color: "#064E3B" }}>
+      <span className="text-xs font-bold" style={{ color: COLORS.darkAquamarineGreen }}>
         {label}
       </span>
-      <span className="font-bold" style={{ color: "#087F23", fontSize: 18 }}>
+      <span className="font-bold" style={{ color: COLORS.laSalleGreen, fontSize: 18 }}>
         {value}
       </span>
     </div>
@@ -372,34 +376,42 @@ export default function ReportPage() {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen px-6 text-center"
-        style={{ backgroundColor: "#F8FAF9" }}
+        style={{ backgroundColor: COLORS.authenticWhite }}
       >
         <Toolbar type="back" title={t("Diet Report")} onBack={() => router.back()} />
         <div
           className="flex items-center justify-center rounded-full mb-5 mt-10"
-          style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}
+          style={{ width: 80, height: 80, backgroundColor: COLORS.honeydew }}
         >
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <rect x="5" y="4" width="26" height="28" rx="3" stroke="#064E3B" strokeWidth="2" />
+            <rect
+              x="5"
+              y="4"
+              width="26"
+              height="28"
+              rx="3"
+              stroke={COLORS.darkAquamarineGreen}
+              strokeWidth="2"
+            />
             <path
               d="M11 12H25M11 17H22M11 22H17"
-              stroke="#064E3B"
+              stroke={COLORS.darkAquamarineGreen}
               strokeWidth="1.8"
               strokeLinecap="round"
             />
           </svg>
         </div>
-        <p className="text-xl font-bold mb-2" style={{ color: "#064E3B" }}>
+        <p className="text-xl font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen }}>
           {t("No Report")}
         </p>
-        <p className="text-sm mb-8" style={{ color: "#6D6D6D" }}>
+        <p className="text-sm mb-8" style={{ color: COLORS.darkSilver }}>
           {t("Generate a report from the Feed Selection screen")}
         </p>
         <button
           onClick={() => router.push("/feed-selection")}
           className="px-8 py-4 rounded-xl font-bold text-base text-white"
           style={{
-            backgroundColor: "#064E3B",
+            backgroundColor: COLORS.darkAquamarineGreen,
             border: "none",
             cursor: "pointer",
           }}
@@ -538,39 +550,39 @@ export default function ReportPage() {
       return {
         bg: "rgba(255,152,0,0.15)", // vivid_gamboge_15
         stroke: "rgba(255,152,0,0.30)", // vivid_gamboge_30
-        iconBg: "#FFB300", // dark_yellow
-        titleColor: "#FF7800", // fire_orange
-        bodyColor: "#FF9800", // vivid_gamboge
+        iconBg: COLORS.darkYellow, // dark_yellow
+        titleColor: COLORS.fireOrange, // fire_orange
+        bodyColor: COLORS.vividGamboge, // vivid_gamboge
         statusText: "Solution has safety/nutritional violations",
       };
     }
     if (isErrorState) {
       return {
-        bg: "#FEC5BB", // peachy_pink
+        bg: COLORS.peachyPink, // peachy_pink
         stroke: "rgba(228,74,74,0.20)", // carmine_pink_20
-        iconBg: "#E44A4A", // red_shimmer
-        titleColor: "#FC2E20", // red_ryb
-        bodyColor: "#E44A4A", // carmine_pink
+        iconBg: COLORS.carminePink, // red_shimmer
+        titleColor: COLORS.redRyb, // red_ryb
+        bodyColor: COLORS.carminePink, // carmine_pink
         statusText: "No optimized solution found",
       };
     }
     if (isInfeasible) {
       return {
-        bg: "#F0FDF4", // honeydew
+        bg: COLORS.honeydew, // honeydew
         stroke: "rgba(5,188,109,0.15)", // go_green_15
-        iconBg: "#10B981", // dark_green_turquoise
-        titleColor: "#1CA069", // la_salle_green
-        bodyColor: "#064E3B", // dark_aquamarine_green
+        iconBg: COLORS.darkGreenTurquoise, // dark_green_turquoise
+        titleColor: COLORS.crayolaGreen, // la_salle_green
+        bodyColor: COLORS.darkAquamarineGreen, // dark_aquamarine_green
         statusText: "Solution has safety/nutritional violations",
       };
     }
     // Optimal / else
     return {
-      bg: "#F0FDF4",
+      bg: COLORS.honeydew,
       stroke: "rgba(5,188,109,0.15)",
-      iconBg: "#10B981",
-      titleColor: "#1CA069",
-      bodyColor: "#064E3B",
+      iconBg: COLORS.darkGreenTurquoise,
+      titleColor: COLORS.crayolaGreen,
+      bodyColor: COLORS.darkAquamarineGreen,
       statusText: "Optimized solution found",
     };
   })();
@@ -612,7 +624,7 @@ export default function ReportPage() {
     : 0;
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar
         type="back"
         title={isEval ? t("Evaluation Report") : t("Recommendation Report")}
@@ -623,7 +635,10 @@ export default function ReportPage() {
         {/* Section 1: Report Details — matches Android layout_report:
             REPORT ID | SIMULATION ID, OWNER NAME (full), GENERATED ON (full).
             No Status badge — Android does not show one here. */}
-        <SCard title={t("Report Details")} icon={<IcSimulationDetails size={24} color="#064E3B" />}>
+        <SCard
+          title={t("Report Details")}
+          icon={<IcSimulationDetails size={24} color={COLORS.darkAquamarineGreen} />}
+        >
           <div className="grid grid-cols-2 gap-x-3 gap-y-3">
             <LabelValue label={t("Report ID")} value={reportIdForSave || t("N/A")} />
             <LabelValue label={t("Simulation ID")} value={simulationId || t("N/A")} />
@@ -648,7 +663,7 @@ export default function ReportPage() {
         {cattleInfo && (
           <SCard
             title={t("Animal Characteristics")}
-            icon={<IcAnimalCharacteristics size={24} color="#064E3B" />}
+            icon={<IcAnimalCharacteristics size={24} color={COLORS.darkAquamarineGreen} />}
           >
             <div className="grid grid-cols-2 gap-x-3 gap-y-3">
               <LabelValue label={t("Breed")} value={cattleInfo.breed || t("N/A")} />
@@ -756,8 +771,8 @@ export default function ReportPage() {
           const isPositive = margin >= 0;
           // Color tokens chosen to match existing report banners
           // (dark_green_turquoise / carmine_pink theme).
-          const accent = isPositive ? "#10B981" : "#E44A4A";
-          const accentBg = isPositive ? "#F0FDF4" : "#FEC5BB";
+          const accent = isPositive ? COLORS.darkGreenTurquoise : COLORS.carminePink;
+          const accentBg = isPositive ? COLORS.honeydew : COLORS.peachyPink;
           const accentBorder = isPositive ? "rgba(5,188,109,0.20)" : "rgba(228,74,74,0.25)";
           return (
             <SCard
@@ -778,12 +793,12 @@ export default function ReportPage() {
               <div className="grid grid-cols-2 gap-3 mb-3">
                 <div
                   className="rounded-xl p-3"
-                  style={{ backgroundColor: "#F8FAF9", border: "1px solid #E2E8F0" }}
+                  style={{ backgroundColor: COLORS.authenticWhite, border: "1px solid #E2E8F0" }}
                 >
                   <p
                     className="font-bold uppercase mb-1"
                     style={{
-                      color: "#6D6D6D",
+                      color: COLORS.darkSilver,
                       fontSize: 11,
                       letterSpacing: 0.3,
                     }}
@@ -791,20 +806,20 @@ export default function ReportPage() {
                     {t("Diet Cost / L")}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
+                    <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
                       {costPerLitre.toFixed(2)}
                     </p>
-                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{currencySymbol}</p>
+                    <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{currencySymbol}</p>
                   </div>
                 </div>
                 <div
                   className="rounded-xl p-3"
-                  style={{ backgroundColor: "#F8FAF9", border: "1px solid #E2E8F0" }}
+                  style={{ backgroundColor: COLORS.authenticWhite, border: "1px solid #E2E8F0" }}
                 >
                   <p
                     className="font-bold uppercase mb-1"
                     style={{
-                      color: "#6D6D6D",
+                      color: COLORS.darkSilver,
                       fontSize: 11,
                       letterSpacing: 0.3,
                     }}
@@ -812,10 +827,10 @@ export default function ReportPage() {
                     {t("Milk Price / L")}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
+                    <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
                       {milkPrice.toFixed(2)}
                     </p>
-                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{currencySymbol}</p>
+                    <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{currencySymbol}</p>
                   </div>
                 </div>
               </div>
@@ -866,7 +881,7 @@ export default function ReportPage() {
                 </svg>
               </div>
               {/* Daily margin context line */}
-              <p className="mt-2 ml-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
+              <p className="mt-2 ml-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
                 {t("Across")} {milkProduction.toFixed(1)} L/day,
                 {isPositive ? ` ${t("net profit")}` : ` ${t("net loss")}`}{" "}
                 <span className="font-bold" style={{ color: accent }}>
@@ -918,19 +933,19 @@ export default function ReportPage() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M8 4h8v2l-1 2H9L8 6V4z"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinejoin="round"
                     />
                     <path
                       d="M9 8c-1 0-2 2-2 5a5 5 0 0 0 10 0c0-3-1-5-2-5"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                     />
                     <path
                       d="M10 14a2 2 0 0 0 4 0"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.6"
                       strokeLinecap="round"
                     />
@@ -940,7 +955,7 @@ export default function ReportPage() {
                 {/* Without a backend plan these figures are the rule of thumb
                     above, not an engine result — say so (audit D-02). */}
                 {!serverPlan && (
-                  <p className="text-xs mb-2" style={{ color: "#6D6D6D" }}>
+                  <p className="text-xs mb-2" style={{ color: COLORS.darkSilver }}>
                     {t(
                       "Estimated from body weight using general guidance — not calculated by the ration engine."
                     )}
@@ -950,12 +965,15 @@ export default function ReportPage() {
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div
                     className="rounded-xl p-2.5"
-                    style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}
+                    style={{
+                      backgroundColor: COLORS.honeydew,
+                      border: "1px solid rgba(5,188,109,0.20)",
+                    }}
                   >
                     <p
                       className="font-bold uppercase mb-1"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -963,20 +981,26 @@ export default function ReportPage() {
                       {t("Daily milk")}
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <p className="font-bold" style={{ color: "#064E3B", fontSize: 18 }}>
+                      <p
+                        className="font-bold"
+                        style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
+                      >
                         {dailyVolume.toFixed(1)}
                       </p>
-                      <p style={{ color: "#6D6D6D", fontSize: 11 }}>{t("L")}</p>
+                      <p style={{ color: COLORS.darkSilver, fontSize: 11 }}>{t("L")}</p>
                     </div>
                   </div>
                   <div
                     className="rounded-xl p-2.5"
-                    style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}
+                    style={{
+                      backgroundColor: COLORS.honeydew,
+                      border: "1px solid rgba(5,188,109,0.20)",
+                    }}
                   >
                     <p
                       className="font-bold uppercase mb-1"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -984,22 +1008,28 @@ export default function ReportPage() {
                       {t("Per feeding")}
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <p className="font-bold" style={{ color: "#064E3B", fontSize: 18 }}>
+                      <p
+                        className="font-bold"
+                        style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
+                      >
                         {perFeedingL.toFixed(1)}
                       </p>
-                      <p style={{ color: "#6D6D6D", fontSize: 11 }}>
+                      <p style={{ color: COLORS.darkSilver, fontSize: 11 }}>
                         {t("L")} × {feedings}
                       </p>
                     </div>
                   </div>
                   <div
                     className="rounded-xl p-2.5"
-                    style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}
+                    style={{
+                      backgroundColor: COLORS.honeydew,
+                      border: "1px solid rgba(5,188,109,0.20)",
+                    }}
                   >
                     <p
                       className="font-bold uppercase mb-1"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -1007,10 +1037,13 @@ export default function ReportPage() {
                       {t("Wean by")}
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <p className="font-bold" style={{ color: "#064E3B", fontSize: 18 }}>
+                      <p
+                        className="font-bold"
+                        style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
+                      >
                         {weaningDays}
                       </p>
-                      <p style={{ color: "#6D6D6D", fontSize: 11 }}>{t("days")}</p>
+                      <p style={{ color: COLORS.darkSilver, fontSize: 11 }}>{t("days")}</p>
                     </div>
                   </div>
                 </div>
@@ -1026,12 +1059,12 @@ export default function ReportPage() {
                             width: 4,
                             height: 4,
                             borderRadius: "50%",
-                            backgroundColor: "#1CA069",
+                            backgroundColor: COLORS.crayolaGreen,
                           }}
                         />
                         <p
                           style={{
-                            color: "#231F20",
+                            color: COLORS.raisinBlack,
                             fontSize: 13,
                             lineHeight: 1.45,
                             margin: 0,
@@ -1046,7 +1079,7 @@ export default function ReportPage() {
                 <p
                   className="mt-2 ml-1"
                   style={{
-                    color: "#6D6D6D",
+                    color: COLORS.darkSilver,
                     fontSize: 11,
                     fontStyle: "italic",
                   }}
@@ -1145,9 +1178,9 @@ export default function ReportPage() {
           // Color tokens — go_green family for Forage, vivid_gamboge
           // amber for Concentrate (matches the Diet Status badge palette
           // used elsewhere on the page).
-          const forageColor = "#1CA069";
-          const concColor = "#FF9800";
-          const otherColor = "#C2C2C2";
+          const forageColor = COLORS.crayolaGreen;
+          const concColor = COLORS.vividGamboge;
+          const otherColor = COLORS.silverSand;
           return (
             <SCard
               title={t("Forage : Concentrate Ratio")}
@@ -1182,13 +1215,13 @@ export default function ReportPage() {
                 <span className="font-bold" style={{ color: forageColor, fontSize: 32 }}>
                   {Math.round(fPct)}
                 </span>
-                <span style={{ color: "#6D6D6D", fontSize: 22 }}>:</span>
+                <span style={{ color: COLORS.darkSilver, fontSize: 22 }}>:</span>
                 <span className="font-bold" style={{ color: concColor, fontSize: 32 }}>
                   {Math.round(cPct)}
                 </span>
                 {oPct > 0.5 && (
                   <>
-                    <span style={{ color: "#6D6D6D", fontSize: 22 }}>:</span>
+                    <span style={{ color: COLORS.darkSilver, fontSize: 22 }}>:</span>
                     <span className="font-bold" style={{ color: otherColor, fontSize: 32 }}>
                       {Math.round(oPct)}
                     </span>
@@ -1202,7 +1235,7 @@ export default function ReportPage() {
                   height: 12,
                   borderRadius: 6,
                   marginBottom: 10,
-                  backgroundColor: "#F1F5F9",
+                  backgroundColor: COLORS.americanDiamond,
                 }}
               >
                 {fPct > 0 && <div style={{ width: `${fPct}%`, backgroundColor: forageColor }} />}
@@ -1222,11 +1255,11 @@ export default function ReportPage() {
                         display: "inline-block",
                       }}
                     />
-                    <span className="font-bold" style={{ color: "#231F20" }}>
+                    <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                       {t("Forage")}
                     </span>
                   </div>
-                  <span style={{ color: "#6D6D6D" }}>
+                  <span style={{ color: COLORS.darkSilver }}>
                     {forageKg.toFixed(2)} {t("kg/day")} ·{" "}
                     <span className="font-bold" style={{ color: forageColor }}>
                       {fPct.toFixed(0)}%
@@ -1246,11 +1279,11 @@ export default function ReportPage() {
                         display: "inline-block",
                       }}
                     />
-                    <span className="font-bold" style={{ color: "#231F20" }}>
+                    <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                       {t("Concentrate")}
                     </span>
                   </div>
-                  <span style={{ color: "#6D6D6D" }}>
+                  <span style={{ color: COLORS.darkSilver }}>
                     {concKg.toFixed(2)} {t("kg/day")} ·{" "}
                     <span className="font-bold" style={{ color: concColor }}>
                       {cPct.toFixed(0)}%
@@ -1270,13 +1303,13 @@ export default function ReportPage() {
                         display: "inline-block",
                       }}
                     />
-                    <span className="font-bold" style={{ color: "#231F20" }}>
+                    <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                       {t("Other")}
                     </span>
                   </div>
-                  <span style={{ color: "#6D6D6D" }}>
+                  <span style={{ color: COLORS.darkSilver }}>
                     {otherKg.toFixed(2)} {t("kg/day")} ·{" "}
-                    <span className="font-bold" style={{ color: "#6D6D6D" }}>
+                    <span className="font-bold" style={{ color: COLORS.darkSilver }}>
                       {oPct.toFixed(0)}%
                     </span>
                   </span>
@@ -1285,7 +1318,7 @@ export default function ReportPage() {
               <p
                 className="mt-3 ml-1"
                 style={{
-                  color: "#6D6D6D",
+                  color: COLORS.darkSilver,
                   fontSize: 11,
                   fontStyle: "italic",
                 }}
@@ -1313,12 +1346,12 @@ export default function ReportPage() {
                         width="16"
                         height="18"
                         rx="2"
-                        stroke="#064E3B"
+                        stroke={COLORS.darkAquamarineGreen}
                         strokeWidth="1.8"
                       />
                       <path
                         d="M8 9l2 2 4-4M8 14h5M8 17h3"
-                        stroke="#064E3B"
+                        stroke={COLORS.darkAquamarineGreen}
                         strokeWidth="1.6"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -1329,9 +1362,9 @@ export default function ReportPage() {
                   {evalReport.evaluation_summary.overall_status && (
                     <div
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
-                      style={{ backgroundColor: "#F8FAF9" }}
+                      style={{ backgroundColor: COLORS.authenticWhite }}
                     >
-                      <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
+                      <span className="text-sm font-bold" style={{ color: COLORS.darkSilver }}>
                         {t("Overall Status")}
                       </span>
                       <StatusBadge status={evalReport.evaluation_summary.overall_status} />
@@ -1340,12 +1373,12 @@ export default function ReportPage() {
                   {evalReport.evaluation_summary.limiting_factor && (
                     <div
                       className="flex items-center justify-between rounded-xl px-3 py-2.5"
-                      style={{ backgroundColor: "#F8FAF9" }}
+                      style={{ backgroundColor: COLORS.authenticWhite }}
                     >
-                      <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
+                      <span className="text-sm font-bold" style={{ color: COLORS.darkSilver }}>
                         {t("Limiting Factor")}
                       </span>
-                      <span className="text-sm font-bold" style={{ color: "#E44A4A" }}>
+                      <span className="text-sm font-bold" style={{ color: COLORS.carminePink }}>
                         {evalReport.evaluation_summary.limiting_factor}
                       </span>
                     </div>
@@ -1358,10 +1391,16 @@ export default function ReportPage() {
               title={t("Cost Analysis")}
               icon={
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="9" stroke="#064E3B" strokeWidth="1.8" />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="9"
+                    stroke={COLORS.darkAquamarineGreen}
+                    strokeWidth="1.8"
+                  />
                   <path
                     d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4"
-                    stroke="#064E3B"
+                    stroke={COLORS.darkAquamarineGreen}
                     strokeWidth="1.6"
                     strokeLinecap="round"
                   />
@@ -1385,9 +1424,12 @@ export default function ReportPage() {
                 <div className="mt-2 space-y-2">
                   <BulletList
                     items={evalReport.cost_analysis?.recommendations ?? []}
-                    color="#064E3B"
+                    color={COLORS.darkAquamarineGreen}
                   />
-                  <BulletList items={evalReport.cost_analysis?.warnings ?? []} color="#FF9800" />
+                  <BulletList
+                    items={evalReport.cost_analysis?.warnings ?? []}
+                    color={COLORS.vividGamboge}
+                  />
                 </div>
               )}
             </SCard>
@@ -1404,7 +1446,7 @@ export default function ReportPage() {
                       width="8"
                       height="8"
                       rx="1.5"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                     />
                     <rect
@@ -1413,7 +1455,7 @@ export default function ReportPage() {
                       width="8"
                       height="8"
                       rx="1.5"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                     />
                     <rect
@@ -1422,7 +1464,7 @@ export default function ReportPage() {
                       width="8"
                       height="8"
                       rx="1.5"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                     />
                     <rect
@@ -1431,7 +1473,7 @@ export default function ReportPage() {
                       width="8"
                       height="8"
                       rx="1.5"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                     />
                   </svg>
@@ -1446,8 +1488,8 @@ export default function ReportPage() {
                 <div
                   className="flex text-xs font-bold py-2 px-1 rounded-lg mb-1"
                   style={{
-                    backgroundColor: "#F1F5F9",
-                    color: "#6D6D6D",
+                    backgroundColor: COLORS.americanDiamond,
+                    color: COLORS.darkSilver,
                   }}
                 >
                   <span className="flex-1">{t("Feed")}</span>
@@ -1461,26 +1503,26 @@ export default function ReportPage() {
                   <div
                     key={i}
                     className="flex items-center py-2 px-1 border-b last:border-0"
-                    style={{ borderColor: "#F1F5F9" }}
+                    style={{ borderColor: COLORS.americanDiamond }}
                   >
-                    <span className="flex-1 text-sm" style={{ color: "#231F20" }}>
+                    <span className="flex-1 text-sm" style={{ color: COLORS.raisinBlack }}>
                       {displayFeedName(row)}
                     </span>
                     <span
                       className="w-20 text-right text-sm font-bold"
-                      style={{ color: "#064E3B" }}
+                      style={{ color: COLORS.darkAquamarineGreen }}
                     >
                       {fmt(row.price_per_kg)}
                     </span>
                     <span
                       className="w-16 text-right text-sm font-bold"
-                      style={{ color: "#064E3B" }}
+                      style={{ color: COLORS.darkAquamarineGreen }}
                     >
                       {fmt(row.quantity_as_fed_kg_per_day, 1)}
                     </span>
                     <span
                       className="w-16 text-right text-sm font-bold"
-                      style={{ color: "#064E3B" }}
+                      style={{ color: COLORS.darkAquamarineGreen }}
                     >
                       {fmt(row.total_cost)}
                     </span>
@@ -1497,12 +1539,12 @@ export default function ReportPage() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M12 3C7 3 3 7.5 3 12s4 9 9 9 9-4 9-9-4-9-9-9z"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                     />
                     <path
                       d="M12 8v4l3 2"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                     />
@@ -1524,9 +1566,9 @@ export default function ReportPage() {
                 {evalReport.intake_evaluation.intake_status && (
                   <div
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
-                    style={{ backgroundColor: "#F8FAF9" }}
+                    style={{ backgroundColor: COLORS.authenticWhite }}
                   >
-                    <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
+                    <span className="text-sm font-bold" style={{ color: COLORS.darkSilver }}>
                       {t("Status")}
                     </span>
                     <StatusBadge status={evalReport.intake_evaluation.intake_status} />
@@ -1534,9 +1576,12 @@ export default function ReportPage() {
                 )}
                 <BulletList
                   items={evalReport.intake_evaluation.recommendations ?? []}
-                  color="#064E3B"
+                  color={COLORS.darkAquamarineGreen}
                 />
-                <BulletList items={evalReport.intake_evaluation.warnings ?? []} color="#FF9800" />
+                <BulletList
+                  items={evalReport.intake_evaluation.warnings ?? []}
+                  color={COLORS.vividGamboge}
+                />
               </SCard>
             )}
 
@@ -1549,19 +1594,19 @@ export default function ReportPage() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M8 3h8l1 4H7L8 3z"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinejoin="round"
                     />
                     <path
                       d="M6 7c0 0-2 3-2 7a8 8 0 0 0 16 0c0-4-2-7-2-7"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                     />
                     <path
                       d="M10 14a3 3 0 0 0 4 0"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.6"
                       strokeLinecap="round"
                     />
@@ -1593,23 +1638,23 @@ export default function ReportPage() {
                 {evalReport.milk_production_analysis.limiting_nutrient && (
                   <div
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
-                    style={{ backgroundColor: "#F8FAF9" }}
+                    style={{ backgroundColor: COLORS.authenticWhite }}
                   >
-                    <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
+                    <span className="text-sm font-bold" style={{ color: COLORS.darkSilver }}>
                       {t("Limiting Nutrient")}
                     </span>
-                    <span className="text-sm font-bold" style={{ color: "#E44A4A" }}>
+                    <span className="text-sm font-bold" style={{ color: COLORS.carminePink }}>
                       {evalReport.milk_production_analysis.limiting_nutrient}
                     </span>
                   </div>
                 )}
                 <BulletList
                   items={evalReport.milk_production_analysis.recommendations ?? []}
-                  color="#064E3B"
+                  color={COLORS.darkAquamarineGreen}
                 />
                 <BulletList
                   items={evalReport.milk_production_analysis.warnings ?? []}
-                  color="#FF9800"
+                  color={COLORS.vividGamboge}
                 />
               </SCard>
             )}
@@ -1622,7 +1667,7 @@ export default function ReportPage() {
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M3 17l5-5 4 4 5-7 4 3"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -1658,9 +1703,12 @@ export default function ReportPage() {
                 <div className="mt-3 space-y-2">
                   <BulletList
                     items={evalReport.nutrient_balance.recommendations ?? []}
-                    color="#064E3B"
+                    color={COLORS.darkAquamarineGreen}
                   />
-                  <BulletList items={evalReport.nutrient_balance.warnings ?? []} color="#FF9800" />
+                  <BulletList
+                    items={evalReport.nutrient_balance.warnings ?? []}
+                    color={COLORS.vividGamboge}
+                  />
                 </div>
               </SCard>
             )}
@@ -1669,7 +1717,7 @@ export default function ReportPage() {
             {evalReport.methane_analysis && (
               <SCard
                 title={t("Environment Impact")}
-                icon={<IcEnvironment size={24} color="#064E3B" />}
+                icon={<IcEnvironment size={24} color={COLORS.darkAquamarineGreen} />}
               >
                 <div className="grid grid-cols-2 gap-3">
                   <MetricTile
@@ -1702,12 +1750,15 @@ export default function ReportPage() {
                 {evalReport.methane_analysis.classification && (
                   <div
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 mt-3"
-                    style={{ backgroundColor: "#F8FAF9" }}
+                    style={{ backgroundColor: COLORS.authenticWhite }}
                   >
-                    <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
+                    <span className="text-sm font-bold" style={{ color: COLORS.darkSilver }}>
                       {t("Classification")}
                     </span>
-                    <span className="text-sm font-bold" style={{ color: "#064E3B" }}>
+                    <span
+                      className="text-sm font-bold"
+                      style={{ color: COLORS.darkAquamarineGreen }}
+                    >
                       {evalReport.methane_analysis.classification}
                     </span>
                   </div>
@@ -1715,9 +1766,12 @@ export default function ReportPage() {
                 <div className="mt-2 space-y-2">
                   <BulletList
                     items={evalReport.methane_analysis.recommendations ?? []}
-                    color="#064E3B"
+                    color={COLORS.darkAquamarineGreen}
                   />
-                  <BulletList items={evalReport.methane_analysis.warnings ?? []} color="#FF9800" />
+                  <BulletList
+                    items={evalReport.methane_analysis.warnings ?? []}
+                    color={COLORS.vividGamboge}
+                  />
                 </div>
               </SCard>
             )}
@@ -1737,17 +1791,17 @@ export default function ReportPage() {
               <SCard
                 title={t("Diet Limit Notes")}
                 icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#FF9800">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill={COLORS.vividGamboge}>
                     <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 15a1.25 1.25 0 110-2.5A1.25 1.25 0 0112 17zm1-4.75a1 1 0 01-2 0V7a1 1 0 012 0z" />
                   </svg>
                 }
               >
-                <p className="text-xs mb-2" style={{ color: "#6D6D6D" }}>
+                <p className="text-xs mb-2" style={{ color: COLORS.darkSilver }}>
                   {t(
                     "These limits are targets. The diet is still valid — the optimizer kept the difference as small as cost allowed."
                   )}
                 </p>
-                <BulletList items={softLimitNotes} color="#FF9800" />
+                <BulletList items={softLimitNotes} color={COLORS.vividGamboge} />
               </SCard>
             )}
 
@@ -1760,7 +1814,7 @@ export default function ReportPage() {
                 title={t("Solution Summary")}
                 icon={
                   /* ic_solution_summary — clipboard with checkmark */
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill={COLORS.darkAquamarineGreen}>
                     <path d="M18,12c-3.314,0 -6,2.686 -6,6s2.686,6 6,6 6,-2.686 6,-6 -2.686,-6 -6,-6ZM21.683,17.712l-2.703,2.614c-0.452,0.446 -1.052,0.671 -1.653,0.671s-1.203,-0.225 -1.663,-0.674l-1.354,-1.332c-0.395,-0.387 -0.4,-1.02 -0.014,-1.414 0.386,-0.395 1.019,-0.401 1.414,-0.014l1.354,1.331c0.144,0.142 0.38,0.139 0.522,-0.002l2.713,-2.624c0.397,-0.381 1.031,-0.37 1.414,0.029 0.382,0.398 0.369,1.031 -0.029,1.414ZM10,18c0,-4.411 3.589,-8 8,-8 0.692,0 1.359,0.097 2,0.263v-3.263c0,-2.045 -1.237,-3.802 -3,-4.576L17,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L13,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L9,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L5,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1.424C1.237,3.198 0,4.955 0,7v12c0,2.757 2.243,5 5,5h7.726c-1.667,-1.467 -2.726,-3.61 -2.726,-6ZM5,7L15,7c0.553,0 1,0.448 1,1s-0.447,1 -1,1L5,9c-0.553,0 -1,-0.448 -1,-1s0.447,-1 1,-1ZM8.5,13h-3.5c-0.553,0 -1,-0.448 -1,-1s0.447,-1 1,-1h3.5c0.553,0 1,0.448 1,1s-0.447,1 -1,1Z" />
                   </svg>
                 }
@@ -1769,19 +1823,19 @@ export default function ReportPage() {
                 {recReport.solution_summary.daily_cost != null && (
                   <div style={{ marginBottom: 10 }}>
                     <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="#05BC6D">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.goGreen}>
                         <path d="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10s10,-4.48 10,-10S17.52,2 12,2zM12.88,17.76v0.36c0,0.48 -0.39,0.88 -0.88,0.88h0c-0.48,0 -0.88,-0.39 -0.88,-0.88v-0.42c-0.63,-0.15 -1.93,-0.61 -2.69,-2.1c-0.23,-0.44 -0.01,-0.99 0.45,-1.18l0.07,-0.03c0.41,-0.17 0.87,0 1.08,0.39c0.32,0.61 0.95,1.37 2.12,1.37c0.93,0 1.98,-0.48 1.98,-1.61c0,-0.96 -0.7,-1.46 -2.28,-2.03c-1.1,-0.39 -3.35,-1.03 -3.35,-3.31c0,-0.1 0.01,-2.4 2.62,-2.96V5.88C11.12,5.39 11.52,5 12,5h0c0.48,0 0.88,0.39 0.88,0.88v0.37c1.07,0.19 1.75,0.76 2.16,1.3c0.34,0.44 0.16,1.08 -0.36,1.3l0,0C14.32,9 13.9,8.88 13.66,8.57c-0.28,-0.38 -0.78,-0.77 -1.6,-0.77c-0.7,0 -1.81,0.37 -1.81,1.39c0,0.95 0.86,1.31 2.64,1.9c2.4,0.83 3.01,2.05 3.01,3.45C15.9,17.17 13.4,17.67 12.88,17.76z" />
                       </svg>
-                      <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12 }}>
+                      <p className="font-bold" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
                         {t("Daily Cost")}
                       </p>
                     </div>
                     {/* Value + currency code suffix — Android "108,199.8 VND" */}
                     <div className="flex items-baseline gap-1.5">
-                      <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
+                      <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
                         {Number(recReport.solution_summary.daily_cost).toFixed(2)}
                       </p>
-                      <p style={{ color: "#6D6D6D", fontSize: 14 }}>{currencySymbol}</p>
+                      <p style={{ color: COLORS.darkSilver, fontSize: 14 }}>{currencySymbol}</p>
                     </div>
                   </div>
                 )}
@@ -1795,13 +1849,13 @@ export default function ReportPage() {
                         <div>
                           <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
                             {/* ic_milk_production_20 — droplet with notch (azure tint) */}
-                            <svg width="18" height="18" viewBox="0 0 20 20" fill="#007BFF">
+                            <svg width="18" height="18" viewBox="0 0 20 20" fill={COLORS.azure}>
                               <path d="M10.65,2.55c-0.38,-0.33 -0.93,-0.33 -1.31,0C7.7,4 3.5,8.01 3.5,11.5c0,3.59 2.91,6.5 6.5,6.5s6.5,-2.91 6.5,-6.5C16.5,8.01 12.3,4 10.65,2.55zM7.03,11.93c0.24,1.66 1.79,2.77 3.4,2.54c0.3,-0.04 0.57,0.19 0.57,0.49c0,0.28 -0.2,0.47 -0.42,0.5c-2.23,0.31 -4.22,-1.23 -4.54,-3.39C6,11.77 6.23,11.5 6.54,11.5C6.79,11.5 7,11.68 7.03,11.93z" />
                             </svg>
                             <p
                               className="font-bold"
                               style={{
-                                color: "#6D6D6D",
+                                color: COLORS.darkSilver,
                                 fontSize: 12,
                               }}
                             >
@@ -1812,7 +1866,7 @@ export default function ReportPage() {
                             <p
                               className="font-bold"
                               style={{
-                                color: "#231F20",
+                                color: COLORS.raisinBlack,
                                 fontSize: 20,
                               }}
                             >
@@ -1820,7 +1874,7 @@ export default function ReportPage() {
                             </p>
                             <p
                               style={{
-                                color: "#6D6D6D",
+                                color: COLORS.darkSilver,
                                 fontSize: 14,
                               }}
                             >
@@ -1837,13 +1891,18 @@ export default function ReportPage() {
                         <div>
                           <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
                             {/* ic_dm_intake — Material Symbols "grass" (vivid_gamboge tint) */}
-                            <svg width="20" height="20" viewBox="0 0 960 960" fill="#FF9800">
+                            <svg
+                              width="20"
+                              height="20"
+                              viewBox="0 0 960 960"
+                              fill={COLORS.vividGamboge}
+                            >
                               <path d="M120,800q-17,0 -28.5,-11.5T80,760q0,-17 11.5,-28.5T120,720h190q-17,-63 -56,-114t-94,-83q-22,-13 -21,-28.5t27,-14.5q131,2 222.5,95T480,800L120,800ZM560,800q0,-42 -9,-83.5T525,637q42,-69 112.5,-112T794,480q24,-1 25,15.5T800,523q-55,32 -94,83t-56,114h190q17,0 28.5,11.5T880,760q0,17 -11.5,28.5T840,800L560,800ZM480,561q0,-106 60.5,-188.5T696,258q23,-8 34,5t-9,32q-32,30 -55.5,67T626,441q-44,21 -80.5,51.5T480,561ZM407,486q-12,-9 -24,-17t-25,-16q0,-6 1,-12.5t1,-12.5q0,-53 -11.5,-101T315,234q-11,-22 1.5,-32.5T349,207q36,29 63.5,66t44.5,81q-18,30 -31,63.5T407,486Z" />
                             </svg>
                             <p
                               className="font-bold"
                               style={{
-                                color: "#6D6D6D",
+                                color: COLORS.darkSilver,
                                 fontSize: 12,
                               }}
                             >
@@ -1854,7 +1913,7 @@ export default function ReportPage() {
                             <p
                               className="font-bold"
                               style={{
-                                color: "#231F20",
+                                color: COLORS.raisinBlack,
                                 fontSize: 20,
                               }}
                             >
@@ -1862,7 +1921,7 @@ export default function ReportPage() {
                             </p>
                             <p
                               style={{
-                                color: "#6D6D6D",
+                                color: COLORS.darkSilver,
                                 fontSize: 14,
                               }}
                             >
@@ -1884,31 +1943,39 @@ export default function ReportPage() {
                 <SCard
                   title={t("Cost-Effective Diet")}
                   icon={
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill={COLORS.darkAquamarineGreen}
+                    >
                       <path
                         d="M12 2C9 2 5 4 5 8c0 2.5 2 3.5 4 4-1 2-1 5 0 7 1 1.5 3 2 5 2-1-2-1-5 1-7v9h-2v-9c-2 0-4-1-4-3 0-4 3-4 3-4z"
                         opacity="0.3"
                       />
                       <path d="M3 14c0-1.5 1.5-3 4-3s4 1.5 4 3v6H3v-6z" />
-                      <path d="M3 17h8M3 20h8" stroke="#FFFFFF" strokeWidth="0.6" />
+                      <path d="M3 17h8M3 20h8" stroke={COLORS.white} strokeWidth="0.6" />
                     </svg>
                   }
                   footer={
                     <div
                       className="flex items-center justify-between"
-                      style={{ backgroundColor: "#E4F7EF", padding: "12px 14px" }}
+                      style={{ backgroundColor: COLORS.brightGrayNew, padding: "12px 14px" }}
                     >
                       <span
                         className="font-bold uppercase"
                         style={{
-                          color: "#064E3B",
+                          color: COLORS.darkAquamarineGreen,
                           fontSize: 12,
                           letterSpacing: 0.5,
                         }}
                       >
                         {t("Total Diet Cost")}
                       </span>
-                      <span className="font-bold" style={{ color: "#1CA069", fontSize: 16 }}>
+                      <span
+                        className="font-bold"
+                        style={{ color: COLORS.crayolaGreen, fontSize: 16 }}
+                      >
                         {fmt(recTotalCost)} {user?.currency || ""}
                       </span>
                     </div>
@@ -1925,7 +1992,7 @@ export default function ReportPage() {
                     <span
                       className="font-bold uppercase"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -1935,7 +2002,7 @@ export default function ReportPage() {
                     <span
                       className="font-bold uppercase text-center"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -1945,7 +2012,7 @@ export default function ReportPage() {
                     <span
                       className="font-bold uppercase text-center"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -1955,7 +2022,7 @@ export default function ReportPage() {
                     <span
                       className="font-bold uppercase text-right"
                       style={{
-                        color: "#6D6D6D",
+                        color: COLORS.darkSilver,
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -1973,18 +2040,27 @@ export default function ReportPage() {
                         borderBottom: "1px solid #F1F5F9",
                       }}
                     >
-                      <span className="font-bold" style={{ color: "#231F20", fontSize: 14 }}>
+                      <span
+                        className="font-bold"
+                        style={{ color: COLORS.raisinBlack, fontSize: 14 }}
+                      >
                         {displayFeedName(row)}
                       </span>
-                      <span className="text-center" style={{ color: "#231F20", fontSize: 14 }}>
+                      <span
+                        className="text-center"
+                        style={{ color: COLORS.raisinBlack, fontSize: 14 }}
+                      >
                         {fmt(row.price_per_kg, 0)}
                       </span>
-                      <span className="text-center" style={{ color: "#231F20", fontSize: 14 }}>
+                      <span
+                        className="text-center"
+                        style={{ color: COLORS.raisinBlack, fontSize: 14 }}
+                      >
                         {fmt(row.quantity_kg_per_day, 2)}
                       </span>
                       <span
                         className="text-right font-bold"
-                        style={{ color: "#1CA069", fontSize: 14 }}
+                        style={{ color: COLORS.crayolaGreen, fontSize: 14 }}
                       >
                         {fmt(row.daily_cost, 0)}
                       </span>
@@ -2011,32 +2087,41 @@ export default function ReportPage() {
                 return (
                   <SCard
                     title={t("Environmental Impact")}
-                    icon={<IcEnvironment size={24} color="#064E3B" />}
+                    icon={<IcEnvironment size={24} color={COLORS.darkAquamarineGreen} />}
                   >
                     {/* Methane Production */}
                     <div className="flex items-center justify-between mt-1">
-                      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
+                      <p
+                        className="font-bold uppercase"
+                        style={{ color: COLORS.darkSilver, fontSize: 12 }}
+                      >
                         {t("Methane Production")}
                       </p>
-                      <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
+                      <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16 }}>
                         {fmt(productionVal, 2)} {t("g/day")}
                       </p>
                     </div>
                     <MethaneBar
                       progress={calcPct(productionVal, MAX_METHANE_PRODUCTION)}
-                      color="#1CA069"
+                      color={COLORS.crayolaGreen}
                     />
 
                     {/* Methane Yield */}
                     <div className="flex items-center justify-between mt-4">
-                      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
+                      <p
+                        className="font-bold uppercase"
+                        style={{ color: COLORS.darkSilver, fontSize: 12 }}
+                      >
                         {t("Methane Yield")}
                       </p>
-                      <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
+                      <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16 }}>
                         {fmt(yieldVal, 2)} {t("g/kg DMI")}
                       </p>
                     </div>
-                    <MethaneBar progress={calcPct(yieldVal, MAX_METHANE_YIELD)} color="#064E3B" />
+                    <MethaneBar
+                      progress={calcPct(yieldVal, MAX_METHANE_YIELD)}
+                      color={COLORS.darkAquamarineGreen}
+                    />
 
                     {/* Methane Intensity — per kg of ENERGY-CORRECTED MILK,
                         so it is only shown for a Lactating Cow (QA row 12).
@@ -2048,7 +2133,7 @@ export default function ReportPage() {
                           <p
                             className="font-bold uppercase"
                             style={{
-                              color: "#6D6D6D",
+                              color: COLORS.darkSilver,
                               fontSize: 12,
                             }}
                           >
@@ -2057,7 +2142,7 @@ export default function ReportPage() {
                           <p
                             className="font-bold"
                             style={{
-                              color: "#231F20",
+                              color: COLORS.raisinBlack,
                               fontSize: 16,
                             }}
                           >
@@ -2066,28 +2151,34 @@ export default function ReportPage() {
                         </div>
                         <MethaneBar
                           progress={calcPct(intensityVal, MAX_METHANE_INTENSITY)}
-                          color="#296CD3"
+                          color={COLORS.celticBlue}
                         />
                       </>
                     )}
 
                     {/* Methane Conversion Rate (Ym %) */}
                     <div className="flex items-center justify-between mt-4">
-                      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
+                      <p
+                        className="font-bold uppercase"
+                        style={{ color: COLORS.darkSilver, fontSize: 12 }}
+                      >
                         {t("Methane Conversion Rate (Ym %)")}
                       </p>
-                      <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
+                      <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16 }}>
                         {fmt(ymVal, 2)} %
                       </p>
                     </div>
-                    <MethaneBar progress={calcPct(ymVal, MAX_YM_PERCENT)} color="#FF9800" />
+                    <MethaneBar
+                      progress={calcPct(ymVal, MAX_YM_PERCENT)}
+                      color={COLORS.vividGamboge}
+                    />
 
                     {/* Classification banner */}
                     {env.classification && (
                       <div
                         className="flex items-center gap-3 mt-5"
                         style={{
-                          backgroundColor: "#E3F2FD",
+                          backgroundColor: COLORS.water,
                           border: "1px solid rgba(41,108,211,0.25)",
                           borderRadius: 16,
                           padding: "10px 12px",
@@ -2099,10 +2190,10 @@ export default function ReportPage() {
                             width: 36,
                             height: 36,
                             borderRadius: "50%",
-                            backgroundColor: "#1E40AF",
+                            backgroundColor: COLORS.ultramarine,
                           }}
                         >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.white}>
                             <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 14h-2v-6h2zm0-8h-2V6h2z" />
                           </svg>
                         </div>
@@ -2110,7 +2201,7 @@ export default function ReportPage() {
                           <p
                             className="font-bold uppercase"
                             style={{
-                              color: "#1E40AF",
+                              color: COLORS.ultramarine,
                               fontSize: 12,
                               letterSpacing: 0.5,
                             }}
@@ -2120,7 +2211,7 @@ export default function ReportPage() {
                           <p
                             className="font-bold"
                             style={{
-                              color: "#1E40AF",
+                              color: COLORS.ultramarine,
                               fontSize: 16,
                             }}
                           >
@@ -2133,7 +2224,7 @@ export default function ReportPage() {
                     {/* Ym footnote */}
                     <p
                       style={{
-                        color: "#1E40AF",
+                        color: COLORS.ultramarine,
                         fontSize: 12,
                         marginTop: 12,
                       }}
@@ -2155,11 +2246,11 @@ export default function ReportPage() {
               <SCard
                 title={t("Notes")}
                 icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="#064E3B">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill={COLORS.darkAquamarineGreen}>
                     <rect x="3" y="4" width="18" height="16" rx="2" />
                     <path
                       d="M7 10v6M11 8v8M15 12v4M19 6v10"
-                      stroke="#FFFFFF"
+                      stroke={COLORS.white}
                       strokeWidth="1.6"
                       strokeLinecap="round"
                     />
@@ -2185,7 +2276,7 @@ export default function ReportPage() {
                       backgroundColor: banner.iconBg,
                     }}
                   >
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.white}>
                       {isErrorState ? (
                         // X (no solution)
                         <path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm4 14.59L14.59 18 12 15.41 9.41 18 8 16.59 10.59 14 8 11.41 9.41 10 12 12.59 14.59 10 16 11.41 13.41 14 16 16.59z" />
@@ -2229,7 +2320,7 @@ export default function ReportPage() {
                     <p
                       className="font-bold"
                       style={{
-                        color: "#231F20",
+                        color: COLORS.raisinBlack,
                         fontSize: 14,
                         marginTop: 16,
                       }}
@@ -2251,7 +2342,7 @@ export default function ReportPage() {
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
                               <path
                                 d="M9 11l3 3L20 6M4 12l3 3"
-                                stroke="#064E3B"
+                                stroke={COLORS.darkAquamarineGreen}
                                 strokeWidth="2"
                                 strokeLinecap="round"
                                 strokeLinejoin="round"
@@ -2260,7 +2351,7 @@ export default function ReportPage() {
                           </div>
                           <p
                             style={{
-                              color: "#231F20",
+                              color: COLORS.raisinBlack,
                               fontSize: 14,
                               lineHeight: 1.5,
                             }}
@@ -2279,7 +2370,7 @@ export default function ReportPage() {
                 <p
                   className="font-bold"
                   style={{
-                    color: "#231F20",
+                    color: COLORS.raisinBlack,
                     fontSize: 14,
                     marginTop: 16,
                     marginBottom: 8,
@@ -2289,7 +2380,7 @@ export default function ReportPage() {
                 </p>
                 <BulletList
                   items={rwDisplay}
-                  color={rwPoints.length === 0 ? "#6D6D6D" : "#064E3B"}
+                  color={rwPoints.length === 0 ? COLORS.darkSilver : COLORS.darkAquamarineGreen}
                 />
               </SCard>
             )}
@@ -2307,7 +2398,7 @@ export default function ReportPage() {
           transform: "translateX(-50%)",
           width: "100%",
           maxWidth: COLUMN_WIDTH,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: COLORS.white,
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
         }}
@@ -2320,7 +2411,7 @@ export default function ReportPage() {
             }}
             className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5 mb-3"
             style={{
-              backgroundColor: "#064E3B",
+              backgroundColor: COLORS.darkAquamarineGreen,
               color: "white",
               border: "none",
               cursor: "pointer",
@@ -2335,8 +2426,8 @@ export default function ReportPage() {
               onClick={() => window.open(pdfUrl, "_blank", "noopener,noreferrer")}
               className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
               style={{
-                backgroundColor: "#F0FDF4",
-                color: "#064E3B",
+                backgroundColor: COLORS.honeydew,
+                color: COLORS.darkAquamarineGreen,
                 border: "1px solid #064E3B",
                 cursor: "pointer",
               }}
@@ -2390,7 +2481,7 @@ export default function ReportPage() {
               }}
               className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
               style={{
-                backgroundColor: "#064E3B",
+                backgroundColor: COLORS.darkAquamarineGreen,
                 color: "white",
                 border: "none",
                 cursor: "pointer",
@@ -2429,12 +2520,12 @@ export default function ReportPage() {
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
             style={{
               border: "2px solid #064E3B",
-              color: "#064E3B",
+              color: COLORS.darkAquamarineGreen,
               background: "white",
               cursor: "pointer",
             }}
           >
-            <IcNewCase size={18} color="#064E3B" />
+            <IcNewCase size={18} color={COLORS.darkAquamarineGreen} />
             {t("New Case")}
           </button>
           <button
@@ -2442,8 +2533,9 @@ export default function ReportPage() {
             disabled={isSaving || !reportIdForSave}
             className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
             style={{
-              backgroundColor: isSaving || !reportIdForSave ? "#D3D3D3" : "#064E3B",
-              color: isSaving || !reportIdForSave ? "#999999" : "white",
+              backgroundColor:
+                isSaving || !reportIdForSave ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
+              color: isSaving || !reportIdForSave ? COLORS.spanishGray : "white",
               border: "none",
               cursor: isSaving || !reportIdForSave ? "not-allowed" : "pointer",
             }}
@@ -2455,7 +2547,7 @@ export default function ReportPage() {
               </>
             ) : (
               <>
-                <IcSave size={18} color={!reportIdForSave ? "#999999" : "white"} />
+                <IcSave size={18} color={!reportIdForSave ? COLORS.spanishGray : "white"} />
                 {t("Save Report")}
               </>
             )}

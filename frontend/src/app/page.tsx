@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import { SPLASH_DURATION_MS } from "@/components/SplashOverlay";
+import { COLORS } from "@/lib/colors";
 
 export default function SplashScreen() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function SplashScreen() {
   return (
     <div
       className="flex flex-col items-center justify-between min-h-screen py-16"
-      style={{ backgroundColor: "#FFFFFF" }}
+      style={{ backgroundColor: COLORS.white }}
     >
       <div />
       <AppBranding />

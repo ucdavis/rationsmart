@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { INSTALL_PROMPT_DELAY_MS } from "@/lib/ui-timings";
+import { COLORS } from "@/lib/colors";
 
 // A fresh install must open to login. Removing the localStorage key alone
 // isn't enough: the in-memory store re-persists user + token on its next
@@ -141,7 +142,7 @@ export default function InstallPrompt() {
             style={{
               fontSize: 18,
               fontWeight: 700,
-              color: "#064E3B",
+              color: COLORS.darkAquamarineGreen,
               textAlign: "center",
               marginBottom: 4,
             }}
@@ -151,7 +152,7 @@ export default function InstallPrompt() {
           <p
             style={{
               fontSize: 12,
-              color: "#6D6D6D",
+              color: COLORS.darkSilver,
               textAlign: "center",
               margin: "0 0 20px",
             }}
@@ -172,14 +173,14 @@ export default function InstallPrompt() {
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path
                         d="M12 3v12M8 7l4-4 4 4"
-                        stroke="#1CA069"
+                        stroke={COLORS.crayolaGreen}
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                       />
                       <path
                         d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"
-                        stroke="#1CA069"
+                        stroke={COLORS.crayolaGreen}
                         strokeWidth="2"
                         strokeLinecap="round"
                       />
@@ -198,12 +199,12 @@ export default function InstallPrompt() {
                         width="16"
                         height="16"
                         rx="3"
-                        stroke="#1CA069"
+                        stroke={COLORS.crayolaGreen}
                         strokeWidth="2"
                       />
                       <path
                         d="M12 8v8M8 12h8"
-                        stroke="#1CA069"
+                        stroke={COLORS.crayolaGreen}
                         strokeWidth="2"
                         strokeLinecap="round"
                       />
@@ -220,7 +221,7 @@ export default function InstallPrompt() {
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                       <path
                         d="M5 12l5 5L20 7"
-                        stroke="#1CA069"
+                        stroke={COLORS.crayolaGreen}
                         strokeWidth="2.5"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -259,7 +260,7 @@ export default function InstallPrompt() {
                   width: 28,
                   height: 28,
                   borderRadius: "50%",
-                  backgroundColor: "#064E3B",
+                  backgroundColor: COLORS.darkAquamarineGreen,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -282,7 +283,7 @@ export default function InstallPrompt() {
                     style={{
                       fontSize: 14,
                       fontWeight: 700,
-                      color: "#231F20",
+                      color: COLORS.raisinBlack,
                       margin: 0,
                     }}
                   >
@@ -293,7 +294,7 @@ export default function InstallPrompt() {
                 <p
                   style={{
                     fontSize: 12,
-                    color: "#6D6D6D",
+                    color: COLORS.darkSilver,
                     margin: "2px 0 0",
                   }}
                 >
@@ -309,7 +310,7 @@ export default function InstallPrompt() {
               marginTop: 8,
               padding: "14px",
               borderRadius: 999,
-              backgroundColor: "#064E3B",
+              backgroundColor: COLORS.darkAquamarineGreen,
               color: "#fff",
               border: "none",
               fontWeight: 700,
@@ -347,7 +348,7 @@ export default function InstallPrompt() {
       >
         <div
           style={{
-            backgroundColor: "#064E3B",
+            backgroundColor: COLORS.darkAquamarineGreen,
             borderRadius: 16,
             padding: "12px 12px 12px 12px",
             display: "flex",
@@ -405,7 +406,7 @@ export default function InstallPrompt() {
           <button
             onClick={handleInstall}
             style={{
-              backgroundColor: "#1CA069",
+              backgroundColor: COLORS.crayolaGreen,
               color: "#fff",
               border: "none",
               borderRadius: 999,

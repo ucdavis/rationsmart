@@ -14,6 +14,7 @@ import {
 } from "@/lib/download";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
+import { COLORS } from "@/lib/colors";
 
 // Upload template. The filename's "tempate" misspelling is the real object
 // name (Android downloads the same file). It is a public static asset, so
@@ -43,8 +44,15 @@ function fillTemplate(template: string, vars: Record<string, string>): string {
 function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 mt-5 ml-3">
-      <span style={{ width: 6, height: 30, borderRadius: 3, backgroundColor: "#064E3B" }} />
-      <p className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
+      <span
+        style={{
+          width: 6,
+          height: 30,
+          borderRadius: 3,
+          backgroundColor: COLORS.darkAquamarineGreen,
+        }}
+      />
+      <p className="font-bold" style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}>
         {children}
       </p>
     </div>
@@ -291,23 +299,23 @@ export default function BulkUploadPage() {
       case "uploading":
         return {
           title: t("Uploading"),
-          bg: "#E3F2FD",
+          bg: COLORS.water,
           stroke: "rgba(41,108,211,0.25)",
-          iconBg: "#007BFF",
-          titleColor: "#1E40AF",
-          msgColor: "#2563EB",
-          progressColor: "#296CD3",
+          iconBg: COLORS.azure,
+          titleColor: COLORS.ultramarine,
+          msgColor: COLORS.mirrorBlue,
+          progressColor: COLORS.celticBlue,
           trackColor: "rgba(41,108,211,0.15)",
         };
       case "successful":
         return {
           title: t("Upload Successful"),
-          bg: "#F0FDF4",
+          bg: COLORS.honeydew,
           stroke: "rgba(5,188,109,0.25)",
-          iconBg: "#1CA069",
-          titleColor: "#064E3B",
-          msgColor: "#064E3B",
-          progressColor: "#064E3B",
+          iconBg: COLORS.crayolaGreen,
+          titleColor: COLORS.darkAquamarineGreen,
+          msgColor: COLORS.darkAquamarineGreen,
+          progressColor: COLORS.darkAquamarineGreen,
           trackColor: "rgba(5,188,109,0.15)",
         };
       case "failed":
@@ -315,10 +323,10 @@ export default function BulkUploadPage() {
           title: t("Upload Failed"),
           bg: "rgba(228,74,74,0.10)",
           stroke: "rgba(228,74,74,0.25)",
-          iconBg: "#FC2E20",
-          titleColor: "#E44A4A",
-          msgColor: "#E44A4A",
-          progressColor: "#FC2E20",
+          iconBg: COLORS.redRyb,
+          titleColor: COLORS.carminePink,
+          msgColor: COLORS.carminePink,
+          progressColor: COLORS.redRyb,
           trackColor: "rgba(228,74,74,0.15)",
         };
       default:
@@ -333,12 +341,12 @@ export default function BulkUploadPage() {
       if (downloadKind === "standard") {
         return {
           title: downloadStatus === "downloading" ? t("Downloading") : t("Export Successful"),
-          bg: "#F0FDF4",
+          bg: COLORS.honeydew,
           stroke: "rgba(5,188,109,0.25)",
-          iconBg: "#1CA069",
-          titleColor: "#064E3B",
-          msgColor: "#069460",
-          progressColor: "#064E3B",
+          iconBg: COLORS.crayolaGreen,
+          titleColor: COLORS.darkAquamarineGreen,
+          msgColor: COLORS.greenOnyx,
+          progressColor: COLORS.darkAquamarineGreen,
           trackColor: "rgba(5,188,109,0.15)",
         };
       }
@@ -346,10 +354,10 @@ export default function BulkUploadPage() {
         title: downloadStatus === "downloading" ? t("Downloading") : t("Export Successful"),
         bg: "rgba(255,152,0,0.10)",
         stroke: "rgba(255,152,0,0.30)",
-        iconBg: "#FF6D00",
-        titleColor: "#FF7800",
-        msgColor: "#FF9800",
-        progressColor: "#FF9800",
+        iconBg: COLORS.hotOrange,
+        titleColor: COLORS.fireOrange,
+        msgColor: COLORS.vividGamboge,
+        progressColor: COLORS.vividGamboge,
         trackColor: "rgba(255,152,0,0.15)",
       };
     }
@@ -358,10 +366,10 @@ export default function BulkUploadPage() {
       title: t("Export Failed"),
       bg: "rgba(228,74,74,0.10)",
       stroke: "rgba(228,74,74,0.25)",
-      iconBg: "#FC2E20",
-      titleColor: "#E44A4A",
-      msgColor: "#E44A4A",
-      progressColor: "#FC2E20",
+      iconBg: COLORS.redRyb,
+      titleColor: COLORS.carminePink,
+      msgColor: COLORS.carminePink,
+      progressColor: COLORS.redRyb,
       trackColor: "rgba(228,74,74,0.15)",
     };
   })();
@@ -373,7 +381,7 @@ export default function BulkUploadPage() {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
           <path
             d="M5 12l5 5L20 7"
-            stroke="#FFFFFF"
+            stroke={COLORS.white}
             strokeWidth="2.5"
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -385,7 +393,12 @@ export default function BulkUploadPage() {
       // ic_failed — exclamation in triangle / X
       return (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-          <path d="M6 6l12 12M18 6L6 18" stroke="#FFFFFF" strokeWidth="2.5" strokeLinecap="round" />
+          <path
+            d="M6 6l12 12M18 6L6 18"
+            stroke={COLORS.white}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
         </svg>
       );
     }
@@ -397,7 +410,7 @@ export default function BulkUploadPage() {
           cx="12"
           cy="12"
           r="9"
-          stroke="#FFFFFF"
+          stroke={COLORS.white}
           strokeWidth="3"
           strokeDasharray="40"
           strokeDashoffset="10"
@@ -416,8 +429,8 @@ export default function BulkUploadPage() {
 
       {/* Page header — matches Android tv_title_data_sync / tv_title_feed_export_upload */}
       <div className="ml-3 mt-5">
-        <p style={{ color: "#6D6D6D", fontSize: 14 }}>{t("Data Sync")}</p>
-        <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
+        <p style={{ color: COLORS.darkSilver, fontSize: 14 }}>{t("Data Sync")}</p>
+        <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
           {t("Feed Export & Upload")}
         </p>
       </div>
@@ -437,7 +450,7 @@ export default function BulkUploadPage() {
             className="w-full flex flex-col items-center justify-center rounded-2xl"
             style={{
               border: "2px dashed #007BFF",
-              backgroundColor: "#F6F9FD",
+              backgroundColor: COLORS.ghostWhite,
               padding: "32px 16px",
               cursor: uploadStatus === "uploading" ? "not-allowed" : "pointer",
             }}
@@ -448,23 +461,23 @@ export default function BulkUploadPage() {
                 width: 56,
                 height: 56,
                 borderRadius: 14,
-                backgroundColor: "#007BFF",
+                backgroundColor: COLORS.azure,
                 boxShadow: "0 4px 12px rgba(0,123,255,0.25)",
               }}
             >
               {/* ic_upload — Material cloud-with-arrow */}
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="#FFFFFF">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill={COLORS.white}>
                 <path d="M19,11c0,-3.87 -3.13,-7 -7,-7C8.78,4 6.07,6.18 5.26,9.15C2.82,9.71 1,11.89 1,14.5C1,17.54 3.46,20 6.5,20c1.76,0 10.25,0 12,0l0,0c2.49,-0.01 4.5,-2.03 4.5,-4.52C23,13.15 21.25,11.26 19,11zM13,13v2c0,0.55 -0.45,1 -1,1h0c-0.55,0 -1,-0.45 -1,-1v-2H9.21c-0.45,0 -0.67,-0.54 -0.35,-0.85l2.79,-2.79c0.2,-0.2 0.51,-0.2 0.71,0l2.79,2.79c0.31,0.31 0.09,0.85 -0.35,0.85H13z" />
               </svg>
             </span>
             {/* "UPLOAD FEEDS" (ultramarine, bold, font_16) */}
-            <p className="font-bold mt-4" style={{ color: "#1E40AF", fontSize: 16 }}>
+            <p className="font-bold mt-4" style={{ color: COLORS.ultramarine, fontSize: 16 }}>
               {t("UPLOAD FEEDS")}
             </p>
             {/* "Tap to browse CSV or Excel" (mirror_blue, regular, font_12) */}
             <p
               style={{
-                color: "#2563EB",
+                color: COLORS.mirrorBlue,
                 fontSize: 12,
                 marginTop: 10,
               }}
@@ -488,7 +501,7 @@ export default function BulkUploadPage() {
             <div
               className="mt-5 flex items-center"
               style={{
-                backgroundColor: "#FFFFFF",
+                backgroundColor: COLORS.white,
                 border: "1px solid rgba(5,188,109,0.40)",
                 borderRadius: 20,
                 padding: 10,
@@ -498,13 +511,16 @@ export default function BulkUploadPage() {
               {/* ic_file inside mint_whisper pill */}
               <div
                 className="flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: "#E8F5E9", borderRadius: 8, padding: 8 }}
+                style={{ backgroundColor: COLORS.mintWhisper, borderRadius: 8, padding: 8 }}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="#064E3B">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill={COLORS.darkAquamarineGreen}>
                   <path d="M14,2H6C4.9,2 4,2.9 4,4v16c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V8L14,2zM6,20V4h7v5h5v11H6z" />
                 </svg>
               </div>
-              <p className="flex-1 min-w-0 truncate" style={{ color: "#064E3B", fontSize: 12 }}>
+              <p
+                className="flex-1 min-w-0 truncate"
+                style={{ color: COLORS.darkAquamarineGreen, fontSize: 12 }}
+              >
                 {selectedFile.name}
               </p>
               {/* Cancel (X) */}
@@ -523,7 +539,7 @@ export default function BulkUploadPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M6 6l12 12M18 6L6 18"
-                    stroke="#FC2E20"
+                    stroke={COLORS.redRyb}
                     strokeWidth="2.4"
                     strokeLinecap="round"
                   />
@@ -545,7 +561,7 @@ export default function BulkUploadPage() {
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M5 12l5 5L20 7"
-                    stroke="#064E3B"
+                    stroke={COLORS.darkAquamarineGreen}
                     strokeWidth="2.4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
@@ -627,7 +643,10 @@ export default function BulkUploadPage() {
           )}
 
           {/* Helper text — Android "Only files stored on your device are supported." */}
-          <p className="mt-5 text-center italic" style={{ color: "#999999", fontSize: 12 }}>
+          <p
+            className="mt-5 text-center italic"
+            style={{ color: COLORS.spanishGray, fontSize: 12 }}
+          >
             {t("* Only files stored on your device are supported.")}
           </p>
         </div>
@@ -645,7 +664,7 @@ export default function BulkUploadPage() {
               disabled={downloadStatus === "downloading"}
               className="flex flex-col items-start rounded-2xl px-4 py-5"
               style={{
-                backgroundColor: "#F0FDF4",
+                backgroundColor: COLORS.honeydew,
                 border: "1px solid rgba(5,188,109,0.15)",
                 cursor: downloadStatus === "downloading" ? "not-allowed" : "pointer",
                 opacity: downloadStatus === "downloading" ? 0.7 : 1,
@@ -658,18 +677,18 @@ export default function BulkUploadPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: "#FFFFFF",
+                  backgroundColor: COLORS.white,
                   boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 960 960" fill="#10B981">
+                <svg width="20" height="20" viewBox="0 0 960 960" fill={COLORS.darkGreenTurquoise}>
                   <path d="M480,840q-151,0 -255.5,-46.5T120,680v-400q0,-66 105.5,-113T480,120q149,0 254.5,47T840,280v400q0,67 -104.5,113.5T480,840ZM480,361q89,0 179,-25.5T760,281q-11,-29 -100.5,-55T480,200q-91,0 -178.5,25.5T200,281q14,30 101.5,55T480,361ZM480,560q42,0 81,-4t74.5,-11.5q35.5,-7.5 67,-18.5t57.5,-25v-120q-26,14 -57.5,25t-67,18.5Q600,432 561,436t-81,4q-42,0 -82,-4t-75.5,-11.5Q287,417 256,406t-56,-25v120q25,14 56,25t66.5,18.5Q358,552 398,556t82,4ZM480,760q46,0 93.5,-7t87.5,-18.5q40,-11.5 67,-26t32,-29.5v-98q-26,14 -57.5,25t-67,18.5Q600,632 561,636t-81,4q-42,0 -82,-4t-75.5,-11.5Q287,617 256,606t-56,-25v99q5,15 31.5,29t66.5,25.5q40,11.5 88,18.5t94,7Z" />
                 </svg>
               </span>
-              <p className="font-bold mt-4" style={{ color: "#069460", fontSize: 12 }}>
+              <p className="font-bold mt-4" style={{ color: COLORS.greenOnyx, fontSize: 12 }}>
                 {t("STANDARD")}
               </p>
-              <p className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
+              <p className="font-bold" style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}>
                 {t("Feeds")}
               </p>
             </button>
@@ -680,7 +699,7 @@ export default function BulkUploadPage() {
               disabled={downloadStatus === "downloading"}
               className="flex flex-col items-start rounded-2xl px-4 py-5"
               style={{
-                backgroundColor: "#FFFAF2",
+                backgroundColor: COLORS.aestheticWhite,
                 border: "1px solid #FFF3E0",
                 cursor: downloadStatus === "downloading" ? "not-allowed" : "pointer",
                 opacity: downloadStatus === "downloading" ? 0.7 : 1,
@@ -694,18 +713,18 @@ export default function BulkUploadPage() {
                   width: 36,
                   height: 36,
                   borderRadius: 10,
-                  backgroundColor: "#FFFFFF",
+                  backgroundColor: COLORS.white,
                   boxShadow: "0 2px 4px rgba(0,0,0,0.08)",
                 }}
               >
-                <svg width="20" height="20" viewBox="0 0 960 960" fill="#FF6D00">
+                <svg width="20" height="20" viewBox="0 0 960 960" fill={COLORS.hotOrange}>
                   <path d="M240,920q-50,0 -85,-35t-35,-85q0,-50 35,-85t85,-35q14,0 26,3t23,8l57,-71q-28,-31 -39,-70t-5,-78l-81,-27q-17,25 -43,40t-58,15q-50,0 -85,-35T0,380q0,-50 35,-85t85,-35q50,0 85,35t35,85v8l81,28q20,-36 53.5,-61t75.5,-32v-87q-39,-11 -64.5,-42.5T360,120q0,-50 35,-85t85,-35q50,0 85,35t35,85q0,42 -26,73.5T510,236v87q42,7 75.5,32t53.5,61l81,-28v-8q0,-50 35,-85t85,-35q50,0 85,35t35,85q0,50 -35,85t-85,35q-32,0 -58.5,-15T739,445l-81,27q6,39 -5,77.5T614,620l57,70q11,-5 23,-7.5t26,-2.5q50,0 85,35t35,85q0,50 -35,85t-85,35q-50,0 -85,-35t-35,-85q0,-20 6.5,-38.5T624,728l-57,-71q-41,23 -87.5,23T392,657l-56,71q11,15 17.5,33.5T360,800q0,50 -35,85t-85,35ZM120,420q17,0 28.5,-11.5T160,380q0,-17 -11.5,-28.5T120,340q-17,0 -28.5,11.5T80,380q0,17 11.5,28.5T120,420ZM240,840q17,0 28.5,-11.5T280,800q0,-17 -11.5,-28.5T240,760q-17,0 -28.5,11.5T200,800q0,17 11.5,28.5T240,840ZM480,160q17,0 28.5,-11.5T520,120q0,-17 -11.5,-28.5T480,80q-17,0 -28.5,11.5T440,120q0,17 11.5,28.5T480,160ZM480,600q42,0 71,-29t29,-71q0,-42 -29,-71t-71,-29q-42,0 -71,29t-29,71q0,42 29,71t71,29ZM720,840q17,0 28.5,-11.5T760,800q0,-17 -11.5,-28.5T720,760q-17,0 -28.5,11.5T680,800q0,17 11.5,28.5T720,840ZM840,420q17,0 28.5,-11.5T880,380q0,-17 -11.5,-28.5T840,340q-17,0 -28.5,11.5T800,380q0,17 11.5,28.5T840,420Z" />
                 </svg>
               </span>
-              <p className="font-bold mt-4" style={{ color: "#E65100", fontSize: 12 }}>
+              <p className="font-bold mt-4" style={{ color: COLORS.trinidad, fontSize: 12 }}>
                 {t("FILTERED")}
               </p>
-              <p className="font-bold" style={{ color: "#3E2723", fontSize: 16 }}>
+              <p className="font-bold" style={{ color: COLORS.tobago, fontSize: 16 }}>
                 {t("Custom Feeds")}
               </p>
             </button>
@@ -813,12 +832,12 @@ export default function BulkUploadPage() {
           {isDownloadingTemplate ? t("Downloading...") : t("Download Template")}
           <span
             className="flex items-center justify-center"
-            style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: "#FFFFFF" }}
+            style={{ width: 22, height: 22, borderRadius: "50%", backgroundColor: COLORS.white }}
           >
             <svg width="13" height="13" viewBox="0 0 14 14" fill="none">
               <path
                 d="M7 2v8M3.5 7L7 10.5L10.5 7M2 12h10"
-                stroke="#064E3B"
+                stroke={COLORS.darkAquamarineGreen}
                 strokeWidth="1.8"
                 strokeLinecap="round"
                 strokeLinejoin="round"

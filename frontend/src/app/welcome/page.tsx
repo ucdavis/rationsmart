@@ -6,13 +6,14 @@ import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import { IcArrowRight } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
+import { COLORS } from "@/lib/colors";
 
 export default function WelcomePage() {
   const router = useRouter();
   const t = useT();
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       {/* Top: App Branding */}
       <div className="flex justify-center pt-5 pb-2">
         <AppBranding />
@@ -37,7 +38,7 @@ export default function WelcomePage() {
       <div className="mt-3 px-4 text-center">
         <p
           className="text-xl font-bold leading-snug"
-          style={{ color: "#064E3B", whiteSpace: "pre-line" }}
+          style={{ color: COLORS.darkAquamarineGreen, whiteSpace: "pre-line" }}
         >
           {t("Smart feeding.\nMaximum yield.\nMinimal cost.")}
         </p>
@@ -52,13 +53,13 @@ export default function WelcomePage() {
           onClick={() => router.push("/login")}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-full font-bold text-base text-white"
           style={{
-            backgroundColor: "#064E3B",
+            backgroundColor: COLORS.darkAquamarineGreen,
             boxShadow: "0 4px 14px rgba(6,78,59,0.28)",
           }}
         >
           <span>{t("Continue")}</span>
           {/* Android ic_arrow_right drawable — chevron only, no stem */}
-          <IcArrowRight size={20} color="#FFFFFF" />
+          <IcArrowRight size={20} color={COLORS.white} />
         </button>
 
         <div className="mt-5">

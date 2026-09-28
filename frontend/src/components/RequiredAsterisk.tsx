@@ -1,3 +1,4 @@
+import { COLORS } from "@/lib/colors";
 export default function RequiredAsterisk() {
-  return <span style={{ color: "#FC2E20" }}>{" *"}</span>;
+  return <span style={{ color: COLORS.redRyb }}>{" *"}</span>;
 }

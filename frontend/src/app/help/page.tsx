@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
 import { SUPPORT_EMAIL } from "@/lib/contact";
+import { COLORS } from "@/lib/colors";
 
 // English source strings stay as the identity/lookup key (see i18n-ui.ts)
 // — item.title is passed through t() at render time, not translated here.
@@ -29,7 +30,7 @@ export default function HelpAndSupportPage() {
   const t = useT();
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title={t("Help & Support")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto px-3 pt-5 pb-8">
@@ -57,7 +58,7 @@ export default function HelpAndSupportPage() {
                 <span
                   style={{
                     fontSize: 16,
-                    color: "#231F20",
+                    color: COLORS.raisinBlack,
                   }}
                 >
                   {t(item.title)}
@@ -65,27 +66,27 @@ export default function HelpAndSupportPage() {
                 <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                   <path
                     d="M7.5 4.5H4a1 1 0 0 0-1 1v8.5a1 1 0 0 0 1 1h8.5a1 1 0 0 0 1-1V10"
-                    stroke="#6D6D6D"
+                    stroke={COLORS.darkSilver}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                   />
                   <path
                     d="M10.5 3H15v4.5"
-                    stroke="#6D6D6D"
+                    stroke={COLORS.darkSilver}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M15 3L8.5 9.5"
-                    stroke="#6D6D6D"
+                    stroke={COLORS.darkSilver}
                     strokeWidth="1.5"
                     strokeLinecap="round"
                   />
                 </svg>
               </button>
               {idx < items.length - 1 && (
-                <div style={{ height: 1, backgroundColor: "#E2E8F0", marginInline: 0 }} />
+                <div style={{ height: 1, backgroundColor: COLORS.webDivider, marginInline: 0 }} />
               )}
             </div>
           ))}

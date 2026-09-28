@@ -12,6 +12,7 @@ import {
   IcReportNav,
   IcBulkUpload,
 } from "@/components/Icons";
+import { COLORS } from "@/lib/colors";
 
 interface AdminCard {
   title: string;
@@ -26,27 +27,27 @@ const adminCards: AdminCard[] = [
   {
     title: "User\nManagement",
     href: "/admin/users",
-    icon: <IcUserManagement size={28} color="#064E3B" />,
+    icon: <IcUserManagement size={28} color={COLORS.darkAquamarineGreen} />,
   },
   {
     title: "Feed\nManagement",
     href: "/admin/feeds",
-    icon: <IcFeedManagement size={28} color="#064E3B" />,
+    icon: <IcFeedManagement size={28} color={COLORS.darkAquamarineGreen} />,
   },
   {
     title: "Feedback\nManagement",
     href: "/admin/feedback",
-    icon: <IcFeedbackManagement size={28} color="#064E3B" />,
+    icon: <IcFeedbackManagement size={28} color={COLORS.darkAquamarineGreen} />,
   },
   {
     title: "Bulk Upload &\nExport Feed",
     href: "/admin/bulk-upload",
-    icon: <IcBulkUpload size={28} color="#064E3B" />,
+    icon: <IcBulkUpload size={28} color={COLORS.darkAquamarineGreen} />,
   },
   {
     title: "Feed\nReports",
     href: "/admin/reports",
-    icon: <IcReportNav size={28} color="#064E3B" />,
+    icon: <IcReportNav size={28} color={COLORS.darkAquamarineGreen} />,
   },
   // i18n V2 Phase 2 — three new admin tools.
   // Translations: workbook download/upload, coverage, per-feed editor.
@@ -57,14 +58,14 @@ const adminCards: AdminCard[] = [
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <path
           d="M3 5h12M9 3v2M5 7c0 6 4 8 4 8M3 17l4-8 4 8M5 14h4"
-          stroke="#064E3B"
+          stroke={COLORS.darkAquamarineGreen}
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
           d="M13 21l4-8 4 8M15 18h4"
-          stroke="#064E3B"
+          stroke={COLORS.darkAquamarineGreen}
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -83,11 +84,11 @@ const adminCards: AdminCard[] = [
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <path
           d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"
-          stroke="#064E3B"
+          stroke={COLORS.darkAquamarineGreen}
           strokeWidth="1.8"
           strokeLinejoin="round"
         />
-        <circle cx="12" cy="9" r="2.5" stroke="#064E3B" strokeWidth="1.6" />
+        <circle cx="12" cy="9" r="2.5" stroke={COLORS.darkAquamarineGreen} strokeWidth="1.6" />
       </svg>
     ),
   },
@@ -101,14 +102,14 @@ const adminCards: AdminCard[] = [
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <path
           d="M4 4v5h5M20 20v-5h-5"
-          stroke="#064E3B"
+          stroke={COLORS.darkAquamarineGreen}
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
         <path
           d="M4.5 15a8 8 0 0014.2 3.4M19.5 9A8 8 0 005.3 5.6"
-          stroke="#064E3B"
+          stroke={COLORS.darkAquamarineGreen}
           strokeWidth="1.8"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -133,7 +134,7 @@ export default function AdminPage() {
     return (
       <div
         className="flex flex-col items-center justify-center min-h-screen px-6 text-center"
-        style={{ backgroundColor: "#FFFFFF" }}
+        style={{ backgroundColor: COLORS.white }}
       >
         <Toolbar type="back" title={t("Admin")} onBack={() => router.back()} />
         <div
@@ -141,14 +142,19 @@ export default function AdminPage() {
           style={{ width: 80, height: 80, backgroundColor: "rgba(228,74,74,0.2)" }}
         >
           <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <circle cx="18" cy="18" r="15" stroke="#E44A4A" strokeWidth="2" />
-            <path d="M18 12v8M18 23v1" stroke="#E44A4A" strokeWidth="2.2" strokeLinecap="round" />
+            <circle cx="18" cy="18" r="15" stroke={COLORS.carminePink} strokeWidth="2" />
+            <path
+              d="M18 12v8M18 23v1"
+              stroke={COLORS.carminePink}
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
           </svg>
         </div>
-        <p className="text-xl font-bold mb-2" style={{ color: "#E44A4A" }}>
+        <p className="text-xl font-bold mb-2" style={{ color: COLORS.carminePink }}>
           {t("Access Denied")}
         </p>
-        <p className="text-sm" style={{ color: "#6D6D6D" }}>
+        <p className="text-sm" style={{ color: COLORS.darkSilver }}>
           {t("You do not have admin permissions to view this page.")}
         </p>
       </div>
@@ -164,10 +170,13 @@ export default function AdminPage() {
 
       {/* WELCOME / name greeting */}
       <div className="px-3 mt-5">
-        <p className="text-xs" style={{ color: "#1B5E20", letterSpacing: "0.05em" }}>
+        <p className="text-xs" style={{ color: COLORS.deepForest, letterSpacing: "0.05em" }}>
           {t("WELCOME")}
         </p>
-        <p className="font-bold" style={{ color: "#064E3B", fontSize: 20, marginTop: 2 }}>
+        <p
+          className="font-bold"
+          style={{ color: COLORS.darkAquamarineGreen, fontSize: 20, marginTop: 2 }}
+        >
           {user.name}
         </p>
       </div>
@@ -193,14 +202,19 @@ export default function AdminPage() {
             >
               <div
                 className="flex items-center justify-center mb-5"
-                style={{ width: 48, height: 48, backgroundColor: "#E8F5E9", borderRadius: 16 }}
+                style={{
+                  width: 48,
+                  height: 48,
+                  backgroundColor: COLORS.mintWhisper,
+                  borderRadius: 16,
+                }}
               >
                 {card.icon}
               </div>
               <p
                 className="text-base font-bold text-left"
                 style={{
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   whiteSpace: "pre-line",
                   lineHeight: 1.25,
                 }}

@@ -3,6 +3,7 @@
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { COLORS } from "@/lib/colors";
 
 // Mirrors Android dialog_generating_report.xml — a centred, non-cancellable
 // dialog with a green-tinted ic_generating_report icon, "Generating your
@@ -43,18 +44,21 @@ export default function GeneratingReportDialog() {
         >
           <div
             className="flex items-center justify-center"
-            style={{ backgroundColor: "#FFFFFF", borderRadius: 60, padding: 10 }}
+            style={{ backgroundColor: COLORS.white, borderRadius: 60, padding: 10 }}
           >
             {/* ic_generating_report.xml — Material Symbols "feed" icon
                 (a list-with-pen glyph). Single filled path, viewport 960x960. */}
-            <svg width="36" height="36" viewBox="0 0 960 960" fill="#064E3B">
+            <svg width="36" height="36" viewBox="0 0 960 960" fill={COLORS.darkAquamarineGreen}>
               <path d="M216,784q-45,-45 -70.5,-104T120,558q0,-63 24,-124.5T222,318q60,-60 169.5,-91T675,201q26,1 48,11t39,27q17,17 27,39.5t11,48.5q2,82 -4.5,151.5t-21,125.5q-14.5,56 -37,99.5T684,778q-53,53 -112.5,77.5T450,880q-65,0 -127,-25.5T216,784ZM328,768q29,17 59.5,24.5T450,800q46,0 91,-18.5t86,-59.5q18,-18 36.5,-50.5t32,-85Q709,534 716,459.5t2,-177.5q-49,-2 -110.5,-1.5T485,290q-61,9 -116,29t-90,55q-45,45 -62,89t-17,85q0,59 22.5,103.5T262,714q42,-80 111,-153.5T534,440q-72,63 -125.5,142.5T328,768Z" />
             </svg>
           </div>
         </div>
 
         {/* Title */}
-        <p className="font-bold mt-5 text-center" style={{ color: "#064E3B", fontSize: 20 }}>
+        <p
+          className="font-bold mt-5 text-center"
+          style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+        >
           {t("Generating your report")}
         </p>
 
@@ -66,7 +70,7 @@ export default function GeneratingReportDialog() {
             cx="25"
             cy="25"
             r="20"
-            stroke="#064E3B"
+            stroke={COLORS.darkAquamarineGreen}
             strokeWidth="4"
             strokeLinecap="round"
             strokeDasharray="90 200"

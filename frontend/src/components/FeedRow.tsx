@@ -20,6 +20,7 @@ import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 // Match Android DialogFeedDetails: layout chosen by feedCategory.
 type NutrientLayout = "additive" | "mineral" | "general";
@@ -181,11 +182,11 @@ function FieldBox({
     <div
       className={loading ? "shimmer" : undefined}
       style={{
-        backgroundColor: loading ? undefined : "#FFFFFF",
+        backgroundColor: loading ? undefined : COLORS.white,
         borderRadius: 16,
         border: loading
           ? "1.5px solid transparent"
-          : `1.5px solid ${invalid ? "#E44A4A" : hasValue ? "#064E3B" : "#DCE0E4"}`,
+          : `1.5px solid ${invalid ? COLORS.carminePink : hasValue ? COLORS.darkAquamarineGreen : COLORS.gainsboro}`,
         padding: "16px 12px 12px",
         position: "relative",
         opacity: disabled && !loading ? 0.55 : 1,
@@ -204,14 +205,18 @@ function FieldBox({
             position: "absolute",
             top: -8,
             left: 12,
-            backgroundColor: "#FFFFFF",
+            backgroundColor: COLORS.white,
             padding: "0 6px",
-            color: invalid ? "#E44A4A" : hasValue ? "#064E3B" : "#6D6D6D",
+            color: invalid
+              ? COLORS.carminePink
+              : hasValue
+                ? COLORS.darkAquamarineGreen
+                : COLORS.darkSilver,
             fontSize: 12,
           }}
         >
           {label}
-          {!optional && <span style={{ color: "#FC2E20" }}>{" *"}</span>}
+          {!optional && <span style={{ color: COLORS.redRyb }}>{" *"}</span>}
         </span>
       )}
       {children}
@@ -221,7 +226,7 @@ function FieldBox({
 
 const innerInputStyle = {
   backgroundColor: "transparent",
-  color: "#231F20",
+  color: COLORS.raisinBlack,
   border: "none",
   width: "100%",
   fontSize: 14,
@@ -1138,7 +1143,7 @@ export default function FeedRow({
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span
             style={{
-              color: "#064E3B",
+              color: COLORS.darkAquamarineGreen,
               fontWeight: 700,
               fontSize: 16,
             }}
@@ -1148,8 +1153,8 @@ export default function FeedRow({
           {isActive && (
             <span
               style={{
-                backgroundColor: "#E4F7EF",
-                color: "#064E3B",
+                backgroundColor: COLORS.brightGrayNew,
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 11,
                 fontWeight: 700,
                 padding: "3px 8px",
@@ -1176,7 +1181,7 @@ export default function FeedRow({
                 ? undefined
                 : canEdit
                   ? "rgba(5,188,109,0.15)"
-                  : "#D3D3D3",
+                  : COLORS.lightGrayNew,
               borderRadius: 10,
               padding: 8,
               border: "none",
@@ -1197,7 +1202,7 @@ export default function FeedRow({
             >
               <path
                 d="M11.5 2.5a1.5 1.5 0 0 1 2.121 2.121L5.5 12.743 2 13.5l.757-3.5L11.5 2.5z"
-                stroke={canEdit ? "#064E3B" : "#6D6D6D"}
+                stroke={canEdit ? COLORS.darkAquamarineGreen : COLORS.darkSilver}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -1212,7 +1217,7 @@ export default function FeedRow({
             <button
               onClick={() => onDelete(item.id)}
               style={{
-                backgroundColor: "#FEC5BB",
+                backgroundColor: COLORS.peachyPink,
                 borderRadius: 10,
                 padding: 8,
                 border: "none",
@@ -1224,7 +1229,7 @@ export default function FeedRow({
               }}
               aria-label={t("Remove feed")}
             >
-              <IcDelete size={16} color="#FC2E20" />
+              <IcDelete size={16} color={COLORS.redRyb} />
             </button>
           )}
         </div>
@@ -1239,9 +1244,9 @@ export default function FeedRow({
           plain circle + label, no surrounding box. Two-column grid so
           Forage and Concentrate line up vertically across cards. */}
       <div style={{ padding: "0 10px 24px" }}>
-        <p className="text-xs font-bold uppercase mb-2 ml-1" style={{ color: "#6D6D6D" }}>
+        <p className="text-xs font-bold uppercase mb-2 ml-1" style={{ color: COLORS.darkSilver }}>
           {t("Feed Type")}
-          <span style={{ color: "#FC2E20" }}>{" *"}</span>
+          <span style={{ color: COLORS.redRyb }}>{" *"}</span>
         </p>
         {loadingTypes ? (
           // Same 2-column radio grid as the real content below (feed
@@ -1313,7 +1318,7 @@ export default function FeedRow({
                       width: 20,
                       height: 20,
                       borderRadius: "50%",
-                      border: `2px solid ${selected ? "#064E3B" : "#E2E8F0"}`,
+                      border: `2px solid ${selected ? COLORS.darkAquamarineGreen : COLORS.webDivider}`,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1326,7 +1331,7 @@ export default function FeedRow({
                           width: 10,
                           height: 10,
                           borderRadius: "50%",
-                          backgroundColor: "#064E3B",
+                          backgroundColor: COLORS.darkAquamarineGreen,
                         }}
                       />
                     )}
@@ -1335,7 +1340,7 @@ export default function FeedRow({
                     style={{
                       fontSize: 14,
                       fontWeight: selected ? 700 : 400,
-                      color: selected ? "#064E3B" : "#6D6D6D",
+                      color: selected ? COLORS.darkAquamarineGreen : COLORS.darkSilver,
                       whiteSpace: "nowrap",
                     }}
                   >
@@ -1445,7 +1450,7 @@ export default function FeedRow({
           className="w-full flex items-center justify-between"
           style={{ padding: "8px 4px", opacity: item.feed_uuid && !rowLoading ? 1 : 0.55 }}
         >
-          <span className="font-bold" style={{ color: "#064E3B", fontSize: 13 }}>
+          <span className="font-bold" style={{ color: COLORS.darkAquamarineGreen, fontSize: 13 }}>
             {t("Set inclusion limits")}
           </span>
           <label
@@ -1526,7 +1531,7 @@ export default function FeedRow({
             {(minIsZero || maxIsZero) && (
               <p
                 style={{
-                  color: "#E44A4A",
+                  color: COLORS.carminePink,
                   fontSize: 11,
                   margin: "6px 2px 0",
                 }}
@@ -1539,7 +1544,7 @@ export default function FeedRow({
             {boundsCrossed && (
               <p
                 style={{
-                  color: "#E44A4A",
+                  color: COLORS.carminePink,
                   fontSize: 11,
                   margin: "6px 2px 0",
                 }}
@@ -1615,7 +1620,11 @@ export default function FeedRow({
               value={cost ? `${cost}${currencySymbol ? ` ${currencySymbol}` : ""}` : ""}
               style={{
                 ...innerInputStyle,
-                color: rowLoading ? "transparent" : cost ? "#064E3B" : "#9CA3AF",
+                color: rowLoading
+                  ? "transparent"
+                  : cost
+                    ? COLORS.darkAquamarineGreen
+                    : COLORS.webPlaceholder,
                 fontWeight: cost ? 700 : 400,
                 cursor: "default",
               }}
@@ -1646,8 +1655,8 @@ export default function FeedRow({
               gap: 6,
               padding: "6px 12px",
               borderRadius: 60,
-              backgroundColor: "#E4F7EF",
-              color: "#064E3B",
+              backgroundColor: COLORS.brightGrayNew,
+              color: COLORS.darkAquamarineGreen,
               border: "1.5px solid rgba(5,188,109,0.30)",
               cursor: "pointer",
               fontSize: 12,
@@ -1706,13 +1715,21 @@ export default function FeedRow({
                 {/* Drag handle (Android view_drag_handle) */}
                 <div className="flex justify-center mb-3">
                   <div
-                    style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }}
+                    style={{
+                      width: 40,
+                      height: 6,
+                      borderRadius: 3,
+                      backgroundColor: COLORS.sageBreeze,
+                    }}
                   />
                 </div>
 
                 {/* Title with close button */}
                 <div className="relative mb-4">
-                  <h3 className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
+                  <h3
+                    className="text-center font-bold"
+                    style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+                  >
                     {title}
                   </h3>
                   <button
@@ -1730,7 +1747,7 @@ export default function FeedRow({
                     <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                       <path
                         d="M5 5L15 15M15 5L5 15"
-                        stroke="#6D6D6D"
+                        stroke={COLORS.darkSilver}
                         strokeWidth="2"
                         strokeLinecap="round"
                       />
@@ -1739,7 +1756,7 @@ export default function FeedRow({
                 </div>
 
                 {/* Separator line below title */}
-                <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
+                <div className="mb-4" style={{ height: 1, backgroundColor: COLORS.webDivider }} />
 
                 {isLoadingEdit ? (
                   <div className="flex items-center justify-center py-12">
@@ -1754,7 +1771,7 @@ export default function FeedRow({
                         cx="12"
                         cy="12"
                         r="10"
-                        stroke="#064E3B"
+                        stroke={COLORS.darkAquamarineGreen}
                         strokeWidth="3"
                         strokeDasharray="40"
                         strokeDashoffset="10"
@@ -1775,15 +1792,23 @@ export default function FeedRow({
                         padding: "4px 0",
                       }}
                     >
-                      <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
+                      <span
+                        className="font-bold"
+                        style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}
+                      >
                         {t("Feed Details")}
                       </span>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                        <path
+                          d="M3 9h12"
+                          stroke={COLORS.darkAquamarineGreen}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
                         {!editFeedDetailsExpanded && (
                           <path
                             d="M9 3v12"
-                            stroke="#064E3B"
+                            stroke={COLORS.darkAquamarineGreen}
                             strokeWidth="2"
                             strokeLinecap="round"
                           />
@@ -1799,15 +1824,15 @@ export default function FeedRow({
                     system — left untouched here per that system's ownership. */}
                         <p
                           className="text-xs font-bold uppercase mb-1"
-                          style={{ color: "#6D6D6D" }}
+                          style={{ color: COLORS.darkSilver }}
                         >
                           {t("Feed Type")}
                         </p>
                         <div
                           className="rounded-xl px-4 py-3 text-sm mb-3"
                           style={{
-                            backgroundColor: "#EBEAEA",
-                            color: "#231F20",
+                            backgroundColor: COLORS.brightGray,
+                            color: COLORS.raisinBlack,
                           }}
                         >
                           {item.feed_type_name || "—"}
@@ -1816,15 +1841,15 @@ export default function FeedRow({
                         {/* Feed Category — read-only (see note above) */}
                         <p
                           className="text-xs font-bold uppercase mb-1"
-                          style={{ color: "#6D6D6D" }}
+                          style={{ color: COLORS.darkSilver }}
                         >
                           {t("Feed Category")}
                         </p>
                         <div
                           className="rounded-xl px-4 py-3 text-sm mb-3"
                           style={{
-                            backgroundColor: "#EBEAEA",
-                            color: "#231F20",
+                            backgroundColor: COLORS.brightGray,
+                            color: COLORS.raisinBlack,
                           }}
                         >
                           {item.category_name || "—"}
@@ -1834,19 +1859,24 @@ export default function FeedRow({
                     isInsert=false and the original name already contains "-"). */}
                         <p
                           className="text-xs font-bold uppercase mb-1"
-                          style={{ color: "#6D6D6D" }}
+                          style={{ color: COLORS.darkSilver }}
                         >
                           {t("Feed Name")}
-                          <span style={{ color: "#FC2E20" }}> *</span>
+                          <span style={{ color: COLORS.redRyb }}> *</span>
                         </p>
                         <div
                           className="flex items-center rounded-xl mb-4"
                           style={{
-                            backgroundColor: editIsInsert ? "#F1F5F9" : "#EBEAEA",
+                            backgroundColor: editIsInsert
+                              ? COLORS.americanDiamond
+                              : COLORS.brightGray,
                           }}
                         >
                           {editNamePrefix && (
-                            <span className="pl-4 pr-1 text-sm" style={{ color: "#6D6D6D" }}>
+                            <span
+                              className="pl-4 pr-1 text-sm"
+                              style={{ color: COLORS.darkSilver }}
+                            >
                               {editNamePrefix}
                             </span>
                           )}
@@ -1860,7 +1890,7 @@ export default function FeedRow({
                             disabled={!editIsInsert}
                             className="flex-1 bg-transparent px-3 py-3 text-sm border-none focus:outline-none"
                             style={{
-                              color: "#231F20",
+                              color: COLORS.raisinBlack,
                               cursor: !editIsInsert ? "not-allowed" : "text",
                             }}
                           />
@@ -1879,15 +1909,23 @@ export default function FeedRow({
                         padding: "4px 0",
                       }}
                     >
-                      <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
+                      <span
+                        className="font-bold"
+                        style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}
+                      >
                         {t("Nutritional Information")}
                       </span>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                        <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                        <path
+                          d="M3 9h12"
+                          stroke={COLORS.darkAquamarineGreen}
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                        />
                         {!editNutritionalInfoExpanded && (
                           <path
                             d="M9 3v12"
-                            stroke="#064E3B"
+                            stroke={COLORS.darkAquamarineGreen}
                             strokeWidth="2"
                             strokeLinecap="round"
                           />
@@ -1897,7 +1935,7 @@ export default function FeedRow({
 
                     {editNutritionalInfoExpanded && (
                       <>
-                        <p className="text-xs mb-3" style={{ color: "#6D6D6D" }}>
+                        <p className="text-xs mb-3" style={{ color: COLORS.darkSilver }}>
                           {t("Nutrient Composition (%)")}
                         </p>
                         <div className="grid grid-cols-2 gap-3 mb-5">
@@ -1905,7 +1943,7 @@ export default function FeedRow({
                             <div key={f.key}>
                               <p
                                 className="text-xs font-bold uppercase mb-1"
-                                style={{ color: "#6D6D6D" }}
+                                style={{ color: COLORS.darkSilver }}
                               >
                                 {t(f.label)}
                               </p>
@@ -1920,8 +1958,8 @@ export default function FeedRow({
                                 placeholder="0.00"
                                 className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                                 style={{
-                                  backgroundColor: "#F1F5F9",
-                                  color: "#231F20",
+                                  backgroundColor: COLORS.americanDiamond,
+                                  color: COLORS.raisinBlack,
                                 }}
                               />
                             </div>
@@ -1935,7 +1973,9 @@ export default function FeedRow({
                       disabled={!submitReady}
                       className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center"
                       style={{
-                        backgroundColor: submitReady ? "#064E3B" : "#D3D3D3",
+                        backgroundColor: submitReady
+                          ? COLORS.darkAquamarineGreen
+                          : COLORS.lightGrayNew,
                         color: submitReady ? "white" : "#999",
                         border: "none",
                         cursor: submitReady ? "pointer" : "not-allowed",

@@ -19,6 +19,7 @@ import {
 } from "@/components/Icons";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { COLORS } from "@/lib/colors";
 
 interface NavDrawerProps {
   open: boolean;
@@ -36,26 +37,42 @@ type MenuItem = {
 };
 
 const userMenuItems: MenuItem[] = [
-  { label: "Profile", href: "/profile", icon: <IcProfileNav size={20} color="#064E3B" /> },
-  { label: "Feed Reports", href: "/reports", icon: <IcReportNav size={20} color="#064E3B" /> },
+  {
+    label: "Profile",
+    href: "/profile",
+    icon: <IcProfileNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    label: "Feed Reports",
+    href: "/reports",
+    icon: <IcReportNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
   {
     label: "Help & Support",
     href: "/help",
-    icon: <IcHelpSupport size={20} color="#064E3B" />,
+    icon: <IcHelpSupport size={20} color={COLORS.darkAquamarineGreen} />,
     badge: "Ongoing",
   },
-  { label: "Feedback", href: "/feedback", icon: <IcFeedbackNav size={20} color="#064E3B" /> },
+  {
+    label: "Feedback",
+    href: "/feedback",
+    icon: <IcFeedbackNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
   {
     label: "Terms & Conditions",
     href: "/terms",
-    icon: <IcTerms size={20} color="#064E3B" />,
+    icon: <IcTerms size={20} color={COLORS.darkAquamarineGreen} />,
     badge: "Ongoing",
   },
 ];
 
 // Admin options: Admin first, then same as userOptions
 const adminMenuItems: MenuItem[] = [
-  { label: "Admin", href: "/admin", icon: <IcAdminNav size={20} color="#064E3B" /> },
+  {
+    label: "Admin",
+    href: "/admin",
+    icon: <IcAdminNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
   ...userMenuItems,
 ];
 
@@ -136,10 +153,10 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           <button
             onClick={onClose}
             className="flex items-center justify-center rounded-full flex-shrink-0"
-            style={{ width: 36, height: 36, backgroundColor: "#F0FDF4" }}
+            style={{ width: 36, height: 36, backgroundColor: COLORS.honeydew }}
             aria-label={t("Close drawer")}
           >
-            <IcClose size={18} color="#064E3B" />
+            <IcClose size={18} color={COLORS.darkAquamarineGreen} />
           </button>
         </div>
 
@@ -149,15 +166,15 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
         <div className="flex items-center gap-3 px-4 pb-4">
           <div
             className="flex items-center justify-center flex-shrink-0"
-            style={{ width: 52, height: 52, backgroundColor: "#F0FDF4", borderRadius: 20 }}
+            style={{ width: 52, height: 52, backgroundColor: COLORS.honeydew, borderRadius: 20 }}
           >
-            <IcUser size={30} color="#064E3B" />
+            <IcUser size={30} color={COLORS.darkAquamarineGreen} />
           </div>
           <div className="min-w-0">
-            <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18 }}>
+            <p className="font-bold truncate" style={{ color: COLORS.raisinBlack, fontSize: 18 }}>
               {user?.name || t("User")}
             </p>
-            <p className="text-sm truncate" style={{ color: "#231F20" }}>
+            <p className="text-sm truncate" style={{ color: COLORS.raisinBlack }}>
               {user?.email || ""}
             </p>
           </div>
@@ -180,7 +197,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
-                <span className="text-base truncate" style={{ color: "#231F20" }}>
+                <span className="text-base truncate" style={{ color: COLORS.raisinBlack }}>
                   {t(item.label)}
                 </span>
                 {item.badge && (
@@ -188,8 +205,8 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   // font_12, dark_aquamarine_green text, bg_nav_menu_status pill
                   <span
                     style={{
-                      backgroundColor: "#E4F7EF",
-                      color: "#064E3B",
+                      backgroundColor: COLORS.brightGrayNew,
+                      color: COLORS.darkAquamarineGreen,
                       fontSize: 12,
                       fontWeight: 400,
                       padding: "2px 10px",
@@ -201,7 +218,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   </span>
                 )}
               </div>
-              <IcArrowRight size={16} color="#064E3B" />
+              <IcArrowRight size={16} color={COLORS.darkAquamarineGreen} />
             </button>
           ))}
 
@@ -212,8 +229,8 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             className="w-full flex items-center gap-3 px-4 py-4"
             style={{ background: "none", border: "none", cursor: "pointer" }}
           >
-            <IcLogoutNav size={20} color="#E44A4A" />
-            <span className="text-base" style={{ color: "#E44A4A" }}>
+            <IcLogoutNav size={20} color={COLORS.carminePink} />
+            <span className="text-base" style={{ color: COLORS.carminePink }}>
               {t("Logout")}
             </span>
           </button>
@@ -259,19 +276,24 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
               >
                 <div
                   className="flex items-center justify-center"
-                  style={{ width: 40, height: 40, borderRadius: "50%", backgroundColor: "#FFFFFF" }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: COLORS.white,
+                  }}
                 >
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     />
                     <polyline
                       points="16 17 21 12 16 7"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -281,7 +303,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                       y1="12"
                       x2="9"
                       y2="12"
-                      stroke="#064E3B"
+                      stroke={COLORS.darkAquamarineGreen}
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -292,11 +314,11 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             </div>
             <h3
               className="text-center font-bold mb-2 mx-4"
-              style={{ color: "#064E3B", fontSize: 20 }}
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
             >
               {t("Are you sure you want to logout?")}
             </h3>
-            <p className="text-center text-sm mb-5 mx-4" style={{ color: "#6D6D6D" }}>
+            <p className="text-center text-sm mb-5 mx-4" style={{ color: COLORS.darkSilver }}>
               {t("You can always log back in to access you feed simulations.")}
             </p>
             <div className="flex flex-col gap-2.5">
@@ -304,7 +326,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                 onClick={handleLogout}
                 className="w-full py-3 rounded-full font-bold"
                 style={{
-                  backgroundColor: "#064E3B",
+                  backgroundColor: COLORS.darkAquamarineGreen,
                   color: "white",
                   border: "none",
                   cursor: "pointer",
@@ -317,7 +339,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                 className="w-full py-3 rounded-full font-bold"
                 style={{
                   border: "2px solid #064E3B",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
                 }}

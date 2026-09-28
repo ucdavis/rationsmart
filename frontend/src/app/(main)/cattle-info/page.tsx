@@ -37,6 +37,7 @@ import {
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
+import { COLORS } from "@/lib/colors";
 
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
@@ -308,18 +309,18 @@ const EMPTY_FORM: FormState = {
 };
 
 const inputStyle = {
-  backgroundColor: "#F1F5F9",
-  color: "#231F20",
+  backgroundColor: COLORS.americanDiamond,
+  color: COLORS.raisinBlack,
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const cls = "text-xs font-bold uppercase tracking-wide mt-3 mb-1.5 ml-1";
-  const style = { color: "#6D6D6D" };
+  const style = { color: COLORS.darkSilver };
   if (typeof children === "string" && children.endsWith(" *")) {
     return (
       <p className={cls} style={style}>
         {children.slice(0, -2)}
-        <span style={{ color: "#FC2E20" }}>{" *"}</span>
+        <span style={{ color: COLORS.redRyb }}>{" *"}</span>
       </p>
     );
   }
@@ -356,7 +357,7 @@ function loadingFieldProps(
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="text-xs mt-1 ml-1" style={{ color: "#E44A4A" }}>
+    <p className="text-xs mt-1 ml-1" style={{ color: COLORS.carminePink }}>
       {message}
     </p>
   );
@@ -368,7 +369,7 @@ const ADJUSTED_RING: React.CSSProperties = { boxShadow: "0 0 0 2px #FF9800" };
 function AdjustedNote({ from, label }: { from?: string; label: string }) {
   if (from === undefined) return null;
   return (
-    <p className="text-xs mt-1 ml-1" style={{ color: "#FF9800" }}>
+    <p className="text-xs mt-1 ml-1" style={{ color: COLORS.vividGamboge }}>
       {label} {from}
     </p>
   );
@@ -1168,7 +1169,7 @@ export default function CattleInfoPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar
         type="home"
         title={t("Cattle Info")}
@@ -1180,17 +1181,22 @@ export default function CattleInfoPage() {
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
         {/* Section 1: Simulation Details */}
         <SectionCard
-          iconSvg={<IcSimulationDetails size={22} color="#064E3B" />}
+          iconSvg={<IcSimulationDetails size={22} color={COLORS.darkAquamarineGreen} />}
           title={t("Simulation Details")}
           topRightContent={
             <button
               onClick={() => setShowHistoryModal(true)}
               className="flex items-center justify-center rounded-xl border-none p-0"
-              style={{ width: 36, height: 36, backgroundColor: "#E4F7EF", cursor: "pointer" }}
+              style={{
+                width: 36,
+                height: 36,
+                backgroundColor: COLORS.brightGrayNew,
+                cursor: "pointer",
+              }}
               aria-label={t("Simulation history")}
             >
               {/* Android ic_simulation_history — filled icon, regular weight (no stroke). */}
-              <IcSimulationHistory size={20} color="#064E3B" />
+              <IcSimulationHistory size={20} color={COLORS.darkAquamarineGreen} />
             </button>
           }
         >
@@ -1334,7 +1340,7 @@ export default function CattleInfoPage() {
         {/* Section 2: Animal Characteristics */}
         {anyVisible(["breed", "body_weight", "bw_gain", "bc_score", "days_in_milk"]) && (
           <SectionCard
-            iconSvg={<IcAnimalCharacteristics size={22} color="#064E3B" />}
+            iconSvg={<IcAnimalCharacteristics size={22} color={COLORS.darkAquamarineGreen} />}
             title={t("Animal Characteristics")}
           >
             <div className="px-3">
@@ -1393,7 +1399,7 @@ export default function CattleInfoPage() {
         {/* Section 3: Reproductive Data */}
         {anyVisible(["days_of_pregnancy", "parity"]) && (
           <SectionCard
-            iconSvg={<IcReproductiveData size={22} color="#064E3B" />}
+            iconSvg={<IcReproductiveData size={22} color={COLORS.darkAquamarineGreen} />}
             title={t("Reproductive Data")}
           >
             <div className="px-3">
@@ -1425,7 +1431,7 @@ export default function CattleInfoPage() {
         {/* Section 4: Milk Production — Lactating Cow only, per the spec. */}
         {anyVisible(["milk_production", "tp_milk", "fat_milk", "milk_price"]) && (
           <SectionCard
-            iconSvg={<IcMilkProduction size={22} color="#064E3B" />}
+            iconSvg={<IcMilkProduction size={22} color={COLORS.darkAquamarineGreen} />}
             title={t("Milk Production")}
           >
             <div className="px-3">
@@ -1493,7 +1499,7 @@ export default function CattleInfoPage() {
         {/* Section 5: Environment */}
         {anyVisible(["temperature", "grazing", "distance", "topography"]) && (
           <SectionCard
-            iconSvg={<IcEnvironment size={22} color="#064E3B" />}
+            iconSvg={<IcEnvironment size={22} color={COLORS.darkAquamarineGreen} />}
             title={t("Environment")}
           >
             <div className="px-3">
@@ -1517,14 +1523,17 @@ export default function CattleInfoPage() {
                   <div
                     className="flex items-center justify-between px-4 py-3 mt-2.5"
                     style={{
-                      backgroundColor: "#F0FDF4",
+                      backgroundColor: COLORS.honeydew,
                       border: "1px solid rgba(5,188,109,0.15)",
                       borderRadius: 20,
                     }}
                   >
                     <div className="flex items-center gap-2.5">
-                      <IcActiveGrazing size={22} color="#064E3B" />
-                      <span className="text-base font-bold" style={{ color: "#064E3B" }}>
+                      <IcActiveGrazing size={22} color={COLORS.darkAquamarineGreen} />
+                      <span
+                        className="text-base font-bold"
+                        style={{ color: COLORS.darkAquamarineGreen }}
+                      >
                         {t("Active Grazing")}
                       </span>
                       <button
@@ -1548,16 +1557,18 @@ export default function CattleInfoPage() {
                             cx="12"
                             cy="12"
                             r="10"
-                            fill={showGrazingTooltip ? "#064E3B" : "#1CA069"}
+                            fill={
+                              showGrazingTooltip ? COLORS.darkAquamarineGreen : COLORS.crayolaGreen
+                            }
                           />
-                          <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
+                          <circle cx="12" cy="7.6" r="1.35" fill={COLORS.white} />
                           <rect
                             x="10.95"
                             y="10.5"
                             width="2.1"
                             height="7"
                             rx="1.05"
-                            fill="#FFFFFF"
+                            fill={COLORS.white}
                           />
                         </svg>
                       </button>
@@ -1580,7 +1591,7 @@ export default function CattleInfoPage() {
                       role="tooltip"
                       className="mt-2 px-4 py-3 flex gap-2.5"
                       style={{
-                        backgroundColor: "#FFFFFF",
+                        backgroundColor: COLORS.white,
                         border: "1px solid rgba(5,188,109,0.30)",
                         borderRadius: 16,
                         boxShadow: "0 4px 14px rgba(6,78,59,0.10)",
@@ -1594,14 +1605,21 @@ export default function CattleInfoPage() {
                         style={{ flexShrink: 0, marginTop: 2 }}
                         aria-hidden
                       >
-                        <circle cx="12" cy="12" r="10" fill="#064E3B" />
-                        <circle cx="12" cy="7.6" r="1.35" fill="#FFFFFF" />
-                        <rect x="10.95" y="10.5" width="2.1" height="7" rx="1.05" fill="#FFFFFF" />
+                        <circle cx="12" cy="12" r="10" fill={COLORS.darkAquamarineGreen} />
+                        <circle cx="12" cy="7.6" r="1.35" fill={COLORS.white} />
+                        <rect
+                          x="10.95"
+                          y="10.5"
+                          width="2.1"
+                          height="7"
+                          rx="1.05"
+                          fill={COLORS.white}
+                        />
                       </svg>
                       <p
                         className="text-sm"
                         style={{
-                          color: "#231F20",
+                          color: COLORS.raisinBlack,
                           lineHeight: 1.5,
                           margin: 0,
                         }}
@@ -1623,7 +1641,7 @@ export default function CattleInfoPage() {
                           border: "none",
                           cursor: "pointer",
                           padding: 0,
-                          color: "#6D6D6D",
+                          color: COLORS.darkSilver,
                         }}
                       >
                         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -1652,13 +1670,13 @@ export default function CattleInfoPage() {
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 ml-1">
                       <span
                         className="text-xs font-bold uppercase tracking-wide"
-                        style={{ color: "#6D6D6D" }}
+                        style={{ color: COLORS.darkSilver }}
                       >
                         {(() => {
                           const label = t("Topography *");
                           return label.endsWith(" *") ? label.slice(0, -2) : label;
                         })()}
-                        <span style={{ color: "#FC2E20" }}>{" *"}</span>
+                        <span style={{ color: COLORS.redRyb }}>{" *"}</span>
                       </span>
                       {(specs?.topography?.options ?? []).map((opt) => {
                         const selected = form.topography === opt;
@@ -1682,7 +1700,7 @@ export default function CattleInfoPage() {
                                 width: 20,
                                 height: 20,
                                 borderRadius: "50%",
-                                border: `2px solid ${active ? "#064E3B" : "#E2E8F0"}`,
+                                border: `2px solid ${active ? COLORS.darkAquamarineGreen : COLORS.webDivider}`,
                                 display: "flex",
                                 alignItems: "center",
                                 justifyContent: "center",
@@ -1695,7 +1713,9 @@ export default function CattleInfoPage() {
                                     width: 10,
                                     height: 10,
                                     borderRadius: "50%",
-                                    backgroundColor: active ? "#064E3B" : "#C2C2C2",
+                                    backgroundColor: active
+                                      ? COLORS.darkAquamarineGreen
+                                      : COLORS.silverSand,
                                   }}
                                 />
                               )}
@@ -1704,7 +1724,7 @@ export default function CattleInfoPage() {
                               style={{
                                 fontSize: 14,
                                 fontWeight: active ? 700 : 400,
-                                color: active ? "#064E3B" : "#6D6D6D",
+                                color: active ? COLORS.darkAquamarineGreen : COLORS.darkSilver,
                               }}
                             >
                               {t(opt)}
@@ -1738,8 +1758,8 @@ export default function CattleInfoPage() {
                               }
                             : {
                                 ...inputStyle,
-                                backgroundColor: "#F1F5F9",
-                                color: "#999999",
+                                backgroundColor: COLORS.americanDiamond,
+                                color: COLORS.spanishGray,
                                 cursor: "not-allowed",
                               }
                         )}
@@ -1769,7 +1789,7 @@ export default function CattleInfoPage() {
           transform: "translateX(-50%)",
           width: "100%",
           maxWidth: COLUMN_WIDTH,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: COLORS.white,
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
         }}
@@ -1780,8 +1800,8 @@ export default function CattleInfoPage() {
           className="py-3.5 rounded-2xl font-bold text-base inline-flex items-center justify-center gap-2"
           style={{
             border: "2px solid #064E3B",
-            color: isResetting ? "#6D6D6D" : "#064E3B",
-            background: isResetting ? "#F1F5F9" : "white",
+            color: isResetting ? COLORS.darkSilver : COLORS.darkAquamarineGreen,
+            background: isResetting ? COLORS.americanDiamond : "white",
             paddingLeft: isResetting ? 24 : 40,
             paddingRight: isResetting ? 24 : 40,
             cursor: isResetting ? "wait" : "pointer",
@@ -1803,7 +1823,7 @@ export default function CattleInfoPage() {
                   cx="12"
                   cy="12"
                   r="9"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="2.4"
                   strokeLinecap="round"
                   strokeDasharray="14 30"
@@ -1821,8 +1841,8 @@ export default function CattleInfoPage() {
           disabled={!requiredFilled}
           className="flex-1 py-3.5 rounded-2xl font-bold text-base"
           style={{
-            backgroundColor: requiredFilled ? "#064E3B" : "#D3D3D3",
-            color: requiredFilled ? "#FFFFFF" : "#999999",
+            backgroundColor: requiredFilled ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+            color: requiredFilled ? COLORS.white : COLORS.spanishGray,
             border: "none",
             cursor: requiredFilled ? "pointer" : "not-allowed",
             transition: "background-color 0.2s, color 0.2s",
@@ -1854,12 +1874,19 @@ export default function CattleInfoPage() {
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-4 mb-5">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#E2E8F0" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.webDivider,
+                }}
+              />
             </div>
             {/* Title */}
             <p
               className="text-center font-bold px-3 mb-3"
-              style={{ color: "#064E3B", fontSize: 20 }}
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
             >
               {t("Simulation History")}
             </p>
@@ -1876,25 +1903,25 @@ export default function CattleInfoPage() {
                     >
                       <div
                         className="h-5 w-48 rounded shimmer"
-                        style={{ backgroundColor: "#E2E8F0" }}
+                        style={{ backgroundColor: COLORS.webDivider }}
                       />
                       <div
                         className="h-3.5 w-36 rounded shimmer"
-                        style={{ backgroundColor: "#E2E8F0" }}
+                        style={{ backgroundColor: COLORS.webDivider }}
                       />
                       <div
                         className="h-3.5 w-28 rounded shimmer"
-                        style={{ backgroundColor: "#E2E8F0" }}
+                        style={{ backgroundColor: COLORS.webDivider }}
                       />
                       <div
                         className="h-3.5 w-40 rounded shimmer"
-                        style={{ backgroundColor: "#E2E8F0" }}
+                        style={{ backgroundColor: COLORS.webDivider }}
                       />
                     </div>
                   ))}
                 </div>
               ) : historyList.length === 0 ? (
-                <p className="text-sm text-center py-8" style={{ color: "#6D6D6D" }}>
+                <p className="text-sm text-center py-8" style={{ color: COLORS.darkSilver }}>
                   {t("No saved simulations found")}
                 </p>
               ) : (
@@ -1932,7 +1959,7 @@ export default function CattleInfoPage() {
                             <p
                               className="font-bold"
                               style={{
-                                color: "#231F20",
+                                color: COLORS.raisinBlack,
                                 fontSize: 18,
                                 margin: "10px 10px 0 10px",
                               }}
@@ -1956,19 +1983,19 @@ export default function CattleInfoPage() {
                                   width="10"
                                   height="11"
                                   rx="1.5"
-                                  stroke="#6D6D6D"
+                                  stroke={COLORS.darkSilver}
                                   strokeWidth="1.2"
                                 />
                                 <path
                                   d="M4 5h6M4 7h5M4 9h3.5"
-                                  stroke="#6D6D6D"
+                                  stroke={COLORS.darkSilver}
                                   strokeWidth="1.2"
                                   strokeLinecap="round"
                                 />
                               </svg>
                               <span
                                 style={{
-                                  color: "#6D6D6D",
+                                  color: COLORS.darkSilver,
                                   fontSize: 13,
                                 }}
                               >
@@ -1990,12 +2017,12 @@ export default function CattleInfoPage() {
                                 >
                                   <path
                                     d="M7 1.5A3.5 3.5 0 0 0 3.5 5c0 2.625 3.5 7 3.5 7S10.5 7.625 10.5 5A3.5 3.5 0 0 0 7 1.5zm0 4.75A1.25 1.25 0 1 1 7 4a1.25 1.25 0 0 1 0 2.25z"
-                                    fill="#6D6D6D"
+                                    fill={COLORS.darkSilver}
                                   />
                                 </svg>
                                 <span
                                   style={{
-                                    color: "#6D6D6D",
+                                    color: COLORS.darkSilver,
                                     fontSize: 13,
                                   }}
                                 >
@@ -2022,19 +2049,19 @@ export default function CattleInfoPage() {
                                     width="11"
                                     height="10"
                                     rx="1.5"
-                                    stroke="#6D6D6D"
+                                    stroke={COLORS.darkSilver}
                                     strokeWidth="1.2"
                                   />
                                   <path
                                     d="M4.5 1.5v2M9.5 1.5v2M1.5 5.5h11"
-                                    stroke="#6D6D6D"
+                                    stroke={COLORS.darkSilver}
                                     strokeWidth="1.2"
                                     strokeLinecap="round"
                                   />
                                 </svg>
                                 <span
                                   style={{
-                                    color: "#6D6D6D",
+                                    color: COLORS.darkSilver,
                                     fontSize: 13,
                                   }}
                                 >
@@ -2051,7 +2078,7 @@ export default function CattleInfoPage() {
                               width: 34,
                               height: 34,
                               borderRadius: 60,
-                              backgroundColor: "#E4F7EF",
+                              backgroundColor: COLORS.brightGrayNew,
                               marginRight: 10,
                             }}
                           >
@@ -2063,10 +2090,16 @@ export default function CattleInfoPage() {
                                 viewBox="0 0 16 16"
                                 fill="none"
                               >
-                                <circle cx="8" cy="8" r="6" stroke="#E2E8F0" strokeWidth="2" />
+                                <circle
+                                  cx="8"
+                                  cy="8"
+                                  r="6"
+                                  stroke={COLORS.webDivider}
+                                  strokeWidth="2"
+                                />
                                 <path
                                   d="M8 2a6 6 0 0 1 6 6"
-                                  stroke="#064E3B"
+                                  stroke={COLORS.darkAquamarineGreen}
                                   strokeWidth="2"
                                   strokeLinecap="round"
                                 />
@@ -2075,7 +2108,7 @@ export default function CattleInfoPage() {
                               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                                 <path
                                   d="M6 4L10 8L6 12"
-                                  stroke="#064E3B"
+                                  stroke={COLORS.darkAquamarineGreen}
                                   strokeWidth="1.6"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"

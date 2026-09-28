@@ -1,6 +1,7 @@
 "use client";
 
 import { IcHamburger, IcBack, IcForward } from "@/components/Icons";
+import { COLORS } from "@/lib/colors";
 
 interface ToolbarProps {
   type: "home" | "back";
@@ -49,7 +50,7 @@ export default function Toolbar({
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
           aria-label="Open menu"
         >
-          <IcHamburger size={20} color="#064E3B" />
+          <IcHamburger size={20} color={COLORS.darkAquamarineGreen} />
         </button>
       ) : (
         <button
@@ -58,7 +59,7 @@ export default function Toolbar({
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
           aria-label="Go back"
         >
-          <IcBack size={20} color="#064E3B" />
+          <IcBack size={20} color={COLORS.darkAquamarineGreen} />
         </button>
       )}
 
@@ -66,7 +67,7 @@ export default function Toolbar({
       <h1
         className="flex-1 text-center"
         style={{
-          color: "#042F23",
+          color: COLORS.webDeepGreen,
           fontSize: 16,
           fontWeight: 700,
           margin: 0,
@@ -86,7 +87,7 @@ export default function Toolbar({
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
           aria-label="Forward"
         >
-          <IcForward size={20} color="#064E3B" />
+          <IcForward size={20} color={COLORS.darkAquamarineGreen} />
         </button>
       ) : (
         <div style={{ width: 40 }} />

@@ -44,6 +44,7 @@ import {
   SCROLL_AFTER_RENDER_MS,
   SEARCH_DEBOUNCE_MS,
 } from "@/lib/ui-timings";
+import { COLORS } from "@/lib/colors";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -157,7 +158,7 @@ function CustomFeedNutrientInput({
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
+      <p className="text-xs font-bold uppercase mb-1" style={{ color: COLORS.darkSilver }}>
         {label}
       </p>
       <input
@@ -168,7 +169,7 @@ function CustomFeedNutrientInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder="0.00"
         className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-        style={{ backgroundColor: "#F1F5F9", color: "#231F20" }}
+        style={{ backgroundColor: COLORS.americanDiamond, color: COLORS.raisinBlack }}
       />
     </div>
   );
@@ -996,7 +997,7 @@ export default function FeedSelectionPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
 
       {/* Optional tools row — these two are INDEPENDENT actions (each opens
@@ -1012,7 +1013,7 @@ export default function FeedSelectionPage() {
       <div className="px-4 pt-4">
         <p
           className="text-[11px] font-bold uppercase tracking-wide mb-2 ml-1"
-          style={{ color: "#999999" }}
+          style={{ color: COLORS.spanishGray }}
         >
           {t("Optional")}
         </p>
@@ -1034,9 +1035,9 @@ export default function FeedSelectionPage() {
                 gap: 10,
                 padding: "7px 16px 7px 7px",
                 borderRadius: 999,
-                backgroundColor: limitsDisabled ? "#F1F5F9" : "#FFFFFF",
-                color: limitsDisabled ? "#999999" : "#064E3B",
-                border: `1.5px solid ${limitsDisabled ? "#E2E8F0" : "#DCE0E4"}`,
+                backgroundColor: limitsDisabled ? COLORS.americanDiamond : COLORS.white,
+                color: limitsDisabled ? COLORS.spanishGray : COLORS.darkAquamarineGreen,
+                border: `1.5px solid ${limitsDisabled ? COLORS.webDivider : COLORS.gainsboro}`,
                 boxShadow: limitsDisabled ? "none" : "0 1px 2px rgba(6,40,30,0.06)",
                 cursor: limitsDisabled ? "not-allowed" : "pointer",
                 transition: "all 0.15s",
@@ -1049,11 +1050,14 @@ export default function FeedSelectionPage() {
                   width: 30,
                   height: 30,
                   borderRadius: "50%",
-                  backgroundColor: limitsDisabled ? "#E8EBEE" : "#E4F7EF",
+                  backgroundColor: limitsDisabled ? COLORS.webBorder : COLORS.brightGrayNew,
                   flexShrink: 0,
                 }}
               >
-                <IcTune size={17} color={limitsDisabled ? "#999999" : "#064E3B"} />
+                <IcTune
+                  size={17}
+                  color={limitsDisabled ? COLORS.spanishGray : COLORS.darkAquamarineGreen}
+                />
               </span>
               {/* Label never changes — it's the button's accessible name and a
                 translated string. Loading/unavailable is conveyed by the
@@ -1072,8 +1076,8 @@ export default function FeedSelectionPage() {
               gap: 10,
               padding: "7px 16px 7px 7px",
               borderRadius: 999,
-              backgroundColor: "#FFFFFF",
-              color: "#064E3B",
+              backgroundColor: COLORS.white,
+              color: COLORS.darkAquamarineGreen,
               border: "1.5px solid #DCE0E4",
               boxShadow: "0 1px 2px rgba(6,40,30,0.06)",
               cursor: "pointer",
@@ -1087,11 +1091,11 @@ export default function FeedSelectionPage() {
                 width: 30,
                 height: 30,
                 borderRadius: "50%",
-                backgroundColor: "#E4F7EF",
+                backgroundColor: COLORS.brightGrayNew,
                 flexShrink: 0,
               }}
             >
-              <IcAddFeed size={17} color="#064E3B" />
+              <IcAddFeed size={17} color={COLORS.darkAquamarineGreen} />
             </span>
             {t("Custom Feed")}
           </button>
@@ -1100,7 +1104,7 @@ export default function FeedSelectionPage() {
             Only shown for the fetch failure — evaluation mode already reads
             as "not applicable here" from the radio group right below. */}
         {limitsApplyToAnimal && !isEvaluation && limitSpecsError && (
-          <p className="text-[11px] mt-1.5 ml-1" style={{ color: "#6D6D6D" }}>
+          <p className="text-[11px] mt-1.5 ml-1" style={{ color: COLORS.darkSilver }}>
             {t("Diet limits unavailable — check your connection and reopen this screen.")}
           </p>
         )}
@@ -1131,7 +1135,7 @@ export default function FeedSelectionPage() {
                 width: 20,
                 height: 20,
                 borderRadius: "50%",
-                border: `2px solid ${feedSelectionType === mode ? "#064E3B" : "#E2E8F0"}`,
+                border: `2px solid ${feedSelectionType === mode ? COLORS.darkAquamarineGreen : COLORS.webDivider}`,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -1144,7 +1148,7 @@ export default function FeedSelectionPage() {
                     width: 10,
                     height: 10,
                     borderRadius: "50%",
-                    backgroundColor: "#064E3B",
+                    backgroundColor: COLORS.darkAquamarineGreen,
                   }}
                 />
               )}
@@ -1153,7 +1157,7 @@ export default function FeedSelectionPage() {
               style={{
                 fontSize: 14,
                 fontWeight: feedSelectionType === mode ? 700 : 400,
-                color: feedSelectionType === mode ? "#064E3B" : "#6D6D6D",
+                color: feedSelectionType === mode ? COLORS.darkAquamarineGreen : COLORS.darkSilver,
                 whiteSpace: "nowrap",
               }}
             >
@@ -1178,7 +1182,7 @@ export default function FeedSelectionPage() {
             style={{
               fontSize: 11,
               fontWeight: 800,
-              color: "#064E3B",
+              color: COLORS.darkAquamarineGreen,
               letterSpacing: 0.6,
               textTransform: "uppercase",
             }}
@@ -1198,8 +1202,8 @@ export default function FeedSelectionPage() {
               style={{
                 fontSize: 13,
                 fontWeight: 800,
-                color: "#064E3B",
-                backgroundColor: "#E4F7EF",
+                color: COLORS.darkAquamarineGreen,
+                backgroundColor: COLORS.brightGrayNew,
                 padding: "7px 14px",
                 borderRadius: 60,
                 letterSpacing: 0.2,
@@ -1225,8 +1229,8 @@ export default function FeedSelectionPage() {
         <div
           className="flex items-center rounded-2xl"
           style={{
-            backgroundColor: "#FFFFFF",
-            border: `1.5px solid ${searchOpen ? "#064E3B" : activeRowId ? "#1CA069" : "#DCE0E4"}`,
+            backgroundColor: COLORS.white,
+            border: `1.5px solid ${searchOpen ? COLORS.darkAquamarineGreen : activeRowId ? COLORS.crayolaGreen : COLORS.gainsboro}`,
             boxShadow: searchOpen
               ? "0 6px 20px rgba(6,78,59,0.16), 0 2px 4px rgba(6,78,59,0.06)"
               : "0 2px 8px rgba(0,0,0,0.05)",
@@ -1243,7 +1247,11 @@ export default function FeedSelectionPage() {
               width: 40,
               height: 40,
               borderRadius: 12,
-              backgroundColor: searchOpen ? "#064E3B" : activeRowId ? "#1CA069" : "#E4F7EF",
+              backgroundColor: searchOpen
+                ? COLORS.darkAquamarineGreen
+                : activeRowId
+                  ? COLORS.crayolaGreen
+                  : COLORS.brightGrayNew,
               transition: "background-color 0.18s ease",
             }}
           >
@@ -1252,12 +1260,12 @@ export default function FeedSelectionPage() {
                 cx="11"
                 cy="11"
                 r="7"
-                stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"}
+                stroke={searchOpen || activeRowId ? COLORS.white : COLORS.darkAquamarineGreen}
                 strokeWidth="2.2"
               />
               <path
                 d="M16.5 16.5L21 21"
-                stroke={searchOpen || activeRowId ? "#FFFFFF" : "#064E3B"}
+                stroke={searchOpen || activeRowId ? COLORS.white : COLORS.darkAquamarineGreen}
                 strokeWidth="2.2"
                 strokeLinecap="round"
               />
@@ -1280,7 +1288,7 @@ export default function FeedSelectionPage() {
             className="flex-1 border-none focus:outline-none"
             style={{
               backgroundColor: "transparent",
-              color: "#231F20",
+              color: COLORS.raisinBlack,
               fontSize: 15,
               fontWeight: 500,
               padding: "8px 0",
@@ -1299,11 +1307,11 @@ export default function FeedSelectionPage() {
               style={{
                 width: 30,
                 height: 30,
-                background: "#F1F5F9",
+                background: COLORS.americanDiamond,
                 border: "none",
                 borderRadius: 9,
                 cursor: "pointer",
-                color: "#6D6D6D",
+                color: COLORS.darkSilver,
                 marginRight: 4,
               }}
             >
@@ -1325,17 +1333,17 @@ export default function FeedSelectionPage() {
           className="flex items-center gap-2 mt-2.5 ml-1"
           style={{
             fontSize: 12.5,
-            color: activeRowId ? "#064E3B" : "#6D6D6D",
+            color: activeRowId ? COLORS.darkAquamarineGreen : COLORS.darkSilver,
             fontWeight: activeRowId ? 700 : 500,
           }}
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
             {activeRowId ? (
               <>
-                <circle cx="12" cy="12" r="10" fill="#1CA069" />
+                <circle cx="12" cy="12" r="10" fill={COLORS.crayolaGreen} />
                 <path
                   d="M8 12.5l2.5 2.5L16 9.5"
-                  stroke="#FFFFFF"
+                  stroke={COLORS.white}
                   strokeWidth="2.2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -1367,7 +1375,7 @@ export default function FeedSelectionPage() {
               top: "calc(100% + 6px)",
               left: 12,
               right: 12,
-              backgroundColor: "#FFFFFF",
+              backgroundColor: COLORS.white,
               borderRadius: 14,
               boxShadow: "0 10px 32px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.06)",
               maxHeight: 320,
@@ -1380,7 +1388,7 @@ export default function FeedSelectionPage() {
               <div
                 style={{
                   padding: "12px 14px",
-                  color: "#6D6D6D",
+                  color: COLORS.darkSilver,
                   fontSize: 13,
                 }}
               >
@@ -1390,7 +1398,7 @@ export default function FeedSelectionPage() {
               <div
                 style={{
                   padding: "12px 14px",
-                  color: "#6D6D6D",
+                  color: COLORS.darkSilver,
                   fontSize: 13,
                 }}
               >
@@ -1404,7 +1412,7 @@ export default function FeedSelectionPage() {
                   onClick={() => applySearchResult(r)}
                   className="w-full text-left"
                   style={{
-                    background: i % 2 === 1 ? "#E4F7EF" : "#FFFFFF",
+                    background: i % 2 === 1 ? COLORS.brightGrayNew : COLORS.white,
                     border: "none",
                     padding: "10px 14px",
                     cursor: "pointer",
@@ -1420,16 +1428,18 @@ export default function FeedSelectionPage() {
                       makes the match explain itself. Suppressed when the two
                       are equal (the English-selected case, and every custom
                       feed — those are never translated). */}
-                  <p style={{ color: "#231F20", fontSize: 14, fontWeight: 700, margin: 0 }}>
+                  <p
+                    style={{ color: COLORS.raisinBlack, fontSize: 14, fontWeight: 700, margin: 0 }}
+                  >
                     {r.display_name ?? r.feed_name}
                     {r.feed_name_en && r.feed_name_en !== (r.display_name ?? r.feed_name) && (
-                      <span style={{ color: "#6D6D6D", fontSize: 12, fontWeight: 400 }}>
+                      <span style={{ color: COLORS.darkSilver, fontSize: 12, fontWeight: 400 }}>
                         {" "}
                         ({r.feed_name_en})
                       </span>
                     )}
                   </p>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, margin: "2px 0 0" }}>
+                  <p style={{ color: COLORS.darkSilver, fontSize: 12, margin: "2px 0 0" }}>
                     {r.display_type ?? r.feed_type} · {r.display_category ?? r.feed_category}
                   </p>
                 </button>
@@ -1470,13 +1480,13 @@ export default function FeedSelectionPage() {
           style={{
             border: "2px dashed #064E3B",
             backgroundColor: "transparent",
-            color: "#064E3B",
+            color: COLORS.darkAquamarineGreen,
             fontWeight: 700,
             fontSize: 16,
             cursor: "pointer",
           }}
         >
-          <IcAddFeed size={20} color="#064E3B" />
+          <IcAddFeed size={20} color={COLORS.darkAquamarineGreen} />
           {t("Add More Feed")}
         </button>
       </div>
@@ -1491,7 +1501,7 @@ export default function FeedSelectionPage() {
           transform: "translateX(-50%)",
           width: "100%",
           maxWidth: COLUMN_WIDTH,
-          backgroundColor: "#FFFFFF",
+          backgroundColor: COLORS.white,
           borderTop: "1px solid #E2E8F0",
           zIndex: 30,
         }}
@@ -1501,8 +1511,9 @@ export default function FeedSelectionPage() {
           disabled={!isValid() || isLoading}
           className="w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-base"
           style={{
-            backgroundColor: isValid() && !isLoading ? "#064E3B" : "#D3D3D3",
-            color: isValid() && !isLoading ? "#FFFFFF" : "#999999",
+            backgroundColor:
+              isValid() && !isLoading ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+            color: isValid() && !isLoading ? COLORS.white : COLORS.spanishGray,
             border: "none",
             cursor: isValid() && !isLoading ? "pointer" : "not-allowed",
             transition: "background-color 0.2s",
@@ -1557,14 +1568,24 @@ export default function FeedSelectionPage() {
           >
             {/* Drag handle (matches Android view_drag_handle) */}
             <div className="flex justify-center mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
 
             {/* Title — matches Android DialogFeedDetails tv_title:
                 "Add Custom Feed" for isAdd=true, "Edit Nutritional Information"
                 for isAdd=false. Centered, bold, 20sp, dark_aquamarine_green. */}
             <div className="relative mb-4">
-              <h3 className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
+              <h3
+                className="text-center font-bold"
+                style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+              >
                 {t("Add Custom Feed")}
               </h3>
               <button
@@ -1582,7 +1603,7 @@ export default function FeedSelectionPage() {
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M5 5L15 15M15 5L5 15"
-                    stroke="#6D6D6D"
+                    stroke={COLORS.darkSilver}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -1591,7 +1612,7 @@ export default function FeedSelectionPage() {
             </div>
 
             {/* Separator line below title (matches Android view_separator_feed_details) */}
-            <div className="mb-4" style={{ height: 1, backgroundColor: "#E2E8F0" }} />
+            <div className="mb-4" style={{ height: 1, backgroundColor: COLORS.webDivider }} />
 
             {/* "Feed Details" expand/collapse header (matches Android cvExpandFeedDetails).
                 Icon mirrors Android drawables: minus when expanded, plus when collapsed. */}
@@ -1600,13 +1621,26 @@ export default function FeedSelectionPage() {
               className="w-full flex items-center justify-between mb-3"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
-              <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
+              <span
+                className="font-bold"
+                style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}
+              >
                 {t("Feed Details")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M3 9h12"
+                  stroke={COLORS.darkAquamarineGreen}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
                 {!feedDetailsExpanded && (
-                  <path d="M9 3v12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M9 3v12"
+                    stroke={COLORS.darkAquamarineGreen}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 )}
               </svg>
             </button>
@@ -1614,9 +1648,12 @@ export default function FeedSelectionPage() {
             {feedDetailsExpanded && (
               <>
                 {/* Feed Type — first required field (no Country in Android end-user UI) */}
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
+                <p
+                  className="text-xs font-bold uppercase mb-1"
+                  style={{ color: COLORS.darkSilver }}
+                >
                   {t("Feed Type")}
-                  <span style={{ color: "#FC2E20" }}> *</span>
+                  <span style={{ color: COLORS.redRyb }}> *</span>
                 </p>
                 <div className="relative mb-3">
                   {loadingCustomTypes ? (
@@ -1624,7 +1661,10 @@ export default function FeedSelectionPage() {
                   ) : (
                     <div
                       className="rounded-xl px-4 py-3"
-                      style={{ backgroundColor: "#F1F5F9", opacity: !user?.country_id ? 0.6 : 1 }}
+                      style={{
+                        backgroundColor: COLORS.americanDiamond,
+                        opacity: !user?.country_id ? 0.6 : 1,
+                      }}
                     >
                       <CustomSelect
                         transparentTrigger
@@ -1639,9 +1679,12 @@ export default function FeedSelectionPage() {
                 </div>
 
                 {/* Feed Category — gated on feed type */}
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
+                <p
+                  className="text-xs font-bold uppercase mb-1"
+                  style={{ color: COLORS.darkSilver }}
+                >
                   {t("Feed Category")}
-                  <span style={{ color: "#FC2E20" }}> *</span>
+                  <span style={{ color: COLORS.redRyb }}> *</span>
                 </p>
                 <div className="relative mb-3">
                   {loadingCustomCats ? (
@@ -1650,7 +1693,9 @@ export default function FeedSelectionPage() {
                     <div
                       className="rounded-xl px-4 py-3"
                       style={{
-                        backgroundColor: !customFeedForm.feed_type ? "#EBEAEA" : "#F1F5F9",
+                        backgroundColor: !customFeedForm.feed_type
+                          ? COLORS.brightGray
+                          : COLORS.americanDiamond,
                         opacity: !customFeedForm.feed_type ? 0.6 : 1,
                       }}
                     >
@@ -1671,18 +1716,23 @@ export default function FeedSelectionPage() {
                 {/* Feed Name — gated on category. Android DialogFeedDetails
                 also shows a user-name prefix (e.g. "John-") via
                 PrefsManager.getUserNamePrefix(). We render the same. */}
-                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
+                <p
+                  className="text-xs font-bold uppercase mb-1"
+                  style={{ color: COLORS.darkSilver }}
+                >
                   {t("Feed Name")}
-                  <span style={{ color: "#FC2E20" }}> *</span>
+                  <span style={{ color: COLORS.redRyb }}> *</span>
                 </p>
                 <div
                   className="flex items-center rounded-xl mb-4"
                   style={{
-                    backgroundColor: !customFeedForm.feed_category ? "#EBEAEA" : "#F1F5F9",
+                    backgroundColor: !customFeedForm.feed_category
+                      ? COLORS.brightGray
+                      : COLORS.americanDiamond,
                     opacity: !customFeedForm.feed_category ? 0.6 : 1,
                   }}
                 >
-                  <span className="pl-4 pr-1 text-sm" style={{ color: "#6D6D6D" }}>
+                  <span className="pl-4 pr-1 text-sm" style={{ color: COLORS.darkSilver }}>
                     {user?.name ? `${user.name.split(" ")[0]}-` : ""}
                   </span>
                   <input
@@ -1695,7 +1745,7 @@ export default function FeedSelectionPage() {
                     disabled={!customFeedForm.feed_category}
                     className="flex-1 bg-transparent px-1 py-3 text-sm border-none focus:outline-none"
                     style={{
-                      color: "#231F20",
+                      color: COLORS.raisinBlack,
                       cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
                     }}
                   />
@@ -1711,13 +1761,26 @@ export default function FeedSelectionPage() {
               className="w-full flex items-center justify-between mb-3"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
-              <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
+              <span
+                className="font-bold"
+                style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}
+              >
                 {t("Nutritional Information")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path d="M3 9h12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                <path
+                  d="M3 9h12"
+                  stroke={COLORS.darkAquamarineGreen}
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
                 {!nutritionalInfoExpanded && (
-                  <path d="M9 3v12" stroke="#064E3B" strokeWidth="2" strokeLinecap="round" />
+                  <path
+                    d="M9 3v12"
+                    stroke={COLORS.darkAquamarineGreen}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 )}
               </svg>
             </button>
@@ -1736,7 +1799,7 @@ export default function FeedSelectionPage() {
                       : NUTRIENT_FIELDS_GENERAL;
                 return (
                   <>
-                    <p className="text-xs mb-3" style={{ color: "#6D6D6D" }}>
+                    <p className="text-xs mb-3" style={{ color: COLORS.darkSilver }}>
                       {t("Nutrient Composition (%)")}
                     </p>
                     <div className="grid grid-cols-2 gap-3 mb-5">
@@ -1768,7 +1831,7 @@ export default function FeedSelectionPage() {
                   disabled={!ready}
                   className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
                   style={{
-                    backgroundColor: ready ? "#064E3B" : "#D3D3D3",
+                    backgroundColor: ready ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
                     color: ready ? "white" : "#999",
                     border: "none",
                     cursor: ready ? "pointer" : "not-allowed",
@@ -1807,13 +1870,13 @@ export default function FeedSelectionPage() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                    stroke="#FF9800"
+                    stroke={COLORS.vividGamboge}
                     strokeWidth="2"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M12 9v4M12 17h.01"
-                    stroke="#FF9800"
+                    stroke={COLORS.vividGamboge}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -1824,7 +1887,7 @@ export default function FeedSelectionPage() {
             <p
               className="text-center font-bold"
               style={{
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 20,
                 margin: "20px 16px 0",
               }}
@@ -1835,7 +1898,7 @@ export default function FeedSelectionPage() {
             <p
               className="text-center"
               style={{
-                color: "#6D6D6D",
+                color: COLORS.darkSilver,
                 fontSize: 16,
                 margin: "16px 16px 0",
                 lineHeight: 1.5,
@@ -1848,7 +1911,7 @@ export default function FeedSelectionPage() {
             {/* Honeydew card with feed names */}
             <div
               style={{
-                backgroundColor: "#F0FDF4",
+                backgroundColor: COLORS.honeydew,
                 borderRadius: 20,
                 padding: 16,
                 margin: "16px 16px 0",
@@ -1860,7 +1923,7 @@ export default function FeedSelectionPage() {
                   key={i}
                   className="font-bold"
                   style={{
-                    color: "#1CA069",
+                    color: COLORS.crayolaGreen,
                     marginTop: i > 0 ? 6 : 0,
                     lineHeight: 1.6,
                   }}
@@ -1873,7 +1936,7 @@ export default function FeedSelectionPage() {
             <p
               className="text-center"
               style={{
-                color: "#6D6D6D",
+                color: COLORS.darkSilver,
                 fontSize: 16,
                 margin: "30px 12px 0",
               }}
@@ -1887,7 +1950,7 @@ export default function FeedSelectionPage() {
               style={{
                 display: "block",
                 width: "calc(100% - 32px)",
-                backgroundColor: "#EF6464",
+                backgroundColor: COLORS.lightCarminePink,
                 color: "white",
                 borderRadius: 60,
                 padding: "14px 0",
@@ -1909,7 +1972,7 @@ export default function FeedSelectionPage() {
               style={{
                 display: "block",
                 width: "calc(100% - 32px)",
-                backgroundColor: "#064E3B",
+                backgroundColor: COLORS.darkAquamarineGreen,
                 color: "white",
                 borderRadius: 60,
                 padding: "14px 0",
@@ -1950,13 +2013,13 @@ export default function FeedSelectionPage() {
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                   <path
                     d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
-                    stroke="#FF9800"
+                    stroke={COLORS.vividGamboge}
                     strokeWidth="2"
                     strokeLinejoin="round"
                   />
                   <path
                     d="M12 9v4M12 17h.01"
-                    stroke="#FF9800"
+                    stroke={COLORS.vividGamboge}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -1966,7 +2029,7 @@ export default function FeedSelectionPage() {
             <p
               className="text-center font-bold"
               style={{
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 20,
                 margin: "20px 16px 0",
               }}
@@ -1976,7 +2039,7 @@ export default function FeedSelectionPage() {
             <p
               className="text-center"
               style={{
-                color: "#6D6D6D",
+                color: COLORS.darkSilver,
                 fontSize: 16,
                 margin: "16px 16px 0",
                 lineHeight: 1.5,
@@ -1998,7 +2061,7 @@ export default function FeedSelectionPage() {
               style={{
                 display: "block",
                 width: "calc(100% - 32px)",
-                backgroundColor: "#064E3B",
+                backgroundColor: COLORS.darkAquamarineGreen,
                 color: "white",
                 borderRadius: 60,
                 padding: "14px 0",
@@ -2035,13 +2098,13 @@ export default function FeedSelectionPage() {
           >
             <div className="flex items-start justify-between mb-5">
               <div>
-                <h3 className="text-base font-bold" style={{ color: "#064E3B" }}>
+                <h3 className="text-base font-bold" style={{ color: COLORS.darkAquamarineGreen }}>
                   {t("Custom Diet Limits")}
                 </h3>
                 {/* Blank is a first-class state, NOT zero: blank means "use
                     this animal's engine default", and a typed 0 is rejected
                     outright. Stated once here instead of on all eight rows. */}
-                <p className="text-xs mt-1" style={{ color: "#6D6D6D" }}>
+                <p className="text-xs mt-1" style={{ color: COLORS.darkSilver }}>
                   {t("Default value will be applied if left blank")}
                 </p>
               </div>
@@ -2053,7 +2116,7 @@ export default function FeedSelectionPage() {
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
                   <path
                     d="M5 5L15 15M15 5L5 15"
-                    stroke="#6D6D6D"
+                    stroke={COLORS.darkSilver}
                     strokeWidth="2"
                     strokeLinecap="round"
                   />
@@ -2079,7 +2142,10 @@ export default function FeedSelectionPage() {
                 const invalid = outOfRange || ndfConflict;
                 return (
                   <div key={key} className="mb-4">
-                    <p className="text-xs font-bold uppercase mb-2" style={{ color: "#231F20" }}>
+                    <p
+                      className="text-xs font-bold uppercase mb-2"
+                      style={{ color: COLORS.raisinBlack }}
+                    >
                       {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
                     </p>
                     <input
@@ -2094,14 +2160,14 @@ export default function FeedSelectionPage() {
                       onChange={(e) => updateLimit(key, e.target.value)}
                       className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                       style={{
-                        backgroundColor: invalid ? "#FEC5BB" : "#F1F5F9",
-                        color: "#231F20",
+                        backgroundColor: invalid ? COLORS.peachyPink : COLORS.americanDiamond,
+                        color: COLORS.raisinBlack,
                       }}
                     />
                     <p
                       className="text-xs mt-1 ml-1"
                       style={{
-                        color: invalid ? "#E44A4A" : "#6D6D6D",
+                        color: invalid ? COLORS.carminePink : COLORS.darkSilver,
                       }}
                     >
                       {ndfConflict
@@ -2130,7 +2196,7 @@ export default function FeedSelectionPage() {
             {/* Limits may only be tightened — say so once rather than on
                 every row. The "leave blank" half of this sentence now lives
                 under the sheet title. */}
-            <p className="text-[11px] mb-3 mt-1 ml-1" style={{ color: "#6D6D6D" }}>
+            <p className="text-[11px] mb-3 mt-1 ml-1" style={{ color: COLORS.darkSilver }}>
               {t(
                 "Limits can only be tightened, never loosened. Tightening a limit too far can return no diet at all."
               )}
@@ -2161,8 +2227,8 @@ export default function FeedSelectionPage() {
                   disabled={cantApply}
                   className="w-full py-4 rounded-xl font-bold text-base mt-2"
                   style={{
-                    backgroundColor: cantApply ? "#D3D3D3" : "#064E3B",
-                    color: cantApply ? "#999999" : "white",
+                    backgroundColor: cantApply ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
+                    color: cantApply ? COLORS.spanishGray : "white",
                     border: "none",
                     cursor: cantApply ? "not-allowed" : "pointer",
                   }}

@@ -30,6 +30,7 @@ import {
   filenameFromContentDisposition,
   uploadFileProblem,
 } from "@/lib/download";
+import { COLORS } from "@/lib/colors";
 
 interface CountryRow {
   id: string;
@@ -213,7 +214,7 @@ export default function AdminTranslationsPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title="Translations" onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-24">
@@ -221,7 +222,7 @@ export default function AdminTranslationsPage() {
         <div className="px-4 pt-4">
           <p
             className="text-xs font-bold uppercase tracking-wide mb-1.5"
-            style={{ color: "#6D6D6D" }}
+            style={{ color: COLORS.darkSilver }}
           >
             COUNTRY
           </p>
@@ -230,8 +231,8 @@ export default function AdminTranslationsPage() {
             onChange={(e) => setSelectedCountryId(e.target.value)}
             className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-4"
             style={{
-              backgroundColor: "#F1F5F9",
-              color: "#231F20",
+              backgroundColor: COLORS.americanDiamond,
+              color: COLORS.raisinBlack,
               cursor: "pointer",
             }}
           >
@@ -249,10 +250,10 @@ export default function AdminTranslationsPage() {
           className="mx-3 mt-1 bg-white rounded-2xl px-4 py-4"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
         >
-          <p className="font-bold mb-2" style={{ color: "#064E3B", fontSize: 16 }}>
+          <p className="font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}>
             Translation Workbook
           </p>
-          <p className="text-xs mb-3" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
+          <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
             Download the pre-filled xlsx, fill in the language columns, then upload it back.
           </p>
 
@@ -262,8 +263,11 @@ export default function AdminTranslationsPage() {
             disabled={isDownloading || !selectedCountryId}
             className="w-full py-3 rounded-xl font-bold mb-3"
             style={{
-              backgroundColor: isDownloading || !selectedCountryId ? "#D3D3D3" : "#064E3B",
-              color: "#FFFFFF",
+              backgroundColor:
+                isDownloading || !selectedCountryId
+                  ? COLORS.lightGrayNew
+                  : COLORS.darkAquamarineGreen,
+              color: COLORS.white,
               border: "none",
               cursor: isDownloading || !selectedCountryId ? "not-allowed" : "pointer",
             }}
@@ -274,11 +278,14 @@ export default function AdminTranslationsPage() {
           {/* Upload — file picker + Submit */}
           <p
             className="text-xs font-bold uppercase tracking-wide mb-1.5"
-            style={{ color: "#6D6D6D" }}
+            style={{ color: COLORS.darkSilver }}
           >
             UPLOAD FILLED WORKBOOK
           </p>
-          <div className="rounded-xl px-3 py-3 mb-3" style={{ backgroundColor: "#F1F5F9" }}>
+          <div
+            className="rounded-xl px-3 py-3 mb-3"
+            style={{ backgroundColor: COLORS.americanDiamond }}
+          >
             <input
               type="file"
               accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -293,12 +300,12 @@ export default function AdminTranslationsPage() {
                 setUploadFile(file);
               }}
               className="block w-full text-sm"
-              style={{ color: "#231F20" }}
+              style={{ color: COLORS.raisinBlack }}
             />
             {uploadFile && (
-              <p className="text-xs mt-1.5 ml-1" style={{ color: "#6D6D6D" }}>
+              <p className="text-xs mt-1.5 ml-1" style={{ color: COLORS.darkSilver }}>
                 Selected:{" "}
-                <span className="font-bold" style={{ color: "#064E3B" }}>
+                <span className="font-bold" style={{ color: COLORS.darkAquamarineGreen }}>
                   {uploadFile.name}
                 </span>
               </p>
@@ -310,8 +317,10 @@ export default function AdminTranslationsPage() {
             className="w-full py-3 rounded-xl font-bold"
             style={{
               backgroundColor:
-                isUploading || !uploadFile || !selectedCountryId ? "#D3D3D3" : "#1CA069",
-              color: "#FFFFFF",
+                isUploading || !uploadFile || !selectedCountryId
+                  ? COLORS.lightGrayNew
+                  : COLORS.crayolaGreen,
+              color: COLORS.white,
               border: "none",
               cursor: isUploading || !uploadFile || !selectedCountryId ? "not-allowed" : "pointer",
             }}
@@ -324,24 +333,28 @@ export default function AdminTranslationsPage() {
             <div
               className="mt-3 rounded-xl px-3 py-3"
               style={{
-                backgroundColor: uploadSummary.success === false ? "#FEC5BB" : "#F0FDF4",
+                backgroundColor:
+                  uploadSummary.success === false ? COLORS.peachyPink : COLORS.honeydew,
                 border: `1px solid ${uploadSummary.success === false ? "rgba(228,74,74,0.25)" : "rgba(5,188,109,0.20)"}`,
               }}
             >
               <p
                 className="font-bold text-sm mb-1"
                 style={{
-                  color: uploadSummary.success === false ? "#E44A4A" : "#064E3B",
+                  color:
+                    uploadSummary.success === false
+                      ? COLORS.carminePink
+                      : COLORS.darkAquamarineGreen,
                 }}
               >
                 {uploadSummary.success === false ? "Import Failed" : "Import Summary"}
               </p>
               {uploadSummary.message && (
-                <p className="text-xs mb-2" style={{ color: "#231F20" }}>
+                <p className="text-xs mb-2" style={{ color: COLORS.raisinBlack }}>
                   {uploadSummary.message}
                 </p>
               )}
-              <div className="text-xs space-y-0.5" style={{ color: "#231F20" }}>
+              <div className="text-xs space-y-0.5" style={{ color: COLORS.raisinBlack }}>
                 <p>
                   Feeds — {uploadSummary.feeds_inserted ?? 0} inserted ·{" "}
                   {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0}{" "}
@@ -360,15 +373,18 @@ export default function AdminTranslationsPage() {
               </div>
               {uploadSummary.errors && uploadSummary.errors.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-xs font-bold mb-1" style={{ color: "#E44A4A" }}>
+                  <p className="text-xs font-bold mb-1" style={{ color: COLORS.carminePink }}>
                     Errors ({uploadSummary.errors.length}):
                   </p>
-                  <ul className="text-xs space-y-0.5 list-disc ml-4" style={{ color: "#231F20" }}>
+                  <ul
+                    className="text-xs space-y-0.5 list-disc ml-4"
+                    style={{ color: COLORS.raisinBlack }}
+                  >
                     {uploadSummary.errors.slice(0, 10).map((e, i) => (
                       <li key={i}>{e}</li>
                     ))}
                     {uploadSummary.errors.length > 10 && (
-                      <li style={{ color: "#6D6D6D" }}>
+                      <li style={{ color: COLORS.darkSilver }}>
                         … and {uploadSummary.errors.length - 10} more
                       </li>
                     )}
@@ -384,21 +400,21 @@ export default function AdminTranslationsPage() {
           className="mx-3 mt-3 bg-white rounded-2xl px-4 py-4"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}
         >
-          <p className="font-bold mb-2" style={{ color: "#064E3B", fontSize: 16 }}>
+          <p className="font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}>
             Translation Coverage
           </p>
-          <p className="text-xs mb-3" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
+          <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
             How complete the feed, type, and category translations are for the picked language.
           </p>
 
           <p
             className="text-xs font-bold uppercase tracking-wide mb-1.5"
-            style={{ color: "#6D6D6D" }}
+            style={{ color: COLORS.darkSilver }}
           >
             LANGUAGE
           </p>
           {coverageLangs.length === 0 ? (
-            <p className="text-xs italic mb-3" style={{ color: "#6D6D6D" }}>
+            <p className="text-xs italic mb-3" style={{ color: COLORS.darkSilver }}>
               No non-English languages assigned to this country yet. Add one in Admin → Country
               Languages first.
             </p>
@@ -411,8 +427,8 @@ export default function AdminTranslationsPage() {
               }}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-3"
               style={{
-                backgroundColor: "#F1F5F9",
-                color: "#231F20",
+                backgroundColor: COLORS.americanDiamond,
+                color: COLORS.raisinBlack,
                 cursor: "pointer",
               }}
             >
@@ -430,8 +446,10 @@ export default function AdminTranslationsPage() {
             className="w-full py-3 rounded-xl font-bold"
             style={{
               backgroundColor:
-                isLoadingCoverage || !selectedCountryId || !selectedLang ? "#D3D3D3" : "#064E3B",
-              color: "#FFFFFF",
+                isLoadingCoverage || !selectedCountryId || !selectedLang
+                  ? COLORS.lightGrayNew
+                  : COLORS.darkAquamarineGreen,
+              color: COLORS.white,
               border: "none",
               cursor:
                 isLoadingCoverage || !selectedCountryId || !selectedLang
@@ -467,23 +485,28 @@ export default function AdminTranslationsPage() {
                 return (
                   <div key={label}>
                     <div className="flex items-baseline justify-between mb-1">
-                      <p className="text-sm font-bold" style={{ color: "#231F20" }}>
+                      <p className="text-sm font-bold" style={{ color: COLORS.raisinBlack }}>
                         {label}
                       </p>
-                      <p className="text-xs" style={{ color: "#6D6D6D" }}>
+                      <p className="text-xs" style={{ color: COLORS.darkSilver }}>
                         {translated ?? 0} / {total ?? 0}
                         {missing != null && missing > 0 && ` · ${missing} missing`}
                       </p>
                     </div>
                     <div
                       className="w-full rounded-full overflow-hidden"
-                      style={{ height: 8, backgroundColor: "#F1F5F9" }}
+                      style={{ height: 8, backgroundColor: COLORS.americanDiamond }}
                     >
                       <div
                         style={{
                           height: "100%",
                           width: `${p}%`,
-                          backgroundColor: p >= 80 ? "#1CA069" : p >= 40 ? "#FF9800" : "#E44A4A",
+                          backgroundColor:
+                            p >= 80
+                              ? COLORS.crayolaGreen
+                              : p >= 40
+                                ? COLORS.vividGamboge
+                                : COLORS.carminePink,
                           transition: "width 0.25s",
                         }}
                       />
@@ -491,7 +514,12 @@ export default function AdminTranslationsPage() {
                     <p
                       className="text-xs mt-0.5 text-right"
                       style={{
-                        color: p >= 80 ? "#1CA069" : p >= 40 ? "#FF9800" : "#E44A4A",
+                        color:
+                          p >= 80
+                            ? COLORS.crayolaGreen
+                            : p >= 40
+                              ? COLORS.vividGamboge
+                              : COLORS.carminePink,
                         fontWeight: 700,
                       }}
                     >

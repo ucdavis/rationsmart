@@ -19,14 +19,15 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
+import { COLORS } from "@/lib/colors";
 
 const inputStyle = (readOnly?: boolean) => ({
-  backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
-  color: readOnly ? "#999999" : "#231F20",
+  backgroundColor: readOnly ? COLORS.authenticWhite : COLORS.americanDiamond,
+  color: readOnly ? COLORS.spanishGray : COLORS.raisinBlack,
 });
 
 const labelStyle = {
-  color: "#6D6D6D",
+  color: COLORS.darkSilver,
 };
 
 // UX: shimmer the REAL form fields in place while getCountries is in
@@ -286,7 +287,7 @@ export default function ProfilePage() {
     (showLangSelector && selectedLang !== (user.preferred_language ?? "en"));
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar type="back" title={t("Your Profile")} onBack={() => router.back()} />
 
       <div className="flex-1 overflow-y-auto pb-8">
@@ -305,26 +306,35 @@ export default function ProfilePage() {
               style={{
                 width: 52,
                 height: 52,
-                backgroundColor: "#F0FDF4",
+                backgroundColor: COLORS.honeydew,
                 borderRadius: 16,
                 border: "1px solid rgba(5,188,109,0.15)",
               }}
             >
               <svg width="28" height="28" viewBox="0 0 40 40" fill="none">
-                <circle cx="20" cy="14" r="7" stroke="#064E3B" strokeWidth="2.2" />
+                <circle
+                  cx="20"
+                  cy="14"
+                  r="7"
+                  stroke={COLORS.darkAquamarineGreen}
+                  strokeWidth="2.2"
+                />
                 <path
                   d="M6 36c0-6.627 6.268-12 14-12s14 5.373 14 12"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="2.2"
                   strokeLinecap="round"
                 />
               </svg>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
-              <span className="font-bold truncate" style={{ color: "#231F20", fontSize: 18 }}>
+              <span
+                className="font-bold truncate"
+                style={{ color: COLORS.raisinBlack, fontSize: 18 }}
+              >
                 {user.name}
               </span>
-              <span className="text-sm truncate" style={{ color: "#6D6D6D" }}>
+              <span className="text-sm truncate" style={{ color: COLORS.darkSilver }}>
                 {user.email}
               </span>
             </div>
@@ -384,7 +394,7 @@ export default function ProfilePage() {
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path
                   d="M3 6l5 5 5-5"
-                  stroke="#231F20"
+                  stroke={COLORS.raisinBlack}
                   strokeWidth="1.8"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -430,7 +440,7 @@ export default function ProfilePage() {
                   <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                     <path
                       d="M3 6l5 5 5-5"
-                      stroke="#231F20"
+                      stroke={COLORS.raisinBlack}
                       strokeWidth="1.8"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -447,8 +457,9 @@ export default function ProfilePage() {
             disabled={!canSave || isSaving}
             className="w-full mt-5 py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
             style={{
-              backgroundColor: canSave && !isSaving ? "#064E3B" : "#D3D3D3",
-              color: canSave && !isSaving ? "#FFFFFF" : "#999999",
+              backgroundColor:
+                canSave && !isSaving ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+              color: canSave && !isSaving ? COLORS.white : COLORS.spanishGray,
               border: "none",
               cursor: canSave && !isSaving ? "pointer" : "not-allowed",
               transition: "background-color 0.2s",
@@ -505,7 +516,7 @@ export default function ProfilePage() {
             className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
-              color: "#E44A4A", // carmine_pink
+              color: COLORS.carminePink, // carmine_pink
               backgroundColor: "rgba(228,74,74,0.20)", // carmine_pink_20
               cursor: "pointer",
               borderRadius: 14,
@@ -513,7 +524,7 @@ export default function ProfilePage() {
           >
             {/* ic_delete_account — Material Symbols filled trash with
                 rounded lid (single filled path, viewport 24x24) */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#E44A4A">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.carminePink}>
               <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
             </svg>
             {t("Delete")}
@@ -524,7 +535,7 @@ export default function ProfilePage() {
             className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "none",
-              color: "#296CD3", // celtic_blue
+              color: COLORS.celticBlue, // celtic_blue
               backgroundColor: "rgba(41,108,211,0.25)", // celtic_blue_25
               cursor: "pointer",
               borderRadius: 14,
@@ -532,7 +543,7 @@ export default function ProfilePage() {
           >
             {/* ic_reset_pin — Material Symbols refresh arrow with
                 inset padlock (filled path, viewport 24x24) */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="#296CD3">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.celticBlue}>
               <path d="M13.26,3C8.17,2.86 4,6.94 4,12H2.21c-0.45,0 -0.67,0.54 -0.35,0.85l2.79,2.79c0.2,0.2 0.51,0.2 0.71,0l2.8,-2.79C8.46,12.54 8.24,12 7.79,12H6c0,-3.89 3.2,-7.06 7.1,-7c3.71,0.05 6.84,3.18 6.9,6.9c0.06,3.91 -3.1,7.1 -7,7.1c-1.59,0 -3.05,-0.53 -4.23,-1.43c-0.4,-0.3 -0.96,-0.27 -1.31,0.09l0,0c-0.43,0.43 -0.39,1.14 0.09,1.5C9.06,20.31 10.95,21 13,21c5.06,0 9.14,-4.17 9,-9.25C21.87,7.05 17.95,3.13 13.26,3zM15,11v-1c0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2v1c-0.55,0 -1,0.45 -1,1v3c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-3C16,11.45 15.55,11 15,11zM14,11h-2v-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1V11z" />
             </svg>
             {t("Reset PIN")}
@@ -548,7 +559,7 @@ export default function ProfilePage() {
             className="w-full py-3.5 text-base flex items-center justify-center gap-2"
             style={{
               border: "2px solid #064E3B",
-              color: "#064E3B",
+              color: COLORS.darkAquamarineGreen,
               backgroundColor: "white",
               cursor: "pointer",
               borderRadius: 14,
@@ -556,10 +567,18 @@ export default function ProfilePage() {
             }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect x="5" y="11" width="14" height="9" rx="2" stroke="#064E3B" strokeWidth="2" />
+              <rect
+                x="5"
+                y="11"
+                width="14"
+                height="9"
+                rx="2"
+                stroke={COLORS.darkAquamarineGreen}
+                strokeWidth="2"
+              />
               <path
                 d="M8 11V8a4 4 0 0 1 8 0v3"
-                stroke="#064E3B"
+                stroke={COLORS.darkAquamarineGreen}
                 strokeWidth="2"
                 strokeLinecap="round"
               />
@@ -600,23 +619,33 @@ export default function ProfilePage() {
           >
             {/* Drag handle */}
             <div className="flex justify-center pt-4 mb-4">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
 
             {/* Title */}
-            <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
+            <p
+              className="text-center font-bold"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Reset Your PIN")}
             </p>
-            <p className="text-center mt-1 px-3" style={{ color: "#6D6D6D", fontSize: 14 }}>
+            <p className="text-center mt-1 px-3" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
               {t("Enter your registered email to receive a reset link")}
             </p>
 
             {/* Email label + input */}
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
-              {t("Email Address")} <span style={{ color: "#FC2E20" }}>*</span>
+              {t("Email Address")} <span style={{ color: COLORS.redRyb }}>*</span>
             </p>
             <div className="px-3">
               <input
@@ -627,8 +656,8 @@ export default function ProfilePage() {
                 onChange={(e) => setResetEmail(e.target.value)}
                 className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
                 style={{
-                  backgroundColor: "#F1F5F9",
-                  color: "#231F20",
+                  backgroundColor: COLORS.americanDiamond,
+                  color: COLORS.raisinBlack,
                 }}
                 aria-label={t("Email address")}
               />
@@ -641,8 +670,11 @@ export default function ProfilePage() {
                 disabled={!isResetReady || isSendingReset}
                 className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: isResetReady && !isSendingReset ? "#064E3B" : "#D3D3D3",
-                  color: isResetReady && !isSendingReset ? "#FFFFFF" : "#999999",
+                  backgroundColor:
+                    isResetReady && !isSendingReset
+                      ? COLORS.darkAquamarineGreen
+                      : COLORS.lightGrayNew,
+                  color: isResetReady && !isSendingReset ? COLORS.white : COLORS.spanishGray,
                   border: "none",
                   cursor: isResetReady && !isSendingReset ? "pointer" : "not-allowed",
                   transition: "background-color 0.2s, color 0.2s",
@@ -707,7 +739,7 @@ export default function ProfilePage() {
                 backgroundColor: "rgba(228,74,74,0.20)",
               }}
             >
-              <svg width="28" height="28" viewBox="0 0 960 960" fill="#FC2E20">
+              <svg width="28" height="28" viewBox="0 0 960 960" fill={COLORS.redRyb}>
                 <path d="M480,680q17,0 28.5,-11.5T520,640v-160q0,-17 -11.5,-28.5T480,440q-17,0 -28.5,11.5T440,480v160q0,17 11.5,28.5T480,680ZM480,360q17,0 28.5,-11.5T520,320q0,-17 -11.5,-28.5T480,280q-17,0 -28.5,11.5T440,320q0,17 11.5,28.5T480,360ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
               </svg>
             </div>
@@ -717,7 +749,7 @@ export default function ProfilePage() {
             <h3
               className="text-center font-bold mb-2 mx-3"
               style={{
-                color: "#064E3B",
+                color: COLORS.darkAquamarineGreen,
                 fontSize: 20,
                 whiteSpace: "pre-line",
               }}
@@ -728,7 +760,7 @@ export default function ProfilePage() {
             {/* Description — Android string @delete_account_message */}
             <p
               className="text-center text-sm mb-5 mx-3"
-              style={{ color: "#6D6D6D", whiteSpace: "pre-line" }}
+              style={{ color: COLORS.darkSilver, whiteSpace: "pre-line" }}
             >
               {t("This action is permanent. Your account\nand data will be deleted\npermanently.")}
             </p>
@@ -740,13 +772,13 @@ export default function ProfilePage() {
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
                 style={{
                   border: "2px solid #064E3B",
-                  color: "#064E3B",
+                  color: COLORS.darkAquamarineGreen,
                   background: "white",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 960 960" fill="#064E3B">
+                <svg width="18" height="18" viewBox="0 0 960 960" fill={COLORS.darkAquamarineGreen}>
                   <path d="m480,536 l116,116q11,11 28,11t28,-11q11,-11 11,-28t-11,-28L536,480l116,-116q11,-11 11,-28t-11,-28q-11,-11 -28,-11t-28,11L480,424 364,308q-11,-11 -28,-11t-28,11q-11,11 -11,28t11,28l116,116 -116,116q-11,11 -11,28t11,28q11,11 28,11t28,-11l116,-116ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
                 </svg>
                 {t("No")}
@@ -761,14 +793,14 @@ export default function ProfilePage() {
                 }}
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: "#E44A4A",
+                  backgroundColor: COLORS.carminePink,
                   color: "white",
                   border: "none",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.white}>
                   <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
                 </svg>
                 {t("Yes")}
@@ -816,7 +848,10 @@ export default function ProfilePage() {
                 }}
               />
             </div>
-            <h3 className="text-center font-bold mb-5" style={{ color: "#064E3B", fontSize: 20 }}>
+            <h3
+              className="text-center font-bold mb-5"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Submit PIN")}
             </h3>
             <PinInput value={deletePin} onChange={setDeletePin} />
@@ -827,8 +862,11 @@ export default function ProfilePage() {
                 className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
                   backgroundColor:
-                    deletePin.length === PIN_LENGTH && !isDeleting ? "#064E3B" : "#D3D3D3",
-                  color: deletePin.length === PIN_LENGTH && !isDeleting ? "white" : "#999999",
+                    deletePin.length === PIN_LENGTH && !isDeleting
+                      ? COLORS.darkAquamarineGreen
+                      : COLORS.lightGrayNew,
+                  color:
+                    deletePin.length === PIN_LENGTH && !isDeleting ? "white" : COLORS.spanishGray,
                   border: "none",
                   cursor:
                     deletePin.length === PIN_LENGTH && !isDeleting ? "pointer" : "not-allowed",
@@ -878,19 +916,32 @@ export default function ProfilePage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex justify-center pt-4 mb-3">
-              <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
+              <div
+                style={{
+                  width: 40,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor: COLORS.sageBreeze,
+                }}
+              />
             </div>
 
-            <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
+            <p
+              className="text-center font-bold"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Change Your PIN")}
             </p>
-            <p className="text-center mt-1 mb-4 px-4" style={{ color: "#6D6D6D", fontSize: 14 }}>
+            <p
+              className="text-center mt-1 mb-4 px-4"
+              style={{ color: COLORS.darkSilver, fontSize: 14 }}
+            >
               {t("Enter your current PIN and choose a new 6-digit PIN.")}
             </p>
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("Current PIN")}
             </p>
@@ -904,7 +955,7 @@ export default function ProfilePage() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("New 6-digit PIN")}
             </p>
@@ -922,7 +973,7 @@ export default function ProfilePage() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("Confirm New PIN")}
             </p>
@@ -935,7 +986,10 @@ export default function ProfilePage() {
             />
 
             {confirmNewPin.length === PIN_LENGTH && newPin !== confirmNewPin && (
-              <p className="text-xs font-bold text-center mt-2" style={{ color: "#E44A4A" }}>
+              <p
+                className="text-xs font-bold text-center mt-2"
+                style={{ color: COLORS.carminePink }}
+              >
                 {t("New PINs do not match")}
               </p>
             )}
@@ -946,8 +1000,11 @@ export default function ProfilePage() {
                 disabled={!isChangePinReady || isChangingPin}
                 className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: isChangePinReady && !isChangingPin ? "#064E3B" : "#D3D3D3",
-                  color: isChangePinReady && !isChangingPin ? "#FFFFFF" : "#999999",
+                  backgroundColor:
+                    isChangePinReady && !isChangingPin
+                      ? COLORS.darkAquamarineGreen
+                      : COLORS.lightGrayNew,
+                  color: isChangePinReady && !isChangingPin ? COLORS.white : COLORS.spanishGray,
                   border: "none",
                   cursor: isChangePinReady && !isChangingPin ? "pointer" : "not-allowed",
                 }}

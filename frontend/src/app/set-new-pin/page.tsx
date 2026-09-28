@@ -28,6 +28,7 @@ import { useT } from "@/lib/i18n-ui";
 import { PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import { authErrorMessage } from "@/lib/errors";
 import Spinner from "@/components/ui/Spinner";
+import { COLORS } from "@/lib/colors";
 
 function SetNewPinInner() {
   const router = useRouter();
@@ -82,7 +83,7 @@ function SetNewPinInner() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: "#F8FAF9" }}>
+    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       {/* Toolbar */}
       <div
         className="flex items-center px-3 py-3 gap-3"
@@ -100,12 +101,12 @@ function SetNewPinInner() {
           }}
           aria-label={t("Back")}
         >
-          <IcBack size={20} color="#064E3B" />
+          <IcBack size={20} color={COLORS.darkAquamarineGreen} />
         </button>
         <h1
           className="flex-1 text-center"
           style={{
-            color: "#042F23",
+            color: COLORS.webDeepGreen,
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -126,29 +127,29 @@ function SetNewPinInner() {
           <div className="flex flex-col items-center justify-center flex-1 px-6 text-center">
             <div
               className="flex items-center justify-center rounded-full mb-6"
-              style={{ width: 80, height: 80, backgroundColor: "#F0FDF4" }}
+              style={{ width: 80, height: 80, backgroundColor: COLORS.honeydew }}
             >
               <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
                 <path
                   d="M9 19l7 7L29 13"
-                  stroke="#064E3B"
+                  stroke={COLORS.darkAquamarineGreen}
                   strokeWidth="2.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               </svg>
             </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: "#064E3B" }}>
+            <h2 className="text-xl font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen }}>
               {t("PIN Updated")}
             </h2>
-            <p className="text-sm mb-8" style={{ color: "#6D6D6D", lineHeight: 1.6 }}>
+            <p className="text-sm mb-8" style={{ color: COLORS.darkSilver, lineHeight: 1.6 }}>
               {t("Your account now uses a 6-digit PIN. Please sign in with your new PIN.")}
             </p>
             <button
               onClick={() => router.replace("/login")}
               className="px-8 py-4 rounded-full font-bold text-base text-white"
               style={{
-                backgroundColor: "#064E3B",
+                backgroundColor: COLORS.darkAquamarineGreen,
                 border: "none",
                 cursor: "pointer",
               }}
@@ -158,12 +159,15 @@ function SetNewPinInner() {
           </div>
         ) : (
           <div className="px-3">
-            <p className="text-center font-bold mt-5" style={{ color: "#064E3B", fontSize: 20 }}>
+            <p
+              className="text-center font-bold mt-5"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
               {t("Time to upgrade your PIN")}
             </p>
             <p
               className="text-center text-sm mt-1 mb-5 px-2"
-              style={{ color: "#6D6D6D", lineHeight: 1.5 }}
+              style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}
             >
               {t(
                 "RationSmart now uses a 6-digit PIN for stronger security. Confirm your existing\n              4-digit PIN and pick a new 6-digit one."
@@ -172,7 +176,7 @@ function SetNewPinInner() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
@@ -186,14 +190,14 @@ function SetNewPinInner() {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
               style={{
-                backgroundColor: "#F1F5F9",
-                color: "#231F20",
+                backgroundColor: COLORS.americanDiamond,
+                color: COLORS.raisinBlack,
               }}
             />
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("Current 4-digit PIN")}
             </p>
@@ -206,7 +210,7 @@ function SetNewPinInner() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("New 6-digit PIN")}
             </p>
@@ -220,7 +224,7 @@ function SetNewPinInner() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
-              style={{ color: "#6D6D6D" }}
+              style={{ color: COLORS.darkSilver }}
             >
               {t("Confirm New PIN")}
             </p>
@@ -233,7 +237,10 @@ function SetNewPinInner() {
             />
 
             {confirmPin.length === PIN_LENGTH && newPin !== confirmPin && (
-              <p className="text-xs font-bold text-center mt-2" style={{ color: "#E44A4A" }}>
+              <p
+                className="text-xs font-bold text-center mt-2"
+                style={{ color: COLORS.carminePink }}
+              >
                 {t("New PINs do not match")}
               </p>
             )}
@@ -244,8 +251,9 @@ function SetNewPinInner() {
                 disabled={!isReady || isSubmitting}
                 className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
                 style={{
-                  backgroundColor: isReady && !isSubmitting ? "#064E3B" : "#D3D3D3",
-                  color: isReady && !isSubmitting ? "#FFFFFF" : "#999999",
+                  backgroundColor:
+                    isReady && !isSubmitting ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
+                  color: isReady && !isSubmitting ? COLORS.white : COLORS.spanishGray,
                   border: "none",
                   cursor: isReady && !isSubmitting ? "pointer" : "not-allowed",
                 }}

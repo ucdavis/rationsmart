@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SNACKBAR_EXIT_MS, SNACKBAR_REMOVE_MS, SNACKBAR_VISIBLE_MS } from "@/lib/ui-timings";
+import { COLORS } from "@/lib/colors";
 
 export default function Snackbar() {
   const snackbar = useStore((s) => s.snackbar);
@@ -35,9 +36,9 @@ export default function Snackbar() {
   // ERROR   = mustard #FFDB58 / raisin_black #231F20 text
   // INFO    = azure #007BFF / white text
   const styleMap = {
-    success: { bg: "#064E3B", text: "#FFFFFF" },
-    error: { bg: "#FFDB58", text: "#231F20" },
-    info: { bg: "#007BFF", text: "#FFFFFF" },
+    success: { bg: COLORS.darkAquamarineGreen, text: COLORS.white },
+    error: { bg: COLORS.mustard, text: COLORS.raisinBlack },
+    info: { bg: COLORS.azure, text: COLORS.white },
   };
   const s = styleMap[snackbar.type];
 
@@ -103,7 +104,7 @@ export default function Snackbar() {
           setTimeout(() => hideSnackbar(), SNACKBAR_EXIT_MS);
         }}
         style={{
-          background: "#FFFFFF",
+          background: COLORS.white,
           border: "none",
           cursor: "pointer",
           padding: 6,

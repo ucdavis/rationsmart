@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useT } from "@/lib/i18n-ui";
+import { COLORS } from "@/lib/colors";
 
 export default function AppBranding() {
   const t = useT();
@@ -23,7 +24,7 @@ export default function AppBranding() {
       </div>
 
       {/* App name */}
-      <p className="mt-3 text-xl font-bold" style={{ color: "#064E3B" }}>
+      <p className="mt-3 text-xl font-bold" style={{ color: COLORS.darkAquamarineGreen }}>
         {t("RationSmart")}
       </p>
     </div>
