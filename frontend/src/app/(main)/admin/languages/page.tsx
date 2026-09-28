@@ -318,6 +318,14 @@ export default function AdminLanguageCatalogPage() {
   // new layout only renders rows for already-enabled languages, so the
   // ONLY direction this handler ever goes is ON → OFF. Adding is handled
   // by the per-country "+ Add Language" sheet (handleAssign above).
+  // Unassigning hides a language from every user in that country, so ask
+  // first — same as the live /admin/country-language screen (audit A-13).
+  const [confirmUnassign, setConfirmUnassign] = useState<{
+    country: CountryRow;
+    code: string;
+  } | null>(null);
+  useEscapeKey(!!confirmUnassign, () => setConfirmUnassign(null));
+
   const handleUnassign = async (countryRow: CountryRow, code: string) => {
     const key = `${countryRow.id}:${code}`;
     if (pendingKey.has(key)) return;
@@ -1030,7 +1038,7 @@ export default function AdminLanguageCatalogPage() {
                                     type="checkbox"
                                     checked
                                     disabled={isPending}
-                                    onChange={() => handleUnassign(c, code)}
+                                    onChange={() => setConfirmUnassign({ country: c, code })}
                                   />
                                   <span className="toggle-slider" />
                                 </label>
@@ -1226,6 +1234,83 @@ export default function AdminLanguageCatalogPage() {
       {/* Add Language bottom sheet — registers a row in the global
           catalog. After insert it will appear (unassigned) under every
           country's toggle list. */}
+      {confirmUnassign && (
+        <div
+          className="fixed top-0 h-full z-[60] flex items-center justify-center px-6"
+          style={{ left: COLUMN_LEFT, width: COLUMN_WIDTH, backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={() => setConfirmUnassign(null)}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="bg-white rounded-2xl w-full"
+            style={{ padding: 20 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              className="font-bold"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
+              Disable{" "}
+              {allLanguages.find((l) => l.code === confirmUnassign.code)?.name ??
+                confirmUnassign.code.toUpperCase()}{" "}
+              for {confirmUnassign.country.name}?
+            </p>
+            <p
+              style={{
+                color: "#6D6D6D",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 14,
+                marginTop: 8,
+                lineHeight: 1.4,
+              }}
+            >
+              Users in this country will no longer be able to pick it.
+            </p>
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button
+                onClick={() => setConfirmUnassign(null)}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 12,
+                  border: "2px solid #064E3B",
+                  backgroundColor: "white",
+                  color: "#064E3B",
+                  cursor: "pointer",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 15,
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  const { country, code } = confirmUnassign;
+                  setConfirmUnassign(null);
+                  handleUnassign(country, code);
+                }}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 12,
+                  border: "none",
+                  backgroundColor: "#E44A4A",
+                  color: "white",
+                  cursor: "pointer",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 15,
+                }}
+              >
+                Disable
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showAdd && (
         <div
           className="fixed top-0 h-full z-50 flex flex-col justify-end"

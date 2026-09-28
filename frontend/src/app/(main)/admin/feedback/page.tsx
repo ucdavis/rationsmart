@@ -9,6 +9,7 @@ import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
+import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 
 interface AdminFeedback {
   id: number;
@@ -131,10 +132,19 @@ export default function AdminFeedbackPage() {
   useEffect(() => {
     if (!user?.id) return;
     setIsLoading(true);
-    Promise.all([getAdminFeedbacks(user.id, 50, 0), getAdminFeedbackStats(user.id)])
-      .then(([fbRes, statsRes]) => {
-        const data = fbRes.data;
-        setFeedbacks(Array.isArray(data) ? data : (data?.feedbacks ?? []));
+    Promise.all([
+      collectPages(
+        // getAdminFeedbacks takes (limit, offset) and converts to page/page_size.
+        (page) => getAdminFeedbacks(user.id, ADMIN_PAGE_SIZE, (page - 1) * ADMIN_PAGE_SIZE),
+        (data) => {
+          const d = data as { feedbacks?: AdminFeedback[] } | AdminFeedback[];
+          return Array.isArray(d) ? d : (d?.feedbacks ?? []);
+        }
+      ),
+      getAdminFeedbackStats(user.id),
+    ])
+      .then(([allFeedbacks, statsRes]) => {
+        setFeedbacks(allFeedbacks);
         setStats(statsRes.data ?? null);
       })
       .catch(() => showSnackbar(t("Could not load feedback"), "error"))

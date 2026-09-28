@@ -473,7 +473,7 @@ export default function ReportPage() {
 
   const handleSave = async () => {
     if (!user || !reportIdForSave) {
-      showSnackbar("Report not ready — generate a report first", "info");
+      showSnackbar(t("Report not ready — generate a report first"), "info");
       return;
     }
     setIsSaving(true);
@@ -493,7 +493,7 @@ export default function ReportPage() {
       // separately describes a secondary problem. Only `success ===
       // false` is a real save failure.
       if (body?.success === false) {
-        showSnackbar(body?.error_message ?? body?.message ?? "Save returned an error", "error");
+        showSnackbar(body?.error_message ?? body?.message ?? t("Save returned an error"), "error");
         return;
       }
       // Only an http(s) URL is ever stored — pdfUrl feeds window.open and
@@ -511,12 +511,12 @@ export default function ReportPage() {
         // not something this response confirms, and it actively
         // misleads when the real cause is something else (e.g. this
         // specific report/report_id) — show the backend's own words.
-        showSnackbar(body?.error_message ?? body?.message ?? "Report saved", "info");
+        showSnackbar(body?.error_message ?? body?.message ?? t("Report saved"), "info");
       } else {
-        showSnackbar(body?.message ?? "Report saved successfully!", "success");
+        showSnackbar(body?.message ?? t("Report saved successfully!"), "success");
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Failed to save report";
+      const message = err instanceof Error ? err.message : t("Failed to save report");
       showSnackbar(message, "error");
     } finally {
       setIsSaving(false);
@@ -1006,6 +1006,18 @@ export default function ReportPage() {
                   </svg>
                 }
               >
+                {/* Without a backend plan these figures are the rule of thumb
+                    above, not an engine result — say so (audit D-02). */}
+                {!serverPlan && (
+                  <p
+                    className="text-xs mb-2"
+                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  >
+                    {t(
+                      "Estimated from body weight using general guidance — not calculated by the ration engine."
+                    )}
+                  </p>
+                )}
                 {/* Three tiles: daily volume, per-feeding split, weaning age */}
                 <div className="grid grid-cols-3 gap-2 mb-3">
                   <div
@@ -2579,7 +2591,7 @@ export default function ReportPage() {
                     await navigator.share(shareData);
                   } else if (typeof navigator !== "undefined" && navigator.clipboard) {
                     await navigator.clipboard.writeText(pdfUrl);
-                    showSnackbar("PDF link copied to clipboard", "success");
+                    showSnackbar(t("PDF link copied to clipboard"), "success");
                   } else {
                     window.open(pdfUrl, "_blank", "noopener,noreferrer");
                   }
@@ -2587,7 +2599,7 @@ export default function ReportPage() {
                   // navigator.share rejects with AbortError if the user
                   // dismisses the sheet — that's not a real failure.
                   if (err instanceof Error && err.name !== "AbortError") {
-                    showSnackbar("Could not share the report", "error");
+                    showSnackbar(t("Could not share the report"), "error");
                   }
                 }
               }}

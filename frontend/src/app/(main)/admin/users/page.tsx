@@ -16,6 +16,7 @@ import Toolbar from "@/components/Toolbar";
 import CustomSelect from "@/components/CustomSelect";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
 
 interface AdminUser {
   id: string;
@@ -86,7 +87,7 @@ export default function AdminUsersPage() {
     // every page in sequence and concatenate. Server-side filters (country /
     // status / search) are applied by the endpoint, so with a filter set only
     // the matching users come back and the loop stays short.
-    const PAGE_SIZE = 100;
+    const PAGE_SIZE = ADMIN_PAGE_SIZE;
     try {
       const all: AdminUser[] = [];
       let page = 1;

@@ -55,7 +55,7 @@ beforeEach(() => {
 });
 
 describe("Admin feedback — loads via Promise.all", () => {
-  it("calls getAdminFeedbacks(user.id, 50, 0) and getAdminFeedbackStats(user.id)", async () => {
+  it("calls getAdminFeedbacks(user.id, 100, 0) and getAdminFeedbackStats(user.id)", async () => {
     getAdminFeedbacks.mockResolvedValueOnce({ data: { feedbacks: [] } });
     getAdminFeedbackStats.mockResolvedValueOnce({
       data: { total_feedbacks: 0, overall_rating: 0 },
@@ -63,7 +63,7 @@ describe("Admin feedback — loads via Promise.all", () => {
 
     render(<AdminFeedbackPage />);
 
-    expect(getAdminFeedbacks).toHaveBeenCalledWith("u-1", 50, 0);
+    expect(getAdminFeedbacks).toHaveBeenCalledWith("u-1", 100, 0);
     expect(getAdminFeedbackStats).toHaveBeenCalledWith("u-1");
     await waitFor(() => expect(screen.getByText("No feedbacks found")).toBeInTheDocument());
   });

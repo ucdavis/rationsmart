@@ -53,7 +53,7 @@ beforeEach(() => {
 });
 
 describe("Admin reports — list rendering", () => {
-  it("calls getAdminReports(user.id, 1, 50) and renders each card", async () => {
+  it("calls getAdminReports(user.id, 1, 100) and renders each card", async () => {
     getAdminReports.mockResolvedValueOnce({
       data: {
         reports: [
@@ -71,7 +71,7 @@ describe("Admin reports — list rendering", () => {
 
     render(<AdminReportsPage />);
 
-    expect(getAdminReports).toHaveBeenCalledWith("u-1", 1, 50);
+    expect(getAdminReports).toHaveBeenCalledWith("u-1", 1, 100);
 
     await waitFor(() => expect(screen.getByText("Farmer Joe")).toBeInTheDocument());
     expect(screen.getByText("sim-1")).toBeInTheDocument();

@@ -20,6 +20,7 @@ import {
 import Toolbar from "@/components/Toolbar";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -251,18 +252,23 @@ export default function AdminFeedsPage() {
     Promise.all([
       getAdminFeedTypes(user.id),
       getAdminFeedCategories(user.id),
-      getAdminFeeds(user.id, 1, 100),
+      collectPages(
+        (page) => getAdminFeeds(user.id, page, ADMIN_PAGE_SIZE),
+        (fd) => {
+          const d = fd as { feeds?: AdminFeed[]; items?: AdminFeed[] } | AdminFeed[];
+          return Array.isArray(d) ? d : (d?.feeds ?? d?.items ?? []);
+        }
+      ),
       getCountries(),
     ])
-      .then(([typesRes, catsRes, feedsRes, countriesRes]) => {
+      .then(([typesRes, catsRes, allFeeds, countriesRes]) => {
         setFeedTypes(
           Array.isArray(typesRes.data) ? typesRes.data : (typesRes.data?.feed_types ?? [])
         );
         setFeedCategories(
           Array.isArray(catsRes.data) ? catsRes.data : (catsRes.data?.categories ?? [])
         );
-        const fd = feedsRes.data;
-        setFeeds(Array.isArray(fd) ? fd : (fd?.feeds ?? fd?.items ?? []));
+        setFeeds(allFeeds);
         setCountries(Array.isArray(countriesRes.data) ? countriesRes.data : []);
       })
       .catch(() => showSnackbar(t("Could not load feed data"), "error"))

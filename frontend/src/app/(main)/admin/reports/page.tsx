@@ -8,6 +8,7 @@ import { toAdminReportDisplayDate } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import { openExternalUrl } from "@/lib/safe-url";
+import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
 // Critically, the "View Report" button opens bucket_url (a PDF URL),
@@ -41,11 +42,14 @@ export default function AdminReportsPage() {
   useEffect(() => {
     if (!user?.id) return;
     setIsLoading(true);
-    getAdminReports(user.id, 1, 50)
-      .then((res) => {
-        const data = res.data;
-        setReports(Array.isArray(data) ? data : (data?.reports ?? data?.items ?? []));
-      })
+    collectPages(
+      (page) => getAdminReports(user.id, page, ADMIN_PAGE_SIZE),
+      (data) => {
+        const d = data as { reports?: AdminReport[]; items?: AdminReport[] } | AdminReport[];
+        return Array.isArray(d) ? d : (d?.reports ?? d?.items ?? []);
+      }
+    )
+      .then(setReports)
       .catch(() => showSnackbar(t("Could not load reports"), "error"))
       .finally(() => setIsLoading(false));
   }, [user?.id]);

@@ -157,7 +157,7 @@ export default function ProfilePage() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      showSnackbar("Name cannot be empty", "error");
+      showSnackbar(t("Name cannot be empty"), "error");
       return;
     }
     setIsSaving(true);
@@ -186,7 +186,7 @@ export default function ProfilePage() {
         currency: sel?.currency ?? user.currency,
         preferred_language: selectedLang,
       });
-      showSnackbar("Profile updated!", "success");
+      showSnackbar(t("Profile updated!"), "success");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Update failed";
       showSnackbar(message, "error");
@@ -197,7 +197,7 @@ export default function ProfilePage() {
 
   const handleDelete = async () => {
     if (deletePin.length !== PIN_LENGTH) {
-      showSnackbar("Enter your 6-digit PIN to confirm", "error");
+      showSnackbar(t("Enter your 6-digit PIN to confirm"), "error");
       return;
     }
     setIsDeleting(true);
@@ -209,7 +209,7 @@ export default function ProfilePage() {
       setDeletePin("");
       logout();
       router.replace("/welcome");
-      showSnackbar("Account deleted. Sorry to see you go.", "info");
+      showSnackbar(t("Account deleted. Sorry to see you go."), "info");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Account deletion failed";
       showSnackbar(message, "error");
@@ -247,7 +247,7 @@ export default function ProfilePage() {
     try {
       const res = await changePin(user.email, currentPin, newPin);
       const msg = (res.data as { message?: string })?.message;
-      showSnackbar(msg ?? "PIN changed successfully", "success");
+      showSnackbar(msg ?? t("PIN changed successfully"), "success");
       setShowChangePinSheet(false);
       setCurrentPin("");
       setNewPin("");
@@ -271,7 +271,7 @@ export default function ProfilePage() {
     try {
       const res = await resetPin(resetEmail.trim());
       const successMsg = (res.data as { message?: string })?.message;
-      showSnackbar(successMsg ?? "PIN reset email sent. Please check your inbox.", "success");
+      showSnackbar(successMsg ?? t("PIN reset email sent. Please check your inbox."), "success");
       setShowResetSheet(false);
     } catch (err: unknown) {
       const message = authErrorMessage(err, "Failed to send reset email. Please try again.", t);

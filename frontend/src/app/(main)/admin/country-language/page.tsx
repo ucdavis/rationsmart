@@ -63,6 +63,8 @@ import {
 } from "@/lib/download";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import { allSettledLimited } from "@/lib/concurrency";
+import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
 
 interface SystemLanguage {
   code: string;
@@ -1142,7 +1144,7 @@ function FeedNamesTab({
       let page = 1;
       let totalPages = 1;
       do {
-        const res = await getAdminFeeds("", page, 100, "", "", selCountry.name, "");
+        const res = await getAdminFeeds("", page, ADMIN_PAGE_SIZE, "", "", selCountry.name, "");
         const data = res.data as { feeds?: AdminFeedLite[]; total_pages?: number };
         all.push(...(data?.feeds ?? []));
         totalPages = data?.total_pages ?? 1;
@@ -1150,16 +1152,16 @@ function FeedNamesTab({
       } while (page <= totalPages);
       if (cancelled) return;
       setFeeds(all.map((f) => ({ ...f })));
-      const results = await Promise.allSettled(
-        all.map((f) =>
-          listFeedTranslations(f.feed_id).then((r) => ({
-            feed_id: f.feed_id,
-            translation:
-              ((r.data as { translations?: FeedTranslation[] })?.translations ?? []).find(
-                (t) => t.language === selLang
-              ) ?? null,
-          }))
-        )
+      // One request per feed (no bulk endpoint) — capped at 6 in flight so a
+      // large catalogue doesn't fire hundreds of requests at once.
+      const results = await allSettledLimited(all, 6, (f) =>
+        listFeedTranslations(f.feed_id).then((r) => ({
+          feed_id: f.feed_id,
+          translation:
+            ((r.data as { translations?: FeedTranslation[] })?.translations ?? []).find(
+              (t) => t.language === selLang
+            ) ?? null,
+        }))
       );
       if (cancelled) return;
       const byId = new Map(

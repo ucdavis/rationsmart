@@ -9,6 +9,7 @@ import {
   toAdminReportDisplayDate,
   cleanNameInput,
   formatTotalUsers,
+  inclusionBoundsCrossed,
 } from "@/lib/validators";
 
 describe("isEmailAddressValid", () => {
@@ -82,6 +83,12 @@ describe("calculateCost", () => {
   it("returns empty for missing quantity", () => {
     expect(calculateCost("10", "")).toBe("");
   });
+  it("rounds HALF_UP exactly, like Android's BigDecimal (no float drift)", () => {
+    expect(calculateCost("1.15", "3")).toBe("3.45");
+    expect(calculateCost("0.05", "0.5")).toBe("0.03"); // 0.025 → 0.03
+    expect(calculateCost("2.05", "0.5")).toBe("1.03"); // 1.025 → 1.03 (float gives 1.02)
+    expect(calculateCost("10.1", "0.1")).toBe("1.01");
+  });
   it("rejects strings with more than 2 decimals", () => {
     expect(calculateCost("10.123", "2")).toBe("");
   });
@@ -148,5 +155,15 @@ describe("formatTotalUsers", () => {
   });
   it("handles zero", () => {
     expect(formatTotalUsers(0)).toBe("0");
+  });
+});
+
+describe("inclusionBoundsCrossed", () => {
+  it("is true only when both bounds are set and min > max", () => {
+    expect(inclusionBoundsCrossed(5, 2)).toBe(true);
+    expect(inclusionBoundsCrossed(2, 2)).toBe(false);
+    expect(inclusionBoundsCrossed(1, 2)).toBe(false);
+    expect(inclusionBoundsCrossed(null, 2)).toBe(false);
+    expect(inclusionBoundsCrossed(5, null)).toBe(false);
   });
 });

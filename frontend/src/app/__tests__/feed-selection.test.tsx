@@ -469,6 +469,23 @@ describe("feed-selection — inclusion limits reject a typed 0", () => {
     expect(useStore.getState().feedSelections[0].max_kg_per_day).toBe(0);
   });
 
+  it("blocks Generate when the minimum is above the maximum (audit B-14)", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [
+        mkValidForageRow({ inclusion_limits_enabled: true, min_kg_per_day: 5, max_kg_per_day: 2 }),
+      ],
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe("Minimum can't be more than the maximum.")
+    );
+    expect(recommendDiet).not.toHaveBeenCalled();
+  });
+
   it("still sends a legitimate positive bound", async () => {
     recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-3" } });
     useStore.setState({

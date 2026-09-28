@@ -33,7 +33,7 @@ import type {
   FeedTaxonomyLabels,
 } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
-import { inclusionBoundIsInvalid } from "@/lib/validators";
+import { inclusionBoundIsInvalid, inclusionBoundsCrossed } from "@/lib/validators";
 import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
@@ -818,6 +818,17 @@ export default function FeedSelectionPage() {
         ),
         "error"
       );
+      return;
+    }
+    if (
+      !isEvaluation &&
+      items.some(
+        (it) =>
+          it.inclusion_limits_enabled &&
+          inclusionBoundsCrossed(it.min_kg_per_day, it.max_kg_per_day)
+      )
+    ) {
+      showSnackbar(t("Minimum can't be more than the maximum."), "error");
       return;
     }
     // Custom Diet Limits are persisted across simulations, but the accepted

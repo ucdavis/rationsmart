@@ -27,15 +27,27 @@ export function getDecimalPointIndex(str: string): number {
   return 0;
 }
 
+// Android Ext.kt `String.calculateCost` parity: both inputs must have at most
+// 2 decimals (otherwise "" — the input fields only allow 2), and the product
+// is rounded HALF_UP to 2 decimals. Android uses BigDecimal; here the inputs
+// are scaled to integer hundredths so the multiply and rounding are exact —
+// plain float math turned e.g. 1.005-style products into x.4999… and rounded
+// the wrong way (audit B-25).
 export function calculateCost(price: string, quantity: string): string {
   if (!price || !quantity) return "";
   const regex = /^\d+(\.\d{1,2})?$/;
   if (!regex.test(price) || !regex.test(quantity)) return "";
-  const p = parseFloat(price);
-  const q = parseFloat(quantity);
-  if (isNaN(p) || isNaN(q)) return "";
-  const result = Math.round(p * q * 100) / 100;
-  return result % 1 === 0 ? String(Math.round(result)) : result.toFixed(2);
+  const toHundredths = (v: string) => {
+    const [whole, frac = ""] = v.split(".");
+    return Number(whole) * 100 + Number(frac.padEnd(2, "0"));
+  };
+  // product is in 1/10 000 units; + 50 then floor = HALF_UP to 1/100.
+  const product = toHundredths(price) * toHundredths(quantity);
+  if (!Number.isSafeInteger(product)) return "";
+  const cents = Math.floor((product + 50) / 100);
+  const whole = Math.floor(cents / 100);
+  const frac = cents % 100;
+  return frac === 0 ? String(whole) : `${whole}.${String(frac).padStart(2, "0")}`;
 }
 
 export function formatFeedBreakdownData(value: number | null | undefined): string {
@@ -94,6 +106,14 @@ export function formatTotalUsers(n: number): string {
  */
 export function inclusionBoundIsInvalid(value: number | null | undefined): boolean {
   return value != null && value <= 0;
+}
+
+/** True when both inclusion bounds are set and the minimum exceeds the maximum (backend 422s it). */
+export function inclusionBoundsCrossed(
+  min: number | null | undefined,
+  max: number | null | undefined
+): boolean {
+  return min != null && max != null && min > max;
 }
 
 // PIN lengths. The v1 backend issues 6-digit PINs; legacy 4-digit PINs are

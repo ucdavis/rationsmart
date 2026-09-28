@@ -15,7 +15,7 @@ import {
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useStore } from "@/lib/store";
-import { calculateCost, inclusionBoundIsInvalid } from "@/lib/validators";
+import { calculateCost, inclusionBoundIsInvalid, inclusionBoundsCrossed } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
 import { useT } from "@/lib/i18n-ui";
@@ -1110,6 +1110,9 @@ export default function FeedRow({
   // inclusionBoundIsInvalid. Flagged here and blocked on Generate.
   const minIsZero = inclusionBoundIsInvalid(item.min_kg_per_day);
   const maxIsZero = inclusionBoundIsInvalid(item.max_kg_per_day);
+  // Min above max can't be satisfied; flag both fields (audit B-14).
+  const boundsCrossed =
+    !minIsZero && !maxIsZero && inclusionBoundsCrossed(item.min_kg_per_day, item.max_kg_per_day);
 
   const colGap = { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 } as const;
 
@@ -1483,7 +1486,7 @@ export default function FeedRow({
                 hasValue={item.min_kg_per_day != null}
                 disabled={false}
                 loading={rowLoading}
-                invalid={minIsZero}
+                invalid={minIsZero || boundsCrossed}
                 optional
               >
                 <input
@@ -1506,7 +1509,7 @@ export default function FeedRow({
                 loading={rowLoading}
                 hasValue={item.max_kg_per_day != null}
                 disabled={false}
-                invalid={maxIsZero}
+                invalid={maxIsZero || boundsCrossed}
                 optional
               >
                 <input
@@ -1542,6 +1545,18 @@ export default function FeedRow({
                 {t(
                   "Enter a value greater than 0, or leave the field empty for no limit. To exclude a feed, remove it from the selection."
                 )}
+              </p>
+            )}
+            {boundsCrossed && (
+              <p
+                style={{
+                  color: "#E44A4A",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 11,
+                  margin: "6px 2px 0",
+                }}
+              >
+                {t("Minimum can't be more than the maximum.")}
               </p>
             )}
           </>
