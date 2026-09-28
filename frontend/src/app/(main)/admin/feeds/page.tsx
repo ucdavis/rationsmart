@@ -23,6 +23,7 @@ import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
+import { anyNutrientInvalid, NUTRIENT_RANGE_MESSAGE } from "@/lib/validators";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -336,9 +337,8 @@ export default function AdminFeedsPage() {
     // every string field is non-null (default ""). A non-numeric entry would
     // serialise as null (NaN), so reject it instead of sending it.
     const num = (v: string) => (v ? Number(v) : 0);
-    const badField = NUMERIC_FEED_FIELDS.find((k) => !Number.isFinite(num(feedForm[k])));
-    if (badField) {
-      showSnackbar(t("Please enter valid numbers for all nutrient fields"), "error");
+    if (anyNutrientInvalid(NUMERIC_FEED_FIELDS.map((k) => feedForm[k]))) {
+      showSnackbar(t(NUTRIENT_RANGE_MESSAGE), "error");
       return;
     }
     setIsSavingFeed(true);

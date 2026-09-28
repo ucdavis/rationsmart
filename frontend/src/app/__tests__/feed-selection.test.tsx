@@ -776,6 +776,23 @@ describe("feed-selection — generateReport payloads", () => {
     expect(useStore.getState().reportData).toEqual({ report_id: "EVAL-1", mode: "evaluation" });
   });
 
+  it("blocks an evaluation with a 0 quantity (audit B-14)", async () => {
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo: mkCattleInfo(),
+      feedSelections: [mkValidForageRow({ quantity_kg: 0 })],
+      user: seedUser(),
+    });
+    await renderReady();
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe(
+        "Enter a quantity greater than 0 for every feed, or remove the feed."
+      )
+    );
+    expect(evaluateDiet).not.toHaveBeenCalled();
+  });
+
   it("derives a missing currency from the simulation's country (audit D-03)", async () => {
     evaluateDiet.mockResolvedValueOnce({ data: { report_id: "EVAL-2" } });
     const cattleInfo = mkCattleInfo();

@@ -616,3 +616,66 @@ export const searchFeeds = async (
     return { data: [] };
   }
 };
+
+// ─── Feed type / category response parsing ──────────────────────────────────
+// One parser for the taxonomy endpoints, shared by FeedRow's cascade and the
+// Custom Feed sheet (audit B-21 / B-23). Shapes the backend has returned:
+//   1. string[]                                  → identity == display
+//   2. [{type_name|category_name, display_*}]    → identity + localized label
+//   3. [{name, display_name}]                    → identity + localized label
+//   4. { <wrapperKey>: [...] }                   → unwrapped
+//   5. a single bare object for a 1-result list  → wrapped as [obj]
+// `name` is the English identity (store / compare / send); `display` is only
+// for rendering (CLAUDE.md §18.4).
+
+export interface TaxonomyOption {
+  name: string;
+  display: string;
+}
+
+const asRecord = (v: unknown): Record<string, unknown> | null =>
+  v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
+const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
+
+function taxonomyRows(data: unknown, wrapperKeys: string[], identityKey: string): unknown[] {
+  if (Array.isArray(data)) return data;
+  const obj = asRecord(data);
+  if (!obj) return [];
+  for (const k of wrapperKeys) {
+    const v = obj[k];
+    if (Array.isArray(v)) return v;
+  }
+  return identityKey in obj || "name" in obj ? [obj] : [];
+}
+
+function toOptions(rows: unknown[], identityKey: string, displayKey: string): TaxonomyOption[] {
+  return rows
+    .map((it) => {
+      if (typeof it === "string") return { name: it, display: it };
+      const o = asRecord(it) ?? {};
+      const name = str(o[identityKey]) ?? str(o.name) ?? "";
+      const display = str(o[displayKey]) ?? str(o.display_name) ?? name;
+      return { name, display };
+    })
+    .filter((o) => o.name);
+}
+
+export function parseFeedTypeOptions(data: unknown): TaxonomyOption[] {
+  return toOptions(
+    taxonomyRows(data, ["feed_types", "unique_feed_types"], "type_name"),
+    "type_name",
+    "display_type"
+  );
+}
+
+export function parseFeedCategoryOptions(data: unknown): TaxonomyOption[] {
+  return toOptions(
+    taxonomyRows(
+      data,
+      ["categories", "unique_feed_categories", "feed_categories"],
+      "category_name"
+    ),
+    "category_name",
+    "display_category"
+  );
+}

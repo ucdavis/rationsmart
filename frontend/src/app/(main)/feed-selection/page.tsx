@@ -16,6 +16,8 @@ import {
   checkInsertOrUpdate,
   updateCustomFeed,
   searchFeeds,
+  parseFeedCategoryOptions,
+  parseFeedTypeOptions,
   getCountries,
   fetchFeedTaxonomyLabels,
   getDietThresholds,
@@ -32,7 +34,12 @@ import type {
   FeedTaxonomyLabels,
 } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
-import { inclusionBoundIsInvalid, inclusionBoundsCrossed } from "@/lib/validators";
+import {
+  anyNutrientInvalid,
+  inclusionBoundIsInvalid,
+  inclusionBoundsCrossed,
+  NUTRIENT_RANGE_MESSAGE,
+} from "@/lib/validators";
 import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
@@ -49,6 +56,7 @@ import {
   buildRecommendationRequest,
   checkedLimits,
 } from "@/lib/diet-request";
+import { nutrientFieldsFor } from "@/lib/nutrients";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -102,54 +110,6 @@ const EMPTY_CUSTOM = {
   fd_ca: "", // Calcium
   fd_p: "", // Phosphorus
 };
-
-// Match Android DialogFeedDetails category → layout mapping.
-// "Additive" → 13 fields incl. NPN
-// "Mineral"/"Minerals" → 4 fields (DM, Ash, Ca, P)
-// else → General (12 fields, no NPN)
-type NutrientLayout = "additive" | "mineral" | "general";
-function getNutrientLayout(category: string): NutrientLayout {
-  if (category === "Additive") return "additive";
-  if (category === "Mineral" || category === "Minerals") return "mineral";
-  return "general";
-}
-
-type CustomFeedFormKey = keyof typeof EMPTY_CUSTOM;
-const NUTRIENT_FIELDS_ADDITIVE: { key: CustomFeedFormKey; label: string }[] = [
-  { key: "fd_dm", label: "Dry Matter" },
-  { key: "fd_ash", label: "Ash" },
-  { key: "fd_cp", label: "Protein" },
-  { key: "fd_npn_cp", label: "NPN" },
-  { key: "fd_ee", label: "Ether Extract" },
-  { key: "fd_st", label: "Starch" },
-  { key: "fd_ndf", label: "NDF" },
-  { key: "fd_adf", label: "ADF" },
-  { key: "fd_lg", label: "Lignin" },
-  { key: "fd_ndin", label: "NDIN" },
-  { key: "fd_adin", label: "ADIN" },
-  { key: "fd_ca", label: "Calcium" },
-  { key: "fd_p", label: "Phosphorus" },
-];
-const NUTRIENT_FIELDS_GENERAL: { key: CustomFeedFormKey; label: string }[] = [
-  { key: "fd_dm", label: "Dry Matter" },
-  { key: "fd_ash", label: "Ash" },
-  { key: "fd_cp", label: "Protein" },
-  { key: "fd_ee", label: "Ether Extract" },
-  { key: "fd_st", label: "Starch" },
-  { key: "fd_ndf", label: "NDF" },
-  { key: "fd_adf", label: "ADF" },
-  { key: "fd_lg", label: "Lignin" },
-  { key: "fd_ndin", label: "NDIN" },
-  { key: "fd_adin", label: "ADIN" },
-  { key: "fd_ca", label: "Calcium" },
-  { key: "fd_p", label: "Phosphorus" },
-];
-const NUTRIENT_FIELDS_MINERAL: { key: CustomFeedFormKey; label: string }[] = [
-  { key: "fd_dm", label: "Dry Matter" },
-  { key: "fd_ash", label: "Ash" },
-  { key: "fd_ca", label: "Calcium" },
-  { key: "fd_p", label: "Phosphorus" },
-];
 
 function CustomFeedNutrientInput({
   label,
@@ -504,24 +464,7 @@ export default function FeedSelectionPage() {
     setLoadingCustomTypes(true);
     try {
       const res = await getFeedTypes(user.country_id, user.id);
-      // v1 backend may return bare string[] (e.g. ["Roughage","Concentrate"])
-      // OR objects with type_name OR a wrapper. Same defensive parsing
-      // as FeedRow's cascade — keep both paths in sync.
-      const data = res.data as unknown;
-      const raw: unknown[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
-          ? (data as { feed_types: unknown[] }).feed_types
-          : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
-            ? (data as { unique_feed_types: unknown[] }).unique_feed_types
-            : [];
-      const names: string[] = raw
-        .map((it) => {
-          if (typeof it === "string") return it;
-          const o = it as { type_name?: string; name?: string };
-          return o?.type_name ?? o?.name ?? "";
-        })
-        .filter((n) => n);
+      const names = parseFeedTypeOptions(res.data).map((o) => o.name);
       setCustomFeedTypes(names);
     } catch {
       showSnackbar(t("Could not load feed types"), "error");
@@ -537,23 +480,7 @@ export default function FeedSelectionPage() {
     setLoadingCustomCats(true);
     try {
       const res = await getFeedCategories(feedType, user.country_id, user.id);
-      const data = res.data as unknown;
-      const raw: unknown[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as { categories?: unknown[] })?.categories)
-          ? (data as { categories: unknown[] }).categories
-          : Array.isArray((data as { unique_feed_categories?: unknown[] })?.unique_feed_categories)
-            ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
-            : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
-              ? (data as { feed_categories: unknown[] }).feed_categories
-              : [];
-      const names: string[] = raw
-        .map((it) => {
-          if (typeof it === "string") return it;
-          const o = it as { category_name?: string; name?: string };
-          return o?.category_name ?? o?.name ?? "";
-        })
-        .filter((n) => n);
+      const names = parseFeedCategoryOptions(res.data).map((o) => o.name);
       setCustomFeedCategories(names);
     } catch {
       showSnackbar(t("Could not load categories"), "error");
@@ -566,6 +493,16 @@ export default function FeedSelectionPage() {
     if (!user?.id || !user?.country_id) return;
     if (!customFeedForm.feed_name.trim() || !customFeedForm.feed_type) {
       showSnackbar(t("Feed name and type are required"), "error");
+      return;
+    }
+    if (
+      anyNutrientInvalid(
+        Object.entries(customFeedForm)
+          .filter(([k]) => k.startsWith("fd_"))
+          .map(([, v]) => v as string)
+      )
+    ) {
+      showSnackbar(t(NUTRIENT_RANGE_MESSAGE), "error");
       return;
     }
     setIsSavingCustom(true);
@@ -796,6 +733,22 @@ export default function FeedSelectionPage() {
     if (incomplete.length > 0) {
       setIncompleteFeedNames(incomplete);
       setShowIncompleteFeedsDialog(true);
+      return;
+    }
+    // Values the number inputs let through but the diet can't use (audit
+    // B-14): a negative price, or — in evaluation, where the quantity IS the
+    // diet — a quantity of 0 or less. A price of 0 stays allowed (own-farm
+    // feed); Android has no such rules, so they only block clear typos.
+    const picked = items.filter((item) => item.feed_uuid !== null);
+    if (picked.some((item) => item.price_per_kg != null && item.price_per_kg < 0)) {
+      showSnackbar(t("Price can't be negative."), "error");
+      return;
+    }
+    if (isEvaluation && picked.some((item) => item.quantity_kg != null && item.quantity_kg <= 0)) {
+      showSnackbar(
+        t("Enter a quantity greater than 0 for every feed, or remove the feed."),
+        "error"
+      );
       return;
     }
     // Y3 — block generate when no Forage feed is selected. Apply to both
@@ -1730,13 +1683,7 @@ export default function FeedSelectionPage() {
                 // Match Android DialogFeedDetails: layout is chosen by feedCategory.
                 // Before category is selected, default to General (matches Android
                 // initUi where layoutNutrientInfoGeneral.root.visibility = VISIBLE).
-                const layout = getNutrientLayout(customFeedForm.feed_category);
-                const fields =
-                  layout === "additive"
-                    ? NUTRIENT_FIELDS_ADDITIVE
-                    : layout === "mineral"
-                      ? NUTRIENT_FIELDS_MINERAL
-                      : NUTRIENT_FIELDS_GENERAL;
+                const fields = nutrientFieldsFor(customFeedForm.feed_category);
                 return (
                   <>
                     <p className="text-xs mb-3" style={{ color: COLORS.darkSilver }}>

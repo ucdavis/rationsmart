@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import {
   getFeedTypes,
+  parseFeedCategoryOptions,
+  parseFeedTypeOptions,
   getFeedCategories,
   getFeedSubCategories,
   updateCustomFeed,
@@ -13,7 +15,13 @@ import {
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useStore } from "@/lib/store";
-import { calculateCost, inclusionBoundIsInvalid, inclusionBoundsCrossed } from "@/lib/validators";
+import {
+  anyNutrientInvalid,
+  calculateCost,
+  inclusionBoundIsInvalid,
+  inclusionBoundsCrossed,
+  NUTRIENT_RANGE_MESSAGE,
+} from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
 import { useT } from "@/lib/i18n-ui";
@@ -21,65 +29,7 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
-
-// Match Android DialogFeedDetails: layout chosen by feedCategory.
-type NutrientLayout = "additive" | "mineral" | "general";
-function getNutrientLayout(category: string): NutrientLayout {
-  if (category === "Additive") return "additive";
-  if (category === "Mineral" || category === "Minerals") return "mineral";
-  return "general";
-}
-
-type EditFormKey =
-  | "fd_dm"
-  | "fd_ash"
-  | "fd_cp"
-  | "fd_npn_cp"
-  | "fd_ee"
-  | "fd_st"
-  | "fd_ndf"
-  | "fd_adf"
-  | "fd_lg"
-  | "fd_ndin"
-  | "fd_adin"
-  | "fd_ca"
-  | "fd_p";
-
-const NUTRIENT_FIELDS_ADDITIVE: { key: EditFormKey; label: string }[] = [
-  { key: "fd_dm", label: "Dry Matter" },
-  { key: "fd_ash", label: "Ash" },
-  { key: "fd_cp", label: "Protein" },
-  { key: "fd_npn_cp", label: "NPN" },
-  { key: "fd_ee", label: "Ether Extract" },
-  { key: "fd_st", label: "Starch" },
-  { key: "fd_ndf", label: "NDF" },
-  { key: "fd_adf", label: "ADF" },
-  { key: "fd_lg", label: "Lignin" },
-  { key: "fd_ndin", label: "NDIN" },
-  { key: "fd_adin", label: "ADIN" },
-  { key: "fd_ca", label: "Calcium" },
-  { key: "fd_p", label: "Phosphorus" },
-];
-const NUTRIENT_FIELDS_GENERAL: { key: EditFormKey; label: string }[] = [
-  { key: "fd_dm", label: "Dry Matter" },
-  { key: "fd_ash", label: "Ash" },
-  { key: "fd_cp", label: "Protein" },
-  { key: "fd_ee", label: "Ether Extract" },
-  { key: "fd_st", label: "Starch" },
-  { key: "fd_ndf", label: "NDF" },
-  { key: "fd_adf", label: "ADF" },
-  { key: "fd_lg", label: "Lignin" },
-  { key: "fd_ndin", label: "NDIN" },
-  { key: "fd_adin", label: "ADIN" },
-  { key: "fd_ca", label: "Calcium" },
-  { key: "fd_p", label: "Phosphorus" },
-];
-const NUTRIENT_FIELDS_MINERAL: { key: EditFormKey; label: string }[] = [
-  { key: "fd_dm", label: "Dry Matter" },
-  { key: "fd_ash", label: "Ash" },
-  { key: "fd_ca", label: "Calcium" },
-  { key: "fd_p", label: "Phosphorus" },
-];
+import { nutrientFieldsFor, type NutrientKey } from "@/lib/nutrients";
 
 // Decimal-or-empty string for response numerics (matches Android
 // formatFeedBreakdownData which strips trailing zeros/decimals).
@@ -304,7 +254,7 @@ export default function FeedRow({
   const [editNamePrefix, setEditNamePrefix] = useState("");
   const [editFeedDetailsExpanded, setEditFeedDetailsExpanded] = useState(true);
   const [editNutritionalInfoExpanded, setEditNutritionalInfoExpanded] = useState(true);
-  const [editForm, setEditForm] = useState<Record<EditFormKey, string>>({
+  const [editForm, setEditForm] = useState<Record<NutrientKey, string>>({
     fd_dm: "",
     fd_ash: "",
     fd_cp: "",
@@ -414,6 +364,10 @@ export default function FeedRow({
 
   const handleEditSubmit = async () => {
     if (!user?.id || !user?.country_id || !item.feed_uuid) return;
+    if (anyNutrientInvalid(Object.values(editForm))) {
+      showSnackbar(t(NUTRIENT_RANGE_MESSAGE), "error");
+      return;
+    }
     setIsSavingEdit(true);
     try {
       // Mirror Android FeedDetailsViewModel: empty → 0.0 (toDoubleOrZero).
@@ -528,38 +482,7 @@ export default function FeedRow({
     //   2. Array of {type_name, display_type}   → identity = type_name, display = display_type
     //   3. Array of {name, display_name}        → identity = name, display = display_name
     // Falls back to identity when display isn't present.
-    const extractOptions = (data: unknown): { name: string; display: string }[] => {
-      const raw: unknown[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as { feed_types?: unknown[] })?.feed_types)
-          ? (data as { feed_types: unknown[] }).feed_types
-          : Array.isArray((data as { unique_feed_types?: unknown[] })?.unique_feed_types)
-            ? (data as { unique_feed_types: unknown[] }).unique_feed_types
-            : // Some responses come back as a single bare object instead of
-              // a 1-item array when there's exactly one result (a common
-              // REST quirk) — wrap it rather than silently showing an empty
-              // dropdown for an option that genuinely exists.
-              data &&
-                typeof data === "object" &&
-                !Array.isArray(data) &&
-                ("type_name" in data || "name" in data)
-              ? [data]
-              : [];
-      return raw
-        .map((it) => {
-          if (typeof it === "string") return { name: it, display: it };
-          const o = it as {
-            type_name?: string;
-            name?: string;
-            display_name?: string;
-            display_type?: string;
-          };
-          const name = o?.type_name ?? o?.name ?? "";
-          const display = o?.display_type ?? o?.display_name ?? name;
-          return { name, display };
-        })
-        .filter((o) => o.name);
-    };
+    const extractOptions = parseFeedTypeOptions;
 
     // i18n V2 — single fetch with ?lang=. Backend returns objects with
     // both identity (type_name) and localized (display_type) fields.
@@ -712,40 +635,7 @@ export default function FeedRow({
     // returns objects with both category_name (identity) and
     // display_category (localized label). Falls back to bare-string
     // rows for backwards compat.
-    const extractCatOptions = (data: unknown): { name: string; display: string }[] => {
-      const raw: unknown[] = Array.isArray(data)
-        ? data
-        : Array.isArray((data as { categories?: unknown[] })?.categories)
-          ? (data as { categories: unknown[] }).categories
-          : Array.isArray((data as { unique_feed_categories?: unknown[] })?.unique_feed_categories)
-            ? (data as { unique_feed_categories: unknown[] }).unique_feed_categories
-            : Array.isArray((data as { feed_categories?: unknown[] })?.feed_categories)
-              ? (data as { feed_categories: unknown[] }).feed_categories
-              : // Some categories come back as a single bare object instead
-                // of a 1-item array when there's exactly one result for that
-                // feed type — wrap it instead of rendering an empty dropdown
-                // for a category that genuinely exists.
-                data &&
-                  typeof data === "object" &&
-                  !Array.isArray(data) &&
-                  ("category_name" in data || "name" in data)
-                ? [data]
-                : [];
-      return raw
-        .map((it) => {
-          if (typeof it === "string") return { name: it, display: it };
-          const o = it as {
-            category_name?: string;
-            name?: string;
-            display_name?: string;
-            display_category?: string;
-          };
-          const name = o?.category_name ?? o?.name ?? "";
-          const display = o?.display_category ?? o?.display_name ?? name;
-          return { name, display };
-        })
-        .filter((o) => o.name);
-    };
+    const extractCatOptions = parseFeedCategoryOptions;
 
     // i18n V2 — single fetch with ?lang= (see api.ts getFeedCategories).
     // Response provides both category_name (identity for comparison /
@@ -1030,30 +920,34 @@ export default function FeedRow({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.category_name, item.feed_type_name, user?.country_id, user?.id]);
 
-  // When the selected feed clears (because the user changed feed type or
-  // category, or the cascade above invalidated the stored feed_uuid), the
-  // inclusion-limits toggle and any stored Min/Max numbers must also reset.
-  // Otherwise the new feed inherits stale bounds from the previous one,
-  // and the toggle stays "on" against no feed at all. The same applies when
-  // one feed is swapped DIRECTLY for another (a search pick over a filled
-  // row never passes through null — audit B-12). The first render is
-  // skipped so a restored simulation keeps its saved bounds.
-  // Price is deliberately NOT reset: neither the dropdown nor the search
-  // path ever cleared it, and users re-pick feeds expecting the price to stay.
+  // When the selected feed changes, everything that described the OLD feed
+  // must reset, or the new feed silently inherits it (audit B-12):
+  // - inclusion toggle + Min/Max, whenever the feed changes or clears;
+  // - price + quantity, when one real feed is swapped for another (dropdown
+  //   or a search pick over a filled row). Picking the first feed, or a
+  //   cascade clearing an invalid one, leaves typed price/quantity alone.
+  // The first render is skipped so a restored simulation keeps its values.
   const prevFeedUuid = useRef(item.feed_uuid);
   useEffect(() => {
-    const swapped = prevFeedUuid.current !== item.feed_uuid;
+    const prev = prevFeedUuid.current;
+    const swapped = prev !== item.feed_uuid;
     prevFeedUuid.current = item.feed_uuid;
+    if (!swapped) return;
+    const reset: Partial<FeedItem> = {};
     if (
-      swapped &&
-      (item.inclusion_limits_enabled || item.min_kg_per_day != null || item.max_kg_per_day != null)
+      item.inclusion_limits_enabled ||
+      item.min_kg_per_day != null ||
+      item.max_kg_per_day != null
     ) {
-      onUpdate(item.id, {
-        inclusion_limits_enabled: false,
-        min_kg_per_day: null,
-        max_kg_per_day: null,
-      });
+      reset.inclusion_limits_enabled = false;
+      reset.min_kg_per_day = null;
+      reset.max_kg_per_day = null;
     }
+    if (prev && item.feed_uuid && (item.price_per_kg != null || item.quantity_kg != null)) {
+      reset.price_per_kg = null;
+      reset.quantity_kg = null;
+    }
+    if (Object.keys(reset).length > 0) onUpdate(item.id, reset);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.feed_uuid]);
 
@@ -1684,13 +1578,7 @@ export default function FeedRow({
                              prefix derived from "-" split of existing feed name. */}
       {showEditModal &&
         (() => {
-          const layout = getNutrientLayout(item.category_name);
-          const fields =
-            layout === "additive"
-              ? NUTRIENT_FIELDS_ADDITIVE
-              : layout === "mineral"
-                ? NUTRIENT_FIELDS_MINERAL
-                : NUTRIENT_FIELDS_GENERAL;
+          const fields = nutrientFieldsFor(item.category_name);
           const title = editIsInsert ? t("Add Custom Feed") : t("Edit Nutritional Information");
           const submitReady = !isSavingEdit && !isLoadingEdit && editFeedName.trim() !== "";
           return (

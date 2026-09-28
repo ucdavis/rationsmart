@@ -120,3 +120,20 @@ export function inclusionBoundsCrossed(
 // accepted at login only, which then routes to /set-new-pin to upgrade.
 export const PIN_LENGTH = 6;
 export const LEGACY_PIN_LENGTH = 4;
+
+// Feed nutrient composition is entered as % of dry matter (or of CP for
+// NPN / NDIN / ADIN) — anything outside 0–100, or not a number, is a typo
+// the backend would otherwise store (audit B-14). Blank means "0" (Android).
+export const NUTRIENT_RANGE_MESSAGE = "Nutrient values must be numbers between 0 and 100 %.";
+
+export function nutrientValueInvalid(v: string | number | null | undefined): boolean {
+  if (v === null || v === undefined || v === "") return false;
+  const n = typeof v === "number" ? v : Number(v);
+  return !Number.isFinite(n) || n < 0 || n > 100;
+}
+
+/** True when any of `values` (a form's nutrient fields) is out of range. */
+export function anyNutrientInvalid(values: Iterable<string | number | null | undefined>): boolean {
+  for (const v of values) if (nutrientValueInvalid(v)) return true;
+  return false;
+}

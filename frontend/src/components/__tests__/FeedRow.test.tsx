@@ -974,3 +974,50 @@ describe("stale non-ASCII feed_type_name / category_name self-heal", () => {
     );
   });
 });
+
+describe("feed swap resets the old feed's values (audit B-12)", () => {
+  const props = (item: FeedItem, onUpdate: ReturnType<typeof vi.fn>) => ({
+    item,
+    index: 0,
+    showQuantity: true,
+    onUpdate,
+    onDelete: vi.fn(),
+  });
+
+  it("clears price, quantity and bounds when one feed is swapped for another", () => {
+    const onUpdate = vi.fn();
+    const first = makeItem({
+      feed_uuid: "feed-a",
+      price_per_kg: 12,
+      quantity_kg: 3,
+      inclusion_limits_enabled: true,
+      max_kg_per_day: 2,
+    });
+    const { rerender } = render(<FeedRow {...props(first, onUpdate)} />);
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ price_per_kg: null })
+    );
+    rerender(<FeedRow {...props({ ...first, feed_uuid: "feed-b" }, onUpdate)} />);
+    expect(onUpdate).toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({
+        price_per_kg: null,
+        quantity_kg: null,
+        inclusion_limits_enabled: false,
+        max_kg_per_day: null,
+      })
+    );
+  });
+
+  it("keeps a typed price when the first feed is picked", () => {
+    const onUpdate = vi.fn();
+    const empty = makeItem({ price_per_kg: 12 });
+    const { rerender } = render(<FeedRow {...props(empty, onUpdate)} />);
+    rerender(<FeedRow {...props({ ...empty, feed_uuid: "feed-a" }, onUpdate)} />);
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ price_per_kg: null })
+    );
+  });
+});

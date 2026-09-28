@@ -75,6 +75,8 @@ export {
   getFeedTypes,
   getFeedTypesLocalized,
   insertCustomFeed,
+  parseFeedCategoryOptions,
+  parseFeedTypeOptions,
   recommendDiet,
   searchFeeds,
   sortDietThresholds,
@@ -88,6 +90,7 @@ export type {
   DietThresholdsResponse,
   FeedSearchResult,
   FeedTaxonomyLabels,
+  TaxonomyOption,
 } from "./api-client/feeds";
 export {
   getMyFeedback,
