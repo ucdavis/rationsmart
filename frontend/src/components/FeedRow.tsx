@@ -20,6 +20,7 @@ import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 // Match Android DialogFeedDetails: layout chosen by feedCategory.
 type NutrientLayout = "additive" | "mineral" | "general";
@@ -294,6 +295,7 @@ export default function FeedRow({
   // Nutrient layout (Additive/Mineral/General) is chosen by category.
   const [showEditModal, setShowEditModal] = useState(false);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  useEscapeKey(showEditModal && !isSavingEdit, () => setShowEditModal(false));
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
   const [editIsInsert, setEditIsInsert] = useState(false);
   const [editFeedName, setEditFeedName] = useState("");
@@ -1690,6 +1692,9 @@ export default function FeedRow({
               }}
             >
               <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={title}
                 className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
                 style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
               >

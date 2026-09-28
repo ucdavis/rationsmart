@@ -18,6 +18,7 @@ import PoweredBy from "@/components/PoweredBy";
 import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
@@ -83,6 +84,13 @@ export default function ProfilePage() {
   const [isChangingPin, setIsChangingPin] = useState(false);
   const [deletePin, setDeletePin] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  useEscapeKey(!!(showChangePinSheet && !isChangingPin), () => setShowChangePinSheet(false));
+  useEscapeKey(!!(showResetSheet && !isSendingReset), () => setShowResetSheet(false));
+  useEscapeKey(!!(showPinSheet && !isDeleting), () => {
+    setShowPinSheet(false);
+    setDeletePin("");
+  });
+  useEscapeKey(!!showDeleteDialog, () => setShowDeleteDialog(false));
   const [countries, setCountries] = useState<
     Array<{
       id: string | number;
@@ -612,6 +620,8 @@ export default function ProfilePage() {
           />
           {/* Sheet */}
           <div
+            role="dialog"
+            aria-modal="true"
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
               maxWidth: COLUMN_WIDTH,
@@ -739,6 +749,8 @@ export default function ProfilePage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
             onClick={(e) => e.stopPropagation()}
@@ -849,6 +861,8 @@ export default function ProfilePage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl w-full max-w-[430px] pb-5 pt-5 px-4"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.15)" }}
             onClick={(e) => e.stopPropagation()}
@@ -935,6 +949,8 @@ export default function ProfilePage() {
             onClick={() => !isChangingPin && setShowChangePinSheet(false)}
           />
           <div
+            role="dialog"
+            aria-modal="true"
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
               maxWidth: COLUMN_WIDTH,

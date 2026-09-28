@@ -43,6 +43,7 @@ import {
   getFeedSyncLog,
 } from "@/lib/api";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 interface SchedulerStatus {
   scheduler_enabled: boolean;
@@ -248,6 +249,7 @@ export default function AdminFeedSyncPage() {
   const [config, setConfig] = useState<SyncConfig | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+  useEscapeKey(!!confirm, () => setConfirm(null));
   const [viewLogId, setViewLogId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -385,6 +387,8 @@ export default function AdminFeedSyncPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full px-5 py-5"
             style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
           >
@@ -848,7 +852,7 @@ function SyncSettingsTab({
                 cursor: isDispatching || isRunning ? "not-allowed" : "pointer",
               }}
             >
-              ⟳ Sync now
+              <span aria-hidden="true">⟳</span> Sync now
             </button>
             <span
               className="text-xs font-bold"
@@ -1156,6 +1160,7 @@ function RunHistoryTab({
 
   const [openLog, setOpenLog] = useState<FeedSyncLogDetail | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  useEscapeKey(!!isDetailOpen, () => setIsDetailOpen(false));
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
   const [rowFilter, setRowFilter] = useState("");
@@ -1367,6 +1372,8 @@ function RunHistoryTab({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)", maxHeight: "88vh" }}
           >
@@ -1489,6 +1496,7 @@ function RunHistoryTab({
                         </p>
                       </button>
                       <button
+                        aria-label="Download CSV"
                         onClick={() =>
                           downloadCsv(
                             `feed-sync-${openLog.id}-skipped-rows.csv`,
@@ -1504,7 +1512,7 @@ function RunHistoryTab({
                           cursor: "pointer",
                         }}
                       >
-                        ⬇ CSV
+                        <span aria-hidden="true">⬇</span> CSV
                       </button>
                     </div>
                     {rowsExpanded && (
@@ -1590,6 +1598,7 @@ function RunHistoryTab({
                         </p>
                       </button>
                       <button
+                        aria-label="Download CSV"
                         onClick={() =>
                           downloadCsv(
                             `feed-sync-${openLog.id}-skipped-names.csv`,
@@ -1605,7 +1614,7 @@ function RunHistoryTab({
                           cursor: "pointer",
                         }}
                       >
-                        ⬇ CSV
+                        <span aria-hidden="true">⬇</span> CSV
                       </button>
                     </div>
                     {transExpanded && (

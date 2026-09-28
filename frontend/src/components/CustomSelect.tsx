@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 
 // Mirrors Android DropdownListAdapter.setTextBackgroundColor:
 // position 0 → white (top-rounded), odd positions → bright_gray_new
@@ -61,6 +61,43 @@ export default function CustomSelect({
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const popupRef = useRef<HTMLDivElement | null>(null);
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  const listboxId = useId();
+
+  // Keyboard support (audit B-32): arrows move between options, Home/End
+  // jump, Escape closes and returns focus to the trigger. Enter/Space on a
+  // focused option is the native button click.
+  const focusOption = (idx: number) => {
+    const n = options.length;
+    if (n === 0) return;
+    optionRefs.current[((idx % n) + n) % n]?.focus();
+  };
+  const onTriggerKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled || loading) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setOpen(true);
+      const selectedIdx = options.findIndex((o) => o.value === value);
+      // Focus once the popup has rendered.
+      requestAnimationFrame(() =>
+        focusOption(selectedIdx >= 0 ? selectedIdx : e.key === "ArrowUp" ? -1 : 0)
+      );
+    }
+  };
+  const onOptionKeyDown = (e: React.KeyboardEvent, idx: number) => {
+    const moves: Record<string, number> = {
+      ArrowDown: idx + 1,
+      ArrowUp: idx - 1,
+      Home: 0,
+      End: options.length - 1,
+    };
+    if (e.key in moves) {
+      e.preventDefault();
+      focusOption(moves[e.key]);
+    } else if (e.key === "Tab") {
+      setOpen(false);
+    }
+  };
 
   // Close on outside click / escape.
   useEffect(() => {
@@ -77,7 +114,10 @@ export default function CustomSelect({
       }
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
+      if (e.key === "Escape") {
+        setOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("mousedown", onDocClick);
     document.addEventListener("keydown", onKey);
@@ -109,6 +149,10 @@ export default function CustomSelect({
         ref={triggerRef}
         type="button"
         onClick={() => !disabled && !loading && setOpen((p) => !p)}
+        onKeyDown={onTriggerKeyDown}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? listboxId : undefined}
         disabled={disabled || loading}
         tabIndex={loading ? -1 : undefined}
         className="w-full flex items-center justify-between"
@@ -156,6 +200,8 @@ export default function CustomSelect({
       {open && (
         <div
           ref={popupRef}
+          id={listboxId}
+          role="listbox"
           style={{
             position: "absolute",
             top: "calc(100% + 6px)",
@@ -188,10 +234,17 @@ export default function CustomSelect({
             return (
               <button
                 key={opt.value}
+                ref={(el) => {
+                  optionRefs.current[idx] = el;
+                }}
                 type="button"
+                role="option"
+                aria-selected={opt.value === value}
+                onKeyDown={(e) => onOptionKeyDown(e, idx)}
                 onClick={() => {
                   onChange(opt.value);
                   setOpen(false);
+                  triggerRef.current?.focus();
                 }}
                 className="w-full text-left"
                 style={{

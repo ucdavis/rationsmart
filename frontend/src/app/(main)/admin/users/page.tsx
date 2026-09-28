@@ -15,6 +15,7 @@ import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import CustomSelect from "@/components/CustomSelect";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 interface AdminUser {
   id: string;
@@ -71,6 +72,11 @@ export default function AdminUsersPage() {
   // Only "Save" commits it; Cancel / backdrop discards it.
   const [sheetActive, setSheetActive] = useState<boolean | null>(null);
   useEffect(() => setSheetActive(null), [selectedUser?.id]);
+  useEscapeKey(!!confirmAdmin, () => setConfirmAdmin(null));
+  useEscapeKey(!!confirmDeactivate, () => setConfirmDeactivate(null));
+  useEscapeKey(!!(selectedUser && !confirmAdmin && !confirmDeactivate), () =>
+    setSelectedUser(null)
+  );
 
   const load = async (country = countryFilter, s = statusFilter, q = search) => {
     if (!user?.id) return;
@@ -494,6 +500,8 @@ export default function AdminUsersPage() {
           onClick={() => setSelectedUser(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="w-full rounded-t-3xl bg-white"
             style={{
               maxWidth: COLUMN_WIDTH,
@@ -927,6 +935,8 @@ export default function AdminUsersPage() {
           onClick={() => setConfirmAdmin(null)}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full"
             style={{ padding: 20 }}
             onClick={(e) => e.stopPropagation()}

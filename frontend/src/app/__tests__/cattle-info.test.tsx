@@ -251,13 +251,9 @@ async function openDropdown(labelText: string): Promise<HTMLElement> {
 }
 
 async function chooseOption(wrapper: HTMLElement, optionLabel: string) {
-  // The trigger button can ALREADY display optionLabel as its current
-  // selected value (e.g. re-picking "India" when it's already selected),
-  // which would tie with the popup's option button on an exact name match.
-  // The trigger always renders before the popup in DOM order, so the last
-  // match is always the popup's option row.
-  const options = await within(wrapper).findAllByRole("button", { name: optionLabel });
-  fireEvent.click(options[options.length - 1]);
+  // Popup rows are role="option" (CustomSelect listbox semantics), so this
+  // can't collide with the trigger button showing the same label.
+  fireEvent.click(await within(wrapper).findByRole("option", { name: optionLabel }));
 }
 
 async function selectCountry(name: string) {

@@ -62,6 +62,7 @@ import {
   uploadFileProblem,
 } from "@/lib/download";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 interface SystemLanguage {
   code: string;
@@ -215,6 +216,7 @@ export default function AdminCountryLanguagePage() {
   // state (matching the prototype's confirm1/confirm2, unified here since
   // only one can ever be open at a time).
   const [confirm, setConfirm] = useState<ConfirmState>(null);
+  useEscapeKey(!!confirm, () => setConfirm(null));
 
   useEffect(() => {
     if (user && !user.is_admin) router.replace("/cattle-info");
@@ -333,6 +335,8 @@ export default function AdminCountryLanguagePage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full px-5 py-5"
             style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
           >
@@ -409,13 +413,16 @@ function CountriesLanguagesTab({
   ) => void;
 }) {
   const [showActivate, setShowActivate] = useState(false);
+  useEscapeKey(!!showActivate, () => setShowActivate(false));
   const [inactiveCountries, setInactiveCountries] = useState<InactiveCountryRow[]>([]);
   const [isLoadingInactive, setIsLoadingInactive] = useState(false);
 
   const [assocFor, setAssocFor] = useState<CountryRow | null>(null);
+  useEscapeKey(!!assocFor, () => setAssocFor(null));
   const [isAssociating, setIsAssociating] = useState(false);
 
   const [showRegister, setShowRegister] = useState(false);
+  useEscapeKey(!!showRegister, () => setShowRegister(false));
   const [regName, setRegName] = useState("");
   const [regCode, setRegCode] = useState("");
   const [isRegistering, setIsRegistering] = useState(false);
@@ -847,6 +854,8 @@ function CountriesLanguagesTab({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
@@ -926,6 +935,8 @@ function CountriesLanguagesTab({
               }}
             >
               <div
+                role="dialog"
+                aria-modal="true"
                 className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
                 style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
               >
@@ -1003,6 +1014,8 @@ function CountriesLanguagesTab({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
@@ -1103,6 +1116,7 @@ function FeedNamesTab({
   const [editValue, setEditValue] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  useEscapeKey(!!(editingFeed && !isSaving && !isDeleting), () => setEditingFeed(null));
 
   const [isDownloading, setIsDownloading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -1543,6 +1557,8 @@ function FeedNamesTab({
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >

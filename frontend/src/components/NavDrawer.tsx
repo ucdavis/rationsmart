@@ -18,6 +18,7 @@ import {
   IcArrowRight,
 } from "@/components/Icons";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 interface NavDrawerProps {
   open: boolean;
@@ -64,6 +65,9 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
   const logout = useStore((s) => s.logout);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const t = useT();
+  // Escape closes the top-most layer: the logout confirm first, then the drawer.
+  useEscapeKey(showLogoutConfirm, () => setShowLogoutConfirm(false));
+  useEscapeKey(open && !showLogoutConfirm, onClose);
 
   const handleNavigate = (href: string) => {
     onClose();
@@ -106,12 +110,22 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
 
       {/* Drawer — slides from the left edge of the centered content column */}
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("Menu")}
+        aria-hidden={!open}
         className="fixed top-0 h-full z-50 flex flex-col bg-white"
         style={{
           left: containerLeft,
           width: "min(82vw, 340px)",
           transform: open ? "translateX(0)" : hiddenTransform,
-          transition: "transform 0.28s cubic-bezier(0.22,1,0.36,1)",
+          // visibility:hidden takes the closed drawer out of the tab order and
+          // the accessibility tree (audit B-33). It flips only after the
+          // slide-out finishes, so the close animation still shows.
+          visibility: open ? "visible" : "hidden",
+          transition: open
+            ? "transform 0.28s cubic-bezier(0.22,1,0.36,1)"
+            : "transform 0.28s cubic-bezier(0.22,1,0.36,1), visibility 0s linear 0.28s",
           boxShadow: open ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
         }}
       >
@@ -239,6 +253,8 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
           }}
         >
           <div
+            role="alertdialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
             onClick={(e) => e.stopPropagation()}

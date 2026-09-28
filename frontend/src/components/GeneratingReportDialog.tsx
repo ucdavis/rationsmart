@@ -29,6 +29,10 @@ export default function GeneratingReportDialog() {
       }}
     >
       <div
+        role="alertdialog"
+        aria-modal="true"
+        aria-busy="true"
+        aria-live="polite"
         className="bg-white rounded-2xl w-full max-w-xs flex flex-col items-center"
         style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)", padding: "30px 12px 20px" }}
       >

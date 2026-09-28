@@ -206,6 +206,7 @@ export default function RegisterPage() {
             type="text"
             value={name}
             onChange={handleNameChange}
+            autoComplete="name"
             className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
             style={inputStyle}
           />

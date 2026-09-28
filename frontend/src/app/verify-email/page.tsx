@@ -138,6 +138,7 @@ function VerifyEmailInner() {
         </p>
         <input
           type="email"
+          autoComplete="email"
           inputMode="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}

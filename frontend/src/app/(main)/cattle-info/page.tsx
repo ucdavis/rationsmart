@@ -35,6 +35,7 @@ import {
   IcActiveGrazing,
 } from "@/components/Icons";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
@@ -551,6 +552,7 @@ export default function CattleInfoPage() {
   // doc comment on useT() in src/lib/i18n-ui.ts.
   const t = useT(effectiveSimulationLanguage);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  useEscapeKey(!!showHistoryModal, () => setShowHistoryModal(false));
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [loadingSimId, setLoadingSimId] = useState<string | null>(null);
@@ -1821,6 +1823,8 @@ export default function CattleInfoPage() {
           />
           {/* Sheet */}
           <div
+            role="dialog"
+            aria-modal="true"
             className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full rounded-t-3xl bg-white pb-8 overflow-y-auto"
             style={{ maxWidth: COLUMN_WIDTH, maxHeight: "80vh", zIndex: 51 }}
           >

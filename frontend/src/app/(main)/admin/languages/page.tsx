@@ -43,6 +43,7 @@ import {
   labelForLanguage,
 } from "@/lib/api";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 interface SystemLanguage {
   code: string;
@@ -124,11 +125,13 @@ export default function AdminLanguageCatalogPage() {
   // Add-language-to-country sheet (per-country picker). Distinct from
   // the catalog-level "Add Language" sheet below.
   const [assignSheetCountry, setAssignSheetCountry] = useState<CountryRow | null>(null);
+  useEscapeKey(!!assignSheetCountry, () => setAssignSheetCountry(null));
   const [selectedNewCode, setSelectedNewCode] = useState("");
   const [isAssigning, setIsAssigning] = useState(false);
 
   // Add Language sheet (registers a row in the global catalog).
   const [showAdd, setShowAdd] = useState(false);
+  useEscapeKey(!!showAdd, () => setShowAdd(false));
   const [newCode, setNewCode] = useState("");
   const [newName, setNewName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -1099,6 +1102,8 @@ export default function AdminLanguageCatalogPage() {
               }}
             >
               <div
+                role="dialog"
+                aria-modal="true"
                 className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
                 style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
               >
@@ -1234,6 +1239,8 @@ export default function AdminLanguageCatalogPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >

@@ -42,6 +42,9 @@ export default function HelpAndSupportPage() {
             <div key={idx}>
               <button
                 onClick={item.onPress}
+                // User Manual / FAQs have no content yet: expose them as
+                // disabled instead of rows that look tappable but do nothing.
+                disabled={!item.onPress}
                 className="w-full flex items-center justify-between text-left"
                 style={{
                   background: "none",

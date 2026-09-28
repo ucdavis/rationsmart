@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n-ui";
 import { useStore } from "@/lib/store";
 import { COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 // A fresh install must open to login. Removing the localStorage key alone
 // isn't enough: the in-memory store re-persists user + token on its next
@@ -104,6 +105,8 @@ export default function InstallPrompt() {
     }
   };
 
+  useEscapeKey(visible && showSteps, () => setShowSteps(false));
+
   if (!visible) return null;
 
   if (showSteps) {
@@ -121,6 +124,8 @@ export default function InstallPrompt() {
         onClick={() => setShowSteps(false)}
       >
         <div
+          role="dialog"
+          aria-modal="true"
           style={{
             backgroundColor: "#fff",
             borderRadius: "16px 16px 0 0",

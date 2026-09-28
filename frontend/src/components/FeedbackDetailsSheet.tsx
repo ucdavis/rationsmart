@@ -18,6 +18,7 @@
 
 import { toFeedReportDisplayDate } from "@/lib/validators";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 export interface FeedbackDetails {
   rating: number;
@@ -37,6 +38,8 @@ export default function FeedbackDetailsSheet({
 
   const rating = Math.max(0, Math.min(5, details.rating || 0));
 
+  useEscapeKey(true, onClose);
+
   return (
     <div
       className="fixed top-0 h-full z-50 flex flex-col justify-end"
@@ -50,6 +53,8 @@ export default function FeedbackDetailsSheet({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
         className="bg-white rounded-t-2xl px-4 pt-5 pb-6"
         style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
         onClick={(e) => e.stopPropagation()}

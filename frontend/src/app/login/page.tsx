@@ -13,6 +13,7 @@ import { IcEye, IcEyeOff } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const [showResetSheet, setShowResetSheet] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [isSendingReset, setIsSendingReset] = useState(false);
+  useEscapeKey(!!(showResetSheet && !isSendingReset), () => setShowResetSheet(false));
 
   // v1 backend accepts both legacy 4-digit and new 6-digit PINs at login —
   // if the user has a legacy 4-digit PIN, the response will carry
@@ -354,6 +356,8 @@ export default function LoginPage() {
           />
           {/* Sheet — left/right:0 + mx-auto so animation transform doesn't fight the centering */}
           <div
+            role="dialog"
+            aria-modal="true"
             className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
             style={{
               maxWidth: COLUMN_WIDTH,

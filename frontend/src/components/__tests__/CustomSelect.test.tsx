@@ -177,4 +177,44 @@ describe("CustomSelect", () => {
       expect(container.querySelector("svg")).toBeInTheDocument();
     });
   });
+
+  it("exposes listbox semantics: aria-expanded on the trigger, options with aria-selected", () => {
+    render(<CustomSelect value="concentrate" onChange={() => {}} options={OPTIONS} />);
+    const trigger = screen.getByRole("button", { name: "Concentrate" });
+    expect(trigger).toHaveAttribute("aria-haspopup", "listbox");
+    expect(trigger).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute("aria-expanded", "true");
+    expect(screen.getByRole("listbox")).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: "Concentrate" })).toHaveAttribute(
+      "aria-selected",
+      "true"
+    );
+    expect(screen.getByRole("option", { name: "Forage" })).toHaveAttribute(
+      "aria-selected",
+      "false"
+    );
+  });
+
+  it("arrow keys move focus between options", () => {
+    render(<CustomSelect value="" onChange={() => {}} options={OPTIONS} />);
+    fireEvent.click(screen.getByRole("button", { name: "Select" }));
+    const forage = screen.getByRole("option", { name: "Forage" });
+    forage.focus();
+    fireEvent.keyDown(forage, { key: "ArrowDown" });
+    expect(screen.getByRole("option", { name: "Concentrate" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: "End" });
+    expect(screen.getByRole("option", { name: "Mineral" })).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: "ArrowDown" });
+    expect(forage).toHaveFocus(); // wraps
+  });
+
+  it("Escape closes the popup and returns focus to the trigger", () => {
+    render(<CustomSelect value="" onChange={() => {}} options={OPTIONS} />);
+    const trigger = screen.getByRole("button", { name: "Select" });
+    fireEvent.click(trigger);
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(trigger).toHaveFocus();
+  });
 });

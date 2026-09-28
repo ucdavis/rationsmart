@@ -19,6 +19,7 @@ import {
 } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -197,28 +198,34 @@ export default function AdminFeedsPage() {
 
   // Feed modal state
   const [showFeedModal, setShowFeedModal] = useState(false);
+  useEscapeKey(!!showFeedModal, () => setShowFeedModal(false));
   const [editingFeed, setEditingFeed] = useState<AdminFeed | null>(null);
   const [feedForm, setFeedForm] = useState(emptyFeedForm);
   const [isSavingFeed, setIsSavingFeed] = useState(false);
   const [deletingFeedId, setDeletingFeedId] = useState<string | null>(null);
   const [confirmDeleteFeed, setConfirmDeleteFeed] = useState<AdminFeed | null>(null);
+  useEscapeKey(!!confirmDeleteFeed, () => setConfirmDeleteFeed(null));
 
   // Category modal state (Android dialog_feed_category.xml fields)
   const [showCatModal, setShowCatModal] = useState(false);
+  useEscapeKey(!!showCatModal, () => setShowCatModal(false));
   const [newCatName, setNewCatName] = useState("");
   const [newCatTypeId, setNewCatTypeId] = useState("");
   const [newCatDescription, setNewCatDescription] = useState("");
   const [isSavingCat, setIsSavingCat] = useState(false);
   const [deletingCatId, setDeletingCatId] = useState<string | null>(null);
   const [confirmDeleteCat, setConfirmDeleteCat] = useState<AdminFeedCategory | null>(null);
+  useEscapeKey(!!confirmDeleteCat, () => setConfirmDeleteCat(null));
 
   // Type modal state (Android dialog_feed_type.xml fields)
   const [showTypeModal, setShowTypeModal] = useState(false);
+  useEscapeKey(!!showTypeModal, () => setShowTypeModal(false));
   const [newTypeName, setNewTypeName] = useState("");
   const [newTypeDescription, setNewTypeDescription] = useState("");
   const [isSavingType, setIsSavingType] = useState(false);
   const [deletingTypeId, setDeletingTypeId] = useState<string | null>(null);
   const [confirmDeleteType, setConfirmDeleteType] = useState<AdminFeedType | null>(null);
+  useEscapeKey(!!confirmDeleteType, () => setConfirmDeleteType(null));
 
   const getName = (t: AdminFeedType) => t.type_name ?? t.name ?? "";
   const getCatName = (c: AdminFeedCategory) => c.category_name ?? c.name ?? "";
@@ -1009,6 +1016,8 @@ export default function AdminFeedsPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-4 pt-5 pb-8 overflow-y-auto"
             style={{ maxHeight: "92vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
@@ -1429,6 +1438,8 @@ export default function AdminFeedsPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-sm"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)", padding: "30px 12px 30px" }}
           >
@@ -1572,6 +1583,8 @@ export default function AdminFeedsPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-sm"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)", padding: "30px 12px 30px" }}
           >
@@ -1765,6 +1778,8 @@ export default function AdminFeedsPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-xs pb-5"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
           >
@@ -1861,6 +1876,8 @@ export default function AdminFeedsPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-xs pb-5"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
           >
@@ -1957,6 +1974,8 @@ export default function AdminFeedsPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-2xl w-full max-w-xs pb-5"
             style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
           >

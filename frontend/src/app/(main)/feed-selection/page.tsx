@@ -37,6 +37,7 @@ import { inclusionBoundIsInvalid } from "@/lib/validators";
 import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -300,6 +301,7 @@ export default function FeedSelectionPage() {
   }, [feedSelections]);
   const [isLoading, setIsLoading] = useState(false);
   const [showLimitsModal, setShowLimitsModal] = useState(false);
+  useEscapeKey(!!showLimitsModal, () => setShowLimitsModal(false));
   const [limits, setLimits] = useState<Partial<DietLimits>>(dietLimits);
   // Custom Diet Limits specs, fetched per physiological state. `null` while
   // in flight; `[]` never happens on success (the endpoint always returns all
@@ -307,13 +309,16 @@ export default function FeedSelectionPage() {
   const [limitSpecs, setLimitSpecs] = useState<DietThresholdSpec[] | null>(null);
   const [limitSpecsError, setLimitSpecsError] = useState<string | null>(null);
   const [showIncompleteFeedsDialog, setShowIncompleteFeedsDialog] = useState(false);
+  useEscapeKey(!!showIncompleteFeedsDialog, () => setShowIncompleteFeedsDialog(false));
   // Y3 — diet optimization / evaluation requires at least one Forage
   // ingredient. The block fires before generate when none is present.
   const [showNoForageDialog, setShowNoForageDialog] = useState(false);
+  useEscapeKey(!!showNoForageDialog, () => setShowNoForageDialog(false));
   const [incompleteFeedNames, setIncompleteFeedNames] = useState<string[]>([]);
 
   // Custom Feed modal state
   const [showCustomFeedModal, setShowCustomFeedModal] = useState(false);
+  useEscapeKey(!!showCustomFeedModal, () => setShowCustomFeedModal(false));
   // Two collapsible sections, both expanded by default (matches Android
   // DialogFeedDetails isFeedDetailsExpanded/isNutritionalInfoExpanded = true).
   const [feedDetailsExpanded, setFeedDetailsExpanded] = useState(true);
@@ -1545,6 +1550,8 @@ export default function FeedSelectionPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
             style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
@@ -1831,7 +1838,12 @@ export default function FeedSelectionPage() {
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
-          <div className="bg-white w-full max-w-xs" style={{ borderRadius: 16, paddingBottom: 30 }}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="bg-white w-full max-w-xs"
+            style={{ borderRadius: 16, paddingBottom: 30 }}
+          >
             {/* Orange warning icon pill */}
             <div className="flex justify-center" style={{ marginTop: 30 }}>
               <div
@@ -1976,7 +1988,12 @@ export default function FeedSelectionPage() {
             backgroundColor: "rgba(0,0,0,0.5)",
           }}
         >
-          <div className="bg-white w-full max-w-xs" style={{ borderRadius: 16, paddingBottom: 30 }}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="bg-white w-full max-w-xs"
+            style={{ borderRadius: 16, paddingBottom: 30 }}
+          >
             <div className="flex justify-center" style={{ marginTop: 30 }}>
               <div
                 className="flex items-center justify-center"
@@ -2066,6 +2083,8 @@ export default function FeedSelectionPage() {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
             className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
             style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
           >
