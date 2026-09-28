@@ -40,3 +40,6 @@ docs/SESSION_HANDOFF.md
 docs/*.local.md
 CLAUDE.local.md
 Code_Audit_Report*.md
+
+# TypeScript incremental build cache
+tsconfig.tsbuildinfo
