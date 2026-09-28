@@ -15,10 +15,8 @@ import {
   insertCustomFeed,
   checkInsertOrUpdate,
   updateCustomFeed,
-  toCattleInfoPayload,
   searchFeeds,
   fetchFeedTaxonomyLabels,
-  buildDietSimulationId,
   getDietThresholds,
   ANIMAL_CATEGORY_LABELS,
   DIET_LIMIT_LABELS,
@@ -45,6 +43,11 @@ import {
   SEARCH_DEBOUNCE_MS,
 } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
+import {
+  buildEvaluationRequest,
+  buildRecommendationRequest,
+  checkedLimits,
+} from "@/lib/diet-request";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -862,110 +865,19 @@ export default function FeedSelectionPage() {
     if (!cattleInfo || !user) return;
     setIsLoading(true);
     try {
-      let res;
-      const validItems = items.filter(
-        (item) => item.feed_uuid !== null && item.price_per_kg !== null
-      );
-
-      // Backend keys Simulation History by `simulation_id` (each row in
-      // GET /v1/animal/simulations carries the simulation_id we send here
-      // alongside its own report_id — see SimulationListItem in the v1
-      // swagger). "New Case" deliberately does NOT clear the Simulation
-      // Name field (unlike the Android app, which forces a fresh name via
-      // resetToDefaults()) — that's an intentional product decision for
-      // this PWA, not something to port over. But that means re-running
-      // the SAME case under a different diet mode (e.g. Recommendation,
-      // then New Case → Evaluation, same name untouched) sent the exact
-      // same simulation_id twice, and only one entry showed up in
-      // Simulation History. Appending the mode keeps each report's
-      // history entry distinct without touching the Simulation Name the
-      // user actually typed/sees on the Cattle Info form — only the
-      // identifier sent to the backend (and echoed back as this report's
-      // own simulation_id) picks up the suffix. buildDietSimulationId
-      // strips any suffix ALREADY on cattleInfo.simulation_name first —
-      // restoring a saved simulation writes the backend's echoed (already
-      // suffixed) simulation_id back into this same field (see
-      // stripDietModeSuffix's doc comment in api.ts), so without
-      // stripping, regenerating from a restored row would compound the
-      // suffix every time ("Sim 1 (Recommendation) (Recommendation)").
-      const simulationId = buildDietSimulationId(cattleInfo.simulation_name, isEvaluation);
-      const cattlePayload = toCattleInfoPayload(cattleInfo);
-      // Only send limits that were range-checked against the current state's
-      // spec (audit B-06). Keys the spec doesn't list (stale, from an older
-      // build) can't even be seen in the dialog, so they're dropped — and a
-      // Baby Calf/Heifer has no limits at all, so it sends none. If the spec
-      // fetch FAILED, nothing could be checked: send none (the engine uses
-      // its per-state defaults) and say so rather than risk a raw 422.
-      // (isValid() keeps Generate disabled while the spec is still loading.)
-      // The saved limits themselves are kept for the next run.
-      const specKeys = new Set((limitSpecs ?? []).map((sp) => sp.key));
-      const limitsToSend: Partial<DietLimits> = Object.fromEntries(
-        Object.entries(limits).filter(([k]) => specKeys.has(k as keyof DietLimits))
-      );
+      // The saved limits themselves are kept for the next run; only the
+      // spec-checked subset is sent. When the spec fetch FAILED nothing
+      // could be checked, so none are sent and the user is told.
       const limitsSkipped =
         limitsApplyToAnimal && !!limitSpecsError && Object.keys(limits).length > 0;
 
       if (isEvaluation) {
-        res = await evaluateDiet({
-          user_id: user.id,
-          country_id: cattleInfo.country_id,
-          // AUDIT D-03 (kept): "USD" only covers accounts persisted before
-          // currency was stored on the user; every login / country change
-          // sets it (CLAUDE.md §10.9). Blocking the request instead would
-          // strand those users with no way to fix it from this screen.
-          currency: user.currency || "USD",
-          simulation_id: simulationId,
-          cattle_info: cattlePayload,
-          feed_evaluation: validItems.map((item) => ({
-            feed_id: item.feed_uuid!,
-            quantity_as_fed: item.quantity_kg ?? 0,
-            price_per_kg: item.price_per_kg!,
-          })),
-        });
+        const res = await evaluateDiet(buildEvaluationRequest(user, cattleInfo, items));
         setReportData({ ...res.data, mode: "evaluation" });
       } else {
-        res = await recommendDiet({
-          user_id: user.id,
-          country_id: cattleInfo.country_id,
-          simulation_id: simulationId,
-          cattle_info: cattlePayload,
-          feed_selection: validItems.map((item) => {
-            // Y3 §1.1.2 — only include bounds when the toggle is ON AND
-            // the corresponding side has a value. Blank min → omit min;
-            // blank max → omit max; toggle off → omit both.
-            //
-            // Wire names are min_kg_asfed / max_kg_asfed per FeedWithPrice
-            // in the v1 spec. We previously sent min_kg_per_day /
-            // max_kg_per_day, which Pydantic dropped as unknown keys — the
-            // optimizer never received the user's inclusion limits and the
-            // run silently came back unconstrained. The store keeps the
-            // *_per_day names; the rename happens here at the wire edge.
-            const base: {
-              feed_id: string;
-              price_per_kg: number;
-              min_kg_asfed?: number;
-              max_kg_asfed?: number;
-            } = {
-              feed_id: item.feed_uuid!,
-              price_per_kg: item.price_per_kg!,
-            };
-            if (item.inclusion_limits_enabled) {
-              if (item.min_kg_per_day != null) base.min_kg_asfed = item.min_kg_per_day;
-              if (item.max_kg_per_day != null) base.max_kg_asfed = item.max_kg_per_day;
-            }
-            return base;
-          }),
-          // Send ONLY the limits the user actually typed, and omit the key
-          // entirely when they typed none. We used to merge a hardcoded
-          // DEFAULT_BASE_THRESHOLDS copy of Android's defaults underneath
-          // `limits` and send it on every run. The backend now converts
-          // percent → fraction and enforces a per-physiological-state range,
-          // so those constants started binding: they over-constrained every
-          // lactating diet and 422'd every Dry Cow / Heifer one. The engine
-          // holds the correct per-state defaults — an omitted key is how we
-          // ask for them.
-          ...(Object.keys(limitsToSend).length > 0 ? { base_thresholds: limitsToSend } : {}),
-        });
+        const res = await recommendDiet(
+          buildRecommendationRequest(user, cattleInfo, items, checkedLimits(limits, limitSpecs))
+        );
         if (limitsSkipped) {
           showSnackbar(
             t("Diet limits unavailable — report generated with the default limits."),
