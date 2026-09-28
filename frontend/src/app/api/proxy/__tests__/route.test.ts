@@ -152,8 +152,8 @@ describe("normal (non-redirected) response", () => {
         chunks: ['{"ok":true}'],
       });
 
-      const req = makeRequest(["auth", "countries"], { method: "GET" });
-      const res = await callHandler(mod, req, ["auth", "countries"]);
+      const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+      const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
 
       expect(res.status).toBe(200);
       expect(res.headers.get("x-backend-env")).toBe(expectedEnv);
@@ -167,19 +167,19 @@ describe("normal (non-redirected) response", () => {
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
     const body = JSON.stringify({ user_id: "abc-123" });
-    const req = makeRequest(["diet-recommendation-working"], {
+    const req = makeRequest(["v1", "diet-recommendation-working"], {
       method: "POST",
       headers: { "content-type": "application/json" },
       body,
     });
-    await callHandler(mod, req, ["diet-recommendation-working"]);
+    await callHandler(mod, req, ["v1", "diet-recommendation-working"]);
 
     expect(httpMock.calls).toHaveLength(1);
     const opts = httpMock.calls[0];
     expect(opts.hostname).toBe("10.0.0.1");
     expect(opts.port).toBe(8000);
     expect(opts.method).toBe("POST");
-    expect(opts.path).toBe("/diet-recommendation-working");
+    expect(opts.path).toBe("/v1/diet-recommendation-working");
     expect(Buffer.concat(httpMock.writes[0]).toString()).toBe(body);
   });
 
@@ -187,17 +187,17 @@ describe("normal (non-redirected) response", () => {
     const mod = await loadHandler("10.0.0.1", "8000");
 
     httpMock.plans.push({ statusCode: 200, chunks: ["[]"] });
-    const reqNoQuery = makeRequest(["admin", "users"], { method: "GET" });
-    await callHandler(mod, reqNoQuery, ["admin", "users"]);
-    expect(httpMock.calls[0].path).toBe("/admin/users");
+    const reqNoQuery = makeRequest(["v1", "admin", "users"], { method: "GET" });
+    await callHandler(mod, reqNoQuery, ["v1", "admin", "users"]);
+    expect(httpMock.calls[0].path).toBe("/v1/admin/users");
 
     httpMock.plans.push({ statusCode: 200, chunks: ["[]"] });
-    const reqWithQuery = makeRequest(["admin", "users"], {
+    const reqWithQuery = makeRequest(["v1", "admin", "users"], {
       method: "GET",
       search: "?page=1&page_size=100",
     });
-    await callHandler(mod, reqWithQuery, ["admin", "users"]);
-    expect(httpMock.calls[1].path).toBe("/admin/users?page=1&page_size=100");
+    await callHandler(mod, reqWithQuery, ["v1", "admin", "users"]);
+    expect(httpMock.calls[1].path).toBe("/v1/admin/users?page=1&page_size=100");
   });
 
   // The two diet endpoints carry ?lang= in the URL even though they are
@@ -232,7 +232,7 @@ describe("request header forwarding", () => {
     const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
-    const req = makeRequest(["auth", "countries"], {
+    const req = makeRequest(["v1", "auth", "countries"], {
       method: "GET",
       headers: {
         Connection: "keep-alive",
@@ -252,7 +252,7 @@ describe("request header forwarding", () => {
         "Accept-Language": "hi",
       },
     });
-    await callHandler(mod, req, ["auth", "countries"]);
+    await callHandler(mod, req, ["v1", "auth", "countries"]);
 
     const forwarded = httpMock.calls[0].headers;
     for (const h of [
@@ -283,6 +283,15 @@ describe("request header forwarding", () => {
     const req = makeRequest(["v1", "x"], { method: "GET" });
     const res = await callHandler(mod, req, ["v1", "..", "docs"]);
     expect(res.status).toBe(400);
+    expect(httpMock.calls).toHaveLength(0);
+  });
+
+  it("refuses anything outside /v1/ (no /docs or /openapi.json passthrough)", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    for (const path of [["docs"], ["openapi.json"], ["redoc"], ["auth", "countries"]]) {
+      const res = await callHandler(mod, makeRequest(path, { method: "GET" }), path);
+      expect(res.status).toBe(404);
+    }
     expect(httpMock.calls).toHaveLength(0);
   });
 
@@ -346,8 +355,8 @@ describe("307/308 redirect-follow (CLAUDE.md §10.11 regression guard)", () => {
       chunks: ['{"countries":[]}'],
     });
 
-    const req = makeRequest(["auth", "countries"], { method: "GET" });
-    const res = await callHandler(mod, req, ["auth", "countries"]);
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
 
     // Re-issued exactly once, to the redirect target.
     expect(httpMock.calls).toHaveLength(2);
@@ -373,8 +382,8 @@ describe("307/308 redirect-follow (CLAUDE.md §10.11 regression guard)", () => {
     });
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
-    const req = makeRequest(["fetch-simulation-details"], { method: "POST", body: "{}" });
-    const res = await callHandler(mod, req, ["fetch-simulation-details"]);
+    const req = makeRequest(["v1", "fetch-simulation-details"], { method: "POST", body: "{}" });
+    const res = await callHandler(mod, req, ["v1", "fetch-simulation-details"]);
 
     expect(httpMock.calls[1].path).toBe("/fetch-simulation-details/?x=1");
     expect(res.headers.get("x-backend-env")).toBe("prod");
@@ -390,8 +399,8 @@ describe("error handling", () => {
     const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ reqError: "ECONNREFUSED" });
 
-    const req = makeRequest(["auth", "countries"], { method: "GET" });
-    const res = await callHandler(mod, req, ["auth", "countries"]);
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
 
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ detail: "Upstream request failed" });
@@ -401,8 +410,8 @@ describe("error handling", () => {
     const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 200, resError: "socket hang up" });
 
-    const req = makeRequest(["auth", "countries"], { method: "GET" });
-    const res = await callHandler(mod, req, ["auth", "countries"]);
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
 
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ detail: "Response stream error" });
@@ -413,8 +422,8 @@ describe("error handling", () => {
     httpMock.plans.push({ statusCode: 307, headers: { location: "/auth/countries/" } });
     httpMock.plans.push({ statusCode: 200, resError: "socket hang up" });
 
-    const req = makeRequest(["auth", "countries"], { method: "GET" });
-    const res = await callHandler(mod, req, ["auth", "countries"]);
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
 
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ detail: "Redirect proxy error" });
@@ -425,8 +434,8 @@ describe("error handling", () => {
     httpMock.plans.push({ statusCode: 307, headers: { location: "/auth/countries/" } });
     httpMock.plans.push({ reqError: "ECONNRESET" });
 
-    const req = makeRequest(["auth", "countries"], { method: "GET" });
-    const res = await callHandler(mod, req, ["auth", "countries"]);
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
 
     expect(res.status).toBe(502);
     expect(await res.json()).toEqual({ detail: "Redirect request error" });

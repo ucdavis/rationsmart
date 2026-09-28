@@ -85,6 +85,12 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
   if (path.some((s) => s === "" || s === "." || s === "..")) {
     return NextResponse.json({ detail: "Invalid path" }, { status: 400 });
   }
+  // Only the versioned API is proxied (every client call is under /v1/). This
+  // keeps the backend's /docs, /redoc and /openapi.json — and anything else
+  // at the root — unreachable through the public app domain (audit A-15).
+  if (path[0] !== "v1") {
+    return NextResponse.json({ detail: "Not found" }, { status: 404 });
+  }
   const search = req.nextUrl.search; // includes leading "?"
 
   // No trailing slash: all but one backend route is defined without it, and
