@@ -2,7 +2,7 @@
 // Separate from i18n V2 (api.ts) which only translates feed-data
 // (feed names/types/categories) via the backend. There is no backend
 // endpoint for UI-label translation — checked the live swagger
-// (<DEV_BACKEND_IP>:8000/openapi.json) on 2026-07-13; every /v1/admin/translations/*
+// (dev backend /openapi.json) on 2026-07-13; every /v1/admin/translations/*
 // route is scoped to a feed_id. The only source for these strings is
 // docs/RationSmart_i18n_source.xlsx (554 rows, 9 locales). The ACTIVE
 // language is whatever is already persisted at user.preferred_language

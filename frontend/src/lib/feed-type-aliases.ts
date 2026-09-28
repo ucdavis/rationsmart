@@ -10,7 +10,7 @@
 
 export const FORAGE_ALIASES: ReadonlySet<string> = new Set([
   "Forage", // en
-  "चारा", // hi — verified 2026-07-08 vs <DEV_BACKEND_IP>:8000
+  "चारा", // hi — verified 2026-07-08 vs the dev backend
 ]);
 
 export const ROUGHAGE_ALIASES: ReadonlySet<string> = new Set([

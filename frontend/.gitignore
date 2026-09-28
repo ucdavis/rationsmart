@@ -30,3 +30,13 @@ yarn-error.log*
 
 # Claude Code local session settings
 .claude/
+
+# Local-only env for `next dev` (copy .env.example → .env.development)
+.env.development
+
+# Internal notes that must never be published (audit C-01 / C-04)
+docs/backend-security-brief.html
+docs/SESSION_HANDOFF.md
+docs/*.local.md
+CLAUDE.local.md
+Code_Audit_Report*.md

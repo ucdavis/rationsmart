@@ -93,7 +93,7 @@ const adminCards: AdminCard[] = [
   },
   // CLIMDES Feed Library Sync (new) — configure the external feed-catalogue
   // connection, toggle the weekly auto-import, trigger a manual sync, and
-  // audit past runs. See ~/Downloads/climdes_admin_ui_design.md.
+  // audit past runs. See the CLIMDES admin UI design doc.
   {
     title: "Feed Library\nSync",
     href: "/admin/feed-sync",

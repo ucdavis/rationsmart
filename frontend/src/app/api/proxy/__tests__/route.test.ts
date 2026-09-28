@@ -11,16 +11,14 @@
 // CLAUDE.md §10.11 documents the exact regression these tests guard
 // against: FastAPI 307-redirects any backend path that's missing a
 // trailing slash, and the proxy re-issues that redirected request
-// itself. The debug headers (`x-backend-host` / `x-backend-env`) must
-// be stamped on BOTH the normal-response branch and the
-// redirect-follow branch — most calls (auth/countries,
+// itself. The debug header (`x-backend-env`) must be stamped on BOTH
+// the normal-response branch and the redirect-follow branch — most calls (auth/countries,
 // fetch-simulation-details, etc.) go through the redirect branch, so a
 // regression there is easy to miss if you only test the "happy path"
 // non-redirected case.
 //
 // Because BACKEND_HOST / BACKEND_PORT are read from process.env at
-// MODULE LOAD time (`const BACKEND_HOST = process.env.BACKEND_HOST ??
-// "<DEV_BACKEND_IP>"`), every test that cares about a specific host/port
+// MODULE LOAD time, every test that cares about a specific host/port
 // combination sets the env vars and then dynamically re-imports the
 // module after `vi.resetModules()`.
 
@@ -113,10 +111,12 @@ beforeEach(() => {
 });
 
 /** Re-imports the route module fresh, after setting BACKEND_HOST/PORT, since those constants are read once at module load. */
-async function loadHandler(host: string, port = "8000") {
+async function loadHandler(host: string, port = "8000", env?: string) {
   vi.resetModules();
   process.env.BACKEND_HOST = host;
   process.env.BACKEND_PORT = port;
+  if (env === undefined) delete process.env.BACKEND_ENV;
+  else process.env.BACKEND_ENV = env;
   return import("@/app/api/proxy/[...path]/route");
 }
 
@@ -135,13 +135,14 @@ function callHandler(mod: any, req: NextRequest, path: string[]) {
 
 describe("normal (non-redirected) response", () => {
   it.each([
-    ["<DEV_BACKEND_IP>", "dev"],
-    ["<PROD_BACKEND_IP>", "prod"],
-    ["9.9.9.9", "custom"],
+    ["dev", "dev"],
+    ["prod", "prod"],
+    [undefined, "custom"],
   ])(
-    "stamps x-backend-host/x-backend-env correctly for BACKEND_HOST=%s (-> env=%s)",
-    async (host, expectedEnv) => {
-      const mod = await loadHandler(host, "8000");
+    "stamps x-backend-env from BACKEND_ENV=%s (-> %s) and never exposes the host",
+    async (envLabel, expectedEnv) => {
+      const host = "10.0.0.1";
+      const mod = await loadHandler(host, "8000", envLabel);
       httpMock.plans.push({
         statusCode: 200,
         headers: { "content-type": "application/json" },
@@ -153,13 +154,13 @@ describe("normal (non-redirected) response", () => {
 
       expect(res.status).toBe(200);
       expect(res.headers.get("x-backend-env")).toBe(expectedEnv);
-      expect(res.headers.get("x-backend-host")).toBe(`${host}:8000`);
+      expect(res.headers.get("x-backend-host")).toBeNull();
       expect(await res.text()).toBe('{"ok":true}');
     }
   );
 
-  it("forwards method, trailing-slash path, and the request body to the backend", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+  it("forwards method, path (no trailing slash), and the request body to the backend", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
     const body = JSON.stringify({ user_id: "abc-123" });
@@ -172,20 +173,20 @@ describe("normal (non-redirected) response", () => {
 
     expect(httpMock.calls).toHaveLength(1);
     const opts = httpMock.calls[0];
-    expect(opts.hostname).toBe("<DEV_BACKEND_IP>");
+    expect(opts.hostname).toBe("10.0.0.1");
     expect(opts.port).toBe(8000);
     expect(opts.method).toBe("POST");
-    expect(opts.path).toBe("/diet-recommendation-working/");
+    expect(opts.path).toBe("/diet-recommendation-working");
     expect(Buffer.concat(httpMock.writes[0]).toString()).toBe(body);
   });
 
-  it("always appends a trailing slash to the backend path, with or without a querystring", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+  it("never appends a trailing slash to the backend path, with or without a querystring", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
 
     httpMock.plans.push({ statusCode: 200, chunks: ["[]"] });
     const reqNoQuery = makeRequest(["admin", "users"], { method: "GET" });
     await callHandler(mod, reqNoQuery, ["admin", "users"]);
-    expect(httpMock.calls[0].path).toBe("/admin/users/");
+    expect(httpMock.calls[0].path).toBe("/admin/users");
 
     httpMock.plans.push({ statusCode: 200, chunks: ["[]"] });
     const reqWithQuery = makeRequest(["admin", "users"], {
@@ -193,7 +194,7 @@ describe("normal (non-redirected) response", () => {
       search: "?page=1&page_size=100",
     });
     await callHandler(mod, reqWithQuery, ["admin", "users"]);
-    expect(httpMock.calls[1].path).toBe("/admin/users/?page=1&page_size=100");
+    expect(httpMock.calls[1].path).toBe("/admin/users?page=1&page_size=100");
   });
 
   // The two diet endpoints carry ?lang= in the URL even though they are
@@ -204,7 +205,7 @@ describe("normal (non-redirected) response", () => {
   // query string dropped here would freeze reports in the wrong language
   // with nothing anywhere reporting an error.
   it("forwards the querystring on a POST, alongside the body", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
     const body = JSON.stringify({ user_id: "abc-123" });
@@ -216,7 +217,7 @@ describe("normal (non-redirected) response", () => {
     });
     await callHandler(mod, req, ["v1", "animal", "diet-recommendation"]);
 
-    expect(httpMock.calls[0].path).toBe("/v1/animal/diet-recommendation/?lang=hi");
+    expect(httpMock.calls[0].path).toBe("/v1/animal/diet-recommendation?lang=hi");
     expect(Buffer.concat(httpMock.writes[0]).toString()).toBe(body);
   });
 });
@@ -224,8 +225,8 @@ describe("normal (non-redirected) response", () => {
 // ─── 2. Hop-by-hop header stripping + host overwrite ────────────────────
 
 describe("request header forwarding", () => {
-  it("strips hop-by-hop request headers and overwrites host with BACKEND_HOST:BACKEND_PORT", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+  it("forwards only allowlisted request headers and overwrites host with BACKEND_HOST:BACKEND_PORT", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
     const req = makeRequest(["auth", "countries"], {
@@ -241,6 +242,11 @@ describe("request header forwarding", () => {
         "Proxy-Authorization": "Basic abc",
         Host: "evil.example.com",
         "X-Custom": "value",
+        Cookie: "session=abc",
+        Origin: "https://evil.example.com",
+        "X-Forwarded-For": "1.2.3.4",
+        Authorization: "Bearer jwt",
+        "Accept-Language": "hi",
       },
     });
     await callHandler(mod, req, ["auth", "countries"]);
@@ -255,21 +261,74 @@ describe("request header forwarding", () => {
       "upgrade",
       "proxy-authenticate",
       "proxy-authorization",
+      "x-custom",
+      "cookie",
+      "origin",
+      "x-forwarded-for",
     ]) {
       expect(forwarded[h]).toBeUndefined();
     }
     // host is stripped as hop-by-hop, then unconditionally re-set to
     // the backend's own host:port — never the original request's Host.
-    expect(forwarded["host"]).toBe("<DEV_BACKEND_IP>:8000");
-    expect(forwarded["x-custom"]).toBe("value");
+    expect(forwarded["host"]).toBe("10.0.0.1:8000");
+    expect(forwarded["authorization"]).toBe("Bearer jwt");
+    expect(forwarded["accept-language"]).toBe("hi");
+  });
+
+  it("rejects dot segments instead of forwarding them", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    const req = makeRequest(["v1", "x"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "..", "docs"]);
+    expect(res.status).toBe(400);
+    expect(httpMock.calls).toHaveLength(0);
+  });
+
+  it("fails closed with a 500 when BACKEND_HOST is not configured", async () => {
+    const mod = await loadHandler("", "8000");
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
+    expect(res.status).toBe(500);
+    expect(httpMock.calls).toHaveLength(0);
+  });
+});
+
+describe("response header forwarding", () => {
+  it("passes only allowlisted backend headers through to the browser", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000", "dev");
+    httpMock.plans.push({
+      statusCode: 200,
+      headers: {
+        "content-type": "application/json",
+        "content-disposition": 'attachment; filename="x.xlsx"',
+        server: "uvicorn",
+        "set-cookie": ["a=1", "b=2"],
+      },
+      chunks: ["{}"],
+    });
+    const req = makeRequest(["v1", "auth", "countries"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "auth", "countries"]);
+    expect(res.headers.get("content-type")).toBe("application/json");
+    expect(res.headers.get("content-disposition")).toBe('attachment; filename="x.xlsx"');
+    expect(res.headers.get("server")).toBeNull();
+    expect(res.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("does not follow a 302 on POST and never leaks the backend Location", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    httpMock.plans.push({ statusCode: 302, headers: { location: "http://10.0.0.1:8000/x" } });
+    const req = makeRequest(["v1", "x"], { method: "POST", body: "{}" });
+    const res = await callHandler(mod, req, ["v1", "x"]);
+    expect(httpMock.calls).toHaveLength(1);
+    expect(res.status).toBe(302);
+    expect(res.headers.get("location")).toBeNull();
   });
 });
 
 // ─── 3. §10.11 — redirect-follow branch must ALSO stamp debug headers ──
 
 describe("307/308 redirect-follow (CLAUDE.md §10.11 regression guard)", () => {
-  it("re-issues the request to the redirect target and stamps x-backend-host/x-backend-env on the FINAL response", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+  it("re-issues the request to the redirect target and stamps x-backend-env on the FINAL response", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000", "dev");
 
     // FastAPI's real-world behavior: a path missing its trailing
     // slash comes back as a 307 with `location` pointing at the
@@ -290,24 +349,24 @@ describe("307/308 redirect-follow (CLAUDE.md §10.11 regression guard)", () => {
     // Re-issued exactly once, to the redirect target.
     expect(httpMock.calls).toHaveLength(2);
     expect(httpMock.calls[1].path).toBe("/auth/countries/");
-    expect(httpMock.calls[1].hostname).toBe("<DEV_BACKEND_IP>");
+    expect(httpMock.calls[1].hostname).toBe("10.0.0.1");
     expect(httpMock.calls[1].port).toBe(8000);
 
     // This is the exact assertion the landmine doc calls out: the
     // debug headers must be present on the redirect-follow response,
     // not just the (never-surfaced-to-the-browser) 307 itself.
     expect(res.status).toBe(200);
-    expect(res.headers.get("x-backend-host")).toBe("<DEV_BACKEND_IP>:8000");
+    expect(res.headers.get("x-backend-host")).toBeNull();
     expect(res.headers.get("x-backend-env")).toBe("dev");
     expect(await res.text()).toBe('{"countries":[]}');
   });
 
   it("derives the redirect target's path+query from an absolute Location URL", async () => {
-    const mod = await loadHandler("<PROD_BACKEND_IP>", "8000");
+    const mod = await loadHandler("10.0.0.2", "8000", "prod");
 
     httpMock.plans.push({
       statusCode: 308,
-      headers: { location: "http://<PROD_BACKEND_IP>:8000/fetch-simulation-details/?x=1" },
+      headers: { location: "http://10.0.0.2:8000/fetch-simulation-details/?x=1" },
     });
     httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
 
@@ -316,7 +375,8 @@ describe("307/308 redirect-follow (CLAUDE.md §10.11 regression guard)", () => {
 
     expect(httpMock.calls[1].path).toBe("/fetch-simulation-details/?x=1");
     expect(res.headers.get("x-backend-env")).toBe("prod");
-    expect(res.headers.get("x-backend-host")).toBe("<PROD_BACKEND_IP>:8000");
+    // Redirect path is re-issued against the PINNED host, not the Location's.
+    expect(httpMock.calls[1].hostname).toBe("10.0.0.2");
   });
 });
 
@@ -324,7 +384,7 @@ describe("307/308 redirect-follow (CLAUDE.md §10.11 regression guard)", () => {
 
 describe("error handling", () => {
   it("resolves 502 with a generic message when the initial connection fails (no upstream internals leaked)", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ reqError: "ECONNREFUSED" });
 
     const req = makeRequest(["auth", "countries"], { method: "GET" });
@@ -335,7 +395,7 @@ describe("error handling", () => {
   });
 
   it("resolves 502 with 'Response stream error' when the normal (non-redirect) response stream errors", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 200, resError: "socket hang up" });
 
     const req = makeRequest(["auth", "countries"], { method: "GET" });
@@ -346,7 +406,7 @@ describe("error handling", () => {
   });
 
   it("resolves 502 with 'Redirect proxy error' when the redirect-follow response stream errors", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 307, headers: { location: "/auth/countries/" } });
     httpMock.plans.push({ statusCode: 200, resError: "socket hang up" });
 
@@ -358,7 +418,7 @@ describe("error handling", () => {
   });
 
   it("resolves 502 with 'Redirect request error' when the redirect-follow connection itself fails", async () => {
-    const mod = await loadHandler("<DEV_BACKEND_IP>", "8000");
+    const mod = await loadHandler("10.0.0.1", "8000");
     httpMock.plans.push({ statusCode: 307, headers: { location: "/auth/countries/" } });
     httpMock.plans.push({ reqError: "ECONNRESET" });
 

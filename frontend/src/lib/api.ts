@@ -472,7 +472,7 @@ export const labelForLanguage = (code: string): string =>
 
 // ─── Axios Instance ───────────────────────────────────────────────────────────
 //
-// Testing-branch note (2026-06): the backend at <DEV_BACKEND_IP>:8000 was migrated
+// Testing-branch note (2026-06): the dev backend was migrated
 // to RationSmart v4.0.0:
 //   1. All endpoints now live under /v1/...
 //   2. Authenticated endpoints require Authorization: Bearer <jwt> (HTTPBearer)
@@ -480,9 +480,8 @@ export const labelForLanguage = (code: string): string =>
 //      the JWT instead
 //   4. Custom-feed update is now PUT (was POST) with feed_id as a query param
 //   5. /fetch-* POST endpoints became GET equivalents
-//   6. The dev/prod backends (<DEV_BACKEND_IP> was reused so the IP didn't change;
-//      <PROD_BACKEND_IP> is still on legacy) are still on the OLD API — this
-//      file is incompatible with them.
+//   6. The prod backend is still on the legacy API — this file is
+//      incompatible with it.
 // `tokenProvider` is set from src/lib/store.ts so the interceptor can read
 // the latest JWT on every request without a circular import.
 
@@ -1358,7 +1357,7 @@ export const exportCustomFeeds = (_admin_user_id: string) =>
 //     → PUT  /v1/animal/custom-feeds?feed_id=... (note method + query param!)
 // user_id derived from JWT in all three.
 
-// Response shape (verified live against <DEV_BACKEND_IP> on 2026-08-10):
+// Response shape (verified live against the dev backend on 2026-08-10):
 //   { action: "insert" | "update", feed_id: string }
 // It is UUID-based: an owned custom-feed UUID → "update"; a non-owned
 // (standard) feed UUID *or* a plain name string → "insert". The legacy
@@ -1421,7 +1420,7 @@ export const updateCustomFeed = (body: {
 export const getFeedClassification = () => api.get("/v1/feed-classification/structure");
 
 // ─── i18n V2 Phase 2: Admin Translation + Language endpoints ────────────────
-// Spec source: ~/Desktop/post_impl_multi_language/api_endpoints_for_frontend.md
+// Spec source: backend i18n V2 "API endpoints for frontend" spec
 // (sections 3 and 4). All JWT-admin protected. Always operate on a country_id.
 
 // 3.1 — workbook download. Response is a binary xlsx; we ask axios for a Blob
@@ -1496,8 +1495,8 @@ export const toggleCountryStatus = (country_id: string, action: "enable" | "disa
 export const listAllCountries = () => api.get("/v1/admin/list-all-countries");
 
 // ─── CLIMDES Feed Library Sync (Admin) ──────────────────────────────────────
-// Spec source: ~/Downloads/climdes_admin_ui_design.md, verified live against
-// http://<DEV_BACKEND_IP>:8000/openapi.json (2026-07-20) — all six endpoints
+// Spec source: CLIMDES admin UI design doc, verified live against the dev
+// backend's /openapi.json (2026-07-20) — all six endpoints
 // below exist exactly as documented. External org CLIMDES publishes a Feed
 // Library (Excel export); this lets an admin configure the connection, flip
 // the weekly auto-sync on/off, trigger a manual sync, and audit past runs.

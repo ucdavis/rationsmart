@@ -13,8 +13,8 @@
 #
 # Required GitHub secrets (already configured):
 #   VERCEL_TOKEN                 — Vercel auth token (rotate from Vercel dashboard if leaked)
-#   VERCEL_ORG_ID                — <VERCEL_TEAM_ID>
-#   VERCEL_TESTING_PROJECT_ID    — <TESTING_PROJECT_ID>
+#   VERCEL_ORG_ID                — Vercel team id (see Vercel dashboard)
+#   VERCEL_TESTING_PROJECT_ID    — rationsmart-testing project id
 
 name: Deploy testing branch
 on:

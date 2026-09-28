@@ -1,8 +1,8 @@
 "use client";
 
 // Admin > Feed Library Sync (CLIMDES)
-// Spec: ~/Downloads/climdes_admin_ui_design.md — verified live against
-// http://<DEV_BACKEND_IP>:8000/openapi.json (2026-07-20). CLIMDES is an external
+// Spec: CLIMDES admin UI design doc — verified live against the dev
+// backend's /openapi.json (2026-07-20). CLIMDES is an external
 // org whose API publishes a Feed Library (Excel export) with English + a
 // local-language name per feed. RationSmart imports it weekly on an
 // admin-chosen day (default Wednesday, 00:00 UTC); the admin can also

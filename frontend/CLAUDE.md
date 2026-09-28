@@ -1,5 +1,8 @@
 # RationSmart PWA — Claude Code Context
 
+> Placeholders like `<DEV_BACKEND_IP>` / `<TESTING_PROJECT_ID>` are resolved in the
+> untracked `CLAUDE.local.md` (kept out of git — audit item C-04).
+
 Auto-loaded by every Claude Code session that starts in this directory. Read top
 to bottom before editing — this file exists specifically to prevent regression,
 theme drift, and Android-parity slips between sessions.
@@ -595,7 +598,7 @@ Four actions on this page:
 4. **Download Template** (fixed-position green-gradient button at the
    bottom of the screen): hits a **static S3 URL**, not the backend:
    ```
-   https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx
+   <TEMPLATE_S3_URL>
    ```
    The filename is misspelled "tempate" — this is the actual server-side
    filename and matches Android. Saved client-side as

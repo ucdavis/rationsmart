@@ -1,8 +1,8 @@
 "use client";
 
 // Admin > Country/Language
-// Spec source: ~/Downloads/RationSmartAdmin.html (interactive prototype) +
-// ~/Downloads/Admin_Country_Language.xlsx (UI action -> endpoint mapping).
+// Spec source: RationSmartAdmin.html (interactive prototype) +
+// Admin_Country_Language.xlsx (UI action -> endpoint mapping).
 // Built as an ADDITION alongside the existing Admin > Languages /
 // Admin > Translations screens — not a replacement; nothing there changed.
 //

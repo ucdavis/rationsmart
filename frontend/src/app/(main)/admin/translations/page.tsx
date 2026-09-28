@@ -1,7 +1,7 @@
 "use client";
 
 // i18n V2 Phase 2 — Admin > Translations
-// Spec source: ~/Desktop/post_impl_multi_language/api_endpoints_for_frontend.md §3.1–3.6
+// Spec source: backend i18n V2 "API endpoints for frontend" spec §3.1–3.6
 //
 // Purpose:
 //   - Download a pre-filled translation workbook for a country (xlsx)
