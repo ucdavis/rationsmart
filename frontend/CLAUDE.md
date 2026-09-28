@@ -1419,37 +1419,19 @@ Current screens and what they hit on the backend:
 - Per-feed editor (3.4-3.6) endpoints exist in api.ts but no UI
   consumes them yet; intentional — the workbook path is primary
 
-**`/admin/languages`** — the unified catalog + country-availability screen
-- Top header: count, **Seed Defaults** button, **+ Add Language**
-  button, optional Seed-result panel
-- One expandable card per country, header shows
-  "English" or "English + N more" subtitle
-- Inside each country card: rows for ONLY the non-English languages
-  currently enabled. Toggle a row OFF → DELETE 4.6 unassigns.
-  English NEVER renders (backend rejects DELETE on `en`).
-- "+ Add Language" pill INSIDE each country card → opens a sheet
-  with catalog langs NOT yet enabled for that country → pick → POST 4.5
-- Top "+ Add Language" → opens the catalog-level sheet → POST 4.1
+**`/admin/languages` — REMOVED 2026-09-28 (now a redirect).** The unified
+catalog screen (and its Seed Defaults flow) was unlinked on 2026-07-20 when
+`/admin/country-language` replaced it, then deleted in the audit clean-up
+(B-18). `/admin/country-language` covers catalog add / activate / deactivate,
+per-country assign / unassign and feed-name translations.
 
-**Seed Defaults flow (handleSeed in `/admin/languages/page.tsx`)**:
-- Canonical mapping hard-coded as `DEFAULT_SEEDS` constant:
-  India→hi, Philippines→tl, Indonesia→id, Thailand→th, Vietnam→vi,
-  Bangladesh→bn, Nepal→ne, Ethiopia→am, Ethiopia→om
-- Country matching is name-based case-insensitive substring; Ethiopia
-  uses a `regionalCue` ("amhar" / "oromia") to route languages to the
-  right row when backend has two regional entries
-- POSTs each assignment in sequence (4.5). Idempotent — skips
-  already-assigned pairs. Skips when language isn't in catalog yet
-  (admin must "+ Add Language" first, then re-tap Seed Defaults).
-- Result breakdown surfaced both in on-screen panel and console
-  `[seed]` log group
-
-**Routes (post-merge)**:
-- `/admin/translations` — translations screen
-- `/admin/languages` — unified catalog + country availability
-- `/admin/country-languages` — **redirects to /admin/languages**
-  (kept for back-compat with any bookmarks)
-- Admin landing has 2 i18n tiles: "Translations" and "Language Catalog"
+**Routes (current)**:
+- `/admin/translations` — workbook + coverage (still linked; the only
+  screen with the coverage check)
+- `/admin/country-language` — the live country / language / feed-name screen
+- `/admin/languages` and `/admin/country-languages` — **redirect to
+  `/admin/country-language`** (kept for old bookmarks)
+- Admin landing i18n tiles: "Translations" and "Country/Language"
 
 **api.ts helpers under "i18n V2 Phase 2":**
 - `downloadTranslationWorkbook(country_id)` — blob xlsx (3.1)
@@ -1637,7 +1619,7 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
 - **Custom Diet Limits:** only keys present in the fetched spec are sent;
   if the spec couldn't load, none are sent and the user is told.
 - **`/admin/country-languages` redirects to `/admin/country-language`**
-  (the live screen). `/admin/languages` is unlinked legacy.
+  (the live screen). `/admin/languages` is now also just a redirect there.
 - **Shared constants:** `PIN_LENGTH` / `LEGACY_PIN_LENGTH`
   (validators.ts), `API_TIMEOUT_MS` / `UPSTREAM_TIMEOUT_MS` (timeouts.ts).
 - **CI:** actions pinned by SHA, `permissions: contents: read`, deploy
