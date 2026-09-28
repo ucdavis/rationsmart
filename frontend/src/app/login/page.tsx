@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { login, getUserProfile, getCountries, resetPin } from "@/lib/api";
+import { login, getUserProfile, getCountries } from "@/lib/api";
 import { isEmailAddressValid, PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
@@ -15,6 +15,7 @@ import { authErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
+import { useResetPin } from "@/lib/use-reset-pin";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -30,7 +31,14 @@ export default function LoginPage() {
   // Reset-PIN bottom sheet state
   const [showResetSheet, setShowResetSheet] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  const [isSendingReset, setIsSendingReset] = useState(false);
+  const { isSending: isSendingReset, send: sendReset } = useResetPin({
+    translate: t,
+    fallbackError: "Unexpected error: failed to generate PIN. Please, try again!",
+    onSuccess: () => {
+      setShowResetSheet(false);
+      setResetEmail("");
+    },
+  });
   useEscapeKey(!!(showResetSheet && !isSendingReset), () => setShowResetSheet(false));
 
   // v1 backend accepts both legacy 4-digit and new 6-digit PINs at login —
@@ -43,26 +51,8 @@ export default function LoginPage() {
   const isResetReady = isEmailAddressValid(resetEmail.trim());
 
   const handleResetSend = async () => {
-    if (!isResetReady || isSendingReset) return;
-    setIsSendingReset(true);
-    try {
-      const res = await resetPin(resetEmail.trim());
-      // Android shows backend's message via uiData.data.message.toStringOrNA()
-      const successMsg = (res.data as { message?: string })?.message;
-      if (successMsg) showSnackbar(successMsg, "success");
-      setShowResetSheet(false);
-      setResetEmail("");
-    } catch (err: unknown) {
-      // Android fallback for non-404, non-network errors
-      const message = authErrorMessage(
-        err,
-        "Unexpected error: failed to generate PIN. Please, try again!",
-        t
-      );
-      showSnackbar(message, "error");
-    } finally {
-      setIsSendingReset(false);
-    }
+    if (!isResetReady) return;
+    await sendReset(resetEmail);
   };
 
   const handleProceed = async () => {

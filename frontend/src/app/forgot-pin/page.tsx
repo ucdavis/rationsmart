@@ -2,46 +2,31 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/lib/store";
-import { resetPin } from "@/lib/api";
 import { isEmailAddressValid } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PoweredBy from "@/components/PoweredBy";
 import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
-import { authErrorMessage } from "@/lib/errors";
 import Spinner from "@/components/ui/Spinner";
+import { useResetPin } from "@/lib/use-reset-pin";
 
 export default function ForgotPinPage() {
   const router = useRouter();
-  const showSnackbar = useStore((s) => s.showSnackbar);
   const t = useT();
   const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const { isSending: isLoading, send } = useResetPin({
+    translate: t,
+    fallbackError: "Unexpected error: failed to generate PIN. Please, try again!",
+    onSuccess: () => setSent(true),
+  });
 
   const isReady = isEmailAddressValid(email.trim());
 
   const handleSend = async () => {
-    if (!isReady || isLoading) return;
-    setIsLoading(true);
-    try {
-      const res = await resetPin(email.trim());
-      setSent(true);
-      const successMsg = (res.data as { message?: string })?.message;
-      if (successMsg) showSnackbar(successMsg, "success");
-    } catch (err: unknown) {
-      // Android fallback for non-404, non-network errors
-      const message = authErrorMessage(
-        err,
-        "Unexpected error: failed to generate PIN. Please, try again!",
-        t
-      );
-      showSnackbar(message, "error");
-    } finally {
-      setIsLoading(false);
-    }
+    if (!isReady) return;
+    await send(email);
   };
 
   return (

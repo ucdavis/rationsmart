@@ -7,7 +7,6 @@ import {
   updateUserProfile,
   deleteAccount,
   getCountries,
-  resetPin,
   changePin,
   labelForLanguage,
 } from "@/lib/api";
@@ -16,10 +15,10 @@ import Toolbar from "@/components/Toolbar";
 import PinInput from "@/components/ui/PinInput";
 import PoweredBy from "@/components/PoweredBy";
 import { useT } from "@/lib/i18n-ui";
-import { authErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
+import { useResetPin } from "@/lib/use-reset-pin";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
@@ -72,7 +71,12 @@ export default function ProfilePage() {
   // which surprised users who registered with a different address.
   const [showResetSheet, setShowResetSheet] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
-  const [isSendingReset, setIsSendingReset] = useState(false);
+  const { isSending: isSendingReset, send: sendReset } = useResetPin({
+    translate: t,
+    fallbackError: "Failed to send reset email. Please try again.",
+    defaultSuccess: "PIN reset email sent. Please check your inbox.",
+    onSuccess: () => setShowResetSheet(false),
+  });
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showPinSheet, setShowPinSheet] = useState(false);
   // Change-PIN bottom sheet — user-initiated PIN change. Distinct from
@@ -267,19 +271,8 @@ export default function ProfilePage() {
   const isResetReady = isEmailAddressValid(resetEmail.trim());
 
   const handleResetSend = async () => {
-    if (!isResetReady || isSendingReset) return;
-    setIsSendingReset(true);
-    try {
-      const res = await resetPin(resetEmail.trim());
-      const successMsg = (res.data as { message?: string })?.message;
-      showSnackbar(successMsg ?? t("PIN reset email sent. Please check your inbox."), "success");
-      setShowResetSheet(false);
-    } catch (err: unknown) {
-      const message = authErrorMessage(err, "Failed to send reset email. Please try again.", t);
-      showSnackbar(message, "error");
-    } finally {
-      setIsSendingReset(false);
-    }
+    if (!isResetReady) return;
+    await sendReset(resetEmail);
   };
 
   // Enable Save whenever a field has CHANGED — including a cleared/whitespace
