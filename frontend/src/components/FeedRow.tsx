@@ -3,9 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   getFeedTypes,
-  getFeedTypesLocalized,
   getFeedCategories,
-  getFeedCategoriesLocalized,
   getFeedSubCategories,
   updateCustomFeed,
   insertCustomFeed,

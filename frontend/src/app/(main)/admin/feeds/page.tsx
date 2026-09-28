@@ -495,21 +495,6 @@ export default function AdminFeedsPage() {
   const isFeedFormValid =
     feedForm.fd_name.trim() !== "" && feedForm.fd_type !== "" && feedForm.fd_country_name !== "";
 
-  const btnStyle = (active: boolean) =>
-    ({
-      flex: 1,
-      padding: "10px 0",
-      borderRadius: 12,
-      fontWeight: 700,
-      fontSize: 13,
-      fontFamily: "Nunito, sans-serif",
-      cursor: "pointer",
-      border: "2px solid #064E3B",
-      backgroundColor: active ? "#064E3B" : "white",
-      color: active ? "white" : "#064E3B",
-      transition: "all 0.15s",
-    }) as const;
-
   const goToSection = (s: TabType) => {
     setTab(s);
     setSection(s);

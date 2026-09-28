@@ -314,25 +314,15 @@ function TotalCostFooter({ label, value }: { label: string; value: string }) {
 
 export default function ReportPage() {
   const router = useRouter();
-  const {
-    user,
-    cattleInfo,
-    reportData,
-    feedSelections,
-    showSnackbar,
-    setFeedSelectionType,
-    setFeedSelections,
-    setCattleInfo,
-  } = useStore((s) => ({
-    feedSelections: s.feedSelections,
-    user: s.user,
-    cattleInfo: s.cattleInfo,
-    reportData: s.reportData,
-    showSnackbar: s.showSnackbar,
-    setFeedSelectionType: s.setFeedSelectionType,
-    setFeedSelections: s.setFeedSelections,
-    setCattleInfo: s.setCattleInfo,
-  }));
+  const { user, cattleInfo, reportData, feedSelections, showSnackbar, setFeedSelectionType } =
+    useStore((s) => ({
+      feedSelections: s.feedSelections,
+      user: s.user,
+      cattleInfo: s.cattleInfo,
+      reportData: s.reportData,
+      showSnackbar: s.showSnackbar,
+      setFeedSelectionType: s.setFeedSelectionType,
+    }));
 
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -458,10 +448,6 @@ export default function ReportPage() {
   const isEval = report.mode === "evaluation";
   const evalReport = isEval ? (report as EvaluationResponse) : null;
   const recReport = !isEval ? (report as RecommendationResponse) : null;
-
-  const statusLabel = isEval
-    ? (evalReport?.evaluation_summary?.overall_status ?? "Evaluated")
-    : (recReport?.report_info?.diet_rating ?? "—");
 
   // Try every place the v1 backend might surface the report_id —
   // legacy lived at report_info.report_id (recommendation) or top-

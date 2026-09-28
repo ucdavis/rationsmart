@@ -1642,6 +1642,18 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
   (validators.ts), `API_TIMEOUT_MS` / `UPSTREAM_TIMEOUT_MS` (timeouts.ts).
 - **CI:** actions pinned by SHA, `permissions: contents: read`, deploy
   workflow is `workflow_dispatch`-only with the token passed via env.
+- **Shared building blocks (pass 2, 2026-09-28)** — reuse these, don't
+  re-copy: `authErrorMessage()` (lib/errors.ts), `useEscapeKey()`
+  (lib/use-escape.ts — every sheet/dialog gets `role="dialog"`
+  `aria-modal` + Escape), `ui/Spinner`, `COLUMN_LEFT`/`COLUMN_WIDTH`
+  (lib/column.ts), `collectPages()`/`ADMIN_PAGE_SIZE` (lib/pagination.ts —
+  admin lists fetch every page), `allSettledLimited()` (lib/concurrency.ts),
+  `SUPPORT_EMAIL` (lib/contact.ts), `inclusionBoundsCrossed()`.
+- **CustomSelect is a listbox:** options are `role="option"` (tests pick
+  them with `findByRole("option", …)`), arrow keys move focus.
+- **Tests are type-checked** (`tsconfig.test.json`, part of
+  `npm run typecheck`). `@typescript-eslint/no-unused-vars` is on
+  (prefix `_` to opt out).
 
 Deliberately NOT changed (reasons in `docs/AUDIT_RESPONSE.local.md`):
 backend-dependent items (TLS to the backend, httpOnly-cookie session,
