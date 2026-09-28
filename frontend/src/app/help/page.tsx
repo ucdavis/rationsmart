@@ -56,7 +56,6 @@ export default function HelpAndSupportPage() {
               >
                 <span
                   style={{
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 16,
                     color: "#231F20",
                   }}

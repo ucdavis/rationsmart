@@ -157,10 +157,7 @@ function CustomFeedNutrientInput({
 }) {
   return (
     <div>
-      <p
-        className="text-xs font-bold uppercase mb-1"
-        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-      >
+      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
         {label}
       </p>
       <input
@@ -171,7 +168,7 @@ function CustomFeedNutrientInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder="0.00"
         className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-        style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+        style={{ backgroundColor: "#F1F5F9", color: "#231F20" }}
       />
     </div>
   );
@@ -1015,7 +1012,7 @@ export default function FeedSelectionPage() {
       <div className="px-4 pt-4">
         <p
           className="text-[11px] font-bold uppercase tracking-wide mb-2 ml-1"
-          style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
+          style={{ color: "#999999" }}
         >
           {t("Optional")}
         </p>
@@ -1030,7 +1027,6 @@ export default function FeedSelectionPage() {
               onClick={() => setShowLimitsModal(true)}
               disabled={limitsDisabled}
               style={{
-                fontFamily: "Nunito, sans-serif",
                 fontWeight: 700,
                 fontSize: 14,
                 display: "inline-flex",
@@ -1069,7 +1065,6 @@ export default function FeedSelectionPage() {
           <button
             onClick={openCustomFeedModal}
             style={{
-              fontFamily: "Nunito, sans-serif",
               fontWeight: 700,
               fontSize: 14,
               display: "inline-flex",
@@ -1105,10 +1100,7 @@ export default function FeedSelectionPage() {
             Only shown for the fetch failure — evaluation mode already reads
             as "not applicable here" from the radio group right below. */}
         {limitsApplyToAnimal && !isEvaluation && limitSpecsError && (
-          <p
-            className="text-[11px] mt-1.5 ml-1"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-[11px] mt-1.5 ml-1" style={{ color: "#6D6D6D" }}>
             {t("Diet limits unavailable — check your connection and reopen this screen.")}
           </p>
         )}
@@ -1159,7 +1151,6 @@ export default function FeedSelectionPage() {
             </div>
             <span
               style={{
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 14,
                 fontWeight: feedSelectionType === mode ? 700 : 400,
                 color: feedSelectionType === mode ? "#064E3B" : "#6D6D6D",
@@ -1185,7 +1176,6 @@ export default function FeedSelectionPage() {
         <div className="flex items-center justify-between mb-2 px-1">
           <span
             style={{
-              fontFamily: "Nunito, sans-serif",
               fontSize: 11,
               fontWeight: 800,
               color: "#064E3B",
@@ -1206,7 +1196,6 @@ export default function FeedSelectionPage() {
                 if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
               }}
               style={{
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 13,
                 fontWeight: 800,
                 color: "#064E3B",
@@ -1292,7 +1281,6 @@ export default function FeedSelectionPage() {
             style={{
               backgroundColor: "transparent",
               color: "#231F20",
-              fontFamily: "Nunito, sans-serif",
               fontSize: 15,
               fontWeight: 500,
               padding: "8px 0",
@@ -1336,7 +1324,6 @@ export default function FeedSelectionPage() {
         <div
           className="flex items-center gap-2 mt-2.5 ml-1"
           style={{
-            fontFamily: "Nunito, sans-serif",
             fontSize: 12.5,
             color: activeRowId ? "#064E3B" : "#6D6D6D",
             fontWeight: activeRowId ? 700 : 500,
@@ -1394,7 +1381,6 @@ export default function FeedSelectionPage() {
                 style={{
                   padding: "12px 14px",
                   color: "#6D6D6D",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 13,
                 }}
               >
@@ -1405,7 +1391,6 @@ export default function FeedSelectionPage() {
                 style={{
                   padding: "12px 14px",
                   color: "#6D6D6D",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 13,
                 }}
               >
@@ -1424,7 +1409,6 @@ export default function FeedSelectionPage() {
                     padding: "10px 14px",
                     cursor: "pointer",
                     display: "block",
-                    fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   {/* i18n V2 — render display_* (translated, English fallback).
@@ -1487,7 +1471,6 @@ export default function FeedSelectionPage() {
             border: "2px dashed #064E3B",
             backgroundColor: "transparent",
             color: "#064E3B",
-            fontFamily: "Nunito, sans-serif",
             fontWeight: 700,
             fontSize: 16,
             cursor: "pointer",
@@ -1521,7 +1504,6 @@ export default function FeedSelectionPage() {
             backgroundColor: isValid() && !isLoading ? "#064E3B" : "#D3D3D3",
             color: isValid() && !isLoading ? "#FFFFFF" : "#999999",
             border: "none",
-            fontFamily: "Nunito, sans-serif",
             cursor: isValid() && !isLoading ? "pointer" : "not-allowed",
             transition: "background-color 0.2s",
           }}
@@ -1582,10 +1564,7 @@ export default function FeedSelectionPage() {
                 "Add Custom Feed" for isAdd=true, "Edit Nutritional Information"
                 for isAdd=false. Centered, bold, 20sp, dark_aquamarine_green. */}
             <div className="relative mb-4">
-              <h3
-                className="text-center font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-              >
+              <h3 className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
                 {t("Add Custom Feed")}
               </h3>
               <button
@@ -1621,10 +1600,7 @@ export default function FeedSelectionPage() {
               className="w-full flex items-center justify-between mb-3"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
-              <span
-                className="font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-              >
+              <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
                 {t("Feed Details")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1638,10 +1614,7 @@ export default function FeedSelectionPage() {
             {feedDetailsExpanded && (
               <>
                 {/* Feed Type — first required field (no Country in Android end-user UI) */}
-                <p
-                  className="text-xs font-bold uppercase mb-1"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
                   {t("Feed Type")}
                   <span style={{ color: "#FC2E20" }}> *</span>
                 </p>
@@ -1666,10 +1639,7 @@ export default function FeedSelectionPage() {
                 </div>
 
                 {/* Feed Category — gated on feed type */}
-                <p
-                  className="text-xs font-bold uppercase mb-1"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
                   {t("Feed Category")}
                   <span style={{ color: "#FC2E20" }}> *</span>
                 </p>
@@ -1701,10 +1671,7 @@ export default function FeedSelectionPage() {
                 {/* Feed Name — gated on category. Android DialogFeedDetails
                 also shows a user-name prefix (e.g. "John-") via
                 PrefsManager.getUserNamePrefix(). We render the same. */}
-                <p
-                  className="text-xs font-bold uppercase mb-1"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
                   {t("Feed Name")}
                   <span style={{ color: "#FC2E20" }}> *</span>
                 </p>
@@ -1715,10 +1682,7 @@ export default function FeedSelectionPage() {
                     opacity: !customFeedForm.feed_category ? 0.6 : 1,
                   }}
                 >
-                  <span
-                    className="pl-4 pr-1 text-sm"
-                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                  >
+                  <span className="pl-4 pr-1 text-sm" style={{ color: "#6D6D6D" }}>
                     {user?.name ? `${user.name.split(" ")[0]}-` : ""}
                   </span>
                   <input
@@ -1732,7 +1696,6 @@ export default function FeedSelectionPage() {
                     className="flex-1 bg-transparent px-1 py-3 text-sm border-none focus:outline-none"
                     style={{
                       color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
                       cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
                     }}
                   />
@@ -1748,10 +1711,7 @@ export default function FeedSelectionPage() {
               className="w-full flex items-center justify-between mb-3"
               style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
             >
-              <span
-                className="font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-              >
+              <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
                 {t("Nutritional Information")}
               </span>
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1776,10 +1736,7 @@ export default function FeedSelectionPage() {
                       : NUTRIENT_FIELDS_GENERAL;
                 return (
                   <>
-                    <p
-                      className="text-xs mb-3"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-xs mb-3" style={{ color: "#6D6D6D" }}>
                       {t("Nutrient Composition (%)")}
                     </p>
                     <div className="grid grid-cols-2 gap-3 mb-5">
@@ -1814,7 +1771,6 @@ export default function FeedSelectionPage() {
                     backgroundColor: ready ? "#064E3B" : "#D3D3D3",
                     color: ready ? "white" : "#999",
                     border: "none",
-                    fontFamily: "Nunito, sans-serif",
                     cursor: ready ? "pointer" : "not-allowed",
                   }}
                 >
@@ -1870,7 +1826,6 @@ export default function FeedSelectionPage() {
               style={{
                 color: "#064E3B",
                 fontSize: 20,
-                fontFamily: "Nunito, sans-serif",
                 margin: "20px 16px 0",
               }}
             >
@@ -1882,7 +1837,6 @@ export default function FeedSelectionPage() {
               style={{
                 color: "#6D6D6D",
                 fontSize: 16,
-                fontFamily: "Nunito, sans-serif",
                 margin: "16px 16px 0",
                 lineHeight: 1.5,
               }}
@@ -1907,7 +1861,6 @@ export default function FeedSelectionPage() {
                   className="font-bold"
                   style={{
                     color: "#1CA069",
-                    fontFamily: "Nunito, sans-serif",
                     marginTop: i > 0 ? 6 : 0,
                     lineHeight: 1.6,
                   }}
@@ -1922,7 +1875,6 @@ export default function FeedSelectionPage() {
               style={{
                 color: "#6D6D6D",
                 fontSize: 16,
-                fontFamily: "Nunito, sans-serif",
                 margin: "30px 12px 0",
               }}
             >
@@ -1940,7 +1892,6 @@ export default function FeedSelectionPage() {
                 borderRadius: 60,
                 padding: "14px 0",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 16,
                 cursor: "pointer",
                 margin: "30px 16px 0",
@@ -1963,7 +1914,6 @@ export default function FeedSelectionPage() {
                 borderRadius: 60,
                 padding: "14px 0",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 16,
                 cursor: "pointer",
                 margin: "20px 16px 0",
@@ -2018,7 +1968,6 @@ export default function FeedSelectionPage() {
               style={{
                 color: "#064E3B",
                 fontSize: 20,
-                fontFamily: "Nunito, sans-serif",
                 margin: "20px 16px 0",
               }}
             >
@@ -2029,7 +1978,6 @@ export default function FeedSelectionPage() {
               style={{
                 color: "#6D6D6D",
                 fontSize: 16,
-                fontFamily: "Nunito, sans-serif",
                 margin: "16px 16px 0",
                 lineHeight: 1.5,
               }}
@@ -2055,7 +2003,6 @@ export default function FeedSelectionPage() {
                 borderRadius: 60,
                 padding: "14px 0",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 16,
                 cursor: "pointer",
                 margin: "30px 16px 0",
@@ -2088,19 +2035,13 @@ export default function FeedSelectionPage() {
           >
             <div className="flex items-start justify-between mb-5">
               <div>
-                <h3
-                  className="text-base font-bold"
-                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                >
+                <h3 className="text-base font-bold" style={{ color: "#064E3B" }}>
                   {t("Custom Diet Limits")}
                 </h3>
                 {/* Blank is a first-class state, NOT zero: blank means "use
                     this animal's engine default", and a typed 0 is rejected
                     outright. Stated once here instead of on all eight rows. */}
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs mt-1" style={{ color: "#6D6D6D" }}>
                   {t("Default value will be applied if left blank")}
                 </p>
               </div>
@@ -2138,10 +2079,7 @@ export default function FeedSelectionPage() {
                 const invalid = outOfRange || ndfConflict;
                 return (
                   <div key={key} className="mb-4">
-                    <p
-                      className="text-xs font-bold uppercase mb-2"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-xs font-bold uppercase mb-2" style={{ color: "#231F20" }}>
                       {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
                     </p>
                     <input
@@ -2158,14 +2096,12 @@ export default function FeedSelectionPage() {
                       style={{
                         backgroundColor: invalid ? "#FEC5BB" : "#F1F5F9",
                         color: "#231F20",
-                        fontFamily: "Nunito, sans-serif",
                       }}
                     />
                     <p
                       className="text-xs mt-1 ml-1"
                       style={{
                         color: invalid ? "#E44A4A" : "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                       }}
                     >
                       {ndfConflict
@@ -2194,10 +2130,7 @@ export default function FeedSelectionPage() {
             {/* Limits may only be tightened — say so once rather than on
                 every row. The "leave blank" half of this sentence now lives
                 under the sheet title. */}
-            <p
-              className="text-[11px] mb-3 mt-1 ml-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-[11px] mb-3 mt-1 ml-1" style={{ color: "#6D6D6D" }}>
               {t(
                 "Limits can only be tightened, never loosened. Tightening a limit too far can return no diet at all."
               )}
@@ -2231,7 +2164,6 @@ export default function FeedSelectionPage() {
                     backgroundColor: cantApply ? "#D3D3D3" : "#064E3B",
                     color: cantApply ? "#999999" : "white",
                     border: "none",
-                    fontFamily: "Nunito, sans-serif",
                     cursor: cantApply ? "not-allowed" : "pointer",
                   }}
                 >

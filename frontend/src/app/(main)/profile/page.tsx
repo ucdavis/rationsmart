@@ -23,12 +23,10 @@ import { useResetPin } from "@/lib/use-reset-pin";
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
   color: readOnly ? "#999999" : "#231F20",
-  fontFamily: "Nunito, sans-serif",
 });
 
 const labelStyle = {
   color: "#6D6D6D",
-  fontFamily: "Nunito, sans-serif",
 };
 
 // UX: shimmer the REAL form fields in place while getCountries is in
@@ -323,16 +321,10 @@ export default function ProfilePage() {
               </svg>
             </div>
             <div className="flex flex-col flex-1 min-w-0">
-              <span
-                className="font-bold truncate"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-              >
+              <span className="font-bold truncate" style={{ color: "#231F20", fontSize: 18 }}>
                 {user.name}
               </span>
-              <span
-                className="text-sm truncate"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
+              <span className="text-sm truncate" style={{ color: "#6D6D6D" }}>
                 {user.email}
               </span>
             </div>
@@ -458,7 +450,6 @@ export default function ProfilePage() {
               backgroundColor: canSave && !isSaving ? "#064E3B" : "#D3D3D3",
               color: canSave && !isSaving ? "#FFFFFF" : "#999999",
               border: "none",
-              fontFamily: "Nunito, sans-serif",
               cursor: canSave && !isSaving ? "pointer" : "not-allowed",
               transition: "background-color 0.2s",
             }}
@@ -516,7 +507,6 @@ export default function ProfilePage() {
               border: "none",
               color: "#E44A4A", // carmine_pink
               backgroundColor: "rgba(228,74,74,0.20)", // carmine_pink_20
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
               borderRadius: 14,
             }}
@@ -536,7 +526,6 @@ export default function ProfilePage() {
               border: "none",
               color: "#296CD3", // celtic_blue
               backgroundColor: "rgba(41,108,211,0.25)", // celtic_blue_25
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
               borderRadius: 14,
             }}
@@ -561,7 +550,6 @@ export default function ProfilePage() {
               border: "2px solid #064E3B",
               color: "#064E3B",
               backgroundColor: "white",
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
               borderRadius: 14,
               fontWeight: 700,
@@ -616,23 +604,17 @@ export default function ProfilePage() {
             </div>
 
             {/* Title */}
-            <p
-              className="text-center font-bold"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Reset Your PIN")}
             </p>
-            <p
-              className="text-center mt-1 px-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-            >
+            <p className="text-center mt-1 px-3" style={{ color: "#6D6D6D", fontSize: 14 }}>
               {t("Enter your registered email to receive a reset link")}
             </p>
 
             {/* Email label + input */}
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Email Address")} <span style={{ color: "#FC2E20" }}>*</span>
             </p>
@@ -647,7 +629,6 @@ export default function ProfilePage() {
                 style={{
                   backgroundColor: "#F1F5F9",
                   color: "#231F20",
-                  fontFamily: "Nunito, sans-serif",
                 }}
                 aria-label={t("Email address")}
               />
@@ -662,7 +643,6 @@ export default function ProfilePage() {
                 style={{
                   backgroundColor: isResetReady && !isSendingReset ? "#064E3B" : "#D3D3D3",
                   color: isResetReady && !isSendingReset ? "#FFFFFF" : "#999999",
-                  fontFamily: "Nunito, sans-serif",
                   border: "none",
                   cursor: isResetReady && !isSendingReset ? "pointer" : "not-allowed",
                   transition: "background-color 0.2s, color 0.2s",
@@ -738,7 +718,6 @@ export default function ProfilePage() {
               className="text-center font-bold mb-2 mx-3"
               style={{
                 color: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 20,
                 whiteSpace: "pre-line",
               }}
@@ -749,7 +728,7 @@ export default function ProfilePage() {
             {/* Description — Android string @delete_account_message */}
             <p
               className="text-center text-sm mb-5 mx-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", whiteSpace: "pre-line" }}
+              style={{ color: "#6D6D6D", whiteSpace: "pre-line" }}
             >
               {t("This action is permanent. Your account\nand data will be deleted\npermanently.")}
             </p>
@@ -763,7 +742,6 @@ export default function ProfilePage() {
                   border: "2px solid #064E3B",
                   color: "#064E3B",
                   background: "white",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -786,7 +764,6 @@ export default function ProfilePage() {
                   backgroundColor: "#E44A4A",
                   color: "white",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -839,10 +816,7 @@ export default function ProfilePage() {
                 }}
               />
             </div>
-            <h3
-              className="text-center font-bold mb-5"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <h3 className="text-center font-bold mb-5" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Submit PIN")}
             </h3>
             <PinInput value={deletePin} onChange={setDeletePin} />
@@ -856,7 +830,6 @@ export default function ProfilePage() {
                     deletePin.length === PIN_LENGTH && !isDeleting ? "#064E3B" : "#D3D3D3",
                   color: deletePin.length === PIN_LENGTH && !isDeleting ? "white" : "#999999",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor:
                     deletePin.length === PIN_LENGTH && !isDeleting ? "pointer" : "not-allowed",
                   transition: "background-color 0.2s",
@@ -908,22 +881,16 @@ export default function ProfilePage() {
               <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
             </div>
 
-            <p
-              className="text-center font-bold"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Change Your PIN")}
             </p>
-            <p
-              className="text-center mt-1 mb-4 px-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-            >
+            <p className="text-center mt-1 mb-4 px-4" style={{ color: "#6D6D6D", fontSize: 14 }}>
               {t("Enter your current PIN and choose a new 6-digit PIN.")}
             </p>
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Current PIN")}
             </p>
@@ -937,7 +904,7 @@ export default function ProfilePage() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("New 6-digit PIN")}
             </p>
@@ -955,7 +922,7 @@ export default function ProfilePage() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Confirm New PIN")}
             </p>
@@ -968,10 +935,7 @@ export default function ProfilePage() {
             />
 
             {confirmNewPin.length === PIN_LENGTH && newPin !== confirmNewPin && (
-              <p
-                className="text-xs font-bold text-center mt-2"
-                style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="text-xs font-bold text-center mt-2" style={{ color: "#E44A4A" }}>
                 {t("New PINs do not match")}
               </p>
             )}
@@ -984,7 +948,6 @@ export default function ProfilePage() {
                 style={{
                   backgroundColor: isChangePinReady && !isChangingPin ? "#064E3B" : "#D3D3D3",
                   color: isChangePinReady && !isChangingPin ? "#FFFFFF" : "#999999",
-                  fontFamily: "Nunito, sans-serif",
                   border: "none",
                   cursor: isChangePinReady && !isChangingPin ? "pointer" : "not-allowed",
                 }}

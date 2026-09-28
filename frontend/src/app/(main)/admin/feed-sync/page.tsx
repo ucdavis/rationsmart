@@ -222,7 +222,6 @@ const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 const inputStyle = {
   backgroundColor: "#F1F5F9",
   color: "#231F20",
-  fontFamily: "Nunito, sans-serif",
 };
 const sheetOverlayStyle = {
   left: COLUMN_LEFT,
@@ -241,7 +240,7 @@ function StatusChip({ status }: { status: string }) {
   return (
     <span
       className={`text-xs font-bold px-2 py-0.5 rounded-full ${s === "running" ? "animate-pulse" : ""}`}
-      style={{ backgroundColor: cfg.bg, color: cfg.fg, fontFamily: "Nunito, sans-serif" }}
+      style={{ backgroundColor: cfg.bg, color: cfg.fg }}
     >
       {cfg.label}
     </span>
@@ -341,7 +340,6 @@ export default function AdminFeedSyncPage() {
                 backgroundColor: tab === t.key ? "#064E3B" : "transparent",
                 color: tab === t.key ? "#FFFFFF" : "#064E3B",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
                 transition: "background-color 0.15s",
               }}
@@ -400,16 +398,10 @@ export default function AdminFeedSyncPage() {
             className="bg-white rounded-2xl w-full px-5 py-5"
             style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
           >
-            <p
-              className="font-bold mb-2"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 15 }}
-            >
+            <p className="font-bold mb-2" style={{ color: "#231F20", fontSize: 15 }}>
               {confirm.title}
             </p>
-            <p
-              className="text-sm mb-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
-            >
+            <p className="text-sm mb-4" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
               {confirm.body}
             </p>
             <div className="flex gap-3">
@@ -420,7 +412,6 @@ export default function AdminFeedSyncPage() {
                   backgroundColor: "transparent",
                   color: "#064E3B",
                   border: "1.5px solid #064E3B",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -433,7 +424,6 @@ export default function AdminFeedSyncPage() {
                   backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B",
                   color: "#FFFFFF",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -710,10 +700,7 @@ function SyncSettingsTab({
           className="px-4 py-3"
           style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
         >
-          <p
-            className="text-xs font-bold uppercase tracking-wide"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
             Automatic Sync
           </p>
         </div>
@@ -724,7 +711,6 @@ function SyncSettingsTab({
               style={{
                 backgroundColor: "rgba(255,152,0,0.14)",
                 color: "#B4690E",
-                fontFamily: "Nunito, sans-serif",
               }}
             >
               Last sync overdue — check Run History
@@ -733,33 +719,21 @@ function SyncSettingsTab({
 
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p
-                className="font-bold text-sm"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="font-bold text-sm" style={{ color: "#231F20" }}>
                 Automatic Scheduler
               </p>
-              <p
-                className="text-xs mt-0.5"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="text-xs mt-0.5" style={{ color: "#6D6D6D" }}>
                 {status.scheduler_enabled
                   ? `Syncs automatically every ${capitalize(status.sync_day_of_week)} at 00:00 UTC.`
                   : "Automatic sync is off. You can still sync manually."}
               </p>
               {!canEnable && !status.scheduler_enabled && (
-                <p
-                  className="text-xs mt-0.5 font-bold"
-                  style={{ color: "#B4690E", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs mt-0.5 font-bold" style={{ color: "#B4690E" }}>
                   Configure the CLIMDES endpoint first
                 </p>
               )}
               {config.scheduler_toggled_by && (
-                <p
-                  className="text-xs mt-1"
-                  style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs mt-1" style={{ color: "#999999" }}>
                   Last changed by {config.scheduler_toggled_by.slice(0, 8)}… on{" "}
                   {formatDateTime(config.scheduler_toggled_at)}
                 </p>
@@ -793,7 +767,7 @@ function SyncSettingsTab({
           <div>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               Sync day
             </p>
@@ -804,10 +778,7 @@ function SyncSettingsTab({
               disabled={isSavingDay}
               style={{ backgroundColor: "#F1F5F9", borderRadius: 14, padding: "10px 12px" }}
             />
-            <p
-              className="text-xs mt-1"
-              style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-xs mt-1" style={{ color: "#999999" }}>
               Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate
               refresh.
             </p>
@@ -815,33 +786,26 @@ function SyncSettingsTab({
 
           <div className="space-y-2 pt-1" style={{ borderTop: "1px solid #F1F5F9" }}>
             <div className="flex justify-between text-sm pt-2">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                Next scheduled sync
-              </span>
-              <span
-                className="font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
+              <span style={{ color: "#6D6D6D" }}>Next scheduled sync</span>
+              <span className="font-bold" style={{ color: "#231F20" }}>
                 {formatNextRun(status.next_scheduled_run)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Last run</span>
+              <span style={{ color: "#6D6D6D" }}>Last run</span>
               <span
                 className="font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                style={{ color: "#231F20" }}
                 title={status.last_run_at ?? undefined}
               >
                 {formatDateTime(status.last_run_at)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                Last successful sync
-              </span>
+              <span style={{ color: "#6D6D6D" }}>Last successful sync</span>
               <span
                 className="font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                style={{ color: "#231F20" }}
                 title={status.last_success_at ?? undefined}
               >
                 {formatDateTime(status.last_success_at)}
@@ -858,7 +822,6 @@ function SyncSettingsTab({
                 backgroundColor: isDispatching || isRunning ? "#D3D3D3" : "#064E3B",
                 color: "#FFFFFF",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: isDispatching || isRunning ? "not-allowed" : "pointer",
               }}
             >
@@ -866,7 +829,7 @@ function SyncSettingsTab({
             </button>
             <span
               className="text-xs font-bold"
-              style={{ color: isRunning ? "#B4690E" : "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: isRunning ? "#B4690E" : "#6D6D6D" }}
             >
               status: {isRunning ? "running…" : "idle"}
             </span>
@@ -889,17 +852,13 @@ function SyncSettingsTab({
               className="font-bold text-sm"
               style={{
                 color: lastResult.status === "success" ? "#1CA069" : "#E44A4A",
-                fontFamily: "Nunito, sans-serif",
               }}
             >
               {lastResult.status === "success" ? "✅ Sync complete" : "❌ Sync failed"} —{" "}
               {formatDateTime(lastResult.finished_at)}
             </p>
           </div>
-          <div
-            className="px-4 py-3 space-y-1 text-sm"
-            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-          >
+          <div className="px-4 py-3 space-y-1 text-sm" style={{ color: "#231F20" }}>
             {lastResult.status === "success" ? (
               <>
                 <p>{lastResult.total_rows.toLocaleString()} rows processed</p>
@@ -925,7 +884,6 @@ function SyncSettingsTab({
                 background: "none",
                 border: "none",
                 color: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
                 padding: 0,
               }}
@@ -944,7 +902,7 @@ function SyncSettingsTab({
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            style={{ color: "#064E3B" }}
           >
             Connection Settings
           </p>
@@ -956,7 +914,6 @@ function SyncSettingsTab({
                 backgroundColor: "#064E3B",
                 color: "#FFFFFF",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
               }}
             >
@@ -968,45 +925,29 @@ function SyncSettingsTab({
         {!isEditingSettings ? (
           <div className="px-4 py-4 space-y-3 text-sm">
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                Endpoint URL
-              </span>
-              <span
-                className="font-bold text-right break-all"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
+              <span style={{ color: "#6D6D6D" }}>Endpoint URL</span>
+              <span className="font-bold text-right break-all" style={{ color: "#231F20" }}>
                 {config.endpoint_url || "Not configured"}
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Auth type</span>
-              <span
-                className="font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
+              <span style={{ color: "#6D6D6D" }}>Auth type</span>
+              <span className="font-bold" style={{ color: "#231F20" }}>
                 {AUTH_TYPE_OPTIONS.find((o) => o.value === config.auth_type)?.label ??
                   capitalize(config.auth_type)}
               </span>
             </div>
             {config.auth_type === "api_key" && (
               <div className="flex justify-between gap-3">
-                <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
-                  Header name
-                </span>
-                <span
-                  className="font-bold"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                >
+                <span style={{ color: "#6D6D6D" }}>Header name</span>
+                <span className="font-bold" style={{ color: "#231F20" }}>
                   {config.auth_header_name || "—"}
                 </span>
               </div>
             )}
             <div className="flex justify-between gap-3">
-              <span style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>Token</span>
-              <span
-                className="font-bold"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
+              <span style={{ color: "#6D6D6D" }}>Token</span>
+              <span className="font-bold" style={{ color: "#231F20" }}>
                 {config.auth_token_masked || "Not set"}
               </span>
             </div>
@@ -1016,7 +957,7 @@ function SyncSettingsTab({
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-wide mb-1"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                style={{ color: "#6D6D6D" }}
               >
                 Endpoint URL
               </p>
@@ -1033,7 +974,7 @@ function SyncSettingsTab({
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-wide mb-1"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                style={{ color: "#6D6D6D" }}
               >
                 Auth type
               </p>
@@ -1048,7 +989,7 @@ function SyncSettingsTab({
               <div>
                 <p
                   className="text-xs font-bold uppercase tracking-wide mb-1"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                  style={{ color: "#6D6D6D" }}
                 >
                   Header name
                 </p>
@@ -1066,7 +1007,7 @@ function SyncSettingsTab({
             <div>
               <p
                 className="text-xs font-bold uppercase tracking-wide mb-1"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                style={{ color: "#6D6D6D" }}
               >
                 Token
               </p>
@@ -1082,7 +1023,6 @@ function SyncSettingsTab({
                       backgroundColor: "transparent",
                       color: "#064E3B",
                       border: "1.5px solid #064E3B",
-                      fontFamily: "Nunito, sans-serif",
                       cursor: "pointer",
                     }}
                   >
@@ -1104,10 +1044,7 @@ function SyncSettingsTab({
             </div>
 
             {settingsError && (
-              <p
-                className="text-xs font-bold"
-                style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="text-xs font-bold" style={{ color: "#E44A4A" }}>
                 {settingsError}
               </p>
             )}
@@ -1121,7 +1058,6 @@ function SyncSettingsTab({
                   backgroundColor: "transparent",
                   color: "#064E3B",
                   border: "1.5px solid #064E3B",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -1135,7 +1071,6 @@ function SyncSettingsTab({
                   backgroundColor: isSavingSettings ? "#D3D3D3" : "#064E3B",
                   color: "#FFFFFF",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: isSavingSettings ? "not-allowed" : "pointer",
                 }}
               >
@@ -1260,13 +1195,10 @@ function RunHistoryTab({
           className="flex items-center justify-between px-4 py-3"
           style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
         >
-          <p
-            className="text-xs font-bold uppercase tracking-wide"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
             Run History
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <p className="text-xs" style={{ color: "#6D6D6D" }}>
             {totalCount} runs
           </p>
         </div>
@@ -1285,10 +1217,7 @@ function RunHistoryTab({
             ))}
           </div>
         ) : logs.length === 0 ? (
-          <p
-            className="text-sm text-center py-6"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-sm text-center py-6" style={{ color: "#6D6D6D" }}>
             No sync runs yet.
           </p>
         ) : (
@@ -1310,17 +1239,14 @@ function RunHistoryTab({
               <div className="flex items-center justify-between gap-2">
                 <p
                   className="font-bold text-sm"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+                  style={{ color: "#231F20" }}
                   title={log.started_at ?? undefined}
                 >
                   {formatDateTime(log.started_at)}
                 </p>
                 <StatusChip status={log.status} />
               </div>
-              <p
-                className="text-xs mt-1"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="text-xs mt-1" style={{ color: "#6D6D6D" }}>
                 {capitalize(log.trigger_type)}
                 {log.status !== "running" && (
                   <>
@@ -1348,13 +1274,12 @@ function RunHistoryTab({
                 backgroundColor: "transparent",
                 color: page <= 1 ? "#C2C2C2" : "#064E3B",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: page <= 1 ? "not-allowed" : "pointer",
               }}
             >
               ‹ Prev
             </button>
-            <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p className="text-xs" style={{ color: "#6D6D6D" }}>
               Page {page} of {totalPages}
             </p>
             <button
@@ -1365,7 +1290,6 @@ function RunHistoryTab({
                 backgroundColor: "transparent",
                 color: page >= totalPages ? "#C2C2C2" : "#064E3B",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: page >= totalPages ? "not-allowed" : "pointer",
               }}
             >
@@ -1405,17 +1329,14 @@ function RunHistoryTab({
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <p
                     className="font-bold"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                    style={{ color: "#231F20", fontSize: 16 }}
                     title={openLog.started_at ?? undefined}
                   >
                     Run {formatDateTime(openLog.started_at)}
                   </p>
                   <StatusChip status={openLog.status} />
                 </div>
-                <p
-                  className="text-xs mb-4"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs mb-4" style={{ color: "#6D6D6D" }}>
                   {capitalize(openLog.trigger_type)} · Duration{" "}
                   {formatDuration(openLog.started_at, openLog.finished_at)}
                   {openLog.http_status ? ` · HTTP ${openLog.http_status}` : ""}
@@ -1427,7 +1348,6 @@ function RunHistoryTab({
                     style={{
                       backgroundColor: "#FEC5BB",
                       color: "#E44A4A",
-                      fontFamily: "Nunito, sans-serif",
                     }}
                   >
                     {openLog.error_message}
@@ -1438,49 +1358,34 @@ function RunHistoryTab({
                   <div className="rounded-xl p-3" style={{ backgroundColor: "#F8FAF9" }}>
                     <p
                       className="text-xs font-bold uppercase tracking-wide mb-2"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                      style={{ color: "#064E3B" }}
                     >
                       Feeds
                     </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-sm" style={{ color: "#231F20" }}>
                       {openLog.inserted.toLocaleString()} added
                     </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-sm" style={{ color: "#231F20" }}>
                       {openLog.updated.toLocaleString()} updated
                     </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-sm" style={{ color: "#231F20" }}>
                       {openLog.skipped.toLocaleString()} rows skipped
                     </p>
                   </div>
                   <div className="rounded-xl p-3" style={{ backgroundColor: "#F8FAF9" }}>
                     <p
                       className="text-xs font-bold uppercase tracking-wide mb-2"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                      style={{ color: "#064E3B" }}
                     >
                       Local names
                     </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-sm" style={{ color: "#231F20" }}>
                       {(
                         openLog.translations_inserted + openLog.translations_updated
                       ).toLocaleString()}{" "}
                       saved
                     </p>
-                    <p
-                      className="text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-sm" style={{ color: "#231F20" }}>
                       {openLog.translations_skipped.toLocaleString()} skipped
                     </p>
                   </div>
@@ -1500,10 +1405,7 @@ function RunHistoryTab({
                           padding: 0,
                         }}
                       >
-                        <p
-                          className="font-bold text-sm"
-                          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                        >
+                        <p className="font-bold text-sm" style={{ color: "#064E3B" }}>
                           {rowsExpanded ? "▾" : "▸"} Skipped rows (
                           {openLog.failed_rows.length.toLocaleString()})
                         </p>
@@ -1521,7 +1423,6 @@ function RunHistoryTab({
                           backgroundColor: "#E4F7EF",
                           color: "#064E3B",
                           border: "none",
-                          fontFamily: "Nunito, sans-serif",
                           cursor: "pointer",
                         }}
                       >
@@ -1550,7 +1451,6 @@ function RunHistoryTab({
                               style={{
                                 borderBottom: "1px solid #F1F5F9",
                                 color: "#231F20",
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               <span className="font-bold">row {r.row ?? "—"}</span>
@@ -1558,10 +1458,7 @@ function RunHistoryTab({
                             </div>
                           ))}
                           {filteredFailedRows.length === 0 && (
-                            <p
-                              className="text-xs py-3 text-center"
-                              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                            >
+                            <p className="text-xs py-3 text-center" style={{ color: "#6D6D6D" }}>
                               No matching rows.
                             </p>
                           )}
@@ -1574,7 +1471,6 @@ function RunHistoryTab({
                               background: "none",
                               border: "none",
                               color: "#064E3B",
-                              fontFamily: "Nunito, sans-serif",
                               cursor: "pointer",
                               padding: 0,
                             }}
@@ -1602,10 +1498,7 @@ function RunHistoryTab({
                           padding: 0,
                         }}
                       >
-                        <p
-                          className="font-bold text-sm"
-                          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                        >
+                        <p className="font-bold text-sm" style={{ color: "#064E3B" }}>
                           {transExpanded ? "▾" : "▸"} Skipped local names (
                           {openLog.skipped_translations.length.toLocaleString()}) — grouped by
                           reason
@@ -1624,7 +1517,6 @@ function RunHistoryTab({
                           backgroundColor: "#E4F7EF",
                           color: "#064E3B",
                           border: "none",
-                          fontFamily: "Nunito, sans-serif",
                           cursor: "pointer",
                         }}
                       >
@@ -1641,17 +1533,14 @@ function RunHistoryTab({
                               className="flex items-center justify-between gap-2 rounded-xl px-3 py-2"
                               style={{ backgroundColor: "#F8FAF9" }}
                             >
-                              <p
-                                className="text-xs flex-1"
-                                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                              >
+                              <p className="text-xs flex-1" style={{ color: "#231F20" }}>
                                 {reason} <span className="font-bold">({items.length})</span>
                               </p>
                               {link && (
                                 <a
                                   href={link.href}
                                   className="text-xs font-bold flex-shrink-0"
-                                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                                  style={{ color: "#064E3B" }}
                                 >
                                   {link.label}
                                 </a>

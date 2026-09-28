@@ -111,10 +111,7 @@ function NutrientInput({
 }) {
   return (
     <div>
-      <p
-        className="text-xs font-bold uppercase mb-1"
-        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-      >
+      <p className="text-xs font-bold uppercase mb-1" style={{ color: "#6D6D6D" }}>
         {label}
         {required && " *"}
       </p>
@@ -126,7 +123,7 @@ function NutrientInput({
         onChange={(e) => onChange(e.target.value)}
         placeholder="0.00"
         className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-        style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+        style={{ backgroundColor: "#F1F5F9", color: "#231F20" }}
       />
     </div>
   );
@@ -520,13 +517,10 @@ export default function AdminFeedsPage() {
         <Toolbar type="back" title={t("Feed Management")} onBack={() => router.back()} />
 
         <div className="ml-3 mt-5">
-          <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-            {t("Administration")}
-          </p>
+          <p style={{ color: "#6D6D6D", fontSize: 14 }}>{t("Administration")}</p>
           <p
             style={{
               color: "#231F20",
-              fontFamily: "Nunito, sans-serif",
               fontSize: 20,
               fontWeight: 700,
             }}
@@ -571,7 +565,6 @@ export default function AdminFeedsPage() {
                 className="font-bold"
                 style={{
                   color: "#064E3B",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 16,
                   paddingLeft: 8,
                 }}
@@ -609,7 +602,7 @@ export default function AdminFeedsPage() {
       {/* MANAGEMENT subheader (matches Android list screens) */}
       <p
         className="font-bold uppercase tracking-wide mt-5 ml-3 mb-2"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+        style={{ color: "#064E3B", fontSize: 14 }}
       >
         {t("Management")}
       </p>
@@ -644,7 +637,7 @@ export default function AdminFeedsPage() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t("Search by feed name")}
                 className="flex-1 bg-transparent border-none focus:outline-none ml-2"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+                style={{ color: "#231F20", fontSize: 14 }}
               />
             </div>
           </div>
@@ -654,10 +647,7 @@ export default function AdminFeedsPage() {
               [0, 1, 2, 3].map((i) => <SkeletonCard key={i} />)
             ) : filteredFeeds.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p
-                  className="text-base"
-                  style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-base" style={{ color: "#999999" }}>
                   {searchQuery ? t("No feeds match your search") : t("No feeds found")}
                 </p>
               </div>
@@ -670,17 +660,13 @@ export default function AdminFeedsPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0" style={{ marginRight: 10 }}>
-                      <p
-                        className="font-bold truncate"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-                      >
+                      <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 20 }}>
                         {f.fd_name || t("N/A")}
                       </p>
                       <p
                         className="uppercase"
                         style={{
                           color: "#064E3B",
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 14,
                           marginTop: 10,
                         }}
@@ -690,7 +676,6 @@ export default function AdminFeedsPage() {
                       <p
                         style={{
                           color: "#6D6D6D",
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 14,
                           marginTop: 10,
                         }}
@@ -782,9 +767,7 @@ export default function AdminFeedsPage() {
               [0, 1, 2].map((i) => <SkeletonCard key={i} />)
             ) : feedTypes.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
-                  {t("No feed types found")}
-                </p>
+                <p style={{ color: "#999999" }}>{t("No feed types found")}</p>
               </div>
             ) : (
               feedTypes.map((ft) => {
@@ -803,7 +786,6 @@ export default function AdminFeedsPage() {
                           className="font-bold truncate"
                           style={{
                             color: "#231F20",
-                            fontFamily: "Nunito, sans-serif",
                             fontSize: 20,
                           }}
                         >
@@ -815,7 +797,6 @@ export default function AdminFeedsPage() {
                             backgroundColor: isActive ? "#F0FDF4" : "#FEC5BB",
                             color: isActive ? "#064E3B" : "#E44A4A",
                             border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
-                            fontFamily: "Nunito, sans-serif",
                             fontSize: 10,
                             padding: "2px 10px",
                             borderRadius: 10,
@@ -844,10 +825,7 @@ export default function AdminFeedsPage() {
                         </svg>
                       </button>
                     </div>
-                    <p
-                      className="mt-2"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                    >
+                    <p className="mt-2" style={{ color: "#6D6D6D", fontSize: 14 }}>
                       {ft.description || t("N/A")}
                     </p>
                   </div>
@@ -894,9 +872,7 @@ export default function AdminFeedsPage() {
               [0, 1, 2].map((i) => <SkeletonCard key={i} />)
             ) : feedCategories.length === 0 ? (
               <div className="flex items-center justify-center py-16">
-                <p style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
-                  {t("No categories found")}
-                </p>
+                <p style={{ color: "#999999" }}>{t("No categories found")}</p>
               </div>
             ) : (
               feedCategories.map((fc) => {
@@ -910,7 +886,7 @@ export default function AdminFeedsPage() {
                     <div className="flex items-start justify-between gap-3">
                       <p
                         className="font-bold flex-1 min-w-0"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+                        style={{ color: "#231F20", fontSize: 20 }}
                       >
                         {getCatName(fc) || t("N/A")}
                       </p>
@@ -920,7 +896,6 @@ export default function AdminFeedsPage() {
                           backgroundColor: isActive ? "#F0FDF4" : "#FEC5BB",
                           color: isActive ? "#064E3B" : "#E44A4A",
                           border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 10,
                           padding: "2px 10px",
                           borderRadius: 10,
@@ -930,17 +905,11 @@ export default function AdminFeedsPage() {
                         {isActive ? t("ACTIVE") : t("INACTIVE")}
                       </span>
                     </div>
-                    <p
-                      className="uppercase mt-2"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                    >
+                    <p className="uppercase mt-2" style={{ color: "#064E3B", fontSize: 14 }}>
                       {getFeedTypeName(fc) || t("N/A")}
                     </p>
                     <div className="flex items-end justify-between gap-3 mt-2">
-                      <p
-                        className="flex-1 min-w-0"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                      >
+                      <p className="flex-1 min-w-0" style={{ color: "#231F20", fontSize: 14 }}>
                         {fc.description || t("N/A")}
                       </p>
                       {/* Delete — Android ic_delete inside circular pill */}
@@ -1022,7 +991,6 @@ export default function AdminFeedsPage() {
                 <h3
                   style={{
                     color: "#231F20",
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 16,
                     fontWeight: 400,
                   }}
@@ -1045,10 +1013,7 @@ export default function AdminFeedsPage() {
               </div>
             ) : (
               <div className="relative mb-5">
-                <h3
-                  className="text-center font-bold"
-                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-                >
+                <h3 className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
                   {t("Add Feed")}
                 </h3>
                 <button
@@ -1084,7 +1049,6 @@ export default function AdminFeedsPage() {
                 ({
                   backgroundColor: disabled ? "#EBEAEA" : "#F1F5F9",
                   color: "#231F20",
-                  fontFamily: "Nunito, sans-serif",
                   borderRadius: 16,
                   padding: "12px 14px",
                   fontSize: 14,
@@ -1100,7 +1064,7 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+                      style={{ color: "#6D6D6D", fontSize: 12 }}
                     >
                       {t("Country")}
                       <span style={{ color: "#FC2E20" }}> *</span>
@@ -1154,7 +1118,7 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+                      style={{ color: "#6D6D6D", fontSize: 12 }}
                     >
                       {t("Feed Type")}
                       <span style={{ color: "#FC2E20" }}> *</span>
@@ -1209,7 +1173,7 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+                      style={{ color: "#6D6D6D", fontSize: 12 }}
                     >
                       {t("Feed Category")}
                       <span style={{ color: "#FC2E20" }}> *</span>
@@ -1261,7 +1225,7 @@ export default function AdminFeedsPage() {
                   <div>
                     <p
                       className="font-bold uppercase mb-1"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
+                      style={{ color: "#6D6D6D", fontSize: 12 }}
                     >
                       {t("Feed Name")}
                       <span style={{ color: "#FC2E20" }}> *</span>
@@ -1290,10 +1254,7 @@ export default function AdminFeedsPage() {
             })()}
 
             {/* Nutrient fields — 17 fields matching Android layout_nutrient_info.xml */}
-            <p
-              className="text-xs font-bold uppercase mb-3"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-xs font-bold uppercase mb-3" style={{ color: "#064E3B" }}>
               {t("Nutrient Composition (%)")}
             </p>
             <div className="grid grid-cols-2 gap-3">
@@ -1392,7 +1353,6 @@ export default function AdminFeedsPage() {
                 backgroundColor: isFeedFormValid && !isSavingFeed ? "#064E3B" : "#D3D3D3",
                 color: isFeedFormValid && !isSavingFeed ? "white" : "#999",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: isFeedFormValid && !isSavingFeed ? "pointer" : "not-allowed",
               }}
             >
@@ -1423,7 +1383,6 @@ export default function AdminFeedsPage() {
               className="text-center font-bold"
               style={{
                 color: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 20,
                 marginBottom: 20,
               }}
@@ -1432,10 +1391,7 @@ export default function AdminFeedsPage() {
             </h3>
 
             {/* FEED TYPE * label + input */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-            >
+            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
               {t("Feed Type")}
               <span style={{ color: "#FC2E20" }}> *</span>
             </p>
@@ -1449,7 +1405,6 @@ export default function AdminFeedsPage() {
               style={{
                 backgroundColor: "#F1F5F9",
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 borderRadius: 16,
                 padding: "12px 14px",
                 fontSize: 14,
@@ -1458,10 +1413,7 @@ export default function AdminFeedsPage() {
             />
 
             {/* DESCRIPTION label + multiline textarea (4:1 aspect, max 100 chars) */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-            >
+            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
               {t("Description")}
             </p>
             <textarea
@@ -1473,7 +1425,6 @@ export default function AdminFeedsPage() {
               style={{
                 backgroundColor: "#F1F5F9",
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 borderRadius: 16,
                 padding: "12px 14px",
                 fontSize: 14,
@@ -1494,7 +1445,6 @@ export default function AdminFeedsPage() {
                 backgroundColor: newTypeName.trim() && !isSavingType ? "#064E3B" : "#D3D3D3",
                 color: newTypeName.trim() && !isSavingType ? "white" : "#999",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: newTypeName.trim() && !isSavingType ? "pointer" : "not-allowed",
                 padding: "12px 0",
                 borderRadius: 12,
@@ -1516,7 +1466,6 @@ export default function AdminFeedsPage() {
                 background: "none",
                 border: "none",
                 color: "#6D6D6D",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 14,
                 cursor: "pointer",
               }}
@@ -1547,7 +1496,6 @@ export default function AdminFeedsPage() {
               className="text-center font-bold"
               style={{
                 color: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 20,
                 marginBottom: 20,
               }}
@@ -1556,10 +1504,7 @@ export default function AdminFeedsPage() {
             </h3>
 
             {/* FEED TYPE * dropdown (required) */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-            >
+            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
               {t("Feed Type")}
               <span style={{ color: "#FC2E20" }}> *</span>
             </p>
@@ -1575,7 +1520,6 @@ export default function AdminFeedsPage() {
                 style={{
                   backgroundColor: "#F1F5F9",
                   color: newCatTypeId ? "#231F20" : "#999",
-                  fontFamily: "Nunito, sans-serif",
                   borderRadius: 16,
                   padding: "12px 14px",
                   fontSize: 14,
@@ -1603,10 +1547,7 @@ export default function AdminFeedsPage() {
 
             {/* FEED CATEGORY * input — disabled until type selected
                 (bright_gray bg when disabled). */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-            >
+            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
               {t("Feed Category")}
               <span style={{ color: "#FC2E20" }}> *</span>
             </p>
@@ -1621,7 +1562,6 @@ export default function AdminFeedsPage() {
               style={{
                 backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 opacity: !newCatTypeId ? 0.6 : 1,
                 borderRadius: 16,
                 padding: "12px 14px",
@@ -1631,10 +1571,7 @@ export default function AdminFeedsPage() {
             />
 
             {/* DESCRIPTION multiline — disabled until type selected */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-            >
+            <p className="font-bold uppercase mb-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
               {t("Description")}
             </p>
             <textarea
@@ -1647,7 +1584,6 @@ export default function AdminFeedsPage() {
               style={{
                 backgroundColor: newCatTypeId ? "#F1F5F9" : "#EBEAEA",
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 opacity: !newCatTypeId ? 0.6 : 1,
                 borderRadius: 16,
                 padding: "12px 14px",
@@ -1668,7 +1604,6 @@ export default function AdminFeedsPage() {
                   newCatName.trim() && newCatTypeId && !isSavingCat ? "#064E3B" : "#D3D3D3",
                 color: newCatName.trim() && newCatTypeId && !isSavingCat ? "white" : "#999",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor:
                   newCatName.trim() && newCatTypeId && !isSavingCat ? "pointer" : "not-allowed",
                 padding: "12px 0",
@@ -1691,7 +1626,6 @@ export default function AdminFeedsPage() {
                 background: "none",
                 border: "none",
                 color: "#6D6D6D",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 14,
                 cursor: "pointer",
               }}
@@ -1736,14 +1670,11 @@ export default function AdminFeedsPage() {
             </div>
             <h3
               className="text-center font-bold mb-4 px-3"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+              style={{ color: "#064E3B", fontSize: 20 }}
             >
               {t("Are you sure you want to delete feed?")}
             </h3>
-            <p
-              className="text-center text-sm mb-5 px-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D" }}>
               {t('"${fd_name}" will be permanently deleted. This action cannot be undone.').replace(
                 "${fd_name}",
                 confirmDeleteFeed.fd_name ?? ""
@@ -1757,7 +1688,6 @@ export default function AdminFeedsPage() {
                   border: "2px solid #064E3B",
                   color: "#064E3B",
                   background: "white",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -1779,7 +1709,6 @@ export default function AdminFeedsPage() {
                   backgroundColor: "#E44A4A",
                   color: "white",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -1832,16 +1761,10 @@ export default function AdminFeedsPage() {
                 </svg>
               </div>
             </div>
-            <h3
-              className="text-center font-bold mb-4"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Are you sure you want to delete type?")}
             </h3>
-            <p
-              className="text-center text-sm mb-5 px-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D" }}>
               {t('"${name}" will be permanently deleted. This action cannot be undone.').replace(
                 "${name}",
                 getName(confirmDeleteType)
@@ -1855,7 +1778,6 @@ export default function AdminFeedsPage() {
                   border: "2px solid #064E3B",
                   color: "#064E3B",
                   background: "white",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -1877,7 +1799,6 @@ export default function AdminFeedsPage() {
                   backgroundColor: "#E44A4A",
                   color: "white",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -1930,16 +1851,10 @@ export default function AdminFeedsPage() {
                 </svg>
               </div>
             </div>
-            <h3
-              className="text-center font-bold mb-4"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Are you sure you want to delete category?")}
             </h3>
-            <p
-              className="text-center text-sm mb-5 px-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-center text-sm mb-5 px-3" style={{ color: "#6D6D6D" }}>
               {t('"${name}" will be permanently deleted. This action cannot be undone.').replace(
                 "${name}",
                 getCatName(confirmDeleteCat)
@@ -1953,7 +1868,6 @@ export default function AdminFeedsPage() {
                   border: "2px solid #064E3B",
                   color: "#064E3B",
                   background: "white",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -1975,7 +1889,6 @@ export default function AdminFeedsPage() {
                   backgroundColor: "#E44A4A",
                   color: "white",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                   borderRadius: 16,
                 }}

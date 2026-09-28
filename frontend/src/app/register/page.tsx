@@ -137,12 +137,10 @@ export default function RegisterPage() {
   const inputStyle = {
     backgroundColor: "#F1F5F9",
     color: "#231F20",
-    fontFamily: "Nunito, sans-serif",
   };
 
   const labelStyle = {
     color: "#6D6D6D",
-    fontFamily: "Nunito, sans-serif",
   };
 
   return (
@@ -175,7 +173,6 @@ export default function RegisterPage() {
           className="flex-1 text-center"
           style={{
             color: "#042F23",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -368,10 +365,7 @@ export default function RegisterPage() {
         </div>
 
         {confirmPin.length === PIN_LENGTH && pin !== confirmPin && (
-          <p
-            className="text-xs font-bold text-center mt-2"
-            style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold text-center mt-2" style={{ color: "#E44A4A" }}>
             {t("PINs do not match")}
           </p>
         )}
@@ -386,7 +380,6 @@ export default function RegisterPage() {
           style={{
             backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
             color: isReady && !isLoading ? "#FFFFFF" : "#999999",
-            fontFamily: "Nunito, sans-serif",
             border: "none",
             cursor: isReady && !isLoading ? "pointer" : "not-allowed",
             transition: "background-color 0.2s, color 0.2s",

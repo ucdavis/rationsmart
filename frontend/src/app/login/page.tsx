@@ -194,7 +194,7 @@ export default function LoginPage() {
         {/* Email label + input */}
         <p
           className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          style={{ color: "#6D6D6D" }}
         >
           {t("Email Address")}
           <RequiredAsterisk />
@@ -212,17 +212,13 @@ export default function LoginPage() {
             style={{
               backgroundColor: "#F1F5F9",
               color: "#231F20",
-              fontFamily: "Nunito, sans-serif",
             }}
           />
         </div>
 
         {/* PIN label + reveal toggle */}
         <div className="flex items-center justify-between mt-3 ml-3 mr-3 mb-3">
-          <p
-            className="text-xs font-bold uppercase tracking-wide"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#6D6D6D" }}>
             {t("Enter PIN")}
           </p>
           <button
@@ -247,7 +243,6 @@ export default function LoginPage() {
             style={{
               backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
               color: isReady && !isLoading ? "#FFFFFF" : "#999999",
-              fontFamily: "Nunito, sans-serif",
               border: "none",
               cursor: isReady && !isLoading ? "pointer" : "not-allowed",
               transition: "background-color 0.2s, color 0.2s",
@@ -260,10 +255,7 @@ export default function LoginPage() {
         {/* OR divider */}
         <div className="flex items-center mt-5 px-3 gap-3">
           <div style={{ flex: 1, height: 2, backgroundColor: "#E2E8F0" }} />
-          <span
-            className="font-bold"
-            style={{ fontSize: 20, color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-          >
+          <span className="font-bold" style={{ fontSize: 20, color: "#231F20" }}>
             {t("OR")}
           </span>
           <div style={{ flex: 1, height: 2, backgroundColor: "#E2E8F0" }} />
@@ -282,12 +274,8 @@ export default function LoginPage() {
               lineHeight: 1,
             }}
           >
-            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-              {t("New User? ")}
-            </span>
-            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-              {t("Register here")}
-            </span>
+            <span style={{ color: "#231F20" }}>{t("New User? ")}</span>
+            <span style={{ color: "#064E3B", fontWeight: 700 }}>{t("Register here")}</span>
           </button>
         </div>
 
@@ -304,12 +292,8 @@ export default function LoginPage() {
               lineHeight: 1,
             }}
           >
-            <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}>
-              {t("Forgot PIN? ")}
-            </span>
-            <span style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontWeight: 700 }}>
-              {t("Tap here")}
-            </span>
+            <span style={{ color: "#231F20" }}>{t("Forgot PIN? ")}</span>
+            <span style={{ color: "#064E3B", fontWeight: 700 }}>{t("Tap here")}</span>
           </button>
         </div>
       </div>
@@ -350,24 +334,18 @@ export default function LoginPage() {
             </div>
 
             {/* Title */}
-            <p
-              className="text-center font-bold"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Reset Your PIN")}
             </p>
             {/* Subtitle */}
-            <p
-              className="text-center mt-1 px-3"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-            >
+            <p className="text-center mt-1 px-3" style={{ color: "#6D6D6D", fontSize: 14 }}>
               {t("Enter your registered email to receive a reset link")}
             </p>
 
             {/* Email label */}
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
@@ -385,7 +363,6 @@ export default function LoginPage() {
                 style={{
                   backgroundColor: "#F1F5F9",
                   color: "#231F20",
-                  fontFamily: "Nunito, sans-serif",
                 }}
                 aria-label={t("Email Address")}
               />
@@ -400,7 +377,6 @@ export default function LoginPage() {
                 style={{
                   backgroundColor: isResetReady && !isSendingReset ? "#064E3B" : "#D3D3D3",
                   color: isResetReady && !isSendingReset ? "#FFFFFF" : "#999999",
-                  fontFamily: "Nunito, sans-serif",
                   border: "none",
                   cursor: isResetReady && !isSendingReset ? "pointer" : "not-allowed",
                   transition: "background-color 0.2s, color 0.2s",

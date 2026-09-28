@@ -207,7 +207,6 @@ function FieldBox({
             backgroundColor: "#FFFFFF",
             padding: "0 6px",
             color: invalid ? "#E44A4A" : hasValue ? "#064E3B" : "#6D6D6D",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 12,
           }}
         >
@@ -223,7 +222,6 @@ function FieldBox({
 const innerInputStyle = {
   backgroundColor: "transparent",
   color: "#231F20",
-  fontFamily: "Nunito, sans-serif",
   border: "none",
   width: "100%",
   fontSize: 14,
@@ -1141,7 +1139,6 @@ export default function FeedRow({
           <span
             style={{
               color: "#064E3B",
-              fontFamily: "Nunito, sans-serif",
               fontWeight: 700,
               fontSize: 16,
             }}
@@ -1153,7 +1150,6 @@ export default function FeedRow({
               style={{
                 backgroundColor: "#E4F7EF",
                 color: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 11,
                 fontWeight: 700,
                 padding: "3px 8px",
@@ -1243,10 +1239,7 @@ export default function FeedRow({
           plain circle + label, no surrounding box. Two-column grid so
           Forage and Concentrate line up vertically across cards. */}
       <div style={{ padding: "0 10px 24px" }}>
-        <p
-          className="text-xs font-bold uppercase mb-2 ml-1"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-        >
+        <p className="text-xs font-bold uppercase mb-2 ml-1" style={{ color: "#6D6D6D" }}>
           {t("Feed Type")}
           <span style={{ color: "#FC2E20" }}>{" *"}</span>
         </p>
@@ -1313,7 +1306,6 @@ export default function FeedRow({
                     cursor: feedTypeLocked ? "not-allowed" : "pointer",
                     justifyContent: "flex-start",
                     opacity: feedTypeLocked && !selected ? 0.55 : 1,
-                    fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   <span
@@ -1453,10 +1445,7 @@ export default function FeedRow({
           className="w-full flex items-center justify-between"
           style={{ padding: "8px 4px", opacity: item.feed_uuid && !rowLoading ? 1 : 0.55 }}
         >
-          <span
-            className="font-bold"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 13 }}
-          >
+          <span className="font-bold" style={{ color: "#064E3B", fontSize: 13 }}>
             {t("Set inclusion limits")}
           </span>
           <label
@@ -1538,7 +1527,6 @@ export default function FeedRow({
               <p
                 style={{
                   color: "#E44A4A",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 11,
                   margin: "6px 2px 0",
                 }}
@@ -1552,7 +1540,6 @@ export default function FeedRow({
               <p
                 style={{
                   color: "#E44A4A",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 11,
                   margin: "6px 2px 0",
                 }}
@@ -1663,7 +1650,6 @@ export default function FeedRow({
               color: "#064E3B",
               border: "1.5px solid rgba(5,188,109,0.30)",
               cursor: "pointer",
-              fontFamily: "Nunito, sans-serif",
               fontSize: 12,
               fontWeight: 700,
             }}
@@ -1726,10 +1712,7 @@ export default function FeedRow({
 
                 {/* Title with close button */}
                 <div className="relative mb-4">
-                  <h3
-                    className="text-center font-bold"
-                    style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-                  >
+                  <h3 className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
                     {title}
                   </h3>
                   <button
@@ -1792,10 +1775,7 @@ export default function FeedRow({
                         padding: "4px 0",
                       }}
                     >
-                      <span
-                        className="font-bold"
-                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
+                      <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
                         {t("Feed Details")}
                       </span>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1819,7 +1799,7 @@ export default function FeedRow({
                     system — left untouched here per that system's ownership. */}
                         <p
                           className="text-xs font-bold uppercase mb-1"
-                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                          style={{ color: "#6D6D6D" }}
                         >
                           {t("Feed Type")}
                         </p>
@@ -1828,7 +1808,6 @@ export default function FeedRow({
                           style={{
                             backgroundColor: "#EBEAEA",
                             color: "#231F20",
-                            fontFamily: "Nunito, sans-serif",
                           }}
                         >
                           {item.feed_type_name || "—"}
@@ -1837,7 +1816,7 @@ export default function FeedRow({
                         {/* Feed Category — read-only (see note above) */}
                         <p
                           className="text-xs font-bold uppercase mb-1"
-                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                          style={{ color: "#6D6D6D" }}
                         >
                           {t("Feed Category")}
                         </p>
@@ -1846,7 +1825,6 @@ export default function FeedRow({
                           style={{
                             backgroundColor: "#EBEAEA",
                             color: "#231F20",
-                            fontFamily: "Nunito, sans-serif",
                           }}
                         >
                           {item.category_name || "—"}
@@ -1856,7 +1834,7 @@ export default function FeedRow({
                     isInsert=false and the original name already contains "-"). */}
                         <p
                           className="text-xs font-bold uppercase mb-1"
-                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                          style={{ color: "#6D6D6D" }}
                         >
                           {t("Feed Name")}
                           <span style={{ color: "#FC2E20" }}> *</span>
@@ -1868,10 +1846,7 @@ export default function FeedRow({
                           }}
                         >
                           {editNamePrefix && (
-                            <span
-                              className="pl-4 pr-1 text-sm"
-                              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                            >
+                            <span className="pl-4 pr-1 text-sm" style={{ color: "#6D6D6D" }}>
                               {editNamePrefix}
                             </span>
                           )}
@@ -1886,7 +1861,6 @@ export default function FeedRow({
                             className="flex-1 bg-transparent px-3 py-3 text-sm border-none focus:outline-none"
                             style={{
                               color: "#231F20",
-                              fontFamily: "Nunito, sans-serif",
                               cursor: !editIsInsert ? "not-allowed" : "text",
                             }}
                           />
@@ -1905,10 +1879,7 @@ export default function FeedRow({
                         padding: "4px 0",
                       }}
                     >
-                      <span
-                        className="font-bold"
-                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
+                      <span className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
                         {t("Nutritional Information")}
                       </span>
                       <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -1926,10 +1897,7 @@ export default function FeedRow({
 
                     {editNutritionalInfoExpanded && (
                       <>
-                        <p
-                          className="text-xs mb-3"
-                          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                        >
+                        <p className="text-xs mb-3" style={{ color: "#6D6D6D" }}>
                           {t("Nutrient Composition (%)")}
                         </p>
                         <div className="grid grid-cols-2 gap-3 mb-5">
@@ -1937,7 +1905,7 @@ export default function FeedRow({
                             <div key={f.key}>
                               <p
                                 className="text-xs font-bold uppercase mb-1"
-                                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                                style={{ color: "#6D6D6D" }}
                               >
                                 {t(f.label)}
                               </p>
@@ -1954,7 +1922,6 @@ export default function FeedRow({
                                 style={{
                                   backgroundColor: "#F1F5F9",
                                   color: "#231F20",
-                                  fontFamily: "Nunito, sans-serif",
                                 }}
                               />
                             </div>
@@ -1971,7 +1938,6 @@ export default function FeedRow({
                         backgroundColor: submitReady ? "#064E3B" : "#D3D3D3",
                         color: submitReady ? "white" : "#999",
                         border: "none",
-                        fontFamily: "Nunito, sans-serif",
                         cursor: submitReady ? "pointer" : "not-allowed",
                       }}
                     >

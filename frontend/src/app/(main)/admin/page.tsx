@@ -145,13 +145,10 @@ export default function AdminPage() {
             <path d="M18 12v8M18 23v1" stroke="#E44A4A" strokeWidth="2.2" strokeLinecap="round" />
           </svg>
         </div>
-        <p
-          className="text-xl font-bold mb-2"
-          style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-        >
+        <p className="text-xl font-bold mb-2" style={{ color: "#E44A4A" }}>
           {t("Access Denied")}
         </p>
-        <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+        <p className="text-sm" style={{ color: "#6D6D6D" }}>
           {t("You do not have admin permissions to view this page.")}
         </p>
       </div>
@@ -167,16 +164,10 @@ export default function AdminPage() {
 
       {/* WELCOME / name greeting */}
       <div className="px-3 mt-5">
-        <p
-          className="text-xs"
-          style={{ color: "#1B5E20", fontFamily: "Nunito, sans-serif", letterSpacing: "0.05em" }}
-        >
+        <p className="text-xs" style={{ color: "#1B5E20", letterSpacing: "0.05em" }}>
           {t("WELCOME")}
         </p>
-        <p
-          className="font-bold"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20, marginTop: 2 }}
-        >
+        <p className="font-bold" style={{ color: "#064E3B", fontSize: 20, marginTop: 2 }}>
           {user.name}
         </p>
       </div>
@@ -210,7 +201,6 @@ export default function AdminPage() {
                 className="text-base font-bold text-left"
                 style={{
                   color: "#064E3B",
-                  fontFamily: "Nunito, sans-serif",
                   whiteSpace: "pre-line",
                   lineHeight: 1.25,
                 }}

@@ -6,10 +6,10 @@ export default function PoweredBy() {
   const t = useT();
   return (
     <div className="flex flex-col items-center py-3">
-      <span className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+      <span className="text-sm" style={{ color: "#6D6D6D" }}>
         {t("POWERED BY")}
       </span>
-      <span className="text-sm" style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}>
+      <span className="text-sm" style={{ color: "#064E3B" }}>
         {t("DigitalGreen")}
       </span>
     </div>

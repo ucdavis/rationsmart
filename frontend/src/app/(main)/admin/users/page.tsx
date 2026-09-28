@@ -205,16 +205,12 @@ export default function AdminUsersPage() {
         style={{ borderRadius: 20, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
       >
         <div>
-          <p
-            className="uppercase tracking-wide"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-          >
+          <p className="uppercase tracking-wide" style={{ color: "#064E3B", fontSize: 12 }}>
             {t("Total Users")}
           </p>
           <p
             style={{
               color: "#064E3B",
-              fontFamily: "Nunito, sans-serif",
               fontSize: 28,
               fontWeight: 700,
               lineHeight: 1.2,
@@ -236,10 +232,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* "Users" section heading (matches Android tv_title_users) */}
-      <p
-        className="font-bold ml-3 mt-4"
-        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-      >
+      <p className="font-bold ml-3 mt-4" style={{ color: "#231F20", fontSize: 16 }}>
         {t("Users")}
       </p>
 
@@ -287,7 +280,6 @@ export default function AdminUsersPage() {
               outline: "none",
               background: "transparent",
               padding: "11px 8px",
-              fontFamily: "Nunito, sans-serif",
               fontSize: 14,
               color: "#231F20",
             }}
@@ -333,7 +325,6 @@ export default function AdminUsersPage() {
                   border: `1px solid ${active ? "#064E3B" : "rgba(5,188,109,0.20)"}`,
                   backgroundColor: active ? "#064E3B" : "#FFFFFF",
                   color: active ? "#FFFFFF" : "#064E3B",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 13,
                   cursor: "pointer",
                   transition: "background-color 0.15s",
@@ -355,10 +346,7 @@ export default function AdminUsersPage() {
           </>
         ) : users.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center px-6">
-            <p
-              className="text-base font-bold mb-2"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-base font-bold mb-2" style={{ color: "#064E3B" }}>
               {t("No users found")}
             </p>
           </div>
@@ -401,10 +389,7 @@ export default function AdminUsersPage() {
                       </svg>
                     )}
                   </div>
-                  <span
-                    className="font-bold uppercase"
-                    style={{ color: "#064E3B", fontSize: 12, fontFamily: "Nunito, sans-serif" }}
-                  >
+                  <span className="font-bold uppercase" style={{ color: "#064E3B", fontSize: 12 }}>
                     {u.is_admin ? t("ADMIN") : t("USER")}
                   </span>
                 </div>
@@ -427,7 +412,6 @@ export default function AdminUsersPage() {
                     fontSize: 10,
                     cursor: togglingId === u.id ? "not-allowed" : "pointer",
                     opacity: togglingId === u.id ? 0.7 : 1,
-                    fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   {togglingId === u.id ? "..." : u.is_active ? t("ACTIVE") : t("INACTIVE")}
@@ -439,7 +423,6 @@ export default function AdminUsersPage() {
                 style={{
                   color: "#231F20",
                   fontSize: 18,
-                  fontFamily: "Nunito, sans-serif",
                   margin: "4px 12px 0 68px",
                 }}
               >
@@ -457,10 +440,7 @@ export default function AdminUsersPage() {
                 >
                   <path d="M20,4L4,4c-1.1,0 -2,0.9 -2,2v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2L22,6c0,-1.1 -0.9,-2 -2,-2zM19.6,8.25l-6.54,4.09c-0.65,0.41 -1.47,0.41 -2.12,0L4.4,8.25c-0.25,-0.16 -0.4,-0.43 -0.4,-0.72 0,-0.67 0.73,-1.07 1.3,-0.72L12,11l6.7,-4.19c0.57,-0.35 1.3,0.05 1.3,0.72 0,0.29 -0.15,0.56 -0.4,0.72z" />
                 </svg>
-                <span
-                  className="truncate"
-                  style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}
-                >
+                <span className="truncate" style={{ color: "#6D6D6D", fontSize: 14 }}>
                   {u.email_id}
                 </span>
               </div>
@@ -477,9 +457,7 @@ export default function AdminUsersPage() {
                   >
                     <path d="M480,769q119,-107 179.5,-197T720,411q0,-105 -68.5,-174T480,168q-103,0 -171.5,69T240,411q0,71 60.5,161T480,769ZM480,841q-13,0 -24.5,-4.5T433,823q-40,-35 -86.5,-82T260,640q-40,-54 -66,-112.5T168,411q0,-134 89,-224.5T480,96q133,0 222.5,90.5T792,411q0,58 -26.5,117t-66,113q-39.5,54 -86,100.5T527,823q-11,9 -22.5,13.5T480,841ZM480,480q30,0 51,-21t21,-51q0,-30 -21,-51t-51,-21q-30,0 -51,21t-21,51q0,30 21,51t51,21Z" />
                   </svg>
-                  <span
-                    style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}
-                  >
+                  <span style={{ color: "#6D6D6D", fontSize: 14 }}>
                     {getCountryName(u.country)}
                   </span>
                 </div>
@@ -550,7 +528,6 @@ export default function AdminUsersPage() {
               className="text-center font-bold"
               style={{
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 20,
                 marginInline: 12,
               }}
@@ -572,7 +549,6 @@ export default function AdminUsersPage() {
                   borderRadius: 10,
                   padding: "2px 10px",
                   fontSize: 12,
-                  fontFamily: "Nunito, sans-serif",
                 }}
               >
                 {selectedUser.is_active ? t("ACTIVE ACCOUNT") : t("INACTIVE ACCOUNT")}
@@ -603,13 +579,8 @@ export default function AdminUsersPage() {
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                    {t("Email Address")}
-                  </p>
-                  <p
-                    className="font-bold truncate"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                  >
+                  <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Email Address")}</p>
+                  <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 16 }}>
                     {selectedUser.email_id}
                   </p>
                 </div>
@@ -631,13 +602,8 @@ export default function AdminUsersPage() {
                   </svg>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}>
-                    {t("Country")}
-                  </p>
-                  <p
-                    className="font-bold"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                  >
+                  <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Country")}</p>
+                  <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
                     {getCountryName(selectedUser.country) || "—"}
                   </p>
                 </div>
@@ -657,16 +623,12 @@ export default function AdminUsersPage() {
               }}
             >
               <div className="min-w-0 flex-1">
-                <p
-                  className="font-bold"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                >
+                <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
                   {t("Account Activation")}
                 </p>
                 <p
                   style={{
                     color: "#231F20",
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 14,
                     marginTop: 2,
                   }}
@@ -729,16 +691,12 @@ export default function AdminUsersPage() {
                 }}
               >
                 <div className="min-w-0 flex-1">
-                  <p
-                    className="font-bold"
-                    style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                  >
+                  <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
                     {t("Administrator Access")}
                   </p>
                   <p
                     style={{
                       color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 14,
                       marginTop: 2,
                     }}
@@ -810,7 +768,6 @@ export default function AdminUsersPage() {
                 borderRadius: 12,
                 cursor: togglingId === selectedUser.id ? "not-allowed" : "pointer",
                 opacity: togglingId === selectedUser.id ? 0.7 : 1,
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 16,
               }}
             >
@@ -829,7 +786,6 @@ export default function AdminUsersPage() {
                 border: "2px solid #064E3B",
                 borderRadius: 12,
                 cursor: "pointer",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 16,
               }}
             >
@@ -858,16 +814,12 @@ export default function AdminUsersPage() {
             style={{ padding: 20 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p
-              className="font-bold"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-            >
+            <p className="font-bold" style={{ color: "#231F20", fontSize: 18 }}>
               {t("Deactivate this user?")}
             </p>
             <p
               style={{
                 color: "#6D6D6D",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 14,
                 marginTop: 8,
                 lineHeight: 1.4,
@@ -890,7 +842,6 @@ export default function AdminUsersPage() {
                   backgroundColor: "white",
                   color: "#064E3B",
                   cursor: "pointer",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 15,
                 }}
               >
@@ -911,7 +862,6 @@ export default function AdminUsersPage() {
                   backgroundColor: "#E44A4A",
                   color: "white",
                   cursor: "pointer",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 15,
                 }}
               >
@@ -943,16 +893,12 @@ export default function AdminUsersPage() {
             style={{ padding: 20 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <p
-              className="font-bold"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-            >
+            <p className="font-bold" style={{ color: "#231F20", fontSize: 18 }}>
               {confirmAdmin.is_admin ? t("Revoke admin access?") : t("Make this user an admin?")}
             </p>
             <p
               style={{
                 color: "#6D6D6D",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 14,
                 marginTop: 8,
                 lineHeight: 1.4,
@@ -979,7 +925,6 @@ export default function AdminUsersPage() {
                   backgroundColor: "white",
                   color: "#064E3B",
                   cursor: "pointer",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 15,
                 }}
               >
@@ -1000,7 +945,6 @@ export default function AdminUsersPage() {
                   backgroundColor: confirmAdmin.is_admin ? "#E44A4A" : "#064E3B",
                   color: "white",
                   cursor: "pointer",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 15,
                 }}
               >

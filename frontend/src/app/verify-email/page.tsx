@@ -81,7 +81,6 @@ function VerifyEmailInner() {
           className="flex-1 text-center"
           style={{
             color: "#042F23",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -114,16 +113,10 @@ function VerifyEmailInner() {
           </div>
         </div>
 
-        <h2
-          className="text-center font-bold mt-5"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 22 }}
-        >
+        <h2 className="text-center font-bold mt-5" style={{ color: "#064E3B", fontSize: 22 }}>
           {t("Check Your Email")}
         </h2>
-        <p
-          className="text-center text-sm mt-2 px-4"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
-        >
+        <p className="text-center text-sm mt-2 px-4" style={{ color: "#6D6D6D", lineHeight: 1.6 }}>
           {t(
             "We've sent a verification link to your email address. Tap the link to activate your\n          account, then sign in."
           )}
@@ -132,7 +125,7 @@ function VerifyEmailInner() {
         {/* Email field — pre-filled, editable so user can correct typos */}
         <p
           className="text-xs font-bold uppercase tracking-wide mt-6 mb-1.5 ml-1"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+          style={{ color: "#6D6D6D" }}
         >
           {t("Email Address")}
           <RequiredAsterisk />
@@ -145,7 +138,7 @@ function VerifyEmailInner() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-          style={{ backgroundColor: "#F1F5F9", color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+          style={{ backgroundColor: "#F1F5F9", color: "#231F20" }}
         />
 
         {/* Resend button */}
@@ -157,7 +150,6 @@ function VerifyEmailInner() {
             backgroundColor: "transparent",
             color: isResendReady && !isResending ? "#064E3B" : "#999999",
             border: `2px solid ${isResendReady && !isResending ? "#064E3B" : "#D3D3D3"}`,
-            fontFamily: "Nunito, sans-serif",
             cursor: isResendReady && !isResending ? "pointer" : "not-allowed",
           }}
         >
@@ -178,7 +170,6 @@ function VerifyEmailInner() {
           style={{
             backgroundColor: "#064E3B",
             border: "none",
-            fontFamily: "Nunito, sans-serif",
             cursor: "pointer",
           }}
         >

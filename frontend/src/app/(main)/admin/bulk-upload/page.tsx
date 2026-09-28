@@ -44,10 +44,7 @@ function SectionHeader({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-center gap-2.5 mt-5 ml-3">
       <span style={{ width: 6, height: 30, borderRadius: 3, backgroundColor: "#064E3B" }} />
-      <p
-        className="font-bold"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-      >
+      <p className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
         {children}
       </p>
     </div>
@@ -419,13 +416,8 @@ export default function BulkUploadPage() {
 
       {/* Page header — matches Android tv_title_data_sync / tv_title_feed_export_upload */}
       <div className="ml-3 mt-5">
-        <p style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-          {t("Data Sync")}
-        </p>
-        <p
-          className="font-bold"
-          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-        >
+        <p style={{ color: "#6D6D6D", fontSize: 14 }}>{t("Data Sync")}</p>
+        <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
           {t("Feed Export & Upload")}
         </p>
       </div>
@@ -466,17 +458,13 @@ export default function BulkUploadPage() {
               </svg>
             </span>
             {/* "UPLOAD FEEDS" (ultramarine, bold, font_16) */}
-            <p
-              className="font-bold mt-4"
-              style={{ color: "#1E40AF", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-            >
+            <p className="font-bold mt-4" style={{ color: "#1E40AF", fontSize: 16 }}>
               {t("UPLOAD FEEDS")}
             </p>
             {/* "Tap to browse CSV or Excel" (mirror_blue, regular, font_12) */}
             <p
               style={{
                 color: "#2563EB",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 12,
                 marginTop: 10,
               }}
@@ -516,10 +504,7 @@ export default function BulkUploadPage() {
                   <path d="M14,2H6C4.9,2 4,2.9 4,4v16c0,1.1 0.9,2 2,2h12c1.1,0 2,-0.9 2,-2V8L14,2zM6,20V4h7v5h5v11H6z" />
                 </svg>
               </div>
-              <p
-                className="flex-1 min-w-0 truncate"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-              >
+              <p className="flex-1 min-w-0 truncate" style={{ color: "#064E3B", fontSize: 12 }}>
                 {selectedFile.name}
               </p>
               {/* Cancel (X) */}
@@ -622,7 +607,6 @@ export default function BulkUploadPage() {
                     className="font-bold"
                     style={{
                       color: uploadBanner.titleColor,
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 14,
                     }}
                   >
@@ -631,7 +615,6 @@ export default function BulkUploadPage() {
                   <p
                     style={{
                       color: uploadBanner.msgColor,
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 13,
                       marginTop: 2,
                     }}
@@ -644,10 +627,7 @@ export default function BulkUploadPage() {
           )}
 
           {/* Helper text — Android "Only files stored on your device are supported." */}
-          <p
-            className="mt-5 text-center italic"
-            style={{ color: "#999999", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-          >
+          <p className="mt-5 text-center italic" style={{ color: "#999999", fontSize: 12 }}>
             {t("* Only files stored on your device are supported.")}
           </p>
         </div>
@@ -686,16 +666,10 @@ export default function BulkUploadPage() {
                   <path d="M480,840q-151,0 -255.5,-46.5T120,680v-400q0,-66 105.5,-113T480,120q149,0 254.5,47T840,280v400q0,67 -104.5,113.5T480,840ZM480,361q89,0 179,-25.5T760,281q-11,-29 -100.5,-55T480,200q-91,0 -178.5,25.5T200,281q14,30 101.5,55T480,361ZM480,560q42,0 81,-4t74.5,-11.5q35.5,-7.5 67,-18.5t57.5,-25v-120q-26,14 -57.5,25t-67,18.5Q600,432 561,436t-81,4q-42,0 -82,-4t-75.5,-11.5Q287,417 256,406t-56,-25v120q25,14 56,25t66.5,18.5Q358,552 398,556t82,4ZM480,760q46,0 93.5,-7t87.5,-18.5q40,-11.5 67,-26t32,-29.5v-98q-26,14 -57.5,25t-67,18.5Q600,632 561,636t-81,4q-42,0 -82,-4t-75.5,-11.5Q287,617 256,606t-56,-25v99q5,15 31.5,29t66.5,25.5q40,11.5 88,18.5t94,7Z" />
                 </svg>
               </span>
-              <p
-                className="font-bold mt-4"
-                style={{ color: "#069460", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-              >
+              <p className="font-bold mt-4" style={{ color: "#069460", fontSize: 12 }}>
                 {t("STANDARD")}
               </p>
-              <p
-                className="font-bold"
-                style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-              >
+              <p className="font-bold" style={{ color: "#064E3B", fontSize: 16 }}>
                 {t("Feeds")}
               </p>
             </button>
@@ -728,16 +702,10 @@ export default function BulkUploadPage() {
                   <path d="M240,920q-50,0 -85,-35t-35,-85q0,-50 35,-85t85,-35q14,0 26,3t23,8l57,-71q-28,-31 -39,-70t-5,-78l-81,-27q-17,25 -43,40t-58,15q-50,0 -85,-35T0,380q0,-50 35,-85t85,-35q50,0 85,35t35,85v8l81,28q20,-36 53.5,-61t75.5,-32v-87q-39,-11 -64.5,-42.5T360,120q0,-50 35,-85t85,-35q50,0 85,35t35,85q0,42 -26,73.5T510,236v87q42,7 75.5,32t53.5,61l81,-28v-8q0,-50 35,-85t85,-35q50,0 85,35t35,85q0,50 -35,85t-85,35q-32,0 -58.5,-15T739,445l-81,27q6,39 -5,77.5T614,620l57,70q11,-5 23,-7.5t26,-2.5q50,0 85,35t35,85q0,50 -35,85t-85,35q-50,0 -85,-35t-35,-85q0,-20 6.5,-38.5T624,728l-57,-71q-41,23 -87.5,23T392,657l-56,71q11,15 17.5,33.5T360,800q0,50 -35,85t-85,35ZM120,420q17,0 28.5,-11.5T160,380q0,-17 -11.5,-28.5T120,340q-17,0 -28.5,11.5T80,380q0,17 11.5,28.5T120,420ZM240,840q17,0 28.5,-11.5T280,800q0,-17 -11.5,-28.5T240,760q-17,0 -28.5,11.5T200,800q0,17 11.5,28.5T240,840ZM480,160q17,0 28.5,-11.5T520,120q0,-17 -11.5,-28.5T480,80q-17,0 -28.5,11.5T440,120q0,17 11.5,28.5T480,160ZM480,600q42,0 71,-29t29,-71q0,-42 -29,-71t-71,-29q-42,0 -71,29t-29,71q0,42 29,71t71,29ZM720,840q17,0 28.5,-11.5T760,800q0,-17 -11.5,-28.5T720,760q-17,0 -28.5,11.5T680,800q0,17 11.5,28.5T720,840ZM840,420q17,0 28.5,-11.5T880,380q0,-17 -11.5,-28.5T840,340q-17,0 -28.5,11.5T800,380q0,17 11.5,28.5T840,420Z" />
                 </svg>
               </span>
-              <p
-                className="font-bold mt-4"
-                style={{ color: "#E65100", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-              >
+              <p className="font-bold mt-4" style={{ color: "#E65100", fontSize: 12 }}>
                 {t("FILTERED")}
               </p>
-              <p
-                className="font-bold"
-                style={{ color: "#3E2723", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-              >
+              <p className="font-bold" style={{ color: "#3E2723", fontSize: 16 }}>
                 {t("Custom Feeds")}
               </p>
             </button>
@@ -796,7 +764,6 @@ export default function BulkUploadPage() {
                     className="font-bold"
                     style={{
                       color: downloadBanner.titleColor,
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 14,
                     }}
                   >
@@ -805,7 +772,6 @@ export default function BulkUploadPage() {
                   <p
                     style={{
                       color: downloadBanner.msgColor,
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 13,
                       marginTop: 2,
                     }}
@@ -841,7 +807,6 @@ export default function BulkUploadPage() {
             background: "linear-gradient(180deg, #1CA069 0%, #064E3B 100%)",
             border: "none",
             cursor: isDownloadingTemplate ? "not-allowed" : "pointer",
-            fontFamily: "Nunito, sans-serif",
             boxShadow: "0 4px 14px rgba(6,78,59,0.28)",
           }}
         >

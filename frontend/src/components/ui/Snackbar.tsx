@@ -87,7 +87,6 @@ export default function Snackbar() {
         borderRadius: 16,
         backgroundColor: s.bg,
         color: s.text,
-        fontFamily: "Nunito, sans-serif",
         fontWeight: 700,
         fontSize: 16,
         boxShadow: "0 4px 20px rgba(0,0,0,0.2)",

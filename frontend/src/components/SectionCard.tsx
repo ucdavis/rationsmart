@@ -32,10 +32,7 @@ export default function SectionCard({
           >
             {iconSvg ? iconSvg : <span style={{ fontSize: 18 }}>{iconEmoji}</span>}
           </div>
-          <span
-            className="text-base font-bold"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
+          <span className="text-base font-bold" style={{ color: "#064E3B" }}>
             {title}
           </span>
         </div>

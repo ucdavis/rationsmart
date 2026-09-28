@@ -89,7 +89,7 @@ export default function AdminReportsPage() {
           ))
         ) : reports.length === 0 ? (
           <div className="flex items-center justify-center py-16 text-center px-6">
-            <p className="text-base" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
+            <p className="text-base" style={{ color: "#999999" }}>
               {t("No reports found")}
             </p>
           </div>
@@ -149,7 +149,7 @@ export default function AdminReportsPage() {
                     {/* tv_user_name: crayola_green (#1CA069), bold, font_16 */}
                     <p
                       className="font-bold truncate flex-1 min-w-0"
-                      style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
+                      style={{ color: "#1CA069", fontSize: 16 }}
                     >
                       {r.user_name || r.user_email || t("N/A")}
                     </p>
@@ -172,7 +172,6 @@ export default function AdminReportsPage() {
                         border: "none",
                         cursor: "pointer",
                         color: themed.text,
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         marginLeft: 8,
                       }}
@@ -191,7 +190,6 @@ export default function AdminReportsPage() {
                         borderRadius: 60,
                         padding: "8px 14px",
                         color: "#FF9800",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         marginLeft: 8,
                       }}
@@ -206,15 +204,12 @@ export default function AdminReportsPage() {
                     values are bold, raisin_black) */}
                 <div className="grid grid-cols-2" style={{ padding: "20px 10px 0" }}>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
-                      {t("Simulation ID")}
-                    </p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Simulation ID")}</p>
                     <p
                       className="font-bold"
                       style={{
                         color: "#231F20",
                         fontSize: 14,
-                        fontFamily: "Nunito, sans-serif",
                         marginTop: 4,
                       }}
                     >
@@ -222,15 +217,12 @@ export default function AdminReportsPage() {
                     </p>
                   </div>
                   <div>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
-                      {t("Report Type")}
-                    </p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Report Type")}</p>
                     <p
                       className="font-bold"
                       style={{
                         color: "#231F20",
                         fontSize: 14,
-                        fontFamily: "Nunito, sans-serif",
                         marginTop: 4,
                       }}
                     >
@@ -241,15 +233,12 @@ export default function AdminReportsPage() {
 
                 {/* Date */}
                 <div style={{ padding: "10px 10px 0" }}>
-                  <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
-                    {t("Date")}
-                  </p>
+                  <p style={{ color: "#6D6D6D", fontSize: 12 }}>{t("Date")}</p>
                   <p
                     className="font-bold"
                     style={{
                       color: "#231F20",
                       fontSize: 14,
-                      fontFamily: "Nunito, sans-serif",
                       marginTop: 4,
                     }}
                   >

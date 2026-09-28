@@ -142,7 +142,6 @@ export default function InstallPrompt() {
               fontSize: 18,
               fontWeight: 700,
               color: "#064E3B",
-              fontFamily: "Nunito, sans-serif",
               textAlign: "center",
               marginBottom: 4,
             }}
@@ -153,7 +152,6 @@ export default function InstallPrompt() {
             style={{
               fontSize: 12,
               color: "#6D6D6D",
-              fontFamily: "Nunito, sans-serif",
               textAlign: "center",
               margin: "0 0 20px",
             }}
@@ -273,7 +271,6 @@ export default function InstallPrompt() {
                     color: "#fff",
                     fontSize: 13,
                     fontWeight: 700,
-                    fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   {n}
@@ -286,7 +283,6 @@ export default function InstallPrompt() {
                       fontSize: 14,
                       fontWeight: 700,
                       color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
                       margin: 0,
                     }}
                   >
@@ -298,7 +294,6 @@ export default function InstallPrompt() {
                   style={{
                     fontSize: 12,
                     color: "#6D6D6D",
-                    fontFamily: "Nunito, sans-serif",
                     margin: "2px 0 0",
                   }}
                 >
@@ -319,7 +314,6 @@ export default function InstallPrompt() {
               border: "none",
               fontWeight: 700,
               fontSize: 14,
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
             }}
           >
@@ -373,7 +367,6 @@ export default function InstallPrompt() {
                 color: "#fff",
                 fontWeight: 700,
                 fontSize: 14,
-                fontFamily: "Nunito, sans-serif",
                 margin: 0,
               }}
             >
@@ -383,7 +376,6 @@ export default function InstallPrompt() {
               style={{
                 color: "rgba(255,255,255,0.72)",
                 fontSize: 11,
-                fontFamily: "Nunito, sans-serif",
                 margin: "2px 0 0",
               }}
             >
@@ -420,7 +412,6 @@ export default function InstallPrompt() {
               padding: "8px 16px",
               fontWeight: 700,
               fontSize: 13,
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
               flexShrink: 0,
             }}

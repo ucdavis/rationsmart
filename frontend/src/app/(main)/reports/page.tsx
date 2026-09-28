@@ -104,16 +104,10 @@ export default function ReportsPage() {
                 />
               </svg>
             </div>
-            <p
-              className="text-lg font-bold mb-2"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-lg font-bold mb-2" style={{ color: "#064E3B" }}>
               {t("No saved reports")}
             </p>
-            <p
-              className="text-sm mb-8"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-sm mb-8" style={{ color: "#6D6D6D" }}>
               {t('Generate a ration report and tap "Save Report" to see it here')}
             </p>
             <button
@@ -123,7 +117,6 @@ export default function ReportsPage() {
                 backgroundColor: "#064E3B",
                 border: "none",
                 cursor: "pointer",
-                fontFamily: "Nunito, sans-serif",
               }}
             >
               {t("Create Report")}
@@ -176,7 +169,6 @@ export default function ReportsPage() {
                           border: "none",
                           cursor: "pointer",
                           color: "#064E3B", // dark_aquamarine_green
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 12, // font_12 (matches Android)
                         }}
                       >
@@ -199,7 +191,6 @@ export default function ReportsPage() {
                           backgroundColor: "#FFF4E5",
                           padding: "8px 14px",
                           color: "#FF9800",
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 12,
                         }}
                       >
@@ -213,7 +204,6 @@ export default function ReportsPage() {
                   <p
                     style={{
                       color: "#6D6D6D",
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 12,
                       marginTop: 20,
                       marginLeft: 10,
@@ -225,7 +215,6 @@ export default function ReportsPage() {
                     className="font-bold"
                     style={{
                       color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 16,
                       margin: "4px 10px 0 10px",
                     }}
@@ -241,7 +230,6 @@ export default function ReportsPage() {
                           <p
                             style={{
                               color: "#6D6D6D",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 12,
                             }}
                           >
@@ -251,7 +239,6 @@ export default function ReportsPage() {
                             className="font-bold"
                             style={{
                               color: "#231F20",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 16,
                               marginTop: 4,
                             }}
@@ -263,7 +250,6 @@ export default function ReportsPage() {
                           <p
                             style={{
                               color: "#6D6D6D",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 12,
                             }}
                           >
@@ -273,7 +259,6 @@ export default function ReportsPage() {
                             className="font-bold"
                             style={{
                               color: "#231F20",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 16,
                               marginTop: 4,
                             }}
@@ -285,7 +270,6 @@ export default function ReportsPage() {
                       <p
                         style={{
                           color: "#6D6D6D",
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 12,
                           marginTop: 10,
                         }}
@@ -296,7 +280,6 @@ export default function ReportsPage() {
                         className="font-bold"
                         style={{
                           color: "#231F20",
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 16,
                           marginTop: 4,
                         }}
@@ -354,7 +337,6 @@ export default function ReportsPage() {
                     color: "#064E3B",
                     border: "none",
                     padding: "8px 16px",
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 13,
                     cursor: page === 0 ? "not-allowed" : "pointer",
                     opacity: page === 0 ? 0.4 : 1,
@@ -370,10 +352,7 @@ export default function ReportsPage() {
                     />
                   </svg>
                 </button>
-                <span
-                  className="font-bold"
-                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                >
+                <span className="font-bold" style={{ color: "#064E3B", fontSize: 14 }}>
                   {page + 1}
                 </span>
                 <button
@@ -386,7 +365,6 @@ export default function ReportsPage() {
                     color: "#064E3B",
                     border: "none",
                     padding: "8px 16px",
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 13,
                     cursor: page === totalPages - 1 ? "not-allowed" : "pointer",
                     opacity: page === totalPages - 1 ? 0.4 : 1,

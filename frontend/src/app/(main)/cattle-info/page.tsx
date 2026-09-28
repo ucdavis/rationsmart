@@ -310,12 +310,11 @@ const EMPTY_FORM: FormState = {
 const inputStyle = {
   backgroundColor: "#F1F5F9",
   color: "#231F20",
-  fontFamily: "Nunito, sans-serif",
 };
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
   const cls = "text-xs font-bold uppercase tracking-wide mt-3 mb-1.5 ml-1";
-  const style = { color: "#6D6D6D", fontFamily: "Nunito, sans-serif" };
+  const style = { color: "#6D6D6D" };
   if (typeof children === "string" && children.endsWith(" *")) {
     return (
       <p className={cls} style={style}>
@@ -357,7 +356,7 @@ function loadingFieldProps(
 function FieldError({ message }: { message?: string }) {
   if (!message) return null;
   return (
-    <p className="text-xs mt-1 ml-1" style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}>
+    <p className="text-xs mt-1 ml-1" style={{ color: "#E44A4A" }}>
       {message}
     </p>
   );
@@ -369,7 +368,7 @@ const ADJUSTED_RING: React.CSSProperties = { boxShadow: "0 0 0 2px #FF9800" };
 function AdjustedNote({ from, label }: { from?: string; label: string }) {
   if (from === undefined) return null;
   return (
-    <p className="text-xs mt-1 ml-1" style={{ color: "#FF9800", fontFamily: "Nunito, sans-serif" }}>
+    <p className="text-xs mt-1 ml-1" style={{ color: "#FF9800" }}>
       {label} {from}
     </p>
   );
@@ -1525,10 +1524,7 @@ export default function CattleInfoPage() {
                   >
                     <div className="flex items-center gap-2.5">
                       <IcActiveGrazing size={22} color="#064E3B" />
-                      <span
-                        className="text-base font-bold"
-                        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <span className="text-base font-bold" style={{ color: "#064E3B" }}>
                         {t("Active Grazing")}
                       </span>
                       <button
@@ -1606,7 +1602,6 @@ export default function CattleInfoPage() {
                         className="text-sm"
                         style={{
                           color: "#231F20",
-                          fontFamily: "Nunito, sans-serif",
                           lineHeight: 1.5,
                           margin: 0,
                         }}
@@ -1657,7 +1652,7 @@ export default function CattleInfoPage() {
                     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 ml-1">
                       <span
                         className="text-xs font-bold uppercase tracking-wide"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+                        style={{ color: "#6D6D6D" }}
                       >
                         {(() => {
                           const label = t("Topography *");
@@ -1707,7 +1702,6 @@ export default function CattleInfoPage() {
                             </div>
                             <span
                               style={{
-                                fontFamily: "Nunito, sans-serif",
                                 fontSize: 14,
                                 fontWeight: active ? 700 : 400,
                                 color: active ? "#064E3B" : "#6D6D6D",
@@ -1790,7 +1784,6 @@ export default function CattleInfoPage() {
             background: isResetting ? "#F1F5F9" : "white",
             paddingLeft: isResetting ? 24 : 40,
             paddingRight: isResetting ? 24 : 40,
-            fontFamily: "Nunito, sans-serif",
             cursor: isResetting ? "wait" : "pointer",
             transition: "background 0.15s, color 0.15s",
           }}
@@ -1831,7 +1824,6 @@ export default function CattleInfoPage() {
             backgroundColor: requiredFilled ? "#064E3B" : "#D3D3D3",
             color: requiredFilled ? "#FFFFFF" : "#999999",
             border: "none",
-            fontFamily: "Nunito, sans-serif",
             cursor: requiredFilled ? "pointer" : "not-allowed",
             transition: "background-color 0.2s, color 0.2s",
           }}
@@ -1867,7 +1859,7 @@ export default function CattleInfoPage() {
             {/* Title */}
             <p
               className="text-center font-bold px-3 mb-3"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+              style={{ color: "#064E3B", fontSize: 20 }}
             >
               {t("Simulation History")}
             </p>
@@ -1902,10 +1894,7 @@ export default function CattleInfoPage() {
                   ))}
                 </div>
               ) : historyList.length === 0 ? (
-                <p
-                  className="text-sm text-center py-8"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-sm text-center py-8" style={{ color: "#6D6D6D" }}>
                   {t("No saved simulations found")}
                 </p>
               ) : (
@@ -1944,7 +1933,6 @@ export default function CattleInfoPage() {
                               className="font-bold"
                               style={{
                                 color: "#231F20",
-                                fontFamily: "Nunito, sans-serif",
                                 fontSize: 18,
                                 margin: "10px 10px 0 10px",
                               }}
@@ -1981,7 +1969,6 @@ export default function CattleInfoPage() {
                               <span
                                 style={{
                                   color: "#6D6D6D",
-                                  fontFamily: "Nunito, sans-serif",
                                   fontSize: 13,
                                 }}
                               >
@@ -2009,7 +1996,6 @@ export default function CattleInfoPage() {
                                 <span
                                   style={{
                                     color: "#6D6D6D",
-                                    fontFamily: "Nunito, sans-serif",
                                     fontSize: 13,
                                   }}
                                 >
@@ -2049,7 +2035,6 @@ export default function CattleInfoPage() {
                                 <span
                                   style={{
                                     color: "#6D6D6D",
-                                    fontFamily: "Nunito, sans-serif",
                                     fontSize: 13,
                                   }}
                                 >

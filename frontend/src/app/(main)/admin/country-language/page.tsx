@@ -121,7 +121,6 @@ type ConfirmState = {
 const inputStyle = {
   backgroundColor: "#F1F5F9",
   color: "#231F20",
-  fontFamily: "Nunito, sans-serif",
 };
 const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 const sheetOverlayStyle = {
@@ -142,7 +141,7 @@ function SkeletonCardShell({ title, children }: { title: string; children: React
       >
         <p
           className="text-xs font-bold uppercase tracking-wide"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", opacity: 0.5 }}
+          style={{ color: "#064E3B", opacity: 0.5 }}
         >
           {title}
         </p>
@@ -290,7 +289,6 @@ export default function AdminCountryLanguagePage() {
                 backgroundColor: tab === t.key ? "#064E3B" : "transparent",
                 color: tab === t.key ? "#FFFFFF" : "#064E3B",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
                 transition: "background-color 0.15s",
               }}
@@ -342,16 +340,10 @@ export default function AdminCountryLanguagePage() {
             className="bg-white rounded-2xl w-full px-5 py-5"
             style={{ boxShadow: "0 12px 40px rgba(0,0,0,0.25)" }}
           >
-            <p
-              className="font-bold mb-2"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 15 }}
-            >
+            <p className="font-bold mb-2" style={{ color: "#231F20", fontSize: 15 }}>
               {confirm.title}
             </p>
-            <p
-              className="text-sm mb-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
-            >
+            <p className="text-sm mb-4" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
               {confirm.body}
             </p>
             <div className="flex gap-3">
@@ -362,7 +354,6 @@ export default function AdminCountryLanguagePage() {
                   backgroundColor: "transparent",
                   color: "#064E3B",
                   border: "1.5px solid #064E3B",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -375,7 +366,6 @@ export default function AdminCountryLanguagePage() {
                   backgroundColor: confirm.danger ? "#E44A4A" : "#064E3B",
                   color: "#FFFFFF",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -633,11 +623,11 @@ function CountriesLanguagesTab({
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            style={{ color: "#064E3B" }}
           >
             Enabled Countries / Languages
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <p className="text-xs" style={{ color: "#6D6D6D" }}>
             {countries.length} enabled
           </p>
           <button
@@ -658,10 +648,7 @@ function CountriesLanguagesTab({
           </button>
         </div>
         {countries.length === 0 ? (
-          <p
-            className="text-sm text-center py-6"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-sm text-center py-6" style={{ color: "#6D6D6D" }}>
             No countries enabled yet.
           </p>
         ) : (
@@ -672,16 +659,10 @@ function CountriesLanguagesTab({
               <div key={c.id} className="px-4 py-3" style={{ borderTop: "1px solid #F8FAF9" }}>
                 <div className="flex items-center gap-3">
                   <div className="min-w-0 flex-1">
-                    <p
-                      className="font-bold text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="font-bold text-sm" style={{ color: "#231F20" }}>
                       {c.name}
                     </p>
-                    <p
-                      className="text-xs"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="text-xs" style={{ color: "#6D6D6D" }}>
                       {extraLangs.length} local language{extraLangs.length === 1 ? "" : "s"}
                     </p>
                   </div>
@@ -714,7 +695,6 @@ function CountriesLanguagesTab({
                         style={{
                           backgroundColor: "#F1F5F9",
                           color: "#064E3B",
-                          fontFamily: "Nunito, sans-serif",
                         }}
                       >
                         {langName}
@@ -745,7 +725,6 @@ function CountriesLanguagesTab({
                       backgroundColor: "transparent",
                       color: "#064E3B",
                       border: "1.5px dashed rgba(5,188,109,0.5)",
-                      fontFamily: "Nunito, sans-serif",
                       cursor: "pointer",
                     }}
                   >
@@ -766,11 +745,11 @@ function CountriesLanguagesTab({
         >
           <p
             className="text-xs font-bold uppercase tracking-wide flex-1"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+            style={{ color: "#064E3B" }}
           >
             Registered Languages
           </p>
-          <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+          <p className="text-xs" style={{ color: "#6D6D6D" }}>
             {activeLangCount} active
           </p>
           <button
@@ -801,16 +780,10 @@ function CountriesLanguagesTab({
               style={{ borderTop: "1px solid #F8FAF9", opacity: l.is_active ? 1 : 0.6 }}
             >
               <div className="min-w-0 flex-1">
-                <p
-                  className="font-bold text-sm"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="font-bold text-sm" style={{ color: "#231F20" }}>
                   {labelForLanguage(l.code)}
                 </p>
-                <p
-                  className="text-xs"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs" style={{ color: "#6D6D6D" }}>
                   {l.name} · {l.code}
                   {!l.is_active && " · inactive"}
                 </p>
@@ -821,7 +794,6 @@ function CountriesLanguagesTab({
                   style={{
                     backgroundColor: "#E4F7EF",
                     color: "#064E3B",
-                    fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   locked 🔒
@@ -864,16 +836,10 @@ function CountriesLanguagesTab({
             <div className="flex justify-center mb-3">
               <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
             </div>
-            <h3
-              className="text-center font-bold mb-1"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-            >
+            <h3 className="text-center font-bold mb-1" style={{ color: "#064E3B", fontSize: 18 }}>
               Activate a country
             </h3>
-            <p
-              className="text-center text-sm mb-5"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D" }}>
               RationSmart becomes available to farmers in the activated country.
             </p>
             {isLoadingInactive ? (
@@ -883,10 +849,7 @@ function CountriesLanguagesTab({
                 ))}
               </div>
             ) : inactiveCountries.length === 0 ? (
-              <p
-                className="text-sm text-center"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="text-sm text-center" style={{ color: "#6D6D6D" }}>
                 All registered countries are already enabled.
               </p>
             ) : (
@@ -902,16 +865,10 @@ function CountriesLanguagesTab({
                       cursor: "pointer",
                     }}
                   >
-                    <span
-                      className="font-bold text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="font-bold text-sm" style={{ color: "#231F20" }}>
                       {c.name}
                     </span>
-                    <span
-                      className="text-xs font-bold"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="text-xs font-bold" style={{ color: "#064E3B" }}>
                       Activate →
                     </span>
                   </button>
@@ -949,22 +906,16 @@ function CountriesLanguagesTab({
                 </div>
                 <h3
                   className="text-center font-bold mb-1"
-                  style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+                  style={{ color: "#064E3B", fontSize: 18 }}
                 >
                   Associate a language — {assocFor.name}
                 </h3>
-                <p
-                  className="text-center text-sm mb-5"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-center text-sm mb-5" style={{ color: "#6D6D6D" }}>
                   The combination will appear in the Cattle Info screen for farmers in{" "}
                   {assocFor.name}.
                 </p>
                 {available.length === 0 ? (
-                  <p
-                    className="text-sm text-center"
-                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                  >
+                  <p className="text-sm text-center" style={{ color: "#6D6D6D" }}>
                     All active languages are already associated. Register or activate a language
                     first.
                   </p>
@@ -982,17 +933,11 @@ function CountriesLanguagesTab({
                           cursor: isAssociating ? "wait" : "pointer",
                         }}
                       >
-                        <span
-                          className="font-bold text-sm"
-                          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                        >
+                        <span className="font-bold text-sm" style={{ color: "#231F20" }}>
                           {labelForLanguage(l.code)}{" "}
                           <span style={{ color: "#6D6D6D", fontWeight: 400 }}>· {l.name}</span>
                         </span>
-                        <span
-                          className="text-xs font-bold"
-                          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                        >
+                        <span className="text-xs font-bold" style={{ color: "#064E3B" }}>
                           Associate →
                         </span>
                       </button>
@@ -1024,15 +969,12 @@ function CountriesLanguagesTab({
             <div className="flex justify-center mb-3">
               <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
             </div>
-            <h3
-              className="text-center font-bold mb-4"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-            >
+            <h3 className="text-center font-bold mb-4" style={{ color: "#064E3B", fontSize: 18 }}>
               Register a new language
             </h3>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               Language name (English)
             </p>
@@ -1048,7 +990,7 @@ function CountriesLanguagesTab({
             />
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               ISO code
             </p>
@@ -1070,7 +1012,6 @@ function CountriesLanguagesTab({
                 backgroundColor: isRegistering ? "#D3D3D3" : "#064E3B",
                 color: "#FFFFFF",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: isRegistering ? "not-allowed" : "pointer",
               }}
             >
@@ -1296,10 +1237,7 @@ function FeedNamesTab({
           className="px-4 py-3"
           style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
         >
-          <p
-            className="text-xs font-bold uppercase tracking-wide"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
             1 · Pick a country
           </p>
         </div>
@@ -1317,7 +1255,6 @@ function FeedNamesTab({
                 border: selCountry?.id === c.id ? "1.5px solid #064E3B" : "1.5px solid #DCE0E4",
                 backgroundColor: selCountry?.id === c.id ? "#064E3B" : "#FFFFFF",
                 color: selCountry?.id === c.id ? "#FFFFFF" : "#231F20",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
               }}
             >
@@ -1325,7 +1262,7 @@ function FeedNamesTab({
             </button>
           ))}
           {countries.length === 0 && (
-            <p className="text-sm" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+            <p className="text-sm" style={{ color: "#6D6D6D" }}>
               No countries enabled.
             </p>
           )}
@@ -1338,10 +1275,7 @@ function FeedNamesTab({
           className="px-4 py-3"
           style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
         >
-          <p
-            className="text-xs font-bold uppercase tracking-wide"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
             2 · Pick a language
           </p>
         </div>
@@ -1356,7 +1290,6 @@ function FeedNamesTab({
                   border: selLang === code ? "1.5px solid #064E3B" : "1.5px solid #DCE0E4",
                   backgroundColor: selLang === code ? "#064E3B" : "#FFFFFF",
                   color: selLang === code ? "#FFFFFF" : "#231F20",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -1365,10 +1298,7 @@ function FeedNamesTab({
             ))}
           </div>
           {selCountry && localLangs.length === 0 && (
-            <p
-              className="text-sm mt-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
-            >
+            <p className="text-sm mt-1" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
               No local language is associated with this country yet — associate one on the Countries
               &amp; Languages screen.
             </p>
@@ -1385,12 +1315,12 @@ function FeedNamesTab({
           >
             <p
               className="text-xs font-bold uppercase tracking-wide flex-1"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#064E3B" }}
             >
               3 · Feed names in {selLang ? labelForLanguage(selLang).toUpperCase() : ""}
             </p>
             {!isLoadingFeeds && (
-              <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+              <p className="text-xs" style={{ color: "#6D6D6D" }}>
                 {doneCount} of {feeds.length} named
               </p>
             )}
@@ -1416,17 +1346,11 @@ function FeedNamesTab({
                   }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p
-                      className="font-bold text-sm truncate"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="font-bold text-sm truncate" style={{ color: "#231F20" }}>
                       {f.fd_name}
                     </p>
                     {f.translation && (
-                      <p
-                        className="text-xs truncate"
-                        style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p className="text-xs truncate" style={{ color: "#1CA069" }}>
                         {f.translation.name}
                       </p>
                     )}
@@ -1437,7 +1361,6 @@ function FeedNamesTab({
                       style={{
                         backgroundColor: "rgba(255,152,0,0.12)",
                         color: "#B4690E",
-                        fontFamily: "Nunito, sans-serif",
                       }}
                     >
                       + Add name
@@ -1457,18 +1380,12 @@ function FeedNamesTab({
           className="px-4 py-3"
           style={{ backgroundColor: "#E4F7EF", borderBottom: "1px solid #F1F5F9" }}
         >
-          <p
-            className="text-xs font-bold uppercase tracking-wide"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs font-bold uppercase tracking-wide" style={{ color: "#064E3B" }}>
             Bulk upsert via workbook
           </p>
         </div>
         <div className="px-4 py-3">
-          <p
-            className="text-xs mb-3"
-            style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
-          >
+          <p className="text-xs mb-3" style={{ color: "#6D6D6D", lineHeight: 1.5 }}>
             Export all feed names across languages for {selCountry?.name ?? "the selected country"}{" "}
             as a workbook, edit offline, then import to upsert in bulk.
           </p>
@@ -1481,7 +1398,6 @@ function FeedNamesTab({
                 backgroundColor: "transparent",
                 color: "#064E3B",
                 border: "1.5px solid #064E3B",
-                fontFamily: "Nunito, sans-serif",
                 cursor: isDownloading || !selCountry ? "not-allowed" : "pointer",
                 opacity: !selCountry ? 0.5 : 1,
               }}
@@ -1496,7 +1412,6 @@ function FeedNamesTab({
                 backgroundColor: isUploading || !uploadFile || !selCountry ? "#D3D3D3" : "#064E3B",
                 color: "#FFFFFF",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: isUploading || !uploadFile || !selCountry ? "not-allowed" : "pointer",
               }}
             >
@@ -1517,7 +1432,7 @@ function FeedNamesTab({
               setUploadFile(file);
             }}
             className="block w-full text-sm"
-            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
+            style={{ color: "#231F20" }}
           />
           {uploadSummary && (
             <div
@@ -1531,15 +1446,11 @@ function FeedNamesTab({
                 className="font-bold text-sm mb-1"
                 style={{
                   color: uploadSummary.success === false ? "#E44A4A" : "#064E3B",
-                  fontFamily: "Nunito, sans-serif",
                 }}
               >
                 {uploadSummary.success === false ? "Import failed" : "Import summary"}
               </p>
-              <div
-                className="text-xs space-y-0.5"
-                style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-              >
+              <div className="text-xs space-y-0.5" style={{ color: "#231F20" }}>
                 <p>
                   Feeds — {uploadSummary.feeds_inserted ?? 0} added ·{" "}
                   {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0}{" "}
@@ -1569,21 +1480,15 @@ function FeedNamesTab({
             <div className="flex justify-center mb-3">
               <div style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: "#C8E6C9" }} />
             </div>
-            <p
-              className="text-xs font-bold"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-xs font-bold" style={{ color: "#6D6D6D" }}>
               {selCountry?.name} · {labelForLanguage(selLang)}
             </p>
-            <h3
-              className="font-bold mb-4"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 17 }}
-            >
+            <h3 className="font-bold mb-4" style={{ color: "#231F20", fontSize: 17 }}>
               {editingFeed.fd_name}
             </h3>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               Name in {labelForLanguage(selLang)}
             </p>
@@ -1605,7 +1510,6 @@ function FeedNamesTab({
                 backgroundColor: isSaving ? "#D3D3D3" : "#064E3B",
                 color: "#FFFFFF",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: isSaving ? "not-allowed" : "pointer",
               }}
             >
@@ -1620,7 +1524,6 @@ function FeedNamesTab({
                   backgroundColor: "transparent",
                   color: "#E44A4A",
                   border: "1.5px solid rgba(228,74,74,0.4)",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: isDeleting ? "not-allowed" : "pointer",
                 }}
               >

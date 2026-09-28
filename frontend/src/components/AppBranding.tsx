@@ -23,10 +23,7 @@ export default function AppBranding() {
       </div>
 
       {/* App name */}
-      <p
-        className="mt-3 text-xl font-bold"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-      >
+      <p className="mt-3 text-xl font-bold" style={{ color: "#064E3B" }}>
         {t("RationSmart")}
       </p>
     </div>

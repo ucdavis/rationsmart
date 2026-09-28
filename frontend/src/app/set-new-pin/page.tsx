@@ -106,7 +106,6 @@ function SetNewPinInner() {
           className="flex-1 text-center"
           style={{
             color: "#042F23",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -139,16 +138,10 @@ function SetNewPinInner() {
                 />
               </svg>
             </div>
-            <h2
-              className="text-xl font-bold mb-2"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
+            <h2 className="text-xl font-bold mb-2" style={{ color: "#064E3B" }}>
               {t("PIN Updated")}
             </h2>
-            <p
-              className="text-sm mb-8"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
-            >
+            <p className="text-sm mb-8" style={{ color: "#6D6D6D", lineHeight: 1.6 }}>
               {t("Your account now uses a 6-digit PIN. Please sign in with your new PIN.")}
             </p>
             <button
@@ -156,7 +149,6 @@ function SetNewPinInner() {
               className="px-8 py-4 rounded-full font-bold text-base text-white"
               style={{
                 backgroundColor: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 border: "none",
                 cursor: "pointer",
               }}
@@ -166,15 +158,12 @@ function SetNewPinInner() {
           </div>
         ) : (
           <div className="px-3">
-            <p
-              className="text-center font-bold mt-5"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <p className="text-center font-bold mt-5" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Time to upgrade your PIN")}
             </p>
             <p
               className="text-center text-sm mt-1 mb-5 px-2"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
+              style={{ color: "#6D6D6D", lineHeight: 1.5 }}
             >
               {t(
                 "RationSmart now uses a 6-digit PIN for stronger security. Confirm your existing\n              4-digit PIN and pick a new 6-digit one."
@@ -183,7 +172,7 @@ function SetNewPinInner() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
@@ -199,13 +188,12 @@ function SetNewPinInner() {
               style={{
                 backgroundColor: "#F1F5F9",
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
               }}
             />
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Current 4-digit PIN")}
             </p>
@@ -218,7 +206,7 @@ function SetNewPinInner() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("New 6-digit PIN")}
             </p>
@@ -232,7 +220,7 @@ function SetNewPinInner() {
 
             <p
               className="text-xs font-bold uppercase tracking-wide mt-3 mb-3 ml-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Confirm New PIN")}
             </p>
@@ -245,10 +233,7 @@ function SetNewPinInner() {
             />
 
             {confirmPin.length === PIN_LENGTH && newPin !== confirmPin && (
-              <p
-                className="text-xs font-bold text-center mt-2"
-                style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-              >
+              <p className="text-xs font-bold text-center mt-2" style={{ color: "#E44A4A" }}>
                 {t("New PINs do not match")}
               </p>
             )}
@@ -261,7 +246,6 @@ function SetNewPinInner() {
                 style={{
                   backgroundColor: isReady && !isSubmitting ? "#064E3B" : "#D3D3D3",
                   color: isReady && !isSubmitting ? "#FFFFFF" : "#999999",
-                  fontFamily: "Nunito, sans-serif",
                   border: "none",
                   cursor: isReady && !isSubmitting ? "pointer" : "not-allowed",
                 }}

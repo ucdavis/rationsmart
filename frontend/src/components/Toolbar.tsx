@@ -67,7 +67,6 @@ export default function Toolbar({
         className="flex-1 text-center"
         style={{
           color: "#042F23",
-          fontFamily: "Nunito, sans-serif",
           fontSize: 16,
           fontWeight: 700,
           margin: 0,

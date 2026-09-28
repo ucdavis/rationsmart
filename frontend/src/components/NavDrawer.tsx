@@ -154,16 +154,10 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             <IcUser size={30} color="#064E3B" />
           </div>
           <div className="min-w-0">
-            <p
-              className="font-bold truncate"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-            >
+            <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 18 }}>
               {user?.name || t("User")}
             </p>
-            <p
-              className="text-sm truncate"
-              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-sm truncate" style={{ color: "#231F20" }}>
               {user?.email || ""}
             </p>
           </div>
@@ -186,10 +180,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             >
               <div className="flex items-center gap-3 min-w-0">
                 <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
-                <span
-                  className="text-base truncate"
-                  style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                >
+                <span className="text-base truncate" style={{ color: "#231F20" }}>
                   {t(item.label)}
                 </span>
                 {item.badge && (
@@ -199,7 +190,6 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                     style={{
                       backgroundColor: "#E4F7EF",
                       color: "#064E3B",
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 12,
                       fontWeight: 400,
                       padding: "2px 10px",
@@ -223,10 +213,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             style={{ background: "none", border: "none", cursor: "pointer" }}
           >
             <IcLogoutNav size={20} color="#E44A4A" />
-            <span
-              className="text-base"
-              style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-            >
+            <span className="text-base" style={{ color: "#E44A4A" }}>
               {t("Logout")}
             </span>
           </button>
@@ -305,14 +292,11 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
             </div>
             <h3
               className="text-center font-bold mb-2 mx-4"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
+              style={{ color: "#064E3B", fontSize: 20 }}
             >
               {t("Are you sure you want to logout?")}
             </h3>
-            <p
-              className="text-center text-sm mb-5 mx-4"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-center text-sm mb-5 mx-4" style={{ color: "#6D6D6D" }}>
               {t("You can always log back in to access you feed simulations.")}
             </p>
             <div className="flex flex-col gap-2.5">
@@ -323,7 +307,6 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   backgroundColor: "#064E3B",
                   color: "white",
                   border: "none",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >
@@ -336,7 +319,6 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   border: "2px solid #064E3B",
                   color: "#064E3B",
                   background: "white",
-                  fontFamily: "Nunito, sans-serif",
                   cursor: "pointer",
                 }}
               >

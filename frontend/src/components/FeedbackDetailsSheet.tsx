@@ -65,10 +65,7 @@ export default function FeedbackDetailsSheet({
         </div>
 
         {/* Your Rating heading */}
-        <p
-          className="text-center font-bold"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-        >
+        <p className="text-center font-bold" style={{ color: "#064E3B", fontSize: 20 }}>
           Your Rating
         </p>
 
@@ -164,7 +161,6 @@ export default function FeedbackDetailsSheet({
           className="font-bold mt-6"
           style={{
             color: "#6D6D6D",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 14,
             marginLeft: 4,
           }}
@@ -178,10 +174,7 @@ export default function FeedbackDetailsSheet({
             border: "1px solid rgba(5,188,109,0.15)",
           }}
         >
-          <p
-            className="font-bold text-base"
-            style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
-          >
+          <p className="font-bold text-base" style={{ color: "#064E3B", lineHeight: 1.5 }}>
             {details.text?.trim() || "Feedback not provided!"}
           </p>
         </div>
@@ -194,7 +187,6 @@ export default function FeedbackDetailsSheet({
             backgroundColor: "#064E3B",
             color: "#FFFFFF",
             border: "none",
-            fontFamily: "Nunito, sans-serif",
             cursor: "pointer",
           }}
         >
@@ -217,18 +209,13 @@ function InfoTile({ label, value, icon }: { label: string; value: string; icon: 
           className="uppercase"
           style={{
             color: "#6D6D6D",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 11,
             letterSpacing: 0.4,
           }}
         >
           {label}
         </p>
-        <p
-          className="font-bold truncate"
-          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-          title={value}
-        >
+        <p className="font-bold truncate" style={{ color: "#231F20", fontSize: 14 }} title={value}>
           {value}
         </p>
       </div>

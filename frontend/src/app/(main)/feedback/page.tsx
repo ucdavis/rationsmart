@@ -72,7 +72,6 @@ const categoryBadgeStyle = (cat: string): React.CSSProperties => {
   return {
     backgroundColor: colors.bg,
     color: colors.color,
-    fontFamily: "Nunito, sans-serif",
     fontWeight: 700,
     fontSize: 12,
     padding: "4px 10px",
@@ -148,10 +147,7 @@ export default function FeedbackPage() {
 
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Rating title */}
-        <p
-          className="text-center font-bold mt-5"
-          style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
-        >
+        <p className="text-center font-bold mt-5" style={{ color: "#231F20", fontSize: 18 }}>
           {t("Rate The App")}
         </p>
 
@@ -161,10 +157,7 @@ export default function FeedbackPage() {
         </div>
 
         {/* Category label */}
-        <p
-          className="font-bold mt-5 ml-3"
-          style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-        >
+        <p className="font-bold mt-5 ml-3" style={{ color: "#6D6D6D", fontSize: 14 }}>
           {t("Feedback Category")}
         </p>
 
@@ -180,9 +173,7 @@ export default function FeedbackPage() {
                 onChange={() => setCategory(c)}
                 style={{ accentColor: "#064E3B", width: 18, height: 18, cursor: "pointer" }}
               />
-              <span style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}>
-                {t(c)}
-              </span>
+              <span style={{ color: "#231F20", fontSize: 14 }}>{t(c)}</span>
             </label>
           ))}
         </div>
@@ -199,16 +190,12 @@ export default function FeedbackPage() {
             style={{
               backgroundColor: "#F1F5F9",
               color: "#231F20",
-              fontFamily: "Nunito, sans-serif",
               borderRadius: 18,
               border: "1px solid #E2E8F0",
               minHeight: 140,
             }}
           />
-          <p
-            className="text-xs text-right mt-1"
-            style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}
-          >
+          <p className="text-xs text-right mt-1" style={{ color: "#999999" }}>
             {text.length} / 1000
           </p>
         </div>
@@ -224,7 +211,6 @@ export default function FeedbackPage() {
               color: canSubmit && !isSubmitting ? "#FFFFFF" : "#999999",
               border: "none",
               borderRadius: 14,
-              fontFamily: "Nunito, sans-serif",
               cursor: canSubmit && !isSubmitting ? "pointer" : "not-allowed",
               transition: "background-color 0.2s",
             }}
@@ -251,17 +237,13 @@ export default function FeedbackPage() {
         {/* My Feedback History */}
         <div className="mx-3 mt-5">
           <div className="flex items-center justify-between mb-3">
-            <p
-              className="font-bold"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-            >
+            <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 14 }}>
               {t("Your Feedbacks")}
             </p>
             <span
               style={{
                 backgroundColor: "#F0FDF4",
                 color: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 12,
                 paddingLeft: 10,
                 paddingRight: 10,
@@ -293,7 +275,7 @@ export default function FeedbackPage() {
               className="rounded-2xl bg-white p-8 text-center"
               style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
             >
-              <p className="text-sm" style={{ color: "#999999", fontFamily: "Nunito, sans-serif" }}>
+              <p className="text-sm" style={{ color: "#999999" }}>
                 {t("No feedback submitted yet")}
               </p>
             </div>
@@ -328,10 +310,7 @@ export default function FeedbackPage() {
                 {/* Row 1: Stars (left) + Date (right) */}
                 <div className="flex items-center justify-between mb-3">
                   <StarRating rating={item.overall_rating} readOnly size={24} />
-                  <span
-                    className="font-bold"
-                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-                  >
+                  <span className="font-bold" style={{ color: "#6D6D6D", fontSize: 12 }}>
                     {new Date(item.created_at).toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",
@@ -351,7 +330,6 @@ export default function FeedbackPage() {
                   style={
                     {
                       color: "#231F20",
-                      fontFamily: "Nunito, sans-serif",
                       display: "-webkit-box",
                       WebkitLineClamp: 3,
                       WebkitBoxOrient: "vertical",

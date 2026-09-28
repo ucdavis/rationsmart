@@ -54,10 +54,7 @@ export default function GeneratingReportDialog() {
         </div>
 
         {/* Title */}
-        <p
-          className="font-bold mt-5 text-center"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-        >
+        <p className="font-bold mt-5 text-center" style={{ color: "#064E3B", fontSize: 20 }}>
           {t("Generating your report")}
         </p>
 

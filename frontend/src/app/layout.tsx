@@ -60,7 +60,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body
         style={{
-          fontFamily: "Nunito, sans-serif",
           backgroundColor: "#F8FAF9",
           margin: 0,
           padding: 0,

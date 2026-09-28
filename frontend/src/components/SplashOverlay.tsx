@@ -77,22 +77,18 @@ export default function SplashOverlay() {
             fontWeight: 700,
             fontSize: 20,
             margin: "12px 0 0",
-            fontFamily: "Nunito, sans-serif",
           }}
         >
           {t("RationSmart")}
         </p>
       </div>
       <div style={{ textAlign: "center" }}>
-        <p style={{ color: "#6D6D6D", fontSize: 14, margin: 0, fontFamily: "Nunito, sans-serif" }}>
-          {t("POWERED BY")}
-        </p>
+        <p style={{ color: "#6D6D6D", fontSize: 14, margin: 0 }}>{t("POWERED BY")}</p>
         <p
           style={{
             color: "#064E3B",
             fontSize: 14,
             margin: "2px 0 0",
-            fontFamily: "Nunito, sans-serif",
           }}
         >
           {t("DigitalGreen")}

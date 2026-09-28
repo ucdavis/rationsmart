@@ -121,7 +121,6 @@ export default function PinInput({
           style={{
             backgroundColor: disabled ? "#EBEAEA" : "#F1F5F9",
             color: disabled ? "#999999" : "#231F20",
-            fontFamily: "Nunito, sans-serif",
             opacity: disabled ? 0.55 : 1,
             cursor: disabled ? "not-allowed" : "text",
             maxWidth: boxMaxWidth,

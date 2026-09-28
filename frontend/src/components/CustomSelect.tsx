@@ -162,7 +162,6 @@ export default function CustomSelect({
           border: "none",
           padding: 0,
           color: loading ? "transparent" : value ? "#231F20" : "#9CA3AF",
-          fontFamily: "Nunito, sans-serif",
           fontSize: 14,
           cursor: loading ? "default" : disabled ? "not-allowed" : "pointer",
           width: "100%",
@@ -221,7 +220,6 @@ export default function CustomSelect({
             <div
               style={{
                 padding: "10px 12px",
-                fontFamily: "Nunito, sans-serif",
                 fontSize: 14,
                 color: "#999999",
                 borderRadius: 10,
@@ -253,7 +251,6 @@ export default function CustomSelect({
                   borderRadius: rowRadius(idx, last),
                   border: "none",
                   padding: "10px 12px",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 14,
                   color: "#231F20",
                   cursor: "pointer",

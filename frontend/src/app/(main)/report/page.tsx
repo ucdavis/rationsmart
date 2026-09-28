@@ -73,7 +73,7 @@ function StatusBadge({ status }: { status: string }) {
   return (
     <span
       className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-      style={{ backgroundColor: colors.bg, color: colors.text, fontFamily: "Nunito, sans-serif" }}
+      style={{ backgroundColor: colors.bg, color: colors.text }}
     >
       {status}
     </span>
@@ -110,10 +110,7 @@ function SCard({
               {icon}
             </div>
           )}
-          <p
-            className="font-bold"
-            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-          >
+          <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
             {title}
           </p>
         </div>
@@ -130,16 +127,10 @@ function SCard({
 function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <p
-        className="font-bold uppercase"
-        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-      >
+      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
         {label}
       </p>
-      <p
-        className="font-bold"
-        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16, marginTop: 4 }}
-      >
+      <p className="font-bold" style={{ color: "#231F20", fontSize: 16, marginTop: 4 }}>
         {value}
       </p>
     </div>
@@ -214,20 +205,14 @@ const calcPct = (v: number | string | null | undefined, max: number) => {
 function MetricTile({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
     <div className="flex-1 rounded-xl p-3 text-center" style={{ backgroundColor: "#F0FDF4" }}>
-      <p
-        className="text-xs font-bold"
-        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-      >
+      <p className="text-xs font-bold" style={{ color: "#6D6D6D" }}>
         {label}
       </p>
-      <p
-        className="text-lg font-bold mt-0.5"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-      >
+      <p className="text-lg font-bold mt-0.5" style={{ color: "#064E3B" }}>
         {value}
       </p>
       {unit && (
-        <p className="text-xs" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+        <p className="text-xs" style={{ color: "#6D6D6D" }}>
           {unit}
         </p>
       )}
@@ -251,16 +236,10 @@ function BalanceRow({
       className="flex items-center justify-between py-2.5 border-b last:border-0"
       style={{ borderColor: "#F1F5F9" }}
     >
-      <span
-        className="text-sm font-bold"
-        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-      >
+      <span className="text-sm font-bold" style={{ color: "#231F20" }}>
         {label}
       </span>
-      <span
-        className="text-sm font-bold"
-        style={{ color: isPositive ? "#05BC6D" : "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-      >
+      <span className="text-sm font-bold" style={{ color: isPositive ? "#05BC6D" : "#E44A4A" }}>
         {isPositive ? "+" : ""}
         {Number(value).toFixed(3)} {unit}
       </span>
@@ -278,10 +257,7 @@ function BulletList({ items, color }: { items: string[]; color: string }) {
             className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full"
             style={{ backgroundColor: color }}
           />
-          <span
-            className="text-sm"
-            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", lineHeight: 1.5 }}
-          >
+          <span className="text-sm" style={{ color: "#231F20", lineHeight: 1.5 }}>
             {item}
           </span>
         </li>
@@ -296,16 +272,10 @@ function TotalCostFooter({ label, value }: { label: string; value: string }) {
       className="flex items-center justify-between"
       style={{ backgroundColor: "#F0FDF4", paddingInline: 10, paddingBlock: 12 }}
     >
-      <span
-        className="text-xs font-bold"
-        style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-      >
+      <span className="text-xs font-bold" style={{ color: "#064E3B" }}>
         {label}
       </span>
-      <span
-        className="font-bold"
-        style={{ color: "#087F23", fontSize: 18, fontFamily: "Nunito, sans-serif" }}
-      >
+      <span className="font-bold" style={{ color: "#087F23", fontSize: 18 }}>
         {value}
       </span>
     </div>
@@ -419,13 +389,10 @@ export default function ReportPage() {
             />
           </svg>
         </div>
-        <p
-          className="text-xl font-bold mb-2"
-          style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-        >
+        <p className="text-xl font-bold mb-2" style={{ color: "#064E3B" }}>
           {t("No Report")}
         </p>
-        <p className="text-sm mb-8" style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}>
+        <p className="text-sm mb-8" style={{ color: "#6D6D6D" }}>
           {t("Generate a report from the Feed Selection screen")}
         </p>
         <button
@@ -435,7 +402,6 @@ export default function ReportPage() {
             backgroundColor: "#064E3B",
             border: "none",
             cursor: "pointer",
-            fontFamily: "Nunito, sans-serif",
           }}
         >
           {t("Go to Feed Selection")}
@@ -818,7 +784,6 @@ export default function ReportPage() {
                     className="font-bold uppercase mb-1"
                     style={{
                       color: "#6D6D6D",
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 11,
                       letterSpacing: 0.3,
                     }}
@@ -826,15 +791,10 @@ export default function ReportPage() {
                     {t("Diet Cost / L")}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <p
-                      className="font-bold"
-                      style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
                       {costPerLitre.toFixed(2)}
                     </p>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
-                      {currencySymbol}
-                    </p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{currencySymbol}</p>
                   </div>
                 </div>
                 <div
@@ -845,7 +805,6 @@ export default function ReportPage() {
                     className="font-bold uppercase mb-1"
                     style={{
                       color: "#6D6D6D",
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 11,
                       letterSpacing: 0.3,
                     }}
@@ -853,15 +812,10 @@ export default function ReportPage() {
                     {t("Milk Price / L")}
                   </p>
                   <div className="flex items-baseline gap-1">
-                    <p
-                      className="font-bold"
-                      style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
                       {milkPrice.toFixed(2)}
                     </p>
-                    <p style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}>
-                      {currencySymbol}
-                    </p>
+                    <p style={{ color: "#6D6D6D", fontSize: 12 }}>{currencySymbol}</p>
                   </div>
                 </div>
               </div>
@@ -875,7 +829,6 @@ export default function ReportPage() {
                     className="font-bold uppercase"
                     style={{
                       color: accent,
-                      fontFamily: "Nunito, sans-serif",
                       fontSize: 11,
                       letterSpacing: 0.3,
                     }}
@@ -883,17 +836,11 @@ export default function ReportPage() {
                     {isPositive ? t("Profit / Litre") : t("Loss / Litre")}
                   </p>
                   <div className="flex items-baseline gap-1" style={{ marginTop: 2 }}>
-                    <p
-                      className="font-bold"
-                      style={{ color: accent, fontSize: 24, fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="font-bold" style={{ color: accent, fontSize: 24 }}>
                       {isPositive ? "+" : "−"}
                       {Math.abs(margin).toFixed(2)}
                     </p>
-                    <p
-                      className="font-bold"
-                      style={{ color: accent, fontSize: 13, fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <p className="font-bold" style={{ color: accent, fontSize: 13 }}>
                       {currencySymbol}/L
                     </p>
                   </div>
@@ -919,10 +866,7 @@ export default function ReportPage() {
                 </svg>
               </div>
               {/* Daily margin context line */}
-              <p
-                className="mt-2 ml-1"
-                style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-              >
+              <p className="mt-2 ml-1" style={{ color: "#6D6D6D", fontSize: 12 }}>
                 {t("Across")} {milkProduction.toFixed(1)} L/day,
                 {isPositive ? ` ${t("net profit")}` : ` ${t("net loss")}`}{" "}
                 <span className="font-bold" style={{ color: accent }}>
@@ -996,10 +940,7 @@ export default function ReportPage() {
                 {/* Without a backend plan these figures are the rule of thumb
                     above, not an engine result — say so (audit D-02). */}
                 {!serverPlan && (
-                  <p
-                    className="text-xs mb-2"
-                    style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                  >
+                  <p className="text-xs mb-2" style={{ color: "#6D6D6D" }}>
                     {t(
                       "Estimated from body weight using general guidance — not calculated by the ration engine."
                     )}
@@ -1015,7 +956,6 @@ export default function ReportPage() {
                       className="font-bold uppercase mb-1"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -1023,17 +963,10 @@ export default function ReportPage() {
                       {t("Daily milk")}
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <p
-                        className="font-bold"
-                        style={{ color: "#064E3B", fontSize: 18, fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p className="font-bold" style={{ color: "#064E3B", fontSize: 18 }}>
                         {dailyVolume.toFixed(1)}
                       </p>
-                      <p
-                        style={{ color: "#6D6D6D", fontSize: 11, fontFamily: "Nunito, sans-serif" }}
-                      >
-                        {t("L")}
-                      </p>
+                      <p style={{ color: "#6D6D6D", fontSize: 11 }}>{t("L")}</p>
                     </div>
                   </div>
                   <div
@@ -1044,7 +977,6 @@ export default function ReportPage() {
                       className="font-bold uppercase mb-1"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -1052,15 +984,10 @@ export default function ReportPage() {
                       {t("Per feeding")}
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <p
-                        className="font-bold"
-                        style={{ color: "#064E3B", fontSize: 18, fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p className="font-bold" style={{ color: "#064E3B", fontSize: 18 }}>
                         {perFeedingL.toFixed(1)}
                       </p>
-                      <p
-                        style={{ color: "#6D6D6D", fontSize: 11, fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p style={{ color: "#6D6D6D", fontSize: 11 }}>
                         {t("L")} × {feedings}
                       </p>
                     </div>
@@ -1073,7 +1000,6 @@ export default function ReportPage() {
                       className="font-bold uppercase mb-1"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 10,
                         letterSpacing: 0.3,
                       }}
@@ -1081,17 +1007,10 @@ export default function ReportPage() {
                       {t("Wean by")}
                     </p>
                     <div className="flex items-baseline gap-1">
-                      <p
-                        className="font-bold"
-                        style={{ color: "#064E3B", fontSize: 18, fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p className="font-bold" style={{ color: "#064E3B", fontSize: 18 }}>
                         {weaningDays}
                       </p>
-                      <p
-                        style={{ color: "#6D6D6D", fontSize: 11, fontFamily: "Nunito, sans-serif" }}
-                      >
-                        {t("days")}
-                      </p>
+                      <p style={{ color: "#6D6D6D", fontSize: 11 }}>{t("days")}</p>
                     </div>
                   </div>
                 </div>
@@ -1113,7 +1032,6 @@ export default function ReportPage() {
                         <p
                           style={{
                             color: "#231F20",
-                            fontFamily: "Nunito, sans-serif",
                             fontSize: 13,
                             lineHeight: 1.45,
                             margin: 0,
@@ -1129,7 +1047,6 @@ export default function ReportPage() {
                   className="mt-2 ml-1"
                   style={{
                     color: "#6D6D6D",
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 11,
                     fontStyle: "italic",
                   }}
@@ -1262,32 +1179,17 @@ export default function ReportPage() {
                 className="flex items-baseline justify-center gap-2"
                 style={{ marginBottom: 12 }}
               >
-                <span
-                  className="font-bold"
-                  style={{ color: forageColor, fontSize: 32, fontFamily: "Nunito, sans-serif" }}
-                >
+                <span className="font-bold" style={{ color: forageColor, fontSize: 32 }}>
                   {Math.round(fPct)}
                 </span>
-                <span style={{ color: "#6D6D6D", fontSize: 22, fontFamily: "Nunito, sans-serif" }}>
-                  :
-                </span>
-                <span
-                  className="font-bold"
-                  style={{ color: concColor, fontSize: 32, fontFamily: "Nunito, sans-serif" }}
-                >
+                <span style={{ color: "#6D6D6D", fontSize: 22 }}>:</span>
+                <span className="font-bold" style={{ color: concColor, fontSize: 32 }}>
                   {Math.round(cPct)}
                 </span>
                 {oPct > 0.5 && (
                   <>
-                    <span
-                      style={{ color: "#6D6D6D", fontSize: 22, fontFamily: "Nunito, sans-serif" }}
-                    >
-                      :
-                    </span>
-                    <span
-                      className="font-bold"
-                      style={{ color: otherColor, fontSize: 32, fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span style={{ color: "#6D6D6D", fontSize: 22 }}>:</span>
+                    <span className="font-bold" style={{ color: otherColor, fontSize: 32 }}>
                       {Math.round(oPct)}
                     </span>
                   </>
@@ -1309,10 +1211,7 @@ export default function ReportPage() {
               </div>
               {/* Legend rows — name, kg/day as-fed, % share */}
               <div style={{ marginBottom: 6 }}>
-                <div
-                  className="flex items-center justify-between"
-                  style={{ fontFamily: "Nunito, sans-serif", fontSize: 13 }}
-                >
+                <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
                   <div className="flex items-center gap-2">
                     <span
                       style={{
@@ -1336,10 +1235,7 @@ export default function ReportPage() {
                 </div>
               </div>
               <div style={{ marginBottom: oPct > 0 ? 6 : 0 }}>
-                <div
-                  className="flex items-center justify-between"
-                  style={{ fontFamily: "Nunito, sans-serif", fontSize: 13 }}
-                >
+                <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
                   <div className="flex items-center gap-2">
                     <span
                       style={{
@@ -1363,10 +1259,7 @@ export default function ReportPage() {
                 </div>
               </div>
               {oPct > 0 && (
-                <div
-                  className="flex items-center justify-between"
-                  style={{ fontFamily: "Nunito, sans-serif", fontSize: 13 }}
-                >
+                <div className="flex items-center justify-between" style={{ fontSize: 13 }}>
                   <div className="flex items-center gap-2">
                     <span
                       style={{
@@ -1393,7 +1286,6 @@ export default function ReportPage() {
                 className="mt-3 ml-1"
                 style={{
                   color: "#6D6D6D",
-                  fontFamily: "Nunito, sans-serif",
                   fontSize: 11,
                   fontStyle: "italic",
                 }}
@@ -1439,10 +1331,7 @@ export default function ReportPage() {
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
                       style={{ backgroundColor: "#F8FAF9" }}
                     >
-                      <span
-                        className="text-sm font-bold"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
                         {t("Overall Status")}
                       </span>
                       <StatusBadge status={evalReport.evaluation_summary.overall_status} />
@@ -1453,16 +1342,10 @@ export default function ReportPage() {
                       className="flex items-center justify-between rounded-xl px-3 py-2.5"
                       style={{ backgroundColor: "#F8FAF9" }}
                     >
-                      <span
-                        className="text-sm font-bold"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
                         {t("Limiting Factor")}
                       </span>
-                      <span
-                        className="text-sm font-bold"
-                        style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <span className="text-sm font-bold" style={{ color: "#E44A4A" }}>
                         {evalReport.evaluation_summary.limiting_factor}
                       </span>
                     </div>
@@ -1565,7 +1448,6 @@ export default function ReportPage() {
                   style={{
                     backgroundColor: "#F1F5F9",
                     color: "#6D6D6D",
-                    fontFamily: "Nunito, sans-serif",
                   }}
                 >
                   <span className="flex-1">{t("Feed")}</span>
@@ -1581,27 +1463,24 @@ export default function ReportPage() {
                     className="flex items-center py-2 px-1 border-b last:border-0"
                     style={{ borderColor: "#F1F5F9" }}
                   >
-                    <span
-                      className="flex-1 text-sm"
-                      style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="flex-1 text-sm" style={{ color: "#231F20" }}>
                       {displayFeedName(row)}
                     </span>
                     <span
                       className="w-20 text-right text-sm font-bold"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                      style={{ color: "#064E3B" }}
                     >
                       {fmt(row.price_per_kg)}
                     </span>
                     <span
                       className="w-16 text-right text-sm font-bold"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                      style={{ color: "#064E3B" }}
                     >
                       {fmt(row.quantity_as_fed_kg_per_day, 1)}
                     </span>
                     <span
                       className="w-16 text-right text-sm font-bold"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
+                      style={{ color: "#064E3B" }}
                     >
                       {fmt(row.total_cost)}
                     </span>
@@ -1647,10 +1526,7 @@ export default function ReportPage() {
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
                     style={{ backgroundColor: "#F8FAF9" }}
                   >
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
                       {t("Status")}
                     </span>
                     <StatusBadge status={evalReport.intake_evaluation.intake_status} />
@@ -1719,16 +1595,10 @@ export default function ReportPage() {
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
                     style={{ backgroundColor: "#F8FAF9" }}
                   >
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
                       {t("Limiting Nutrient")}
                     </span>
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: "#E44A4A", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: "#E44A4A" }}>
                       {evalReport.milk_production_analysis.limiting_nutrient}
                     </span>
                   </div>
@@ -1834,16 +1704,10 @@ export default function ReportPage() {
                     className="flex items-center justify-between rounded-xl px-3 py-2.5 mt-3"
                     style={{ backgroundColor: "#F8FAF9" }}
                   >
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: "#6D6D6D" }}>
                       {t("Classification")}
                     </span>
-                    <span
-                      className="text-sm font-bold"
-                      style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-                    >
+                    <span className="text-sm font-bold" style={{ color: "#064E3B" }}>
                       {evalReport.methane_analysis.classification}
                     </span>
                   </div>
@@ -1878,10 +1742,7 @@ export default function ReportPage() {
                   </svg>
                 }
               >
-                <p
-                  className="text-xs mb-2"
-                  style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-                >
+                <p className="text-xs mb-2" style={{ color: "#6D6D6D" }}>
                   {t(
                     "These limits are targets. The diet is still valid — the optimizer kept the difference as small as cost allowed."
                   )}
@@ -1911,26 +1772,16 @@ export default function ReportPage() {
                       <svg width="18" height="18" viewBox="0 0 24 24" fill="#05BC6D">
                         <path d="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10s10,-4.48 10,-10S17.52,2 12,2zM12.88,17.76v0.36c0,0.48 -0.39,0.88 -0.88,0.88h0c-0.48,0 -0.88,-0.39 -0.88,-0.88v-0.42c-0.63,-0.15 -1.93,-0.61 -2.69,-2.1c-0.23,-0.44 -0.01,-0.99 0.45,-1.18l0.07,-0.03c0.41,-0.17 0.87,0 1.08,0.39c0.32,0.61 0.95,1.37 2.12,1.37c0.93,0 1.98,-0.48 1.98,-1.61c0,-0.96 -0.7,-1.46 -2.28,-2.03c-1.1,-0.39 -3.35,-1.03 -3.35,-3.31c0,-0.1 0.01,-2.4 2.62,-2.96V5.88C11.12,5.39 11.52,5 12,5h0c0.48,0 0.88,0.39 0.88,0.88v0.37c1.07,0.19 1.75,0.76 2.16,1.3c0.34,0.44 0.16,1.08 -0.36,1.3l0,0C14.32,9 13.9,8.88 13.66,8.57c-0.28,-0.38 -0.78,-0.77 -1.6,-0.77c-0.7,0 -1.81,0.37 -1.81,1.39c0,0.95 0.86,1.31 2.64,1.9c2.4,0.83 3.01,2.05 3.01,3.45C15.9,17.17 13.4,17.67 12.88,17.76z" />
                       </svg>
-                      <p
-                        className="font-bold"
-                        style={{ color: "#6D6D6D", fontSize: 12, fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p className="font-bold" style={{ color: "#6D6D6D", fontSize: 12 }}>
                         {t("Daily Cost")}
                       </p>
                     </div>
                     {/* Value + currency code suffix — Android "108,199.8 VND" */}
                     <div className="flex items-baseline gap-1.5">
-                      <p
-                        className="font-bold"
-                        style={{ color: "#231F20", fontSize: 20, fontFamily: "Nunito, sans-serif" }}
-                      >
+                      <p className="font-bold" style={{ color: "#231F20", fontSize: 20 }}>
                         {Number(recReport.solution_summary.daily_cost).toFixed(2)}
                       </p>
-                      <p
-                        style={{ color: "#6D6D6D", fontSize: 14, fontFamily: "Nunito, sans-serif" }}
-                      >
-                        {currencySymbol}
-                      </p>
+                      <p style={{ color: "#6D6D6D", fontSize: 14 }}>{currencySymbol}</p>
                     </div>
                   </div>
                 )}
@@ -1952,7 +1803,6 @@ export default function ReportPage() {
                               style={{
                                 color: "#6D6D6D",
                                 fontSize: 12,
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               {t("Milk Production")}
@@ -1964,7 +1814,6 @@ export default function ReportPage() {
                               style={{
                                 color: "#231F20",
                                 fontSize: 20,
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               {parts[0]}
@@ -1973,7 +1822,6 @@ export default function ReportPage() {
                               style={{
                                 color: "#6D6D6D",
                                 fontSize: 14,
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               {parts.slice(1).join(" ")}
@@ -1997,7 +1845,6 @@ export default function ReportPage() {
                               style={{
                                 color: "#6D6D6D",
                                 fontSize: 12,
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               {t("Dry Matter Intake")}
@@ -2009,7 +1856,6 @@ export default function ReportPage() {
                               style={{
                                 color: "#231F20",
                                 fontSize: 20,
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               {parts[0]}
@@ -2018,7 +1864,6 @@ export default function ReportPage() {
                               style={{
                                 color: "#6D6D6D",
                                 fontSize: 14,
-                                fontFamily: "Nunito, sans-serif",
                               }}
                             >
                               {parts.slice(1).join(" ")}
@@ -2057,17 +1902,13 @@ export default function ReportPage() {
                         className="font-bold uppercase"
                         style={{
                           color: "#064E3B",
-                          fontFamily: "Nunito, sans-serif",
                           fontSize: 12,
                           letterSpacing: 0.5,
                         }}
                       >
                         {t("Total Diet Cost")}
                       </span>
-                      <span
-                        className="font-bold"
-                        style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
+                      <span className="font-bold" style={{ color: "#1CA069", fontSize: 16 }}>
                         {fmt(recTotalCost)} {user?.currency || ""}
                       </span>
                     </div>
@@ -2085,7 +1926,6 @@ export default function ReportPage() {
                       className="font-bold uppercase"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -2096,7 +1936,6 @@ export default function ReportPage() {
                       className="font-bold uppercase text-center"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -2107,7 +1946,6 @@ export default function ReportPage() {
                       className="font-bold uppercase text-center"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -2118,7 +1956,6 @@ export default function ReportPage() {
                       className="font-bold uppercase text-right"
                       style={{
                         color: "#6D6D6D",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -2136,27 +1973,18 @@ export default function ReportPage() {
                         borderBottom: "1px solid #F1F5F9",
                       }}
                     >
-                      <span
-                        className="font-bold"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                      >
+                      <span className="font-bold" style={{ color: "#231F20", fontSize: 14 }}>
                         {displayFeedName(row)}
                       </span>
-                      <span
-                        className="text-center"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                      >
+                      <span className="text-center" style={{ color: "#231F20", fontSize: 14 }}>
                         {fmt(row.price_per_kg, 0)}
                       </span>
-                      <span
-                        className="text-center"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
-                      >
+                      <span className="text-center" style={{ color: "#231F20", fontSize: 14 }}>
                         {fmt(row.quantity_kg_per_day, 2)}
                       </span>
                       <span
                         className="text-right font-bold"
-                        style={{ color: "#1CA069", fontFamily: "Nunito, sans-serif", fontSize: 14 }}
+                        style={{ color: "#1CA069", fontSize: 14 }}
                       >
                         {fmt(row.daily_cost, 0)}
                       </span>
@@ -2187,16 +2015,10 @@ export default function ReportPage() {
                   >
                     {/* Methane Production */}
                     <div className="flex items-center justify-between mt-1">
-                      <p
-                        className="font-bold uppercase"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-                      >
+                      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
                         {t("Methane Production")}
                       </p>
-                      <p
-                        className="font-bold"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
+                      <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
                         {fmt(productionVal, 2)} {t("g/day")}
                       </p>
                     </div>
@@ -2207,16 +2029,10 @@ export default function ReportPage() {
 
                     {/* Methane Yield */}
                     <div className="flex items-center justify-between mt-4">
-                      <p
-                        className="font-bold uppercase"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-                      >
+                      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
                         {t("Methane Yield")}
                       </p>
-                      <p
-                        className="font-bold"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
+                      <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
                         {fmt(yieldVal, 2)} {t("g/kg DMI")}
                       </p>
                     </div>
@@ -2233,7 +2049,6 @@ export default function ReportPage() {
                             className="font-bold uppercase"
                             style={{
                               color: "#6D6D6D",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 12,
                             }}
                           >
@@ -2243,7 +2058,6 @@ export default function ReportPage() {
                             className="font-bold"
                             style={{
                               color: "#231F20",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 16,
                             }}
                           >
@@ -2259,16 +2073,10 @@ export default function ReportPage() {
 
                     {/* Methane Conversion Rate (Ym %) */}
                     <div className="flex items-center justify-between mt-4">
-                      <p
-                        className="font-bold uppercase"
-                        style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", fontSize: 12 }}
-                      >
+                      <p className="font-bold uppercase" style={{ color: "#6D6D6D", fontSize: 12 }}>
                         {t("Methane Conversion Rate (Ym %)")}
                       </p>
-                      <p
-                        className="font-bold"
-                        style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 16 }}
-                      >
+                      <p className="font-bold" style={{ color: "#231F20", fontSize: 16 }}>
                         {fmt(ymVal, 2)} %
                       </p>
                     </div>
@@ -2303,7 +2111,6 @@ export default function ReportPage() {
                             className="font-bold uppercase"
                             style={{
                               color: "#1E40AF",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 12,
                               letterSpacing: 0.5,
                             }}
@@ -2314,7 +2121,6 @@ export default function ReportPage() {
                             className="font-bold"
                             style={{
                               color: "#1E40AF",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 16,
                             }}
                           >
@@ -2328,7 +2134,6 @@ export default function ReportPage() {
                     <p
                       style={{
                         color: "#1E40AF",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         marginTop: 12,
                       }}
@@ -2398,7 +2203,6 @@ export default function ReportPage() {
                       className="font-bold uppercase"
                       style={{
                         color: banner.titleColor,
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 12,
                         letterSpacing: 0.5,
                       }}
@@ -2408,7 +2212,6 @@ export default function ReportPage() {
                     <p
                       style={{
                         color: banner.bodyColor,
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 14,
                       }}
                     >
@@ -2427,7 +2230,6 @@ export default function ReportPage() {
                       className="font-bold"
                       style={{
                         color: "#231F20",
-                        fontFamily: "Nunito, sans-serif",
                         fontSize: 14,
                         marginTop: 16,
                       }}
@@ -2459,7 +2261,6 @@ export default function ReportPage() {
                           <p
                             style={{
                               color: "#231F20",
-                              fontFamily: "Nunito, sans-serif",
                               fontSize: 14,
                               lineHeight: 1.5,
                             }}
@@ -2479,7 +2280,6 @@ export default function ReportPage() {
                   className="font-bold"
                   style={{
                     color: "#231F20",
-                    fontFamily: "Nunito, sans-serif",
                     fontSize: 14,
                     marginTop: 16,
                     marginBottom: 8,
@@ -2523,7 +2323,6 @@ export default function ReportPage() {
               backgroundColor: "#064E3B",
               color: "white",
               border: "none",
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
             }}
           >
@@ -2539,7 +2338,6 @@ export default function ReportPage() {
                 backgroundColor: "#F0FDF4",
                 color: "#064E3B",
                 border: "1px solid #064E3B",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
               }}
             >
@@ -2595,7 +2393,6 @@ export default function ReportPage() {
                 backgroundColor: "#064E3B",
                 color: "white",
                 border: "none",
-                fontFamily: "Nunito, sans-serif",
                 cursor: "pointer",
               }}
             >
@@ -2634,7 +2431,6 @@ export default function ReportPage() {
               border: "2px solid #064E3B",
               color: "#064E3B",
               background: "white",
-              fontFamily: "Nunito, sans-serif",
               cursor: "pointer",
             }}
           >
@@ -2649,7 +2445,6 @@ export default function ReportPage() {
               backgroundColor: isSaving || !reportIdForSave ? "#D3D3D3" : "#064E3B",
               color: isSaving || !reportIdForSave ? "#999999" : "white",
               border: "none",
-              fontFamily: "Nunito, sans-serif",
               cursor: isSaving || !reportIdForSave ? "not-allowed" : "pointer",
             }}
           >

@@ -59,7 +59,6 @@ export default function ForgotPinPage() {
           className="flex-1 text-center"
           style={{
             color: "#042F23",
-            fontFamily: "Nunito, sans-serif",
             fontSize: 16,
             fontWeight: 700,
             margin: 0,
@@ -93,16 +92,10 @@ export default function ForgotPinPage() {
                 />
               </svg>
             </div>
-            <h2
-              className="text-xl font-bold mb-2"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
+            <h2 className="text-xl font-bold mb-2" style={{ color: "#064E3B" }}>
               {t("Check Your Email")}
             </h2>
-            <p
-              className="text-sm mb-8"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif", lineHeight: 1.6 }}
-            >
+            <p className="text-sm mb-8" style={{ color: "#6D6D6D", lineHeight: 1.6 }}>
               {t(
                 "We've sent PIN reset instructions to your email address. Please check your inbox."
               )}
@@ -112,7 +105,6 @@ export default function ForgotPinPage() {
               className="px-8 py-4 rounded-full font-bold text-base text-white"
               style={{
                 backgroundColor: "#064E3B",
-                fontFamily: "Nunito, sans-serif",
                 border: "none",
                 cursor: "pointer",
               }}
@@ -123,21 +115,15 @@ export default function ForgotPinPage() {
         ) : (
           /* Form state */
           <div className="px-3">
-            <p
-              className="text-center font-bold mt-5"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif", fontSize: 20 }}
-            >
+            <p className="text-center font-bold mt-5" style={{ color: "#064E3B", fontSize: 20 }}>
               {t("Reset Your PIN")}
             </p>
-            <p
-              className="text-center text-sm mt-1"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
-            >
+            <p className="text-center text-sm mt-1" style={{ color: "#6D6D6D" }}>
               {t("Enter your registered email to receive a reset link")}
             </p>
             <p
               className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
-              style={{ color: "#6D6D6D", fontFamily: "Nunito, sans-serif" }}
+              style={{ color: "#6D6D6D" }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
@@ -153,7 +139,6 @@ export default function ForgotPinPage() {
               style={{
                 backgroundColor: "#F1F5F9",
                 color: "#231F20",
-                fontFamily: "Nunito, sans-serif",
               }}
             />
 
@@ -164,7 +149,6 @@ export default function ForgotPinPage() {
               style={{
                 backgroundColor: isReady && !isLoading ? "#064E3B" : "#D3D3D3",
                 color: isReady && !isLoading ? "#FFFFFF" : "#999999",
-                fontFamily: "Nunito, sans-serif",
                 border: "none",
                 cursor: isReady && !isLoading ? "pointer" : "not-allowed",
                 transition: "background-color 0.2s",
