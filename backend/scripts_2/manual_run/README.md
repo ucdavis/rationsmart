@@ -5,7 +5,7 @@ directly from the command line, reading inputs from an Excel workbook,
 writing an HTML report you open in a browser. No server, no database, no
 `.env` file, no network connection.
 
-This tool is tracked in git under `scripts_2/`, so a normal clone of the repo
+This tool is tracked in git under `backend/scripts_2/`, so a normal clone of the repo
 brings everything you need — no extra files to be handed separately.
 
 ---
@@ -20,7 +20,7 @@ read those if a command here doesn't behave as expected.
 ```bash
 # 1. Clone the repo (use whatever URL/branch you were told to use)
 git clone <repo-url> rationsmart
-cd rationsmart
+cd rationsmart/backend
 
 # 2. Set up Python 3.11
 python3 -m venv .venv
@@ -54,24 +54,26 @@ python -m scripts_2.manual_run.run_evaluation --mode bulk
 
 ```bash
 git clone <repo-url> rationsmart
-cd rationsmart
+cd rationsmart/backend
 ```
 
-(Use whatever URL/branch you were told to use.) `scripts_2/` comes with the
-clone automatically:
+(Use whatever URL/branch you were told to use.) Everything this tool needs
+lives in the `backend/` folder of the clone, and `scripts_2/` comes with it
+automatically:
 
 ```
 rationsmart/
-  core/
-  services/
-  scripts_2/
-    animal_inputs_loader.py
-    manual_run/
-      run_optimization.py
-      run_evaluation.py
-      RFT_FD_Lib_Y2test.xlsx
-      README.md            <- this file
-      results/             <- created on first run
+  backend/                 <- run every command from here
+    core/
+    services/
+    scripts_2/
+      animal_inputs_loader.py
+      manual_run/
+        run_optimization.py
+        run_evaluation.py
+        RFT_FD_Lib_Y2test.xlsx
+        README.md          <- this file
+        results/           <- created on first run
 ```
 
 ## 2. Set up Python
@@ -79,7 +81,7 @@ rationsmart/
 Requires **Python 3.11** (check with `python3 --version`).
 
 ```bash
-cd rationsmart
+cd rationsmart/backend
 python3 -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 ```
@@ -96,7 +98,7 @@ pip install numpy==2.0.2 pandas==2.2.3 scipy==1.13.1 pymoo==0.6.1.3 openpyxl==3.
 
 (If you'd rather just reuse the project's full backend environment instead —
 e.g. because you already have it set up for other work — `pip install -r
-requirements.txt` from the repo root also works, it's just heavier and pulls
+requirements.txt` from the `backend/` folder also works, it's just heavier and pulls
 in packages this task doesn't use.)
 
 No `.env` file, no database connection string, and no AWS/S3 credentials are
@@ -105,8 +107,8 @@ network.
 
 ## 4. Run it
 
-Always run these **from the `rationsmart/` repo root** (not from inside
-`scripts_2/`), using `-m`:
+Always run these **from the `rationsmart/backend/` folder** (not from the
+`rationsmart/` folder above it, and not from inside `scripts_2/`), using `-m`:
 
 ```bash
 # Diet Recommendation — one animal (reads the "Animal" sheet)
@@ -184,9 +186,9 @@ python -m scripts_2.manual_run.run_evaluation --file /path/to/your.xlsx --output
 ## 7. Troubleshooting
 
 - **`ModuleNotFoundError: No module named 'core'` (or `scripts_2`)** — you're
-  either not running from the repo root, or not using `-m`. Re-run as
-  `python -m scripts_2.manual_run.run_optimization` from the `rationsmart/`
-  folder.
+  either not running from the `backend/` folder, or not using `-m`. Re-run as
+  `python -m scripts_2.manual_run.run_optimization` from the
+  `rationsmart/backend/` folder.
 - **`Input workbook not found`** — check `scripts_2/manual_run/` actually
   contains `RFT_FD_Lib_Y2test.xlsx`, or pass `--file` with a full path.
 - **A bulk run says one animal "failed" but keeps going** — by design: bulk

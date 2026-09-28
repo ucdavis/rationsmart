@@ -2,6 +2,11 @@
 # Containers reach the host DB via host.docker.internal (resolved by extra_hosts below).
 # Set POSTGRES_HOST=host.docker.internal in .env on the server.
 
+# Pinned project name: compose would otherwise name the project after this folder
+# ("backend"), and on the server that starts a second set of containers beside the
+# running rationsmart-* ones instead of replacing them, plus a new empty Redis volume.
+name: rationsmart
+
 services:
   api:
     build: .
