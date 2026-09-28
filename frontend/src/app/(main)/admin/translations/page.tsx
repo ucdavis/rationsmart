@@ -100,7 +100,7 @@ export default function AdminTranslationsPage() {
       .then(([cRes, lRes]) => {
         const cs = (cRes.data ?? []) as CountryRow[];
         setCountries(cs);
-        if (cs.length > 0 && !selectedCountryId) setSelectedCountryId(String(cs[0].id));
+        if (cs[0] && !selectedCountryId) setSelectedCountryId(String(cs[0].id));
         const ls = (lRes.data as { languages?: SystemLanguage[] })?.languages ?? [];
         setAllLanguages(ls);
       })
@@ -120,8 +120,9 @@ export default function AdminTranslationsPage() {
   // Default the coverage language to the first available one whenever
   // the country changes.
   useEffect(() => {
-    if (coverageLangs.length > 0 && !coverageLangs.includes(selectedLang)) {
-      setSelectedLang(coverageLangs[0]);
+    const firstLang = coverageLangs[0];
+    if (firstLang && !coverageLangs.includes(selectedLang)) {
+      setSelectedLang(firstLang);
     }
     setCoverage(null); // reset stale coverage when country changes
     // eslint-disable-next-line react-hooks/exhaustive-deps

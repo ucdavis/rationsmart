@@ -13,6 +13,15 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
+      // Floors set just under the measured baseline (2026-09-28: statements /
+      // lines 83.4 %, branches 79.7 %, functions 71.7 %) so coverage can only
+      // ratchet up. Raise them as tests are added (audit B-38).
+      thresholds: {
+        statements: 83,
+        lines: 83,
+        branches: 79,
+        functions: 71,
+      },
       include: ["src/**/*.{ts,tsx}"],
       exclude: [
         "src/**/*.d.ts",

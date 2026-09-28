@@ -51,14 +51,17 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Unhandled-promise lint
+        run: npm run lint:promises
+
       - name: Typecheck
         run: npm run typecheck
 
       - name: Format check
         run: npm run format:check
 
-      - name: Tests
-        run: npm test
+      - name: Tests (with coverage floors)
+        run: npm run test:coverage
 
       # Informational only — see header note. Does not fail the gate.
       - name: Security audit (informational)

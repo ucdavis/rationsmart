@@ -599,7 +599,7 @@ export default function CattleInfoPage() {
   useEffect(() => {
     const state = form.animal_category;
     const hydrated = !!cattleInfo;
-    loadSpecs(state).then((s) => {
+    void loadSpecs(state).then((s) => {
       if (!s) return;
       if (!hydrated) {
         setForm((p) => (p.animal_category === state ? applyDefaults(p, s) : p));
@@ -1039,7 +1039,7 @@ export default function CattleInfoPage() {
     setForm(cachedSpecs ? applyDefaults(resetForm, cachedSpecs) : resetForm);
     setAdjusted({});
     if (!cachedSpecs) {
-      loadSpecs(resetState).then((s) => {
+      void loadSpecs(resetState).then((s) => {
         if (s) setForm((p) => (p.animal_category === resetState ? applyDefaults(p, s) : p));
       });
     }

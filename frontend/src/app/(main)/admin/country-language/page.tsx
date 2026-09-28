@@ -115,7 +115,7 @@ type ConfirmState = {
   body: string;
   label: string;
   danger?: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 } | null;
 
 const inputStyle = {
@@ -226,7 +226,7 @@ export default function AdminCountryLanguagePage() {
 
   const reload = () => {
     setIsLoading(true);
-    Promise.allSettled([listLanguages(), listCountriesWithLanguages()])
+    void Promise.allSettled([listLanguages(), listCountriesWithLanguages()])
       .then(([langRes, countriesRes]) => {
         if (langRes.status === "fulfilled") {
           const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
@@ -254,7 +254,7 @@ export default function AdminCountryLanguagePage() {
     body: string,
     label: string,
     danger: boolean,
-    onConfirm: () => void
+    onConfirm: () => void | Promise<void>
   ) => {
     setConfirm({
       title,
@@ -262,7 +262,7 @@ export default function AdminCountryLanguagePage() {
       label,
       danger,
       onConfirm: () => {
-        onConfirm();
+        void onConfirm();
         setConfirm(null);
       },
     });
@@ -411,7 +411,7 @@ function CountriesLanguagesTab({
     body: string,
     label: string,
     danger: boolean,
-    onConfirm: () => void
+    onConfirm: () => void | Promise<void>
   ) => void;
 }) {
   const [showActivate, setShowActivate] = useState(false);
@@ -591,7 +591,7 @@ function CountriesLanguagesTab({
         flip
       );
     } else {
-      flip();
+      void flip();
     }
   };
 
@@ -1100,8 +1100,8 @@ function FeedNamesTab({
   // only when nothing has been picked yet, so it doesn't clobber the
   // admin's own selection on a later reload.
   useEffect(() => {
-    if (selCountry || countries.length === 0) return;
     const first = countries[0];
+    if (selCountry || !first) return;
     setSelCountry(first);
     setSelLang(first.languages.find((g) => g !== "en") ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps

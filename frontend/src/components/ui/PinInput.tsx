@@ -60,7 +60,7 @@ export default function PinInput({
     onChange(next);
 
     if (char && index < lastIndex) {
-      refs[index + 1].current?.focus();
+      refs[index + 1]?.current?.focus();
     }
     if (next.length === length) {
       onComplete?.(next);
@@ -74,12 +74,12 @@ export default function PinInput({
         const arr = digits.slice();
         arr[index - 1] = "";
         onChange(arr.join("").trimEnd());
-        refs[index - 1].current?.focus();
+        refs[index - 1]?.current?.focus();
       }
     } else if (e.key === "ArrowLeft" && index > 0) {
-      refs[index - 1].current?.focus();
+      refs[index - 1]?.current?.focus();
     } else if (e.key === "ArrowRight" && index < lastIndex) {
-      refs[index + 1].current?.focus();
+      refs[index + 1]?.current?.focus();
     }
   };
 
@@ -89,7 +89,7 @@ export default function PinInput({
     const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length);
     onChange(pasted);
     const focusIndex = Math.min(pasted.length, lastIndex);
-    refs[focusIndex].current?.focus();
+    refs[focusIndex]?.current?.focus();
     if (pasted.length === length) onComplete?.(pasted);
   };
 

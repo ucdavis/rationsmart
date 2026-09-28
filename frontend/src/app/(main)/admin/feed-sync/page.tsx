@@ -106,7 +106,7 @@ type ConfirmState = {
   body: string;
   label: string;
   danger?: boolean;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
 } | null;
 
 const DAY_OPTIONS = [
@@ -278,7 +278,7 @@ export default function AdminFeedSyncPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.is_admin) reload();
+    if (user?.is_admin) void reload();
   }, [user?.is_admin, reload]);
 
   // Cheap endpoint — auto-refresh the status card every 60s while the
@@ -300,7 +300,7 @@ export default function AdminFeedSyncPage() {
     body: string,
     label: string,
     danger: boolean,
-    onConfirm: () => void
+    onConfirm: () => void | Promise<void>
   ) => {
     setConfirm({
       title,
@@ -308,7 +308,7 @@ export default function AdminFeedSyncPage() {
       label,
       danger,
       onConfirm: () => {
-        onConfirm();
+        void onConfirm();
         setConfirm(null);
       },
     });
@@ -474,7 +474,7 @@ function SyncSettingsTab({
     body: string,
     label: string,
     danger: boolean,
-    onConfirm: () => void
+    onConfirm: () => void | Promise<void>
   ) => void;
   onViewDetails: (logId: string) => void;
 }) {
@@ -516,7 +516,7 @@ function SyncSettingsTab({
           setStatus(res.data);
           if (!res.data.running) {
             if (statusPollRef.current) clearInterval(statusPollRef.current);
-            reload();
+            void reload();
           }
         })
         .catch(() => {}); // transient — the next tick retries
@@ -542,7 +542,7 @@ function SyncSettingsTab({
     if (!status || !config) return;
     if (!status.scheduler_enabled) {
       if (!config.endpoint_url) return; // guarded by disabled UI already
-      doToggle("enable");
+      void doToggle("enable");
     } else {
       askConfirm(
         "Disable automatic scheduler?",
@@ -596,36 +596,38 @@ function SyncSettingsTab({
     // poll forever. The run keeps going server-side; the history table
     // below still shows its final status on the next reload.
     const deadline = Date.now() + SYNC_POLL_MAX_MS;
-    pollRef.current = setInterval(async () => {
-      if (Date.now() > deadline) {
-        if (pollRef.current) clearInterval(pollRef.current);
-        pollRef.current = null;
-        setRunningLogId(null);
-        reload();
-        showSnackbar("Sync is taking longer than expected — check Sync History later", "info");
-        return;
-      }
-      try {
-        const res = await getFeedSyncLog(logId);
-        const log: FeedSyncLogDetail = res.data;
-        if (log.status !== "running") {
+    pollRef.current = setInterval(() => {
+      void (async () => {
+        if (Date.now() > deadline) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
           setRunningLogId(null);
-          setLastResult(log);
-          reload();
-          if (log.status === "success") {
-            showSnackbar(
-              `Sync complete — ${log.inserted} added, ${log.updated} updated, ${log.skipped} rows skipped`,
-              "success"
-            );
-          } else {
-            showSnackbar(log.error_message ?? "Sync failed", "error");
-          }
+          void reload();
+          showSnackbar("Sync is taking longer than expected — check Sync History later", "info");
+          return;
         }
-      } catch {
-        // transient network hiccup — keep polling, don't abandon the run
-      }
+        try {
+          const res = await getFeedSyncLog(logId);
+          const log: FeedSyncLogDetail = res.data;
+          if (log.status !== "running") {
+            if (pollRef.current) clearInterval(pollRef.current);
+            pollRef.current = null;
+            setRunningLogId(null);
+            setLastResult(log);
+            void reload();
+            if (log.status === "success") {
+              showSnackbar(
+                `Sync complete — ${log.inserted} added, ${log.updated} updated, ${log.skipped} rows skipped`,
+                "success"
+              );
+            } else {
+              showSnackbar(log.error_message ?? "Sync failed", "error");
+            }
+          }
+        } catch {
+          // transient network hiccup — keep polling, don't abandon the run
+        }
+      })();
     }, OWN_RUN_POLL_MS);
   };
 

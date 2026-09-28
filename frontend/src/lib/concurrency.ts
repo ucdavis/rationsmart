@@ -12,7 +12,7 @@ export async function allSettledLimited<T, R>(
     while (next < items.length) {
       const i = next++;
       try {
-        results[i] = { status: "fulfilled", value: await fn(items[i]) };
+        results[i] = { status: "fulfilled", value: await fn(items[i] as T) };
       } catch (reason) {
         results[i] = { status: "rejected", reason };
       }

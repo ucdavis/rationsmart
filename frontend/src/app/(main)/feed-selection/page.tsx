@@ -851,7 +851,7 @@ export default function FeedSelectionPage() {
         return;
       }
     }
-    generateReport();
+    void generateReport();
   };
 
   const generateReport = async () => {
@@ -1945,7 +1945,7 @@ export default function FeedSelectionPage() {
             <button
               onClick={() => {
                 setShowIncompleteFeedsDialog(false);
-                generateReport();
+                void generateReport();
               }}
               className="font-bold"
               style={{

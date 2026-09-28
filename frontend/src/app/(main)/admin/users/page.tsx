@@ -131,7 +131,7 @@ export default function AdminUsersPage() {
   useEffect(() => {
     if (!user?.id) return;
     const timer = setTimeout(() => {
-      load(countryFilter, statusFilter, search);
+      void load(countryFilter, statusFilter, search);
     }, 350);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
   // Badge tap: activating is harmless and immediate; deactivating asks first.
   const requestToggle = (u: AdminUser) => {
     if (u.is_active && u.id !== user?.id) setConfirmDeactivate(u);
-    else handleToggle(u);
+    else void handleToggle(u);
   };
 
   const handleToggleAdmin = async (u: AdminUser) => {
@@ -792,7 +792,7 @@ export default function AdminUsersPage() {
             <button
               onClick={() => {
                 if (sheetActive !== null && sheetActive !== selectedUser.is_active) {
-                  handleToggle(selectedUser);
+                  void handleToggle(selectedUser);
                 }
                 setSelectedUser(null);
               }}
@@ -899,7 +899,7 @@ export default function AdminUsersPage() {
                 onClick={() => {
                   const target = confirmDeactivate;
                   setConfirmDeactivate(null);
-                  handleToggle(target);
+                  void handleToggle(target);
                 }}
                 className="font-bold"
                 style={{
@@ -988,7 +988,7 @@ export default function AdminUsersPage() {
                 onClick={() => {
                   const target = confirmAdmin;
                   setConfirmAdmin(null);
-                  handleToggleAdmin(target);
+                  void handleToggleAdmin(target);
                 }}
                 className="font-bold"
                 style={{

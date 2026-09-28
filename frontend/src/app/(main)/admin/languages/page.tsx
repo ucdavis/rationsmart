@@ -180,7 +180,7 @@ export default function AdminLanguageCatalogPage() {
 
   const reload = () => {
     setIsLoading(true);
-    Promise.allSettled([listLanguages(), listCountriesWithLanguages()])
+    void Promise.allSettled([listLanguages(), listCountriesWithLanguages()])
       .then(([langRes, countriesRes]) => {
         if (langRes.status === "fulfilled") {
           const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
@@ -1289,7 +1289,7 @@ export default function AdminLanguageCatalogPage() {
                 onClick={() => {
                   const { country, code } = confirmUnassign;
                   setConfirmUnassign(null);
-                  handleUnassign(country, code);
+                  void handleUnassign(country, code);
                 }}
                 className="font-bold"
                 style={{

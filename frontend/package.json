@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "next lint",
+    "lint:promises": "eslint --no-eslintrc --no-inline-config -c .eslintrc.promises.js \"src/**/*.{ts,tsx}\" --ignore-pattern \"**/__tests__/**\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
   },
@@ -34,6 +35,7 @@
     "@types/react-dom": "^18",
     "@typescript-eslint/eslint-plugin": "^8.70.1",
     "@vitejs/plugin-react": "^4.7.0",
+    "@vitest/coverage-v8": "^1.6.1",
     "autoprefixer": "^10.0.1",
     "eslint": "^8.57.0",
     "eslint-config-next": "^14.2.35",

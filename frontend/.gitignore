@@ -43,3 +43,4 @@ Code_Audit_Report*.md
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+coverage/

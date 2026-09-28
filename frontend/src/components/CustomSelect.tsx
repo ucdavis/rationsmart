@@ -85,15 +85,16 @@ export default function CustomSelect({
     }
   };
   const onOptionKeyDown = (e: React.KeyboardEvent, idx: number) => {
-    const moves: Record<string, number> = {
+    const moves: Partial<Record<string, number>> = {
       ArrowDown: idx + 1,
       ArrowUp: idx - 1,
       Home: 0,
       End: options.length - 1,
     };
-    if (e.key in moves) {
+    const target = moves[e.key];
+    if (target !== undefined) {
       e.preventDefault();
-      focusOption(moves[e.key]);
+      focusOption(target);
     } else if (e.key === "Tab") {
       setOpen(false);
     }
