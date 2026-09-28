@@ -205,7 +205,7 @@ describe("Login — successful path", () => {
 });
 
 describe("Login — requires_pin_reset", () => {
-  it("redirects to /set-new-pin with email + old_pin in query string", async () => {
+  it("redirects to /set-new-pin, handing email + old PIN over in memory (never the URL)", async () => {
     login.mockResolvedValueOnce({
       data: { requires_pin_reset: true },
     });
@@ -220,9 +220,9 @@ describe("Login — requires_pin_reset", () => {
     await waitFor(() => expect(replace).toHaveBeenCalled());
 
     const dest = replace.mock.calls[0][0] as string;
-    expect(dest).toContain("/set-new-pin?");
-    expect(dest).toContain("email=legacy%40x.com");
-    expect(dest).toContain("old_pin=");
+    expect(dest).toBe("/set-new-pin");
+    expect(useStore.getState().pendingPinReset?.email).toBe("legacy@x.com");
+    expect(useStore.getState().pendingPinReset?.oldPin).toMatch(/^\d+$/);
   });
 });
 

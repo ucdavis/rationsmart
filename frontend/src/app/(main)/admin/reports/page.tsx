@@ -7,6 +7,7 @@ import { getAdminReports } from "@/lib/api";
 import { toAdminReportDisplayDate } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
+import { openExternalUrl } from "@/lib/safe-url";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
 // Critically, the "View Report" button opens bucket_url (a PDF URL),
@@ -55,12 +56,9 @@ export default function AdminReportsPage() {
   // open the URL in a new tab (browser handles the PDF/share). On mobile
   // PWA this triggers native share/open via the browser.
   const viewReport = (r: AdminReport) => {
-    const url = r.bucket_url || r.report_url;
-    if (!url) {
+    if (!openExternalUrl(r.bucket_url || r.report_url)) {
       showSnackbar(t("Report URL not available"), "error");
-      return;
     }
-    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (

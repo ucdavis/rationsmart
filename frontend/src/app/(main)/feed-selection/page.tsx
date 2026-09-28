@@ -205,21 +205,6 @@ export default function FeedSelectionPage() {
   // See src/lib/i18n-ui.ts's doc comment on the `langOverride` param.
   const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
 
-  // Diagnostic — feed-selection nothing-loads investigation. Prints the
-  // user fields the cascade depends on. If country_id is missing/empty
-  // the FeedRow cascade short-circuits and dropdowns stay empty.
-  if (typeof window !== "undefined") {
-    console.log("[feed-selection mount] user state:", {
-      has_user: !!user,
-      user_id: user?.id,
-      country_id: user?.country_id,
-      currency: user?.currency,
-      country: user?.country,
-      has_token: !!user?.token,
-      cattleInfo_country_id: cattleInfo?.country_id,
-    });
-  }
-
   const [items, setItems] = useState<FeedItem[]>(() => {
     const stored = feedSelections.length > 0 ? [...feedSelections] : [];
     while (stored.length < 3) stored.push(createFeedItem());
@@ -249,16 +234,9 @@ export default function FeedSelectionPage() {
   useEffect(() => {
     if (!user?.country_id) return;
     let cancelled = false;
-    console.log("[feed-cascade] fetchFeedTaxonomyLabels firing with:", {
-      country_id: user.country_id,
-      "cattleInfo.simulation_language": simulationLanguage,
-      "user.preferred_language": preferredLanguage,
-      resolvedLang: simulationLanguage ?? preferredLanguage ?? "en",
-    });
     fetchFeedTaxonomyLabels(user.country_id)
       .then((labels) => {
         if (!cancelled) {
-          console.log("[feed-cascade] taxonomyLabels resolved:", labels);
           setTaxonomyLabels(labels);
         }
       })

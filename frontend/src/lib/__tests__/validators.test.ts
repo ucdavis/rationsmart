@@ -1,23 +1,12 @@
 import { describe, it, expect } from "vitest";
 import {
   isEmailAddressValid,
-  daysInMilkIsInRange,
-  daysOfPregnancyIsInRange,
-  scoreIsInRange,
-  bodyWeightIsInRange,
-  bodyWeightGainIsInRange,
-  milkProductionIsInRange,
   containsMultipleDecimalPoints,
   getDecimalPointIndex,
   calculateCost,
-  formatFeedSelectionData,
   formatFeedBreakdownData,
-  formatPrice,
-  toDisplayDate,
   toFeedReportDisplayDate,
-  toSimulationHistoryDisplayDate,
   toAdminReportDisplayDate,
-  emptyStringOrValue,
   cleanNameInput,
   formatTotalUsers,
 } from "@/lib/validators";
@@ -45,44 +34,6 @@ describe("isEmailAddressValid", () => {
     "user@domain.a", // TLD must be at least 2 chars
   ])("rejects %s", (email) => {
     expect(isEmailAddressValid(email)).toBe(false);
-  });
-});
-
-describe("range validators", () => {
-  describe("daysInMilkIsInRange (0..400)", () => {
-    it.each([0, 1, 200, 399, 400])("accepts %i", (n) => expect(daysInMilkIsInRange(n)).toBe(true));
-    it.each([-1, 401, 999])("rejects %i", (n) => expect(daysInMilkIsInRange(n)).toBe(false));
-  });
-
-  describe("daysOfPregnancyIsInRange (0..280)", () => {
-    it.each([0, 100, 279, 280])("accepts %i", (n) =>
-      expect(daysOfPregnancyIsInRange(n)).toBe(true)
-    );
-    it.each([-1, 281, 400])("rejects %i", (n) => expect(daysOfPregnancyIsInRange(n)).toBe(false));
-  });
-
-  describe("scoreIsInRange (1..5)", () => {
-    it.each([1, 1.0, 2.5, 4.9, 5, 5.0])("accepts %s", (n) => expect(scoreIsInRange(n)).toBe(true));
-    it.each([0, 0.9, 5.1, 10, -1])("rejects %s", (n) => expect(scoreIsInRange(n)).toBe(false));
-  });
-
-  describe("bodyWeightIsInRange (350..720)", () => {
-    it.each([350, 500, 719, 720])("accepts %i", (n) => expect(bodyWeightIsInRange(n)).toBe(true));
-    it.each([349, 721, 0, 800])("rejects %i", (n) => expect(bodyWeightIsInRange(n)).toBe(false));
-  });
-
-  describe("bodyWeightGainIsInRange (0..1.8)", () => {
-    it.each([0, 0.5, 1.0, 1.7, 1.8])("accepts %s", (n) =>
-      expect(bodyWeightGainIsInRange(n)).toBe(true)
-    );
-    it.each([-0.1, 1.81, 2, 10])("rejects %s", (n) =>
-      expect(bodyWeightGainIsInRange(n)).toBe(false)
-    );
-  });
-
-  describe("milkProductionIsInRange (1..59)", () => {
-    it.each([1, 20, 58, 59])("accepts %i", (n) => expect(milkProductionIsInRange(n)).toBe(true));
-    it.each([0, 60, -5, 100])("rejects %i", (n) => expect(milkProductionIsInRange(n)).toBe(false));
   });
 });
 
@@ -142,21 +93,6 @@ describe("calculateCost", () => {
   });
 });
 
-describe("formatFeedSelectionData", () => {
-  it("returns '0' for null/undefined", () => {
-    expect(formatFeedSelectionData(null)).toBe("0");
-    expect(formatFeedSelectionData(undefined)).toBe("0");
-  });
-  it("returns integer as string when whole", () => {
-    expect(formatFeedSelectionData(10)).toBe("10");
-    expect(formatFeedSelectionData(0)).toBe("0");
-  });
-  it("returns 2-decimal fixed for fractions", () => {
-    expect(formatFeedSelectionData(10.5)).toBe("10.50");
-    expect(formatFeedSelectionData(1.234)).toBe("1.23");
-  });
-});
-
 describe("formatFeedBreakdownData", () => {
   it("returns empty string for null/undefined (differs from FeedSelection)", () => {
     expect(formatFeedBreakdownData(null)).toBe("");
@@ -168,59 +104,14 @@ describe("formatFeedBreakdownData", () => {
   });
 });
 
-describe("formatPrice", () => {
-  it("returns empty string for null/undefined", () => {
-    expect(formatPrice(null)).toBe("");
-    expect(formatPrice(undefined)).toBe("");
-  });
-  it("uses thousands grouping", () => {
-    expect(formatPrice(1000000)).toBe("1,000,000");
-  });
-  it("preserves up to 2 decimals", () => {
-    expect(formatPrice(1234.5)).toBe("1,234.5");
-    expect(formatPrice(1234.56)).toBe("1,234.56");
-  });
-});
-
 describe("date formatters", () => {
-  it("toDisplayDate — returns dd/mm/yyyy for valid ISO", () => {
-    expect(toDisplayDate("2026-06-04T00:00:00Z")).toBe("04/06/2026");
-  });
-  it("toDisplayDate — returns 'Not available' for null/empty/garbage", () => {
-    expect(toDisplayDate(null)).toBe("Not available");
-    expect(toDisplayDate("")).toBe("Not available");
-    expect(toDisplayDate("not a date")).toBe("Not available");
-  });
   it("toFeedReportDisplayDate — '4 Jun 2026' style", () => {
     expect(toFeedReportDisplayDate("2026-06-04T00:00:00Z")).toBe("4 Jun 2026");
     expect(toFeedReportDisplayDate(null)).toBe("Not available");
   });
-  it("toSimulationHistoryDisplayDate — parses 'yyyy-MM-dd HH:mm:ss'", () => {
-    const out = toSimulationHistoryDisplayDate("2026-06-04 15:45:00");
-    expect(out).toContain("Jun 2026");
-    expect(out).toContain("at");
-    expect(out).toContain("PM");
-  });
-  it("toSimulationHistoryDisplayDate — 'Not available' for null", () => {
-    expect(toSimulationHistoryDisplayDate(null)).toBe("Not available");
-    expect(toSimulationHistoryDisplayDate("")).toBe("Not available");
-  });
   it("toAdminReportDisplayDate — parses space-separated datetime", () => {
     expect(toAdminReportDisplayDate("2026-06-04 15:45:00")).toBe("4 Jun 2026");
     expect(toAdminReportDisplayDate(null)).toBe("Not available");
-  });
-});
-
-describe("emptyStringOrValue", () => {
-  it("returns empty for null/undefined/empty/'Select'", () => {
-    expect(emptyStringOrValue(null)).toBe("");
-    expect(emptyStringOrValue(undefined)).toBe("");
-    expect(emptyStringOrValue("")).toBe("");
-    expect(emptyStringOrValue("Select")).toBe("");
-  });
-  it("returns the value as-is otherwise", () => {
-    expect(emptyStringOrValue("India")).toBe("India");
-    expect(emptyStringOrValue("selected")).toBe("selected");
   });
 });
 

@@ -5,30 +5,6 @@ export function isEmailAddressValid(email: string): boolean {
   return emailRegex.test(email);
 }
 
-export function daysInMilkIsInRange(days: number): boolean {
-  return days >= 0 && days <= 400;
-}
-
-export function daysOfPregnancyIsInRange(days: number): boolean {
-  return days >= 0 && days <= 280;
-}
-
-export function scoreIsInRange(score: number): boolean {
-  return score >= 1.0 && score <= 5.0;
-}
-
-export function bodyWeightIsInRange(weight: number): boolean {
-  return weight >= 350 && weight <= 720;
-}
-
-export function bodyWeightGainIsInRange(gain: number): boolean {
-  return gain >= 0 && gain <= 1.8;
-}
-
-export function milkProductionIsInRange(litres: number): boolean {
-  return litres >= 1 && litres <= 59;
-}
-
 export function containsMultipleDecimalPoints(str: string): boolean {
   let count = 0;
   for (const c of str) {
@@ -62,38 +38,10 @@ export function calculateCost(price: string, quantity: string): string {
   return result % 1 === 0 ? String(Math.round(result)) : result.toFixed(2);
 }
 
-export function formatFeedSelectionData(value: number | null | undefined): string {
-  if (value == null) return "0";
-  const result = Math.round(value * 100) / 100;
-  return result % 1 === 0 ? String(Math.round(result)) : result.toFixed(2);
-}
-
 export function formatFeedBreakdownData(value: number | null | undefined): string {
   if (value == null) return "";
   const result = Math.round(value * 100) / 100;
   return result % 1 === 0 ? String(Math.round(result)) : result.toFixed(2);
-}
-
-export function formatPrice(value: number | null | undefined): string {
-  if (value == null) return "";
-  const result = Math.round(value * 100) / 100;
-  const formatted = new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2,
-    minimumFractionDigits: 0,
-    useGrouping: true,
-  }).format(result);
-  return formatted;
-}
-
-export function toDisplayDate(iso: string | null | undefined): string {
-  if (!iso) return "Not available";
-  try {
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "Not available";
-    return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
-  } catch {
-    return "Not available";
-  }
 }
 
 export function toFeedReportDisplayDate(iso: string | null | undefined): string {
@@ -102,28 +50,6 @@ export function toFeedReportDisplayDate(iso: string | null | undefined): string 
     const d = new Date(iso);
     if (isNaN(d.getTime())) return "Not available";
     return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-  } catch {
-    return "Not available";
-  }
-}
-
-export function toSimulationHistoryDisplayDate(datetime: string | null | undefined): string {
-  if (!datetime) return "Not available";
-  try {
-    // "yyyy-MM-dd HH:mm:ss" — replace space with T for ISO parsing
-    const d = new Date(datetime.replace(" ", "T"));
-    if (isNaN(d.getTime())) return "Not available";
-    const datePart = d.toLocaleDateString("en-GB", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-    const timePart = d.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-    return `${datePart} at ${timePart}`;
   } catch {
     return "Not available";
   }
@@ -138,11 +64,6 @@ export function toAdminReportDisplayDate(datetime: string | null | undefined): s
   } catch {
     return "Not available";
   }
-}
-
-export function emptyStringOrValue(value: string | null | undefined): string {
-  if (!value || value === "Select") return "";
-  return value;
 }
 
 export function cleanNameInput(input: string): string {

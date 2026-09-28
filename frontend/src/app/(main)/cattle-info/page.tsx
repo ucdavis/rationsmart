@@ -1002,13 +1002,6 @@ export default function CattleInfoPage() {
                 languageOptionsForCountry.includes(user?.preferred_language ?? "en")
               ? null
               : effectiveSimulationLanguage;
-        console.log("[cattle-info save] simulation_language resolution:", {
-          "form.simulation_language": form.simulation_language,
-          "user.preferred_language": user?.preferred_language,
-          languageOptionsForCountry,
-          effectiveSimulationLanguage,
-          resolved,
-        });
         return resolved;
       })(),
     });

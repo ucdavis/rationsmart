@@ -198,6 +198,9 @@ describe("Admin Users — activate/deactivate toggle", () => {
 
     const badge = screen.getByRole("button", { name: "ACTIVE" });
     fireEvent.click(badge);
+    // Deactivation asks for confirmation first — nothing is sent until then.
+    expect(toggleUserStatus).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Deactivate" }));
 
     await waitFor(() => expect(toggleUserStatus).toHaveBeenCalledWith("u-1", "admin-1", false));
     // Optimistic local flip on success — no refetch, the row updates in place.
@@ -243,6 +246,7 @@ describe("Admin Users — activate/deactivate toggle", () => {
     await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("button", { name: "ACTIVE" }));
+    fireEvent.click(screen.getByRole("button", { name: "Deactivate" }));
 
     await waitFor(() => {
       const snap = useStore.getState().snackbar;
@@ -251,6 +255,55 @@ describe("Admin Users — activate/deactivate toggle", () => {
     });
     // Badge stays ACTIVE — the optimistic update only happens after success.
     expect(screen.getByRole("button", { name: "ACTIVE" })).toBeInTheDocument();
+  });
+});
+
+describe("Admin Users — status safeguards (audit A-13 / B-02)", () => {
+  it("cancelling the deactivate confirmation sends nothing", async () => {
+    getAdminUsers.mockResolvedValueOnce({
+      data: { users: [mkUser({ id: "u-1", is_active: true })], total_count: 1, total_pages: 1 },
+    });
+    render(<AdminUsersPage />);
+    await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "ACTIVE" }));
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(toggleUserStatus).not.toHaveBeenCalled();
+  });
+
+  it("an admin cannot deactivate their own account", async () => {
+    getAdminUsers.mockResolvedValueOnce({
+      data: { users: [mkUser({ id: "admin-1", is_active: true })], total_count: 1, total_pages: 1 },
+    });
+    render(<AdminUsersPage />);
+    await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "ACTIVE" }));
+    expect(toggleUserStatus).not.toHaveBeenCalled();
+    expect(useStore.getState().snackbar?.type).toBe("error");
+  });
+
+  it("Save in the user sheet does not change status when the switch wasn't touched", async () => {
+    getAdminUsers.mockResolvedValueOnce({
+      data: { users: [mkUser({ id: "u-1", is_active: true })], total_count: 1, total_pages: 1 },
+    });
+    render(<AdminUsersPage />);
+    await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Jane Doe"));
+    fireEvent.click(await screen.findByRole("button", { name: "Save" }));
+    expect(toggleUserStatus).not.toHaveBeenCalled();
+  });
+
+  it("Save commits the switch when it was changed", async () => {
+    getAdminUsers.mockResolvedValueOnce({
+      data: { users: [mkUser({ id: "u-1", is_active: true })], total_count: 1, total_pages: 1 },
+    });
+    toggleUserStatus.mockResolvedValueOnce({ data: {} });
+    render(<AdminUsersPage />);
+    await waitFor(() => expect(screen.getByText("Jane Doe")).toBeInTheDocument());
+    fireEvent.click(screen.getByText("Jane Doe"));
+    fireEvent.click(await screen.findByRole("switch", { name: "Deactivate user" }));
+    expect(toggleUserStatus).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+    await waitFor(() => expect(toggleUserStatus).toHaveBeenCalledWith("u-1", "admin-1", false));
   });
 });
 

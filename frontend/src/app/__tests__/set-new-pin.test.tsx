@@ -1,17 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const { replace, back, push, setNewPin, searchParamsState } = vi.hoisted(() => ({
+const { replace, back, push, setNewPin } = vi.hoisted(() => ({
   replace: vi.fn(),
   back: vi.fn(),
   push: vi.fn(),
   setNewPin: vi.fn(),
-  searchParamsState: { value: "" },
 }));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ replace, back, push }),
-  useSearchParams: () => new URLSearchParams(searchParamsState.value),
 }));
 
 vi.mock("@/lib/api", async () => {
@@ -43,9 +41,14 @@ beforeEach(() => {
   back.mockClear();
   push.mockClear();
   setNewPin.mockReset();
-  // Standard entry: reached from /login with requires_pin_reset=true.
-  searchParamsState.value = "email=legacy%40dg.org&old_pin=1234";
-  useStore.setState({ snackbar: null, user: null, lastUiLanguage: "en" } as never);
+  // Standard entry: reached from /login with requires_pin_reset=true, which
+  // hands email + old PIN over through the memory-only store slice.
+  useStore.setState({
+    snackbar: null,
+    user: null,
+    lastUiLanguage: "en",
+    pendingPinReset: { email: "legacy@dg.org", oldPin: "1234" },
+  } as never);
 });
 
 // PinInput renders type="password" boxes. With the default query string
@@ -61,13 +64,13 @@ function fillPin(boxes: NodeListOf<HTMLInputElement>, start: number, digits: str
   }
 }
 
-describe("Set New PIN — reads query string", () => {
-  it("pre-fills email from ?email=", () => {
+describe("Set New PIN — reads the pending hand-off from /login", () => {
+  it("pre-fills email from the store hand-off", () => {
     render(<SetNewPinPage />);
     expect(screen.getByRole("textbox")).toHaveValue("legacy@dg.org");
   });
 
-  it("pre-fills the old-PIN boxes (4 digits) from ?old_pin=", () => {
+  it("pre-fills the old-PIN boxes (4 digits) from the store hand-off", () => {
     render(<SetNewPinPage />);
     const boxes = pinBoxes();
     // First 4 boxes are the legacy old-PIN field (length=4).
@@ -83,12 +86,16 @@ describe("Set New PIN — reads query string", () => {
     expect(pinBoxes()).toHaveLength(16);
   });
 
-  it("strips old_pin from the URL after mount", () => {
-    // Note: the mocked useSearchParams() is independent of jsdom's real
-    // window.location, so this only verifies the component's cleanup
-    // effect runs without throwing and doesn't leave old_pin behind.
+  it("clears the in-memory hand-off after mount and never puts the PIN in the URL", () => {
     render(<SetNewPinPage />);
+    expect(useStore.getState().pendingPinReset).toBeNull();
     expect(window.location.search).not.toContain("old_pin");
+  });
+
+  it("starts empty on a direct visit with no hand-off", () => {
+    useStore.setState({ pendingPinReset: null } as never);
+    render(<SetNewPinPage />);
+    expect(screen.getByRole("textbox")).toHaveValue("");
   });
 });
 

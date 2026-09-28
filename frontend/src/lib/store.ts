@@ -69,6 +69,11 @@ interface AppState {
   // deliberately NOT cleared by logout() — this is a device-level "last
   // language used" memory, not tied to any one account's session.
   lastUiLanguage: string;
+  // Legacy 4→6-digit PIN migration hand-off from /login to /set-new-pin.
+  // Memory-only (NOT in partialize) so the old PIN never touches the URL,
+  // localStorage, server logs or the SW cache. A reload on /set-new-pin
+  // loses it — the user just re-types the old PIN there.
+  pendingPinReset: { email: string; oldPin: string } | null;
 
   // Actions
   setUser: (user: User) => void;
@@ -84,7 +89,12 @@ interface AppState {
   setDietLimits: (limits: Partial<DietLimits>) => void;
   showSnackbar: (message: string, type?: "success" | "error" | "info") => void;
   hideSnackbar: () => void;
+  setPendingPinReset: (v: { email: string; oldPin: string } | null) => void;
 }
+
+// Service-worker runtime cache name (next.config.js). Deleted on logout so a
+// shared device never serves the previous user's cached pages.
+const SW_RUNTIME_CACHE = "runtime-cache";
 
 export const useStore = create<AppState>()(
   persist(
@@ -97,6 +107,7 @@ export const useStore = create<AppState>()(
       dietLimits: {},
       snackbar: null,
       lastUiLanguage: "en",
+      pendingPinReset: null,
 
       setUser: (user) => {
         if (typeof window !== "undefined") {
@@ -111,8 +122,12 @@ export const useStore = create<AppState>()(
       logout: () => {
         if (typeof window !== "undefined") {
           localStorage.removeItem("user_id");
+          if ("caches" in window) {
+            window.caches.delete(SW_RUNTIME_CACHE).catch(() => {});
+          }
         }
         set({
+          pendingPinReset: null,
           user: null,
           cattleInfo: null,
           feedSelections: [],
@@ -126,32 +141,7 @@ export const useStore = create<AppState>()(
 
       setFeedSelectionType: (type) => set({ feedSelectionType: type }),
 
-      setFeedSelections: (items) => {
-        // Diagnostic — trace who wipes feedSelections. User has been
-        // reporting rows disappearing after nav + language change.
-        // Fires when the incoming list is empty, OR when every row is
-        // effectively blank (no feed_uuid / feed_type_name / category_name).
-        if (typeof window !== "undefined") {
-          const empty = items.length === 0;
-          const allBlank =
-            !empty && items.every((r) => !r.feed_uuid && !r.feed_type_name && !r.category_name);
-          if (empty || allBlank) {
-            console.warn(
-              `[store] setFeedSelections(${empty ? "[]" : "all-blank"}) — items:`,
-              JSON.stringify(
-                items.map((i) => ({
-                  fu: i.feed_uuid,
-                  ft: i.feed_type_name,
-                  cn: i.category_name,
-                }))
-              ),
-              "\nstack:",
-              new Error().stack?.split("\n").slice(1, 10).join("\n")
-            );
-          }
-        }
-        set({ feedSelections: items });
-      },
+      setFeedSelections: (items) => set({ feedSelections: items }),
 
       setReportData: (data) => set({ reportData: data }),
 
@@ -163,6 +153,8 @@ export const useStore = create<AppState>()(
         set((state) =>
           state.snackbar ? { snackbar: { ...state.snackbar, visible: false } } : { snackbar: null }
         ),
+
+      setPendingPinReset: (v) => set({ pendingPinReset: v }),
     }),
     {
       name: "rationsmart-storage",

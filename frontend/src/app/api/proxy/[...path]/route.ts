@@ -48,7 +48,10 @@ const FORWARD_RESPONSE_HEADERS = new Set([
   "retry-after",
 ]);
 
-function buildResponse(res: http.IncomingMessage, body: Buffer): NextResponse {
+function buildResponse(
+  res: http.IncomingMessage,
+  body: ReturnType<typeof Buffer.concat>
+): NextResponse {
   const headers = new Headers();
   for (const [k, v] of Object.entries(res.headers)) {
     if (v && FORWARD_RESPONSE_HEADERS.has(k.toLowerCase())) {

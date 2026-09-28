@@ -177,8 +177,12 @@ function deepLinkForReason(reason: string): { label: string; href: string } | nu
 }
 
 function csvEscape(v: unknown): string {
-  const s = v === null || v === undefined ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  let s = v === null || v === undefined ? "" : String(v);
+  // Cells come from the external CLIMDES feed. A leading = + - @ (or tab /
+  // CR) makes Excel/Sheets evaluate the cell as a formula, so neutralise it
+  // with a leading apostrophe (OWASP CSV-injection guidance).
+  if (/^[=+\-@\t\r]/.test(s)) s = `'${s}`;
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
 
 function downloadCsv(filename: string, rows: Array<Record<string, unknown>>) {
@@ -618,8 +622,13 @@ function SyncSettingsTab({
   const handleSaveSettings = async () => {
     if (!config) return;
     setSettingsError(null);
-    if (formEndpoint && !/^https?:\/\//i.test(formEndpoint.trim())) {
-      setSettingsError("Endpoint URL must start with http:// or https://");
+    // A NEW endpoint must be https — the request carries the CLIMDES API
+    // key / bearer token. An already-saved http:// endpoint is left alone so
+    // other settings can still be saved; the backend should enforce https
+    // and block private address ranges too (it chooses where to connect).
+    const endpointChanged = formEndpoint.trim() !== (config.endpoint_url ?? "");
+    if (formEndpoint && endpointChanged && !/^https:\/\//i.test(formEndpoint.trim())) {
+      setSettingsError("Endpoint URL must start with https://");
       return;
     }
     const body: Parameters<typeof updateFeedSyncConfig>[0] = {};

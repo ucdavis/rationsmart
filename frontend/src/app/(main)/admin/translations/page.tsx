@@ -25,6 +25,7 @@ import {
   getTranslationCoverage,
   labelForLanguage,
 } from "@/lib/api";
+import { contentDispositionOf, filenameFromContentDisposition } from "@/lib/download";
 
 interface CountryRow {
   id: string;
@@ -133,13 +134,10 @@ export default function AdminTranslationsPage() {
       const res = await downloadTranslationWorkbook(selectedCountryId);
       // Pull filename from Content-Disposition when present; otherwise
       // build a sensible default tagged with the country id.
-      const cdRaw = (res.headers["content-disposition"] ||
-        res.headers["Content-Disposition"] ||
-        "") as string;
-      const cdMatch = /filename\*?=(?:UTF-8'')?["']?([^;"'\r\n]+)["']?/i.exec(cdRaw);
-      const fileName = cdMatch?.[1]
-        ? decodeURIComponent(cdMatch[1].trim())
-        : `translations_${selectedCountryId}.xlsx`;
+      const fileName = filenameFromContentDisposition(
+        contentDispositionOf(res.headers),
+        `translations_${selectedCountryId}.xlsx`
+      );
       const blob = res.data as Blob;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

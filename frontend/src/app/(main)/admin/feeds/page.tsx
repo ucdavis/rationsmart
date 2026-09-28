@@ -157,6 +157,26 @@ const emptyFeedForm = {
   fd_season: "",
 };
 
+const NUMERIC_FEED_FIELDS = [
+  "fd_dm",
+  "fd_cp",
+  "fd_ee",
+  "fd_cf",
+  "fd_ash",
+  "fd_ndf",
+  "fd_adf",
+  "fd_ca",
+  "fd_p",
+  "fd_st",
+  "fd_cellulose",
+  "fd_hemicellulose",
+  "fd_lg",
+  "fd_ndin",
+  "fd_nfe",
+  "fd_npn_cp",
+  "fd_adin",
+] as const satisfies ReadonlyArray<keyof typeof emptyFeedForm>;
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminFeedsPage() {
@@ -298,11 +318,16 @@ export default function AdminFeedsPage() {
       showSnackbar(t("Name, Type and Country are required"), "error");
       return;
     }
-    setIsSavingFeed(true);
     // Match Android FeedRequest: every nutrient is a non-null Double (default 0.0),
-    // every string field is non-null (default ""). fd_code and the three metadata
-    // fields are not exposed in the Android dialog UI, so we always send "" for them.
+    // every string field is non-null (default ""). A non-numeric entry would
+    // serialise as null (NaN), so reject it instead of sending it.
     const num = (v: string) => (v ? Number(v) : 0);
+    const badField = NUMERIC_FEED_FIELDS.find((k) => !Number.isFinite(num(feedForm[k])));
+    if (badField) {
+      showSnackbar(t("Please enter valid numbers for all nutrient fields"), "error");
+      return;
+    }
+    setIsSavingFeed(true);
     const body = {
       fd_name: feedForm.fd_name.trim(),
       fd_type: feedForm.fd_type,
@@ -310,7 +335,11 @@ export default function AdminFeedsPage() {
       fd_country_name: feedForm.fd_country_name,
       fd_country_cd: feedForm.fd_country_cd,
       ...(feedForm.fd_country_id ? { fd_country_id: feedForm.fd_country_id } : {}),
-      fd_code: "",
+      // fd_code and the three metadata fields aren't editable in the dialog
+      // (Android parity) but the backend requires them. Echo back what was
+      // loaded — "" only for a new feed — so an edit never wipes them.
+      // fd_code is the key the CLIMDES sync matches on.
+      fd_code: feedForm.fd_code,
       fd_dm: num(feedForm.fd_dm),
       fd_ash: num(feedForm.fd_ash),
       fd_cellulose: num(feedForm.fd_cellulose),
@@ -328,9 +357,9 @@ export default function AdminFeedsPage() {
       fd_adin: num(feedForm.fd_adin),
       fd_ca: num(feedForm.fd_ca),
       fd_p: num(feedForm.fd_p),
-      fd_ipb_local_lab: "",
-      fd_orginin: "",
-      fd_season: "",
+      fd_ipb_local_lab: feedForm.fd_ipb_local_lab,
+      fd_orginin: feedForm.fd_orginin,
+      fd_season: feedForm.fd_season,
     };
     try {
       if (editingFeed?.feed_id) {

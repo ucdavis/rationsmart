@@ -1,10 +1,9 @@
 "use client";
 
-// 2026-06-29 — This route has been merged into /admin/languages. The
-// unified screen there now handles both the catalog (add a language)
-// AND the per-country toggle that this page used to own. Keep this
-// file as a redirect so any saved bookmarks or links in chat still
-// reach the right place.
+// Legacy route kept as a redirect for old bookmarks. It first merged into
+// /admin/languages (2026-06-29); that screen was itself unlinked from the
+// admin landing on 2026-07-20 in favour of /admin/country-language, so the
+// redirect now goes straight to the live screen.
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -12,7 +11,7 @@ import { useRouter } from "next/navigation";
 export default function AdminCountryLanguagesRedirect() {
   const router = useRouter();
   useEffect(() => {
-    router.replace("/admin/languages");
+    router.replace("/admin/country-language");
   }, [router]);
   return null;
 }

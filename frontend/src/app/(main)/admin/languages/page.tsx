@@ -170,19 +170,6 @@ export default function AdminLanguageCatalogPage() {
     }
   };
 
-  // Seed Defaults — one-tap assignment of the canonical country→language
-  // mapping for the rollout locales. Idempotent: skips assignments that
-  // already exist; skips silently if the language isn't yet in the
-  // catalog. The result panel reports counts.
-  const [isSeeding, setIsSeeding] = useState(false);
-  const [seedSummary, setSeedSummary] = useState<{
-    assigned: string[];
-    skippedExisting: string[];
-    skippedNoLanguage: string[];
-    skippedNoCountry: string[];
-    failed: { key: string; reason: string }[];
-  } | null>(null);
-
   useEffect(() => {
     if (user && !user.is_admin) router.replace("/cattle-info");
   }, [user, router]);
@@ -192,10 +179,6 @@ export default function AdminLanguageCatalogPage() {
     Promise.allSettled([listLanguages(), listCountriesWithLanguages()])
       .then(([langRes, countriesRes]) => {
         if (langRes.status === "fulfilled") {
-          console.log("[admin/languages] /v1/admin/languages response:", {
-            status: langRes.value.status,
-            data: langRes.value.data,
-          });
           const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
           setAllLanguages(Array.isArray(d) ? d : (d?.languages ?? []));
         } else {
@@ -215,10 +198,6 @@ export default function AdminLanguageCatalogPage() {
           );
         }
         if (countriesRes.status === "fulfilled") {
-          console.log("[admin/languages] /v1/admin/countries response:", {
-            status: countriesRes.value.status,
-            data: countriesRes.value.data,
-          });
           const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
           const fromApi = (Array.isArray(d) ? d : (d?.countries ?? [])) as CountryRow[];
           // Merge in rollout placeholders for any country the backend
@@ -365,192 +344,6 @@ export default function AdminLanguageCatalogPage() {
     }
   };
 
-  // ── Seed Default Mappings ─────────────────────────────────────────────
-  // Canonical country → language assignments for the rollout locales.
-  // Each entry can have multiple language codes (e.g. Ethiopia gets both
-  // Amharic and Oromo when represented as a single country row).
-  //
-  // Country matching is name-based, case-insensitive substring — handles
-  // small variants like "Ethiopia" vs "Ethiopia (FDRE)" without us
-  // hard-coding country IDs. Multiple country rows for one logical
-  // country (e.g. "Ethiopia (Amharic region)" + "Ethiopia (Oromia
-  // region)") are matched on the regional cue when present so each
-  // gets the right single language; otherwise both langs go to all
-  // matching country rows.
-  //
-  // The function POSTs assignments in sequence and accumulates a result
-  // breakdown (assigned / skipped-existing / skipped-no-language /
-  // skipped-no-country / failed). It does NOT auto-create catalog rows
-  // — admin must add via the "+ Add Language" button first. The summary
-  // tells them which catalog entries are missing.
-  const DEFAULT_SEEDS: Array<{
-    countryHint: string;
-    regionalCue?: string;
-    langCode: string;
-    langDisplay: string;
-  }> = [
-    { countryHint: "india", langCode: "hi", langDisplay: "Hindi" },
-    { countryHint: "philippines", langCode: "tl", langDisplay: "Filipino (Tagalog)" },
-    { countryHint: "indonesia", langCode: "id", langDisplay: "Indonesian (Bahasa Indonesia)" },
-    { countryHint: "thailand", langCode: "th", langDisplay: "Thai" },
-    { countryHint: "vietnam", langCode: "vi", langDisplay: "Vietnamese" },
-    { countryHint: "bangladesh", langCode: "bn", langDisplay: "Bengali (Bangla)" },
-    { countryHint: "nepal", langCode: "ne", langDisplay: "Nepali" },
-    // Ethiopia — two languages. If backend has a single Ethiopia row,
-    // both go on it. If backend has two regional rows, the regionalCue
-    // routes each language to its own row.
-    { countryHint: "ethiopia", regionalCue: "amhar", langCode: "am", langDisplay: "Amharic" },
-    {
-      countryHint: "ethiopia",
-      regionalCue: "oromia",
-      langCode: "om",
-      langDisplay: "Oromo (Afaan Oromo)",
-    },
-  ];
-
-  const handleSeed = async () => {
-    setIsSeeding(true);
-    setSeedSummary(null);
-    const assigned: string[] = [];
-    const skippedExisting: string[] = [];
-    const skippedNoLanguage: string[] = [];
-    const skippedNoCountry: string[] = [];
-    const failed: { key: string; reason: string }[] = [];
-
-    // Snapshot active language codes from the catalog so a missing code
-    // surfaces in skippedNoLanguage instead of failing on POST.
-    const catalogActive = new Set(allLanguages.filter((l) => l.is_active).map((l) => l.code));
-
-    // Verbose run banner — easy to find the start of a seed batch in the
-    // console when there are dozens of other [api ←] lines around it.
-    console.group(
-      "%c[seed] Seed Defaults — start",
-      "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;"
-    );
-    console.log("[seed] catalog active codes:", Array.from(catalogActive));
-    console.log(
-      "[seed] countries known to UI:",
-      countries.map((c) => ({ id: c.id, name: c.name, languages: c.languages }))
-    );
-    console.log("[seed] mapping plan:", DEFAULT_SEEDS);
-
-    for (const seed of DEFAULT_SEEDS) {
-      const tag = `${seed.countryHint}${seed.regionalCue ? ` (${seed.regionalCue})` : ""} → ${seed.langCode}`;
-
-      // Step 1: is the language even in the catalog?
-      if (!catalogActive.has(seed.langCode)) {
-        console.warn(`[seed] ${tag}  SKIP — language '${seed.langCode}' not in catalog`);
-        skippedNoLanguage.push(`${seed.langDisplay} (${seed.langCode})`);
-        continue;
-      }
-
-      // Step 2: pick the country row(s) that match. Prefer a regional
-      // match when a cue is set AND there's a country whose name
-      // contains both the hint and the cue. Otherwise fall back to all
-      // rows whose name contains the hint. Placeholder countries are
-      // excluded — backend has no real country_id for them, so any
-      // POST would 404. The seed summary reports them under
-      // skippedNoCountry so the admin sees the gap.
-      let candidates = countries.filter(
-        (c) => !c._isPlaceholder && c.name.toLowerCase().includes(seed.countryHint)
-      );
-      if (seed.regionalCue) {
-        const regional = candidates.filter((c) => c.name.toLowerCase().includes(seed.regionalCue!));
-        if (regional.length > 0) candidates = regional;
-        // If no regional match, fall through: the country list has a
-        // single 'Ethiopia' row → both languages will land on it.
-      }
-
-      if (candidates.length === 0) {
-        console.warn(
-          `[seed] ${tag}  SKIP — country '${seed.countryHint}' not found in API response`
-        );
-        skippedNoCountry.push(
-          `${seed.countryHint}${seed.regionalCue ? ` (${seed.regionalCue})` : ""}`
-        );
-        continue;
-      }
-
-      console.log(
-        `[seed] ${tag}  candidates:`,
-        candidates.map((c) => c.name)
-      );
-
-      // Step 3: POST the assignment for each matched country. Skip if
-      // already assigned.
-      for (const country of candidates) {
-        if (country.languages.includes(seed.langCode)) {
-          console.log(`[seed] ${country.name} → ${seed.langCode}  SKIP — already assigned`);
-          skippedExisting.push(`${country.name} → ${seed.langCode}`);
-          continue;
-        }
-        const url = `/v1/admin/countries/${country.id}/languages/${seed.langCode}`;
-        console.log(`[seed] ${country.name} → ${seed.langCode}  POST ${url}`);
-        try {
-          const res = await assignLanguageToCountry(country.id, seed.langCode);
-          console.log(`[seed] ${country.name} → ${seed.langCode}  ✓ ${res.status}`, {
-            status: res.status,
-            data: res.data,
-            headers: res.headers,
-          });
-          assigned.push(`${country.name} → ${seed.langCode}`);
-        } catch (err: unknown) {
-          const ax = err as {
-            response?: { status?: number; data?: { detail?: string } | unknown };
-            message?: string;
-          };
-          const reason =
-            (ax?.response?.data as { detail?: string })?.detail ?? ax?.message ?? "unknown error";
-          console.error(
-            `[seed] ${country.name} → ${seed.langCode}  ✗ ${ax?.response?.status ?? "ERR"}`,
-            {
-              status: ax?.response?.status,
-              message: ax?.message,
-            }
-          );
-          failed.push({ key: `${country.name} → ${seed.langCode}`, reason });
-        }
-      }
-    }
-
-    // End-of-batch summary in the console — same numbers shown in the
-    // on-screen result panel, but compact and copy-pasteable.
-    console.log("[seed] summary:", {
-      assigned,
-      skippedExisting,
-      skippedNoLanguage,
-      skippedNoCountry,
-      failed,
-    });
-    console.groupEnd();
-
-    setSeedSummary({ assigned, skippedExisting, skippedNoLanguage, skippedNoCountry, failed });
-    setIsSeeding(false);
-
-    // Snackbar gives a one-line gist; detail is in the summary panel.
-    const total = assigned.length;
-    if (total > 0) {
-      showSnackbar(`Seeded ${total} assignment${total === 1 ? "" : "s"}`, "success");
-    } else if (
-      skippedExisting.length > 0 &&
-      failed.length === 0 &&
-      skippedNoLanguage.length === 0 &&
-      skippedNoCountry.length === 0
-    ) {
-      showSnackbar("All default mappings already in place", "info");
-    } else if (failed.length > 0) {
-      showSnackbar(
-        `${failed.length} assignment${failed.length === 1 ? "" : "s"} failed — see panel`,
-        "error"
-      );
-    } else {
-      showSnackbar("No assignments made — see panel for reasons", "info");
-    }
-
-    // Reload from the server so the country cards reflect the new state.
-    reload();
-  };
-
   // Add to the global catalog. After insert we reload so the new
   // language shows up under every country's toggle list (unassigned by
   // default).
@@ -669,105 +462,6 @@ export default function AdminLanguageCatalogPage() {
           </button>
         </div>
       </div>
-
-      {/* Seed result panel — sticks until next Seed run. Surfaces what
-          happened so the admin can see exactly which assignments went
-          through, which were already there, and which couldn't proceed. */}
-      {seedSummary && (
-        <div
-          className="mx-3 mt-3 rounded-2xl px-3.5 py-3"
-          style={{ backgroundColor: "#F0FDF4", border: "1px solid rgba(5,188,109,0.20)" }}
-        >
-          <div className="flex items-start justify-between mb-1.5">
-            <p
-              className="font-bold text-sm"
-              style={{ color: "#064E3B", fontFamily: "Nunito, sans-serif" }}
-            >
-              Seed Defaults Result
-            </p>
-            <button
-              onClick={() => setSeedSummary(null)}
-              aria-label="Dismiss"
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                cursor: "pointer",
-                color: "#6D6D6D",
-              }}
-            >
-              <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                <path
-                  d="M3 3l8 8M11 3L3 11"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </button>
-          </div>
-          <div
-            className="space-y-1 text-xs"
-            style={{ color: "#231F20", fontFamily: "Nunito, sans-serif" }}
-          >
-            <p>
-              <span className="font-bold" style={{ color: "#064E3B" }}>
-                Assigned ({seedSummary.assigned.length}):
-              </span>{" "}
-              {seedSummary.assigned.length === 0 ? (
-                <span style={{ color: "#6D6D6D" }}>none</span>
-              ) : (
-                seedSummary.assigned.join(", ")
-              )}
-            </p>
-            {seedSummary.skippedExisting.length > 0 && (
-              <p>
-                <span className="font-bold" style={{ color: "#6D6D6D" }}>
-                  Already in place ({seedSummary.skippedExisting.length}):
-                </span>{" "}
-                {seedSummary.skippedExisting.join(", ")}
-              </p>
-            )}
-            {seedSummary.skippedNoLanguage.length > 0 && (
-              <p>
-                <span className="font-bold" style={{ color: "#FF9800" }}>
-                  Skipped — not in catalog ({seedSummary.skippedNoLanguage.length}):
-                </span>{" "}
-                {seedSummary.skippedNoLanguage.join(", ")}
-              </p>
-            )}
-            {seedSummary.skippedNoCountry.length > 0 && (
-              <p>
-                <span className="font-bold" style={{ color: "#FF9800" }}>
-                  Skipped — country not found ({seedSummary.skippedNoCountry.length}):
-                </span>{" "}
-                {seedSummary.skippedNoCountry.join(", ")}
-              </p>
-            )}
-            {seedSummary.failed.length > 0 && (
-              <div>
-                <p className="font-bold" style={{ color: "#E44A4A" }}>
-                  Failed ({seedSummary.failed.length}):
-                </p>
-                <ul className="ml-3 list-disc">
-                  {seedSummary.failed.map((f, i) => (
-                    <li key={i}>
-                      {f.key} — {f.reason}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {seedSummary.skippedNoLanguage.length > 0 && (
-              <p className="mt-2 italic" style={{ color: "#6D6D6D" }}>
-                Tip: add the missing catalog entries via{" "}
-                <span className="font-bold">+ Add Language</span>, then tap{" "}
-                <span className="font-bold">Seed Defaults</span> again.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
 
       <div className="flex-1 overflow-y-auto pb-24 px-3 pt-2">
         {/* ── CATALOG section ────────────────────────────────────────────

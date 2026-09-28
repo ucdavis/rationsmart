@@ -22,9 +22,19 @@ export const metadata: Metadata = {
   },
 };
 
+// The service worker is skipped on the testing deployment (DISABLE_PWA=true,
+// see next.config.js). Only there do we also unregister SWs left behind by
+// older visits; on a PWA-enabled build the kill-switch would undo the SW that
+// next-pwa just registered.
+const SW_DISABLED = process.env.DISABLE_PWA === "true";
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  // AUDIT B-35 (kept): pinch-zoom stays disabled for Android-app parity and
+  // because iOS Safari auto-zooms into any focused input under 16 px — every
+  // form field here uses Android's 14 px text, so allowing scale would make
+  // the page jump on each tap. Revisit together with a 16 px input type scale.
   maximumScale: 1,
   userScalable: false,
   // White status bar / Android system bar to match the Android app
@@ -36,22 +46,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="manifest" href="/manifest.json" />
+        {/* manifest, theme-color, viewport and the apple-/mobile-web-app-*
+            tags are emitted by the `metadata` / `viewport` exports above. */}
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
           href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
           rel="stylesheet"
-        />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="RationSmart" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#FFFFFF" />
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
         />
       </head>
       <body
@@ -62,7 +64,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           padding: 0,
         }}
       >
-        {/* SW kill-switch — testing iteration only.
+        {/* SW kill-switch — testing deployment only (SW_DISABLED).
             Old visits installed a Workbox SW (via @ducanh2912/next-pwa).
             With NetworkFirst + 24h cache it served stale JS chunks for
             up to a day across rapid iteration. Inline <script> tags in
@@ -72,9 +74,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             page-level JS. The testing project no longer registers a
             new SW (DISABLE_PWA=true in next.config.js); this script
             cleans up old SWs already installed on visitors' browsers. */}
-        <Script id="sw-kill" strategy="beforeInteractive">
-          {`if(typeof navigator!=="undefined"&&navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(typeof caches!=="undefined"){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});}}`}
-        </Script>
+        {SW_DISABLED && (
+          <Script id="sw-kill" strategy="beforeInteractive">
+            {`if(typeof navigator!=="undefined"&&navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(typeof caches!=="undefined"){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});}}`}
+          </Script>
+        )}
         {/* SplashOverlay handles its own lifecycle: visible on SSR + first
             client render (no hydration mismatch), unmounts itself via
             useEffect once React has hydrated, and never re-renders on

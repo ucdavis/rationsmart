@@ -508,15 +508,12 @@ export const setLangProvider = (fn: () => string) => {
 // Helper for endpoint helpers to spread the current ?lang= into their params.
 export const langParam = (): { lang: string } => ({ lang: langProvider() });
 
-// Build marker — visible in DevTools Console on first paint. Bump the
-// timestamp when pushing a diagnostic build so we can confirm the new
-// bundle is what's actually running (not a stale SW cache).
-if (typeof window !== "undefined") {
-  console.log(
-    "%c[RationSmart] testing build · v1+diag · 2026-06-16T11:30Z",
-    "color:#064E3B;font-weight:700;background:#E4F7EF;padding:2px 6px;border-radius:4px;"
-  );
-}
+// Opt-in API tracing for diagnosing shape mismatches. OFF unless the build
+// sets NEXT_PUBLIC_DEBUG_API=true, and even then it never prints tokens or
+// the bodies of /auth/* calls (login responses carry the JWT and PII).
+// Response bodies are always visible in the DevTools Network tab anyway.
+const DEBUG_API = process.env.NEXT_PUBLIC_DEBUG_API === "true";
+const isAuthPath = (url: string) => url.includes("/auth/");
 
 api.interceptors.request.use((config) => {
   const token = tokenProvider();
@@ -524,33 +521,22 @@ api.interceptors.request.use((config) => {
     config.headers = config.headers ?? {};
     (config.headers as Record<string, string>)["Authorization"] = `Bearer ${token}`;
   }
-  // Verbose logger — prints every outgoing API call in DevTools so
-  // shape mismatches can be diagnosed without server-side access.
-  // Remove this block once feed-selection is stable.
-  if (typeof window !== "undefined") {
+  if (DEBUG_API && typeof window !== "undefined") {
     const method = (config.method || "GET").toUpperCase();
-    const url = (config.baseURL ?? "") + (config.url ?? "");
-    console.log(`[api →] ${method} ${url}`, {
-      params: config.params,
-      hasToken: !!token,
-      tokenPreview: token ? token.slice(0, 16) + "…" : null,
-      bodyKeys:
-        config.data && typeof config.data === "object" && !(config.data instanceof FormData)
-          ? Object.keys(config.data as Record<string, unknown>)
-          : undefined,
-    });
+    console.debug(`[api →] ${method} ${config.url ?? ""}`, { params: config.params });
   }
   return config;
 });
 
-// Response logger — pairs with the request logger above so each call
-// is visible as a (→ request, ← response) pair in DevTools Console.
 api.interceptors.response.use(
   (response) => {
-    if (typeof window !== "undefined") {
+    if (DEBUG_API && typeof window !== "undefined") {
       const method = (response.config.method || "GET").toUpperCase();
-      const url = (response.config.baseURL ?? "") + (response.config.url ?? "");
-      console.log(`[api ←] ${response.status} ${method} ${url}`, response.data);
+      const url = response.config.url ?? "";
+      console.debug(
+        `[api ←] ${response.status} ${method} ${url}`,
+        isAuthPath(url) ? "(body hidden)" : response.data
+      );
     }
     return response;
   },
@@ -558,12 +544,14 @@ api.interceptors.response.use(
     if (typeof window !== "undefined") {
       const cfg = err?.config ?? {};
       const method = (cfg.method || "GET").toUpperCase();
-      const url = (cfg.baseURL ?? "") + (cfg.url ?? "");
       // SECURITY: log status + message only, never `err.response.data`. On a
       // production build console.error survives (removeConsole excludes it),
       // and the response body can carry PII / FastAPI `detail` strings. The
       // full body is still visible in the DevTools Network tab when needed.
-      console.error(`[api ×] ${err?.response?.status ?? "ERR"} ${method} ${url}`, err?.message);
+      console.error(
+        `[api ×] ${err?.response?.status ?? "ERR"} ${method} ${cfg.url ?? ""}`,
+        err?.message
+      );
     }
     return Promise.reject(err);
   }

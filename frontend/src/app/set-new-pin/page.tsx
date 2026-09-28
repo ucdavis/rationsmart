@@ -3,8 +3,9 @@
 // /set-new-pin — legacy 4-digit PIN → new 6-digit PIN migration.
 //
 // Reached automatically from /login when the v1 backend returns
-// `requires_pin_reset: true`. Query params:
-//   ?email=<email>&old_pin=<4-digit>
+// `requires_pin_reset: true`. The email + old 4-digit PIN arrive through the
+// memory-only `pendingPinReset` store slice (never the URL — audit A-03). On a
+// direct visit or reload the fields start empty and the user types them.
 //
 // Flow:
 //   1. User confirms email + sees their 4-digit PIN echoed in the
@@ -15,7 +16,7 @@
 //      /login and let the user re-enter.
 
 import { useEffect, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { setNewPin } from "@/lib/api";
 import AppBranding from "@/components/AppBranding";
@@ -27,12 +28,14 @@ import { useT } from "@/lib/i18n-ui";
 
 function SetNewPinInner() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const showSnackbar = useStore((s) => s.showSnackbar);
   const t = useT();
 
-  const initialEmail = searchParams.get("email") ?? "";
-  const initialOldPin = searchParams.get("old_pin") ?? "";
+  // Read once at mount; the slice is cleared right after so the old PIN
+  // doesn't linger in memory longer than this screen needs it.
+  const [{ email: initialEmail, oldPin: initialOldPin }] = useState(
+    () => useStore.getState().pendingPinReset ?? { email: "", oldPin: "" }
+  );
 
   const [email, setEmail] = useState(initialEmail);
   const [oldPin, setOldPin] = useState(initialOldPin);
@@ -41,15 +44,8 @@ function SetNewPinInner() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [done, setDone] = useState(false);
 
-  // Strip the ?old_pin= query string from the URL after we've consumed it,
-  // so the legacy PIN isn't sitting in the browser history bar.
   useEffect(() => {
-    if (initialOldPin && typeof window !== "undefined") {
-      const url = new URL(window.location.href);
-      url.searchParams.delete("old_pin");
-      window.history.replaceState({}, "", url.toString());
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    useStore.getState().setPendingPinReset(null);
   }, []);
 
   const isReady =

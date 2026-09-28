@@ -3,6 +3,16 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n-ui";
+import { useStore } from "@/lib/store";
+
+// A fresh install must open to login. Removing the localStorage key alone
+// isn't enough: the in-memory store re-persists user + token on its next
+// write. logout() clears the session in memory (and user_id / SW cache),
+// then clearStorage() drops the persisted blob.
+function resetForFreshInstall() {
+  useStore.getState().logout();
+  useStore.persist.clearStorage();
+}
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -58,9 +68,7 @@ export default function InstallPrompt() {
     // previous session survives a reinstall and sends the user straight to the
     // home screen instead of login. Clearing storage on every install/reinstall
     // guarantees a fresh start. (iOS does not fire appinstalled.)
-    const onInstalled = () => {
-      localStorage.removeItem("rationsmart-storage");
-    };
+    const onInstalled = () => resetForFreshInstall();
     window.addEventListener("appinstalled", onInstalled);
 
     return () => {
@@ -90,7 +98,7 @@ export default function InstallPrompt() {
     await installEvent.prompt();
     const { outcome } = await installEvent.userChoice;
     if (outcome === "accepted") {
-      localStorage.removeItem("rationsmart-storage");
+      resetForFreshInstall();
       setVisible(false);
     }
   };

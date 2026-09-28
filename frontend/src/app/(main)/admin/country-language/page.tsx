@@ -56,6 +56,7 @@ import {
   deleteFeedTranslation,
   labelForLanguage,
 } from "@/lib/api";
+import { contentDispositionOf, filenameFromContentDisposition } from "@/lib/download";
 
 interface SystemLanguage {
   code: string;
@@ -503,9 +504,7 @@ function CountriesLanguagesTab({
           // Optimistic: drop the chip from this country immediately.
           setCountries((prev) =>
             prev.map((x) =>
-              x.id === c.id
-                ? { ...x, languages: x.languages.filter((g) => g !== code) }
-                : x
+              x.id === c.id ? { ...x, languages: x.languages.filter((g) => g !== code) } : x
             )
           );
         } catch (err: unknown) {
@@ -1222,13 +1221,10 @@ function FeedNamesTab({
     setIsDownloading(true);
     try {
       const res = await downloadTranslationWorkbook(selCountry.id);
-      const cdRaw = (res.headers["content-disposition"] ||
-        res.headers["Content-Disposition"] ||
-        "") as string;
-      const cdMatch = /filename\*?=(?:UTF-8'')?["']?([^;"'\r\n]+)["']?/i.exec(cdRaw);
-      const fileName = cdMatch?.[1]
-        ? decodeURIComponent(cdMatch[1].trim())
-        : `translations_${selCountry.id}.xlsx`;
+      const fileName = filenameFromContentDisposition(
+        contentDispositionOf(res.headers),
+        `translations_${selCountry.id}.xlsx`
+      );
       const blob = res.data as Blob;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");

@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { getAdminUsers, toggleUserStatus, toggleUserAdmin, getCountries, type Country } from "@/lib/api";
+import {
+  getAdminUsers,
+  toggleUserStatus,
+  toggleUserAdmin,
+  getCountries,
+  type Country,
+} from "@/lib/api";
 import { formatTotalUsers } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
@@ -57,6 +63,13 @@ export default function AdminUsersPage() {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   // Admin-toggle confirmation — holds the user awaiting a grant/revoke confirm.
   const [confirmAdmin, setConfirmAdmin] = useState<AdminUser | null>(null);
+  // Deactivation confirmation — one tap on a status badge must not lock a
+  // user out without a second, explicit yes.
+  const [confirmDeactivate, setConfirmDeactivate] = useState<AdminUser | null>(null);
+  // Unsaved status chosen with the switch in the user sheet. null = unchanged.
+  // Only "Save" commits it; Cancel / backdrop discards it.
+  const [sheetActive, setSheetActive] = useState<boolean | null>(null);
+  useEffect(() => setSheetActive(null), [selectedUser?.id]);
 
   const load = async (country = countryFilter, s = statusFilter, q = search) => {
     if (!user?.id) return;
@@ -112,6 +125,11 @@ export default function AdminUsersPage() {
 
   const handleToggle = async (u: AdminUser) => {
     if (!user?.id) return;
+    // An admin deactivating their own account would lock themselves out.
+    if (u.id === user.id && u.is_active) {
+      showSnackbar(t("You can't deactivate your own account"), "error");
+      return;
+    }
     setTogglingId(u.id);
     try {
       await toggleUserStatus(u.id, user.id, !u.is_active);
@@ -123,6 +141,12 @@ export default function AdminUsersPage() {
     } finally {
       setTogglingId(null);
     }
+  };
+
+  // Badge tap: activating is harmless and immediate; deactivating asks first.
+  const requestToggle = (u: AdminUser) => {
+    if (u.is_active && u.id !== user?.id) setConfirmDeactivate(u);
+    else handleToggle(u);
   };
 
   const handleToggleAdmin = async (u: AdminUser) => {
@@ -257,7 +281,13 @@ export default function AdminUsersPage() {
             <button
               onClick={() => setSearch("")}
               aria-label={t("Clear search")}
-              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4, lineHeight: 0 }}
+              style={{
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                padding: 4,
+                lineHeight: 0,
+              }}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="#6D6D6D">
                 <path d="M19,6.41L17.59,5 12,10.59 6.41,5 5,6.41 10.59,12 5,17.59 6.41,19 12,13.41 17.59,19 19,17.59 13.41,12z" />
@@ -369,7 +399,7 @@ export default function AdminUsersPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleToggle(u);
+                    requestToggle(u);
                   }}
                   disabled={togglingId === u.id}
                   className="font-bold"
@@ -629,17 +659,20 @@ export default function AdminUsersPage() {
               </div>
               {/* Material-style switch */}
               <button
-                onClick={() => {
-                  handleToggle(selectedUser);
-                  setSelectedUser(null);
-                }}
+                onClick={() => setSheetActive(!(sheetActive ?? selectedUser.is_active))}
                 disabled={togglingId === selectedUser.id}
-                aria-label={selectedUser.is_active ? t("Deactivate user") : t("Activate user")}
+                role="switch"
+                aria-checked={sheetActive ?? selectedUser.is_active}
+                aria-label={
+                  (sheetActive ?? selectedUser.is_active)
+                    ? t("Deactivate user")
+                    : t("Activate user")
+                }
                 style={{
                   width: 52,
                   height: 32,
                   borderRadius: 16,
-                  backgroundColor: selectedUser.is_active ? "#064E3B" : "#CBD5E1",
+                  backgroundColor: (sheetActive ?? selectedUser.is_active) ? "#064E3B" : "#CBD5E1",
                   border: "none",
                   position: "relative",
                   cursor: togglingId === selectedUser.id ? "not-allowed" : "pointer",
@@ -651,7 +684,7 @@ export default function AdminUsersPage() {
                   style={{
                     position: "absolute",
                     top: 4,
-                    left: selectedUser.is_active ? 24 : 4,
+                    left: (sheetActive ?? selectedUser.is_active) ? 24 : 4,
                     width: 24,
                     height: 24,
                     borderRadius: "50%",
@@ -700,9 +733,7 @@ export default function AdminUsersPage() {
                 </div>
                 <button
                   onClick={() => setConfirmAdmin(selectedUser)}
-                  disabled={
-                    adminTogglingId === selectedUser.id || selectedUser.id === user?.id
-                  }
+                  disabled={adminTogglingId === selectedUser.id || selectedUser.id === user?.id}
                   aria-label={
                     selectedUser.is_admin ? t("Revoke admin access") : t("Grant admin access")
                   }
@@ -740,10 +771,13 @@ export default function AdminUsersPage() {
             )}
 
             {/* Save + Cancel buttons (Android btn_save filled green,
-                btn_cancel outlined). Save toggles status via existing handler. */}
+                btn_cancel outlined). Save commits the switch only if it was
+                actually changed — it used to flip the status unconditionally. */}
             <button
               onClick={() => {
-                handleToggle(selectedUser);
+                if (sheetActive !== null && sheetActive !== selectedUser.is_active) {
+                  handleToggle(selectedUser);
+                }
                 setSelectedUser(null);
               }}
               disabled={togglingId === selectedUser.id}
@@ -788,6 +822,89 @@ export default function AdminUsersPage() {
         </div>
       )}
 
+      {/* Deactivate-user confirmation (status badge tap). */}
+      {confirmDeactivate && (
+        <div
+          className="fixed top-0 h-full flex items-center justify-center px-6"
+          style={{
+            left: "max(0px, calc((100vw - 480px) / 2))",
+            width: "min(100vw, 480px)",
+            backgroundColor: "rgba(0,0,0,0.5)",
+            zIndex: 60,
+          }}
+          onClick={() => setConfirmDeactivate(null)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            className="bg-white rounded-2xl w-full"
+            style={{ padding: 20 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <p
+              className="font-bold"
+              style={{ color: "#231F20", fontFamily: "Nunito, sans-serif", fontSize: 18 }}
+            >
+              {t("Deactivate this user?")}
+            </p>
+            <p
+              style={{
+                color: "#6D6D6D",
+                fontFamily: "Nunito, sans-serif",
+                fontSize: 14,
+                marginTop: 8,
+                lineHeight: 1.4,
+              }}
+            >
+              <span className="font-bold" style={{ color: "#231F20" }}>
+                {confirmDeactivate.name}
+              </span>{" "}
+              {t("will no longer be able to sign in until reactivated.")}
+            </p>
+            <div className="flex gap-3" style={{ marginTop: 20 }}>
+              <button
+                onClick={() => setConfirmDeactivate(null)}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 12,
+                  border: "2px solid #064E3B",
+                  backgroundColor: "white",
+                  color: "#064E3B",
+                  cursor: "pointer",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 15,
+                }}
+              >
+                {t("Cancel")}
+              </button>
+              <button
+                onClick={() => {
+                  const target = confirmDeactivate;
+                  setConfirmDeactivate(null);
+                  handleToggle(target);
+                }}
+                className="font-bold"
+                style={{
+                  flex: 1,
+                  padding: "10px 0",
+                  borderRadius: 12,
+                  border: "none",
+                  backgroundColor: "#E44A4A",
+                  color: "white",
+                  cursor: "pointer",
+                  fontFamily: "Nunito, sans-serif",
+                  fontSize: 15,
+                }}
+              >
+                {t("Deactivate")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Admin grant/revoke confirmation — a second, explicit yes/no in the UI
           before the user's role actually changes (sits above the detail
           sheet). */}
@@ -827,7 +944,9 @@ export default function AdminUsersPage() {
               </span>{" "}
               {confirmAdmin.is_admin
                 ? t("will lose administrator access and become a regular user.")
-                : t("will be granted full administrator access to manage users, feeds and settings.")}
+                : t(
+                    "will be granted full administrator access to manage users, feeds and settings."
+                  )}
             </p>
             <div className="flex gap-3" style={{ marginTop: 20 }}>
               <button

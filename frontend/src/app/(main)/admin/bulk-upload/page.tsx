@@ -6,6 +6,8 @@ import { useStore } from "@/lib/store";
 import { bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
+import { isSameOrigin, safeExternalUrl } from "@/lib/safe-url";
+import { contentDispositionOf, filenameFromContentDisposition } from "@/lib/download";
 
 // Fills `${key}` placeholder tokens in a translated template. Only used
 // for the two messages on this page whose dictionary entries carry
@@ -132,14 +134,18 @@ export default function BulkUploadPage() {
     // attachment on the file, which makes the browser save it on open.
     // For same-origin URLs the original <a download> trick still works
     // and lets us rename the file.
-    const isAbsolute = /^https?:\/\//i.test(url);
-    const isCrossOrigin = isAbsolute && !url.startsWith(window.location.origin);
-    if (isCrossOrigin) {
-      window.open(url, "_blank", "noopener,noreferrer");
+    const safe = safeExternalUrl(url);
+    if (!safe) {
+      setDownloadStatus("failed");
+      setDownloadMessage(t("Backend returned an unparseable response."));
+      return;
+    }
+    if (!isSameOrigin(safe)) {
+      window.open(safe.href, "_blank", "noopener,noreferrer");
       return;
     }
     const a = document.createElement("a");
-    a.href = url;
+    a.href = safe.href;
     a.download = filename;
     document.body.appendChild(a);
     a.click();
@@ -192,7 +198,6 @@ export default function BulkUploadPage() {
           setDownloadMessage(t("Backend returned an unparseable response."));
           return;
         }
-        console.log(`[export-${kind}] JSON response:`, parsed);
         if (parsed?.success === false) {
           setDownloadStatus("failed");
           setDownloadMessage(parsed?.message ?? t("Could not export feeds."));
@@ -225,11 +230,10 @@ export default function BulkUploadPage() {
         // Response is the xlsx binary. Save it directly via a blob URL.
         // Parse the filename out of Content-Disposition when the
         // backend provides one (e.g. attachment; filename="feeds.xlsx").
-        const cdRaw = (res.headers["content-disposition"] ||
-          res.headers["Content-Disposition"] ||
-          "") as string;
-        const cdMatch = /filename\*?=(?:UTF-8'')?["']?([^;"'\r\n]+)["']?/i.exec(cdRaw);
-        const fileName = cdMatch?.[1] ? decodeURIComponent(cdMatch[1].trim()) : fallbackName;
+        const fileName = filenameFromContentDisposition(
+          contentDispositionOf(res.headers),
+          fallbackName
+        );
         const blob = res.data as Blob;
         // Size sanity check — backend sometimes returns an empty 200
         // when there are no rows. Surface that explicitly.
@@ -238,9 +242,6 @@ export default function BulkUploadPage() {
           setDownloadMessage(t("Backend returned an empty file."));
           return;
         }
-        console.log(
-          `[export-${kind}] binary response — ${blob.size} bytes, type ${contentType}, name ${fileName}`
-        );
         const objUrl = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = objUrl;

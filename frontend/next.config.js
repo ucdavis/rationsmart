@@ -13,8 +13,16 @@ const withPWA = require("@ducanh2912/next-pwa").default({
     disableDevLogs: true,
     skipWaiting: true,
     clientsClaim: true,
-    // Don't cache Next.js build chunks — they have content hashes and change every rebuild
     runtimeCaching: [
+      // SECURITY: never cache API traffic. /api/proxy/* responses are
+      // per-user (profiles, simulations, admin user lists) and must not be
+      // served to the next person on a shared device. Must stay FIRST —
+      // Workbox uses the first matching rule.
+      {
+        urlPattern: /\/api\/proxy\//,
+        handler: "NetworkOnly",
+      },
+      // Don't cache Next.js build chunks — they have content hashes and change every rebuild
       {
         urlPattern: /^https?.*/,
         handler: "NetworkFirst",
@@ -28,16 +36,12 @@ const withPWA = require("@ducanh2912/next-pwa").default({
   },
 });
 
-// SECURITY: the app has verbose diagnostic loggers (api.ts interceptors,
-// per-page [feed-cascade]/[seed]/etc.) that print JWTs, PII, and full API
-// response bodies to the browser console. Those are intentional on the
-// testing deployment (DISABLE_PWA=true), where the SW is off and we rely on
-// console output to diagnose shape mismatches. But on a real production
-// build they leak sensitive data to anyone with console access. So strip
-// console.* (except console.error) from production bundles UNLESS this is the
-// testing build or KEEP_CONSOLE is explicitly set. Dev is never stripped.
+// SECURITY: strip console.* (except console.error) from every production
+// bundle. Diagnostic logging is opt-in per build via NEXT_PUBLIC_DEBUG_API
+// (see api.ts) or KEEP_CONSOLE — deliberately NOT tied to DISABLE_PWA, which
+// the public testing deployment sets. Dev is never stripped.
 const keepConsole =
-  process.env.DISABLE_PWA === "true" || process.env.KEEP_CONSOLE === "true";
+  process.env.KEEP_CONSOLE === "true" || process.env.NEXT_PUBLIC_DEBUG_API === "true";
 
 // Security response headers. Kept intentionally conservative: no strict CSP
 // because the app uses inline styles/Android-exact pixel values everywhere,

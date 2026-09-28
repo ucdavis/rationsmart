@@ -225,9 +225,9 @@ const sampleFeed = {
   fd_ca: 0.3,
   fd_p: 0.25,
   fd_st: 20,
-  // Pre-existing fd_code / metadata on the loaded record — per CLAUDE.md
-  // §10.15 these must NOT be echoed back on save; the wire payload always
-  // sends "" for them regardless of what was loaded.
+  // Pre-existing fd_code / metadata on the loaded record. The dialog doesn't
+  // expose them, so an edit must echo them back unchanged (audit B-01 — the
+  // old "always send ''" behaviour wiped them, including the CLIMDES key).
   fd_code: "OLD_CODE_123",
   fd_cellulose: 12,
   fd_hemicellulose: 10,
@@ -242,7 +242,7 @@ const sampleFeed = {
 };
 
 describe("Admin Feeds — Feed CRUD modal", () => {
-  it("openEditFeed pre-fills the form, and Save sends the full nutrient payload via updateAdminFeed with fd_code/meta forced to ''", async () => {
+  it("openEditFeed pre-fills the form, and Save sends the full nutrient payload via updateAdminFeed and preserves fd_code/meta", async () => {
     resolveLoadAll({ feeds: [sampleFeed] });
     updateAdminFeed.mockResolvedValueOnce({ data: {} });
     render(<AdminFeedsPage />);
@@ -315,7 +315,7 @@ describe("Admin Feeds — Feed CRUD modal", () => {
       fd_country_name: "India",
       fd_country_cd: "IN",
       fd_country_id: "1",
-      fd_code: "",
+      fd_code: "OLD_CODE_123",
       fd_dm: 35.5,
       fd_ash: 6.4,
       fd_cellulose: 12,
@@ -333,9 +333,9 @@ describe("Admin Feeds — Feed CRUD modal", () => {
       fd_adin: 0.2,
       fd_ca: 0.3,
       fd_p: 0.25,
-      fd_ipb_local_lab: "",
-      fd_orginin: "",
-      fd_season: "",
+      fd_ipb_local_lab: "SomeLab",
+      fd_orginin: "SomeOrigin",
+      fd_season: "Summer",
     });
     // addAdminFeed must NOT be used for an edit
     expect(addAdminFeed).not.toHaveBeenCalled();

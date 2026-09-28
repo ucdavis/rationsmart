@@ -17,9 +17,9 @@ beforeEach(() => {
 // /admin/languages on 2026-06-29; this route is kept only as a redirect
 // for back-compat with old bookmarks/links.
 describe("Admin country-languages route (back-compat redirect)", () => {
-  it("redirects to /admin/languages on mount", async () => {
+  it("redirects to the live /admin/country-language screen on mount", async () => {
     const { container } = render(<AdminCountryLanguagesRedirect />);
-    await waitFor(() => expect(replace).toHaveBeenCalledWith("/admin/languages"));
+    await waitFor(() => expect(replace).toHaveBeenCalledWith("/admin/country-language"));
     expect(replace).toHaveBeenCalledTimes(1);
     // Renders nothing itself.
     expect(container).toBeEmptyDOMElement();

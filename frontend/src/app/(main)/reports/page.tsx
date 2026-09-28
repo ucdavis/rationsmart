@@ -7,6 +7,7 @@ import { getSavedReports } from "@/lib/api";
 import type { FeedReport } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
+import { openExternalUrl } from "@/lib/safe-url";
 
 function SkeletonCard() {
   return (
@@ -60,12 +61,6 @@ export default function ReportsPage() {
       .then((res) => {
         const data = res.data;
         const list = data?.reports ?? [];
-        console.log("[reports] Saved reports response:", {
-          count: list.length,
-          dates: list.map((r) => r.report_created_date),
-          ids: list.map((r) => r.report_id),
-          raw_response: data,
-        });
         setReports(list);
       })
       .catch((err) => {
@@ -76,7 +71,7 @@ export default function ReportsPage() {
   }, [user, showSnackbar]);
 
   const openPdf = (url: string) => {
-    window.open(url, "_blank", "noopener,noreferrer");
+    if (!openExternalUrl(url)) showSnackbar(t("Report URL not available"), "error");
   };
 
   const totalPages = Math.max(1, Math.ceil(reports.length / REPORTS_PER_PAGE));

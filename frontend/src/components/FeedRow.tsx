@@ -414,9 +414,7 @@ export default function FeedRow({
       // Mirror Android FeedDetailsViewModel: empty → 0.0 (toDoubleOrZero).
       const toNum = (v: string) => (v ? Number(v) : 0);
       const feed_details: Record<string, unknown> = {
-        feed_name: editIsInsert
-          ? `${editNamePrefix}${editFeedName.trim()}`
-          : `${editNamePrefix}${editFeedName.trim()}`,
+        feed_name: `${editNamePrefix}${editFeedName.trim()}`,
         feed_type: item.feed_type_name ?? "",
         feed_category: item.category_name ?? "",
         // v1 backend requires fd_type/fd_category (or *_id) on custom-feed
@@ -450,7 +448,15 @@ export default function FeedRow({
         const newName =
           (res.data?.feed_details?.feed_name as string) ??
           `${editNamePrefix}${editFeedName.trim()}`;
-        const newId = (res.data?.feed_details?.feed_id as string) ?? item.feed_uuid;
+        const newId = res.data?.feed_details?.feed_id as string | undefined;
+        if (!newId) {
+          // Saved, but the response didn't say which feed_id it got. Don't
+          // fall back to the ORIGINAL feed's uuid — the row would show the
+          // new name while still being bound to the old feed (audit B-04).
+          showSnackbar(t("Custom feed saved"), "success");
+          setShowEditModal(false);
+          return;
+        }
         // Android DialogFeedDetails repopulates the spinner after insert
         // so the new feed becomes the selected option. We mirror that
         // by appending the new entry to the local sub-category list
@@ -462,7 +468,7 @@ export default function FeedRow({
             ? prev
             : // New custom feed — no server translation exists yet, so
               // display_name is just the entered English name.
-              [...prev, { feed_name: newName, feed_uuid: newId!, display_name: newName }]
+              [...prev, { feed_name: newName, feed_uuid: newId, display_name: newName }]
         );
         onUpdate(item.id, {
           sub_category_id: 1,
@@ -501,12 +507,12 @@ export default function FeedRow({
 
   useEffect(() => {
     if (!user?.country_id || !user?.id) {
-      console.warn("[feed-cascade] skipping types fetch — missing user fields", {
-        has_country_id: !!user?.country_id,
-        has_id: !!user?.id,
-      });
+      // Nothing to fetch — clear the initial `true`, otherwise the row
+      // reports "loading" forever and keeps Generate disabled (audit B-03).
+      setLoadingTypes(false);
       return;
     }
+    setLoadingTypes(true);
     // Race protection: if user or country changes while the request is
     // in flight, the previous fetch's .then must NOT overwrite the new
     // fetch's result. Cleanup runs before re-fire.
@@ -557,7 +563,6 @@ export default function FeedRow({
     getFeedTypes(user.country_id, user.id)
       .then((res) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/unique-feed-type response:", res.data);
         // The fetch itself already succeeded by this point — anything
         // that throws below is a parsing/shape problem, not a load
         // failure, so it must NOT surface the misleading "Could not load
@@ -743,7 +748,6 @@ export default function FeedRow({
     getFeedCategories(item.feed_type_name, user.country_id, user.id)
       .then((res) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/unique-feed-category response:", res.data);
         // The fetch itself already succeeded here — anything that throws
         // below is a parsing/shape problem, not a load failure, so it
         // must NOT surface the misleading "Could not load categories"
@@ -892,7 +896,6 @@ export default function FeedRow({
     getFeedSubCategories(item.feed_type_name, item.category_name, user.country_id, user.id)
       .then((res) => {
         if (cancelled) return;
-        console.log("[feed-cascade] /v1/animal/feed-name response:", res.data);
         // The fetch itself already succeeded here — anything that throws
         // below is a parsing/shape problem, not a load failure, so it
         // must NOT surface the misleading "Could not load sub-categories"

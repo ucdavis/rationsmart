@@ -53,6 +53,7 @@ import {
   IcEnvironment,
   IcSimulationDetails,
 } from "@/components/Icons";
+import { safeExternalUrl } from "@/lib/safe-url";
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; text: string }> = {
@@ -466,38 +467,14 @@ export default function ReportPage() {
     (reportData as { id?: string })?.id ??
     "";
 
-  // Diagnostic — log the report payload + chosen report_id so the
-  // user can see whether save-report has anything to identify the
-  // simulation with.
-  if (typeof window !== "undefined") {
-    console.log("[report page] mount:", {
-      mode: report.mode,
-      reportIdForSave,
-      top_level_report_id: (reportData as { report_id?: string })?.report_id,
-      rec_report_info_report_id: recReport?.report_info?.report_id,
-      eval_report_id: evalReport?.report_id,
-      simulation_id_from_cattle_info: cattleInfo?.simulation_name,
-      full_reportData_keys: Object.keys(reportData ?? {}),
-    });
-  }
-
   const handleSave = async () => {
     if (!user || !reportIdForSave) {
-      console.warn("[save-report] aborting — no report_id available", {
-        reportData,
-        user_id: user?.id,
-      });
       showSnackbar("Report not ready — generate a report first", "info");
       return;
     }
     setIsSaving(true);
     try {
-      console.log("[save-report →] POST /v1/animal/save-report", {
-        report_id: reportIdForSave,
-        user_id: user.id,
-      });
       const res = await saveReport(reportIdForSave, user.id);
-      console.log("[save-report ←] response:", res.data);
       const body = res.data as {
         success?: boolean;
         message?: string;
@@ -515,7 +492,11 @@ export default function ReportPage() {
         showSnackbar(body?.error_message ?? body?.message ?? "Save returned an error", "error");
         return;
       }
-      const url = body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url ?? null;
+      // Only an http(s) URL is ever stored — pdfUrl feeds window.open and
+      // navigator.share below.
+      const url =
+        safeExternalUrl(body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url)?.href ??
+        null;
       setPdfUrl(url);
       if (!url) {
         // Don't guess WHY the url is missing — surface exactly what the

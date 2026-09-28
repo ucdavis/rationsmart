@@ -88,12 +88,12 @@ export default function LoginPage() {
 
       // v1 §requires_pin_reset: server tells us when the user just authenticated
       // with a legacy 4-digit PIN and must upgrade to a 6-digit one before
-      // accessing the rest of the app. Route them to /set-new-pin with the
-      // email + old PIN pre-filled via query string (sensitive but lives only
-      // in the in-app URL until the migration completes).
+      // accessing the rest of the app. Hand the email + old PIN to
+      // /set-new-pin through a memory-only store slice — never the URL, which
+      // would put the PIN in edge logs, browser history and the SW cache.
       if (body.requires_pin_reset) {
-        const qs = new URLSearchParams({ email: email.trim(), old_pin: pin });
-        router.replace(`/set-new-pin?${qs.toString()}`);
+        useStore.getState().setPendingPinReset({ email: email.trim(), oldPin: pin });
+        router.replace("/set-new-pin");
         return;
       }
 
