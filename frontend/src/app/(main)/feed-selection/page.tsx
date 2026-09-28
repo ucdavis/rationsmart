@@ -6,7 +6,6 @@ import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
-import CustomSelect from "@/components/CustomSelect";
 import {
   evaluateDiet,
   recommendDiet,
@@ -15,7 +14,6 @@ import {
   insertCustomFeed,
   checkInsertOrUpdate,
   updateCustomFeed,
-  searchFeeds,
   parseFeedCategoryOptions,
   parseFeedTypeOptions,
   getCountries,
@@ -23,7 +21,6 @@ import {
   getDietThresholds,
   ANIMAL_CATEGORY_LABELS,
   DIET_LIMIT_LABELS,
-  DIET_LIMIT_UNIT_LABELS,
   sortDietThresholds,
 } from "@/lib/api";
 import type {
@@ -44,19 +41,16 @@ import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
-import Spinner from "@/components/ui/Spinner";
-import {
-  FOCUS_AFTER_SCROLL_MS,
-  SCROLL_AFTER_RENDER_MS,
-  SEARCH_DEBOUNCE_MS,
-} from "@/lib/ui-timings";
+import { SCROLL_AFTER_RENDER_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
 import {
   buildEvaluationRequest,
   buildRecommendationRequest,
   checkedLimits,
 } from "@/lib/diet-request";
-import { nutrientFieldsFor } from "@/lib/nutrients";
+import { useFeedSearch } from "@/components/feed-selection/useFeedSearch";
+import DietLimitsSheet from "@/components/feed-selection/DietLimitsSheet";
+import CustomFeedSheet, { EMPTY_CUSTOM } from "@/components/feed-selection/CustomFeedSheet";
 import { useLatestRef } from "@/lib/use-latest";
 
 let idCounter = 0;
@@ -93,52 +87,6 @@ const createFeedItem = (): FeedItem => ({
 // Custom feed form — keys mirror Android FeedDetailsViewModel fields.
 // Android DialogFeedDetails only shows the 13 nutrients listed below
 // (Additive layout = all 13; General omits NPN; Mineral keeps only 4).
-const EMPTY_CUSTOM = {
-  feed_type: "",
-  feed_category: "",
-  feed_name: "",
-  fd_dm: "", // Dry Matter
-  fd_ash: "", // Ash
-  fd_cp: "", // Crude Protein
-  fd_npn_cp: "", // NPN (Additive only)
-  fd_ee: "", // Ether Extract
-  fd_st: "", // Starch
-  fd_ndf: "", // NDF
-  fd_adf: "", // ADF
-  fd_lg: "", // Lignin
-  fd_ndin: "", // NDIN
-  fd_adin: "", // ADIN
-  fd_ca: "", // Calcium
-  fd_p: "", // Phosphorus
-};
-
-function CustomFeedNutrientInput({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div>
-      <p className="text-xs font-bold uppercase mb-1" style={{ color: COLORS.darkSilver }}>
-        {label}
-      </p>
-      <input
-        aria-label={label}
-        type="number"
-        inputMode="decimal"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        placeholder="0.00"
-        className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-        style={{ backgroundColor: COLORS.americanDiamond, color: COLORS.raisinBlack }}
-      />
-    </div>
-  );
-}
 
 export default function FeedSelectionPage() {
   const router = useRouter();
@@ -309,13 +257,18 @@ export default function FeedSelectionPage() {
   // query + tapping a result then populates that card. If no card is
   // explicitly active when the user picks a result, fall back to the
   // first row without a feed_uuid (or row 1 if all are populated).
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<FeedSearchResult[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [isSearching, setIsSearching] = useState(false);
+  const {
+    searchQuery,
+    setSearchQuery,
+    searchResults,
+    isSearching,
+    searchOpen,
+    setSearchOpen,
+    searchContainerRef,
+    searchInputRef,
+    jumpToSearch: handleJumpToSearch,
+  } = useFeedSearch(user);
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
-  const searchContainerRef = useRef<HTMLDivElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   // Set of row ids currently fetching their cascade (types / categories /
   // sub-categories). Generate is blocked while non-empty so a user
@@ -338,58 +291,6 @@ export default function FeedSelectionPage() {
       return prev;
     });
   }, []);
-
-  // Per-card "Search to fill" shortcut: scroll the global search bar
-  // into view + focus its input. The caller (FeedRow) marks itself as
-  // the active target first, so the next picked result lands on that
-  // card. ScrollIntoView with block:"start" anchors the bar near the
-  // viewport top; tiny extra padding so it isn't clipped by the toolbar.
-  const handleJumpToSearch = useCallback(() => {
-    searchContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    // Focus after scroll so iOS Safari's virtual keyboard pops up at
-    // the bottom rather than mid-page.
-    setTimeout(() => searchInputRef.current?.focus({ preventScroll: true }), FOCUS_AFTER_SCROLL_MS);
-  }, []);
-
-  // Debounced search — 250 ms after last keystroke.
-  useEffect(() => {
-    if (!searchQuery.trim() || !user?.id || !user?.country_id) {
-      setSearchResults([]);
-      return;
-    }
-    setIsSearching(true);
-    // `stale` flips when the query changes: a slow earlier response must not
-    // overwrite the results for what the user has typed since (audit B-07).
-    let stale = false;
-    const timer = setTimeout(() => {
-      searchFeeds(searchQuery.trim(), user.country_id, user.id)
-        .then((res) => {
-          if (!stale) setSearchResults(res.data ?? []);
-        })
-        .catch(() => {
-          if (!stale) setSearchResults([]);
-        })
-        .finally(() => {
-          if (!stale) setIsSearching(false);
-        });
-    }, SEARCH_DEBOUNCE_MS);
-    return () => {
-      stale = true;
-      clearTimeout(timer);
-    };
-  }, [searchQuery, user?.id, user?.country_id]);
-
-  // Close result dropdown on outside click.
-  useEffect(() => {
-    if (!searchOpen) return;
-    const onDocClick = (e: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(e.target as Node)) {
-        setSearchOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [searchOpen]);
 
   // Apply the picked result to the targeted row. Target priority:
   //   1. The explicitly-tapped activeRowId, if any
@@ -1445,294 +1346,24 @@ export default function FeedSelectionPage() {
       {/* Custom Feed Modal — confined to the 480px centered column so the
           bottom sheet does not span the entire desktop viewport. */}
       {showCustomFeedModal && (
-        <div
-          className="fixed top-0 h-full z-50 flex flex-col justify-end"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowCustomFeedModal(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-t-2xl px-5 pt-5 pb-8 overflow-y-auto"
-            style={{ maxHeight: "90vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-          >
-            {/* Drag handle (matches Android view_drag_handle) */}
-            <div className="flex justify-center mb-3">
-              <div
-                style={{
-                  width: 40,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: COLORS.sageBreeze,
-                }}
-              />
-            </div>
-
-            {/* Title — matches Android DialogFeedDetails tv_title:
-                "Add Custom Feed" for isAdd=true, "Edit Nutritional Information"
-                for isAdd=false. Centered, bold, 20sp, dark_aquamarine_green. */}
-            <div className="relative mb-4">
-              <h3
-                className="text-center font-bold"
-                style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-              >
-                {t("Add Custom Feed")}
-              </h3>
-              <button
-                onClick={() => setShowCustomFeedModal(false)}
-                style={{
-                  position: "absolute",
-                  right: 0,
-                  top: 0,
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                }}
-                aria-label={t("Close")}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M5 5L15 15M15 5L5 15"
-                    stroke={COLORS.darkSilver}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Separator line below title (matches Android view_separator_feed_details) */}
-            <div className="mb-4" style={{ height: 1, backgroundColor: COLORS.webDivider }} />
-
-            {/* "Feed Details" expand/collapse header (matches Android cvExpandFeedDetails).
-                Icon mirrors Android drawables: minus when expanded, plus when collapsed. */}
-            <button
-              onClick={() => setFeedDetailsExpanded((p) => !p)}
-              className="w-full flex items-center justify-between mb-3"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
-            >
-              <span
-                className="font-bold"
-                style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}
-              >
-                {t("Feed Details")}
-              </span>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M3 9h12"
-                  stroke={COLORS.darkAquamarineGreen}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                {!feedDetailsExpanded && (
-                  <path
-                    d="M9 3v12"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                )}
-              </svg>
-            </button>
-
-            {feedDetailsExpanded && (
-              <>
-                {/* Feed Type — first required field (no Country in Android end-user UI) */}
-                <p
-                  className="text-xs font-bold uppercase mb-1"
-                  style={{ color: COLORS.darkSilver }}
-                >
-                  {t("Feed Type")}
-                  <span style={{ color: COLORS.redRyb }}> *</span>
-                </p>
-                <div className="relative mb-3">
-                  {loadingCustomTypes ? (
-                    <div className="h-11 rounded-xl shimmer" />
-                  ) : (
-                    <div
-                      className="rounded-xl px-4 py-3"
-                      style={{
-                        backgroundColor: COLORS.americanDiamond,
-                        opacity: !user?.country_id ? 0.6 : 1,
-                      }}
-                    >
-                      <CustomSelect
-                        transparentTrigger
-                        value={customFeedForm.feed_type}
-                        onChange={handleCustomTypeChange}
-                        disabled={!user?.country_id}
-                        placeholder={t("Select feed type")}
-                        options={customFeedTypes.map((ft) => ({ value: ft, label: ft }))}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Feed Category — gated on feed type */}
-                <p
-                  className="text-xs font-bold uppercase mb-1"
-                  style={{ color: COLORS.darkSilver }}
-                >
-                  {t("Feed Category")}
-                  <span style={{ color: COLORS.redRyb }}> *</span>
-                </p>
-                <div className="relative mb-3">
-                  {loadingCustomCats ? (
-                    <div className="h-11 rounded-xl shimmer" />
-                  ) : (
-                    <div
-                      className="rounded-xl px-4 py-3"
-                      style={{
-                        backgroundColor: !customFeedForm.feed_type
-                          ? COLORS.brightGray
-                          : COLORS.americanDiamond,
-                        opacity: !customFeedForm.feed_type ? 0.6 : 1,
-                      }}
-                    >
-                      <CustomSelect
-                        transparentTrigger
-                        value={customFeedForm.feed_category}
-                        onChange={(v) => setCustomFeedForm((p) => ({ ...p, feed_category: v }))}
-                        disabled={!customFeedForm.feed_type}
-                        placeholder={
-                          !customFeedForm.feed_type ? t("Select type first") : t("Select category")
-                        }
-                        options={customFeedCategories.map((c) => ({ value: c, label: c }))}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Feed Name — gated on category. Android DialogFeedDetails
-                also shows a user-name prefix (e.g. "John-") via
-                PrefsManager.getUserNamePrefix(). We render the same. */}
-                <p
-                  className="text-xs font-bold uppercase mb-1"
-                  style={{ color: COLORS.darkSilver }}
-                >
-                  {t("Feed Name")}
-                  <span style={{ color: COLORS.redRyb }}> *</span>
-                </p>
-                <div
-                  className="flex items-center rounded-xl mb-4"
-                  style={{
-                    backgroundColor: !customFeedForm.feed_category
-                      ? COLORS.brightGray
-                      : COLORS.americanDiamond,
-                    opacity: !customFeedForm.feed_category ? 0.6 : 1,
-                  }}
-                >
-                  <span className="pl-4 pr-1 text-sm" style={{ color: COLORS.darkSilver }}>
-                    {user?.name ? `${user.name.split(" ")[0]}-` : ""}
-                  </span>
-                  <input
-                    aria-label={t("Feed Name")}
-                    type="text"
-                    value={customFeedForm.feed_name}
-                    onChange={(e) =>
-                      setCustomFeedForm((p) => ({ ...p, feed_name: e.target.value }))
-                    }
-                    disabled={!customFeedForm.feed_category}
-                    className="flex-1 bg-transparent px-1 py-3 text-sm border-none focus:outline-none"
-                    style={{
-                      color: COLORS.raisinBlack,
-                      cursor: !customFeedForm.feed_category ? "not-allowed" : "text",
-                    }}
-                  />
-                </div>
-              </>
-            )}
-
-            {/* "Nutritional Information" expand/collapse header
-                (matches Android cvExpandNutritionalInformation).
-                Icon mirrors Android drawables: minus when expanded, plus when collapsed. */}
-            <button
-              onClick={() => setNutritionalInfoExpanded((p) => !p)}
-              className="w-full flex items-center justify-between mb-3"
-              style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 0" }}
-            >
-              <span
-                className="font-bold"
-                style={{ color: COLORS.darkAquamarineGreen, fontSize: 16 }}
-              >
-                {t("Nutritional Information")}
-              </span>
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M3 9h12"
-                  stroke={COLORS.darkAquamarineGreen}
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-                {!nutritionalInfoExpanded && (
-                  <path
-                    d="M9 3v12"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                )}
-              </svg>
-            </button>
-
-            {nutritionalInfoExpanded &&
-              (() => {
-                // Match Android DialogFeedDetails: layout is chosen by feedCategory.
-                // Before category is selected, default to General (matches Android
-                // initUi where layoutNutrientInfoGeneral.root.visibility = VISIBLE).
-                const fields = nutrientFieldsFor(customFeedForm.feed_category);
-                return (
-                  <>
-                    <p className="text-xs mb-3" style={{ color: COLORS.darkSilver }}>
-                      {t("Nutrient Composition (%)")}
-                    </p>
-                    <div className="grid grid-cols-2 gap-3 mb-5">
-                      {fields.map((f) => (
-                        <CustomFeedNutrientInput
-                          key={f.key}
-                          label={t(f.label)}
-                          value={customFeedForm[f.key]}
-                          onChange={(v) => setCustomFeedForm((p) => ({ ...p, [f.key]: v }))}
-                        />
-                      ))}
-                    </div>
-                  </>
-                );
-              })()}
-
-            {/* Submit — Android btn_submit. Disabled (light_gray_new bg +
-                spanish_gray text) until ALL four required fields are filled. */}
-            {(() => {
-              const ready =
-                !!user?.country_id &&
-                !!customFeedForm.feed_type &&
-                !!customFeedForm.feed_category &&
-                customFeedForm.feed_name.trim() !== "" &&
-                !isSavingCustom;
-              return (
-                <button
-                  onClick={handleSaveCustomFeed}
-                  disabled={!ready}
-                  className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-                  style={{
-                    backgroundColor: ready ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
-                    color: ready ? "white" : "#999",
-                    border: "none",
-                    cursor: ready ? "pointer" : "not-allowed",
-                  }}
-                >
-                  {isSavingCustom ? <Spinner size={22} /> : t("Submit")}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
+        <CustomFeedSheet
+          customFeedCategories={customFeedCategories}
+          customFeedForm={customFeedForm}
+          customFeedTypes={customFeedTypes}
+          feedDetailsExpanded={feedDetailsExpanded}
+          handleCustomTypeChange={handleCustomTypeChange}
+          handleSaveCustomFeed={handleSaveCustomFeed}
+          isSavingCustom={isSavingCustom}
+          loadingCustomCats={loadingCustomCats}
+          loadingCustomTypes={loadingCustomTypes}
+          nutritionalInfoExpanded={nutritionalInfoExpanded}
+          setCustomFeedForm={setCustomFeedForm}
+          setFeedDetailsExpanded={setFeedDetailsExpanded}
+          setNutritionalInfoExpanded={setNutritionalInfoExpanded}
+          setShowCustomFeedModal={setShowCustomFeedModal}
+          t={t}
+          user={user}
+        />
       )}
 
       {/* Incomplete Feeds Dialog — confined to centered column */}
@@ -1969,166 +1600,17 @@ export default function FeedSelectionPage() {
 
       {/* Custom Diet Limits Modal (bottom sheet) — confined to centered column */}
       {showLimitsModal && (
-        <div
-          className="fixed top-0 h-full z-50 flex flex-col justify-end"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.45)",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowLimitsModal(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
-            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-          >
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <h3 className="text-base font-bold" style={{ color: COLORS.darkAquamarineGreen }}>
-                  {t("Custom Diet Limits")}
-                </h3>
-                {/* Blank is a first-class state, NOT zero: blank means "use
-                    this animal's engine default", and a typed 0 is rejected
-                    outright. Stated once here instead of on all eight rows. */}
-                <p className="text-xs mt-1" style={{ color: COLORS.darkSilver }}>
-                  {t("Default value will be applied if left blank")}
-                </p>
-              </div>
-              <button
-                onClick={() => setShowLimitsModal(false)}
-                style={{ background: "none", border: "none", cursor: "pointer" }}
-                aria-label={t("Close")}
-              >
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                  <path
-                    d="M5 5L15 15M15 5L5 15"
-                    stroke={COLORS.darkSilver}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-            </div>
-
-            {/* Scrollable — eight limits don't fit a bottom sheet otherwise. */}
-            <div style={{ maxHeight: "58vh", overflowY: "auto", marginRight: -4, paddingRight: 4 }}>
-              {(limitSpecs ?? []).map((spec) => {
-                const { key, min, max, unit } = spec;
-                const val = limits[key];
-                const outOfRange = limitOutOfRange(spec);
-                const unitLabel = t(DIET_LIMIT_UNIT_LABELS[unit] ?? unit);
-                // No TARGET / LIMIT badge. `enforcement: "soft"` rows used to
-                // render as "Target" because QA had read a legitimate
-                // overshoot as the engine ignoring the input — but on
-                // 2026-09-22 Maria and Satish ruled that all eight ARE
-                // limits and the hard/soft distinction is an engine detail
-                // the user shouldn't have to reason about. `spec.enforcement`
-                // is still read elsewhere; don't put the badge back.
-                const ndfConflict = key === "ndf_for_min" && ndfFloorAboveCeiling;
-                const invalid = outOfRange || ndfConflict;
-                return (
-                  <div key={key} className="mb-4">
-                    <p
-                      className="text-xs font-bold uppercase mb-2"
-                      style={{ color: COLORS.raisinBlack }}
-                    >
-                      {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
-                    </p>
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      aria-label={`${t(DIET_LIMIT_LABELS[key] ?? key)} (${unitLabel})`}
-                      placeholder={String(spec.default)}
-                      min={min}
-                      max={max}
-                      step="0.1"
-                      value={val ?? ""}
-                      onChange={(e) => updateLimit(key, e.target.value)}
-                      className="w-full rounded-xl px-3 py-2.5 text-sm border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                      style={{
-                        backgroundColor: invalid ? COLORS.peachyPink : COLORS.americanDiamond,
-                        color: COLORS.raisinBlack,
-                      }}
-                    />
-                    <p
-                      className="text-xs mt-1 ml-1"
-                      style={{
-                        color: invalid ? COLORS.carminePink : COLORS.darkSilver,
-                      }}
-                    >
-                      {ndfConflict
-                        ? t("Forage NDF Min cannot exceed NDF Max")
-                        : outOfRange
-                          ? t("Value must be between ${min} and ${max}")
-                              .replace("${min}", String(min))
-                              .replace("${max}", String(max))
-                          : // `default` is this animal's engine value and is
-                            // also the tighten-only bound, so the hint doubles
-                            // as an explanation of why the range stops there.
-                            // The per-field "leave blank" wording moved to the
-                            // one line under the sheet title (2026-09-22) —
-                            // here the default is just stated in brackets.
-                            t("Range ${min} – ${max} ${unit} (Default ${default})")
-                              .replace("${min}", String(min))
-                              .replace("${max}", String(max))
-                              .replace("${unit}", unitLabel)
-                              .replace("${default}", String(spec.default))}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Limits may only be tightened — say so once rather than on
-                every row. The "leave blank" half of this sentence now lives
-                under the sheet title. */}
-            <p className="text-[11px] mb-3 mt-1 ml-1" style={{ color: COLORS.darkSilver }}>
-              {t(
-                "Limits can only be tightened, never loosened. Tightening a limit too far can return no diet at all."
-              )}
-            </p>
-
-            {(() => {
-              const specs = limitSpecs ?? [];
-              const anyOutOfRange = specs.some(limitOutOfRange);
-              const anyFilled = specs.some(({ key }) => limits[key] != null);
-              const cantApply = anyOutOfRange || ndfFloorAboveCeiling || !anyFilled;
-              return (
-                <button
-                  onClick={() => {
-                    if (anyOutOfRange || ndfFloorAboveCeiling) {
-                      showSnackbar(
-                        t("Please correct out-of-range values before applying"),
-                        "error"
-                      );
-                      return;
-                    }
-                    if (!anyFilled) {
-                      showSnackbar(t("Enter at least one limit before applying"), "info");
-                      return;
-                    }
-                    setDietLimits(limits);
-                    setShowLimitsModal(false);
-                  }}
-                  disabled={cantApply}
-                  className="w-full py-4 rounded-xl font-bold text-base mt-2"
-                  style={{
-                    backgroundColor: cantApply ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
-                    color: cantApply ? COLORS.spanishGray : "white",
-                    border: "none",
-                    cursor: cantApply ? "not-allowed" : "pointer",
-                  }}
-                >
-                  {t("Apply Limits")}
-                </button>
-              );
-            })()}
-          </div>
-        </div>
+        <DietLimitsSheet
+          limits={limits}
+          limitSpecs={limitSpecs}
+          ndfFloorAboveCeiling={ndfFloorAboveCeiling}
+          limitOutOfRange={limitOutOfRange}
+          updateLimit={updateLimit}
+          setDietLimits={setDietLimits}
+          setShowLimitsModal={setShowLimitsModal}
+          showSnackbar={showSnackbar}
+          t={t}
+        />
       )}
     </div>
   );
