@@ -2,6 +2,12 @@
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+import FeedTypeSheet from "@/components/admin/feeds/FeedTypeSheet";
+import FeedCategorySheet from "@/components/admin/feeds/FeedCategorySheet";
+import DeleteFeedDialog from "@/components/admin/feeds/DeleteFeedDialog";
+import DeleteFeedTypeDialog from "@/components/admin/feeds/DeleteFeedTypeDialog";
+import DeleteFeedCategoryDialog from "@/components/admin/feeds/DeleteFeedCategoryDialog";
+import FeedFormSheet from "@/components/admin/feeds/FeedFormSheet";
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
@@ -20,10 +26,8 @@ import {
   getCountries,
 } from "@/lib/api";
 import Toolbar from "@/components/Toolbar";
-import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
-import Spinner from "@/components/ui/Spinner";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 import { anyNutrientInvalid, NUTRIENT_RANGE_MESSAGE } from "@/lib/validators";
 import { useLatestRef } from "@/lib/use-latest";
@@ -33,7 +37,6 @@ import {
   AdminFeedType,
   Country,
   NUMERIC_FEED_FIELDS,
-  NutrientInput,
   SkeletonCard,
   TabType,
   emptyFeedForm,
@@ -838,981 +841,89 @@ export default function AdminFeedsPage() {
 
       {/* ══ ADD/EDIT FEED MODAL ══ — confined to centered column */}
       {showFeedModal && (
-        <div
-          className="fixed top-0 h-full z-50 flex flex-col justify-end"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowFeedModal(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-t-2xl px-4 pt-5 pb-8 overflow-y-auto"
-            style={{ maxHeight: "92vh", boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-          >
-            {/* Header — Android dialog_add_feed: centered "Add Feed" bold green
-                font_20. dialog_edit_feed: left-aligned "Edit Feed" regular font_16. */}
-            {editingFeed ? (
-              <div className="flex items-center justify-between mb-5">
-                <h3
-                  style={{
-                    color: COLORS.raisinBlack,
-                    fontSize: 16,
-                    fontWeight: 400,
-                  }}
-                >
-                  {t("Edit Feed")}
-                </h3>
-                <button
-                  onClick={() => setShowFeedModal(false)}
-                  style={{ background: "none", border: "none", cursor: "pointer" }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M5 5L15 15M15 5L5 15"
-                      stroke={COLORS.darkSilver}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            ) : (
-              <div className="relative mb-5">
-                <h3
-                  className="text-center font-bold"
-                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-                >
-                  {t("Add Feed")}
-                </h3>
-                <button
-                  onClick={() => setShowFeedModal(false)}
-                  style={{
-                    position: "absolute",
-                    right: 0,
-                    top: 0,
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                  }}
-                  aria-label={t("Close")}
-                >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-                    <path
-                      d="M5 5L15 15M15 5L5 15"
-                      stroke={COLORS.darkSilver}
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-            )}
-
-            {/* Base fields — in EDIT mode all four are read-only (bright_gray
-                bg, no border). In ADD mode they cascade: country → type →
-                category → name (each disabled until the previous is picked). */}
-            {(() => {
-              const isEdit = !!editingFeed;
-              const inputStyle = (disabled: boolean) =>
-                ({
-                  backgroundColor: disabled ? COLORS.brightGray : COLORS.americanDiamond,
-                  color: COLORS.raisinBlack,
-                  borderRadius: 16,
-                  padding: "12px 14px",
-                  fontSize: 14,
-                  border: "none",
-                  width: "100%",
-                  opacity: disabled ? 0.85 : 1,
-                  cursor: disabled ? "not-allowed" : "auto",
-                }) as const;
-
-              return (
-                <div className="space-y-3 mb-4">
-                  {/* COUNTRY * */}
-                  <div>
-                    <p
-                      className="font-bold uppercase mb-1"
-                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
-                    >
-                      {t("Country")}
-                      <span style={{ color: COLORS.redRyb }}> *</span>
-                    </p>
-                    {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_country_name || t("N/A")}</div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={feedForm.fd_country_name}
-                          onChange={(e) => {
-                            const c = countries.find((x) => x.name === e.target.value);
-                            setFeedForm((p) => ({
-                              ...p,
-                              fd_country_name: e.target.value,
-                              fd_country_cd: c?.country_code ?? "",
-                              fd_country_id: String(c?.id ?? ""),
-                              fd_type: "",
-                              fd_category: "",
-                              fd_name: "",
-                            }));
-                          }}
-                          className="appearance-none focus:outline-none pr-8"
-                          style={{
-                            ...inputStyle(false),
-                            color: feedForm.fd_country_name ? COLORS.raisinBlack : "#999",
-                          }}
-                        >
-                          <option value="">{t("Select country")}</option>
-                          {countries.map((c) => (
-                            <option key={String(c.id)} value={c.name}>
-                              {c.name}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path
-                              d="M3 5L7 9L11 5"
-                              stroke={COLORS.darkSilver}
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* FEED TYPE * — disabled until country selected (Add only) */}
-                  <div>
-                    <p
-                      className="font-bold uppercase mb-1"
-                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
-                    >
-                      {t("Feed Type")}
-                      <span style={{ color: COLORS.redRyb }}> *</span>
-                    </p>
-                    {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_type || t("N/A")}</div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={feedForm.fd_type}
-                          disabled={!feedForm.fd_country_name}
-                          onChange={(e) =>
-                            setFeedForm((p) => ({
-                              ...p,
-                              fd_type: e.target.value,
-                              fd_category: "",
-                              fd_name: "",
-                            }))
-                          }
-                          className="appearance-none focus:outline-none pr-8"
-                          style={{
-                            ...inputStyle(!feedForm.fd_country_name),
-                            color: feedForm.fd_type ? COLORS.raisinBlack : "#999",
-                          }}
-                        >
-                          <option value="">
-                            {!feedForm.fd_country_name
-                              ? t("Select country first")
-                              : t("Select type")}
-                          </option>
-                          {feedTypes.map((ft) => (
-                            <option key={ft.id} value={getName(ft)}>
-                              {getName(ft)}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path
-                              d="M3 5L7 9L11 5"
-                              stroke={COLORS.darkSilver}
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* FEED CATEGORY * — disabled until type selected (Add only) */}
-                  <div>
-                    <p
-                      className="font-bold uppercase mb-1"
-                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
-                    >
-                      {t("Feed Category")}
-                      <span style={{ color: COLORS.redRyb }}> *</span>
-                    </p>
-                    {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_category || t("N/A")}</div>
-                    ) : (
-                      <div className="relative">
-                        <select
-                          value={feedForm.fd_category}
-                          disabled={!feedForm.fd_type}
-                          onChange={(e) =>
-                            setFeedForm((p) => ({ ...p, fd_category: e.target.value, fd_name: "" }))
-                          }
-                          className="appearance-none focus:outline-none pr-8"
-                          style={{
-                            ...inputStyle(!feedForm.fd_type),
-                            color: feedForm.fd_category ? COLORS.raisinBlack : "#999",
-                          }}
-                        >
-                          <option value="">
-                            {!feedForm.fd_type ? t("Select type first") : t("Select category")}
-                          </option>
-                          {feedCategories
-                            .filter(
-                              (fc) => !feedForm.fd_type || getFeedTypeName(fc) === feedForm.fd_type
-                            )
-                            .map((fc) => (
-                              <option key={fc.id} value={getCatName(fc)}>
-                                {getCatName(fc)}
-                              </option>
-                            ))}
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                            <path
-                              d="M3 5L7 9L11 5"
-                              stroke={COLORS.darkSilver}
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* FEED NAME * — disabled until category selected (Add only) */}
-                  <div>
-                    <p
-                      className="font-bold uppercase mb-1"
-                      style={{ color: COLORS.darkSilver, fontSize: 12 }}
-                    >
-                      {t("Feed Name")}
-                      <span style={{ color: COLORS.redRyb }}> *</span>
-                    </p>
-                    {isEdit ? (
-                      <div style={inputStyle(true)}>{feedForm.fd_name || t("N/A")}</div>
-                    ) : (
-                      <input
-                        aria-label={t("Feed Name")}
-                        type="text"
-                        value={feedForm.fd_name}
-                        disabled={!feedForm.fd_category}
-                        onChange={(e) => setFeedForm((p) => ({ ...p, fd_name: e.target.value }))}
-                        placeholder={
-                          !feedForm.fd_category
-                            ? t("Select category first")
-                            : t("e.g. Maize Silage")
-                        }
-                        className="focus:outline-none"
-                        style={inputStyle(!feedForm.fd_category)}
-                      />
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
-
-            {/* Nutrient fields — 17 fields matching Android layout_nutrient_info.xml */}
-            <p
-              className="text-xs font-bold uppercase mb-3"
-              style={{ color: COLORS.darkAquamarineGreen }}
-            >
-              {t("Nutrient Composition (%)")}
-            </p>
-            <div className="grid grid-cols-2 gap-3">
-              <NutrientInput
-                label={t("Dry Matter (DM)")}
-                value={feedForm.fd_dm}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_dm: v }))}
-              />
-              <NutrientInput
-                label={t("Ash")}
-                value={feedForm.fd_ash}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_ash: v }))}
-              />
-              <NutrientInput
-                label={t("Cellulose")}
-                value={feedForm.fd_cellulose}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_cellulose: v }))}
-              />
-              <NutrientInput
-                label={t("Crude Fiber (CF)")}
-                value={feedForm.fd_cf}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_cf: v }))}
-              />
-              <NutrientInput
-                label={t("Crude Protein (CP)")}
-                value={feedForm.fd_cp}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_cp: v }))}
-              />
-              <NutrientInput
-                label={t("Ether Extract (EE)")}
-                value={feedForm.fd_ee}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_ee: v }))}
-              />
-              <NutrientInput
-                label={t("Hemicellulose")}
-                value={feedForm.fd_hemicellulose}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_hemicellulose: v }))}
-              />
-              <NutrientInput
-                label={t("Starch (ST)")}
-                value={feedForm.fd_st}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_st: v }))}
-              />
-              <NutrientInput
-                label={t("NDF")}
-                value={feedForm.fd_ndf}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndf: v }))}
-              />
-              <NutrientInput
-                label={t("ADF")}
-                value={feedForm.fd_adf}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_adf: v }))}
-              />
-              <NutrientInput
-                label={t("Lignin")}
-                value={feedForm.fd_lg}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_lg: v }))}
-              />
-              <NutrientInput
-                label={t("NDIN")}
-                value={feedForm.fd_ndin}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_ndin: v }))}
-              />
-              <NutrientInput
-                label={t("NFE")}
-                value={feedForm.fd_nfe}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_nfe: v }))}
-              />
-              <NutrientInput
-                label={t("NPN CP")}
-                value={feedForm.fd_npn_cp}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_npn_cp: v }))}
-              />
-              <NutrientInput
-                label={t("ADIN")}
-                value={feedForm.fd_adin}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_adin: v }))}
-              />
-              <NutrientInput
-                label={t("Calcium (Ca)")}
-                value={feedForm.fd_ca}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_ca: v }))}
-              />
-              <NutrientInput
-                label={t("Phosphorus (P)")}
-                value={feedForm.fd_p}
-                onChange={(v) => setFeedForm((p) => ({ ...p, fd_p: v }))}
-              />
-            </div>
-
-            <button
-              onClick={handleSaveFeed}
-              disabled={!isFeedFormValid || isSavingFeed}
-              className="w-full mt-5 py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
-              style={{
-                backgroundColor:
-                  isFeedFormValid && !isSavingFeed
-                    ? COLORS.darkAquamarineGreen
-                    : COLORS.lightGrayNew,
-                color: isFeedFormValid && !isSavingFeed ? "white" : "#999",
-                border: "none",
-                cursor: isFeedFormValid && !isSavingFeed ? "pointer" : "not-allowed",
-              }}
-            >
-              {isSavingFeed ? <Spinner size={18} rounded={false} /> : t("Submit")}
-            </button>
-          </div>
-        </div>
+        <FeedFormSheet
+          countries={countries}
+          editingFeed={editingFeed}
+          feedCategories={feedCategories}
+          feedForm={feedForm}
+          feedTypes={feedTypes}
+          getCatName={getCatName}
+          getFeedTypeName={getFeedTypeName}
+          getName={getName}
+          handleSaveFeed={handleSaveFeed}
+          isFeedFormValid={isFeedFormValid}
+          isSavingFeed={isSavingFeed}
+          setFeedForm={setFeedForm}
+          setShowFeedModal={setShowFeedModal}
+          t={t}
+        />
       )}
 
       {/* ══ ADD TYPE MODAL ══ — matches Android dialog_feed_type.xml */}
       {showTypeModal && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-2xl w-full max-w-sm"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)", padding: "30px 12px 30px" }}
-          >
-            {/* Centered title: dark_aquamarine_green, font_20, bold */}
-            <h3
-              className="text-center font-bold"
-              style={{
-                color: COLORS.darkAquamarineGreen,
-                fontSize: 20,
-                marginBottom: 20,
-              }}
-            >
-              {t("Add Feed Type")}
-            </h3>
-
-            {/* FEED TYPE * label + input */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: COLORS.darkSilver, fontSize: 12 }}
-            >
-              {t("Feed Type")}
-              <span style={{ color: COLORS.redRyb }}> *</span>
-            </p>
-            <input
-              aria-label={t("Feed Type")}
-              type="text"
-              value={newTypeName}
-              onChange={(e) => setNewTypeName(e.target.value)}
-              placeholder={t("e.g. Forage")}
-              className="w-full focus:outline-none mb-3"
-              style={{
-                backgroundColor: COLORS.americanDiamond,
-                color: COLORS.raisinBlack,
-                borderRadius: 16,
-                padding: "12px 14px",
-                fontSize: 14,
-                border: "none",
-              }}
-            />
-
-            {/* DESCRIPTION label + multiline textarea (4:1 aspect, max 100 chars) */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: COLORS.darkSilver, fontSize: 12 }}
-            >
-              {t("Description")}
-            </p>
-            <textarea
-              value={newTypeDescription}
-              onChange={(e) => setNewTypeDescription(e.target.value)}
-              maxLength={100}
-              placeholder={t("Short description")}
-              className="w-full focus:outline-none mb-5"
-              style={{
-                backgroundColor: COLORS.americanDiamond,
-                color: COLORS.raisinBlack,
-                borderRadius: 16,
-                padding: "12px 14px",
-                fontSize: 14,
-                border: "none",
-                resize: "none",
-                minHeight: 80,
-              }}
-            />
-
-            {/* Submit button — Android LoadingButton: disabled state =
-                light_gray_new bg + spanish_gray text; enabled =
-                dark_aquamarine_green bg + white text; corner 12. */}
-            <button
-              onClick={handleSaveType}
-              disabled={!newTypeName.trim() || isSavingType}
-              className="w-full font-bold flex items-center justify-center gap-2"
-              style={{
-                backgroundColor:
-                  newTypeName.trim() && !isSavingType
-                    ? COLORS.darkAquamarineGreen
-                    : COLORS.lightGrayNew,
-                color: newTypeName.trim() && !isSavingType ? "white" : "#999",
-                border: "none",
-                cursor: newTypeName.trim() && !isSavingType ? "pointer" : "not-allowed",
-                padding: "12px 0",
-                borderRadius: 12,
-                fontSize: 16,
-              }}
-            >
-              {isSavingType ? <Spinner size={18} /> : t("Submit")}
-            </button>
-
-            {/* Cancel link — small text-only secondary action */}
-            <button
-              onClick={() => {
-                setShowTypeModal(false);
-                setNewTypeName("");
-                setNewTypeDescription("");
-              }}
-              className="w-full mt-3"
-              style={{
-                background: "none",
-                border: "none",
-                color: COLORS.darkSilver,
-                fontSize: 14,
-                cursor: "pointer",
-              }}
-            >
-              {t("Cancel")}
-            </button>
-          </div>
-        </div>
+        <FeedTypeSheet
+          handleSaveType={handleSaveType}
+          isSavingType={isSavingType}
+          newTypeDescription={newTypeDescription}
+          newTypeName={newTypeName}
+          setNewTypeDescription={setNewTypeDescription}
+          setNewTypeName={setNewTypeName}
+          setShowTypeModal={setShowTypeModal}
+          t={t}
+        />
       )}
 
       {/* ══ ADD CATEGORY MODAL ══ — matches Android dialog_feed_category.xml */}
       {showCatModal && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-2xl w-full max-w-sm"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)", padding: "30px 12px 30px" }}
-          >
-            <h3
-              className="text-center font-bold"
-              style={{
-                color: COLORS.darkAquamarineGreen,
-                fontSize: 20,
-                marginBottom: 20,
-              }}
-            >
-              {t("Add Feed Category")}
-            </h3>
-
-            {/* FEED TYPE * dropdown (required) */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: COLORS.darkSilver, fontSize: 12 }}
-            >
-              {t("Feed Type")}
-              <span style={{ color: COLORS.redRyb }}> *</span>
-            </p>
-            <div className="relative mb-3">
-              <select
-                value={newCatTypeId}
-                onChange={(e) => {
-                  setNewCatTypeId(e.target.value);
-                  setNewCatName("");
-                  setNewCatDescription("");
-                }}
-                className="w-full focus:outline-none appearance-none pr-8"
-                style={{
-                  backgroundColor: COLORS.americanDiamond,
-                  color: newCatTypeId ? COLORS.raisinBlack : "#999",
-                  borderRadius: 16,
-                  padding: "12px 14px",
-                  fontSize: 14,
-                  border: "none",
-                }}
-              >
-                <option value="">{t("Select type")}</option>
-                {feedTypes.map((ft) => (
-                  <option key={ft.id} value={ft.id}>
-                    {getName(ft)}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M3 5L7 9L11 5"
-                    stroke={COLORS.darkSilver}
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* FEED CATEGORY * input — disabled until type selected
-                (bright_gray bg when disabled). */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: COLORS.darkSilver, fontSize: 12 }}
-            >
-              {t("Feed Category")}
-              <span style={{ color: COLORS.redRyb }}> *</span>
-            </p>
-            <input
-              aria-label={t("Feed Category")}
-              type="text"
-              value={newCatName}
-              disabled={!newCatTypeId}
-              onChange={(e) => setNewCatName(e.target.value)}
-              placeholder={!newCatTypeId ? t("Select feed type first") : t("e.g. Cereal Grains")}
-              className="w-full focus:outline-none mb-3"
-              style={{
-                backgroundColor: newCatTypeId ? COLORS.americanDiamond : COLORS.brightGray,
-                color: COLORS.raisinBlack,
-                opacity: !newCatTypeId ? 0.6 : 1,
-                borderRadius: 16,
-                padding: "12px 14px",
-                fontSize: 14,
-                border: "none",
-              }}
-            />
-
-            {/* DESCRIPTION multiline — disabled until type selected */}
-            <p
-              className="font-bold uppercase mb-1"
-              style={{ color: COLORS.darkSilver, fontSize: 12 }}
-            >
-              {t("Description")}
-            </p>
-            <textarea
-              value={newCatDescription}
-              disabled={!newCatTypeId}
-              onChange={(e) => setNewCatDescription(e.target.value)}
-              maxLength={100}
-              placeholder={!newCatTypeId ? t("Select feed type first") : t("Short description")}
-              className="w-full focus:outline-none mb-5"
-              style={{
-                backgroundColor: newCatTypeId ? COLORS.americanDiamond : COLORS.brightGray,
-                color: COLORS.raisinBlack,
-                opacity: !newCatTypeId ? 0.6 : 1,
-                borderRadius: 16,
-                padding: "12px 14px",
-                fontSize: 14,
-                border: "none",
-                resize: "none",
-                minHeight: 80,
-              }}
-            />
-
-            {/* Submit — disabled until type + category filled */}
-            <button
-              onClick={handleSaveCategory}
-              disabled={!newCatName.trim() || !newCatTypeId || isSavingCat}
-              className="w-full font-bold flex items-center justify-center gap-2"
-              style={{
-                backgroundColor:
-                  newCatName.trim() && newCatTypeId && !isSavingCat
-                    ? COLORS.darkAquamarineGreen
-                    : COLORS.lightGrayNew,
-                color: newCatName.trim() && newCatTypeId && !isSavingCat ? "white" : "#999",
-                border: "none",
-                cursor:
-                  newCatName.trim() && newCatTypeId && !isSavingCat ? "pointer" : "not-allowed",
-                padding: "12px 0",
-                borderRadius: 12,
-                fontSize: 16,
-              }}
-            >
-              {isSavingCat ? <Spinner size={18} /> : t("Submit")}
-            </button>
-
-            <button
-              onClick={() => {
-                setShowCatModal(false);
-                setNewCatTypeId("");
-                setNewCatName("");
-                setNewCatDescription("");
-              }}
-              className="w-full mt-3"
-              style={{
-                background: "none",
-                border: "none",
-                color: COLORS.darkSilver,
-                fontSize: 14,
-                cursor: "pointer",
-              }}
-            >
-              {t("Cancel")}
-            </button>
-          </div>
-        </div>
+        <FeedCategorySheet
+          feedTypes={feedTypes}
+          getName={getName}
+          handleSaveCategory={handleSaveCategory}
+          isSavingCat={isSavingCat}
+          newCatDescription={newCatDescription}
+          newCatName={newCatName}
+          newCatTypeId={newCatTypeId}
+          setNewCatDescription={setNewCatDescription}
+          setNewCatName={setNewCatName}
+          setNewCatTypeId={setNewCatTypeId}
+          setShowCatModal={setShowCatModal}
+          t={t}
+        />
       )}
 
       {/* ══ CONFIRM DELETE FEED ══ */}
       {confirmDeleteFeed && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-2xl w-full max-w-xs pb-5"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
-          >
-            <div className="flex justify-center mt-7 mb-4">
-              <div
-                className="flex items-center justify-center"
-                style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke={COLORS.redRyb} strokeWidth="2" />
-                  <path
-                    d="M12 7v5M12 16v1"
-                    stroke={COLORS.redRyb}
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h3
-              className="text-center font-bold mb-4 px-3"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-            >
-              {t("Are you sure you want to delete feed?")}
-            </h3>
-            <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
-              {t('"${fd_name}" will be permanently deleted. This action cannot be undone.').replace(
-                "${fd_name}",
-                confirmDeleteFeed.fd_name ?? ""
-              )}
-            </p>
-            <div className="flex gap-2 px-3">
-              <button
-                onClick={() => setConfirmDeleteFeed(null)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
-                style={{
-                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
-                  color: COLORS.darkAquamarineGreen,
-                  background: "white",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M1 1l12 12M13 1L1 13"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                {t("No")}
-              </button>
-              <button
-                onClick={() => handleDeleteFeed(confirmDeleteFeed)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
-                style={{
-                  backgroundColor: COLORS.carminePink,
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {deletingFeedId === confirmDeleteFeed.feed_id ? t("Deleting...") : t("Yes")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteFeedDialog
+          confirmDeleteFeed={confirmDeleteFeed}
+          deletingFeedId={deletingFeedId}
+          handleDeleteFeed={handleDeleteFeed}
+          setConfirmDeleteFeed={setConfirmDeleteFeed}
+          t={t}
+        />
       )}
 
       {/* ══ CONFIRM DELETE TYPE ══ */}
       {confirmDeleteType && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-2xl w-full max-w-xs pb-5"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
-          >
-            <div className="flex justify-center mt-7 mb-4">
-              <div
-                className="flex items-center justify-center"
-                style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke={COLORS.redRyb} strokeWidth="2" />
-                  <path
-                    d="M12 7v5M12 16v1"
-                    stroke={COLORS.redRyb}
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h3
-              className="text-center font-bold mb-4"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-            >
-              {t("Are you sure you want to delete type?")}
-            </h3>
-            <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
-              {t('"${name}" will be permanently deleted. This action cannot be undone.').replace(
-                "${name}",
-                getName(confirmDeleteType)
-              )}
-            </p>
-            <div className="flex gap-2 px-3">
-              <button
-                onClick={() => setConfirmDeleteType(null)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
-                style={{
-                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
-                  color: COLORS.darkAquamarineGreen,
-                  background: "white",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M1 1l12 12M13 1L1 13"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                {t("No")}
-              </button>
-              <button
-                onClick={() => handleDeleteType(confirmDeleteType)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
-                style={{
-                  backgroundColor: COLORS.carminePink,
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {deletingTypeId === confirmDeleteType.id ? t("Deleting...") : t("Yes")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteFeedTypeDialog
+          confirmDeleteType={confirmDeleteType}
+          deletingTypeId={deletingTypeId}
+          getName={getName}
+          handleDeleteType={handleDeleteType}
+          setConfirmDeleteType={setConfirmDeleteType}
+          t={t}
+        />
       )}
 
       {/* ══ CONFIRM DELETE CATEGORY ══ */}
       {confirmDeleteCat && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-2xl w-full max-w-xs pb-5"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.15)" }}
-          >
-            <div className="flex justify-center mt-7 mb-4">
-              <div
-                className="flex items-center justify-center"
-                style={{ backgroundColor: "rgba(228,74,74,0.2)", borderRadius: 60, padding: 14 }}
-              >
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke={COLORS.redRyb} strokeWidth="2" />
-                  <path
-                    d="M12 7v5M12 16v1"
-                    stroke={COLORS.redRyb}
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h3
-              className="text-center font-bold mb-4"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-            >
-              {t("Are you sure you want to delete category?")}
-            </h3>
-            <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
-              {t('"${name}" will be permanently deleted. This action cannot be undone.').replace(
-                "${name}",
-                getCatName(confirmDeleteCat)
-              )}
-            </p>
-            <div className="flex gap-2 px-3">
-              <button
-                onClick={() => setConfirmDeleteCat(null)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
-                style={{
-                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
-                  color: COLORS.darkAquamarineGreen,
-                  background: "white",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M1 1l12 12M13 1L1 13"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                  />
-                </svg>
-                {t("No")}
-              </button>
-              <button
-                onClick={() => handleDeleteCategory(confirmDeleteCat)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
-                style={{
-                  backgroundColor: COLORS.carminePink,
-                  color: "white",
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path
-                    d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z"
-                    stroke="white"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                {deletingCatId === confirmDeleteCat.id ? t("Deleting...") : t("Yes")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteFeedCategoryDialog
+          confirmDeleteCat={confirmDeleteCat}
+          deletingCatId={deletingCatId}
+          getCatName={getCatName}
+          handleDeleteCategory={handleDeleteCategory}
+          setConfirmDeleteCat={setConfirmDeleteCat}
+          t={t}
+        />
       )}
     </div>
   );

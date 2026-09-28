@@ -264,3 +264,13 @@ export function TotalCostFooter({ label, value }: { label: string; value: string
     </div>
   );
 }
+
+/** Colours + label for the Diet Status banner (driven by diet_rating). */
+export type BannerTheme = {
+  bg: string;
+  stroke: string;
+  iconBg: string;
+  titleColor: string;
+  bodyColor: string;
+  statusText: string;
+};

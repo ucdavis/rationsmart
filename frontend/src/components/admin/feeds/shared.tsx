@@ -151,3 +151,4 @@ export const NUMERIC_FEED_FIELDS = [
 ] as const satisfies ReadonlyArray<keyof typeof emptyFeedForm>;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
+export type FeedForm = typeof emptyFeedForm;
