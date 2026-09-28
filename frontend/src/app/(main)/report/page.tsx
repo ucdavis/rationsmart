@@ -1,290 +1,59 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
-import { saveReport } from "@/lib/api";
-import type {
-  EvaluationResponse,
-  RecommendationResponse,
-  FeedBreakdown,
-  CostEffectiveDiet,
-  AnimalCategory,
-} from "@/lib/api";
-
-// Y3 §2.3 — frontend equivalent of the backend's build_report_context.
-// Maps the animal's physiological state (cattleInfo.animal_category,
-// which maps 1-to-1 with the backend's An_StatePhys field) to a set
-// of booleans indicating which report sections to render. Once Maria
-// ships a `report_context` block on the diet response, we'll prefer
-// that and fall back to this helper for older responses.
-type ReportContext = {
-  showMilkProductionSection: boolean;
-  showMilkCostMarginCard: boolean;
-  showSolutionSummaryMilk: boolean;
-  showCalfMilkFeedingSection: boolean;
-  /**
-   * Methane INTENSITY is g of CH4 per kg of energy-corrected milk. A dry
-   * cow, heifer or calf produces no milk, so the figure has no meaning for
-   * them. Per the backend owner (QA row 12): the engine still calculates it
-   * for non-lactating animals, but it must not be DISPLAYED for them.
-   * Production / yield / Ym are per-day or per-kg-DMI and stay visible.
-   */
-  showMethaneIntensity: boolean;
-};
-function buildReportContext(category?: AnimalCategory | string | null): ReportContext {
-  const cat = (category ?? "").trim();
-  const isLactating = cat === "Lactating Cow";
-  const isCalf = cat === "Baby Calf/Heifer";
-  return {
-    showMilkProductionSection: isLactating,
-    showMilkCostMarginCard: isLactating,
-    showSolutionSummaryMilk: isLactating,
-    showCalfMilkFeedingSection: isCalf,
-    showMethaneIntensity: isLactating,
-  };
-}
+import {
+  ReportContext,
+  buildReportContext,
+  StatusBadge,
+  SCard,
+  LabelValue,
+  MethaneBar,
+  MAX_METHANE_PRODUCTION,
+  MAX_METHANE_YIELD,
+  MAX_METHANE_INTENSITY,
+  MAX_YM_PERCENT,
+  calcPct,
+  MetricTile,
+  BalanceRow,
+  BulletList,
+  TotalCostFooter,
+} from "@/components/report/parts";
+import { useSaveReport } from "@/components/report/useSaveReport";
 import {
   IcSave,
   IcNewCase,
   IcAnimalCharacteristics,
   IcEnvironment,
   IcSimulationDetails,
+  IcDietReport,
+  IcCalfMilk,
+  IcEvaluationSummary,
+  IcCostAnalysis,
+  IcFeedBreakdown,
+  IcDryMatterIntake,
+  IcMilkProductionAnalysis,
+  IcSolutionSummary,
+  IcDailyCost,
+  IcMilkDroplet,
+  IcDmIntakeGrass,
+  IcCostEffectiveDiet,
+  IcNotes,
+  IcViolatedParameter,
+  IcViewPdf,
+  IcShareReport,
 } from "@/components/Icons";
-import { safeExternalUrl } from "@/lib/safe-url";
 import { COLUMN_WIDTH } from "@/lib/column";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
-
-function StatusBadge({ status }: { status: string }) {
-  const map: Record<string, { bg: string; text: string }> = {
-    Optimized: { bg: COLORS.goGreen, text: "#fff" },
-    Optimised: { bg: COLORS.goGreen, text: "#fff" },
-    "Not Optimized": { bg: COLORS.carminePink, text: "#fff" },
-    "Not Feasible": { bg: COLORS.carminePink, text: "#fff" },
-    Evaluation: { bg: COLORS.vividGamboge, text: "#fff" },
-    Evaluated: { bg: COLORS.vividGamboge, text: "#fff" },
-    ADVISORY: { bg: COLORS.vividGamboge, text: "#fff" },
-    INFEASIBLE: { bg: COLORS.carminePink, text: "#fff" },
-    OPTIMAL: { bg: COLORS.goGreen, text: "#fff" },
-  };
-  const colors = map[status] ?? { bg: COLORS.webDivider, text: COLORS.raisinBlack };
-  return (
-    <span
-      className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold"
-      style={{ backgroundColor: colors.bg, color: colors.text }}
-    >
-      {status}
-    </span>
-  );
-}
-
-// Card header — matches Android layout_*_report cards: icon in a
-// go_green_15 (rgba(5,188,109,0.15)) pill with a dark_aquamarine_green
-// tinted icon (24dp inside 6dp content padding, corner 10), then title
-// bold font_16 raisin_black to the right.
-function SCard({
-  title,
-  icon,
-  footer,
-  children,
-}: {
-  title: string;
-  icon?: React.ReactNode;
-  footer?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="mx-3 my-2 bg-white overflow-hidden"
-      style={{ borderRadius: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
-    >
-      {title && (
-        <div className="flex items-center gap-2.5" style={{ padding: "10px 10px 14px" }}>
-          {icon && (
-            <div
-              className="flex items-center justify-center flex-shrink-0"
-              style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 10, padding: 6 }}
-            >
-              {icon}
-            </div>
-          )}
-          <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16 }}>
-            {title}
-          </p>
-        </div>
-      )}
-      <div style={{ paddingInline: 10, paddingBottom: 10 }}>{children}</div>
-      {footer}
-    </div>
-  );
-}
-
-// Label/value pair as used by layout_animal_characteristics_report:
-// label = nunito_bold, font_12, dark_silver; value = nunito_bold,
-// font_16, raisin_black.
-function LabelValue({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <p className="font-bold uppercase" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
-        {label}
-      </p>
-      <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 16, marginTop: 4 }}>
-        {value}
-      </p>
-    </div>
-  );
-}
-
-// Progress bar — Android LinearProgressIndicator with trackCornerRadius=6
-// and small filled circles at both ends. Track is the same color as the
-// indicator but at ~15% alpha. The dots draw at the actual progress
-// position and at the right end.
-function MethaneBar({ progress, color }: { progress: number; color: string }) {
-  const pct = Math.max(0, Math.min(100, progress));
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: 6,
-        borderRadius: 6,
-        backgroundColor: `${color}26`,
-        marginTop: 6,
-      }}
-    >
-      <div
-        style={{
-          width: `${pct}%`,
-          height: "100%",
-          borderRadius: 6,
-          backgroundColor: color,
-          transition: "width 0.3s",
-        }}
-      />
-      {/* Cap dot at end of fill */}
-      <span
-        style={{
-          position: "absolute",
-          left: `calc(${pct}% - 4px)`,
-          top: -1,
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          backgroundColor: color,
-        }}
-      />
-      {/* Cap dot at right end of track */}
-      <span
-        style={{
-          position: "absolute",
-          right: -1,
-          top: -1,
-          width: 8,
-          height: 8,
-          borderRadius: "50%",
-          backgroundColor: color,
-        }}
-      />
-    </div>
-  );
-}
-
-// Android MethaneUiRanges constants (utils/MethaneUiRanges.kt)
-const MAX_METHANE_PRODUCTION = 1000.0; // g/day
-const MAX_METHANE_YIELD = 100.0; // g/kg DMI
-const MAX_METHANE_INTENSITY = 100.0; // g/kg ECM
-const MAX_YM_PERCENT = 100.0; // %
-const calcPct = (v: number | string | null | undefined, max: number) => {
-  const n = Number(v ?? 0);
-  if (!Number.isFinite(n) || n <= 0) return 0;
-  return Math.min(100, (n / max) * 100);
-};
-
-function MetricTile({ label, value, unit }: { label: string; value: string; unit: string }) {
-  return (
-    <div className="flex-1 rounded-xl p-3 text-center" style={{ backgroundColor: COLORS.honeydew }}>
-      <p className="text-xs font-bold" style={{ color: COLORS.darkSilver }}>
-        {label}
-      </p>
-      <p className="text-lg font-bold mt-0.5" style={{ color: COLORS.darkAquamarineGreen }}>
-        {value}
-      </p>
-      {unit && (
-        <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-          {unit}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function BalanceRow({
-  label,
-  value,
-  unit,
-}: {
-  label: string;
-  value: number | null | undefined;
-  unit: string;
-}) {
-  if (value === null || value === undefined) return null;
-  const isPositive = value >= 0;
-  return (
-    <div
-      className="flex items-center justify-between py-2.5 border-b last:border-0"
-      style={{ borderColor: COLORS.americanDiamond }}
-    >
-      <span className="text-sm font-bold" style={{ color: COLORS.raisinBlack }}>
-        {label}
-      </span>
-      <span
-        className="text-sm font-bold"
-        style={{ color: isPositive ? COLORS.goGreen : COLORS.carminePink }}
-      >
-        {isPositive ? "+" : ""}
-        {Number(value).toFixed(3)} {unit}
-      </span>
-    </div>
-  );
-}
-
-function BulletList({ items, color }: { items: string[]; color: string }) {
-  if (!items || items.length === 0) return null;
-  return (
-    <ul className="space-y-2">
-      {items.map((item, i) => (
-        <li key={i} className="flex items-start gap-2">
-          <span
-            className="mt-1.5 flex-shrink-0 w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: color }}
-          />
-          <span className="text-sm" style={{ color: COLORS.raisinBlack, lineHeight: 1.5 }}>
-            {item}
-          </span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
-function TotalCostFooter({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      className="flex items-center justify-between"
-      style={{ backgroundColor: COLORS.honeydew, paddingInline: 10, paddingBlock: 12 }}
-    >
-      <span className="text-xs font-bold" style={{ color: COLORS.darkAquamarineGreen }}>
-        {label}
-      </span>
-      <span className="font-bold" style={{ color: COLORS.laSalleGreen, fontSize: 18 }}>
-        {value}
-      </span>
-    </div>
-  );
-}
+import type {
+  EvaluationResponse,
+  RecommendationResponse,
+  FeedBreakdown,
+  CostEffectiveDiet,
+} from "@/lib/api";
 
 export default function ReportPage() {
   const router = useRouter();
@@ -298,9 +67,6 @@ export default function ReportPage() {
       setFeedSelectionType: s.setFeedSelectionType,
     }));
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-
   // UI-label i18n — this screen (cattle-info → feed-selection → report)
   // is driven by the per-simulation language, not the profile-wide
   // preferred_language, per explicit product decision. Same priority
@@ -308,6 +74,7 @@ export default function ReportPage() {
   // doc comment on useT() in src/lib/i18n-ui.ts for why this screen
   // passes an explicit langOverride instead of calling useT() bare.
   const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
+  const { isSaving, pdfUrl, save: saveReportPdf } = useSaveReport(t);
 
   // i18n V2 — fallback lookup so the report body shows translated feed
   // names even if the backend diet endpoints aren't yet returning
@@ -383,23 +150,7 @@ export default function ReportPage() {
           className="flex items-center justify-center rounded-full mb-5 mt-10"
           style={{ width: 80, height: 80, backgroundColor: COLORS.honeydew }}
         >
-          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
-            <rect
-              x="5"
-              y="4"
-              width="26"
-              height="28"
-              rx="3"
-              stroke={COLORS.darkAquamarineGreen}
-              strokeWidth="2"
-            />
-            <path
-              d="M11 12H25M11 17H22M11 22H17"
-              stroke={COLORS.darkAquamarineGreen}
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
-          </svg>
+          <IcDietReport />
         </div>
         <p className="text-xl font-bold mb-2" style={{ color: COLORS.darkAquamarineGreen }}>
           {t("No Report")}
@@ -436,57 +187,7 @@ export default function ReportPage() {
     (reportData as { id?: string })?.id ??
     "";
 
-  const handleSave = async () => {
-    if (!user || !reportIdForSave) {
-      showSnackbar(t("Report not ready — generate a report first"), "info");
-      return;
-    }
-    setIsSaving(true);
-    try {
-      const res = await saveReport(reportIdForSave, user.id);
-      const body = res.data as {
-        success?: boolean;
-        message?: string;
-        bucket_url?: string | null;
-        error_message?: string | null;
-        report?: { bucket_url?: string | null };
-        pdf_url?: string | null;
-      };
-      // Per the v1 swagger (SaveReportResponse), `success` and
-      // `error_message` are independent fields — a save can succeed
-      // (report persisted, `success: true`) while `error_message`
-      // separately describes a secondary problem. Only `success ===
-      // false` is a real save failure.
-      if (body?.success === false) {
-        showSnackbar(body?.error_message ?? body?.message ?? t("Save returned an error"), "error");
-        return;
-      }
-      // Only an http(s) URL is ever stored — pdfUrl feeds window.open and
-      // navigator.share below.
-      const url =
-        safeExternalUrl(body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url)?.href ??
-        null;
-      setPdfUrl(url);
-      if (!url) {
-        // Don't guess WHY the url is missing — surface exactly what the
-        // backend said (error_message/message). A previous version of
-        // this code unconditionally appended "(PDF generation pending —
-        // backend feature still being built)" here, assuming the reason
-        // was always the same known backend gap. That's an assumption,
-        // not something this response confirms, and it actively
-        // misleads when the real cause is something else (e.g. this
-        // specific report/report_id) — show the backend's own words.
-        showSnackbar(body?.error_message ?? body?.message ?? t("Report saved"), "info");
-      } else {
-        showSnackbar(body?.message ?? t("Report saved successfully!"), "success");
-      }
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("Failed to save report");
-      showSnackbar(message, "error");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const handleSave = () => void saveReportPdf(reportIdForSave);
 
   // Android Ext.toReportDisplayDate renders as e.g. "May 13, 2026 at 07:32 AM".
   const formatReportDate = (raw?: string | null) => {
@@ -933,31 +634,7 @@ export default function ReportPage() {
               t("Wean gradually over 7–10 days once the calf eats 1.5–2 kg of starter daily."),
             ];
             return (
-              <SCard
-                title={t("Calf Milk Feeding")}
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M8 4h8v2l-1 2H9L8 6V4z"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M9 8c-1 0-2 2-2 5a5 5 0 0 0 10 0c0-3-1-5-2-5"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M10 14a2 2 0 0 0 4 0"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                }
-              >
+              <SCard title={t("Calf Milk Feeding")} icon={<IcCalfMilk />}>
                 {/* Without a backend plan these figures are the rule of thumb
                     above, not an engine result — say so (audit D-02). */}
                 {!serverPlan && (
@@ -1342,29 +1019,7 @@ export default function ReportPage() {
             {evalReport.evaluation_summary &&
               (evalReport.evaluation_summary.overall_status ||
                 evalReport.evaluation_summary.limiting_factor) && (
-                <SCard
-                  title={t("Evaluation Summary")}
-                  icon={
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                      <rect
-                        x="4"
-                        y="3"
-                        width="16"
-                        height="18"
-                        rx="2"
-                        stroke={COLORS.darkAquamarineGreen}
-                        strokeWidth="1.8"
-                      />
-                      <path
-                        d="M8 9l2 2 4-4M8 14h5M8 17h3"
-                        stroke={COLORS.darkAquamarineGreen}
-                        strokeWidth="1.6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  }
-                >
+                <SCard title={t("Evaluation Summary")} icon={<IcEvaluationSummary />}>
                   {evalReport.evaluation_summary.overall_status && (
                     <div
                       className="flex items-center justify-between rounded-xl px-3 py-2.5 mb-2"
@@ -1393,26 +1048,7 @@ export default function ReportPage() {
               )}
 
             {/* Cost Analysis */}
-            <SCard
-              title={t("Cost Analysis")}
-              icon={
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="9"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="1.8"
-                  />
-                  <path
-                    d="M12 7.5V9M12 15v1.5M9.5 10.5a2.5 2.5 0 0 1 5 0c0 1.8-2.5 2.5-2.5 4"
-                    stroke={COLORS.darkAquamarineGreen}
-                    strokeWidth="1.6"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              }
-            >
+            <SCard title={t("Cost Analysis")} icon={<IcCostAnalysis />}>
               <div className="flex gap-3 mb-3">
                 <MetricTile
                   label={t("Total Diet Cost")}
@@ -1444,46 +1080,7 @@ export default function ReportPage() {
             {evalReport.feed_breakdown && evalReport.feed_breakdown.length > 0 && (
               <SCard
                 title={t("Feed Breakdown")}
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <rect
-                      x="3"
-                      y="3"
-                      width="8"
-                      height="8"
-                      rx="1.5"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                    />
-                    <rect
-                      x="13"
-                      y="3"
-                      width="8"
-                      height="8"
-                      rx="1.5"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                    />
-                    <rect
-                      x="3"
-                      y="13"
-                      width="8"
-                      height="8"
-                      rx="1.5"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                    />
-                    <rect
-                      x="13"
-                      y="13"
-                      width="8"
-                      height="8"
-                      rx="1.5"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                    />
-                  </svg>
-                }
+                icon={<IcFeedBreakdown />}
                 footer={
                   <TotalCostFooter
                     label={t("Total Diet Cost")}
@@ -1539,24 +1136,7 @@ export default function ReportPage() {
 
             {/* Dry Matter Intake */}
             {evalReport.intake_evaluation && (
-              <SCard
-                title={t("Dry Matter Intake")}
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M12 3C7 3 3 7.5 3 12s4 9 9 9 9-4 9-9-4-9-9-9z"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                    />
-                    <path
-                      d="M12 8v4l3 2"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                }
-              >
+              <SCard title={t("Dry Matter Intake")} icon={<IcDryMatterIntake />}>
                 <div className="flex gap-3 mb-3">
                   <MetricTile
                     label={t("Actual Intake")}
@@ -1594,31 +1174,7 @@ export default function ReportPage() {
             {/* Milk Production Analysis — only relevant for lactating
                 animals (Y3 §2.3). Hidden for Dry Cow / Heifer / Calf. */}
             {reportCtx.showMilkProductionSection && evalReport.milk_production_analysis && (
-              <SCard
-                title={t("Milk Production Analysis")}
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M8 3h8l1 4H7L8 3z"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M6 7c0 0-2 3-2 7a8 8 0 0 0 16 0c0-4-2-7-2-7"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M10 14a3 3 0 0 0 4 0"
-                      stroke={COLORS.darkAquamarineGreen}
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                }
-              >
+              <SCard title={t("Milk Production Analysis")} icon={<IcMilkProductionAnalysis />}>
                 <div className="flex gap-3 mb-3 flex-wrap">
                   <MetricTile
                     label={t("Actual Milk")}
@@ -1820,18 +1376,14 @@ export default function ReportPage() {
                 title={t("Solution Summary")}
                 icon={
                   /* ic_solution_summary — clipboard with checkmark */
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill={COLORS.darkAquamarineGreen}>
-                    <path d="M18,12c-3.314,0 -6,2.686 -6,6s2.686,6 6,6 6,-2.686 6,-6 -2.686,-6 -6,-6ZM21.683,17.712l-2.703,2.614c-0.452,0.446 -1.052,0.671 -1.653,0.671s-1.203,-0.225 -1.663,-0.674l-1.354,-1.332c-0.395,-0.387 -0.4,-1.02 -0.014,-1.414 0.386,-0.395 1.019,-0.401 1.414,-0.014l1.354,1.331c0.144,0.142 0.38,0.139 0.522,-0.002l2.713,-2.624c0.397,-0.381 1.031,-0.37 1.414,0.029 0.382,0.398 0.369,1.031 -0.029,1.414ZM10,18c0,-4.411 3.589,-8 8,-8 0.692,0 1.359,0.097 2,0.263v-3.263c0,-2.045 -1.237,-3.802 -3,-4.576L17,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L13,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L9,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1h-2L5,1c0,-0.552 -0.447,-1 -1,-1s-1,0.448 -1,1v1.424C1.237,3.198 0,4.955 0,7v12c0,2.757 2.243,5 5,5h7.726c-1.667,-1.467 -2.726,-3.61 -2.726,-6ZM5,7L15,7c0.553,0 1,0.448 1,1s-0.447,1 -1,1L5,9c-0.553,0 -1,-0.448 -1,-1s0.447,-1 1,-1ZM8.5,13h-3.5c-0.553,0 -1,-0.448 -1,-1s0.447,-1 1,-1h3.5c0.553,0 1,0.448 1,1s-0.447,1 -1,1Z" />
-                  </svg>
+                  <IcSolutionSummary />
                 }
               >
                 {/* Daily Cost — ic_daily_cost (filled $ in circle, go_green tint) */}
                 {recReport.solution_summary.daily_cost != null && (
                   <div style={{ marginBottom: 10 }}>
                     <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.goGreen}>
-                        <path d="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10s10,-4.48 10,-10S17.52,2 12,2zM12.88,17.76v0.36c0,0.48 -0.39,0.88 -0.88,0.88h0c-0.48,0 -0.88,-0.39 -0.88,-0.88v-0.42c-0.63,-0.15 -1.93,-0.61 -2.69,-2.1c-0.23,-0.44 -0.01,-0.99 0.45,-1.18l0.07,-0.03c0.41,-0.17 0.87,0 1.08,0.39c0.32,0.61 0.95,1.37 2.12,1.37c0.93,0 1.98,-0.48 1.98,-1.61c0,-0.96 -0.7,-1.46 -2.28,-2.03c-1.1,-0.39 -3.35,-1.03 -3.35,-3.31c0,-0.1 0.01,-2.4 2.62,-2.96V5.88C11.12,5.39 11.52,5 12,5h0c0.48,0 0.88,0.39 0.88,0.88v0.37c1.07,0.19 1.75,0.76 2.16,1.3c0.34,0.44 0.16,1.08 -0.36,1.3l0,0C14.32,9 13.9,8.88 13.66,8.57c-0.28,-0.38 -0.78,-0.77 -1.6,-0.77c-0.7,0 -1.81,0.37 -1.81,1.39c0,0.95 0.86,1.31 2.64,1.9c2.4,0.83 3.01,2.05 3.01,3.45C15.9,17.17 13.4,17.67 12.88,17.76z" />
-                      </svg>
+                      <IcDailyCost />
                       <p className="font-bold" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
                         {t("Daily Cost")}
                       </p>
@@ -1855,9 +1407,7 @@ export default function ReportPage() {
                         <div>
                           <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
                             {/* ic_milk_production_20 — droplet with notch (azure tint) */}
-                            <svg width="18" height="18" viewBox="0 0 20 20" fill={COLORS.azure}>
-                              <path d="M10.65,2.55c-0.38,-0.33 -0.93,-0.33 -1.31,0C7.7,4 3.5,8.01 3.5,11.5c0,3.59 2.91,6.5 6.5,6.5s6.5,-2.91 6.5,-6.5C16.5,8.01 12.3,4 10.65,2.55zM7.03,11.93c0.24,1.66 1.79,2.77 3.4,2.54c0.3,-0.04 0.57,0.19 0.57,0.49c0,0.28 -0.2,0.47 -0.42,0.5c-2.23,0.31 -4.22,-1.23 -4.54,-3.39C6,11.77 6.23,11.5 6.54,11.5C6.79,11.5 7,11.68 7.03,11.93z" />
-                            </svg>
+                            <IcMilkDroplet />
                             <p
                               className="font-bold"
                               style={{
@@ -1897,14 +1447,7 @@ export default function ReportPage() {
                         <div>
                           <div className="flex items-center gap-1.5" style={{ marginBottom: 4 }}>
                             {/* ic_dm_intake — Material Symbols "grass" (vivid_gamboge tint) */}
-                            <svg
-                              width="20"
-                              height="20"
-                              viewBox="0 0 960 960"
-                              fill={COLORS.vividGamboge}
-                            >
-                              <path d="M120,800q-17,0 -28.5,-11.5T80,760q0,-17 11.5,-28.5T120,720h190q-17,-63 -56,-114t-94,-83q-22,-13 -21,-28.5t27,-14.5q131,2 222.5,95T480,800L120,800ZM560,800q0,-42 -9,-83.5T525,637q42,-69 112.5,-112T794,480q24,-1 25,15.5T800,523q-55,32 -94,83t-56,114h190q17,0 28.5,11.5T880,760q0,17 -11.5,28.5T840,800L560,800ZM480,561q0,-106 60.5,-188.5T696,258q23,-8 34,5t-9,32q-32,30 -55.5,67T626,441q-44,21 -80.5,51.5T480,561ZM407,486q-12,-9 -24,-17t-25,-16q0,-6 1,-12.5t1,-12.5q0,-53 -11.5,-101T315,234q-11,-22 1.5,-32.5T349,207q36,29 63.5,66t44.5,81q-18,30 -31,63.5T407,486Z" />
-                            </svg>
+                            <IcDmIntakeGrass />
                             <p
                               className="font-bold"
                               style={{
@@ -1948,21 +1491,7 @@ export default function ReportPage() {
               recReport.least_cost_diet.length > 0 && (
                 <SCard
                   title={t("Cost-Effective Diet")}
-                  icon={
-                    <svg
-                      width="24"
-                      height="24"
-                      viewBox="0 0 24 24"
-                      fill={COLORS.darkAquamarineGreen}
-                    >
-                      <path
-                        d="M12 2C9 2 5 4 5 8c0 2.5 2 3.5 4 4-1 2-1 5 0 7 1 1.5 3 2 5 2-1-2-1-5 1-7v9h-2v-9c-2 0-4-1-4-3 0-4 3-4 3-4z"
-                        opacity="0.3"
-                      />
-                      <path d="M3 14c0-1.5 1.5-3 4-3s4 1.5 4 3v6H3v-6z" />
-                      <path d="M3 17h8M3 20h8" stroke={COLORS.white} strokeWidth="0.6" />
-                    </svg>
-                  }
+                  icon={<IcCostEffectiveDiet />}
                   footer={
                     <div
                       className="flex items-center justify-between"
@@ -2249,20 +1778,7 @@ export default function ReportPage() {
                 Optimization Summary (violated_parameters) and the
                 Recommendations & Warnings list. */}
             {showNotesCard && recReport.additional_information && (
-              <SCard
-                title={t("Notes")}
-                icon={
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill={COLORS.darkAquamarineGreen}>
-                    <rect x="3" y="4" width="18" height="16" rx="2" />
-                    <path
-                      d="M7 10v6M11 8v8M15 12v4M19 6v10"
-                      stroke={COLORS.white}
-                      strokeWidth="1.6"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                }
-              >
+              <SCard title={t("Notes")} icon={<IcNotes />}>
                 {/* SIMULATION STATUS banner — colored by dietRating */}
                 <div
                   className="flex items-center gap-3"
@@ -2345,15 +1861,7 @@ export default function ReportPage() {
                               marginTop: 2,
                             }}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M9 11l3 3L20 6M4 12l3 3"
-                                stroke={COLORS.darkAquamarineGreen}
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
+                            <IcViolatedParameter />
                           </div>
                           <p
                             style={{
@@ -2438,21 +1946,7 @@ export default function ReportPage() {
                 cursor: "pointer",
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-                <path
-                  d="M3.5 2h7.5l4 4v10a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  fill="none"
-                />
-                <path d="M11 2v5h5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-                <path
-                  d="M5.5 10h7M5.5 12.5h5"
-                  stroke="currentColor"
-                  strokeWidth="1.3"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <IcViewPdf />
               {t("View PDF")}
             </button>
             {/* Share report — Web Share API on mobile pops the native
@@ -2493,17 +1987,7 @@ export default function ReportPage() {
                 cursor: "pointer",
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                <circle cx="18" cy="5" r="3" stroke="currentColor" strokeWidth="2" />
-                <circle cx="6" cy="12" r="3" stroke="currentColor" strokeWidth="2" />
-                <circle cx="18" cy="19" r="3" stroke="currentColor" strokeWidth="2" />
-                <path
-                  d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <IcShareReport />
               {t("Share Report")}
             </button>
           </div>
