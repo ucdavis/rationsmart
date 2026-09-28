@@ -32,6 +32,7 @@ import {
   inputStyle,
   sheetOverlayStyle,
 } from "./shared";
+import TranslationCoverageCard from "./TranslationCoverageCard";
 
 export function FeedNamesTab({
   countries,
@@ -406,6 +407,12 @@ export function FeedNamesTab({
           )}
         </div>
       )}
+
+      <TranslationCoverageCard
+        countryId={selCountry?.id ?? null}
+        lang={selLang}
+        showSnackbar={showSnackbar}
+      />
 
       {/* Bulk upsert via workbook */}
       <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>

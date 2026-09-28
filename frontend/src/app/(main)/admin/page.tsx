@@ -49,11 +49,12 @@ const adminCards: AdminCard[] = [
     href: "/admin/reports",
     icon: <IcReportNav size={28} color={COLORS.darkAquamarineGreen} />,
   },
-  // i18n V2 Phase 2 — three new admin tools.
-  // Translations: workbook download/upload, coverage, per-feed editor.
+  // i18n V2 Phase 2 — translation tools. "Translations" opens the Feed Names
+  // tab of Country/Language, which now has the workbook, per-feed editor and
+  // coverage check (the separate /admin/translations screen was merged in).
   {
     title: "Translations",
-    href: "/admin/translations",
+    href: "/admin/country-language?tab=feeds",
     icon: (
       <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
         <path

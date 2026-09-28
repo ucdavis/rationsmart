@@ -60,7 +60,14 @@ export default function AdminCountryLanguagePage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
-  const [tab, setTab] = useState<Tab>("countries");
+  // `?tab=feeds` opens the Feed Names tab directly (the retired
+  // /admin/translations route redirects there).
+  const [tab, setTab] = useState<Tab>(() =>
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("tab") === "feeds"
+      ? "feeds"
+      : "countries"
+  );
   const [allLanguages, setAllLanguages] = useState<SystemLanguage[]>([]);
   const [countries, setCountries] = useState<CountryRow[]>([]);
   const [isLoading, setIsLoading] = useState(false);

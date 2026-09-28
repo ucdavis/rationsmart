@@ -1430,12 +1430,14 @@ catalog screen (and its Seed Defaults flow) was unlinked on 2026-07-20 when
 per-country assign / unassign and feed-name translations.
 
 **Routes (current)**:
-- `/admin/translations` — workbook + coverage (still linked; the only
-  screen with the coverage check)
-- `/admin/country-language` — the live country / language / feed-name screen
-- `/admin/languages` and `/admin/country-languages` — **redirect to
-  `/admin/country-language`** (kept for old bookmarks)
-- Admin landing i18n tiles: "Translations" and "Country/Language"
+- `/admin/country-language` — the one country / language / translation
+  screen. Its Feed Names tab (`?tab=feeds`) has the workbook export/import,
+  per-feed names and the coverage check (TranslationCoverageCard).
+- `/admin/translations` → redirects to `/admin/country-language?tab=feeds`
+  (merged 2026-09-28, audit B-18); `/admin/languages` and
+  `/admin/country-languages` → redirect to `/admin/country-language`.
+- Admin landing i18n tiles: "Translations" (opens the Feed Names tab) and
+  "Country/Language"
 
 **api.ts helpers under "i18n V2 Phase 2":**
 - `downloadTranslationWorkbook(country_id)` — blob xlsx (3.1)
