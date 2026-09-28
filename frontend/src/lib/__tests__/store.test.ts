@@ -263,3 +263,20 @@ describe("registered_language field (i18n V2)", () => {
     expect(useStore.getState().user?.preferred_language).toBeDefined();
   });
 });
+
+describe("pendingPinReset (audit A-03)", () => {
+  it("is held in memory but never written to localStorage", () => {
+    useStore.getState().setUser(makeUser());
+    useStore.getState().setPendingPinReset({ email: "legacy@x.com", oldPin: "1234" });
+    expect(useStore.getState().pendingPinReset?.oldPin).toBe("1234");
+    const persisted = localStorage.getItem("rationsmart-storage") ?? "";
+    expect(persisted).not.toContain("pendingPinReset");
+    expect(persisted).not.toContain("1234");
+  });
+
+  it("is cleared by logout", () => {
+    useStore.getState().setPendingPinReset({ email: "a@b.co", oldPin: "1234" });
+    useStore.getState().logout();
+    expect(useStore.getState().pendingPinReset).toBeNull();
+  });
+});

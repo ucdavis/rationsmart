@@ -1633,6 +1633,21 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
   `SUPPORT_EMAIL` (lib/contact.ts), `inclusionBoundsCrossed()`.
 - **CustomSelect is a listbox:** options are `role="option"` (tests pick
   them with `findByRole("option", …)`), arrow keys move focus.
+- **Pass 3 (2026-09-28):**
+  - `src/lib/api.ts` is a **barrel**; code lives in
+    `src/lib/api-client/{models,client,auth,feeds,reports,admin}.ts`. Add
+    new endpoints to the right module and re-export them from the barrel —
+    callers and `vi.mock("@/lib/api")` must keep importing from the barrel.
+  - The proxy forwards **only `/v1/*`** (404 otherwise).
+  - Colours come from `COLORS` (`src/lib/colors.ts`, Android names); no new
+    hex literals. Don't add inline `fontFamily` — `body` sets Nunito.
+  - `DialogFocusTrap` (root layout) traps Tab in the top `aria-modal`.
+  - Diet request bodies are built in `src/lib/diet-request.ts`.
+  - UI timings in `src/lib/ui-timings.ts`; forgot-PIN via `useResetPin`.
+  - CI runs `npm run lint:promises` (type-aware no-floating-promises; mark
+    deliberate fire-and-forget with `void`) and `npm run test:coverage`
+    (floors in vitest.config.ts — only raise them).
+  - `noUncheckedIndexedAccess` is on for app code.
 - **Tests are type-checked** (`tsconfig.test.json`, part of
   `npm run typecheck`). `@typescript-eslint/no-unused-vars` is on
   (prefix `_` to opt out).
@@ -1641,7 +1656,7 @@ Deliberately NOT changed (reasons in `docs/AUDIT_RESPONSE.local.md`):
 backend-dependent items (TLS to the backend, httpOnly-cookie session,
 server-side admin/role enforcement, token revocation, rate limits,
 generic auth messages), a full script/style CSP, pinch-zoom, persisted
-`reportData`, the large-file refactors and colour-token migration.
+`reportData`, and splitting the remaining large page components.
 
 ---
 
