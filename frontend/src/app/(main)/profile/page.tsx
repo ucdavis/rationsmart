@@ -19,6 +19,7 @@ import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import Spinner from "@/components/ui/Spinner";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? "#F8FAF9" : "#F1F5F9",
@@ -470,24 +471,7 @@ export default function ProfilePage() {
           >
             {isSaving ? (
               <>
-                <svg
-                  className="animate-spin"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray="40"
-                    strokeDashoffset="10"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                <Spinner size={18} />
                 {t("Saving...")}
               </>
             ) : (
@@ -691,24 +675,7 @@ export default function ProfilePage() {
                 }}
               >
                 {isSendingReset ? (
-                  <svg
-                    className="animate-spin"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="40"
-                      strokeDashoffset="10"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <Spinner size={22} />
                 ) : (
                   <>
                     {t("Proceed")}
@@ -901,28 +868,7 @@ export default function ProfilePage() {
                   transition: "background-color 0.2s",
                 }}
               >
-                {isDeleting ? (
-                  <svg
-                    className="animate-spin"
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="40"
-                      strokeDashoffset="10"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                ) : (
-                  t("Submit")
-                )}
+                {isDeleting ? <Spinner size={20} /> : t("Submit")}
               </button>
             </div>
 
@@ -1049,28 +995,7 @@ export default function ProfilePage() {
                   cursor: isChangePinReady && !isChangingPin ? "pointer" : "not-allowed",
                 }}
               >
-                {isChangingPin ? (
-                  <svg
-                    className="animate-spin"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="40"
-                      strokeDashoffset="10"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                ) : (
-                  t("Update PIN")
-                )}
+                {isChangingPin ? <Spinner size={22} /> : t("Update PIN")}
               </button>
             </div>
 

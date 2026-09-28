@@ -289,18 +289,13 @@ describe("feed-selection — row count / padding", () => {
 
 // ─── 2. First-row Feed Type lock ─────────────────────────────────────────────
 //
-// CLAUDE.md §5 documents: "The first row's feed_type is LOCKED in
-// recommendation mode (feedTypeLocked={index === 0 && !isEvaluation})".
-// That is NOT what the current source does. `git log` shows the prop was
-// deliberately dropped from the page in commit 614bcf9 ("remove FEED 1
-// type lock"), replaced by Forage-first dropdown ordering + the separate
-// "Forage required" gate (showNoForageDialog) that blocks Generate instead
-// of locking the row. `feedTypeLocked` still exists as a FeedRow prop
-// (defaults to false) but src/app/(main)/feed-selection/page.tsx never
-// passes it. These tests assert the ACTUAL current behavior — the Feed
-// Type radios on row 1 are never disabled, in either mode — and exist to
-// catch a regression if locking is ever reintroduced without updating docs.
-describe("feed-selection — first row Feed Type lock (CLAUDE.md §5 is stale here)", () => {
+// The FEED 1 type lock was removed in commit 614bcf9 ("remove FEED 1 type
+// lock"), replaced by Forage-first dropdown ordering + the separate "Forage
+// required" gate (showNoForageDialog) that blocks Generate. CLAUDE.md §5
+// documents this. `feedTypeLocked` still exists as a FeedRow prop (default
+// false) but the page never passes it. These tests catch a regression if
+// locking is ever reintroduced.
+describe("feed-selection — first row Feed Type is not locked", () => {
   it("row 1's Feed Type radios are NOT disabled in recommendation mode", async () => {
     useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
     await renderReady();

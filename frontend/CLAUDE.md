@@ -401,10 +401,13 @@ true (see §10.1).
   — limits only apply to recommendation.
 - Radio toggle Recommendation/Evaluation. In Evaluation mode every row
   also shows Quantity (kg/day) + computed Cost cell.
-- `FeedRow` per feed. **The first row's feed_type is LOCKED in
-  recommendation mode** (`feedTypeLocked={index === 0 && !isEvaluation}`)
-  — defaults to "Forage" and cannot be changed. Each row owns its own
-  API state for type/category/feed dropdowns (see §6 FeedRow).
+- `FeedRow` per feed. **No row's feed type is locked** — the FEED 1 lock
+  and its Forage auto-default were removed on request (commit `614bcf9`).
+  Instead the Feed Type options are Forage-first and the separate
+  "Forage required" gate (`showNoForageDialog`) blocks Generate when no
+  row is forage. `feedTypeLocked` still exists on FeedRow (default false)
+  but the page never passes it. Each row owns its own API state for
+  type/category/feed dropdowns (see §6 FeedRow).
 - "+ Add More Feed" button has dashed-border styling (Android parity).
 - **Custom Feed bottom sheet** (Android `DialogAddCustomFeed`):
   - Two collapsible sections — Feed Details (name + type + category) and
@@ -459,9 +462,10 @@ true (see §10.1).
     Parameters" (filter empties from `violated_parameters`). Empty arrays
     render `"No recommendation/warnings available!"` placeholder.
 - **Bottom action bar (fixed):**
-  - **"New Case"** (outline button with `IcNewCase`): clears
-    `feedSelections`, sets `feedSelectionType: "recommendation"`, pushes
-    `/cattle-info`. Matches Android `btnNewCase`.
+  - **"New Case"** (outline button with `IcNewCase`): just pushes
+    `/cattle-info` — cattle info, feed selections, the mode toggle and the
+    simulation language all stay, so the user can tweak and re-run. The
+    clean-slate action is **Reset** on Cattle Info.
   - **"Save Report"** (filled): POST `/save-report` with `{report_id,
     user_id}`. Response can carry the PDF URL in any of `bucket_url`,
     `report.bucket_url`, or `pdf_url` (defensive parsing because the
@@ -639,8 +643,8 @@ values. Catch blocks silence the "could not load X" toast when the row
 has a stored name (the value is still displayed; toast would be a false
 alarm).
 
-**Default first row:** if `index === 0 && !item.feed_type_name`, the
-default feed type is "Forage" (matches Android `FragmentFeedSelection`).
+**Default first row:** no row auto-selects a feed type any more (the
+FEED 1 → "Forage" default was removed in commit `614bcf9`); see §5.
 
 **Edit dialog (pencil icon):**
 - On open, calls `checkInsertOrUpdate(country, item.feed_uuid, user.id)`

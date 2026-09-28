@@ -178,8 +178,16 @@ function deepLinkForReason(reason: string): { label: string; href: string } | nu
   return null;
 }
 
+// Polling cadence (audit D-08). Scheduler status refreshes slowly in the
+// background; a sync someone else started is checked every 5 s; a sync
+// started from this page is followed every 4 s.
+const STATUS_REFRESH_MS = 60_000;
+const OTHER_RUN_POLL_MS = 5_000;
+const OWN_RUN_POLL_MS = 4_000;
 // Longest a manual sync is polled for before the page stops waiting.
 const SYNC_POLL_MAX_MS = 30 * 60 * 1000;
+// The scheduler runs weekly, so no success for 8 days means a run was missed.
+const STALE_SUCCESS_MS = 8 * 24 * 60 * 60 * 1000;
 
 function csvEscape(v: unknown): string {
   let s = v === null || v === undefined ? "" : String(v);
@@ -283,7 +291,7 @@ export default function AdminFeedSyncPage() {
         // Background refresh on an interval: a missed tick is retried on
         // the next one, so there's nothing useful to tell the admin.
         .catch(() => {});
-    }, 60000);
+    }, STATUS_REFRESH_MS);
     return () => clearInterval(id);
   }, [user?.is_admin]);
 
@@ -511,8 +519,8 @@ function SyncSettingsTab({
             reload();
           }
         })
-        .catch(() => {}); // transient — the next 5-s tick retries
-    }, 5000);
+        .catch(() => {}); // transient — the next tick retries
+    }, OTHER_RUN_POLL_MS);
     return () => {
       if (statusPollRef.current) clearInterval(statusPollRef.current);
     };
@@ -618,7 +626,7 @@ function SyncSettingsTab({
       } catch {
         // transient network hiccup — keep polling, don't abandon the run
       }
-    }, 4000);
+    }, OWN_RUN_POLL_MS);
   };
 
   const handleSyncNow = async () => {
@@ -690,7 +698,7 @@ function SyncSettingsTab({
   const isStale =
     status.scheduler_enabled &&
     !!status.last_success_at &&
-    Date.now() - new Date(status.last_success_at).getTime() > 8 * 24 * 60 * 60 * 1000;
+    Date.now() - new Date(status.last_success_at).getTime() > STALE_SUCCESS_MS;
 
   return (
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">

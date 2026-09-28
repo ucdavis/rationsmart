@@ -38,6 +38,7 @@ import { IcAddFeed, IcTune } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import Spinner from "@/components/ui/Spinner";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -1810,28 +1811,7 @@ export default function FeedSelectionPage() {
                     cursor: ready ? "pointer" : "not-allowed",
                   }}
                 >
-                  {isSavingCustom ? (
-                    <svg
-                      className="animate-spin"
-                      width="22"
-                      height="22"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                    >
-                      <circle
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeDasharray="40"
-                        strokeDashoffset="10"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                  ) : (
-                    t("Submit")
-                  )}
+                  {isSavingCustom ? <Spinner size={22} /> : t("Submit")}
                 </button>
               );
             })()}

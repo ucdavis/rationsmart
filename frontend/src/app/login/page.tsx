@@ -14,6 +14,7 @@ import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
+import Spinner from "@/components/ui/Spinner";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -262,22 +263,7 @@ export default function LoginPage() {
               transition: "background-color 0.2s, color 0.2s",
             }}
           >
-            {isLoading ? (
-              <svg className="animate-spin" width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="3"
-                  strokeDasharray="40"
-                  strokeDashoffset="10"
-                  strokeLinecap="round"
-                />
-              </svg>
-            ) : (
-              t("Proceed")
-            )}
+            {isLoading ? <Spinner size={22} /> : t("Proceed")}
           </button>
         </div>
 
@@ -431,24 +417,7 @@ export default function LoginPage() {
                 }}
               >
                 {isSendingReset ? (
-                  <svg
-                    className="animate-spin"
-                    width="22"
-                    height="22"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="40"
-                      strokeDashoffset="10"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <Spinner size={22} />
                 ) : (
                   <>
                     {t("Proceed")}

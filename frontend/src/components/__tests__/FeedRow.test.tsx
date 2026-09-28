@@ -102,13 +102,10 @@ beforeEach(() => {
 });
 
 // --- 1. default first row ---------------------------------------------
-// NOTE: CLAUDE.md §6 documents "Default first row: if index === 0 &&
-// !item.feed_type_name, the default feed type is 'Forage'". That behavior
-// was removed from the current source in commit 614bcf9 ("Auto-default-
-// to-Forage on FEED 1 removed by request"). This test documents/locks in
-// the CURRENT behavior (no auto-selection for any index) rather than the
-// stale doc claim — see final report for this finding.
-describe("default first row (documents stale CLAUDE.md §6 claim)", () => {
+// The FEED 1 → "Forage" auto-default was removed in commit 614bcf9
+// ("Auto-default-to-Forage on FEED 1 removed by request"); CLAUDE.md §6 now
+// says so. No row auto-selects a feed type.
+describe("default first row (no auto-selected feed type)", () => {
   it("index 0 with empty feed_type_name does NOT auto-select Forage", async () => {
     const onUpdate = vi.fn();
     getFeedTypes.mockResolvedValueOnce({ data: ["Forage", "Concentrate"] });

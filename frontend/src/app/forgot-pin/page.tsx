@@ -11,6 +11,7 @@ import RequiredAsterisk from "@/components/RequiredAsterisk";
 import { IcBack } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
+import Spinner from "@/components/ui/Spinner";
 
 export default function ForgotPinPage() {
   const router = useRouter();
@@ -185,24 +186,7 @@ export default function ForgotPinPage() {
             >
               {isLoading ? (
                 <>
-                  <svg
-                    className="animate-spin"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                  >
-                    <circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                      strokeDasharray="40"
-                      strokeDashoffset="10"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <Spinner size={18} />
                   <span>{t("Sending...")}</span>
                 </>
               ) : (

@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
 import { useT } from "@/lib/i18n-ui";
+import Spinner from "@/components/ui/Spinner";
 
 interface FeedbackItem {
   id: number;
@@ -230,24 +231,7 @@ export default function FeedbackPage() {
           >
             {isSubmitting ? (
               <>
-                <svg
-                  className="animate-spin"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray="40"
-                    strokeDashoffset="10"
-                    strokeLinecap="round"
-                  />
-                </svg>
+                <Spinner size={18} />
                 {t("Submitting...")}
               </>
             ) : (

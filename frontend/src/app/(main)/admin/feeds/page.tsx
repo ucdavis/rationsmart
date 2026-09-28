@@ -21,6 +21,7 @@ import Toolbar from "@/components/Toolbar";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
+import Spinner from "@/components/ui/Spinner";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -1407,27 +1408,7 @@ export default function AdminFeedsPage() {
                 cursor: isFeedFormValid && !isSavingFeed ? "pointer" : "not-allowed",
               }}
             >
-              {isSavingFeed ? (
-                <svg
-                  className="animate-spin"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray="40"
-                    strokeDashoffset="10"
-                  />
-                </svg>
-              ) : (
-                t("Submit")
-              )}
+              {isSavingFeed ? <Spinner size={18} rounded={false} /> : t("Submit")}
             </button>
           </div>
         </div>
@@ -1531,28 +1512,7 @@ export default function AdminFeedsPage() {
                 fontSize: 16,
               }}
             >
-              {isSavingType ? (
-                <svg
-                  className="animate-spin"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray="40"
-                    strokeDashoffset="10"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              ) : (
-                t("Submit")
-              )}
+              {isSavingType ? <Spinner size={18} /> : t("Submit")}
             </button>
 
             {/* Cancel link — small text-only secondary action */}
@@ -1726,28 +1686,7 @@ export default function AdminFeedsPage() {
                 fontSize: 16,
               }}
             >
-              {isSavingCat ? (
-                <svg
-                  className="animate-spin"
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                >
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray="40"
-                    strokeDashoffset="10"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              ) : (
-                t("Submit")
-              )}
+              {isSavingCat ? <Spinner size={18} /> : t("Submit")}
             </button>
 
             <button
