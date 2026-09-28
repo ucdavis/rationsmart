@@ -731,6 +731,10 @@ export default function FeedSelectionPage() {
     // payload is safe to send. Sending mid-load could ship an obsolete
     // feed_uuid the backend has since removed/renamed.
     if (loadingRows.size > 0) return false;
+    // Saved Custom Diet Limits are range-checked against the per-state spec
+    // before sending, so wait for it rather than send unchecked limits (or
+    // silently drop them) during the brief fetch window.
+    if (!isEvaluation && limitSpecsLoading && Object.keys(limits).length > 0) return false;
     // Validate on the NAME fields, not the *_id fields. The id values are
     // looked up after the cascade dropdowns load, so a search-picked row
     // has names set immediately but ids only after a brief async fill.
@@ -866,15 +870,18 @@ export default function FeedSelectionPage() {
       const cattlePayload = toCattleInfoPayload(cattleInfo);
       // Only send limits that were range-checked against the current state's
       // spec (audit B-06). Keys the spec doesn't list (stale, from an older
-      // build) can't even be seen in the dialog, so they're dropped. If the
-      // spec couldn't be loaded, nothing was checked: send none (the engine
-      // uses its per-state defaults) and say so rather than risk a raw 422.
+      // build) can't even be seen in the dialog, so they're dropped — and a
+      // Baby Calf/Heifer has no limits at all, so it sends none. If the spec
+      // fetch FAILED, nothing could be checked: send none (the engine uses
+      // its per-state defaults) and say so rather than risk a raw 422.
+      // (isValid() keeps Generate disabled while the spec is still loading.)
       // The saved limits themselves are kept for the next run.
       const specKeys = new Set((limitSpecs ?? []).map((sp) => sp.key));
       const limitsToSend: Partial<DietLimits> = Object.fromEntries(
         Object.entries(limits).filter(([k]) => specKeys.has(k as keyof DietLimits))
       );
-      const limitsSkipped = !limitSpecs && Object.keys(limits).length > 0;
+      const limitsSkipped =
+        limitsApplyToAnimal && !!limitSpecsError && Object.keys(limits).length > 0;
 
       if (isEvaluation) {
         res = await evaluateDiet({

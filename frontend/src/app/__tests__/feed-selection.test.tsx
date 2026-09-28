@@ -795,6 +795,39 @@ describe("feed-selection — generateReport payloads", () => {
     expect(useStore.getState().reportData).toEqual({ report_id: "REC-1", mode: "recommendation" });
   });
 
+  it("keeps Generate disabled while the limit ranges are still loading (audit B-06)", async () => {
+    getDietThresholds.mockReset().mockImplementation(() => new Promise(() => {}));
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+      dietLimits: { ash_max: 12 },
+    });
+    await renderReady();
+    expect(screen.getByRole("button", { name: "Generate Recommendation" })).toBeDisabled();
+  });
+
+  it("sends no limits, and says so, when the limit ranges failed to load (audit B-06)", async () => {
+    getDietThresholds.mockReset().mockRejectedValue(new Error("offline"));
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-3" } });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+      dietLimits: { ash_max: 12 },
+    });
+    await renderReady();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Generate Recommendation" })).not.toBeDisabled()
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+    expect("base_thresholds" in recommendDiet.mock.calls[0][0]).toBe(false);
+    expect(useStore.getState().snackbar?.message).toMatch(/Diet limits unavailable/);
+    // The saved limits survive for the next run.
+    expect(useStore.getState().dietLimits).toEqual({ ash_max: 12 });
+  });
+
   it("recommendation mode OMITS base_thresholds entirely when no custom limits are set", async () => {
     recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-2" } });
     useStore.setState({
