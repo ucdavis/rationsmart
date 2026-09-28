@@ -357,6 +357,7 @@ export default function ReportsPage() {
                 <button
                   onClick={() => setPage((p) => Math.max(0, p - 1))}
                   disabled={page === 0}
+                  aria-label={t("Previous page")}
                   className="flex items-center gap-1.5 font-bold"
                   style={{
                     borderRadius: 60,
@@ -382,12 +383,17 @@ export default function ReportsPage() {
                 <span
                   className="font-bold"
                   style={{ color: COLORS.darkAquamarineGreen, fontSize: 14 }}
+                  aria-live="polite"
+                  aria-label={t("Page ${N} of ${M}")
+                    .replace("${N}", String(page + 1))
+                    .replace("${M}", String(totalPages))}
                 >
                   {page + 1}
                 </span>
                 <button
                   onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={page === totalPages - 1}
+                  aria-label={t("Next page")}
                   className="flex items-center gap-1.5 font-bold"
                   style={{
                     borderRadius: 60,

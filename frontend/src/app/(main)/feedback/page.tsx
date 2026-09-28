@@ -35,6 +35,28 @@ function StarRating({
 }) {
   const [hovered, setHovered] = useState(0);
   const t = useT();
+  // Read-only (history cards): plain icons with one accessible label, not
+  // disabled buttons — the card itself is the interactive element, and
+  // buttons nested in it are invalid (audit B-34).
+  if (readOnly) {
+    return (
+      <div
+        className="flex gap-1"
+        role="img"
+        aria-label={t("${N} out of 5 stars").replace("${N}", String(rating))}
+      >
+        {[1, 2, 3, 4, 5].map((star) => (
+          <span key={star} style={{ padding: 2, display: "inline-flex" }} aria-hidden="true">
+            <IcStar
+              size={size}
+              filled={star <= rating}
+              color={star <= rating ? COLORS.mustardYellow : COLORS.silverSand}
+            />
+          </span>
+        ))}
+      </div>
+    );
+  }
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((star) => (

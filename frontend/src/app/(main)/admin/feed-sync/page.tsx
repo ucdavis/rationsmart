@@ -1331,7 +1331,7 @@ function RunHistoryTab({
                 cursor: page <= 1 ? "not-allowed" : "pointer",
               }}
             >
-              ‹ Prev
+              <span aria-hidden="true">‹</span> Prev
             </button>
             <p className="text-xs" style={{ color: COLORS.darkSilver }}>
               Page {page} of {totalPages}
@@ -1347,7 +1347,7 @@ function RunHistoryTab({
                 cursor: page >= totalPages ? "not-allowed" : "pointer",
               }}
             >
-              Next ›
+              Next <span aria-hidden="true">›</span>
             </button>
           </div>
         )}

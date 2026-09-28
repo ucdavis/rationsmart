@@ -1452,7 +1452,7 @@ function FeedNamesTab({
                       + Add name
                     </span>
                   )}
-                  <span style={{ color: COLORS.darkSilver }}>›</span>
+                  <span style={{ color: COLORS.darkSilver }} aria-hidden="true">›</span>
                 </button>
               ))}
             </div>

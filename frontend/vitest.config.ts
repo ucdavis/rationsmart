@@ -8,6 +8,11 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./vitest.setup.ts"],
+    // Each test file gets a fresh module graph — and so a fresh Zustand store
+    // and fresh module-level caches — so state can't leak between files
+    // (audit B-38). This is vitest's default; stated so nobody turns it off
+    // for speed without noticing.
+    isolate: true,
     css: false,
     include: ["src/**/*.{test,spec}.{ts,tsx}", "tests/**/*.{test,spec}.{ts,tsx}"],
     coverage: {

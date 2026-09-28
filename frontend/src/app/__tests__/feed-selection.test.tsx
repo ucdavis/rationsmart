@@ -539,6 +539,38 @@ describe("feed-selection — search result highlights the filled card", () => {
   });
 });
 
+describe("feed-selection — stale search responses (audit B-07)", () => {
+  it("a slow response for an older query never overwrites the newer results", async () => {
+    const row = (name: string) => ({
+      feed_uuid: name,
+      feed_name: name,
+      feed_type: "Forage",
+      feed_category: "Grass",
+      display_name: name,
+      display_type: "Forage",
+      display_category: "Grass",
+    });
+    let resolveOld: (v: unknown) => void = () => {};
+    searchFeeds
+      .mockReset()
+      .mockImplementationOnce(() => new Promise((r) => (resolveOld = r)))
+      .mockResolvedValueOnce({ data: [row("Maize silage")] });
+    await renderReady();
+
+    const box = screen.getByPlaceholderText(/Search feeds/i);
+    fireEvent.change(box, { target: { value: "mai" } });
+    await waitFor(() => expect(searchFeeds).toHaveBeenCalledTimes(1));
+    fireEvent.change(box, { target: { value: "maize" } });
+    await screen.findByText("Maize silage");
+
+    // The first (older) request finally answers — it must be ignored.
+    resolveOld({ data: [row("Mango leaves")] });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("Mango leaves")).not.toBeInTheDocument();
+    expect(screen.getByText("Maize silage")).toBeInTheDocument();
+  });
+});
+
 // ─── 3c. Concurrent cascade writes must not clobber Category ────────────────
 
 describe("feed-selection — search pick keeps Category (no cascade clobber)", () => {

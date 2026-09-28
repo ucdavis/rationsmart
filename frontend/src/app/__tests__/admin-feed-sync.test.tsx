@@ -540,7 +540,7 @@ describe("Admin Feed Library Sync — Run History tab", () => {
     await screen.findByText("Automatic Scheduler");
     fireEvent.click(screen.getByText("Run History"));
     await screen.findByText("Page 1 of 3");
-    fireEvent.click(screen.getByText("Next ›"));
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
     await waitFor(() => expect(getFeedSyncLogs).toHaveBeenCalledWith(2, 20));
   });
 });

@@ -1021,3 +1021,22 @@ describe("feed swap resets the old feed's values (audit B-12)", () => {
     );
   });
 });
+
+describe("loading state without user fields (audit B-03)", () => {
+  it("reports 'not loading' instead of loading forever when the user has no country", async () => {
+    useStore.setState({ user: seedUser({ country_id: "" }) } as never);
+    const onCascadeLoading = vi.fn();
+    render(
+      <FeedRow
+        item={makeItem()}
+        index={0}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+        onCascadeLoading={onCascadeLoading}
+      />
+    );
+    await waitFor(() => expect(onCascadeLoading).toHaveBeenLastCalledWith("row-1", false));
+    expect(getFeedTypes).not.toHaveBeenCalled();
+  });
+});
