@@ -158,6 +158,7 @@ export default function ForgotPinPage() {
               <RequiredAsterisk />
             </p>
             <input
+              aria-label={t("Email Address")}
               type="email"
               autoComplete="email"
               inputMode="email"

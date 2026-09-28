@@ -356,6 +356,7 @@ export default function ProfilePage() {
             {t("Name *")}
           </p>
           <input
+            aria-label={t("Name")}
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}

@@ -1037,6 +1037,7 @@ function CountriesLanguagesTab({
               Language name (English)
             </p>
             <input
+              aria-label="Language name (English)"
               type="text"
               value={regName}
               onChange={(e) => setRegName(e.target.value)}
@@ -1052,6 +1053,7 @@ function CountriesLanguagesTab({
               ISO code
             </p>
             <input
+              aria-label="ISO code"
               type="text"
               value={regCode}
               onChange={(e) => setRegCode(e.target.value.toLowerCase())}
@@ -1586,6 +1588,7 @@ function FeedNamesTab({
               Name in {labelForLanguage(selLang)}
             </p>
             <input
+              aria-label={`Name in ${labelForLanguage(selLang)}`}
               type="text"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}

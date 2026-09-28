@@ -159,6 +159,7 @@ function CustomFeedNutrientInput({
         {label}
       </p>
       <input
+        aria-label={label}
         type="number"
         inputMode="decimal"
         value={value}
@@ -1716,6 +1717,7 @@ export default function FeedSelectionPage() {
                     {user?.name ? `${user.name.split(" ")[0]}-` : ""}
                   </span>
                   <input
+                    aria-label={t("Feed Name")}
                     type="text"
                     value={customFeedForm.feed_name}
                     onChange={(e) =>
@@ -2140,6 +2142,7 @@ export default function FeedSelectionPage() {
                     <input
                       type="number"
                       inputMode="decimal"
+                      aria-label={`${t(DIET_LIMIT_LABELS[key] ?? key)} (${unitLabel})`}
                       placeholder={String(spec.default)}
                       min={min}
                       max={max}

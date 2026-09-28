@@ -6,6 +6,7 @@ import SplashGuard from "@/components/SplashGuard";
 import InstallPrompt from "@/components/InstallPrompt";
 import SplashOverlay from "@/components/SplashOverlay";
 import NumberInputGuard from "@/components/NumberInputGuard";
+import DialogFocusTrap from "@/components/DialogFocusTrap";
 import { COLUMN_WIDTH } from "@/lib/column";
 
 export const metadata: Metadata = {
@@ -108,6 +109,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           <SplashGuard />
           <NumberInputGuard />
+          <DialogFocusTrap />
           {children}
           <Snackbar />
           <InstallPrompt />

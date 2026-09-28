@@ -1089,13 +1089,16 @@ export default function CattleInfoPage() {
   const specNumberInput = (
     key: CattleInfoFieldKey,
     onChange: (v: string) => void,
-    inputMode: "decimal" | "numeric"
+    inputMode: "decimal" | "numeric",
+    /** The FieldLabel text; becomes the input's accessible name (audit B-31). */
+    label?: string
   ) => {
     const fk = FORM_KEY[key];
     const wasAdjusted = adjusted[fk] !== undefined;
     return (
       <>
         <input
+          aria-label={label?.replace(/ \*$/, "")}
           type="number"
           inputMode={inputMode}
           value={String(form[fk] ?? "")}
@@ -1194,6 +1197,7 @@ export default function CattleInfoPage() {
           <div className="px-3">
             <FieldLabel>{t("Simulation Name *")}</FieldLabel>
             <input
+              aria-label={t("Simulation Name")}
               type="text"
               value={form.simulation_name}
               onChange={(e) => set("simulation_name")(e.target.value)}
@@ -1345,14 +1349,19 @@ export default function CattleInfoPage() {
                   "body_weight",
                   <>
                     <FieldLabel>{t("Body Weight (BW; kg) *")}</FieldLabel>
-                    {specNumberInput("body_weight", handleBodyWeight, "decimal")}
+                    {specNumberInput(
+                      "body_weight",
+                      handleBodyWeight,
+                      "decimal",
+                      t("Body Weight (BW; kg) *")
+                    )}
                   </>,
                 ],
                 [
                   "bw_gain",
                   <>
                     <FieldLabel>{t("BW Gain (kg/day) *")}</FieldLabel>
-                    {specNumberInput("bw_gain", handleBWGain, "decimal")}
+                    {specNumberInput("bw_gain", handleBWGain, "decimal", t("BW Gain (kg/day) *"))}
                   </>,
                 ]
               )}
@@ -1361,14 +1370,19 @@ export default function CattleInfoPage() {
                   "bc_score",
                   <>
                     <FieldLabel>{t("Body Condition Score *")}</FieldLabel>
-                    {specNumberInput("bc_score", handleBCS, "decimal")}
+                    {specNumberInput("bc_score", handleBCS, "decimal", t("Body Condition Score *"))}
                   </>,
                 ],
                 [
                   "days_in_milk",
                   <>
                     <FieldLabel>{t("Days in Milk *")}</FieldLabel>
-                    {specNumberInput("days_in_milk", handleDaysInMilk, "numeric")}
+                    {specNumberInput(
+                      "days_in_milk",
+                      handleDaysInMilk,
+                      "numeric",
+                      t("Days in Milk *")
+                    )}
                   </>,
                 ]
               )}
@@ -1388,7 +1402,12 @@ export default function CattleInfoPage() {
                   "days_of_pregnancy",
                   <>
                     <FieldLabel>{t("Days of Pregnancy *")}</FieldLabel>
-                    {specNumberInput("days_of_pregnancy", handleDaysOfPregnancy, "numeric")}
+                    {specNumberInput(
+                      "days_of_pregnancy",
+                      handleDaysOfPregnancy,
+                      "numeric",
+                      t("Days of Pregnancy *")
+                    )}
                   </>,
                 ],
                 [
@@ -1413,7 +1432,12 @@ export default function CattleInfoPage() {
               {isVisible("milk_production") && (
                 <>
                   <FieldLabel>{t("Milk Production (L) *")}</FieldLabel>
-                  {specNumberInput("milk_production", handleMilkProduction, "decimal")}
+                  {specNumberInput(
+                    "milk_production",
+                    handleMilkProduction,
+                    "decimal",
+                    t("Milk Production (L) *")
+                  )}
                 </>
               )}
               {pair(
@@ -1449,6 +1473,7 @@ export default function CattleInfoPage() {
                     )}
                   </FieldLabel>
                   <input
+                    aria-label={t("Milk Price")}
                     type="number"
                     inputMode="decimal"
                     min={0}
@@ -1475,7 +1500,12 @@ export default function CattleInfoPage() {
               {isVisible("temperature") && (
                 <>
                   <FieldLabel>{t("Avg Temperature (°C) *")}</FieldLabel>
-                  {specNumberInput("temperature", handleAvgTemp, "decimal")}
+                  {specNumberInput(
+                    "temperature",
+                    handleAvgTemp,
+                    "decimal",
+                    t("Avg Temperature (°C) *")
+                  )}
                 </>
               )}
 
@@ -1694,6 +1724,7 @@ export default function CattleInfoPage() {
                     <>
                       <FieldLabel>{t("Distance Walked (km) *")}</FieldLabel>
                       <input
+                        aria-label={t("Distance Walked (km)")}
                         type="number"
                         inputMode="decimal"
                         value={

@@ -626,6 +626,7 @@ export default function AdminLanguageCatalogPage() {
                     </div>
                     {/* Search input */}
                     <input
+                      aria-label="Search languages"
                       type="text"
                       value={catalogQuery}
                       onChange={(e) => setCatalogQuery(e.target.value)}
@@ -1346,6 +1347,7 @@ export default function AdminLanguageCatalogPage() {
               CODE <span style={{ color: "#FC2E20" }}>*</span>
             </p>
             <input
+              aria-label="Language code"
               type="text"
               value={newCode}
               onChange={(e) => setNewCode(e.target.value.toLowerCase())}
@@ -1366,6 +1368,7 @@ export default function AdminLanguageCatalogPage() {
               NAME <span style={{ color: "#FC2E20" }}>*</span>
             </p>
             <input
+              aria-label="Language name"
               type="text"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}

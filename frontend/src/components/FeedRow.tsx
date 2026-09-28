@@ -1489,6 +1489,7 @@ export default function FeedRow({
                 optional
               >
                 <input
+                  aria-label={t("Min (kg/day)")}
                   type="number"
                   inputMode="decimal"
                   min={0}
@@ -1512,6 +1513,7 @@ export default function FeedRow({
                 optional
               >
                 <input
+                  aria-label={t("Max (kg/day)")}
                   type="number"
                   inputMode="decimal"
                   min={0}
@@ -1574,6 +1576,7 @@ export default function FeedRow({
           loading={rowLoading}
         >
           <input
+            aria-label={t("Price")}
             type="number"
             inputMode="decimal"
             min={0}
@@ -1601,6 +1604,7 @@ export default function FeedRow({
             loading={rowLoading}
           >
             <input
+              aria-label={t("Quantity")}
               type="number"
               inputMode="decimal"
               min={0}
@@ -1618,6 +1622,7 @@ export default function FeedRow({
           </FieldBox>
           <FieldBox label={t("Cost")} hasValue={!!cost} disabled={!cost} loading={rowLoading}>
             <input
+              aria-label={t("Cost")}
               type="text"
               readOnly
               value={cost ? `${cost}${currencySymbol ? ` ${currencySymbol}` : ""}` : ""}
@@ -1871,6 +1876,7 @@ export default function FeedRow({
                             </span>
                           )}
                           <input
+                            aria-label={t("Feed Name")}
                             type="text"
                             value={editFeedName}
                             onChange={(e) =>
@@ -1936,6 +1942,7 @@ export default function FeedRow({
                                 {t(f.label)}
                               </p>
                               <input
+                                aria-label={t(f.label)}
                                 type="number"
                                 inputMode="decimal"
                                 value={editForm[f.key]}

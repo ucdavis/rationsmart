@@ -119,6 +119,7 @@ function NutrientInput({
         {required && " *"}
       </p>
       <input
+        aria-label={label}
         type="number"
         inputMode="decimal"
         value={value}
@@ -637,6 +638,7 @@ export default function AdminFeedsPage() {
                 />
               </svg>
               <input
+                aria-label={t("Search by feed name")}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -1268,6 +1270,7 @@ export default function AdminFeedsPage() {
                       <div style={inputStyle(true)}>{feedForm.fd_name || t("N/A")}</div>
                     ) : (
                       <input
+                        aria-label={t("Feed Name")}
                         type="text"
                         value={feedForm.fd_name}
                         disabled={!feedForm.fd_category}
@@ -1437,6 +1440,7 @@ export default function AdminFeedsPage() {
               <span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <input
+              aria-label={t("Feed Type")}
               type="text"
               value={newTypeName}
               onChange={(e) => setNewTypeName(e.target.value)}
@@ -1607,6 +1611,7 @@ export default function AdminFeedsPage() {
               <span style={{ color: "#FC2E20" }}> *</span>
             </p>
             <input
+              aria-label={t("Feed Category")}
               type="text"
               value={newCatName}
               disabled={!newCatTypeId}

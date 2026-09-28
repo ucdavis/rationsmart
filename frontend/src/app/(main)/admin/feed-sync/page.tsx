@@ -1021,6 +1021,7 @@ function SyncSettingsTab({
                 Endpoint URL
               </p>
               <input
+                aria-label="Endpoint URL"
                 type="text"
                 value={formEndpoint}
                 onChange={(e) => setFormEndpoint(e.target.value)}
@@ -1052,6 +1053,7 @@ function SyncSettingsTab({
                   Header name
                 </p>
                 <input
+                  aria-label="Header name"
                   type="text"
                   value={formHeaderName}
                   onChange={(e) => setFormHeaderName(e.target.value)}
@@ -1089,6 +1091,7 @@ function SyncSettingsTab({
                 </div>
               ) : (
                 <input
+                  aria-label="New token"
                   type="password"
                   value={formToken}
                   onChange={(e) => setFormToken(e.target.value)}
@@ -1528,6 +1531,7 @@ function RunHistoryTab({
                     {rowsExpanded && (
                       <div className="mt-2">
                         <input
+                          aria-label="Search rows"
                           type="text"
                           value={rowFilter}
                           onChange={(e) => {

@@ -204,6 +204,7 @@ export default function RegisterPage() {
         </p>
         <div className="px-3">
           <input
+            aria-label={t("Name")}
             type="text"
             value={name}
             onChange={handleNameChange}
@@ -223,6 +224,7 @@ export default function RegisterPage() {
         </p>
         <div className="px-3">
           <input
+            aria-label={t("Email Address")}
             type="email"
             inputMode="email"
             autoComplete="email"
