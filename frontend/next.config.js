@@ -46,7 +46,7 @@ const keepConsole =
 // Security response headers.
 //
 // Content-Security-Policy (audit A-04). The app loads nothing from other
-// origins except Google Fonts, so everything else is pinned to 'self':
+// origins (Nunito is self-hosted via next/font), so everything is 'self':
 // - connect-src 'self': XHR/fetch/WebSocket can only reach this origin, so a
 //   script that did get injected couldn't send the JWT anywhere else;
 // - img-src 'self' data: blob: — no third-party image beacons either.
@@ -59,8 +59,8 @@ const contentSecurityPolicy = [
   "default-src 'self'",
   // `next dev` (React Refresh) needs eval; production never gets it.
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
+  "style-src 'self' 'unsafe-inline'",
+  "font-src 'self' data:",
   "img-src 'self' data: blob:",
   "connect-src 'self'",
   "worker-src 'self'",

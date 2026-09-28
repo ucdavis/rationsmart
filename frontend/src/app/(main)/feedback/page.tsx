@@ -10,6 +10,7 @@ import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/Feedbac
 import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface FeedbackItem {
   id: number;
@@ -113,9 +114,12 @@ export default function FeedbackPage() {
       .finally(() => setLoadingHistory(false));
   };
 
+  // Reload when the signed-in user changes; loadHistory itself changes every
+  // render, so it's read through a ref rather than listed as a dependency.
+  const loadHistoryRef = useLatestRef(loadHistory);
   useEffect(() => {
-    loadHistory();
-  }, [user]);
+    loadHistoryRef.current();
+  }, [user, loadHistoryRef]);
 
   const handleSubmit = async () => {
     if (!user) return;

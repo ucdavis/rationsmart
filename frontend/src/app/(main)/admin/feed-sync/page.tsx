@@ -45,6 +45,7 @@ import {
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface SchedulerStatus {
   scheduler_enabled: boolean;
@@ -264,7 +265,11 @@ export default function AdminFeedSyncPage() {
     if (user && !user.is_admin) router.replace("/cattle-info");
   }, [user, router]);
 
+  // Read, not re-run on: see useLatestRef (audit B-20).
+
+  const effectInputs1 = useLatestRef({ showSnackbar });
   const reload = useCallback(() => {
+    const { showSnackbar } = effectInputs1.current;
     setIsLoading(true);
     return Promise.allSettled([getFeedSyncSchedulerStatus(), getFeedSyncConfig()])
       .then(([statusRes, configRes]) => {
@@ -274,8 +279,7 @@ export default function AdminFeedSyncPage() {
         else showSnackbar("Could not load sync configuration", "error");
       })
       .finally(() => setIsLoading(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectInputs1]);
 
   useEffect(() => {
     if (user?.is_admin) void reload();
@@ -498,7 +502,10 @@ function SyncSettingsTab({
   // Someone else's run (a scheduled tick, or another admin's manual sync)
   // is in progress — poll status (not a log_id we don't have) until it
   // clears, then do a full reload so the settings/status cards catch up.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs2 = useLatestRef({ reload, setStatus });
   useEffect(() => {
+    const { reload, setStatus } = effectInputs2.current;
     if (!status?.running || runningLogId) return;
     if (statusPollRef.current) clearInterval(statusPollRef.current);
     statusPollRef.current = setInterval(() => {
@@ -515,8 +522,7 @@ function SyncSettingsTab({
     return () => {
       if (statusPollRef.current) clearInterval(statusPollRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status?.running, runningLogId]);
+  }, [status?.running, runningLogId, effectInputs2]);
 
   const openSettingsEditor = () => {
     if (!config) return;
@@ -1144,47 +1150,62 @@ function RunHistoryTab({
 
   const [transExpanded, setTransExpanded] = useState(false);
 
-  const loadLogs = useCallback((p: number) => {
-    setIsLoadingLogs(true);
-    getFeedSyncLogs(p, PAGE_SIZE)
-      .then((res) => {
-        setLogs(res.data.logs);
-        setTotalPages(res.data.total_pages || 1);
-        setTotalCount(res.data.total_count || 0);
-      })
-      .catch(() => showSnackbar("Could not load run history", "error"))
-      .finally(() => setIsLoadingLogs(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Read, not re-run on: see useLatestRef (audit B-20).
+
+  const effectInputs3 = useLatestRef({ showSnackbar });
+  const loadLogs = useCallback(
+    (p: number) => {
+      const { showSnackbar } = effectInputs3.current;
+      setIsLoadingLogs(true);
+      getFeedSyncLogs(p, PAGE_SIZE)
+        .then((res) => {
+          setLogs(res.data.logs);
+          setTotalPages(res.data.total_pages || 1);
+          setTotalCount(res.data.total_count || 0);
+        })
+        .catch(() => showSnackbar("Could not load run history", "error"))
+        .finally(() => setIsLoadingLogs(false));
+    },
+    [effectInputs3]
+  );
 
   useEffect(() => {
     loadLogs(page);
   }, [page, loadLogs]);
 
-  const openDetail = useCallback((id: string) => {
-    setIsDetailOpen(true);
-    setIsLoadingDetail(true);
-    setOpenLog(null);
-    setRowFilter("");
-    setRowsExpanded(false);
-    setRowsShown(ROWS_CHUNK);
-    setTransExpanded(false);
-    getFeedSyncLog(id)
-      .then((res) => setOpenLog(res.data))
-      .catch(() => {
-        showSnackbar("Could not load run detail", "error");
-        setIsDetailOpen(false);
-      })
-      .finally(() => setIsLoadingDetail(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Read, not re-run on: see useLatestRef (audit B-20).
 
+  const effectInputs4 = useLatestRef({ showSnackbar });
+  const openDetail = useCallback(
+    (id: string) => {
+      const { showSnackbar } = effectInputs4.current;
+      setIsDetailOpen(true);
+      setIsLoadingDetail(true);
+      setOpenLog(null);
+      setRowFilter("");
+      setRowsExpanded(false);
+      setRowsShown(ROWS_CHUNK);
+      setTransExpanded(false);
+      getFeedSyncLog(id)
+        .then((res) => setOpenLog(res.data))
+        .catch(() => {
+          showSnackbar("Could not load run detail", "error");
+          setIsDetailOpen(false);
+        })
+        .finally(() => setIsLoadingDetail(false));
+    },
+    [effectInputs4]
+  );
+
+  // Read, not re-run on: see useLatestRef (audit B-20).
+
+  const effectInputs5 = useLatestRef({ onViewLogIdConsumed, openDetail });
   useEffect(() => {
+    const { onViewLogIdConsumed, openDetail } = effectInputs5.current;
     if (!viewLogId) return;
     openDetail(viewLogId);
     onViewLogIdConsumed();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewLogId]);
+  }, [viewLogId, effectInputs5]);
 
   const filteredFailedRows = useMemo(() => {
     const rows = openLog?.failed_rows ?? [];

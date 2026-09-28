@@ -38,6 +38,7 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
@@ -552,6 +553,7 @@ export default function CattleInfoPage() {
   // the profile language isn't valid for the selected country. See the
   // doc comment on useT() in src/lib/i18n-ui.ts.
   const t = useT(effectiveSimulationLanguage);
+  const tRef = useLatestRef(t);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   useEscapeKey(!!showHistoryModal, () => setShowHistoryModal(false));
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
@@ -560,7 +562,11 @@ export default function CattleInfoPage() {
   // §1.2 Grazing info tooltip — tap-only (mobile-first). Click toggles.
   const [showGrazingTooltip, setShowGrazingTooltip] = useState(false);
 
+  // Read, not re-run on: see useLatestRef (audit B-20).
+
+  const effectInputs1 = useLatestRef({ t });
   useEffect(() => {
+    const { t } = effectInputs1.current;
     getCountries()
       .then((res) => {
         const data = res.data;
@@ -568,8 +574,7 @@ export default function CattleInfoPage() {
       })
       .catch(() => showSnackbar(t("Could not load countries"), "error"))
       .finally(() => setLoadingCountries(false));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showSnackbar]);
+  }, [showSnackbar, effectInputs1]);
 
   // Resolves the spec for a state from cache, else fetches it. null on
   // failure (already reported). Never throws.
@@ -597,7 +602,10 @@ export default function CattleInfoPage() {
   // Mount: a fresh form takes the state's defaults; a form hydrated from the
   // store keeps its values and is only clamped (it may predate a retune).
   // The state-guard drops the result if the user changed state meanwhile.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs2 = useLatestRef({ cattleInfo, form, loadSpecs, reportAdjustments });
   useEffect(() => {
+    const { cattleInfo, form, loadSpecs, reportAdjustments } = effectInputs2.current;
     const state = form.animal_category;
     const hydrated = !!cattleInfo;
     void loadSpecs(state).then((s) => {
@@ -615,8 +623,7 @@ export default function CattleInfoPage() {
     });
     // Mount-only by design: state changes go through handleStateChange, and
     // restores through loadSimulation — each applies its own rule.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectInputs2]);
 
   // User picked a physiological state → every animal field takes the new
   // state's default. Name, country and language are left alone.
@@ -637,9 +644,9 @@ export default function CattleInfoPage() {
         // API returns { simulations: [...], success: bool }
         setHistoryList(Array.isArray(data) ? data : (data?.simulations ?? []));
       })
-      .catch(() => showSnackbar(t("Could not load history"), "error"))
+      .catch(() => showSnackbar(tRef.current("Could not load history"), "error"))
       .finally(() => setIsLoadingHistory(false));
-  }, [showHistoryModal, user, showSnackbar]);
+  }, [showHistoryModal, user, showSnackbar, tRef]);
 
   const loadSimulation = async (reportId: string) => {
     if (!user || !reportId) return;

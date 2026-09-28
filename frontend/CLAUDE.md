@@ -888,8 +888,10 @@ The pre-hydration splash MUST be a self-managing client component
 Inlining a `<div id="pwa-splash">` in `layout.tsx` JSX causes React to
 re-mount it on every navigation and it covers every screen.
 
-### 10.3 SplashGuard `[]` deps — don't change them
-`SplashGuard.useEffect` deps MUST be `[]`. A previous attempt with
+### 10.3 SplashGuard runs once — don't add pathname/router as triggers
+`SplashGuard.useEffect` must run only once. Since 2026-09-28 its deps are
+`[effectInputs1]` — a stable `useLatestRef` holding pathname/router — which
+is equivalent to `[]` without an eslint-disable (audit B-20). A previous attempt with
 `[pathname, router]` caused an infinite redirect loop on `/welcome`
 because each redirect re-fired the effect. Public paths are explicitly
 listed in `PUBLIC_PATHS`. Navigation type is checked via

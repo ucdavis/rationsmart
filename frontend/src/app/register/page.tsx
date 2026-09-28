@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { register as registerApi, getCountries, labelForLanguage } from "@/lib/api";
@@ -14,6 +14,7 @@ import { useT } from "@/lib/i18n-ui";
 import { authErrorMessage } from "@/lib/errors";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface Country {
   id: string | number;
@@ -30,6 +31,7 @@ export default function RegisterPage() {
   // setUser/logout removed in v1 — register no longer auto-signs-in.
   const showSnackbar = useStore((s) => s.showSnackbar);
   const t = useT();
+  const tRef = useLatestRef(t);
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -53,8 +55,11 @@ export default function RegisterPage() {
   // entries come from the country's supported_languages — minus "en" so
   // we don't render it twice.
   const selectedCountry = countries.find((c) => String(c.id) === countryId);
-  const countryLangs = selectedCountry?.supported_languages ?? [];
-  const languageOptions = ["en", ...countryLangs.filter((c) => c !== "en")];
+  const countryLangs = selectedCountry?.supported_languages;
+  const languageOptions = useMemo(
+    () => ["en", ...(countryLangs ?? []).filter((c) => c !== "en")],
+    [countryLangs]
+  );
 
   // If the user picked a country that no longer supports the previously-
   // selected language, snap back to English so we never submit an option
@@ -70,9 +75,9 @@ export default function RegisterPage() {
         const list: Country[] = Array.isArray(data) ? data : [];
         setCountries(list);
       })
-      .catch(() => showSnackbar(t("Could not load countries"), "error"))
+      .catch(() => showSnackbar(tRef.current("Could not load countries"), "error"))
       .finally(() => setLoadingCountries(false));
-  }, [showSnackbar]);
+  }, [showSnackbar, tRef]);
 
   // Android: PIN enabled only when country + email + name are all filled and email is valid
   const pinEnabled =

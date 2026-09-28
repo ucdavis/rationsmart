@@ -57,6 +57,7 @@ import {
   checkedLimits,
 } from "@/lib/diet-request";
 import { nutrientFieldsFor } from "@/lib/nutrients";
+import { useLatestRef } from "@/lib/use-latest";
 
 let idCounter = 0;
 const createFeedItem = (): FeedItem => ({
@@ -238,7 +239,10 @@ export default function FeedSelectionPage() {
   // feed selections disappear. This effect catches that on the next
   // paint by re-taking feedSelections whenever it has entries that
   // items doesn't reflect. Runs on mount + on feedSelections change.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs1 = useLatestRef({ items });
   useEffect(() => {
+    const { items } = effectInputs1.current;
     // Resync local items whenever the store's feedSelections has data
     // that isn't reflected locally. Compares by feed_uuid first (final
     // selection), then by feed_type_name / category_name (partial state
@@ -268,8 +272,7 @@ export default function FeedSelectionPage() {
     const padded = [...feedSelections];
     while (padded.length < 3) padded.push(createFeedItem());
     setItems(padded);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedSelections]);
+  }, [feedSelections, effectInputs1]);
   const [isLoading, setIsLoading] = useState(false);
   const [showLimitsModal, setShowLimitsModal] = useState(false);
   useEscapeKey(!!showLimitsModal, () => setShowLimitsModal(false));

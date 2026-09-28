@@ -9,6 +9,7 @@ import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
 import { openExternalUrl } from "@/lib/safe-url";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 function SkeletonCard() {
   return (
@@ -53,6 +54,7 @@ function formatDate(raw: string | null): string {
 export default function ReportsPage() {
   const router = useRouter();
   const t = useT();
+  const tRef = useLatestRef(t);
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
   const [reports, setReports] = useState<FeedReport[]>([]);
@@ -72,10 +74,10 @@ export default function ReportsPage() {
       })
       .catch((err) => {
         console.error("[reports] fetch failed:", err?.message);
-        showSnackbar(t("Could not load reports"), "error");
+        showSnackbar(tRef.current("Could not load reports"), "error");
       })
       .finally(() => setIsLoading(false));
-  }, [user, showSnackbar]);
+  }, [user, showSnackbar, tRef]);
 
   const openPdf = (url: string) => {
     if (!openExternalUrl(url)) showSnackbar(t("Report URL not available"), "error");

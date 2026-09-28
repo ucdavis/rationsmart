@@ -10,6 +10,7 @@ import Toolbar from "@/components/Toolbar";
 import { openExternalUrl } from "@/lib/safe-url";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
 // Critically, the "View Report" button opens bucket_url (a PDF URL),
@@ -36,6 +37,7 @@ export default function AdminReportsPage() {
     showSnackbar: s.showSnackbar,
   }));
   const t = useT();
+  const tRef = useLatestRef(t);
 
   const [reports, setReports] = useState<AdminReport[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,9 +53,9 @@ export default function AdminReportsPage() {
       }
     )
       .then(setReports)
-      .catch(() => showSnackbar(t("Could not load reports"), "error"))
+      .catch(() => showSnackbar(tRef.current("Could not load reports"), "error"))
       .finally(() => setIsLoading(false));
-  }, [user?.id]);
+  }, [user?.id, showSnackbar, tRef]);
 
   // Android FragmentAdminFeedReports.onClickViewReport calls
   // FileUtils.sharePdf(url) — i.e. opens the bucket_url PDF directly.

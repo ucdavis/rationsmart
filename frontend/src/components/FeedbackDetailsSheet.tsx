@@ -35,11 +35,11 @@ export default function FeedbackDetailsSheet({
   details: FeedbackDetails | null;
   onClose: () => void;
 }) {
+  // Hooks before the early return (rules-of-hooks).
+  useEscapeKey(!!details, onClose);
   if (!details) return null;
 
   const rating = Math.max(0, Math.min(5, details.rating || 0));
-
-  useEscapeKey(true, onClose);
 
   return (
     <div

@@ -11,6 +11,7 @@ import { IcStar } from "@/components/Icons";
 import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/FeedbackDetailsSheet";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface AdminFeedback {
   id: number;
@@ -123,6 +124,7 @@ export default function AdminFeedbackPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
   const t = useT();
+  const tRef = useLatestRef(t);
 
   const [feedbacks, setFeedbacks] = useState<AdminFeedback[]>([]);
   const [stats, setStats] = useState<FeedbackStats | null>(null);
@@ -148,9 +150,9 @@ export default function AdminFeedbackPage() {
         setFeedbacks(allFeedbacks);
         setStats(statsRes.data ?? null);
       })
-      .catch(() => showSnackbar(t("Could not load feedback"), "error"))
+      .catch(() => showSnackbar(tRef.current("Could not load feedback"), "error"))
       .finally(() => setIsLoading(false));
-  }, [user?.id]);
+  }, [user?.id, showSnackbar, tRef]);
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>

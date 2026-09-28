@@ -18,6 +18,7 @@ import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface AdminUser {
   id: string;
@@ -129,14 +130,16 @@ export default function AdminUsersPage() {
   // Re-query the server whenever a filter changes. Debounced so typing in the
   // search box (and rapid pill/dropdown changes) doesn't fire a request per
   // keystroke.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs1 = useLatestRef({ load });
   useEffect(() => {
+    const { load } = effectInputs1.current;
     if (!user?.id) return;
     const timer = setTimeout(() => {
       void load(countryFilter, statusFilter, search);
     }, 350);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id, countryFilter, statusFilter, search]);
+  }, [user?.id, countryFilter, statusFilter, search, effectInputs1]);
 
   const handleToggle = async (u: AdminUser) => {
     if (!user?.id) return;

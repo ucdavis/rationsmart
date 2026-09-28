@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useLatestRef } from "@/lib/use-latest";
 
 export default function SplashGuard() {
   const router = useRouter();
@@ -23,7 +24,11 @@ export default function SplashGuard() {
     "/help",
   ]);
 
+  // Read, not re-run on: see useLatestRef (audit B-20).
+
+  const effectInputs1 = useLatestRef({ PUBLIC_PATHS, pathname, router });
   useEffect(() => {
+    const { PUBLIC_PATHS, pathname, router } = effectInputs1.current;
     if (pathname === "/") return;
     if (PUBLIC_PATHS.has(pathname)) return;
 
@@ -43,8 +48,7 @@ export default function SplashGuard() {
     // Deps are [] on purpose — see commit history. A prior attempt
     // with [pathname, router] caused an infinite redirect loop on
     // /welcome.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectInputs1]);
 
   return null;
 }

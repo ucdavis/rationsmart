@@ -30,6 +30,7 @@ import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
 import { nutrientFieldsFor, type NutrientKey } from "@/lib/nutrients";
+import { useLatestRef } from "@/lib/use-latest";
 
 // Decimal-or-empty string for response numerics (matches Android
 // formatFeedBreakdownData which strips trailing zeros/decimals).
@@ -464,6 +465,10 @@ export default function FeedRow({
     }
   };
 
+  // The types fetch runs when the user / country changes; the row, its
+  // onUpdate and the translator are read at resolve time through a ref, so
+  // a slow response acts on the row as it is now, not as it was (audit B-20).
+  const latest = useLatestRef({ item, onUpdate, t });
   useEffect(() => {
     if (!user?.country_id || !user?.id) {
       // Nothing to fetch — clear the initial `true`, otherwise the row
@@ -521,15 +526,21 @@ export default function FeedRow({
           // Match it against the known-alias sets and rewrite state to
           // the English identity we now fetch. Prevents a phantom
           // "extra radio" from being synthetically inserted below.
-          if (item.feed_type_name && !types.find((t) => t.name === item.feed_type_name)) {
-            if (isForageType(item.feed_type_name) && types.find((t) => t.name === "Forage")) {
-              onUpdate(item.id, { feed_type_name: "Forage" });
+          if (
+            latest.current.item.feed_type_name &&
+            !types.find((t) => t.name === latest.current.item.feed_type_name)
+          ) {
+            if (
+              isForageType(latest.current.item.feed_type_name) &&
+              types.find((t) => t.name === "Forage")
+            ) {
+              latest.current.onUpdate(latest.current.item.id, { feed_type_name: "Forage" });
             } else if (
-              isRoughageType(item.feed_type_name) &&
+              isRoughageType(latest.current.item.feed_type_name) &&
               types.find((t) => t.name === "Roughage")
             ) {
-              onUpdate(item.id, { feed_type_name: "Roughage" });
-            } else if (/[^\x00-\x7F]/.test(item.feed_type_name)) {
+              latest.current.onUpdate(latest.current.item.id, { feed_type_name: "Roughage" });
+            } else if (/[^\x00-\x7F]/.test(latest.current.item.feed_type_name)) {
               // Non-ASCII stored identity that isn't a known Forage/Roughage
               // alias — this endpoint is English-only now (see getFeedTypes
               // above), so any non-Latin string here can only be a
@@ -545,7 +556,7 @@ export default function FeedRow({
               // language is picked. Clear the row's feed selection instead;
               // the freshly-fetched (English) options are still valid to
               // re-pick from.
-              onUpdate(item.id, {
+              latest.current.onUpdate(latest.current.item.id, {
                 feed_type_id: null,
                 feed_type_name: "",
                 category_id: null,
@@ -560,17 +571,17 @@ export default function FeedRow({
               // synthetic entry so the row still renders its stored
               // label instead of falling to an empty selection.
               types.unshift({
-                id: item.feed_type_id ?? -1,
-                name: item.feed_type_name,
-                display: item.feed_type_name,
+                id: latest.current.item.feed_type_id ?? -1,
+                name: latest.current.item.feed_type_name,
+                display: latest.current.item.feed_type_name,
               });
             }
           }
           setFeedTypes(types);
-          if (item.feed_type_name) {
-            const match = types.find((t) => t.name === item.feed_type_name);
-            if (match && match.id !== item.feed_type_id) {
-              onUpdate(item.id, { feed_type_id: match.id });
+          if (latest.current.item.feed_type_name) {
+            const match = types.find((t) => t.name === latest.current.item.feed_type_name);
+            if (match && match.id !== latest.current.item.feed_type_id) {
+              latest.current.onUpdate(latest.current.item.id, { feed_type_id: match.id });
             }
           }
         } catch (parseErr) {
@@ -583,7 +594,8 @@ export default function FeedRow({
       .catch((err) => {
         if (cancelled) return;
         console.error("[feed-cascade] feed types fetch failed:", err?.message);
-        if (!item.feed_type_name) showSnackbar(t("Could not load feed types"), "error");
+        if (!latest.current.item.feed_type_name)
+          showSnackbar(latest.current.t("Could not load feed types"), "error");
       })
       .finally(() => {
         if (!cancelled) setLoadingTypes(false);
@@ -591,7 +603,7 @@ export default function FeedRow({
     return () => {
       cancelled = true;
     };
-  }, [user?.country_id, showSnackbar]);
+  }, [user?.country_id, user?.id, showSnackbar, latest]);
 
   // Self-heal — an earlier i18n build briefly sent ?lang= to
   // unique-feed-type, which stored the TRANSLATED string (e.g. "चारा")
@@ -607,7 +619,10 @@ export default function FeedRow({
   // to the recovered English identity. Runs whenever the fetched types
   // list or the label dict changes, so it fires as soon as both are
   // available regardless of which resolved first.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs1 = useLatestRef({ item, onUpdate });
   useEffect(() => {
+    const { item, onUpdate } = effectInputs1.current;
     if (!item.feed_type_name || !taxonomyLabels?.types) return;
     if (feedTypes.some((ft) => ft.name === item.feed_type_name)) return;
     const englishKey = Object.entries(taxonomyLabels.types).find(
@@ -616,15 +631,17 @@ export default function FeedRow({
     if (englishKey && feedTypes.some((ft) => ft.name === englishKey)) {
       onUpdate(item.id, { feed_type_name: englishKey });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.feed_type_name, feedTypes, taxonomyLabels]);
+  }, [item.feed_type_name, feedTypes, taxonomyLabels, effectInputs1]);
 
   // Categories cascade. We defer the reset until AFTER fetching the new
   // list and only clear category_name/sub_category if the stored values
   // are not in the freshly loaded options — that way simulation-history
   // restoration keeps its values, while a user-driven type change still
   // wipes downstream selections.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs2 = useLatestRef({ item, onUpdate, showSnackbar, t });
   useEffect(() => {
+    const { item, onUpdate, showSnackbar, t } = effectInputs2.current;
     if (!item.feed_type_name || !user?.country_id || !user?.id) return;
     setLoadingCats(true);
     // Race protection — see the types-cascade useEffect above. Without
@@ -761,15 +778,17 @@ export default function FeedRow({
     // Re-running on category_name change matches (or injects+selects) the new
     // category. The cascade only ever SETS category_id (never category_name),
     // so this doesn't re-trigger itself.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.feed_type_name, item.category_name, user?.country_id, user?.id]);
+  }, [item.feed_type_name, item.category_name, user?.country_id, user?.id, effectInputs2]);
 
   // Self-heal for category_name — same rationale as the feed_type_name
   // self-heal effect above. A row saved while unique-feed-category was
   // briefly sending ?lang= has a translated string baked in as its
   // "identity"; recover the English key via taxonomyLabels once it's
   // available.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs3 = useLatestRef({ item, onUpdate });
   useEffect(() => {
+    const { item, onUpdate } = effectInputs3.current;
     if (!item.category_name || !taxonomyLabels?.categories) return;
     if (categories.some((c) => c.name === item.category_name)) return;
     const englishKey = Object.entries(taxonomyLabels.categories).find(
@@ -778,12 +797,14 @@ export default function FeedRow({
     if (englishKey && categories.some((c) => c.name === englishKey)) {
       onUpdate(item.id, { category_name: englishKey });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.category_name, categories, taxonomyLabels]);
+  }, [item.category_name, categories, taxonomyLabels, effectInputs3]);
 
   // Sub-categories cascade. Same pattern — only reset feed_uuid if the
   // previously stored uuid isn't present in the freshly loaded list.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs4 = useLatestRef({ item, onUpdate, showSnackbar, t });
   useEffect(() => {
+    const { item, onUpdate, showSnackbar, t } = effectInputs4.current;
     if (!item.category_name || !item.feed_type_name || !user?.country_id || !user?.id) return;
     setLoadingSubs(true);
     // Race protection — see types-cascade above
@@ -917,8 +938,7 @@ export default function FeedRow({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.category_name, item.feed_type_name, user?.country_id, user?.id]);
+  }, [item.category_name, item.feed_type_name, user?.country_id, user?.id, effectInputs4]);
 
   // When the selected feed changes, everything that described the OLD feed
   // must reset, or the new feed silently inherits it (audit B-12):
@@ -928,7 +948,10 @@ export default function FeedRow({
   //   cascade clearing an invalid one, leaves typed price/quantity alone.
   // The first render is skipped so a restored simulation keeps its values.
   const prevFeedUuid = useRef(item.feed_uuid);
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs5 = useLatestRef({ item, onUpdate });
   useEffect(() => {
+    const { item, onUpdate } = effectInputs5.current;
     const prev = prevFeedUuid.current;
     const swapped = prev !== item.feed_uuid;
     prevFeedUuid.current = item.feed_uuid;
@@ -948,8 +971,7 @@ export default function FeedRow({
       reset.quantity_kg = null;
     }
     if (Object.keys(reset).length > 0) onUpdate(item.id, reset);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.feed_uuid]);
+  }, [item.feed_uuid, effectInputs5]);
 
   // Backfill feed_type_id whenever the name is set but the id is null
   // and the matching id is available in `feedTypes`. The types cascade
@@ -960,13 +982,15 @@ export default function FeedRow({
   // this effect a search-filled row would never unlock the submit. Same
   // effect also covers simulation-history restore and any future flow
   // that updates feed_type_name without the matching id.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs6 = useLatestRef({ item, onUpdate });
   useEffect(() => {
+    const { item, onUpdate } = effectInputs6.current;
     if (item.feed_type_name && item.feed_type_id == null && feedTypes.length > 0) {
       const match = feedTypes.find((t) => t.name === item.feed_type_name);
       if (match) onUpdate(item.id, { feed_type_id: match.id });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [feedTypes, item.feed_type_name, item.feed_type_id]);
+  }, [feedTypes, item.feed_type_name, item.feed_type_id, effectInputs6]);
 
   // Bubble per-row cascade loading state up to the parent. The parent
   // sums these across all rows so the Generate button can stay disabled
@@ -975,18 +999,22 @@ export default function FeedRow({
   // history could hit Generate while a stored category was still being
   // validated against the live category list, sending stale feed_uuid
   // or partially-matched values.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs7 = useLatestRef({ item, onCascadeLoading });
   useEffect(() => {
+    const { item, onCascadeLoading } = effectInputs7.current;
     const loading = loadingTypes || loadingCats || loadingSubs;
     onCascadeLoading?.(item.id, loading);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loadingTypes, loadingCats, loadingSubs]);
+  }, [loadingTypes, loadingCats, loadingSubs, effectInputs7]);
 
   // On unmount (row deletion), tell the parent this row is no longer
   // loading so it doesn't get stuck in the loadingRows set forever.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs8 = useLatestRef({ item, onCascadeLoading });
   useEffect(() => {
+    const { item, onCascadeLoading } = effectInputs8.current;
     return () => onCascadeLoading?.(item.id, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [effectInputs8]);
 
   const cost =
     showQuantity && item.price_per_kg !== null && item.quantity_kg !== null

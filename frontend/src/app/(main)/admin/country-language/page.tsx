@@ -66,6 +66,7 @@ import { useEscapeKey } from "@/lib/use-escape";
 import { allSettledLimited } from "@/lib/concurrency";
 import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface SystemLanguage {
   code: string;
@@ -253,10 +254,13 @@ export default function AdminCountryLanguagePage() {
       .finally(() => setIsLoading(false));
   };
 
+  // Read, not re-run on: see useLatestRef (audit B-20).
+
+  const effectInputs1 = useLatestRef({ reload });
   useEffect(() => {
+    const { reload } = effectInputs1.current;
     if (user?.is_admin) reload();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.is_admin]);
+  }, [user?.is_admin, effectInputs1]);
 
   const askConfirm = (
     title: string,
@@ -1098,13 +1102,15 @@ function FeedNamesTab({
   // the list loads, so the feed list is visible without an extra tap —
   // only when nothing has been picked yet, so it doesn't clobber the
   // admin's own selection on a later reload.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs2 = useLatestRef({ selCountry });
   useEffect(() => {
+    const { selCountry } = effectInputs2.current;
     const first = countries[0];
     if (selCountry || !first) return;
     setSelCountry(first);
     setSelLang(first.languages.find((g) => g !== "en") ?? null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [countries]);
+  }, [countries, effectInputs2]);
 
   const [feeds, setFeeds] = useState<
     Array<AdminFeedLite & { translation?: FeedTranslation | null }>
@@ -1131,7 +1137,10 @@ function FeedNamesTab({
   // capped at 100/page — walk every page), then hydrate each feed's
   // translation status for the selected language IN PARALLEL. No backend
   // endpoint returns "every feed + translation status" in one call.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs3 = useLatestRef({ selCountry, showSnackbar });
   useEffect(() => {
+    const { selCountry, showSnackbar } = effectInputs3.current;
     if (!showFeeds || !selCountry || !selLang) {
       setFeeds([]);
       return;
@@ -1184,8 +1193,7 @@ function FeedNamesTab({
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selCountry?.id, selLang, showFeeds]);
+  }, [selCountry?.id, selLang, showFeeds, effectInputs3]);
 
   const openFeedEdit = (f: AdminFeedLite & { translation?: FeedTranslation | null }) => {
     setEditingFeed(f);

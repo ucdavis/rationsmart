@@ -31,6 +31,7 @@ import {
   uploadFileProblem,
 } from "@/lib/download";
 import { COLORS } from "@/lib/colors";
+import { useLatestRef } from "@/lib/use-latest";
 
 interface CountryRow {
   id: string;
@@ -95,7 +96,10 @@ export default function AdminTranslationsPage() {
   // The system-wide list is used as a fallback in the coverage-language
   // selector when a country's `supported_languages` is not yet provided
   // by the backend response.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs1 = useLatestRef({ selectedCountryId, showSnackbar });
   useEffect(() => {
+    const { selectedCountryId, showSnackbar } = effectInputs1.current;
     if (!user?.is_admin) return;
     Promise.all([getCountries(), listLanguages()])
       .then(([cRes, lRes]) => {
@@ -106,8 +110,7 @@ export default function AdminTranslationsPage() {
         setAllLanguages(ls);
       })
       .catch(() => showSnackbar("Could not load country / language list", "error"));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.is_admin]);
+  }, [user?.is_admin, effectInputs1]);
 
   // Available coverage languages for the selected country.
   // Prefer the country's own supported_languages (post-i18n-V2 backend).
@@ -120,14 +123,16 @@ export default function AdminTranslationsPage() {
 
   // Default the coverage language to the first available one whenever
   // the country changes.
+  // Read, not re-run on: see useLatestRef (audit B-20).
+  const effectInputs2 = useLatestRef({ coverageLangs, selectedLang });
   useEffect(() => {
+    const { coverageLangs, selectedLang } = effectInputs2.current;
     const firstLang = coverageLangs[0];
     if (firstLang && !coverageLangs.includes(selectedLang)) {
       setSelectedLang(firstLang);
     }
     setCoverage(null); // reset stale coverage when country changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCountryId]);
+  }, [selectedCountryId, effectInputs2]);
 
   // ── Download workbook ─────────────────────────────────────────────────
   const handleDownload = async () => {

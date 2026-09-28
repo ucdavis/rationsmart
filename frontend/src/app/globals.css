@@ -38,7 +38,7 @@
 
 html,
 body {
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-nunito), 'Nunito', sans-serif;
   background-color: #F8FAF9;
   color: #231F20;
   margin: 0;
@@ -74,7 +74,7 @@ body {
 input,
 select,
 textarea {
-  font-family: 'Nunito', sans-serif;
+  font-family: var(--font-nunito), 'Nunito', sans-serif;
   outline: none;
 }
 

@@ -24,6 +24,7 @@ import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 import { anyNutrientInvalid, NUTRIENT_RANGE_MESSAGE } from "@/lib/validators";
+import { useLatestRef } from "@/lib/use-latest";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -187,6 +188,7 @@ export default function AdminFeedsPage() {
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
   const t = useT();
+  const tRef = useLatestRef(t);
 
   const [tab, setTab] = useState<TabType>("feeds");
   // Android-style nav: landing view shows 3 cards; sub-views show one section
@@ -272,9 +274,9 @@ export default function AdminFeedsPage() {
         setFeeds(allFeeds);
         setCountries(Array.isArray(countriesRes.data) ? countriesRes.data : []);
       })
-      .catch(() => showSnackbar(t("Could not load feed data"), "error"))
+      .catch(() => showSnackbar(tRef.current("Could not load feed data"), "error"))
       .finally(() => setIsLoading(false));
-  }, [user?.id, showSnackbar]);
+  }, [user?.id, showSnackbar, tRef]);
 
   useEffect(() => {
     loadAll();

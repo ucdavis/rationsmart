@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Nunito } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
 import Snackbar from "@/components/ui/Snackbar";
@@ -9,6 +10,16 @@ import NumberInputGuard from "@/components/NumberInputGuard";
 import DialogFocusTrap from "@/components/DialogFocusTrap";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { COLORS } from "@/lib/colors";
+
+// Nunito is self-hosted by next/font (downloaded at build time, served from
+// /_next/static): no runtime request to Google, so the CSP can stay 'self'
+// for fonts and styles. Exposed as --font-nunito for globals.css.
+const nunito = Nunito({
+  subsets: ["latin", "latin-ext", "vietnamese"],
+  weight: ["400", "600", "700", "800", "900"],
+  display: "swap",
+  variable: "--font-nunito",
+});
 
 export const metadata: Metadata = {
   title: "RationSmart",
@@ -44,17 +55,11 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={nunito.variable}>
       <head>
         {/* manifest, theme-color, viewport and the apple-/mobile-web-app-*
             tags are emitted by the `metadata` / `viewport` exports above. */}
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
       </head>
       <body
         style={{

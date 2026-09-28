@@ -63,7 +63,6 @@ export default function SplashOverlay() {
             boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/images/app_logo.png"
             alt="RationSmart"
