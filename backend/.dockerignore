@@ -1,0 +1,29 @@
+# What NOT to copy into the image. The Dockerfile's `COPY . /app` otherwise takes
+# everything in this folder — tracked or not — including the server's .env.
+# Patterns are relative to backend/ (the build context), so `scripts` does not match scripts_2.
+
+# Secrets — settings reach the container through compose's env_file, never from a file in the image
+.env
+*.env
+
+# Local-only folders (gitignored, but present on disk)
+tests
+docs
+scripts
+imp_files
+temp
+temp_work
+**/results
+
+# Environments, caches, editor/OS clutter
+.venv
+venv
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.coverage
+htmlcov
+**/.DS_Store
+**/.obsidian
+*.log
+logs
