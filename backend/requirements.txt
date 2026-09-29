@@ -105,7 +105,7 @@ importlib_resources==7.1.0
 appdirs==1.4.4
 grapheme==0.6.0
 alive-progress==3.3.0
-about-time==4.2.2
+about-time==4.2.1
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 pytest>=9.1.1
