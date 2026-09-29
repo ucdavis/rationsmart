@@ -12,6 +12,35 @@ updates:
       - "python"
     versioning-strategy: auto
     open-pull-requests-limit: 10
+    # Packages pinned on purpose in backend/requirements.txt. Dependabot cannot read the
+    # "do not bump" comments there, and no CI job renders a PDF or runs the optimizer, so a
+    # green check on these bumps proves nothing. Upgrade them deliberately, with the checks
+    # named below, instead of through bot PRs. Security alerts still appear on the Security tab.
+    ignore:
+      # PDF generation — layout is version-sensitive; verify by comparing rendered reports.
+      - dependency-name: "weasyprint"
+      - dependency-name: "tinycss2"
+      - dependency-name: "tinyhtml5"
+      - dependency-name: "cssselect2"
+      - dependency-name: "pydyf"
+      - dependency-name: "pyphen"
+      - dependency-name: "webencodings"
+      - dependency-name: "fonttools"
+      - dependency-name: "pillow"
+      - dependency-name: "markupsafe"
+      - dependency-name: "zopfli"
+      - dependency-name: "reportlab"
+      # Optimisation science — pinned exactly; diets must not move silently.
+      - dependency-name: "pymoo"
+      - dependency-name: "scipy"
+      - dependency-name: "pandas"
+      - dependency-name: "numpy"
+      - dependency-name: "autograd"
+      - dependency-name: "cma"
+      - dependency-name: "dill"
+      # SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), breaking Alembic (#42).
+      - dependency-name: "sqlalchemy"
+        versions: [">=2.1"]
     groups:
       dependencies:
         patterns:
