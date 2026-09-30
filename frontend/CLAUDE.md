@@ -1697,8 +1697,8 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
 Deliberately NOT changed (reasons in `docs/AUDIT_RESPONSE.local.md`):
 backend-dependent items (TLS to the backend, httpOnly-cookie session,
 server-side admin/role enforcement, token revocation, rate limits,
-generic auth messages), a full script/style CSP, pinch-zoom, persisted
-`reportData`, and splitting the remaining large page components.
+generic auth messages), a full script/style CSP, pinch-zoom and persisted
+`reportData`. (The large-page split was done on 2026-09-30 — see §14.)
 
 ---
 
