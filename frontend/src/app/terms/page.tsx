@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
 import { COLORS } from "@/lib/colors";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 const TERMS_SECTIONS = [
   {
@@ -48,8 +49,7 @@ const TERMS_SECTIONS = [
   },
   {
     title: "9. Contact",
-    content:
-      "For questions about these Terms and Conditions, please contact us at admin@digitalgreen.org.",
+    content: "For questions about these Terms and Conditions, please contact us at ${email}.",
   },
 ];
 
@@ -86,7 +86,7 @@ export default function TermsPage() {
               {t(section.title)}
             </p>
             <p className="text-sm" style={{ color: COLORS.raisinBlack, lineHeight: 1.6 }}>
-              {t(section.content)}
+              {t(section.content).replace("${email}", SUPPORT_EMAIL)}
             </p>
           </div>
         ))}

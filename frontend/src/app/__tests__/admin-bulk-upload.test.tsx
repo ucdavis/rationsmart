@@ -21,9 +21,6 @@ vi.mock("@/lib/api", async () => {
 import BulkUploadPage from "@/app/(main)/admin/bulk-upload/page";
 import { useStore, type User } from "@/lib/store";
 
-const TEMPLATE_URL =
-  "https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx";
-
 const seedUser = (over: Partial<User> = {}): User => ({
   id: "admin-1",
   name: "Admin",
@@ -200,23 +197,28 @@ describe("Bulk Upload — Export Custom Feeds (orange theme)", () => {
 });
 
 describe("Bulk Upload — Download Template", () => {
-  it("opens the exact (misspelled) S3 template URL in a new tab", async () => {
+  // Served same-origin by /api/feed-template (audit C-07): the S3 bucket
+  // never appears in the client, and the download keeps a proper filename.
+  it("downloads /api/feed-template as feeds_table_template.xlsx, no new tab", async () => {
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    const clicks: { href: string; download: string }[] = [];
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+      this: HTMLAnchorElement
+    ) {
+      clicks.push({ href: this.getAttribute("href") ?? "", download: this.download });
+    });
     render(<BulkUploadPage />);
 
     fireEvent.click(screen.getByRole("button", { name: /Download Template/ }));
 
-    expect(openSpy).toHaveBeenCalledWith(TEMPLATE_URL, "_blank", "noopener,noreferrer");
-    // Confirms the client never "fixes" the server's misspelled filename in the URL itself
-    expect(TEMPLATE_URL).toContain("feeds_table_tempate.xlsx");
-
-    await waitFor(
-      () => expect(useStore.getState().snackbar?.message).toBe("Template opened in a new tab"),
-      { timeout: 1000 }
-    );
-    expect(useStore.getState().snackbar?.type).toBe("success");
-
+    expect(openSpy).not.toHaveBeenCalled();
+    expect(clicks[0]?.href).toContain("/api/feed-template");
+    expect(clicks[0]?.download).toBe("feeds_table_template.xlsx");
+    await waitFor(() => expect(useStore.getState().snackbar?.message).toBe("Template downloaded"), {
+      timeout: 1000,
+    });
     openSpy.mockRestore();
+    clickSpy.mockRestore();
   });
 });
 

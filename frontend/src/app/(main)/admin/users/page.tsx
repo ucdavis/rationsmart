@@ -89,20 +89,19 @@ export default function AdminUsersPage() {
     // every page in sequence and concatenate. Server-side filters (country /
     // status / search) are applied by the endpoint, so with a filter set only
     // the matching users come back and the loop stays short.
-    const PAGE_SIZE = ADMIN_PAGE_SIZE;
     try {
       const all: AdminUser[] = [];
       let page = 1;
       let totalCount = 0;
       let totalPages = 1;
       do {
-        const res = await getAdminUsers(user.id, page, PAGE_SIZE, country, s, q);
+        const res = await getAdminUsers(user.id, page, ADMIN_PAGE_SIZE, country, s, q);
         const data = res.data;
         const list: AdminUser[] = Array.isArray(data) ? data : (data?.users ?? data?.items ?? []);
         all.push(...list);
         totalCount = data?.total_count ?? data?.total ?? all.length;
-        totalPages = data?.total_pages ?? Math.ceil(totalCount / PAGE_SIZE);
-        if (list.length < PAGE_SIZE) break;
+        totalPages = data?.total_pages ?? Math.ceil(totalCount / ADMIN_PAGE_SIZE);
+        if (list.length < ADMIN_PAGE_SIZE) break;
         page += 1;
       } while (page <= totalPages);
       setUsers(all);

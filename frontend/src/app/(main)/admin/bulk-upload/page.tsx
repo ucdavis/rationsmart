@@ -16,13 +16,9 @@ import { COLUMN_WIDTH } from "@/lib/column";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 
-// Upload template. The filename's "tempate" misspelling is the real object
-// name (Android downloads the same file). It is a public static asset, so
-// NEXT_PUBLIC_FEED_TEMPLATE_URL only exists to let another environment point
-// at its own copy; the default keeps today's behaviour.
-const FEED_TEMPLATE_URL =
-  process.env.NEXT_PUBLIC_FEED_TEMPLATE_URL ||
-  "https://ucd-reports.s3.ap-southeast-2.amazonaws.com/feed_exports/template_upload/feeds_table_tempate.xlsx";
+// Upload template — served same-origin by /api/feed-template, which keeps the
+// storage bucket out of the client bundle (audit C-07 / D-05).
+const FEED_TEMPLATE_URL = "/api/feed-template";
 
 // Fills `${key}` placeholder tokens in a translated template. Only used
 // for the two messages on this page whose dictionary entries carry
@@ -132,15 +128,12 @@ export default function BulkUploadPage() {
 
   const handleDownloadTemplate = () => {
     setIsDownloadingTemplate(true);
-    // Template lives on S3 — cross-origin, so the `download` attribute
-    // is silently ignored. Use triggerDownload (defined below) which
-    // routes cross-origin URLs through window.open. S3 returns
-    // Content-Disposition: attachment for this object so the browser
-    // saves it instead of rendering.
+    // Same-origin (/api/feed-template), so triggerDownload's <a download>
+    // path saves it directly under the corrected filename.
     triggerDownload(FEED_TEMPLATE_URL, "feeds_table_template.xlsx");
     setTimeout(() => {
       setIsDownloadingTemplate(false);
-      showSnackbar(t("Template opened in a new tab"), "success");
+      showSnackbar(t("Template downloaded"), "success");
     }, ACTION_FEEDBACK_MS);
   };
 

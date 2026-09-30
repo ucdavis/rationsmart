@@ -10,6 +10,7 @@ import { useT } from "@/lib/i18n-ui";
 import { openExternalUrl } from "@/lib/safe-url";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import { PAGE_SIZES } from "@/lib/pagination";
 
 function SkeletonCard() {
   return (
@@ -61,7 +62,6 @@ export default function ReportsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const REPORTS_PER_PAGE = 5;
 
   useEffect(() => {
     if (!user) return;
@@ -83,8 +83,11 @@ export default function ReportsPage() {
     if (!openExternalUrl(url)) showSnackbar(t("Report URL not available"), "error");
   };
 
-  const totalPages = Math.max(1, Math.ceil(reports.length / REPORTS_PER_PAGE));
-  const pagedReports = reports.slice(page * REPORTS_PER_PAGE, (page + 1) * REPORTS_PER_PAGE);
+  const totalPages = Math.max(1, Math.ceil(reports.length / PAGE_SIZES.savedReports));
+  const pagedReports = reports.slice(
+    page * PAGE_SIZES.savedReports,
+    (page + 1) * PAGE_SIZES.savedReports
+  );
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>

@@ -21,9 +21,10 @@ import {
   inputStyle,
   sheetOverlayStyle,
 } from "./shared";
+import { PAGE_SIZES } from "@/lib/pagination";
 
-const PAGE_SIZE = 20;
-const ROWS_CHUNK = 100;
+const PAGE_SIZE = PAGE_SIZES.syncHistory;
+const ROWS_CHUNK = PAGE_SIZES.syncFailedRows;
 export function RunHistoryTab({
   showSnackbar,
   viewLogId,
@@ -46,7 +47,7 @@ export function RunHistoryTab({
 
   const [rowFilter, setRowFilter] = useState("");
   const [rowsExpanded, setRowsExpanded] = useState(false);
-  const [rowsShown, setRowsShown] = useState(ROWS_CHUNK);
+  const [rowsShown, setRowsShown] = useState<number>(ROWS_CHUNK);
 
   const [transExpanded, setTransExpanded] = useState(false);
 

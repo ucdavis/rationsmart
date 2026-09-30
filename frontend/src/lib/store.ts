@@ -62,6 +62,8 @@ interface AppState {
   feedSelectionType: "recommendation" | "evaluation";
   feedSelections: FeedItem[];
   reportData: EvaluationResponse | RecommendationResponse | null;
+  /** Who generated `reportData` and when — bounds its persistence (audit A-24). */
+  reportMeta: { userId: string; savedAt: number } | null;
   dietLimits: Partial<DietLimits>;
   snackbar: SnackbarState | null;
   // UI-label i18n — mirrors the most recent user.preferred_language so
@@ -98,6 +100,8 @@ interface AppState {
 // Service-worker runtime cache name (next.config.js). Deleted on logout so a
 // shared device never serves the previous user's cached pages.
 const SW_RUNTIME_CACHE = "runtime-cache";
+// How long a generated report is restored after a reload (audit A-24).
+export const REPORT_TTL_MS = 24 * 60 * 60 * 1000;
 
 export const useStore = create<AppState>()(
   persist(
@@ -107,6 +111,7 @@ export const useStore = create<AppState>()(
       feedSelectionType: "recommendation",
       feedSelections: [],
       reportData: null,
+      reportMeta: null,
       dietLimits: {},
       snackbar: null,
       lastUiLanguage: "en",
@@ -135,6 +140,7 @@ export const useStore = create<AppState>()(
           cattleInfo: null,
           feedSelections: [],
           reportData: null,
+          reportMeta: null,
           feedSelectionType: "recommendation",
           dietLimits: {},
         });
@@ -146,7 +152,11 @@ export const useStore = create<AppState>()(
 
       setFeedSelections: (items) => set({ feedSelections: items }),
 
-      setReportData: (data) => set({ reportData: data }),
+      setReportData: (data) =>
+        set((state) => ({
+          reportData: data,
+          reportMeta: data && state.user ? { userId: state.user.id, savedAt: Date.now() } : null,
+        })),
 
       setDietLimits: (limits) => set({ dietLimits: limits }),
 
@@ -187,7 +197,27 @@ export const useStore = create<AppState>()(
         // when the user is starting over, so this doesn't risk showing
         // a report tied to a since-abandoned simulation.
         reportData: state.reportData,
+        reportMeta: state.reportMeta,
       }),
+      // A persisted report is only restored for the user who generated it and
+      // for REPORT_TTL_MS (audit A-24): enough to survive the OS reclaiming a
+      // backgrounded tab / PWA right after a diet run, without leaving a
+      // report (owner name, simulation details) on a shared device for days.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<AppState>;
+        const meta = p.reportMeta;
+        const fresh =
+          !!meta &&
+          !!p.user &&
+          meta.userId === p.user.id &&
+          Date.now() - meta.savedAt < REPORT_TTL_MS;
+        return {
+          ...current,
+          ...p,
+          reportData: fresh ? (p.reportData ?? null) : null,
+          reportMeta: fresh ? meta : null,
+        };
+      },
       // NOTE: skipHydration was enabled here in an earlier commit to
       // silence React #418/#423 hydration mismatches caused by persist
       // reading localStorage synchronously on the client's first render.
