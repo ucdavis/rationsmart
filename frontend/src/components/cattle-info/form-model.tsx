@@ -268,3 +268,52 @@ export const EMPTY_FORM: FormState = {
   // i18n V2 — null so langProvider falls back to profile default.
   simulation_language: null,
 };
+
+/**
+ * Range message for one visible numeric field, or undefined. Blank is not an
+ * error here (it only keeps Continue disabled). `t` translates the message.
+ */
+export function fieldErrorFor(
+  key: CattleInfoFieldKey,
+  form: FormState,
+  specs: FieldSpecs | undefined,
+  t: (s: string) => string
+): string | undefined {
+  const spec = specs?.[key];
+  if (!spec || !spec.visible || spec.type !== "number") return undefined;
+  if (key === "distance" && !form.grazing) return undefined;
+  const raw = String(form[FORM_KEY[key]] ?? "");
+  if (raw === "") return undefined;
+  const n = parseFloat(raw);
+  if (Number.isNaN(n)) return undefined;
+  const { min, max } = boundsFor(spec, form.grazing);
+  if ((min == null || n >= min) && (max == null || n <= max)) return undefined;
+  // Keeps the existing copy (and its translations) for the grazing floor.
+  if (key === "distance" && form.grazing && min != null && n < min) {
+    return t("Distance walked must be at least 1 km");
+  }
+  if (min != null && max != null) return t(`Value Range ${min}-${max}`);
+  return min != null ? `≥ ${min}` : `≤ ${max}`;
+}
+
+/**
+ * Every visible field present and in range. Hidden fields are submitted as
+ * their default so they don't gate; distance / topography only count while
+ * grazing is ON; milk price is optional.
+ */
+export function specFieldsValid(
+  form: FormState,
+  specs: FieldSpecs | undefined,
+  t: (s: string) => string
+): boolean {
+  if (!specs) return false;
+  return Object.values(specs).every((spec) => {
+    if (!spec || !spec.visible || spec.type === "boolean") return true;
+    if ((spec.key === "distance" || spec.key === "topography") && !form.grazing) return true;
+    const raw = String(form[FORM_KEY[spec.key]] ?? "");
+    if (spec.key === "milk_price" && raw === "") return true;
+    if (raw === "") return false;
+    if (spec.type === "enum") return !spec.options || spec.options.includes(raw);
+    return !Number.isNaN(parseFloat(raw)) && !fieldErrorFor(spec.key, form, specs, t);
+  });
+}

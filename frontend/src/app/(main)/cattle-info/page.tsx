@@ -1,6 +1,19 @@
 "use client";
 
 import SimulationHistorySheet from "@/components/cattle-info/SimulationHistorySheet";
+import SimulationDetailsSection from "@/components/cattle-info/SimulationDetailsSection";
+import AnimalSections from "@/components/cattle-info/AnimalSections";
+import {
+  type SimulationDetails,
+  cattleInfoOf,
+  isEvaluationRun,
+  matchCountry,
+  restoreDietLimits,
+  restoreFeedItems,
+  restoreForm,
+  restoredStateOf,
+  restoredStoreLanguage,
+} from "@/components/cattle-info/restore";
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
 // the backend per physiological state — nothing below hardcodes a default or
@@ -10,62 +23,30 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
-import {
-  getCountries,
-  getUserReports,
-  getSimulationDetails,
-  getCattleInfoFields,
-  ANIMAL_CATEGORIES,
-  ANIMAL_CATEGORY_LABELS,
-  labelForLanguage,
-} from "@/lib/api";
-import type { AnimalCategory, CattleInfoFieldKey, DietLimits } from "@/lib/api";
+import { getCountries, getUserReports, getSimulationDetails, getCattleInfoFields } from "@/lib/api";
+import type { AnimalCategory } from "@/lib/api";
 import { useT } from "@/lib/i18n-ui";
-import { containsMultipleDecimalPoints, getDecimalPointIndex } from "@/lib/validators";
-import SectionCard from "@/components/SectionCard";
 import Toolbar from "@/components/Toolbar";
-import {
-  IcSimulationDetails,
-  IcSimulationHistory,
-  IcAnimalCharacteristics,
-  IcReproductiveData,
-  IcMilkProduction,
-  IcEnvironment,
-  IcActiveGrazing,
-} from "@/components/Icons";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
 import {
-  ADJUSTED_RING,
-  AdjustedNote,
-  FieldError,
-  FieldLabel,
-  SelectInput,
-  inputStyle,
-  loadingFieldProps,
-} from "@/components/cattle-info/fields";
-import {
   Adjustments,
   Country,
   EMPTY_FORM,
-  FORM_KEY,
   FieldSpecs,
   FormState,
   HistoryItem,
   applyDefaults,
-  boundsFor,
   clampToSpecs,
-  defaultAsFormValue,
   formToCattleInfo,
-  optionsFor,
   toFormString,
   toSpecMap,
+  specFieldsValid,
   withHiddenDefaults,
 } from "@/components/cattle-info/form-model";
-import { taxonomyId } from "@/lib/taxonomy-id";
 
 export default function CattleInfoPage() {
   const router = useRouter();
@@ -203,8 +184,6 @@ export default function CattleInfoPage() {
   const [historyList, setHistoryList] = useState<HistoryItem[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [loadingSimId, setLoadingSimId] = useState<string | null>(null);
-  // §1.2 Grazing info tooltip — tap-only (mobile-first). Click toggles.
-  const [showGrazingTooltip, setShowGrazingTooltip] = useState(false);
 
   // Read, not re-run on: see useLatestRef (audit B-20).
 
@@ -298,16 +277,9 @@ export default function CattleInfoPage() {
     try {
       const res = await getSimulationDetails(reportId, user.id);
       const data = res.data;
-      const ci = data?.cattle_info ?? data;
-      const countryName = data?.country_name ?? "";
-      const matchedCountry = countries.find(
-        (c) => c.name?.toLowerCase() === countryName.toLowerCase()
-      );
-      // Wire key is `physiological_state`; prefer it, fall back to the
-      // legacy `animal_category` for older/echoed responses.
-      const restoredState =
-        ((ci?.physiological_state ?? ci?.animal_category) as AnimalCategory | undefined) ??
-        form.animal_category;
+      const details: SimulationDetails = data ?? {};
+      const matchedCountry = matchCountry(countries, details.country_name ?? "");
+      const restoredState = restoredStateOf(cattleInfoOf(details), form.animal_category);
       // The RESTORED state's spec, not the current form's — the ranges being
       // clamped against are the ones the simulation will be re-run under.
       const restoredSpecs = await loadSpecs(restoredState);
@@ -316,61 +288,7 @@ export default function CattleInfoPage() {
       const prev: FormState = restoredSpecs
         ? applyDefaults({ ...form, animal_category: restoredState }, restoredSpecs)
         : form;
-      const restoredForm: FormState = {
-        ...prev,
-        // Deliberately left blank on restore from Simulation History —
-        // the backend echoes back exactly what we sent as simulation_id
-        // (mode suffix included), and that's not a name the user should
-        // see repopulated into the editable field. Every other field
-        // still restores normally.
-        simulation_name: "",
-        country_id: matchedCountry ? String(matchedCountry.id) : prev.country_id,
-        country_name: matchedCountry?.name ?? countryName ?? prev.country_name,
-        breed: ci?.breed ?? prev.breed,
-        body_weight: ci?.body_weight != null ? String(ci.body_weight) : prev.body_weight,
-        body_weight_gain: ci?.bw_gain != null ? String(ci.bw_gain) : prev.body_weight_gain,
-        body_condition_score:
-          ci?.bc_score != null ? String(ci.bc_score) : prev.body_condition_score,
-        days_in_milk: ci?.days_in_milk != null ? String(ci.days_in_milk) : prev.days_in_milk,
-        days_of_pregnancy:
-          ci?.days_of_pregnancy != null ? String(ci.days_of_pregnancy) : prev.days_of_pregnancy,
-        parity: ci?.parity != null ? String(ci.parity) : prev.parity,
-        milk_production:
-          ci?.milk_production != null ? String(ci.milk_production) : prev.milk_production,
-        milk_protein_percent: ci?.tp_milk != null ? String(ci.tp_milk) : prev.milk_protein_percent,
-        milk_fat_percent: ci?.fat_milk != null ? String(ci.fat_milk) : prev.milk_fat_percent,
-        average_temperature:
-          ci?.temperature != null ? String(ci.temperature) : prev.average_temperature,
-        grazing: ci?.grazing ?? prev.grazing,
-        distance_walked: ci?.distance != null ? String(ci.distance) : prev.distance_walked,
-        topography: ci?.topography ?? prev.topography,
-        // Y3 §1.3 / §1.4 — restore Y3 fields from simulation when the
-        // backend echoes them back on /fetch-simulation-details. Reads that
-        // find nothing fall through to prev (unchanged).
-        milk_price: ci?.milk_price != null ? String(ci.milk_price) : prev.milk_price,
-        animal_category: restoredState,
-        // i18n V2 — hydrate simulation_language from the restored
-        // simulation. Priority chain:
-        //   1. backend response's simulation_language (once shipped)
-        //   2. current form's simulation_language (session continuity —
-        //      if the user just came from the same country's run, keep
-        //      the override they picked)
-        //   3. first non-English supported_language on the restored
-        //      country (best-effort guess for what the sim was likely
-        //      run in — better than showing the user's profile default,
-        //      which would be misleading for someone else's sim)
-        //   4. null (falls back to profile via langProvider)
-        // This gets the "restored sim shows its language, not profile"
-        // behaviour EVEN before backend adds simulation_language on the
-        // response.
-        simulation_language: (() => {
-          const fromBackend = data?.simulation_language as string | null | undefined;
-          if (fromBackend) return fromBackend;
-          if (prev.simulation_language) return prev.simulation_language;
-          const primaryCountryLang = matchedCountry?.supported_languages?.find((c) => c !== "en");
-          return primaryCountryLang ?? null;
-        })(),
-      };
+      const restoredForm = restoreForm(details, prev, matchedCountry, restoredState);
       // FE-4: a stored value the current ranges reject (most often milk
       // protein 2.5 — the old default, now below the 2.6 floor) is pulled
       // into range and flagged, rather than silently edited or left to 422.
@@ -379,141 +297,28 @@ export default function CattleInfoPage() {
         : { form: restoredForm, adjusted: {} };
       setForm(clamped.form);
 
-      // Populate Feed Selection from the simulation — matches Android
-      // FeedViewModel.populateFromSimulation (FeedViewModel.kt:881-958)
-      // which builds a feed list from simulationDetails.feedSelection
-      // and pushes it to _feeds. PWA stores it on the Zustand store so
-      // the feed-selection page picks it up on mount.
-      const feedSelectionList = Array.isArray(data?.feed_selection) ? data.feed_selection : [];
-      if (feedSelectionList.length > 0) {
-        const restoredItems = feedSelectionList.map(
-          (
-            sel: {
-              feed_type?: string;
-              feed_category?: string;
-              feed_name?: string;
-              feed_id?: string;
-              price_per_kg?: number | string | null;
-              quantity_as_fed?: number | string | null;
-              // Per-feed inclusion limits. The wire names are min_kg_asfed /
-              // max_kg_asfed (openapi FeedWithPrice — what diet-request.ts
-              // sends, so what the saved simulation echoes back);
-              // FetchSimulationDetailsResponse leaves feed_selection
-              // untyped, so the older min_kg_per_day names are still read.
-              min_kg_asfed?: number | string | null;
-              max_kg_asfed?: number | string | null;
-              min_kg_per_day?: number | string | null;
-              max_kg_per_day?: number | string | null;
-            },
-            idx: number
-          ) => {
-            const bound = (v: number | string | null | undefined) =>
-              v != null && v !== "" ? Number(v) : null;
-            const minVal = bound(sel.min_kg_asfed ?? sel.min_kg_per_day);
-            const maxVal = bound(sel.max_kg_asfed ?? sel.max_kg_per_day);
-            return {
-              id: `feed_restored_${idx}_${Date.now()}`,
-              feed_type_id: sel.feed_type ? taxonomyId(sel.feed_type) : null,
-              feed_type_name: sel.feed_type ?? "",
-              category_id: sel.feed_category ? taxonomyId(sel.feed_category) : null,
-              category_name: sel.feed_category ?? "",
-              sub_category_id: sel.feed_id ? 1 : null,
-              sub_category_name: sel.feed_name ?? "",
-              feed_uuid: sel.feed_id ?? null,
-              price_per_kg:
-                sel.price_per_kg != null && sel.price_per_kg !== ""
-                  ? Number(sel.price_per_kg)
-                  : null,
-              quantity_kg:
-                sel.quantity_as_fed != null && sel.quantity_as_fed !== ""
-                  ? Number(sel.quantity_as_fed)
-                  : null,
-              // Toggle defaults ON when either bound is present in the restored payload.
-              inclusion_limits_enabled: minVal != null || maxVal != null,
-              min_kg_per_day: minVal,
-              max_kg_per_day: maxVal,
-            };
-          }
-        );
+      // Feed Selection picks the restored rows up from the store on mount.
+      const restoredItems = restoreFeedItems(details, Date.now());
+      if (restoredItems.length > 0) {
         setFeedSelections(restoredItems);
-
-        // Android: if every quantity_as_fed is null → Recommendation;
-        // otherwise Evaluation (FeedViewModel.kt:894-900).
-        const isEvaluation = feedSelectionList.some(
-          (s: { quantity_as_fed?: number | string | null }) =>
-            s.quantity_as_fed != null && s.quantity_as_fed !== ""
-        );
-        setFeedSelectionType(isEvaluation ? "evaluation" : "recommendation");
+        setFeedSelectionType(isEvaluationRun(details) ? "evaluation" : "recommendation");
       } else {
         // Empty simulation — reset so we don't carry over a previous case.
         setFeedSelections([]);
       }
+      // A run without custom limits clears any carried over from the last case.
+      setDietLimits(restoreDietLimits(details));
 
-      // Custom Diet Limits. The backend returns these as `custom_constraints`
-      // on the simulation detail, keyed exactly like DietLimits/BaseThresholds.
-      // We never read it before, so restoring a simulation silently dropped
-      // the limits it was run with. Only finite numbers are taken, so a
-      // partial or junk object can't poison the payload in feed-selection's
-      // generateReport.
-      //
-      // All EIGHT keys now, not just the original four — the backend accepts
-      // conc_max / ndf_for_min / nel_balance_max / mp_balance_max as well.
-      //
-      // UNVERIFIED (2026-09-21): the backend converts pct_dm limits from
-      // percent to fraction in the request validator, and `custom_constraints`
-      // is persisted downstream of that — so a restored `ash_max` may come
-      // back as 0.06 rather than 6. We deliberately do NOT rescale on a hunch.
-      // A fraction-scale value falls below the accepted minimum, and
-      // feed-selection's pre-flight check catches it before submit and tells
-      // the user to open Custom Diet Limits and adjust — rather than either
-      // guessing at the scale or letting a raw 422 through.
-      const constraints = data?.custom_constraints as Record<string, unknown> | null | undefined;
-      if (constraints && typeof constraints === "object") {
-        const restoredLimits: Partial<DietLimits> = {};
-        (
-          [
-            "ash_max",
-            "ee_max",
-            "ndf_max",
-            "starch_max",
-            "conc_max",
-            "ndf_for_min",
-            "nel_balance_max",
-            "mp_balance_max",
-          ] as const
-        ).forEach((key) => {
-          const raw = constraints[key];
-          if (raw === null || raw === undefined || raw === "") return;
-          const n = Number(raw);
-          if (Number.isFinite(n)) restoredLimits[key] = n;
-        });
-        setDietLimits(restoredLimits);
-      } else {
-        // No constraints on this simulation — clear any carried over from
-        // the previously loaded case rather than leaking them into this one.
-        setDietLimits({});
-      }
-
-      // Scenario 4 — push the restored values to the store's cattleInfo
-      // so BOTH screens see the restore. Without this, langProvider
-      // reads the previous simulation's simulation_language when the
-      // user navigates to /feed-selection, and any component reading
-      // cattleInfo directly (e.g. report page context) sees stale data.
-      const restoredSimulationLanguage = (() => {
-        const fromBackend = data?.simulation_language as string | null | undefined;
-        if (fromBackend) return fromBackend;
-        const primaryCountryLang = matchedCountry?.supported_languages?.find((c) => c !== "en");
-        return primaryCountryLang ?? null;
-      })();
+      // Scenario 4 — push the restored values to the store's cattleInfo so
+      // BOTH screens see the restore (langProvider and the report read it).
       setCattleInfo({
         ...formToCattleInfo(
           restoredSpecs ? withHiddenDefaults(clamped.form, restoredSpecs) : clamped.form,
-          restoredSimulationLanguage
+          restoredStoreLanguage(details, matchedCountry)
         ),
-        // Deliberately left blank on restore — see the matching comment
-        // on restoredForm above.
+        // Deliberately left blank on restore — see restoreForm.
         simulation_name: "",
-        country: matchedCountry?.name ?? countryName ?? "",
+        country: matchedCountry?.name ?? details.country_name ?? "",
         country_id: matchedCountry ? String(matchedCountry.id) : "",
       });
 
@@ -538,77 +343,10 @@ export default function CattleInfoPage() {
     });
   };
 
-  // Android input-format rules (FragmentCattleInfo): clip a second decimal
-  // point, and optionally reject a leading "." outright. Range checking is
-  // NOT done here — it's derived from the spec at render (fieldError), so it
-  // also covers values that arrive by restore or a state change.
-  const handleDecimal =
-    (key: keyof FormState, { rejectLeadingDot = false } = {}) =>
-    (input: string) => {
-      if (!input) return set(key)("");
-      if (rejectLeadingDot && input.startsWith(".")) return;
-      if (containsMultipleDecimalPoints(input)) {
-        return set(key)(input.slice(0, getDecimalPointIndex(input)));
-      }
-      set(key)(input);
-    };
-
-  const handleBCS = handleDecimal("body_condition_score", { rejectLeadingDot: true });
-  const handleBodyWeight = handleDecimal("body_weight");
-  const handleBWGain = handleDecimal("body_weight_gain", { rejectLeadingDot: true });
-  const handleDaysInMilk = (input: string) => set("days_in_milk")(input);
-  const handleDaysOfPregnancy = (input: string) => set("days_of_pregnancy")(input);
-  const handleMilkProduction = handleDecimal("milk_production");
-  const handleAvgTemp = handleDecimal("average_temperature", { rejectLeadingDot: true });
-  // Android distance walked validation — a bare "0" is never a valid entry
-  // while the field is editable (grazing ON has a floor of 1 km).
-  const handleDistanceWalked = (input: string) => {
-    if (input === "0") return;
-    handleDecimal("distance_walked", { rejectLeadingDot: true })(input);
-  };
-
-  // While the spec is loading every field is treated as visible, so the
-  // shimmer keeps the full layout rather than collapsing and re-expanding.
-  const isVisible = (key: CattleInfoFieldKey) => specs?.[key]?.visible ?? true;
   const fieldsLoading = loadingCountries || !specs;
 
-  // Range message for one visible numeric field, or undefined. Blank is not
-  // an error here (it just keeps Continue disabled).
-  const fieldError = (key: CattleInfoFieldKey): string | undefined => {
-    const spec = specs?.[key];
-    if (!spec || !spec.visible || spec.type !== "number") return undefined;
-    if (key === "distance" && !form.grazing) return undefined;
-    const raw = String(form[FORM_KEY[key]] ?? "");
-    if (raw === "") return undefined;
-    const n = parseFloat(raw);
-    if (Number.isNaN(n)) return undefined;
-    const { min, max } = boundsFor(spec, form.grazing);
-    if ((min == null || n >= min) && (max == null || n <= max)) return undefined;
-    // Keeps the existing copy (and its translations) for the grazing floor.
-    if (key === "distance" && form.grazing && min != null && n < min) {
-      return t("Distance walked must be at least 1 km");
-    }
-    if (min != null && max != null) return t(`Value Range ${min}-${max}`);
-    return min != null ? `≥ ${min}` : `≤ ${max}`;
-  };
-
-  // Every visible field must be present and in range; hidden ones are
-  // submitted as their default so they don't gate. Distance / topography
-  // only count while grazing is ON. Milk price is optional.
-  const specFieldsValid =
-    !!specs &&
-    Object.values(specs).every((spec) => {
-      if (!spec || !spec.visible || spec.type === "boolean") return true;
-      if ((spec.key === "distance" || spec.key === "topography") && !form.grazing) return true;
-      const raw = String(form[FORM_KEY[spec.key]] ?? "");
-      if (spec.key === "milk_price" && raw === "") return true;
-      if (raw === "") return false;
-      if (spec.type === "enum") return !spec.options || spec.options.includes(raw);
-      return !Number.isNaN(parseFloat(raw)) && !fieldError(spec.key);
-    });
-
   const requiredFilled =
-    form.simulation_name.trim() !== "" && form.country_id !== "" && specFieldsValid;
+    form.simulation_name.trim() !== "" && form.country_id !== "" && specFieldsValid(form, specs, t);
 
   const handleContinue = () => {
     if (!requiredFilled) return;
@@ -715,112 +453,6 @@ export default function CattleInfoPage() {
     }, ACTION_FEEDBACK_MS);
   };
 
-  const INPUT_CLASS =
-    "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark";
-
-  const anyVisible = (keys: CattleInfoFieldKey[]) => keys.some(isVisible);
-
-  // Two fields side by side; a lone visible one takes the full row.
-  const pair = (
-    a: [CattleInfoFieldKey, React.ReactNode],
-    b: [CattleInfoFieldKey, React.ReactNode]
-  ) => {
-    const cells = [a, b].filter(([k]) => isVisible(k));
-    if (cells.length === 0) return null;
-    return (
-      <div className="grid grid-cols-2 gap-3 mt-1">
-        {cells.map(([k, node]) => (
-          <div key={k} className={cells.length === 1 ? "col-span-2" : undefined}>
-            {node}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  // The <input> must stay the label's next sibling (tests + FieldLabel layout).
-  const specNumberInput = (
-    key: CattleInfoFieldKey,
-    onChange: (v: string) => void,
-    inputMode: "decimal" | "numeric",
-    /** The FieldLabel text; becomes the input's accessible name (audit B-31). */
-    label?: string
-  ) => {
-    const fk = FORM_KEY[key];
-    const wasAdjusted = adjusted[fk] !== undefined;
-    return (
-      <>
-        <input
-          id={`ci-${key}`}
-          aria-label={label?.replace(/ \*$/, "")}
-          type="number"
-          inputMode={inputMode}
-          value={String(form[fk] ?? "")}
-          onChange={(e) => onChange(e.target.value)}
-          {...loadingFieldProps(fieldsLoading, INPUT_CLASS, {
-            ...inputStyle,
-            ...(wasAdjusted ? ADJUSTED_RING : {}),
-          })}
-        />
-        <FieldError message={fieldError(key)} />
-        <AdjustedNote from={adjusted[fk]} template={t("Adjusted from ${value}")} />
-      </>
-    );
-  };
-
-  // Options are the spec's own (breed) or generated from min..max (milk
-  // protein / fat at 0.1, parity at 1).
-  const specDropdown = (key: CattleInfoFieldKey, placeholder: string) => {
-    const fk = FORM_KEY[key];
-    return (
-      <>
-        <SelectInput
-          value={String(form[fk] ?? "")}
-          onChange={set(fk)}
-          options={optionsFor(specs?.[key]).map((v) => ({ value: v, label: v }))}
-          placeholder={placeholder}
-          loading={fieldsLoading}
-          highlight={adjusted[fk] !== undefined}
-        />
-        <AdjustedNote from={adjusted[fk]} template={t("Adjusted from ${value}")} />
-      </>
-    );
-  };
-
-  // FE-2: grazing ON raises distance to the grazing floor (1 km) instead of
-  // leaving a value the backend would 422; OFF drops it back to the base
-  // default and resets topography.
-  const handleGrazingToggle = (checked: boolean) => {
-    const dist = specs?.distance;
-    const topo = specs?.topography;
-    setForm((p) => {
-      let distance = p.distance_walked;
-      if (checked) {
-        const floor = dist?.when_grazing_on?.default;
-        const cur = parseFloat(p.distance_walked);
-        if (floor != null && (Number.isNaN(cur) || cur < floor)) distance = String(floor);
-      } else {
-        distance = dist ? String(defaultAsFormValue(dist)) : "";
-      }
-      return {
-        ...p,
-        grazing: checked,
-        distance_walked: distance,
-        topography: checked
-          ? p.topography || (topo ? String(defaultAsFormValue(topo)) : "")
-          : topo
-            ? String(defaultAsFormValue(topo))
-            : p.topography,
-      };
-    });
-    setAdjusted((prev) => {
-      const next = { ...prev };
-      delete next.distance_walked;
-      delete next.topography;
-      return next;
-    });
-  };
-
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
       <Toolbar
@@ -832,612 +464,30 @@ export default function CattleInfoPage() {
       />
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
-        {/* Section 1: Simulation Details */}
-        <SectionCard
-          iconSvg={<IcSimulationDetails size={22} color={COLORS.darkAquamarineGreen} />}
-          title={t("Simulation Details")}
-          topRightContent={
-            <button
-              onClick={() => setShowHistoryModal(true)}
-              className="flex items-center justify-center rounded-xl border-none p-0"
-              style={{
-                width: 36,
-                height: 36,
-                backgroundColor: COLORS.brightGrayNew,
-                cursor: "pointer",
-              }}
-              aria-label={t("Simulation history")}
-            >
-              {/* Android ic_simulation_history — filled icon, regular weight (no stroke). */}
-              <IcSimulationHistory size={20} color={COLORS.darkAquamarineGreen} />
-            </button>
-          }
-        >
-          <div className="px-3">
-            <FieldLabel htmlFor="ci-simulation_name">{t("Simulation Name *")}</FieldLabel>
-            <input
-              id="ci-simulation_name"
-              aria-label={t("Simulation Name")}
-              type="text"
-              value={form.simulation_name}
-              onChange={(e) => set("simulation_name")(e.target.value)}
-              {...loadingFieldProps(
-                loadingCountries,
-                "w-full rounded-2xl px-4 py-3 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark",
-                inputStyle
-              )}
-            />
+        <SimulationDetailsSection
+          form={form}
+          setForm={setForm}
+          set={set}
+          countries={countries}
+          loadingCountries={loadingCountries}
+          languageOptionsForCountry={languageOptionsForCountry}
+          effectiveSimulationLanguage={effectiveSimulationLanguage}
+          onStateChange={(next) => void handleStateChange(next)}
+          onOpenHistory={() => setShowHistoryModal(true)}
+          t={t}
+        />
 
-            {/* Country/Language shimmer via SelectInput's `loading` prop
-                (§ loadingFieldProps comment above) — the SAME dropdown
-                markup renders throughout, just non-interactive with
-                hidden text while getCountries is in flight, so there's
-                no layout drift between loading and loaded. */}
-            <FieldLabel>{t("Country *")}</FieldLabel>
-            <SelectInput
-              value={form.country_id}
-              onChange={(v) => {
-                const found = countries.find((c) => String(c.id) === v);
-                // i18n V2 — snap simulation_language back to null when
-                // the newly-picked country doesn't support the currently
-                // chosen language (or when we can't verify because the
-                // country has no supported_languages field). Keeps us
-                // from submitting ?lang= for a code the backend won't
-                // translate for this country.
-                const supported = [
-                  "en",
-                  ...(found?.supported_languages ?? []).filter((c) => c !== "en"),
-                ];
-                setForm((p) => ({
-                  ...p,
-                  country_id: v,
-                  country_name: found?.name ?? "",
-                  simulation_language:
-                    p.simulation_language && supported.includes(p.simulation_language)
-                      ? p.simulation_language
-                      : null,
-                }));
-              }}
-              options={countries.map((c) => ({ value: String(c.id), label: c.name }))}
-              placeholder={t("Select country")}
-              loading={loadingCountries}
-            />
-
-            {/* i18n V2 — Per-simulation Language dropdown. English is
-                ALWAYS in the list (default when the field is null),
-                other options come from the selected country's
-                supported_languages. Change here overrides ?lang= for
-                every /v1/animal/* call for the duration of this
-                simulation only; profile language stays put.
-
-                Needs the countries fetch resolved to know the selected
-                country's supported_languages — while loadingCountries,
-                render the SAME field shimmered (empty options, loading
-                prop) rather than hiding it outright, so it appears in
-                the same place at the same time as every other field. */}
-            {loadingCountries ? (
-              <>
-                <FieldLabel>{t("Language")}</FieldLabel>
-                <SelectInput
-                  value=""
-                  onChange={() => {}}
-                  options={[]}
-                  placeholder={t("Select")}
-                  loading
-                />
-              </>
-            ) : (
-              countries.length > 0 &&
-              (() => {
-                return (
-                  <>
-                    <FieldLabel>{t("Language")}</FieldLabel>
-                    <SelectInput
-                      value={effectiveSimulationLanguage}
-                      onChange={(v) =>
-                        setForm((p) => ({
-                          ...p,
-                          // Store the picked language verbatim — including
-                          // "en". Collapsing an explicit English pick to
-                          // null used to mean "no override, inherit
-                          // profile" — indistinguishable from never having
-                          // touched this dropdown. For a user whose PROFILE
-                          // language is non-English (e.g. Hindi), explicitly
-                          // choosing English for THIS simulation was
-                          // silently discarded: on restore (Simulation
-                          // History), simulation_language came back empty
-                          // and the fallback chain resolved to the
-                          // country's primary non-English language instead
-                          // of the English the user actually picked. Only
-                          // an untouched dropdown (EMPTY_FORM / Reset) is
-                          // null now; any explicit choice — English
-                          // included — sticks.
-                          simulation_language: v,
-                        }))
-                      }
-                      options={(languageOptionsForCountry ?? ["en"]).map((code) => ({
-                        value: code,
-                        label: labelForLanguage(code),
-                      }))}
-                      placeholder={t("Select language")}
-                    />
-                  </>
-                );
-              })()
-            )}
-
-            {/* Y3 §1.4 — Physiological State selector. Sits in Simulation
-                Details (top of the form) because the choice gates
-                downstream sections (Milk Production hidden for
-                non-lactating) and §2.3 report sections. Stored internally as
-                `animal_category`; sent to the backend as `physiological_state`. */}
-            <FieldLabel>{t("Physiological State *")}</FieldLabel>
-            <SelectInput
-              value={form.animal_category}
-              onChange={(v) => handleStateChange(v as AnimalCategory)}
-              options={ANIMAL_CATEGORIES.map((c) => ({
-                value: c,
-                label: ANIMAL_CATEGORY_LABELS[c],
-              }))}
-              placeholder={t("Select category")}
-              loading={loadingCountries}
-            />
-          </div>
-        </SectionCard>
-
-        {/* Sections 2–5 are driven by the physiological state's field spec
-            (GET /v1/animal/cattle-info-fields): a field renders only when
-            the spec marks it visible, and a card drops out entirely when
-            none of its fields are (Baby Calf/Heifer keeps only Body
-            Weight). Hidden fields are still submitted, as their default. */}
-
-        {/* Section 2: Animal Characteristics */}
-        {anyVisible(["breed", "body_weight", "bw_gain", "bc_score", "days_in_milk"]) && (
-          <SectionCard
-            iconSvg={<IcAnimalCharacteristics size={22} color={COLORS.darkAquamarineGreen} />}
-            title={t("Animal Characteristics")}
-          >
-            <div className="px-3">
-              {isVisible("breed") && (
-                <>
-                  <FieldLabel>{t("Breed Selection *")}</FieldLabel>
-                  {specDropdown("breed", t("Select breed"))}
-                </>
-              )}
-              {pair(
-                [
-                  "body_weight",
-                  <>
-                    <FieldLabel htmlFor="ci-body_weight">{t("Body Weight (BW; kg) *")}</FieldLabel>
-                    {specNumberInput(
-                      "body_weight",
-                      handleBodyWeight,
-                      "decimal",
-                      t("Body Weight (BW; kg) *")
-                    )}
-                  </>,
-                ],
-                [
-                  "bw_gain",
-                  <>
-                    <FieldLabel htmlFor="ci-bw_gain">{t("BW Gain (kg/day) *")}</FieldLabel>
-                    {specNumberInput("bw_gain", handleBWGain, "decimal", t("BW Gain (kg/day) *"))}
-                  </>,
-                ]
-              )}
-              {pair(
-                [
-                  "bc_score",
-                  <>
-                    <FieldLabel htmlFor="ci-bc_score">{t("Body Condition Score *")}</FieldLabel>
-                    {specNumberInput("bc_score", handleBCS, "decimal", t("Body Condition Score *"))}
-                  </>,
-                ],
-                [
-                  "days_in_milk",
-                  <>
-                    <FieldLabel htmlFor="ci-days_in_milk">{t("Days in Milk *")}</FieldLabel>
-                    {specNumberInput(
-                      "days_in_milk",
-                      handleDaysInMilk,
-                      "numeric",
-                      t("Days in Milk *")
-                    )}
-                  </>,
-                ]
-              )}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Section 3: Reproductive Data */}
-        {anyVisible(["days_of_pregnancy", "parity"]) && (
-          <SectionCard
-            iconSvg={<IcReproductiveData size={22} color={COLORS.darkAquamarineGreen} />}
-            title={t("Reproductive Data")}
-          >
-            <div className="px-3">
-              {pair(
-                [
-                  "days_of_pregnancy",
-                  <>
-                    <FieldLabel htmlFor="ci-days_of_pregnancy">
-                      {t("Days of Pregnancy *")}
-                    </FieldLabel>
-                    {specNumberInput(
-                      "days_of_pregnancy",
-                      handleDaysOfPregnancy,
-                      "numeric",
-                      t("Days of Pregnancy *")
-                    )}
-                  </>,
-                ],
-                [
-                  "parity",
-                  <>
-                    <FieldLabel>{t("Parity *")}</FieldLabel>
-                    {specDropdown("parity", t("Select"))}
-                  </>,
-                ]
-              )}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Section 4: Milk Production — Lactating Cow only, per the spec. */}
-        {anyVisible(["milk_production", "tp_milk", "fat_milk", "milk_price"]) && (
-          <SectionCard
-            iconSvg={<IcMilkProduction size={22} color={COLORS.darkAquamarineGreen} />}
-            title={t("Milk Production")}
-          >
-            <div className="px-3">
-              {isVisible("milk_production") && (
-                <>
-                  <FieldLabel htmlFor="ci-milk_production">{t("Milk Production (L) *")}</FieldLabel>
-                  {specNumberInput(
-                    "milk_production",
-                    handleMilkProduction,
-                    "decimal",
-                    t("Milk Production (L) *")
-                  )}
-                </>
-              )}
-              {pair(
-                [
-                  "tp_milk",
-                  <>
-                    <FieldLabel>{t("Milk Protein % *")}</FieldLabel>
-                    {specDropdown("tp_milk", t("Select"))}
-                  </>,
-                ],
-                [
-                  "fat_milk",
-                  <>
-                    <FieldLabel>{t("Milk Fat % *")}</FieldLabel>
-                    {specDropdown("fat_milk", t("Select"))}
-                  </>,
-                ]
-              )}
-
-              {/* Y3 §1.3 — Milk Price input. Optional. Currency suffix comes
-                from the user's selected country. Used by §2.1 margin card.
-                Translated as a composed string — the dictionary stores the
-                key with a literal "${user.currency}" placeholder (same
-                pattern as the "${N} star" / "${count} TOTAL" keys used
-                elsewhere), so we translate first and then substitute the
-                real currency code into the translated string. */}
-              {isVisible("milk_price") && (
-                <>
-                  <FieldLabel>
-                    {t("Milk Price (${user.currency}/L)").replace(
-                      "${user.currency}",
-                      user?.currency || "currency"
-                    )}
-                  </FieldLabel>
-                  <input
-                    aria-label={t("Milk Price")}
-                    type="number"
-                    inputMode="decimal"
-                    min={0}
-                    step={0.01}
-                    value={form.milk_price}
-                    onChange={(e) => set("milk_price")(e.target.value)}
-                    placeholder={t("Optional")}
-                    {...loadingFieldProps(fieldsLoading, INPUT_CLASS, inputStyle)}
-                  />
-                  <FieldError message={fieldError("milk_price")} />
-                </>
-              )}
-            </div>
-          </SectionCard>
-        )}
-
-        {/* Section 5: Environment */}
-        {anyVisible(["temperature", "grazing", "distance", "topography"]) && (
-          <SectionCard
-            iconSvg={<IcEnvironment size={22} color={COLORS.darkAquamarineGreen} />}
-            title={t("Environment")}
-          >
-            <div className="px-3">
-              {isVisible("temperature") && (
-                <>
-                  <FieldLabel htmlFor="ci-temperature">{t("Avg Temperature (°C) *")}</FieldLabel>
-                  {specNumberInput(
-                    "temperature",
-                    handleAvgTemp,
-                    "decimal",
-                    t("Avg Temperature (°C) *")
-                  )}
-                </>
-              )}
-
-              {isVisible("grazing") && (
-                <>
-                  {/* Active Grazing toggle — Android cv_active_grazing marginTop offset_10 (10dp).
-                      §1.2 Y3: "i" icon next to the label opens a tooltip explaining
-                      what grazing does to energy requirements. */}
-                  <div
-                    className="flex items-center justify-between px-4 py-3 mt-2.5"
-                    style={{
-                      backgroundColor: COLORS.honeydew,
-                      border: "1px solid rgba(5,188,109,0.15)",
-                      borderRadius: 20,
-                    }}
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <IcActiveGrazing size={22} color={COLORS.darkAquamarineGreen} />
-                      <span
-                        className="text-base font-bold"
-                        style={{ color: COLORS.darkAquamarineGreen }}
-                      >
-                        {t("Active Grazing")}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setShowGrazingTooltip((p) => !p)}
-                        aria-label={t("What does Active Grazing do?")}
-                        aria-expanded={showGrazingTooltip}
-                        style={{
-                          background: "none",
-                          border: "none",
-                          padding: 0,
-                          cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          flexShrink: 0,
-                        }}
-                      >
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                          <circle
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            fill={
-                              showGrazingTooltip ? COLORS.darkAquamarineGreen : COLORS.crayolaGreen
-                            }
-                          />
-                          <circle cx="12" cy="7.6" r="1.35" fill={COLORS.white} />
-                          <rect
-                            x="10.95"
-                            y="10.5"
-                            width="2.1"
-                            height="7"
-                            rx="1.05"
-                            fill={COLORS.white}
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                    <label className="toggle-switch">
-                      <input
-                        type="checkbox"
-                        aria-label={t("Grazing")}
-                        checked={form.grazing}
-                        disabled={fieldsLoading}
-                        onChange={(e) => handleGrazingToggle(e.target.checked)}
-                      />
-                      <span className={`toggle-slider${fieldsLoading ? " shimmer" : ""}`} />
-                    </label>
-                  </div>
-
-                  {/* §1.2 Y3 tooltip — appears below the toggle row when "i" is tapped.
-                Text is the exact copy from the Refinements Y3 doc. */}
-                  {showGrazingTooltip && (
-                    <div
-                      role="tooltip"
-                      className="mt-2 px-4 py-3 flex gap-2.5"
-                      style={{
-                        backgroundColor: COLORS.white,
-                        border: "1px solid rgba(5,188,109,0.30)",
-                        borderRadius: 16,
-                        boxShadow: "0 4px 14px rgba(6,78,59,0.10)",
-                      }}
-                    >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        style={{ flexShrink: 0, marginTop: 2 }}
-                        aria-hidden
-                      >
-                        <circle cx="12" cy="12" r="10" fill={COLORS.darkAquamarineGreen} />
-                        <circle cx="12" cy="7.6" r="1.35" fill={COLORS.white} />
-                        <rect
-                          x="10.95"
-                          y="10.5"
-                          width="2.1"
-                          height="7"
-                          rx="1.05"
-                          fill={COLORS.white}
-                        />
-                      </svg>
-                      <p
-                        className="text-sm"
-                        style={{
-                          color: COLORS.raisinBlack,
-                          lineHeight: 1.5,
-                          margin: 0,
-                        }}
-                      >
-                        {t(
-                          "Grazing activity increases energy requirements. If enabled, RationSmart adds an extra energy allowance based on topography and distance walked. Leave this off for housed animals."
-                        )}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setShowGrazingTooltip(false)}
-                        aria-label={t("Close tooltip")}
-                        style={{
-                          flexShrink: 0,
-                          width: 22,
-                          height: 22,
-                          borderRadius: "50%",
-                          backgroundColor: "transparent",
-                          border: "none",
-                          cursor: "pointer",
-                          padding: 0,
-                          color: COLORS.darkSilver,
-                        }}
-                      >
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path
-                            d="M3 3l8 8M11 3L3 11"
-                            stroke="currentColor"
-                            strokeWidth="1.6"
-                            strokeLinecap="round"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Distance Walked + Topography — per the Grazing contract these
-                  are ALWAYS rendered (when the state has them): enabled when
-                  grazing is ON, disabled + greyed out when OFF. The OFF
-                  payload is the neutral distance:0 / topography:"Flat". */}
-              {anyVisible(["distance", "topography"]) && (
-                <div style={{ opacity: form.grazing ? 1 : 0.5 }}>
-                  {isVisible("topography") && (
-                    // Label + radios on one row (Android start_toEndOf layout);
-                    // wraps now that the spec offers a third option, Mountainous.
-                    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-3 ml-1">
-                      <span
-                        className="text-xs font-bold uppercase tracking-wide"
-                        style={{ color: COLORS.darkSilver }}
-                      >
-                        {(() => {
-                          const label = t("Topography *");
-                          return label.endsWith(" *") ? label.slice(0, -2) : label;
-                        })()}
-                        <span style={{ color: COLORS.redRyb }}>{" *"}</span>
-                      </span>
-                      {(specs?.topography?.options ?? []).map((opt) => {
-                        const selected = form.topography === opt;
-                        const active = form.grazing && selected;
-                        return (
-                          <button
-                            key={opt}
-                            type="button"
-                            disabled={!form.grazing}
-                            onClick={() => set("topography")(opt)}
-                            className="flex items-center gap-2"
-                            style={{
-                              background: "none",
-                              border: "none",
-                              cursor: form.grazing ? "pointer" : "not-allowed",
-                              padding: 0,
-                            }}
-                          >
-                            <div
-                              style={{
-                                width: 20,
-                                height: 20,
-                                borderRadius: "50%",
-                                border: `2px solid ${active ? COLORS.darkAquamarineGreen : COLORS.webDivider}`,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                flexShrink: 0,
-                              }}
-                            >
-                              {selected && (
-                                <div
-                                  style={{
-                                    width: 10,
-                                    height: 10,
-                                    borderRadius: "50%",
-                                    backgroundColor: active
-                                      ? COLORS.darkAquamarineGreen
-                                      : COLORS.silverSand,
-                                  }}
-                                />
-                              )}
-                            </div>
-                            <span
-                              style={{
-                                fontSize: 14,
-                                fontWeight: active ? 700 : 400,
-                                color: active ? COLORS.darkAquamarineGreen : COLORS.darkSilver,
-                              }}
-                            >
-                              {t(opt)}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {isVisible("distance") && (
-                    <>
-                      <FieldLabel htmlFor="ci-distance">{t("Distance Walked (km) *")}</FieldLabel>
-                      <input
-                        id="ci-distance"
-                        aria-label={t("Distance Walked (km)")}
-                        type="number"
-                        inputMode="decimal"
-                        value={
-                          form.grazing
-                            ? form.distance_walked
-                            : String(specs?.distance?.default ?? 0)
-                        }
-                        onChange={(e) => handleDistanceWalked(e.target.value)}
-                        {...loadingFieldProps(
-                          fieldsLoading,
-                          INPUT_CLASS,
-                          form.grazing
-                            ? {
-                                ...inputStyle,
-                                ...(adjusted.distance_walked !== undefined ? ADJUSTED_RING : {}),
-                              }
-                            : {
-                                ...inputStyle,
-                                backgroundColor: COLORS.americanDiamond,
-                                color: COLORS.spanishGray,
-                                cursor: "not-allowed",
-                              }
-                        )}
-                        // Placed AFTER the spread so it ORs with the loading-disabled
-                        // state that loadingFieldProps sets (otherwise the spread's
-                        // own `disabled` would overwrite this one).
-                        disabled={!form.grazing || fieldsLoading}
-                      />
-                      <FieldError message={fieldError("distance")} />
-                      <AdjustedNote
-                        from={adjusted.distance_walked}
-                        template={t("Adjusted from ${value}")}
-                      />
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-          </SectionCard>
-        )}
+        <AnimalSections
+          form={form}
+          setForm={setForm}
+          set={set}
+          specs={specs}
+          adjusted={adjusted}
+          setAdjusted={setAdjusted}
+          fieldsLoading={fieldsLoading}
+          currency={user?.currency}
+          t={t}
+        />
       </div>
 
       {/* Fixed bottom buttons */}
