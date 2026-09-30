@@ -22,6 +22,7 @@ import {
   sheetOverlayStyle,
 } from "./shared";
 import { PAGE_SIZES } from "@/lib/pagination";
+import { useT } from "@/lib/i18n-ui";
 
 const PAGE_SIZE = PAGE_SIZES.syncHistory;
 const ROWS_CHUNK = PAGE_SIZES.syncFailedRows;
@@ -34,6 +35,7 @@ export function RunHistoryTab({
   viewLogId: string | null;
   onViewLogIdConsumed: () => void;
 }) {
+  const t = useT();
   const [logs, setLogs] = useState<FeedSyncLogItem[]>([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -53,10 +55,10 @@ export function RunHistoryTab({
 
   // Read, not re-run on: see useLatestRef (audit B-20).
 
-  const effectInputs3 = useLatestRef({ showSnackbar });
+  const effectInputs3 = useLatestRef({ showSnackbar, t });
   const loadLogs = useCallback(
     (p: number) => {
-      const { showSnackbar } = effectInputs3.current;
+      const { showSnackbar, t } = effectInputs3.current;
       setIsLoadingLogs(true);
       getFeedSyncLogs(p, PAGE_SIZE)
         .then((res) => {
@@ -64,7 +66,7 @@ export function RunHistoryTab({
           setTotalPages(res.data.total_pages || 1);
           setTotalCount(res.data.total_count || 0);
         })
-        .catch(() => showSnackbar("Could not load run history", "error"))
+        .catch(() => showSnackbar(t("Could not load run history"), "error"))
         .finally(() => setIsLoadingLogs(false));
     },
     [effectInputs3]
@@ -76,10 +78,10 @@ export function RunHistoryTab({
 
   // Read, not re-run on: see useLatestRef (audit B-20).
 
-  const effectInputs4 = useLatestRef({ showSnackbar });
+  const effectInputs4 = useLatestRef({ showSnackbar, t });
   const openDetail = useCallback(
     (id: string) => {
-      const { showSnackbar } = effectInputs4.current;
+      const { showSnackbar, t } = effectInputs4.current;
       setIsDetailOpen(true);
       setIsLoadingDetail(true);
       setOpenLog(null);
@@ -90,7 +92,7 @@ export function RunHistoryTab({
       getFeedSyncLog(id)
         .then((res) => setOpenLog(res.data))
         .catch(() => {
-          showSnackbar("Could not load run detail", "error");
+          showSnackbar(t("Could not load run detail"), "error");
           setIsDetailOpen(false);
         })
         .finally(() => setIsLoadingDetail(false));
@@ -151,10 +153,10 @@ export function RunHistoryTab({
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            Run History
+            {t("Run History")}
           </p>
           <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-            {totalCount} runs
+            {totalCount} {t("runs")}
           </p>
         </div>
 
@@ -173,7 +175,7 @@ export function RunHistoryTab({
           </div>
         ) : logs.length === 0 ? (
           <p className="text-sm text-center py-6" style={{ color: COLORS.darkSilver }}>
-            No sync runs yet.
+            {t("No sync runs yet.")}
           </p>
         ) : (
           logs.map((log) => (
@@ -206,9 +208,9 @@ export function RunHistoryTab({
                 {log.status !== "running" && (
                   <>
                     {" "}
-                    · Rows {log.total_rows.toLocaleString()} · +New {log.inserted.toLocaleString()}{" "}
-                    · ~Upd {log.updated.toLocaleString()} · Skip {log.skipped.toLocaleString()} ·
-                    Names {namesLabel(log)}
+                    {t("· Rows")} {log.total_rows.toLocaleString()} {t("· +New")}{" "}
+                    {log.inserted.toLocaleString()} {t("· ~Upd")} {log.updated.toLocaleString()}{" "}
+                    {t("· Skip")} {log.skipped.toLocaleString()} {t("· Names")} {namesLabel(log)}
                   </>
                 )}
               </p>
@@ -232,10 +234,10 @@ export function RunHistoryTab({
                 cursor: page <= 1 ? "not-allowed" : "pointer",
               }}
             >
-              <span aria-hidden="true">‹</span> Prev
+              <span aria-hidden="true">‹</span> {t("Prev")}
             </button>
             <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-              Page {page} of {totalPages}
+              {t("Page")} {page} {t("of")} {totalPages}
             </p>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -248,7 +250,7 @@ export function RunHistoryTab({
                 cursor: page >= totalPages ? "not-allowed" : "pointer",
               }}
             >
-              Next <span aria-hidden="true">›</span>
+              {t("Next")} <span aria-hidden="true">›</span>
             </button>
           </div>
         )}
@@ -294,12 +296,12 @@ export function RunHistoryTab({
                     style={{ color: COLORS.raisinBlack, fontSize: 16 }}
                     title={openLog.started_at ?? undefined}
                   >
-                    Run {formatDateTime(openLog.started_at)}
+                    {t("Run")} {formatDateTime(openLog.started_at)}
                   </p>
                   <StatusChip status={openLog.status} />
                 </div>
                 <p className="text-xs mb-4" style={{ color: COLORS.darkSilver }}>
-                  {capitalize(openLog.trigger_type)} · Duration{" "}
+                  {capitalize(openLog.trigger_type)} {t("· Duration")}{" "}
                   {formatDuration(openLog.started_at, openLog.finished_at)}
                   {openLog.http_status ? ` · HTTP ${openLog.http_status}` : ""}
                 </p>
@@ -325,16 +327,16 @@ export function RunHistoryTab({
                       className="text-xs font-bold uppercase tracking-wide mb-2"
                       style={{ color: COLORS.darkAquamarineGreen }}
                     >
-                      Feeds
+                      {t("Feeds")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.inserted.toLocaleString()} added
+                      {openLog.inserted.toLocaleString()} {t("added")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.updated.toLocaleString()} updated
+                      {openLog.updated.toLocaleString()} {t("updated")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.skipped.toLocaleString()} rows skipped
+                      {openLog.skipped.toLocaleString()} {t("rows skipped")}
                     </p>
                   </div>
                   <div
@@ -345,16 +347,16 @@ export function RunHistoryTab({
                       className="text-xs font-bold uppercase tracking-wide mb-2"
                       style={{ color: COLORS.darkAquamarineGreen }}
                     >
-                      Local names
+                      {t("Local names")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
                       {(
                         openLog.translations_inserted + openLog.translations_updated
                       ).toLocaleString()}{" "}
-                      saved
+                      {t("saved")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.translations_skipped.toLocaleString()} skipped
+                      {openLog.translations_skipped.toLocaleString()} {t("skipped")}
                     </p>
                   </div>
                 </div>
@@ -377,12 +379,12 @@ export function RunHistoryTab({
                           className="font-bold text-sm"
                           style={{ color: COLORS.darkAquamarineGreen }}
                         >
-                          {rowsExpanded ? "▾" : "▸"} Skipped rows (
+                          {rowsExpanded ? "▾" : "▸"} {t("Skipped rows (")}
                           {openLog.failed_rows.length.toLocaleString()})
                         </p>
                       </button>
                       <button
-                        aria-label="Download CSV"
+                        aria-label={t("Download CSV")}
                         onClick={() =>
                           downloadCsv(
                             `feed-sync-${openLog.id}-skipped-rows.csv`,
@@ -397,20 +399,20 @@ export function RunHistoryTab({
                           cursor: "pointer",
                         }}
                       >
-                        <span aria-hidden="true">⬇</span> CSV
+                        <span aria-hidden="true">⬇</span> {t("CSV")}
                       </button>
                     </div>
                     {rowsExpanded && (
                       <div className="mt-2">
                         <input
-                          aria-label="Search rows"
+                          aria-label={t("Search rows")}
                           type="text"
                           value={rowFilter}
                           onChange={(e) => {
                             setRowFilter(e.target.value);
                             setRowsShown(ROWS_CHUNK);
                           }}
-                          placeholder="Search by row, feed code, or reason…"
+                          placeholder={t("Search by row, feed code, or reason…")}
                           className="w-full rounded-xl px-3 py-2 text-sm border-none focus:outline-none mb-2"
                           style={inputStyle}
                         />
@@ -424,7 +426,9 @@ export function RunHistoryTab({
                                 color: COLORS.raisinBlack,
                               }}
                             >
-                              <span className="font-bold">row {r.row ?? "—"}</span>
+                              <span className="font-bold">
+                                {t("row")} {r.row ?? "—"}
+                              </span>
                               {r.fd_code ? ` · ${r.fd_code}` : ""} — {r.reason ?? "No reason given"}
                             </div>
                           ))}
@@ -433,7 +437,7 @@ export function RunHistoryTab({
                               className="text-xs py-3 text-center"
                               style={{ color: COLORS.darkSilver }}
                             >
-                              No matching rows.
+                              {t("No matching rows.")}
                             </p>
                           )}
                         </div>
@@ -449,8 +453,9 @@ export function RunHistoryTab({
                               padding: 0,
                             }}
                           >
-                            Show {Math.min(ROWS_CHUNK, filteredFailedRows.length - rowsShown)} more
-                            (of {filteredFailedRows.length.toLocaleString()})
+                            {t("Show")}{" "}
+                            {Math.min(ROWS_CHUNK, filteredFailedRows.length - rowsShown)}{" "}
+                            {t("more (of")} {filteredFailedRows.length.toLocaleString()})
                           </button>
                         )}
                       </div>
@@ -476,13 +481,13 @@ export function RunHistoryTab({
                           className="font-bold text-sm"
                           style={{ color: COLORS.darkAquamarineGreen }}
                         >
-                          {transExpanded ? "▾" : "▸"} Skipped local names (
-                          {openLog.skipped_translations.length.toLocaleString()}) — grouped by
-                          reason
+                          {transExpanded ? "▾" : "▸"} {t("Skipped local names (")}
+                          {openLog.skipped_translations.length.toLocaleString()}
+                          {t(") — grouped by reason")}
                         </p>
                       </button>
                       <button
-                        aria-label="Download CSV"
+                        aria-label={t("Download CSV")}
                         onClick={() =>
                           downloadCsv(
                             `feed-sync-${openLog.id}-skipped-names.csv`,
@@ -497,7 +502,7 @@ export function RunHistoryTab({
                           cursor: "pointer",
                         }}
                       >
-                        <span aria-hidden="true">⬇</span> CSV
+                        <span aria-hidden="true">⬇</span> {t("CSV")}
                       </button>
                     </div>
                     {transExpanded && (

@@ -34,6 +34,7 @@ import {
   sheetOverlayStyle,
 } from "./shared";
 import TranslationCoverageCard from "./TranslationCoverageCard";
+import { useT } from "@/lib/i18n-ui";
 
 export function FeedNamesTab({
   countries,
@@ -42,6 +43,7 @@ export function FeedNamesTab({
   countries: CountryRow[];
   showSnackbar: (msg: string, type?: "success" | "error" | "info") => void;
 }) {
+  const t = useT();
   const [selCountry, setSelCountry] = useState<CountryRow | null>(null);
   const [selLang, setSelLang] = useState<string | null>(null);
 
@@ -85,9 +87,9 @@ export function FeedNamesTab({
   // translation status for the selected language IN PARALLEL. No backend
   // endpoint returns "every feed + translation status" in one call.
   // Read, not re-run on: see useLatestRef (audit B-20).
-  const effectInputs3 = useLatestRef({ selCountry, showSnackbar });
+  const effectInputs3 = useLatestRef({ selCountry, showSnackbar, t });
   useEffect(() => {
-    const { selCountry, showSnackbar } = effectInputs3.current;
+    const { selCountry, showSnackbar, t } = effectInputs3.current;
     if (!showFeeds || !selCountry || !selLang) {
       setFeeds([]);
       return;
@@ -132,7 +134,7 @@ export function FeedNamesTab({
       setFeeds((prev) => prev.map((f) => ({ ...f, translation: byId.get(f.feed_id) ?? null })));
     })()
       .catch(() => {
-        if (!cancelled) showSnackbar("Could not load feeds", "error");
+        if (!cancelled) showSnackbar(t("Could not load feeds"), "error");
       })
       .finally(() => {
         if (!cancelled) setIsLoadingFeeds(false);
@@ -149,7 +151,7 @@ export function FeedNamesTab({
 
   const handleSaveFeed = async () => {
     if (!editingFeed || !selLang || !editValue.trim()) {
-      showSnackbar("Enter a name first", "error");
+      showSnackbar(t("Enter a name first"), "error");
       return;
     }
     setIsSaving(true);
@@ -181,7 +183,7 @@ export function FeedNamesTab({
       setFeeds((prev) =>
         prev.map((f) => (f.feed_id === editingFeed.feed_id ? { ...f, translation: null } : f))
       );
-      showSnackbar("Name deleted", "success");
+      showSnackbar(t("Name deleted"), "success");
       setEditingFeed(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not delete name";
@@ -213,7 +215,7 @@ export function FeedNamesTab({
 
   const handleUpload = async () => {
     if (!selCountry || !uploadFile) {
-      showSnackbar("Pick a file to upload", "error");
+      showSnackbar(t("Pick a file to upload"), "error");
       return;
     }
     setIsUploading(true);
@@ -248,7 +250,7 @@ export function FeedNamesTab({
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            1 · Pick a country
+            {t("1 · Pick a country")}
           </p>
         </div>
         <div className="flex gap-2 px-4 py-3 overflow-x-auto">
@@ -277,7 +279,7 @@ export function FeedNamesTab({
           ))}
           {countries.length === 0 && (
             <p className="text-sm" style={{ color: COLORS.darkSilver }}>
-              No countries enabled.
+              {t("No countries enabled.")}
             </p>
           )}
         </div>
@@ -296,7 +298,7 @@ export function FeedNamesTab({
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            2 · Pick a language
+            {t("2 · Pick a language")}
           </p>
         </div>
         <div className="px-4 py-3">
@@ -322,8 +324,9 @@ export function FeedNamesTab({
           </div>
           {selCountry && localLangs.length === 0 && (
             <p className="text-sm mt-1" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
-              No local language is associated with this country yet — associate one on the Countries
-              &amp; Languages screen.
+              {t(
+                "No local language is associated with this country yet — associate one on the Countries &amp; Languages screen."
+              )}
             </p>
           )}
         </div>
@@ -343,11 +346,11 @@ export function FeedNamesTab({
               className="text-xs font-bold uppercase tracking-wide flex-1"
               style={{ color: COLORS.darkAquamarineGreen }}
             >
-              3 · Feed names in {selLang ? labelForLanguage(selLang).toUpperCase() : ""}
+              {t("3 · Feed names in")} {selLang ? labelForLanguage(selLang).toUpperCase() : ""}
             </p>
             {!isLoadingFeeds && (
               <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-                {doneCount} of {feeds.length} named
+                {doneCount} {t("of")} {feeds.length} {t("named")}
               </p>
             )}
           </div>
@@ -389,7 +392,7 @@ export function FeedNamesTab({
                         color: COLORS.webAmberText,
                       }}
                     >
-                      + Add name
+                      {t("+ Add name")}
                     </span>
                   )}
                   <span style={{ color: COLORS.darkSilver }} aria-hidden="true">
@@ -421,13 +424,14 @@ export function FeedNamesTab({
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            Bulk upsert via workbook
+            {t("Bulk upsert via workbook")}
           </p>
         </div>
         <div className="px-4 py-3">
           <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
-            Export all feed names across languages for {selCountry?.name ?? "the selected country"}{" "}
-            as a workbook, edit offline, then import to upsert in bulk.
+            {t("Export all feed names across languages for")}{" "}
+            {selCountry?.name ?? "the selected country"}{" "}
+            {t("as a workbook, edit offline, then import to upsert in bulk.")}
           </p>
           <div className="flex gap-2 mb-3">
             <button
@@ -499,9 +503,9 @@ export function FeedNamesTab({
               </p>
               <div className="text-xs space-y-0.5" style={{ color: COLORS.raisinBlack }}>
                 <p>
-                  Feeds — {uploadSummary.feeds_inserted ?? 0} added ·{" "}
-                  {uploadSummary.feeds_updated ?? 0} updated · {uploadSummary.feeds_skipped ?? 0}{" "}
-                  unchanged
+                  {t("Feeds —")} {uploadSummary.feeds_inserted ?? 0} {t("added ·")}{" "}
+                  {uploadSummary.feeds_updated ?? 0} {t("updated ·")}{" "}
+                  {uploadSummary.feeds_skipped ?? 0} {t("unchanged")}
                 </p>
               </div>
             </div>
@@ -544,7 +548,7 @@ export function FeedNamesTab({
               className="text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
-              Name in {labelForLanguage(selLang)}
+              {t("Name in")} {labelForLanguage(selLang)}
             </p>
             <input
               aria-label={`Name in ${labelForLanguage(selLang)}`}

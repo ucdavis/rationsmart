@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { getTranslationCoverage } from "@/lib/api";
 import { COLORS } from "@/lib/colors";
 import { cardStyle } from "./shared";
+import { useT } from "@/lib/i18n-ui";
 
 interface CoverageReport {
   total_feeds?: number;
@@ -33,6 +34,7 @@ export default function TranslationCoverageCard({
   lang: string | null;
   showSnackbar: (message: string, type?: "success" | "error" | "info") => void;
 }) {
+  const t = useT();
   const [coverage, setCoverage] = useState<CoverageReport | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -73,10 +75,10 @@ export default function TranslationCoverageCard({
   return (
     <div className="bg-white rounded-2xl px-4 py-4" style={cardStyle}>
       <p className="font-bold mb-1" style={{ color: COLORS.darkAquamarineGreen, fontSize: 15 }}>
-        Translation coverage
+        {t("Translation coverage")}
       </p>
       <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
-        How complete the feed, type and category translations are for the selected language.
+        {t("How complete the feed, type and category translations are for the selected language.")}
       </p>
       <button
         onClick={() => void load()}

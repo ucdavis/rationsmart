@@ -29,6 +29,7 @@ import {
   formatNextRun,
   inputStyle,
 } from "./shared";
+import { useT } from "@/lib/i18n-ui";
 
 export function SyncSettingsTab({
   status,
@@ -57,6 +58,7 @@ export function SyncSettingsTab({
   ) => void;
   onViewDetails: (logId: string) => void;
 }) {
+  const t = useT();
   const [isTogglingScheduler, setIsTogglingScheduler] = useState(false);
   const [isSavingDay, setIsSavingDay] = useState(false);
   const [isDispatching, setIsDispatching] = useState(false);
@@ -184,7 +186,7 @@ export function SyncSettingsTab({
           pollRef.current = null;
           setRunningLogId(null);
           void reload();
-          showSnackbar("Sync is taking longer than expected — check Sync History later", "info");
+          showSnackbar(t("Sync is taking longer than expected — check Sync History later"), "info");
           return;
         }
         try {
@@ -223,9 +225,9 @@ export function SyncSettingsTab({
     } catch (err: unknown) {
       const anyErr = err as { response?: { status?: number } };
       const httpStatus = anyErr?.response?.status;
-      if (httpStatus === 409) showSnackbar("A sync is already running", "error");
+      if (httpStatus === 409) showSnackbar(t("A sync is already running"), "error");
       else if (httpStatus === 503)
-        showSnackbar("Sync service unavailable — try again shortly", "error");
+        showSnackbar(t("Sync service unavailable — try again shortly"), "error");
       else showSnackbar(err instanceof Error ? err.message : "Could not start the sync", "error");
     } finally {
       setIsDispatching(false);
@@ -263,7 +265,7 @@ export function SyncSettingsTab({
     try {
       const res = await updateFeedSyncConfig(body);
       setConfig(res.data);
-      showSnackbar("Connection settings saved", "success");
+      showSnackbar(t("Connection settings saved"), "success");
       setIsEditingSettings(false);
       const statusRes = await getFeedSyncSchedulerStatus();
       setStatus(statusRes.data);
@@ -298,7 +300,7 @@ export function SyncSettingsTab({
             className="text-xs font-bold uppercase tracking-wide"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            Automatic Sync
+            {t("Automatic Sync")}
           </p>
         </div>
         <div className="px-4 py-4 space-y-4">
@@ -310,14 +312,14 @@ export function SyncSettingsTab({
                 color: COLORS.webAmberText,
               }}
             >
-              Last sync overdue — check Run History
+              {t("Last sync overdue — check Run History")}
             </div>
           )}
 
           <div className="flex items-center justify-between gap-3">
             <div>
               <p className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
-                Automatic Scheduler
+                {t("Automatic Scheduler")}
               </p>
               <p className="text-xs mt-0.5" style={{ color: COLORS.darkSilver }}>
                 {status.scheduler_enabled
@@ -326,13 +328,13 @@ export function SyncSettingsTab({
               </p>
               {!canEnable && !status.scheduler_enabled && (
                 <p className="text-xs mt-0.5 font-bold" style={{ color: COLORS.webAmberText }}>
-                  Configure the CLIMDES endpoint first
+                  {t("Configure the CLIMDES endpoint first")}
                 </p>
               )}
               {config.scheduler_toggled_by && (
                 <p className="text-xs mt-1" style={{ color: COLORS.spanishGray }}>
-                  Last changed by {config.scheduler_toggled_by.slice(0, 8)}… on{" "}
-                  {formatDateTime(config.scheduler_toggled_at)}
+                  {t("Last changed by")} {config.scheduler_toggled_by.slice(0, 8)}
+                  {t("… on")} {formatDateTime(config.scheduler_toggled_at)}
                 </p>
               )}
             </div>
@@ -366,7 +368,7 @@ export function SyncSettingsTab({
               className="text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
-              Sync day
+              {t("Sync day")}
             </p>
             <CustomSelect
               value={status.sync_day_of_week}
@@ -380,8 +382,9 @@ export function SyncSettingsTab({
               }}
             />
             <p className="text-xs mt-1" style={{ color: COLORS.spanishGray }}>
-              Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate
-              refresh.
+              {t(
+                "Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate refresh."
+              )}
             </p>
           </div>
 
@@ -390,13 +393,13 @@ export function SyncSettingsTab({
             style={{ borderTop: `1px solid ${COLORS.americanDiamond}` }}
           >
             <div className="flex justify-between text-sm pt-2">
-              <span style={{ color: COLORS.darkSilver }}>Next scheduled sync</span>
+              <span style={{ color: COLORS.darkSilver }}>{t("Next scheduled sync")}</span>
               <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                 {formatNextRun(status.next_scheduled_run)}
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: COLORS.darkSilver }}>Last run</span>
+              <span style={{ color: COLORS.darkSilver }}>{t("Last run")}</span>
               <span
                 className="font-bold"
                 style={{ color: COLORS.raisinBlack }}
@@ -406,7 +409,7 @@ export function SyncSettingsTab({
               </span>
             </div>
             <div className="flex justify-between text-sm">
-              <span style={{ color: COLORS.darkSilver }}>Last successful sync</span>
+              <span style={{ color: COLORS.darkSilver }}>{t("Last successful sync")}</span>
               <span
                 className="font-bold"
                 style={{ color: COLORS.raisinBlack }}
@@ -430,13 +433,13 @@ export function SyncSettingsTab({
                 cursor: isDispatching || isRunning ? "not-allowed" : "pointer",
               }}
             >
-              <span aria-hidden="true">⟳</span> Sync now
+              <span aria-hidden="true">⟳</span> {t("Sync now")}
             </button>
             <span
               className="text-xs font-bold"
               style={{ color: isRunning ? COLORS.webAmberText : COLORS.darkSilver }}
             >
-              status: {isRunning ? "running…" : "idle"}
+              {t("status:")} {isRunning ? "running…" : "idle"}
             </span>
           </div>
         </div>
@@ -466,15 +469,17 @@ export function SyncSettingsTab({
           <div className="px-4 py-3 space-y-1 text-sm" style={{ color: COLORS.raisinBlack }}>
             {lastResult.status === "success" ? (
               <>
-                <p>{lastResult.total_rows.toLocaleString()} rows processed</p>
                 <p>
-                  {lastResult.inserted.toLocaleString()} feeds added ·{" "}
-                  {lastResult.updated.toLocaleString()} feeds updated ·{" "}
-                  {lastResult.skipped.toLocaleString()} rows skipped
+                  {lastResult.total_rows.toLocaleString()} {t("rows processed")}
                 </p>
                 <p>
-                  {lastResult.translations_inserted.toLocaleString()} local names saved ·{" "}
-                  {lastResult.translations_skipped.toLocaleString()} local names skipped
+                  {lastResult.inserted.toLocaleString()} {t("feeds added ·")}{" "}
+                  {lastResult.updated.toLocaleString()} {t("feeds updated ·")}{" "}
+                  {lastResult.skipped.toLocaleString()} {t("rows skipped")}
+                </p>
+                <p>
+                  {lastResult.translations_inserted.toLocaleString()} {t("local names saved ·")}{" "}
+                  {lastResult.translations_skipped.toLocaleString()} {t("local names skipped")}
                 </p>
               </>
             ) : (
@@ -493,7 +498,7 @@ export function SyncSettingsTab({
                 padding: 0,
               }}
             >
-              View details →
+              {t("View details →")}
             </button>
           </div>
         </div>
@@ -512,7 +517,7 @@ export function SyncSettingsTab({
             className="text-xs font-bold uppercase tracking-wide flex-1"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            Connection Settings
+            {t("Connection Settings")}
           </p>
           {!isEditingSettings && (
             <button
@@ -525,7 +530,7 @@ export function SyncSettingsTab({
                 cursor: "pointer",
               }}
             >
-              Edit
+              {t("Edit")}
             </button>
           )}
         </div>
@@ -533,7 +538,7 @@ export function SyncSettingsTab({
         {!isEditingSettings ? (
           <div className="px-4 py-4 space-y-3 text-sm">
             <div className="flex justify-between gap-3">
-              <span style={{ color: COLORS.darkSilver }}>Endpoint URL</span>
+              <span style={{ color: COLORS.darkSilver }}>{t("Endpoint URL")}</span>
               <span
                 className="font-bold text-right break-all"
                 style={{ color: COLORS.raisinBlack }}
@@ -542,7 +547,7 @@ export function SyncSettingsTab({
               </span>
             </div>
             <div className="flex justify-between gap-3">
-              <span style={{ color: COLORS.darkSilver }}>Auth type</span>
+              <span style={{ color: COLORS.darkSilver }}>{t("Auth type")}</span>
               <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                 {AUTH_TYPE_OPTIONS.find((o) => o.value === config.auth_type)?.label ??
                   capitalize(config.auth_type)}
@@ -550,14 +555,14 @@ export function SyncSettingsTab({
             </div>
             {config.auth_type === "api_key" && (
               <div className="flex justify-between gap-3">
-                <span style={{ color: COLORS.darkSilver }}>Header name</span>
+                <span style={{ color: COLORS.darkSilver }}>{t("Header name")}</span>
                 <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                   {config.auth_header_name || "—"}
                 </span>
               </div>
             )}
             <div className="flex justify-between gap-3">
-              <span style={{ color: COLORS.darkSilver }}>Token</span>
+              <span style={{ color: COLORS.darkSilver }}>{t("Token")}</span>
               <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
                 {config.auth_token_masked || "Not set"}
               </span>
@@ -570,14 +575,14 @@ export function SyncSettingsTab({
                 className="text-xs font-bold uppercase tracking-wide mb-1"
                 style={{ color: COLORS.darkSilver }}
               >
-                Endpoint URL
+                {t("Endpoint URL")}
               </p>
               <input
-                aria-label="Endpoint URL"
+                aria-label={t("Endpoint URL")}
                 type="text"
                 value={formEndpoint}
                 onChange={(e) => setFormEndpoint(e.target.value)}
-                placeholder="https://api.example.com/feed-library"
+                placeholder={t("https://api.example.com/feed-library")}
                 className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none"
                 style={inputStyle}
               />
@@ -587,7 +592,7 @@ export function SyncSettingsTab({
                 className="text-xs font-bold uppercase tracking-wide mb-1"
                 style={{ color: COLORS.darkSilver }}
               >
-                Auth type
+                {t("Auth type")}
               </p>
               <CustomSelect
                 value={formAuthType}
@@ -606,14 +611,14 @@ export function SyncSettingsTab({
                   className="text-xs font-bold uppercase tracking-wide mb-1"
                   style={{ color: COLORS.darkSilver }}
                 >
-                  Header name
+                  {t("Header name")}
                 </p>
                 <input
-                  aria-label="Header name"
+                  aria-label={t("Header name")}
                   type="text"
                   value={formHeaderName}
                   onChange={(e) => setFormHeaderName(e.target.value)}
-                  placeholder="X-API-Key"
+                  placeholder={t("X-API-Key")}
                   className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none"
                   style={inputStyle}
                 />
@@ -624,7 +629,7 @@ export function SyncSettingsTab({
                 className="text-xs font-bold uppercase tracking-wide mb-1"
                 style={{ color: COLORS.darkSilver }}
               >
-                Token
+                {t("Token")}
               </p>
               {!isReplacingToken ? (
                 <div className="flex items-center gap-2">
@@ -641,16 +646,16 @@ export function SyncSettingsTab({
                       cursor: "pointer",
                     }}
                   >
-                    Replace token
+                    {t("Replace token")}
                   </button>
                 </div>
               ) : (
                 <input
-                  aria-label="New token"
+                  aria-label={t("New token")}
                   type="password"
                   value={formToken}
                   onChange={(e) => setFormToken(e.target.value)}
-                  placeholder="Enter new token"
+                  placeholder={t("Enter new token")}
                   autoFocus
                   className="w-full rounded-xl px-4 py-3 text-sm border-none focus:outline-none"
                   style={inputStyle}
@@ -676,7 +681,7 @@ export function SyncSettingsTab({
                   cursor: "pointer",
                 }}
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 onClick={handleSaveSettings}

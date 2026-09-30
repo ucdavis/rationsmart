@@ -55,8 +55,10 @@ import {
   SystemLanguage,
   Tab,
 } from "@/components/admin/country-language/shared";
+import { useT } from "@/lib/i18n-ui";
 
 export default function AdminCountryLanguagePage() {
+  const t = useT();
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
@@ -89,13 +91,13 @@ export default function AdminCountryLanguagePage() {
           const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
           setAllLanguages(Array.isArray(d) ? d : (d?.languages ?? []));
         } else {
-          showSnackbar("Could not load language registry", "error");
+          showSnackbar(t("Could not load language registry"), "error");
         }
         if (countriesRes.status === "fulfilled") {
           const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
           setCountries((Array.isArray(d) ? d : (d?.countries ?? [])) as CountryRow[]);
         } else {
-          showSnackbar("Could not load countries", "error");
+          showSnackbar(t("Could not load countries"), "error");
         }
       })
       .finally(() => setIsLoading(false));
@@ -132,7 +134,7 @@ export default function AdminCountryLanguagePage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title="Country / Language" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Country / Language")} onBack={() => router.back()} />
 
       <div className="px-3 pt-3">
         <div className="flex rounded-2xl p-1" style={{ backgroundColor: COLORS.brightGrayNew }}>
@@ -162,12 +164,12 @@ export default function AdminCountryLanguagePage() {
 
       {isLoading && countries.length === 0 && allLanguages.length === 0 ? (
         <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
-          <SkeletonCardShell title="Enabled Countries / Languages">
+          <SkeletonCardShell title={t("Enabled Countries / Languages")}>
             {[0, 1, 2].map((i) => (
               <SkeletonCountryRow key={i} />
             ))}
           </SkeletonCardShell>
-          <SkeletonCardShell title="Registered Languages">
+          <SkeletonCardShell title={t("Registered Languages")}>
             {[0, 1, 2, 3].map((i) => (
               <SkeletonLanguageRow key={i} />
             ))}
@@ -218,7 +220,7 @@ export default function AdminCountryLanguagePage() {
                   cursor: "pointer",
                 }}
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 onClick={confirm.onConfirm}

@@ -4,8 +4,10 @@ import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { SNACKBAR_EXIT_MS, SNACKBAR_REMOVE_MS, SNACKBAR_VISIBLE_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
+import { useT } from "@/lib/i18n-ui";
 
 export default function Snackbar() {
+  const t = useT();
   const snackbar = useStore((s) => s.snackbar);
   const hideSnackbar = useStore((s) => s.hideSnackbar);
   const [exiting, setExiting] = useState(false);
@@ -96,7 +98,10 @@ export default function Snackbar() {
       }}
     >
       <div style={{ flexShrink: 0 }}>{iconMap[snackbar.type]}</div>
-      <span style={{ flex: 1 }}>{snackbar.message}</span>
+      {/* Translated at render time too, so messages raised outside React
+          (store.ts session expiry) are localised. t() returns its input on a
+          dictionary miss, so already-translated and backend text pass through. */}
+      <span style={{ flex: 1 }}>{t(snackbar.message)}</span>
       {/* Close button — white circle with the snackbar's bg color as the X tint (matches Android cv_close) */}
       <button
         onClick={() => {
@@ -114,7 +119,7 @@ export default function Snackbar() {
           justifyContent: "center",
           flexShrink: 0,
         }}
-        aria-label="Dismiss"
+        aria-label={t("Dismiss")}
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M2 2L12 12M12 2L2 12" stroke={s.bg} strokeWidth="2" strokeLinecap="round" />

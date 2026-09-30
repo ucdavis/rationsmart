@@ -23,6 +23,7 @@ import {
   inputStyle,
   sheetOverlayStyle,
 } from "./shared";
+import { useT } from "@/lib/i18n-ui";
 
 export function CountriesLanguagesTab({
   countries,
@@ -45,6 +46,7 @@ export function CountriesLanguagesTab({
     onConfirm: () => void | Promise<void>
   ) => void;
 }) {
+  const t = useT();
   const [showActivate, setShowActivate] = useState(false);
   useEscapeKey(!!showActivate, () => setShowActivate(false));
   const [inactiveCountries, setInactiveCountries] = useState<InactiveCountryRow[]>([]);
@@ -71,7 +73,7 @@ export function CountriesLanguagesTab({
         const all = (Array.isArray(d) ? d : (d?.countries ?? [])) as InactiveCountryRow[];
         setInactiveCountries(all.filter((c) => !c.is_active));
       })
-      .catch(() => showSnackbar("Could not load countries", "error"))
+      .catch(() => showSnackbar(t("Could not load countries"), "error"))
       .finally(() => setIsLoadingInactive(false));
   };
 
@@ -229,7 +231,7 @@ export function CountriesLanguagesTab({
   const handleRegister = async () => {
     const code = regCode.trim().toLowerCase();
     if (!regName.trim() || !code) {
-      showSnackbar("Name and code are required", "error");
+      showSnackbar(t("Name and code are required"), "error");
       return;
     }
     setIsRegistering(true);
@@ -269,14 +271,14 @@ export function CountriesLanguagesTab({
             className="text-xs font-bold uppercase tracking-wide flex-1"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            Enabled Countries / Languages
+            {t("Enabled Countries / Languages")}
           </p>
           <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-            {countries.length} enabled
+            {countries.length} {t("enabled")}
           </p>
           <button
             onClick={openActivateSheet}
-            aria-label="Activate a country"
+            aria-label={t("Activate a country")}
             className="flex items-center justify-center rounded-full flex-shrink-0"
             style={{
               width: 24,
@@ -293,7 +295,7 @@ export function CountriesLanguagesTab({
         </div>
         {countries.length === 0 ? (
           <p className="text-sm text-center py-6" style={{ color: COLORS.darkSilver }}>
-            No countries enabled yet.
+            {t("No countries enabled yet.")}
           </p>
         ) : (
           countries.map((c) => {
@@ -311,7 +313,8 @@ export function CountriesLanguagesTab({
                       {c.name}
                     </p>
                     <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-                      {extraLangs.length} local language{extraLangs.length === 1 ? "" : "s"}
+                      {extraLangs.length} {t("local language")}
+                      {extraLangs.length === 1 ? "" : "s"}
                     </p>
                   </div>
                   <label
@@ -376,7 +379,7 @@ export function CountriesLanguagesTab({
                       cursor: "pointer",
                     }}
                   >
-                    + Add language
+                    {t("+ Add language")}
                   </button>
                 </div>
               </div>
@@ -398,14 +401,14 @@ export function CountriesLanguagesTab({
             className="text-xs font-bold uppercase tracking-wide flex-1"
             style={{ color: COLORS.darkAquamarineGreen }}
           >
-            Registered Languages
+            {t("Registered Languages")}
           </p>
           <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-            {activeLangCount} active
+            {activeLangCount} {t("active")}
           </p>
           <button
             onClick={() => setShowRegister(true)}
-            aria-label="Register a new language"
+            aria-label={t("Register a new language")}
             className="flex items-center justify-center rounded-full flex-shrink-0"
             style={{
               width: 24,
@@ -450,7 +453,7 @@ export function CountriesLanguagesTab({
                     color: COLORS.darkAquamarineGreen,
                   }}
                 >
-                  locked 🔒
+                  {t("locked 🔒")}
                 </span>
               ) : (
                 <label
@@ -501,10 +504,10 @@ export function CountriesLanguagesTab({
               className="text-center font-bold mb-1"
               style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
             >
-              Activate a country
+              {t("Activate a country")}
             </h3>
             <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
-              RationSmart becomes available to farmers in the activated country.
+              {t("RationSmart becomes available to farmers in the activated country.")}
             </p>
             {isLoadingInactive ? (
               <div className="flex flex-col gap-2">
@@ -514,7 +517,7 @@ export function CountriesLanguagesTab({
               </div>
             ) : inactiveCountries.length === 0 ? (
               <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>
-                All registered countries are already enabled.
+                {t("All registered countries are already enabled.")}
               </p>
             ) : (
               <div className="flex flex-col gap-2">
@@ -536,7 +539,7 @@ export function CountriesLanguagesTab({
                       className="text-xs font-bold"
                       style={{ color: COLORS.darkAquamarineGreen }}
                     >
-                      Activate →
+                      {t("Activate →")}
                     </span>
                   </button>
                 ))}
@@ -580,16 +583,17 @@ export function CountriesLanguagesTab({
                   className="text-center font-bold mb-1"
                   style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
                 >
-                  Associate a language — {assocFor.name}
+                  {t("Associate a language —")} {assocFor.name}
                 </h3>
                 <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
-                  The combination will appear in the Cattle Info screen for farmers in{" "}
+                  {t("The combination will appear in the Cattle Info screen for farmers in")}{" "}
                   {assocFor.name}.
                 </p>
                 {available.length === 0 ? (
                   <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>
-                    All active languages are already associated. Register or activate a language
-                    first.
+                    {t(
+                      "All active languages are already associated. Register or activate a language first."
+                    )}
                   </p>
                 ) : (
                   <div className="flex flex-col gap-2">
@@ -615,7 +619,7 @@ export function CountriesLanguagesTab({
                           className="text-xs font-bold"
                           style={{ color: COLORS.darkAquamarineGreen }}
                         >
-                          Associate →
+                          {t("Associate →")}
                         </span>
                       </button>
                     ))}
@@ -657,20 +661,20 @@ export function CountriesLanguagesTab({
               className="text-center font-bold mb-4"
               style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
             >
-              Register a new language
+              {t("Register a new language")}
             </h3>
             <p
               className="text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
-              Language name (English)
+              {t("Language name (English)")}
             </p>
             <input
-              aria-label="Language name (English)"
+              aria-label={t("Language name (English)")}
               type="text"
               value={regName}
               onChange={(e) => setRegName(e.target.value)}
-              placeholder="e.g. Swahili"
+              placeholder={t("e.g. Swahili")}
               maxLength={100}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-3"
               style={inputStyle}
@@ -679,14 +683,14 @@ export function CountriesLanguagesTab({
               className="text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
-              ISO code
+              {t("ISO code")}
             </p>
             <input
-              aria-label="ISO code"
+              aria-label={t("ISO code")}
               type="text"
               value={regCode}
               onChange={(e) => setRegCode(e.target.value.toLowerCase())}
-              placeholder="e.g. sw"
+              placeholder={t("e.g. sw")}
               maxLength={10}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"
               style={inputStyle}

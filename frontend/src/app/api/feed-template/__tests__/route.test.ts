@@ -2,7 +2,9 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
 import { GET } from "@/app/api/feed-template/route";
 
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("/api/feed-template (audit C-07)", () => {
   it("streams the template same-origin as an attachment", async () => {

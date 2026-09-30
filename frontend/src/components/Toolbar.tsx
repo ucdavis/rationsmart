@@ -2,6 +2,7 @@
 
 import { IcHamburger, IcBack, IcForward } from "@/components/Icons";
 import { COLORS } from "@/lib/colors";
+import { useT } from "@/lib/i18n-ui";
 
 interface ToolbarProps {
   type: "home" | "back";
@@ -22,6 +23,7 @@ export default function Toolbar({
   onForward,
   rightContent,
 }: ToolbarProps) {
+  const t = useT();
   return (
     <div
       className="flex items-center px-3 gap-3"
@@ -48,7 +50,7 @@ export default function Toolbar({
           onClick={onMenuOpen}
           className="flex items-center justify-center rounded-xl bg-white p-2.5"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
-          aria-label="Open menu"
+          aria-label={t("Open menu")}
         >
           <IcHamburger size={20} color={COLORS.darkAquamarineGreen} />
         </button>
@@ -57,7 +59,7 @@ export default function Toolbar({
           onClick={onBack}
           className="flex items-center justify-center rounded-xl bg-white p-2.5"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
-          aria-label="Go back"
+          aria-label={t("Go back")}
         >
           <IcBack size={20} color={COLORS.darkAquamarineGreen} />
         </button>
@@ -85,7 +87,7 @@ export default function Toolbar({
           onClick={onForward}
           className="flex items-center justify-center rounded-xl bg-white p-2.5"
           style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.1)", minWidth: 40, minHeight: 40 }}
-          aria-label="Forward"
+          aria-label={t("Forward")}
         >
           <IcForward size={20} color={COLORS.darkAquamarineGreen} />
         </button>

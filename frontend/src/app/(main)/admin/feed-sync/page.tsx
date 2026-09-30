@@ -47,8 +47,10 @@ import {
   Tab,
   cardStyle,
 } from "@/components/admin/feed-sync/shared";
+import { useT } from "@/lib/i18n-ui";
 
 export default function AdminFeedSyncPage() {
+  const t = useT();
   const router = useRouter();
   const { user, showSnackbar } = useStore((s) => ({ user: s.user, showSnackbar: s.showSnackbar }));
 
@@ -66,16 +68,16 @@ export default function AdminFeedSyncPage() {
 
   // Read, not re-run on: see useLatestRef (audit B-20).
 
-  const effectInputs1 = useLatestRef({ showSnackbar });
+  const effectInputs1 = useLatestRef({ showSnackbar, t });
   const reload = useCallback(() => {
-    const { showSnackbar } = effectInputs1.current;
+    const { showSnackbar, t } = effectInputs1.current;
     setIsLoading(true);
     return Promise.allSettled([getFeedSyncSchedulerStatus(), getFeedSyncConfig()])
       .then(([statusRes, configRes]) => {
         if (statusRes.status === "fulfilled") setStatus(statusRes.value.data);
-        else showSnackbar("Could not load sync status", "error");
+        else showSnackbar(t("Could not load sync status"), "error");
         if (configRes.status === "fulfilled") setConfig(configRes.value.data);
-        else showSnackbar("Could not load sync configuration", "error");
+        else showSnackbar(t("Could not load sync configuration"), "error");
       })
       .finally(() => setIsLoading(false));
   }, [effectInputs1]);
@@ -126,7 +128,7 @@ export default function AdminFeedSyncPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title="Feed Library Sync" onBack={() => router.back()} />
+      <Toolbar type="back" title={t("Feed Library Sync")} onBack={() => router.back()} />
 
       <div className="px-3 pt-3">
         <div className="flex rounded-2xl p-1" style={{ backgroundColor: COLORS.brightGrayNew }}>
@@ -219,7 +221,7 @@ export default function AdminFeedSyncPage() {
                   cursor: "pointer",
                 }}
               >
-                Cancel
+                {t("Cancel")}
               </button>
               <button
                 onClick={confirm.onConfirm}
