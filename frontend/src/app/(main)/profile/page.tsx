@@ -12,10 +12,12 @@ import {
 } from "@/lib/api";
 import { isEmailAddressValid, PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import Toolbar from "@/components/Toolbar";
-import PinInput from "@/components/ui/PinInput";
-import PoweredBy from "@/components/PoweredBy";
+import ResetPinSheet from "@/components/profile/ResetPinSheet";
+import DeleteAccountDialog from "@/components/profile/DeleteAccountDialog";
+import SubmitPinSheet from "@/components/profile/SubmitPinSheet";
+import ChangePinSheet from "@/components/profile/ChangePinSheet";
+import ProfileActions from "@/components/profile/ProfileActions";
 import { useT } from "@/lib/i18n-ui";
-import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
@@ -510,310 +512,37 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Delete (left) + Reset PIN (right) — order and styling exactly
-            match fragment_profile.xml:209-247.
-              left  : btn_delete_profile  carmine_pink_20 bg / carmine_pink fg / ic_delete_account / text "Delete"
-              right : btn_forgot_pin      celtic_blue_25  bg / celtic_blue fg / ic_reset_pin       / text "Reset PIN" */}
-        <div className="mx-3 mt-3 flex gap-3">
-          <button
-            onClick={() => setShowDeleteDialog(true)}
-            className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
-            style={{
-              border: "none",
-              color: COLORS.carminePink, // carmine_pink
-              backgroundColor: "rgba(228,74,74,0.20)", // carmine_pink_20
-              cursor: "pointer",
-              borderRadius: 14,
-            }}
-          >
-            {/* ic_delete_account — Material Symbols filled trash with
-                rounded lid (single filled path, viewport 24x24) */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.carminePink}>
-              <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
-            </svg>
-            {t("Delete")}
-          </button>
-
-          <button
-            onClick={handleResetPin}
-            className="flex-1 py-3.5 text-base flex items-center justify-center gap-2"
-            style={{
-              border: "none",
-              color: COLORS.celticBlue, // celtic_blue
-              backgroundColor: "rgba(41,108,211,0.25)", // celtic_blue_25
-              cursor: "pointer",
-              borderRadius: 14,
-            }}
-          >
-            {/* ic_reset_pin — Material Symbols refresh arrow with
-                inset padlock (filled path, viewport 24x24) */}
-            <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.celticBlue}>
-              <path d="M13.26,3C8.17,2.86 4,6.94 4,12H2.21c-0.45,0 -0.67,0.54 -0.35,0.85l2.79,2.79c0.2,0.2 0.51,0.2 0.71,0l2.8,-2.79C8.46,12.54 8.24,12 7.79,12H6c0,-3.89 3.2,-7.06 7.1,-7c3.71,0.05 6.84,3.18 6.9,6.9c0.06,3.91 -3.1,7.1 -7,7.1c-1.59,0 -3.05,-0.53 -4.23,-1.43c-0.4,-0.3 -0.96,-0.27 -1.31,0.09l0,0c-0.43,0.43 -0.39,1.14 0.09,1.5C9.06,20.31 10.95,21 13,21c5.06,0 9.14,-4.17 9,-9.25C21.87,7.05 17.95,3.13 13.26,3zM15,11v-1c0,-1.1 -0.9,-2 -2,-2s-2,0.9 -2,2v1c-0.55,0 -1,0.45 -1,1v3c0,0.55 0.45,1 1,1h4c0.55,0 1,-0.45 1,-1v-3C16,11.45 15.55,11 15,11zM14,11h-2v-1c0,-0.55 0.45,-1 1,-1s1,0.45 1,1V11z" />
-            </svg>
-            {t("Reset PIN")}
-          </button>
-        </div>
-
-        {/* Change PIN — user-initiated PIN change. Distinct from Reset
-            PIN (which is the email-based forgot-pin flow). Full-width
-            below the Delete/Reset row so it doesn't crowd the buttons. */}
-        <div className="mx-3 mt-3">
-          <button
-            onClick={openChangePinSheet}
-            className="w-full py-3.5 text-base flex items-center justify-center gap-2"
-            style={{
-              border: `2px solid ${COLORS.darkAquamarineGreen}`,
-              color: COLORS.darkAquamarineGreen,
-              backgroundColor: COLORS.white,
-              cursor: "pointer",
-              borderRadius: 14,
-              fontWeight: 700,
-            }}
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-              <rect
-                x="5"
-                y="11"
-                width="14"
-                height="9"
-                rx="2"
-                stroke={COLORS.darkAquamarineGreen}
-                strokeWidth="2"
-              />
-              <path
-                d="M8 11V8a4 4 0 0 1 8 0v3"
-                stroke={COLORS.darkAquamarineGreen}
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-            {t("Change PIN")}
-          </button>
-        </div>
+        <ProfileActions
+          onDelete={() => setShowDeleteDialog(true)}
+          onResetPin={handleResetPin}
+          onChangePin={openChangePinSheet}
+          t={t}
+        />
       </div>
 
       {/* Reset-PIN bottom sheet — mirrors Login's Forgot PIN flow. The
           email field is pre-filled with the signed-in user's email but
           editable; nothing is sent until the user taps Proceed. */}
       {showResetSheet && (
-        <>
-          {/* Backdrop — confined to centered column. Tap to dismiss. */}
-          <div
-            className="fixed top-0 h-full z-50"
-            style={{
-              left: COLUMN_LEFT,
-              width: COLUMN_WIDTH,
-              backgroundColor: "rgba(0,0,0,0.45)",
-            }}
-            onClick={() => !isSendingReset && setShowResetSheet(false)}
-          />
-          {/* Sheet */}
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
-            style={{
-              maxWidth: COLUMN_WIDTH,
-              width: "100%",
-              zIndex: 51,
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              animation: "slideUp 0.28s cubic-bezier(0.22,1,0.36,1)",
-            }}
-          >
-            {/* Drag handle */}
-            <div className="flex justify-center pt-4 mb-4">
-              <div
-                style={{
-                  width: 40,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: COLORS.goGreen15,
-                }}
-              />
-            </div>
-
-            {/* Title */}
-            <p
-              className="text-center font-bold"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-            >
-              {t("Reset Your PIN")}
-            </p>
-            <p className="text-center mt-1 px-3" style={{ color: COLORS.darkSilver, fontSize: 14 }}>
-              {t("Enter your registered email to receive a reset link")}
-            </p>
-
-            {/* Email label + input */}
-            <p
-              className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
-              style={{ color: COLORS.darkSilver }}
-            >
-              {t("Email Address")} <span style={{ color: COLORS.redRyb }}>*</span>
-            </p>
-            <div className="px-3">
-              <input
-                type="email"
-                inputMode="email"
-                autoComplete="email"
-                // Locked to the signed-in account (audit A-20): a signed-in user
-                // must not be able to send PIN-reset emails to other people.
-                value={user.email ?? ""}
-                readOnly
-                className="w-full rounded-2xl px-4 py-3.5 text-base border-none focus:outline-none focus:ring-2 focus:ring-primary-dark"
-                style={{
-                  backgroundColor: COLORS.americanDiamond,
-                  color: COLORS.raisinBlack,
-                }}
-                aria-label={t("Email address")}
-              />
-            </div>
-
-            {/* Proceed */}
-            <div className="px-3 mt-5">
-              <button
-                onClick={handleResetSend}
-                disabled={!isResetReady || isSendingReset}
-                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor:
-                    isResetReady && !isSendingReset
-                      ? COLORS.darkAquamarineGreen
-                      : COLORS.lightGrayNew,
-                  color: isResetReady && !isSendingReset ? COLORS.white : COLORS.spanishGray,
-                  border: "none",
-                  cursor: isResetReady && !isSendingReset ? "pointer" : "not-allowed",
-                  transition: "background-color 0.2s, color 0.2s",
-                }}
-              >
-                {isSendingReset ? (
-                  <Spinner size={22} />
-                ) : (
-                  <>
-                    {t("Proceed")}
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M5 12h14M13 6l6 6-6 6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </>
-                )}
-              </button>
-            </div>
-
-            <div className="mt-8">
-              <PoweredBy />
-            </div>
-          </div>
-        </>
+        <ResetPinSheet
+          handleResetSend={handleResetSend}
+          isResetReady={isResetReady}
+          isSendingReset={isSendingReset}
+          setShowResetSheet={setShowResetSheet}
+          t={t}
+          user={user}
+        />
       )}
 
       {/* Delete Account confirmation dialog — mirrors Android
           dialog_confirm_delete_account.xml. Scrim dismiss matches the
           MaterialAlertDialog default (setCanceledOnTouchOutside=true). */}
       {showDeleteDialog && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-center justify-center px-6"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowDeleteDialog(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
-            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* ic_additional_information — alert "!" inside an outlined
-                circle, tinted red_ryb, inside a carmine_pink_20 pill. */}
-            <div
-              className="flex items-center justify-center mx-auto mb-4"
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                backgroundColor: "rgba(228,74,74,0.20)",
-              }}
-            >
-              <svg width="28" height="28" viewBox="0 0 960 960" fill={COLORS.redRyb}>
-                <path d="M480,680q17,0 28.5,-11.5T520,640v-160q0,-17 -11.5,-28.5T480,440q-17,0 -28.5,11.5T440,480v160q0,17 11.5,28.5T480,680ZM480,360q17,0 28.5,-11.5T520,320q0,-17 -11.5,-28.5T480,280q-17,0 -28.5,11.5T440,320q0,17 11.5,28.5T480,360ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
-              </svg>
-            </div>
-
-            {/* Title — Android string @delete_account: "Are you sure you
-                want\nto delete your account?" */}
-            <h3
-              className="text-center font-bold mb-2 mx-3"
-              style={{
-                color: COLORS.darkAquamarineGreen,
-                fontSize: 20,
-                whiteSpace: "pre-line",
-              }}
-            >
-              {t("Are you sure you want\nto delete your account?")}
-            </h3>
-
-            {/* Description — Android string @delete_account_message */}
-            <p
-              className="text-center text-sm mb-5 mx-3"
-              style={{ color: COLORS.darkSilver, whiteSpace: "pre-line" }}
-            >
-              {t("This action is permanent. Your account\nand data will be deleted\npermanently.")}
-            </p>
-
-            <div className="flex gap-3">
-              {/* NO — outlined dark green button with ic_cancel (X-in-circle) */}
-              <button
-                onClick={() => setShowDeleteDialog(false)}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
-                style={{
-                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
-                  color: COLORS.darkAquamarineGreen,
-                  background: COLORS.white,
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 960 960" fill={COLORS.darkAquamarineGreen}>
-                  <path d="m480,536 l116,116q11,11 28,11t28,-11q11,-11 11,-28t-11,-28L536,480l116,-116q11,-11 11,-28t-11,-28q-11,-11 -28,-11t-28,11L480,424 364,308q-11,-11 -28,-11t-28,11q-11,11 -11,28t11,28l116,116 -116,116q-11,11 -11,28t11,28q11,11 28,11t28,-11l116,-116ZM480,880q-83,0 -156,-31.5T197,763q-54,-54 -85.5,-127T80,480q0,-83 31.5,-156T197,197q54,-54 127,-85.5T480,80q83,0 156,31.5T763,197q54,54 85.5,127T880,480q0,83 -31.5,156T763,763q-54,54 -127,85.5T480,880ZM480,800q134,0 227,-93t93,-227q0,-134 -93,-227t-227,-93q-134,0 -227,93t-93,227q0,134 93,227t227,93Z" />
-                </svg>
-                {t("No")}
-              </button>
-
-              {/* YES — filled carmine_pink button with ic_delete_account
-                  (filled trash, same icon as the Profile Delete button) */}
-              <button
-                onClick={() => {
-                  setShowDeleteDialog(false);
-                  setShowPinSheet(true);
-                }}
-                className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor: COLORS.carminePink,
-                  color: COLORS.white,
-                  border: "none",
-                  cursor: "pointer",
-                  borderRadius: 16,
-                }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill={COLORS.white}>
-                  <path d="M6,19c0,1.1 0.9,2 2,2h8c1.1,0 2,-0.9 2,-2V9c0,-1.1 -0.9,-2 -2,-2H8c-1.1,0 -2,0.9 -2,2v10zM18,4h-2.5l-0.71,-0.71c-0.18,-0.18 -0.44,-0.29 -0.7,-0.29H9.91c-0.26,0 -0.52,0.11 -0.7,0.29L8.5,4H6c-0.55,0 -1,0.45 -1,1s0.45,1 1,1h12c0.55,0 1,-0.45 1,-1s-0.45,-1 -1,-1z" />
-                </svg>
-                {t("Yes")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <DeleteAccountDialog
+          setShowDeleteDialog={setShowDeleteDialog}
+          setShowPinSheet={setShowPinSheet}
+          t={t}
+        />
       )}
 
       {/* Submit PIN bottom sheet — mirrors Android dialog_submit_pin.xml:
@@ -822,74 +551,14 @@ export default function ProfilePage() {
           (light_gray_new disabled, dark_aquamarine_green enabled), then
           PoweredBy at the bottom. Tap-outside-to-dismiss. */}
       {showPinSheet && (
-        <div
-          className="fixed top-0 h-full z-50 flex items-end justify-center"
-          style={{
-            left: COLUMN_LEFT,
-            width: COLUMN_WIDTH,
-            backgroundColor: "rgba(0,0,0,0.5)",
-          }}
-          onClick={(e) => {
-            if (e.target === e.currentTarget && !isDeleting) {
-              setShowPinSheet(false);
-              setDeletePin("");
-            }
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-t-2xl w-full max-w-[430px] pb-5 pt-5 px-4"
-            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.15)" }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Drag handle — bg_bottom_sheet_pin = go_green_15 (mint) */}
-            <div className="flex justify-center mb-5">
-              <div
-                style={{
-                  width: 40,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: COLORS.goGreen15,
-                }}
-              />
-            </div>
-            <h3
-              className="text-center font-bold mb-5"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-            >
-              {t("Submit PIN")}
-            </h3>
-            <PinInput value={deletePin} onChange={setDeletePin} />
-            <div className="mt-5">
-              <button
-                onClick={handleDelete}
-                disabled={deletePin.length !== PIN_LENGTH || isDeleting}
-                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor:
-                    deletePin.length === PIN_LENGTH && !isDeleting
-                      ? COLORS.darkAquamarineGreen
-                      : COLORS.lightGrayNew,
-                  color:
-                    deletePin.length === PIN_LENGTH && !isDeleting
-                      ? COLORS.white
-                      : COLORS.spanishGray,
-                  border: "none",
-                  cursor:
-                    deletePin.length === PIN_LENGTH && !isDeleting ? "pointer" : "not-allowed",
-                  transition: "background-color 0.2s",
-                }}
-              >
-                {isDeleting ? <Spinner size={20} /> : t("Submit")}
-              </button>
-            </div>
-
-            <div className="mt-8">
-              <PoweredBy />
-            </div>
-          </div>
-        </div>
+        <SubmitPinSheet
+          deletePin={deletePin}
+          handleDelete={handleDelete}
+          isDeleting={isDeleting}
+          setDeletePin={setDeletePin}
+          setShowPinSheet={setShowPinSheet}
+          t={t}
+        />
       )}
 
       {/* Change-PIN bottom sheet — confined to centered column.
@@ -897,135 +566,19 @@ export default function ProfilePage() {
           new (6), confirm-new (6). Disabled cascade so user fills
           top-to-bottom. */}
       {showChangePinSheet && (
-        <>
-          <div
-            className="fixed top-0 h-full z-50"
-            style={{
-              left: COLUMN_LEFT,
-              width: COLUMN_WIDTH,
-              backgroundColor: "rgba(0,0,0,0.45)",
-            }}
-            onClick={() => !isChangingPin && setShowChangePinSheet(false)}
-          />
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="fixed bottom-0 left-0 right-0 mx-auto bg-white pb-5"
-            style={{
-              maxWidth: COLUMN_WIDTH,
-              width: "100%",
-              zIndex: 51,
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              animation: "slideUp 0.28s cubic-bezier(0.22,1,0.36,1)",
-              maxHeight: "92vh",
-              overflowY: "auto",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-center pt-4 mb-3">
-              <div
-                style={{
-                  width: 40,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: COLORS.goGreen15,
-                }}
-              />
-            </div>
-
-            <p
-              className="text-center font-bold"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
-            >
-              {t("Change Your PIN")}
-            </p>
-            <p
-              className="text-center mt-1 mb-4 px-4"
-              style={{ color: COLORS.darkSilver, fontSize: 14 }}
-            >
-              {t("Enter your current PIN and choose a new 6-digit PIN.")}
-            </p>
-
-            <p
-              className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: COLORS.darkSilver }}
-            >
-              {t("Current PIN")}
-            </p>
-            <PinInput
-              label={t("Current PIN")}
-              value={currentPin}
-              onChange={setCurrentPin}
-              length={6}
-              disabled={isChangingPin}
-            />
-
-            <p
-              className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: COLORS.darkSilver }}
-            >
-              {t("New 6-digit PIN")}
-            </p>
-            <PinInput
-              label={t("New PIN")}
-              value={newPin}
-              onChange={setNewPin}
-              length={6}
-              disabled={
-                isChangingPin ||
-                currentPin.length < LEGACY_PIN_LENGTH ||
-                currentPin.length > PIN_LENGTH
-              }
-            />
-
-            <p
-              className="text-xs font-bold uppercase tracking-wide mt-3 mb-2 ml-4"
-              style={{ color: COLORS.darkSilver }}
-            >
-              {t("Confirm New PIN")}
-            </p>
-            <PinInput
-              label={t("Confirm new PIN")}
-              value={confirmNewPin}
-              onChange={setConfirmNewPin}
-              length={6}
-              disabled={isChangingPin || newPin.length !== PIN_LENGTH}
-            />
-
-            {confirmNewPin.length === PIN_LENGTH && newPin !== confirmNewPin && (
-              <p
-                className="text-xs font-bold text-center mt-2"
-                style={{ color: COLORS.carminePink }}
-              >
-                {t("New PINs do not match")}
-              </p>
-            )}
-
-            <div className="px-3 mt-5">
-              <button
-                onClick={handleChangePin}
-                disabled={!isChangePinReady || isChangingPin}
-                className="w-full py-4 rounded-full font-bold text-base flex items-center justify-center gap-2"
-                style={{
-                  backgroundColor:
-                    isChangePinReady && !isChangingPin
-                      ? COLORS.darkAquamarineGreen
-                      : COLORS.lightGrayNew,
-                  color: isChangePinReady && !isChangingPin ? COLORS.white : COLORS.spanishGray,
-                  border: "none",
-                  cursor: isChangePinReady && !isChangingPin ? "pointer" : "not-allowed",
-                }}
-              >
-                {isChangingPin ? <Spinner size={22} /> : t("Update PIN")}
-              </button>
-            </div>
-
-            <div className="mt-6">
-              <PoweredBy />
-            </div>
-          </div>
-        </>
+        <ChangePinSheet
+          confirmNewPin={confirmNewPin}
+          currentPin={currentPin}
+          handleChangePin={handleChangePin}
+          isChangePinReady={isChangePinReady}
+          isChangingPin={isChangingPin}
+          newPin={newPin}
+          setConfirmNewPin={setConfirmNewPin}
+          setCurrentPin={setCurrentPin}
+          setNewPin={setNewPin}
+          setShowChangePinSheet={setShowChangePinSheet}
+          t={t}
+        />
       )}
     </div>
   );
