@@ -12,7 +12,7 @@
 // Known sheet oddity, copied as given: Dry Cow ndf_for_min default (20)
 // sits below its min (25).
 import type { DietLimits } from "@/lib/api-client/models";
-import type { DietThresholdSpec } from "@/lib/api-client/feeds";
+import type { DietThresholdSpec } from "@/lib/api-client/diet";
 
 type Range = { min: number; max: number; default: number };
 type StateRanges = Partial<Record<keyof DietLimits, Range>>;

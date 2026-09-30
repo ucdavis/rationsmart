@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { applyDietLimitRanges, dietLimitSpecsFromTable } from "../diet-limit-ranges";
-import type { DietThresholdSpec } from "../api-client/feeds";
+import type { DietThresholdSpec } from "../api-client/diet";
 
 const apiSpec: DietThresholdSpec = {
   key: "ndf_max",

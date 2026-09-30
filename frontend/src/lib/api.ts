@@ -63,15 +63,9 @@ export {
 } from "./api-client/auth";
 export type { LoginResponse, LoginToken, LoginUser, UserProfileInfo } from "./api-client/auth";
 export {
-  DIET_LIMIT_DISPLAY_ORDER,
-  DIET_LIMIT_LABELS,
-  DIET_LIMIT_UNIT_LABELS,
   __resetFeedClassificationCache,
   checkInsertOrUpdate,
-  evaluateDiet,
   fetchFeedTaxonomyLabels,
-  getCattleInfoFields,
-  getDietThresholds,
   getFeedCategories,
   getFeedCategoriesLocalized,
   getFeedClassification,
@@ -82,21 +76,27 @@ export {
   insertCustomFeed,
   parseFeedCategoryOptions,
   parseFeedTypeOptions,
-  recommendDiet,
   searchFeeds,
-  sortDietThresholds,
   updateCustomFeed,
 } from "./api-client/feeds";
+export {
+  DIET_LIMIT_DISPLAY_ORDER,
+  DIET_LIMIT_LABELS,
+  DIET_LIMIT_UNIT_LABELS,
+  evaluateDiet,
+  getCattleInfoFields,
+  getDietThresholds,
+  recommendDiet,
+  sortDietThresholds,
+} from "./api-client/diet";
+export type { FeedSearchResult, FeedTaxonomyLabels, TaxonomyOption } from "./api-client/feeds";
 export type {
   CattleInfoFieldKey,
   CattleInfoFieldSpec,
   CattleInfoFieldsResponse,
   DietThresholdSpec,
   DietThresholdsResponse,
-  FeedSearchResult,
-  FeedTaxonomyLabels,
-  TaxonomyOption,
-} from "./api-client/feeds";
+} from "./api-client/diet";
 export {
   getMyFeedback,
   getSavedReports,
