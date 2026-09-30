@@ -63,7 +63,7 @@ export default function FeedbackDetailsSheet({
         {/* Drag handle */}
         <div className="flex justify-center mb-3">
           <div
-            style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: COLORS.sageBreeze }}
+            style={{ width: 40, height: 6, borderRadius: 3, backgroundColor: COLORS.goGreen15 }}
           />
         </div>
 

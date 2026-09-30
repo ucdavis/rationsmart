@@ -46,26 +46,26 @@ export const COLORS = {
   celticBlue: "#296CD3",
   water: "#E3F2FD",
   ghostWhite: "#F6F9FD",
+  // Android's 15 %-alpha tints (#26RRGGBB in colors.xml).
+  goGreen15: "rgba(5,188,109,0.15)",
+  vividGamboge15: "rgba(255,152,0,0.15)",
+  celticBlue15: "rgba(41,108,211,0.15)",
+  ultramarine15: "rgba(30,64,175,0.15)",
 
   // ── Web-only values (no Android resource) ────────────────────────────────
-  // Kept as-is to avoid visual changes; map each to an Android colour when
-  // the owning screen is next reviewed against its XML.
-  /** Drag handles, hairline dividers. Tailwind calls it "sparkling-silver". */
+  // Checked against the Android layouts on 2026-09-30 (audit D-12). Values
+  // that had an Android equivalent for the same element were replaced
+  // (toolbar/auth titles → darkAquamarineGreen, switch track off →
+  // lightGrayNew per bg_track.xml, select placeholder → darkSilver, drag
+  // handles → goGreen15 per bg_bottom_sheet_pin.xml, Evaluation chip →
+  // vividGamboge / vividGamboge15 per FeedReportPagingAdapter). What is left
+  // has no one-to-one Android element:
+  /** The PWA's light hairline dividers, input borders and shimmer blocks. */
   webDivider: "#E2E8F0",
-  /** Feed-sync "running" amber text. */
-  webAmberText: "#B4690E",
-  /** Darkest green, used for a few page titles. */
-  webDeepGreen: "#042F23",
-  /** Warning panel background. */
-  webWarningBg: "#FFF4E5",
-  /** Switch track when off. */
-  webSwitchOff: "#CBD5E1",
-  /** Placeholder text in CustomSelect. */
-  webPlaceholder: "#9CA3AF",
-  /** Orange accent. */
-  webOrange: "#FF9F1C",
-  /** Neutral border. */
+  /** Disabled Custom Diet Limits pill fill (web-only control state). */
   webBorder: "#E8EBEE",
+  /** Feed Library Sync "running" / warning text — a web-only admin feature. */
+  webAmberText: "#B4690E",
 } as const;
 
 /** Admin screens' sage → mint background (Android bg_admin). */

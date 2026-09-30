@@ -272,7 +272,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                   width: 56,
                   height: 56,
                   borderRadius: "50%",
-                  backgroundColor: "rgba(5,188,109,0.15)",
+                  backgroundColor: COLORS.goGreen15,
                 }}
               >
                 <div

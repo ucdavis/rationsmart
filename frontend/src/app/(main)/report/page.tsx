@@ -241,7 +241,7 @@ export default function ReportPage() {
     if (isInfeasible) {
       return {
         bg: COLORS.honeydew, // honeydew
-        stroke: "rgba(5,188,109,0.15)", // go_green_15
+        stroke: COLORS.goGreen15, // go_green_15
         iconBg: COLORS.darkGreenTurquoise, // dark_green_turquoise
         titleColor: COLORS.crayolaGreen, // la_salle_green
         bodyColor: COLORS.darkAquamarineGreen, // dark_aquamarine_green
@@ -251,7 +251,7 @@ export default function ReportPage() {
     // Optimal / else
     return {
       bg: COLORS.honeydew,
-      stroke: "rgba(5,188,109,0.15)",
+      stroke: COLORS.goGreen15,
       iconBg: COLORS.darkGreenTurquoise,
       titleColor: COLORS.crayolaGreen,
       bodyColor: COLORS.darkAquamarineGreen,

@@ -554,7 +554,7 @@ export default function AdminFeedsPage() {
                         className="flex items-center justify-center"
                         style={{
                           borderRadius: 60,
-                          backgroundColor: "rgba(5,188,109,0.15)",
+                          backgroundColor: COLORS.goGreen15,
                           padding: 10,
                           border: "none",
                           cursor: "pointer",
@@ -664,7 +664,7 @@ export default function AdminFeedsPage() {
                           style={{
                             backgroundColor: isActive ? COLORS.honeydew : COLORS.peachyPink,
                             color: isActive ? COLORS.darkAquamarineGreen : COLORS.carminePink,
-                            border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
+                            border: `1px solid ${isActive ? COLORS.goGreen15 : "rgba(228,74,74,0.20)"}`,
                             fontSize: 10,
                             padding: "2px 10px",
                             borderRadius: 10,
@@ -763,7 +763,7 @@ export default function AdminFeedsPage() {
                         style={{
                           backgroundColor: isActive ? COLORS.honeydew : COLORS.peachyPink,
                           color: isActive ? COLORS.darkAquamarineGreen : COLORS.carminePink,
-                          border: `1px solid ${isActive ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
+                          border: `1px solid ${isActive ? COLORS.goGreen15 : "rgba(228,74,74,0.20)"}`,
                           fontSize: 10,
                           padding: "2px 10px",
                           borderRadius: 10,

@@ -40,7 +40,7 @@ export default function GeneratingReportDialog() {
         {/* Double-card icon — outer go_green_15 pill, inner white pill, ic_generating_report inside */}
         <div
           className="flex items-center justify-center"
-          style={{ backgroundColor: "rgba(5,188,109,0.15)", borderRadius: 60, padding: 10 }}
+          style={{ backgroundColor: COLORS.goGreen15, borderRadius: 60, padding: 10 }}
         >
           <div
             className="flex items-center justify-center"
@@ -65,7 +65,7 @@ export default function GeneratingReportDialog() {
         {/* Indeterminate circular progress — dark_aquamarine_green stroke
             on go_green_15 track, matching Android cpi_generating. */}
         <svg className="animate-spin mt-5" width="40" height="40" viewBox="0 0 50 50" fill="none">
-          <circle cx="25" cy="25" r="20" stroke="rgba(5,188,109,0.15)" strokeWidth="4" />
+          <circle cx="25" cy="25" r="20" stroke={COLORS.goGreen15} strokeWidth="4" />
           <circle
             cx="25"
             cy="25"

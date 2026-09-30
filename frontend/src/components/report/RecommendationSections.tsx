@@ -570,7 +570,7 @@ export default function RecommendationSections({
                     <div
                       className="flex items-center justify-center flex-shrink-0"
                       style={{
-                        backgroundColor: "rgba(5,188,109,0.15)",
+                        backgroundColor: COLORS.goGreen15,
                         borderRadius: 10,
                         padding: 6,
                         marginTop: 2,

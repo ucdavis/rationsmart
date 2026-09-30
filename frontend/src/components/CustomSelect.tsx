@@ -162,7 +162,7 @@ export default function CustomSelect({
           background: transparentTrigger ? "transparent" : undefined,
           border: "none",
           padding: 0,
-          color: loading ? "transparent" : value ? COLORS.raisinBlack : COLORS.webPlaceholder,
+          color: loading ? "transparent" : value ? COLORS.raisinBlack : COLORS.darkSilver,
           fontSize: 14,
           cursor: loading ? "default" : disabled ? "not-allowed" : "pointer",
           width: "100%",

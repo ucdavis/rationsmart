@@ -309,7 +309,7 @@ export default function BulkUploadPage() {
           titleColor: COLORS.darkAquamarineGreen,
           msgColor: COLORS.darkAquamarineGreen,
           progressColor: COLORS.darkAquamarineGreen,
-          trackColor: "rgba(5,188,109,0.15)",
+          trackColor: COLORS.goGreen15,
         };
       case "failed":
         return {
@@ -340,7 +340,7 @@ export default function BulkUploadPage() {
           titleColor: COLORS.darkAquamarineGreen,
           msgColor: COLORS.greenOnyx,
           progressColor: COLORS.darkAquamarineGreen,
-          trackColor: "rgba(5,188,109,0.15)",
+          trackColor: COLORS.goGreen15,
         };
       }
       return {
@@ -540,7 +540,7 @@ export default function BulkUploadPage() {
                 onClick={handleConfirmUpload}
                 className="flex items-center justify-center flex-shrink-0"
                 style={{
-                  backgroundColor: "rgba(5,188,109,0.15)",
+                  backgroundColor: COLORS.goGreen15,
                   borderRadius: 60,
                   padding: 6,
                   border: "none",

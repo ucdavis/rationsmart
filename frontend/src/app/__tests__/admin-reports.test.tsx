@@ -122,7 +122,7 @@ describe("Admin reports — report-type chip coloring", () => {
     created_at: "2026-06-04T10:30:00Z",
   };
 
-  it("Evaluation → vivid_gamboge theme (#FF9F1C text / 15% bg) on the View Report chip", async () => {
+  it("Evaluation → vivid_gamboge theme (#FF9800 text / vivid_gamboge_15 bg, Android FeedReportPagingAdapter) on the View Report chip", async () => {
     getAdminReports.mockResolvedValueOnce({
       data: { reports: [{ ...baseReport, report_type: "Evaluation" }] },
     });
@@ -130,7 +130,7 @@ describe("Admin reports — report-type chip coloring", () => {
     await waitFor(() => expect(screen.getByText("Evaluation")).toBeInTheDocument());
 
     const chip = screen.getByRole("button", { name: /View Report/ });
-    expect(chip).toHaveStyle({ color: "#FF9F1C", backgroundColor: "rgba(255,159,28,0.15)" });
+    expect(chip).toHaveStyle({ color: "#FF9800", backgroundColor: "rgba(255,152,0,0.15)" });
   });
 
   it("Recommendation → celtic_blue theme (#296CD3 text / 15% bg) on the View Report chip", async () => {

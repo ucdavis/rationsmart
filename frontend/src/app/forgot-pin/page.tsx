@@ -59,7 +59,7 @@ export default function ForgotPinPage() {
         <h1
           className="flex-1 text-center"
           style={{
-            color: COLORS.webDeepGreen,
+            color: COLORS.darkAquamarineGreen,
             fontSize: 16,
             fontWeight: 700,
             margin: 0,

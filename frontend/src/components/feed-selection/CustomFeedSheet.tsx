@@ -122,7 +122,7 @@ export default function CustomFeedSheet({
               width: 40,
               height: 6,
               borderRadius: 3,
-              backgroundColor: COLORS.sageBreeze,
+              backgroundColor: COLORS.goGreen15,
             }}
           />
         </div>

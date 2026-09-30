@@ -50,7 +50,7 @@ export default function SimulationHistorySheet({
               width: 40,
               height: 6,
               borderRadius: 3,
-              backgroundColor: COLORS.webDivider,
+              backgroundColor: COLORS.goGreen15,
             }}
           />
         </div>

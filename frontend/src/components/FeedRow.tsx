@@ -603,7 +603,7 @@ export default function FeedRow({
               backgroundColor: rowLoading
                 ? undefined
                 : canEdit
-                  ? "rgba(5,188,109,0.15)"
+                  ? COLORS.goGreen15
                   : COLORS.lightGrayNew,
               borderRadius: 10,
               padding: 8,
@@ -1047,7 +1047,7 @@ export default function FeedRow({
                   ? "transparent"
                   : cost
                     ? COLORS.darkAquamarineGreen
-                    : COLORS.webPlaceholder,
+                    : COLORS.darkSilver,
                 fontWeight: cost ? 700 : 400,
                 cursor: "default",
               }}

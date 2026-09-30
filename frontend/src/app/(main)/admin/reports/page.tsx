@@ -111,7 +111,7 @@ export default function AdminReportsPage() {
             // t() for display.
             const themed =
               reportType === "Evaluation"
-                ? { bg: "rgba(255,159,28,0.15)", text: COLORS.webOrange } // vivid_gamboge_15 / vivid_gamboge
+                ? { bg: COLORS.vividGamboge15, text: COLORS.vividGamboge } // Android FeedReportPagingAdapter
                 : reportType === "Recommendation"
                   ? { bg: "rgba(41,108,211,0.15)", text: COLORS.celticBlue } // celtic_blue_15 / celtic_blue
                   : { bg: COLORS.brightGrayNew, text: COLORS.darkAquamarineGreen }; // bright_gray_new / dark_aquamarine_green
@@ -137,7 +137,7 @@ export default function AdminReportsPage() {
                     <div
                       className="flex items-center justify-center flex-shrink-0"
                       style={{
-                        backgroundColor: "rgba(5,188,109,0.15)",
+                        backgroundColor: COLORS.goGreen15,
                         borderRadius: 60,
                         padding: 6,
                       }}
@@ -191,7 +191,7 @@ export default function AdminReportsPage() {
                     <span
                       className="font-bold flex-shrink-0"
                       style={{
-                        backgroundColor: COLORS.webWarningBg,
+                        backgroundColor: COLORS.vividGamboge15,
                         borderRadius: 60,
                         padding: "8px 14px",
                         color: COLORS.vividGamboge,

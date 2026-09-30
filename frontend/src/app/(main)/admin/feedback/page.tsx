@@ -86,7 +86,7 @@ const categoryStyle = (cat: string): CategoryStyle => {
       // "General"
       return {
         iconBg: COLORS.darkAquamarineGreen, // dark_aquamarine_green
-        badgeBg: "rgba(5,188,109,0.15)",
+        badgeBg: COLORS.goGreen15,
         badgeText: COLORS.darkAquamarineGreen,
         // ic_feedback_nav (chat bubble)
         icon: (

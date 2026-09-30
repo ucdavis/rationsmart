@@ -167,7 +167,7 @@ export default function ReportsPage() {
                       className="flex items-center justify-center"
                       style={{
                         borderRadius: 60,
-                        backgroundColor: "rgba(5,188,109,0.15)",
+                        backgroundColor: COLORS.goGreen15,
                         padding: 6,
                       }}
                     >
@@ -218,7 +218,7 @@ export default function ReportsPage() {
                         className="font-bold"
                         style={{
                           borderRadius: 60,
-                          backgroundColor: COLORS.webWarningBg,
+                          backgroundColor: COLORS.vividGamboge15,
                           padding: "8px 14px",
                           color: COLORS.vividGamboge,
                           fontSize: 12,
@@ -330,7 +330,7 @@ export default function ReportsPage() {
                     className="w-full flex items-center justify-center"
                     style={{
                       marginTop: 10,
-                      backgroundColor: "rgba(5,188,109,0.15)",
+                      backgroundColor: COLORS.goGreen15,
                       border: "none",
                       cursor: "pointer",
                       padding: "6px 0",

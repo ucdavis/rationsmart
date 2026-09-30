@@ -1101,7 +1101,8 @@ interface User {
 
 ## 12. Theme & visual tokens
 
-All colors taken from Android resources. Do not invent new colors.
+All colors taken from Android resources. Do not invent new colors. In code use
+`COLORS` from `src/lib/colors.ts` (Android names; a few documented web-only greys).
 
 | Token | Hex | Role |
 |---|---|---|
@@ -1118,9 +1119,9 @@ All colors taken from Android resources. Do not invent new colors.
 | carmine_pink | `#E44A4A` | errors, logout link |
 | red_ryb | `#FC2E20` / `#FC2E20` | required-asterisk, urgent red |
 | peachy_pink | `#FEC5BB` | error-state banner bg |
-| mustard | `#FFDB58` | snackbar error bg, filled stars |
+| mustard | `#FFDB58` | snackbar error bg, filled stars in feedback lists (the rating *input* uses mustard_yellow `#E3B505`, Android FragmentFeedback) |
 | silver_sand | `#C2C2C2` | empty stars |
-| vivid_gamboge | `#FF9800` / `#FF9F1C` | warning amber, evaluation chip |
+| vivid_gamboge | `#FF9800` (+ `vivid_gamboge_15` = 15 % alpha) | warning amber, evaluation chip |
 | dark_yellow | `#FFB300` | advisory icon |
 | fire_orange | `#FF7800` | advisory title |
 | celtic_blue | `#296CD3` | recommendation chip |

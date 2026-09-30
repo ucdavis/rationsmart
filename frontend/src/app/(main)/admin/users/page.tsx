@@ -428,7 +428,7 @@ export default function AdminUsersPage() {
                   style={{
                     backgroundColor: u.is_active ? COLORS.honeydew : COLORS.peachyPink,
                     color: u.is_active ? COLORS.darkAquamarineGreen : COLORS.carminePink,
-                    border: `1px solid ${u.is_active ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
+                    border: `1px solid ${u.is_active ? COLORS.goGreen15 : "rgba(228,74,74,0.20)"}`,
                     borderRadius: 10,
                     padding: "2px 10px",
                     fontSize: 10,
@@ -520,7 +520,7 @@ export default function AdminUsersPage() {
                   width: 40,
                   height: 6,
                   borderRadius: 3,
-                  backgroundColor: COLORS.sageBreeze,
+                  backgroundColor: COLORS.goGreen15,
                 }}
               />
             </div>
@@ -579,7 +579,7 @@ export default function AdminUsersPage() {
                 style={{
                   backgroundColor: selectedUser.is_active ? COLORS.honeydew : COLORS.peachyPink,
                   color: selectedUser.is_active ? COLORS.darkAquamarineGreen : COLORS.carminePink,
-                  border: `1px solid ${selectedUser.is_active ? "rgba(5,188,109,0.15)" : "rgba(228,74,74,0.20)"}`,
+                  border: `1px solid ${selectedUser.is_active ? COLORS.goGreen15 : "rgba(228,74,74,0.20)"}`,
                   borderRadius: 10,
                   padding: "2px 10px",
                   fontSize: 12,
@@ -693,7 +693,7 @@ export default function AdminUsersPage() {
                   backgroundColor:
                     (sheetActive ?? selectedUser.is_active)
                       ? COLORS.darkAquamarineGreen
-                      : COLORS.webSwitchOff,
+                      : COLORS.lightGrayNew,
                   border: "none",
                   position: "relative",
                   cursor: togglingId === selectedUser.id ? "not-allowed" : "pointer",
@@ -760,7 +760,7 @@ export default function AdminUsersPage() {
                     borderRadius: 16,
                     backgroundColor: selectedUser.is_admin
                       ? COLORS.darkAquamarineGreen
-                      : COLORS.webSwitchOff,
+                      : COLORS.lightGrayNew,
                     border: "none",
                     position: "relative",
                     cursor:

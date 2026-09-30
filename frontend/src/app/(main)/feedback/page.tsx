@@ -47,10 +47,12 @@ function StarRating({
       >
         {[1, 2, 3, 4, 5].map((star) => (
           <span key={star} style={{ padding: 2, display: "inline-flex" }} aria-hidden="true">
+            {/* Android FeedbackListAdapter tints history stars `mustard`;
+                only the rating INPUT (FragmentFeedback) uses mustard_yellow. */}
             <IcStar
               size={size}
               filled={star <= rating}
-              color={star <= rating ? COLORS.mustardYellow : COLORS.silverSand}
+              color={star <= rating ? COLORS.mustard : COLORS.silverSand}
             />
           </span>
         ))}
@@ -88,7 +90,7 @@ function StarRating({
 
 const categoryBadgeStyle = (cat: string): React.CSSProperties => {
   const map: Record<string, { bg: string; color: string }> = {
-    General: { bg: "rgba(5,188,109,0.15)", color: COLORS.darkAquamarineGreen },
+    General: { bg: COLORS.goGreen15, color: COLORS.darkAquamarineGreen },
     "Feature Request": { bg: "rgba(30,64,175,0.15)", color: COLORS.ultramarine },
     Defect: { bg: "rgba(228,74,74,0.2)", color: COLORS.carminePink },
   };
