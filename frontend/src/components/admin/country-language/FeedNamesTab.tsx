@@ -324,7 +324,7 @@ export function FeedNamesTab({
           {selCountry && localLangs.length === 0 && (
             <p className="text-sm mt-1" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
               {t(
-                "No local language is associated with this country yet — associate one on the Countries &amp; Languages screen."
+                "No local language is associated with this country yet — associate one on the Countries & Languages screen."
               )}
             </p>
           )}

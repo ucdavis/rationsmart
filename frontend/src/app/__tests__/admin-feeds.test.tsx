@@ -583,7 +583,7 @@ describe("Admin Feeds — UI-label translation (preferred_language: hi)", () => 
     fireEvent.click(await screen.findByRole("button", { name: "चारा प्रकार" })); // Feed Type nav card
     await screen.findByText("प्रबंधन"); // Management subheader confirms sub-section loaded
 
-    fireEvent.click(screen.getByRole("button", { name: "Add feed type" })); // aria-label untranslated (documented gap)
+    fireEvent.click(screen.getByRole("button", { name: "चारा प्रकार जोड़ें" })); // Add feed type (aria-label now translated)
 
     expect(await screen.findByText("चारा प्रकार जोड़ें")).toBeInTheDocument(); // Add Feed Type heading
     expect(screen.getByPlaceholderText("जैसे Forage")).toBeInTheDocument(); // e.g. Forage

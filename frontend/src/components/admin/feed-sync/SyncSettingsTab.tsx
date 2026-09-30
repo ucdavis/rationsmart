@@ -390,7 +390,7 @@ export function SyncSettingsTab({
             />
             <p className="text-xs mt-1" style={{ color: COLORS.spanishGray }}>
               {t(
-                "Changing the day doesn&apos;t trigger a run today — use Sync now for an immediate refresh."
+                "Changing the day doesn't trigger a run today — use Sync now for an immediate refresh."
               )}
             </p>
           </div>
