@@ -456,13 +456,25 @@ def build_evaluation_response(
     
     animal_information = _build_animal_information(cattle_info, env_grazing)
 
+    # Milk-derived fields (milk supported, limiting nutrient, cost per litre, milk-price
+    # margin) apply to a Lactating Cow only. For any other state they are None -- "not
+    # applicable to this animal", never 0.0 -- mirroring predict_total_milk_supported's
+    # gate and build_diet_response's is_lactating check. Gated on the state here too, so
+    # the contract holds even if an engine value leaks through.
+    is_lactating = getattr(cattle_info, 'physiological_state', None) == "Lactating Cow"
+
+    def _milk_metric(key):
+        if not is_lactating:
+            return None
+        return round(milk_support.get(key, 0.0), 2)
+
     # 1. Milk Production Analysis
     milk_production_analysis = {
         "target_production_kg_per_day": round(milk_support.get("Milk_Target_Production", 0.0), 2),
-        "milk_supported_by_energy_kg_per_day": round(milk_support.get("Milk_Energy_Supported", 0.0), 2),
-        "milk_supported_by_protein_kg_per_day": round(milk_support.get("Milk_Protein_Supported", 0.0), 2),
-        "actual_milk_supported_kg_per_day": round(milk_support.get("Milk_Supported", 0.0), 2),
-        "limiting_nutrient": milk_support.get("Limiting_Nutrient", "Unknown"),
+        "milk_supported_by_energy_kg_per_day": _milk_metric("Milk_Energy_Supported"),
+        "milk_supported_by_protein_kg_per_day": _milk_metric("Milk_Protein_Supported"),
+        "actual_milk_supported_kg_per_day": _milk_metric("Milk_Supported"),
+        "limiting_nutrient": milk_support.get("Limiting_Nutrient", "Unknown") if is_lactating else None,
         "energy_available_mcal": round(milk_support.get("NEL_Available", 0.0), 2),
         "protein_available_g": round(milk_support.get("MP_Available_kg", 0.0) * 1000, 2),
         "warnings": [],
@@ -484,19 +496,22 @@ def build_evaluation_response(
     # Milk selling rate vs. diet cost-per-liter comparison (optional input). For
     # evaluation, revenue uses the milk the diet actually supports (same denominator
     # as feed_cost_per_kg_milk).
-    eval_daily_cost = float(milk_support.get("Diet_Cost_Total_AF", 0.0))
-    eval_cost_per_liter = float(milk_support.get("Feed_Cost_Per_L_Milk", 0.0))
-    eval_milk_supported = float(milk_support.get("Milk_Supported", 0.0))
-    milk_price = getattr(cattle_info, 'milk_price', None)
-    if milk_price is None:
-        milk_price = post_results.get('milk_price')
-    margin_summary = _build_margin_summary(
-        milk_price, eval_cost_per_liter, eval_daily_cost, eval_milk_supported, currency
-    )
+    # A non-lactating animal has no milk to cost against, so no margin either.
+    margin_summary = None
+    if is_lactating:
+        eval_daily_cost = float(milk_support.get("Diet_Cost_Total_AF", 0.0))
+        eval_cost_per_liter = float(milk_support.get("Feed_Cost_Per_L_Milk", 0.0))
+        eval_milk_supported = float(milk_support.get("Milk_Supported", 0.0))
+        milk_price = getattr(cattle_info, 'milk_price', None)
+        if milk_price is None:
+            milk_price = post_results.get('milk_price')
+        margin_summary = _build_margin_summary(
+            milk_price, eval_cost_per_liter, eval_daily_cost, eval_milk_supported, currency
+        )
 
     cost_analysis = {
         "total_diet_cost_as_fed": round(milk_support.get("Diet_Cost_Total_AF", 0.0), 2),
-        "feed_cost_per_kg_milk": round(milk_support.get("Feed_Cost_Per_L_Milk", 0.0), 2),
+        "feed_cost_per_kg_milk": _milk_metric("Feed_Cost_Per_L_Milk"),
         "currency": currency,
         "margin_summary": margin_summary,
         "warnings": [],

@@ -639,10 +639,12 @@ class DietEvaluationRequest(BaseModel):
 
 class MilkProductionAnalysis(BaseModel):
     target_production_kg_per_day: float
-    milk_supported_by_energy_kg_per_day: float
-    milk_supported_by_protein_kg_per_day: float
-    actual_milk_supported_kg_per_day: float
-    limiting_nutrient: str
+    # The four milk-derived fields below are None for a non-lactating state (Dry Cow,
+    # Heifer): there is no milk to support, so they are "not applicable", not zero.
+    milk_supported_by_energy_kg_per_day: Optional[float] = None
+    milk_supported_by_protein_kg_per_day: Optional[float] = None
+    actual_milk_supported_kg_per_day: Optional[float] = None
+    limiting_nutrient: Optional[str] = None
     energy_available_mcal: float
     protein_available_g: float
     warnings: List[str] = Field(default_factory=list)
@@ -661,7 +663,8 @@ class IntakeEvaluation(BaseModel):
 
 class CostAnalysis(BaseModel):
     total_diet_cost_as_fed: float
-    feed_cost_per_kg_milk: float
+    # None for a non-lactating state -- no milk to cost the diet against.
+    feed_cost_per_kg_milk: Optional[float] = None
     currency: str
     warnings: List[str] = Field(default_factory=list)
     recommendations: List[str] = Field(default_factory=list)
@@ -706,7 +709,8 @@ class FeedBreakdownItem(BaseModel):
 
 class DietEvaluationSummary(BaseModel):
     overall_status: str
-    limiting_factor: str
+    # None for a non-lactating state -- the milk-limiting nutrient does not apply.
+    limiting_factor: Optional[str] = None
 
 
 class DietEvaluationResponse(BaseModel):
