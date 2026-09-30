@@ -35,6 +35,7 @@ import {
 } from "./shared";
 import TranslationCoverageCard from "./TranslationCoverageCard";
 import { useT } from "@/lib/i18n-ui";
+import { listFrom, numberField } from "@/lib/api-client/normalize";
 
 export function FeedNamesTab({
   countries,
@@ -102,9 +103,8 @@ export function FeedNamesTab({
       let totalPages = 1;
       do {
         const res = await getAdminFeeds("", page, ADMIN_PAGE_SIZE, "", "", selCountry.name, "");
-        const data = res.data as { feeds?: AdminFeedLite[]; total_pages?: number };
-        all.push(...(data?.feeds ?? []));
-        totalPages = data?.total_pages ?? 1;
+        all.push(...listFrom<AdminFeedLite>(res.data, "feeds"));
+        totalPages = numberField(res.data, "total_pages") ?? 1;
         page += 1;
       } while (page <= totalPages);
       if (cancelled) return;
@@ -115,7 +115,7 @@ export function FeedNamesTab({
         listFeedTranslations(f.feed_id).then((r) => ({
           feed_id: f.feed_id,
           translation:
-            ((r.data as { translations?: FeedTranslation[] })?.translations ?? []).find(
+            listFrom<FeedTranslation>(r.data, "translations").find(
               (t) => t.language === selLang
             ) ?? null,
         }))

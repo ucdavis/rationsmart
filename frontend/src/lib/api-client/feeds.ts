@@ -3,6 +3,7 @@
 // Split out of src/lib/api.ts (audit B-17); import from "@/lib/api".
 
 import { api, langParam } from "./client";
+import { asRecord, listFrom, stringField } from "./normalize";
 import type { DietLimits, EvaluationRequest, RecommendationRequest } from "./models";
 
 // ─── Feed taxonomy (JWT-protected) ──────────────────────────────────────────
@@ -126,20 +127,14 @@ async function allowedCategoryNamesForType(feed_type: string): Promise<Set<strin
 // Pulls the category rows out of whichever wrapper the backend used, without
 // changing the rows themselves — callers still parse them as they always did.
 function unwrapCategoryRows(data: unknown): unknown[] | null {
-  if (Array.isArray(data)) return data;
-  if (data && typeof data === "object") {
-    const o = data as Record<string, unknown>;
-    for (const key of ["categories", "unique_feed_categories", "feed_categories"]) {
-      if (Array.isArray(o[key])) return o[key] as unknown[];
-    }
-  }
-  return null;
+  const keys = ["categories", "unique_feed_categories", "feed_categories"];
+  const hasList = Array.isArray(data) || keys.some((k) => Array.isArray(asRecord(data)?.[k]));
+  return hasList ? listFrom<unknown>(data, ...keys) : null;
 }
 
 const categoryRowName = (row: unknown): string => {
   if (typeof row === "string") return row;
-  const o = row as { category_name?: string; name?: string };
-  return o?.category_name ?? o?.name ?? "";
+  return stringField(row, "category_name") ?? stringField(row, "name") ?? "";
 };
 
 /**
@@ -221,32 +216,28 @@ export type FeedTaxonomyLabels = {
   feeds: Record<string, string>; // feed id/uuid → localized display_name
 };
 
+// One row of GET /v1/animal/feed-name (standard or custom), as read here.
+interface FeedNameRow {
+  id?: string;
+  feed_id?: string;
+  fd_type?: string;
+  display_type?: string;
+  fd_category?: string;
+  display_category?: string;
+  display_name?: string;
+}
+
 export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedTaxonomyLabels> {
   const res = await api.get("/v1/animal/feed-name", {
     params: { country_id, ...langParam() },
   });
-  const feeds =
-    (res.data as {
-      standard_feeds?: {
-        id?: string;
-        feed_id?: string;
-        fd_type?: string;
-        display_type?: string;
-        fd_category?: string;
-        display_category?: string;
-        display_name?: string;
-      }[];
-      custom_feeds?: {
-        id?: string;
-        feed_id?: string;
-        fd_type?: string;
-        display_type?: string;
-        fd_category?: string;
-        display_category?: string;
-        display_name?: string;
-      }[];
-    }) ?? {};
-  const merged = [...(feeds.standard_feeds ?? []), ...(feeds.custom_feeds ?? [])];
+  // Rows are only read for their optional string fields, so a missing
+  // or reshaped envelope just yields empty label maps.
+  const envelope = asRecord(res.data);
+  const merged = [
+    ...listFrom<FeedNameRow>(envelope?.standard_feeds),
+    ...listFrom<FeedNameRow>(envelope?.custom_feeds),
+  ];
   const types: Record<string, string> = {};
   const categories: Record<string, string> = {};
   const feedNames: Record<string, string> = {};
@@ -443,8 +434,18 @@ export const recommendDiet = (data: RecommendationRequest) =>
 // (standard) feed UUID *or* a plain name string → "insert". The legacy
 // { insert_feed, feed_details:{ feed_id } } shape no longer exists — callers
 // must key off `action` / `feed_id`.
+// v1 answers { action, feed_id }; legacy backends sent the booleans.
+export interface CustomFeedCheckResponse {
+  action?: "insert" | "update";
+  feed_id?: string;
+  is_insert?: boolean;
+  insert_feed?: boolean;
+}
+
 export const checkInsertOrUpdate = (_country_id: string, feed_id: string, _user_id: string) =>
-  api.post("/v1/animal/custom-feeds/check", null, { params: { feed_id } });
+  api.post<CustomFeedCheckResponse | null>("/v1/animal/custom-feeds/check", null, {
+    params: { feed_id },
+  });
 
 // The v1 backend reads custom-feed fields FLAT at the top level of the body:
 // fd_name, fd_country_name, a taxonomy selection (feed_type_id +
@@ -583,31 +584,20 @@ export const searchFeeds = async (
     const res = await api.get("/v1/animal/search-feeds", {
       params: { query: query.trim(), country_id, limit: 20, ...langParam() },
     });
-    const body = res.data as unknown;
+    const body: unknown = res.data;
 
     // Accepted shapes (preferred → fallback):
     //   { feeds: [...], total_count: N }
     //   [...] bare array
     //   { results: [...] }
     //   { standard_feeds: [...], custom_feeds: [...] }  — concatenate
-    let raw: RawFeed[] = [];
-    if (Array.isArray(body)) {
-      raw = body as RawFeed[];
-    } else if (body && typeof body === "object") {
-      const o = body as {
-        feeds?: RawFeed[];
-        results?: RawFeed[];
-        standard_feeds?: RawFeed[];
-        custom_feeds?: RawFeed[];
-      };
-      if (Array.isArray(o.feeds)) raw = o.feeds;
-      else if (Array.isArray(o.results)) raw = o.results;
-      else if (Array.isArray(o.standard_feeds) || Array.isArray(o.custom_feeds)) {
-        raw = [
-          ...(o.standard_feeds ?? []),
-          ...(o.custom_feeds ?? []).map((f) => ({ ...f, is_custom: true })),
-        ];
-      }
+    let raw = listFrom<RawFeed>(body, "feeds", "results");
+    const envelope = asRecord(body);
+    if (!raw.length && envelope) {
+      raw = [
+        ...listFrom<RawFeed>(envelope.standard_feeds),
+        ...listFrom<RawFeed>(envelope.custom_feeds).map((f) => ({ ...f, is_custom: true })),
+      ];
     }
     const normalized = raw.map(normalizeRow).filter((r): r is FeedSearchResult => r !== null);
     return { data: normalized };
@@ -633,8 +623,6 @@ export interface TaxonomyOption {
   display: string;
 }
 
-const asRecord = (v: unknown): Record<string, unknown> | null =>
-  v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : null;
 const str = (v: unknown): string | undefined => (typeof v === "string" ? v : undefined);
 
 function taxonomyRows(data: unknown, wrapperKeys: string[], identityKey: string): unknown[] {

@@ -21,6 +21,7 @@ import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
 import { authErrorMessage } from "@/lib/errors";
+import { messageOf } from "@/lib/api-client/normalize";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? COLORS.authenticWhite : COLORS.americanDiamond,
@@ -249,7 +250,7 @@ export default function ProfilePage() {
     setIsChangingPin(true);
     try {
       const res = await changePin(user.email, currentPin, newPin);
-      const msg = (res.data as { message?: string })?.message;
+      const msg = messageOf(res.data);
       showSnackbar(msg ?? t("PIN changed successfully"), "success");
       setShowChangePinSheet(false);
       setCurrentPin("");

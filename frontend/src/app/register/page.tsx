@@ -15,6 +15,7 @@ import { authErrorMessage } from "@/lib/errors";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import { messageOf } from "@/lib/api-client/normalize";
 
 interface Country {
   id: string | number;
@@ -124,7 +125,7 @@ export default function RegisterPage() {
       // - Push to /verify-email with the email pre-filled so the user
       //   can resend the verification link if needed, then return to
       //   /login to obtain a real JWT.
-      const successMsg = (res.data as { message?: string })?.message;
+      const successMsg = messageOf(res.data);
       if (successMsg) showSnackbar(successMsg, "success");
       router.replace(`/verify-email?email=${encodeURIComponent(email.trim())}`);
     } catch (err: unknown) {

@@ -2,7 +2,7 @@
 // tiles, methane bars, status badge) and the report-context helper. Split out
 // of report/page.tsx (audit B-17); each mirrors an Android report layout.
 import { COLORS } from "@/lib/colors";
-import type { AnimalCategory } from "@/lib/api";
+import type { AnimalCategory, ReportContextFlags } from "@/lib/api";
 
 // Y3 §2.3 — frontend equivalent of the backend's build_report_context.
 // Maps the animal's physiological state (cattleInfo.animal_category,
@@ -10,20 +10,7 @@ import type { AnimalCategory } from "@/lib/api";
 // of booleans indicating which report sections to render. Once Maria
 // ships a `report_context` block on the diet response, we'll prefer
 // that and fall back to this helper for older responses.
-export type ReportContext = {
-  showMilkProductionSection: boolean;
-  showMilkCostMarginCard: boolean;
-  showSolutionSummaryMilk: boolean;
-  showCalfMilkFeedingSection: boolean;
-  /**
-   * Methane INTENSITY is g of CH4 per kg of energy-corrected milk. A dry
-   * cow, heifer or calf produces no milk, so the figure has no meaning for
-   * them. Per the backend owner (QA row 12): the engine still calculates it
-   * for non-lactating animals, but it must not be DISPLAYED for them.
-   * Production / yield / Ym are per-day or per-kg-DMI and stay visible.
-   */
-  showMethaneIntensity: boolean;
-};
+export type ReportContext = Required<ReportContextFlags>;
 export function buildReportContext(category?: AnimalCategory | string | null): ReportContext {
   const cat = (category ?? "").trim();
   const isLactating = cat === "Lactating Cow";

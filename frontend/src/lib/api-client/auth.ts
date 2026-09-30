@@ -9,12 +9,40 @@ import type { Country, RegisterData } from "./models";
 // noted. The `login` response carries the JWT used by every animal/* and
 // most admin/* endpoint below.
 
+// v1 login shape. `country` is anyType server-side (Country object, plain
+// string or null). `token` is an object on v1 and a bare string on legacy;
+// the proxy moves the JWT into the httpOnly cookie and returns the object
+// with `access_token` stripped and `in_cookie: true`.
+export interface LoginUser {
+  id?: string;
+  name?: string;
+  email_id?: string;
+  country?: string | { name?: string; id?: string; country_code?: string } | null;
+  country_id?: string;
+  country_code?: string;
+  is_admin?: boolean;
+  preferred_language?: string;
+  [key: string]: unknown;
+}
+export interface LoginToken {
+  access_token?: string;
+  token_type?: string;
+  expires_in?: number;
+  in_cookie?: boolean;
+}
 export interface LoginResponse {
-  success: boolean;
-  message: string;
-  requires_pin_reset: boolean;
-  user: unknown | null;
-  token: string | null;
+  success?: boolean;
+  message?: string;
+  requires_pin_reset?: boolean;
+  user?: LoginUser | null;
+  token?: LoginToken | string | null;
+}
+
+// GET /v1/auth/user/{email_id} — only the fields the client reads.
+export interface UserProfileInfo {
+  is_admin?: boolean;
+  preferred_language?: string;
+  registered_language?: string;
 }
 
 export const login = (email_id: string, pin: string) =>
@@ -48,7 +76,7 @@ export const getCountries = () => api.get<Country[]>("/v1/auth/countries");
 
 // GET /v1/auth/user/{email_id} — public — returns UserProfileInfoResponse
 export const getUserProfile = (email_id: string) =>
-  api.get(`/v1/auth/user/${encodeURIComponent(email_id)}`);
+  api.get<UserProfileInfo | null>(`/v1/auth/user/${encodeURIComponent(email_id)}`);
 
 // PUT /v1/auth/user/{email_id} — public — { name, country_id, preferred_language? }
 // preferred_language is optional; when the user changes their language from

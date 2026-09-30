@@ -8,6 +8,7 @@ import {
   readSessionToken,
   setSessionCookie,
 } from "@/lib/session-cookie";
+import { asRecord, stringField } from "@/lib/api-client/normalize";
 
 // Backend location comes ONLY from the environment (see .env.example). There
 // is deliberately no hardcoded IP fallback: a deploy with missing env vars
@@ -82,26 +83,19 @@ function buildResponse(
  */
 function captureLoginToken(req: NextRequest, res: NextResponse, body: Buffer): NextResponse {
   if (res.status !== 200) return res;
-  let json: { token?: unknown } & Record<string, unknown>;
+  let json: Record<string, unknown> | null;
   try {
-    json = JSON.parse(body.toString("utf8"));
+    json = asRecord(JSON.parse(body.toString("utf8")));
   } catch {
     return res;
   }
+  if (!json) return res;
   const tok = json.token;
-  const access =
-    typeof tok === "string"
-      ? tok
-      : tok &&
-          typeof tok === "object" &&
-          typeof (tok as { access_token?: unknown }).access_token === "string"
-        ? (tok as { access_token: string }).access_token
-        : null;
+  const tokObj = asRecord(tok);
+  const access = typeof tok === "string" ? tok : (stringField(tok, "access_token") ?? null);
   if (!access) return res;
-  const expiresIn =
-    tok && typeof tok === "object" ? (tok as { expires_in?: unknown }).expires_in : undefined;
-  const { access_token: _dropped, ...rest } =
-    tok && typeof tok === "object" ? (tok as Record<string, unknown>) : { access_token: access };
+  const expiresIn = tokObj?.expires_in;
+  const { access_token: _dropped, ...rest } = tokObj ?? { access_token: access };
   const out = NextResponse.json(
     { ...json, token: { ...rest, in_cookie: true } },
     {

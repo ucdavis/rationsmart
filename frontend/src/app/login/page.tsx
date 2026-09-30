@@ -70,21 +70,7 @@ export default function LoginPage() {
       // 401'd. We now extract `.access_token` (a plain JWT string).
       // UserResponse.country is anyType (server may return a Country
       // object OR a plain string OR null) so we defensively probe both.
-      const body = res.data as {
-        user?: Record<string, unknown> & {
-          id?: string;
-          name?: string;
-          email_id?: string;
-          country?: string | { name?: string; id?: string; country_code?: string } | null;
-          country_id?: string;
-          country_code?: string;
-          is_admin?: boolean;
-          preferred_language?: string;
-        };
-        token?: { access_token?: string; token_type?: string; expires_in?: number } | string | null;
-        requires_pin_reset?: boolean;
-        message?: string;
-      };
+      const body = res.data;
 
       // v1 §requires_pin_reset: server tells us when the user just authenticated
       // with a legacy 4-digit PIN and must upgrade to a 6-digit one before
@@ -122,16 +108,12 @@ export default function LoginPage() {
           getCountries(),
         ]);
         if (profileRes.status === "fulfilled" && profileRes.value) {
-          const d = profileRes.value.data as {
-            is_admin?: boolean;
-            preferred_language?: string;
-            registered_language?: string;
-          };
+          const d = profileRes.value.data;
           is_admin = d?.is_admin ?? false;
           preferred_language = d?.preferred_language ?? d?.registered_language ?? "en";
         }
         if (countriesRes.status === "fulfilled") {
-          const found = (countriesRes.value.data as Array<{ id: string; currency?: string }>).find(
+          const found = countriesRes.value.data.find(
             (c) => String(c.id) === countryId
           );
           currency = found?.currency ?? "";

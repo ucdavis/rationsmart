@@ -350,19 +350,18 @@ describe("Admin Feed Library Sync — Sync & Settings tab", () => {
     expect(await screen.findByText(/Duration 5 s/)).toBeInTheDocument();
   });
 
-  it("shows 409/503 errors from Sync now without starting a run", async () => {
-    const err409 = Object.assign(new Error("A run is already in progress"), {
-      response: { status: 409 },
-    });
-    runFeedSyncNow.mockRejectedValueOnce(err409);
+  // The api client's interceptor rejects with `Error & { status }` — not an
+  // axios error with `.response` — so the fixtures mirror that shape (B-23).
+  it.each([
+    [409, "A sync is already running"],
+    [503, "Sync service unavailable — try again shortly"],
+  ])("shows the %i error from Sync now without starting a run", async (status, message) => {
+    runFeedSyncNow.mockRejectedValueOnce(Object.assign(new Error("upstream detail"), { status }));
     render(<AdminFeedSyncPage />);
     await screen.findByText("Automatic Scheduler");
     fireEvent.click(screen.getByRole("button", { name: /Sync now/ }));
     await waitFor(() =>
-      expect(useStore.getState().showSnackbar).toHaveBeenCalledWith(
-        "A sync is already running",
-        "error"
-      )
+      expect(useStore.getState().showSnackbar).toHaveBeenCalledWith(message, "error")
     );
   });
 

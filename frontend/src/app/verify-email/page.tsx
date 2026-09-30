@@ -29,6 +29,7 @@ import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
 import { cooldownSecondsLeft, markEmailSent } from "@/lib/email-cooldown";
 import { authErrorMessage, errorStatus, RESEND_SENT_NEUTRAL_MESSAGE } from "@/lib/errors";
+import { messageOf } from "@/lib/api-client/normalize";
 
 function VerifyEmailInner() {
   const router = useRouter();
@@ -58,7 +59,7 @@ function VerifyEmailInner() {
     try {
       const res = await resendVerification(email.trim());
       markEmailSent("resend-verification", email);
-      const msg = (res.data as { message?: string })?.message;
+      const msg = messageOf(res.data);
       showSnackbar(msg ?? t("Verification email resent — check your inbox"), "success");
     } catch (err: unknown) {
       // The backend answers an unknown / already-verified address with 400 or

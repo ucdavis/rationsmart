@@ -56,6 +56,7 @@ import {
   Tab,
 } from "@/components/admin/country-language/shared";
 import { useT } from "@/lib/i18n-ui";
+import { listFrom } from "@/lib/api-client/normalize";
 
 export default function AdminCountryLanguagePage() {
   const t = useT();
@@ -88,14 +89,12 @@ export default function AdminCountryLanguagePage() {
     void Promise.allSettled([listLanguages(), listCountriesWithLanguages()])
       .then(([langRes, countriesRes]) => {
         if (langRes.status === "fulfilled") {
-          const d = langRes.value.data as { languages?: SystemLanguage[] } | SystemLanguage[];
-          setAllLanguages(Array.isArray(d) ? d : (d?.languages ?? []));
+          setAllLanguages(listFrom<SystemLanguage>(langRes.value.data, "languages"));
         } else {
           showSnackbar(t("Could not load language registry"), "error");
         }
         if (countriesRes.status === "fulfilled") {
-          const d = countriesRes.value.data as { countries?: CountryRow[] } | CountryRow[];
-          setCountries((Array.isArray(d) ? d : (d?.countries ?? [])) as CountryRow[]);
+          setCountries(listFrom<CountryRow>(countriesRes.value.data, "countries"));
         } else {
           showSnackbar(t("Could not load countries"), "error");
         }

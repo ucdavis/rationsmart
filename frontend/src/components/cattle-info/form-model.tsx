@@ -78,22 +78,34 @@ export function defaultAsFormValue(spec: CattleInfoFieldSpec, grazing = false): 
   if (step && typeof d === "number") return formatStepValue(d, step);
   return String(d);
 }
+// Spec-driven writes go through a runtime key (FORM_KEY[spec.key]), which
+// TypeScript can't correlate with that field's own type. They're sound:
+// every FORM_KEY target is a string field except `grazing`, and
+// defaultAsFormValue returns a boolean exactly for boolean specs. So the
+// writes happen on a widened view and are narrowed back here — the one
+// cast in this module (audit B-23), instead of one per function.
+type FormSlots = Record<keyof FormState, FormState[keyof FormState]>;
+function patchForm(form: FormState, write: (slots: FormSlots) => void): FormState {
+  const next: FormSlots = { ...form };
+  write(next);
+  return next as FormState;
+}
 // Every spec field — visible or hidden — takes its default. Used when the
 // user picks a physiological state, on Reset, and on a fresh mount.
 export function applyDefaults(form: FormState, specs: FieldSpecs): FormState {
-  const next = { ...form } as Record<keyof FormState, unknown>;
-  for (const spec of Object.values(specs)) {
-    if (spec) next[FORM_KEY[spec.key]] = defaultAsFormValue(spec);
-  }
-  return next as unknown as FormState;
+  return patchForm(form, (next) => {
+    for (const spec of Object.values(specs)) {
+      if (spec) next[FORM_KEY[spec.key]] = defaultAsFormValue(spec);
+    }
+  });
 }
 // Hidden fields are submitted as their default, whatever the form holds.
 export function withHiddenDefaults(form: FormState, specs: FieldSpecs): FormState {
-  const next = { ...form } as Record<keyof FormState, unknown>;
-  for (const spec of Object.values(specs)) {
-    if (spec && !spec.visible) next[FORM_KEY[spec.key]] = defaultAsFormValue(spec);
-  }
-  return next as unknown as FormState;
+  return patchForm(form, (next) => {
+    for (const spec of Object.values(specs)) {
+      if (spec && !spec.visible) next[FORM_KEY[spec.key]] = defaultAsFormValue(spec);
+    }
+  });
 }
 export type Adjustments = Partial<Record<keyof FormState, string>>;
 // Pull restored / persisted values into the current spec: numbers clamped to
@@ -105,45 +117,46 @@ export function clampToSpecs(
   form: FormState,
   specs: FieldSpecs
 ): { form: FormState; adjusted: Adjustments } {
-  const next = { ...form } as Record<keyof FormState, unknown>;
   const adjusted: Adjustments = {};
-  for (const spec of Object.values(specs)) {
-    if (!spec || !spec.visible || spec.type === "boolean") continue;
-    if ((spec.key === "distance" || spec.key === "topography") && !form.grazing) continue;
-    const fk = FORM_KEY[spec.key];
-    const raw = String(next[fk] ?? "");
-    if (raw === "") continue;
+  const clamped = patchForm(form, (next) => {
+    for (const spec of Object.values(specs)) {
+      if (!spec || !spec.visible || spec.type === "boolean") continue;
+      if ((spec.key === "distance" || spec.key === "topography") && !form.grazing) continue;
+      const fk = FORM_KEY[spec.key];
+      const raw = String(next[fk] ?? "");
+      if (raw === "") continue;
 
-    if (spec.type === "enum") {
-      const options = spec.options ?? [];
-      if (options.includes(raw)) continue;
-      const alias = ENUM_ALIASES[raw];
-      if (alias && options.includes(alias)) {
-        next[fk] = alias;
+      if (spec.type === "enum") {
+        const options = spec.options ?? [];
+        if (options.includes(raw)) continue;
+        const alias = ENUM_ALIASES[raw];
+        if (alias && options.includes(alias)) {
+          next[fk] = alias;
+          continue;
+        }
+        next[fk] = defaultAsFormValue(spec);
+        adjusted[fk] = raw;
         continue;
       }
-      next[fk] = defaultAsFormValue(spec);
-      adjusted[fk] = raw;
-      continue;
-    }
 
-    const n = parseFloat(raw);
-    if (Number.isNaN(n)) continue;
-    const { min, max } = boundsFor(spec, form.grazing);
-    let v = n;
-    if (min != null && v < min) v = min;
-    if (max != null && v > max) v = max;
-    const step = DROPDOWN_STEP[spec.key];
-    if (step) {
-      v = Math.round(v / step) * step;
-      const snapped = optionsFor(spec).find((o) => Math.abs(parseFloat(o) - v) < 1e-9);
-      next[fk] = snapped ?? formatStepValue(v, step);
-    } else if (v !== n) {
-      next[fk] = String(v);
+      const n = parseFloat(raw);
+      if (Number.isNaN(n)) continue;
+      const { min, max } = boundsFor(spec, form.grazing);
+      let v = n;
+      if (min != null && v < min) v = min;
+      if (max != null && v > max) v = max;
+      const step = DROPDOWN_STEP[spec.key];
+      if (step) {
+        v = Math.round(v / step) * step;
+        const snapped = optionsFor(spec).find((o) => Math.abs(parseFloat(o) - v) < 1e-9);
+        next[fk] = snapped ?? formatStepValue(v, step);
+      } else if (v !== n) {
+        next[fk] = String(v);
+      }
+      if (Math.abs(v - n) > 1e-9) adjusted[fk] = raw;
     }
-    if (Math.abs(v - n) > 1e-9) adjusted[fk] = raw;
-  }
-  return { form: next as unknown as FormState, adjusted };
+  });
+  return { form: clamped, adjusted };
 }
 // Form (strings) → store shape (numbers). The caller passes a form that has
 // already had withHiddenDefaults applied, so hidden fields carry the spec

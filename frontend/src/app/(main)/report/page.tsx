@@ -83,8 +83,7 @@ export default function ReportPage() {
   // server-built report_context, prefer that; otherwise compute locally
   // from the form's animal_category. cattleInfo.animal_category is the
   // 4-state enum (Lactating Cow / Dry Cow / Heifer / Baby Calf/Heifer).
-  const serverCtx = (reportData as { report_context?: Partial<ReportContext> } | null)
-    ?.report_context;
+  const serverCtx = reportData?.report_context;
   // Undefined keys are stripped before the spread: a server report_context
   // that merely *mentions* a flag without a value would otherwise overwrite
   // the locally-computed one with `undefined` and hide a section that should
@@ -163,8 +162,8 @@ export default function ReportPage() {
   // level report_id (evaluation). v1 may put it elsewhere.
   const reportIdForSave =
     (isEval ? evalReport?.report_id : recReport?.report_info?.report_id) ??
-    (reportData as { report_id?: string })?.report_id ??
-    (reportData as { id?: string })?.id ??
+    reportData?.report_id ??
+    reportData?.id ??
     "";
 
   const handleSave = () => void saveReportPdf(reportIdForSave);
@@ -188,17 +187,14 @@ export default function ReportPage() {
   // EvaluationResponse doesn't carry generated_date / user_name / simulation_id
   // at top level — fall back to the local store and current time. Recommendation
   // payload has report_info with those fields populated.
-  const evalRaw = evalReport as unknown as Record<string, unknown> | null;
   const generatedOn = formatReportDate(
-    isEval
-      ? ((evalRaw?.generated_at as string | undefined) ?? null)
-      : (recReport?.report_info?.generated_date ?? null)
+    isEval ? (evalReport?.generated_at ?? null) : (recReport?.report_info?.generated_date ?? null)
   );
   const ownerName = isEval
     ? (user?.name ?? "")
     : (recReport?.report_info?.user_name ?? user?.name ?? "");
   const simulationId = isEval
-    ? ((evalRaw?.simulation_id as string | undefined) ?? cattleInfo?.simulation_name ?? "")
+    ? (evalReport?.simulation_id ?? cattleInfo?.simulation_name ?? "")
     : (recReport?.report_info?.simulation_id ?? cattleInfo?.simulation_name ?? "");
 
   // Diet rating state machine — mirrors FragmentRecommendationReport
@@ -344,18 +340,7 @@ export default function ReportPage() {
           // ships it (see docs/Search_Implmentation.md §12.5 Option A).
           // Falls through to the client-side compute when the block is
           // absent. Either path produces the same UI.
-          const serverMargin = (
-            reportData as {
-              milk_cost_margin?: {
-                milk_price_per_litre?: number | null;
-                cost_per_litre?: number | null;
-                margin_per_litre?: number | null;
-                total_diet_cost_as_fed?: number | null;
-                daily_milk_production_l?: number | null;
-                currency?: string | null;
-              };
-            } | null
-          )?.milk_cost_margin;
+          const serverMargin = reportData?.milk_cost_margin;
           const milkPrice = serverMargin?.milk_price_per_litre ?? cattleInfo?.milk_price ?? null;
           const milkProduction =
             serverMargin?.daily_milk_production_l ?? cattleInfo?.milk_production ?? null;
@@ -520,16 +505,7 @@ export default function ReportPage() {
             // Backend-supplied plan (when present) wins; else compute the
             // rule-of-thumb. cattleInfo.body_weight is in kg → 10% by mass
             // ≈ 10% by volume for whole cow milk (density ~1.03 g/mL).
-            const serverPlan = (
-              reportData as {
-                calf_milk_feeding_plan?: {
-                  daily_milk_volume_l?: number;
-                  feedings_per_day?: number;
-                  estimated_weaning_age_days?: number;
-                  notes?: string[];
-                };
-              } | null
-            )?.calf_milk_feeding_plan;
+            const serverPlan = reportData?.calf_milk_feeding_plan;
             const dailyVolume = serverPlan?.daily_milk_volume_l ?? bw * 0.1;
             const feedings = serverPlan?.feedings_per_day ?? 2;
             const weaningDays = serverPlan?.estimated_weaning_age_days ?? 56;
@@ -696,19 +672,7 @@ export default function ReportPage() {
           // Prefer the backend-computed ForageConcentrateRatio block
           // when Maria ships it (see docs/Search_Implmentation.md §13.3).
           // Falls through to client-side compute when absent. Same UI.
-          const serverRatio = (
-            reportData as {
-              forage_concentrate_ratio?: {
-                forage_kg_as_fed?: number | null;
-                concentrate_kg_as_fed?: number | null;
-                other_kg_as_fed?: number | null;
-                forage_pct?: number | null;
-                concentrate_pct?: number | null;
-                other_pct?: number | null;
-                basis?: string | null;
-              };
-            } | null
-          )?.forage_concentrate_ratio;
+          const serverRatio = reportData?.forage_concentrate_ratio;
           let forageKg = 0;
           let concKg = 0;
           let otherKg = 0;

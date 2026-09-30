@@ -2,6 +2,8 @@
 // parity: backend `detail` first, then a connectivity hint, then a
 // screen-specific fallback). `translate` is the screen's useT() function.
 
+import { numberField } from "@/lib/api-client/normalize";
+
 export const NETWORK_ERROR_MESSAGE = "Please make sure your device has internet connectivity.";
 
 export function authErrorMessage(
@@ -18,8 +20,7 @@ export function authErrorMessage(
 
 /** HTTP status attached by the api client's error interceptor, if any. */
 export function errorStatus(err: unknown): number | undefined {
-  const s = (err as { status?: unknown } | null)?.status;
-  return typeof s === "number" ? s : undefined;
+  return numberField(err, "status");
 }
 
 // Account-enumeration-safe wording (audit A-19). The backend answers an

@@ -30,6 +30,7 @@ import {
   inputStyle,
 } from "./shared";
 import { useT } from "@/lib/i18n-ui";
+import { errorStatus } from "@/lib/errors";
 
 export function SyncSettingsTab({
   status,
@@ -223,8 +224,10 @@ export function SyncSettingsTab({
       showSnackbar(res.data.message, "info");
       startPolling(res.data.log_id);
     } catch (err: unknown) {
-      const anyErr = err as { response?: { status?: number } };
-      const httpStatus = anyErr?.response?.status;
+      // The api client rejects with Error + `.status` (no axios `.response`),
+      // so read it via errorStatus — the old `err.response.status` was
+      // always undefined and the 409/503 messages never showed.
+      const httpStatus = errorStatus(err);
       if (httpStatus === 409) showSnackbar(t("A sync is already running"), "error");
       else if (httpStatus === 503)
         showSnackbar(t("Sync service unavailable — try again shortly"), "error");

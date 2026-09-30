@@ -18,6 +18,7 @@ import {
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useLatestRef } from "@/lib/use-latest";
 import { taxonomyId } from "@/lib/taxonomy-id";
+import { asRecord, listFrom, stringField } from "@/lib/api-client/normalize";
 import type { User } from "@/lib/store";
 
 export interface FeedType {
@@ -425,47 +426,33 @@ export function useFeedCascade({
           // Defensive: also accept legacy bare array / sub_categories /
           // feeds wrappers and the older feed_uuid / feed_name keys, so a
           // shape regression doesn't break the dropdown.
-          const data = res.data as unknown;
-          const standardFeeds = (data as { standard_feeds?: unknown[] })?.standard_feeds;
-          const customFeeds = (data as { custom_feeds?: unknown[] })?.custom_feeds;
-          const raw: unknown[] =
-            Array.isArray(standardFeeds) || Array.isArray(customFeeds)
-              ? [
-                  ...(Array.isArray(standardFeeds) ? standardFeeds : []),
-                  ...(Array.isArray(customFeeds) ? customFeeds : []),
-                ]
-              : Array.isArray(data)
-                ? data
-                : Array.isArray((data as { sub_categories?: unknown[] })?.sub_categories)
-                  ? (data as { sub_categories: unknown[] }).sub_categories
-                  : Array.isArray((data as { feeds?: unknown[] })?.feeds)
-                    ? (data as { feeds: unknown[] }).feeds
-                    : // A single matching feed can come back as a bare object
-                      // instead of a 1-item array — wrap it instead of
-                      // rendering an empty Feed dropdown for a feed that
-                      // genuinely exists.
-                      data &&
-                        typeof data === "object" &&
-                        !Array.isArray(data) &&
-                        ("feed_id" in data || "fd_name" in data)
-                      ? [data]
-                      : [];
+          const data: unknown = res.data;
+          const envelope = asRecord(data);
+          const hasSplit =
+            Array.isArray(envelope?.standard_feeds) || Array.isArray(envelope?.custom_feeds);
+          const raw: unknown[] = hasSplit
+            ? [
+                ...listFrom<unknown>(envelope?.standard_feeds),
+                ...listFrom<unknown>(envelope?.custom_feeds),
+              ]
+            : Array.isArray(data) ||
+                Array.isArray(envelope?.sub_categories) ||
+                Array.isArray(envelope?.feeds)
+              ? listFrom<unknown>(data, "sub_categories", "feeds")
+              : // A single matching feed can come back as a bare object
+                // instead of a 1-item array — wrap it instead of rendering an
+                // empty Feed dropdown for a feed that genuinely exists.
+                envelope && ("feed_id" in envelope || "fd_name" in envelope)
+                ? [data]
+                : [];
           const list: FeedSubCategoryItem[] = raw
             .map((it) => {
-              const o = it as {
-                feed_id?: string;
-                feed_uuid?: string;
-                id?: string;
-                fd_name?: string;
-                feed_name?: string;
-                name?: string;
-                display_name?: string;
-              };
-              const uuid = o?.feed_id ?? o?.feed_uuid ?? o?.id;
-              const name = o?.fd_name ?? o?.feed_name ?? o?.name;
+              const str = (key: string) => stringField(it, key);
+              const uuid = str("feed_id") ?? str("feed_uuid") ?? str("id");
+              const name = str("fd_name") ?? str("feed_name") ?? str("name");
               // i18n V2 — display_name falls back to English name when no
               // translation exists, so we can render unconditionally.
-              const display = o?.display_name ?? name;
+              const display = str("display_name") ?? name;
               return uuid && name
                 ? { feed_name: name, feed_uuid: uuid, display_name: display }
                 : null;

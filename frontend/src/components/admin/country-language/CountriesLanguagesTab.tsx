@@ -24,6 +24,7 @@ import {
   sheetOverlayStyle,
 } from "./shared";
 import { useT } from "@/lib/i18n-ui";
+import { listFrom } from "@/lib/api-client/normalize";
 
 export function CountriesLanguagesTab({
   countries,
@@ -69,8 +70,7 @@ export function CountriesLanguagesTab({
     setIsLoadingInactive(true);
     listAllCountries()
       .then((res) => {
-        const d = res.data as { countries?: InactiveCountryRow[] } | InactiveCountryRow[];
-        const all = (Array.isArray(d) ? d : (d?.countries ?? [])) as InactiveCountryRow[];
+        const all = listFrom<InactiveCountryRow>(res.data, "countries");
         setInactiveCountries(all.filter((c) => !c.is_active));
       })
       .catch(() => showSnackbar(t("Could not load countries"), "error"))

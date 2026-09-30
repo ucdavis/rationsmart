@@ -278,11 +278,7 @@ export default function FeedRow({
         getFeedDetails(item.feed_uuid),
       ]);
       if (checkRes.status === "rejected") throw checkRes.reason;
-      const data = checkRes.value.data as {
-        action?: "insert" | "update";
-        is_insert?: boolean;
-        insert_feed?: boolean;
-      };
+      const data = checkRes.value.data;
       // v1 check endpoint returns { action, feed_id }: a non-owned (standard)
       // feed UUID → "insert" (editing creates a user-owned derivative), an
       // owned custom-feed UUID → "update". Fall back to the legacy booleans

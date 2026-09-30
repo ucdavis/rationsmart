@@ -41,6 +41,7 @@ import {
   TabType,
   emptyFeedForm,
 } from "@/components/admin/feeds/shared";
+import { listFrom } from "@/lib/api-client/normalize";
 
 export default function AdminFeedsPage() {
   const router = useRouter();
@@ -115,10 +116,7 @@ export default function AdminFeedsPage() {
       getAdminFeedCategories(user.id),
       collectPages(
         (page) => getAdminFeeds(user.id, page, ADMIN_PAGE_SIZE),
-        (fd) => {
-          const d = fd as { feeds?: AdminFeed[]; items?: AdminFeed[] } | AdminFeed[];
-          return Array.isArray(d) ? d : (d?.feeds ?? d?.items ?? []);
-        }
+        (fd) => listFrom<AdminFeed>(fd, "feeds", "items")
       ),
       getCountries(),
     ])

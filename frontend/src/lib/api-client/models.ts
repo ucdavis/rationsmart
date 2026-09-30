@@ -361,7 +361,65 @@ export interface NutrientBalance {
   warnings: string[];
 }
 
-export interface EvaluationResponse {
+// ─── Optional v1 report blocks ────────────────────────────────────────────
+// Forward-compatible fields the report prefers when the backend sends them
+// and computes client-side when absent (older responses). Declared here so
+// the report reads them typed instead of casting (audit B-23).
+
+/** Which report sections to render; see buildReportContext in report/parts. */
+export interface ReportContextFlags {
+  showMilkProductionSection?: boolean;
+  showMilkCostMarginCard?: boolean;
+  showSolutionSummaryMilk?: boolean;
+  showCalfMilkFeedingSection?: boolean;
+  /**
+   * Methane INTENSITY is g of CH4 per kg of energy-corrected milk. A dry
+   * cow, heifer or calf produces no milk, so the figure has no meaning for
+   * them. Per the backend owner (QA row 12): the engine still calculates it
+   * for non-lactating animals, but it must not be DISPLAYED for them.
+   * Production / yield / Ym are per-day or per-kg-DMI and stay visible.
+   */
+  showMethaneIntensity?: boolean;
+}
+
+export interface MilkCostMargin {
+  milk_price_per_litre?: number | null;
+  cost_per_litre?: number | null;
+  margin_per_litre?: number | null;
+  total_diet_cost_as_fed?: number | null;
+  daily_milk_production_l?: number | null;
+  currency?: string | null;
+}
+
+export interface CalfMilkFeedingPlan {
+  daily_milk_volume_l?: number;
+  feedings_per_day?: number;
+  estimated_weaning_age_days?: number;
+  notes?: string[];
+}
+
+export interface ForageConcentrateRatio {
+  forage_kg_as_fed?: number | null;
+  concentrate_kg_as_fed?: number | null;
+  other_kg_as_fed?: number | null;
+  forage_pct?: number | null;
+  concentrate_pct?: number | null;
+  other_pct?: number | null;
+  basis?: string | null;
+}
+
+export interface ReportExtras {
+  /** v1 may carry the id here instead of report_id / report_info.report_id. */
+  id?: string | null;
+  report_id?: string | null;
+  generated_at?: string | null;
+  report_context?: ReportContextFlags;
+  milk_cost_margin?: MilkCostMargin;
+  calf_milk_feeding_plan?: CalfMilkFeedingPlan;
+  forage_concentrate_ratio?: ForageConcentrateRatio;
+}
+
+export interface EvaluationResponse extends ReportExtras {
   mode: "evaluation";
   cost_analysis: CostAnalysis;
   currency: string | null;
@@ -401,6 +459,8 @@ export interface EnvironmentalImpact {
   methane_intensity_grams_per_kg_ecm: string | null;
   methane_production_grams_per_day: string | null;
   methane_yield_grams_per_kg_dmi: string | null;
+  /** v1 name for Ym; read when "Ym (%)" is absent. */
+  methane_conversion_rate_percent?: number | string | null;
 }
 
 export interface ReportInfo {
@@ -417,7 +477,7 @@ export interface SolutionSummary {
   milk_production: string | null;
 }
 
-export interface RecommendationResponse {
+export interface RecommendationResponse extends ReportExtras {
   mode: "recommendation";
   // Top-level advisory notes about limits the diet did not meet, e.g.
   // "Fat Content: above maximum (result = 2.66% of DM; target = 2.00% of DM)".

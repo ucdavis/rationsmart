@@ -12,6 +12,7 @@ import FeedbackDetailsSheet, { type FeedbackDetails } from "@/components/Feedbac
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import { listFrom } from "@/lib/api-client/normalize";
 
 interface AdminFeedback {
   id: number;
@@ -139,10 +140,7 @@ export default function AdminFeedbackPage() {
       collectPages(
         // getAdminFeedbacks takes (limit, offset) and converts to page/page_size.
         (page) => getAdminFeedbacks(user.id, ADMIN_PAGE_SIZE, (page - 1) * ADMIN_PAGE_SIZE),
-        (data) => {
-          const d = data as { feedbacks?: AdminFeedback[] } | AdminFeedback[];
-          return Array.isArray(d) ? d : (d?.feedbacks ?? []);
-        }
+        (data) => listFrom<AdminFeedback>(data, "feedbacks")
       ),
       getAdminFeedbackStats(user.id),
     ])

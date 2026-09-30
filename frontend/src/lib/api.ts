@@ -15,6 +15,7 @@ export {
 export type {
   AdditionalInformation,
   AnimalCategory,
+  CalfMilkFeedingPlan,
   CattleInfo,
   CattleInfoPayload,
   CostAnalysis,
@@ -27,12 +28,16 @@ export type {
   EvaluationSummary,
   FeedBreakdown,
   FeedItem,
+  ForageConcentrateRatio,
   IntakeEvaluation,
   MethaneAnalysis,
+  MilkCostMargin,
   MilkProductionAnalysis,
   NutrientBalance,
   RecommendationRequest,
   RecommendationResponse,
+  ReportContextFlags,
+  ReportExtras,
   RegisterData,
   ReportInfo,
   SolutionSummary,
@@ -56,7 +61,7 @@ export {
   updateUserProfile,
   verifyEmail,
 } from "./api-client/auth";
-export type { LoginResponse } from "./api-client/auth";
+export type { LoginResponse, LoginToken, LoginUser, UserProfileInfo } from "./api-client/auth";
 export {
   DIET_LIMIT_DISPLAY_ORDER,
   DIET_LIMIT_LABELS,

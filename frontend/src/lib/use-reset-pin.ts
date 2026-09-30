@@ -5,6 +5,7 @@ import { resetPin } from "@/lib/api";
 import { authErrorMessage, errorStatus, RESET_SENT_NEUTRAL_MESSAGE } from "@/lib/errors";
 import { useStore } from "@/lib/store";
 import { cooldownSecondsLeft, markEmailSent } from "@/lib/email-cooldown";
+import { messageOf } from "@/lib/api-client/normalize";
 
 /**
  * The forgot-PIN request shared by /login (bottom sheet), /forgot-pin (page)
@@ -42,7 +43,7 @@ export function useResetPin(opts: {
       markEmailSent("reset-pin", email);
       // Android shows the backend's message via uiData.data.message.
       const msg =
-        (res.data as { message?: string })?.message ??
+        messageOf(res.data) ??
         (opts.defaultSuccess ? opts.translate(opts.defaultSuccess) : undefined);
       if (msg) showSnackbar(msg, "success");
       opts.onSuccess?.();

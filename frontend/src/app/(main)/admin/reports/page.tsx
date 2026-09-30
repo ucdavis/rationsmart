@@ -11,6 +11,7 @@ import { openExternalUrl } from "@/lib/safe-url";
 import { ADMIN_PAGE_SIZE, collectPages } from "@/lib/pagination";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import { listFrom } from "@/lib/api-client/normalize";
 
 // Mirrors Android AdminFeedReport — only these fields exist in the API.
 // Critically, the "View Report" button opens bucket_url (a PDF URL),
@@ -47,10 +48,7 @@ export default function AdminReportsPage() {
     setIsLoading(true);
     collectPages(
       (page) => getAdminReports(user.id, page, ADMIN_PAGE_SIZE),
-      (data) => {
-        const d = data as { reports?: AdminReport[]; items?: AdminReport[] } | AdminReport[];
-        return Array.isArray(d) ? d : (d?.reports ?? d?.items ?? []);
-      }
+      (data) => listFrom<AdminReport>(data, "reports", "items")
     )
       .then(setReports)
       .catch(() => showSnackbar(tRef.current("Could not load reports"), "error"))

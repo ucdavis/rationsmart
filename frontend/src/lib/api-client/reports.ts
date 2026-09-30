@@ -2,6 +2,7 @@
 // Split out of src/lib/api.ts (audit B-17); import from "@/lib/api".
 
 import { api } from "./client";
+import { listFrom } from "./normalize";
 
 // ─── Reports (JWT-protected) ────────────────────────────────────────────────
 
@@ -31,13 +32,7 @@ export interface FeedReportListResponse {
 }
 
 function extractReportsList(data: unknown): FeedReport[] {
-  return Array.isArray(data)
-    ? (data as FeedReport[])
-    : Array.isArray((data as { reports?: FeedReport[] })?.reports)
-      ? (data as { reports: FeedReport[] }).reports
-      : Array.isArray((data as { items?: FeedReport[] })?.items)
-        ? (data as { items: FeedReport[] }).items
-        : [];
+  return listFrom<FeedReport>(data, "reports", "items");
 }
 
 async function fetchReportsFrom(path: string): Promise<{ ok: boolean; list: FeedReport[] }> {

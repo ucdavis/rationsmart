@@ -29,6 +29,7 @@ import { PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import { authErrorMessage } from "@/lib/errors";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
+import { messageOf } from "@/lib/api-client/normalize";
 
 function SetNewPinInner() {
   const router = useRouter();
@@ -67,7 +68,7 @@ function SetNewPinInner() {
     setIsSubmitting(true);
     try {
       const res = await setNewPin(email.trim(), oldPin, newPin);
-      const msg = (res.data as { message?: string })?.message;
+      const msg = messageOf(res.data);
       if (msg) showSnackbar(msg, "success");
       setDone(true);
     } catch (err: unknown) {

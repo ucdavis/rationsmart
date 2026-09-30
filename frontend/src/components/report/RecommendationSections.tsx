@@ -332,12 +332,7 @@ export default function RecommendationSections({
           const productionVal = Number(env.methane_production_grams_per_day ?? 0);
           const yieldVal = Number(env.methane_yield_grams_per_kg_dmi ?? 0);
           const intensityVal = Number(env.methane_intensity_grams_per_kg_ecm ?? 0);
-          const envRaw = env as unknown as Record<string, unknown>;
-          const ymVal = Number(
-            env["Ym (%)"] ??
-              (envRaw.methane_conversion_rate_percent as number | string | undefined) ??
-              0
-          );
+          const ymVal = Number(env["Ym (%)"] ?? env.methane_conversion_rate_percent ?? 0);
           return (
             <SCard
               title={t("Environmental Impact")}
