@@ -40,7 +40,7 @@ release is manual (`vercel deploy --prod --yes` then `vercel alias set`).
 | `testing` (current dev work) | https://rationsmart-testing.vercel.app | `<DEV_BACKEND_IP>:8000` | `<TESTING_PROJECT_ID>` | **v1** (JWT auth, 6-digit PIN, /v1/* paths) |
 | `main` (legacy prod) | https://rationsmart.vercel.app | `<PROD_BACKEND_IP>:8000` | `<PROD_PROJECT_ID>` | **legacy** (no /v1 prefix) |
 
-The repo at `~/Desktop/RationSmart-PWA` is linked to `rationsmart-testing`
+This checkout is linked to `rationsmart-testing`
 via `.vercel/project.json`. To deploy `main` → prod, use a worktree on
 `main` (pattern in §13 — same approach we used on 2026-06-18 to restore
 the prod URL).
@@ -172,7 +172,7 @@ both projects to redeploy in parallel.
 | `rationsmart-pwa` | `<OLD_DEV_PROJECT_ID>` | `rationsmart-pwa.vercel.app` | (same — no alias) | **dev** `<DEV_BACKEND_IP>:8000` |
 | `rationsmart-prod` | `<OLD_PROD_PROJECT_ID>` | `rationsmart-prod.vercel.app` | **`rationsmart.vercel.app`** | **prod** `<PROD_BACKEND_IP>:8000` |
 
-This directory (`~/Desktop/RationSmart-PWA`) is linked to `rationsmart-pwa`
+This directory is linked to `rationsmart-pwa`
 via `.vercel/project.json` — so any plain `vercel ...` command operates on
 the **dev** project. To operate on `rationsmart-prod` from CLI, use the
 worktree pattern in §13.
@@ -1188,7 +1188,7 @@ Verify with `x-backend-env: dev` (or `custom` if you pointed at something
 other than the two known IPs).
 
 ### Operating on the prod project from CLI
-The repo at `~/Desktop/RationSmart-PWA` is linked to
+This checkout is linked to
 `rationsmart-pwa` (dev). For prod-specific CLI operations:
 ```bash
 git worktree add --detach /tmp/rs-prod main
@@ -1308,7 +1308,7 @@ When a new feature requirement arrives:
 
 ## 18. i18n V2 — backend feed-data translation (Phase 1 shipped 2026-06-25)
 
-Spec source: `~/Desktop/post_impl_multi_language/`
+Spec source: the backend i18n V2 handoff folder (`post_impl_multi_language/`; local path in CLAUDE.local.md)
   - `api_endpoints_for_frontend.md` — the API contract (load first)
   - `technical_documentation.md` — backend invariants + DB schema
   - `user_functional_guide.md` — end-user flow
@@ -1473,7 +1473,7 @@ make backend endpoints consume it.
 
 ## 19. Backend API changes absorbed 2026-09-21 (defect round)
 
-Source: `~/Downloads/defects/` — four backend reports. All of the
+Source: the backend `defects/` folder (local path in CLAUDE.local.md) — four backend reports. All of the
 custom-diet-limits and search-feeds work is **deployed** on
 `<DEV_BACKEND_IP>:8000`; verify anything here against
 `http://<DEV_BACKEND_IP>:8000/openapi.json` rather than from memory.
@@ -1663,6 +1663,23 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
     deliberate fire-and-forget with `void`) and `npm run test:coverage`
     (floors in vitest.config.ts — only raise them).
   - `noUncheckedIndexedAccess` is on for app code.
+- **Pass 5 (2026-09-30):**
+  - Parse responses with `lib/api-client/normalize.ts` (`listFrom`,
+    `stringField`, `numberField`, `messageOf`, `asRecord`) — no new
+    `as {…}` / `as unknown as` casts. Import it directly, not via the
+    `@/lib/api` barrel (tests replace the barrel with `vi.mock`).
+  - The api client rejects with `Error & { status }` — **never read
+    `err.response`**; use `errorStatus(err)` from `lib/errors`. Test
+    fixtures must use the same shape.
+  - Saved simulations echo per-feed bounds as `min_kg_asfed` /
+    `max_kg_asfed` (wire names); `min_kg_per_day` is the store name.
+  - Admin screens use `t()` too. Snackbar translates its message at render.
+  - `FieldLabel` is a `<label>`; pass `htmlFor` for inputs only, never for
+    a `CustomSelect` trigger (it would replace the value in its name).
+  - ESLint runs in `next build` (`ignoreDuringBuilds: false`) with
+    `@typescript-eslint/recommended`.
+  - Tracked docs write the dev backend as `<DEV_BACKEND_IP>`; local paths
+    live in CLAUDE.local.md.
 - **Tests are type-checked** (`tsconfig.test.json`, part of
   `npm run typecheck`). `@typescript-eslint/no-unused-vars` is on
   (prefix `_` to opt out).
