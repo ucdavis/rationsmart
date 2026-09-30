@@ -4,6 +4,7 @@
 
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { COLORS } from "@/lib/colors";
+import { saveBlob } from "@/lib/download";
 
 export interface SchedulerStatus {
   scheduler_enabled: boolean;
@@ -158,14 +159,7 @@ export function downloadCsv(filename: string, rows: Array<Record<string, unknown
   );
   const lines = [cols.join(","), ...rows.map((r) => cols.map((c) => csvEscape(r[c])).join(","))];
   const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  saveBlob(blob, filename);
 }
 export const cardStyle = { boxShadow: "0 2px 8px rgba(0,0,0,0.06)" };
 export const inputStyle = {

@@ -35,6 +35,7 @@ vi.mock("@/lib/api", async () => {
 });
 
 import FeedRow from "@/components/FeedRow";
+import { taxonomyId } from "@/lib/taxonomy-id";
 import type { FeedItem } from "@/lib/api";
 import { useStore, type User } from "@/lib/store";
 
@@ -225,7 +226,11 @@ describe("cascade-reset rule (§10.10)", () => {
       />
     );
     await waitFor(() => expect(getFeedCategories).toHaveBeenCalled());
-    await screen.findByRole("button", { name: "Preserved" });
+    // The stored name is kept, and an id saved by an older build (a list
+    // position) is re-synced to the stable, name-derived id (audit B-24).
+    await waitFor(() =>
+      expect(onUpdate).toHaveBeenCalledWith("row-1", { category_id: taxonomyId("Preserved") })
+    );
     expect(onUpdate).not.toHaveBeenCalledWith(
       "row-1",
       expect.objectContaining({ category_name: "" })
@@ -1038,5 +1043,13 @@ describe("loading state without user fields (audit B-03)", () => {
     );
     await waitFor(() => expect(onCascadeLoading).toHaveBeenLastCalledWith("row-1", false));
     expect(getFeedTypes).not.toHaveBeenCalled();
+  });
+});
+
+describe("stable taxonomy ids (audit B-24)", () => {
+  it("are derived from the English name, so reordering can't change them", () => {
+    expect(taxonomyId("Forage")).toBe(taxonomyId("Forage"));
+    expect(taxonomyId("Forage")).not.toBe(taxonomyId("Concentrate"));
+    expect(taxonomyId("Forage")).toBeGreaterThan(0);
   });
 });

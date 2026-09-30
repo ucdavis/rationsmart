@@ -11,6 +11,7 @@ import {
   contentDispositionOf,
   filenameFromContentDisposition,
   uploadFileProblem,
+  saveBlob,
 } from "@/lib/download";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
@@ -258,16 +259,7 @@ export default function BulkUploadPage() {
           setDownloadMessage(t("Backend returned an empty file."));
           return;
         }
-        const objUrl = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = objUrl;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        // Slight delay before revoking so the browser has time to
-        // start the download stream.
-        setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
+        saveBlob(blob, fileName);
         setDownloadProgress(100);
         setDownloadStatus("successful");
         setDownloadMessage(

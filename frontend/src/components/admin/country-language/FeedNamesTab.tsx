@@ -16,6 +16,7 @@ import {
   contentDispositionOf,
   filenameFromContentDisposition,
   uploadFileProblem,
+  saveBlob,
 } from "@/lib/download";
 import { useEscapeKey } from "@/lib/use-escape";
 import { allSettledLimited } from "@/lib/concurrency";
@@ -200,14 +201,7 @@ export function FeedNamesTab({
         `translations_${selCountry.id}.xlsx`
       );
       const blob = res.data as Blob;
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      saveBlob(blob, fileName);
       showSnackbar(`Downloaded ${fileName}`, "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not download workbook";

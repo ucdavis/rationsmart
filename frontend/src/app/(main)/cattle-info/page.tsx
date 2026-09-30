@@ -65,6 +65,7 @@ import {
   toSpecMap,
   withHiddenDefaults,
 } from "@/components/cattle-info/form-model";
+import { taxonomyId } from "@/lib/taxonomy-id";
 
 export default function CattleInfoPage() {
   const router = useRouter();
@@ -411,9 +412,9 @@ export default function CattleInfoPage() {
                 : null;
             return {
               id: `feed_restored_${idx}_${Date.now()}`,
-              feed_type_id: sel.feed_type ? idx + 1 : null,
+              feed_type_id: sel.feed_type ? taxonomyId(sel.feed_type) : null,
               feed_type_name: sel.feed_type ?? "",
-              category_id: sel.feed_category ? idx + 1 : null,
+              category_id: sel.feed_category ? taxonomyId(sel.feed_category) : null,
               category_name: sel.feed_category ?? "",
               sub_category_id: sel.feed_id ? 1 : null,
               sub_category_name: sel.feed_name ?? "",

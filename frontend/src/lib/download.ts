@@ -55,3 +55,19 @@ export function uploadFileProblem(file: File, allowedExtensions: readonly string
   if (file.size === 0) return "File is empty";
   return null;
 }
+
+/**
+ * Saves a Blob as a file via a temporary same-origin object URL (the one
+ * copy of this for every export / workbook / CSV download — audit B-21).
+ * The URL is revoked shortly after, once the browser has started the save.
+ */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

@@ -17,6 +17,7 @@ import {
 } from "@/lib/api";
 import { isForageType, isRoughageType } from "@/lib/feed-type-aliases";
 import { useLatestRef } from "@/lib/use-latest";
+import { taxonomyId } from "@/lib/taxonomy-id";
 import type { User } from "@/lib/store";
 
 export interface FeedType {
@@ -113,8 +114,8 @@ export function useFeedCascade({
           // below (radios / category dropdown), so localization stays
           // reactive when the dict arrives after the cascade has already
           // populated the state.
-          const types = sorted.map((o, i) => ({
-            id: i + 1,
+          const types = sorted.map((o) => ({
+            id: taxonomyId(o.name),
             name: o.name,
             display: o.display,
           }));
@@ -268,8 +269,8 @@ export function useFeedCascade({
           // Display is applied at render time from taxonomyLabels (same
           // reason as feed types above — the dict fetch can complete
           // after this cascade does).
-          const newCats = opts.map((o, i) => ({
-            id: i + 1,
+          const newCats = opts.map((o) => ({
+            id: taxonomyId(o.name),
             name: o.name,
             display: o.display,
           }));
