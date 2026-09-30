@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "የተዘለሉ የአካባቢ ስሞች (${count}) — በምክንያት ተመድቧል",
   "Skipped rows (${count})": "የተዘለሉ ረድፎች (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "ይህ ጥምረት በ${country} ላሉ አርሶ አደሮች በከብት መረጃ ስክሪን ላይ ይታያል።",
-  "idle": "ስራ ፈት"
+  "idle": "ስራ ፈት",
+  "Too many attempts — try again in ${seconds} s.": "በጣም ብዙ ሙከራዎች — ከ${seconds} ሰከንድ በኋላ እንደገና ይሞክሩ።",
+  "Too many attempts — please wait a moment and try again.": "በጣም ብዙ ሙከራዎች — እባክዎ ትንሽ ይጠብቁና እንደገና ይሞክሩ።",
+  "This account is temporarily locked. Try again later or reset your PIN.": "ይህ መለያ ለጊዜው ተቆልፏል። ቆይተው እንደገና ይሞክሩ ወይም PIN ይቀይሩ።"
 }

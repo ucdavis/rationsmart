@@ -141,10 +141,26 @@ api.interceptors.response.use(
     }
     // Keep the HTTP status on the error so screens can pick a safe message
     // (e.g. auth flows that must not reveal whether an account exists).
-    const e = new Error(message) as Error & { status?: number };
+    const e = new Error(message) as Error & { status?: number; retryAfter?: number };
     e.status = status;
+    // Rate limiting (audit A-20): the backend answers 429 with Retry-After,
+    // in seconds or as an HTTP date. Kept on the error so screens can say
+    // how long to wait.
+    const retryAfter = parseRetryAfter(error?.response?.headers?.["retry-after"]);
+    if (retryAfter !== undefined) e.retryAfter = retryAfter;
     return Promise.reject(e);
   }
 );
+
+/** Retry-After → whole seconds (≥ 1), or undefined when absent / unparseable. */
+export function parseRetryAfter(raw: unknown, now = Date.now()): number | undefined {
+  if (typeof raw !== "string" && typeof raw !== "number") return undefined;
+  const text = String(raw).trim();
+  if (text === "") return undefined;
+  if (/^\d+$/.test(text)) return Math.max(1, Number(text));
+  const at = Date.parse(text);
+  if (Number.isNaN(at)) return undefined;
+  return Math.max(1, Math.ceil((at - now) / 1000));
+}
 
 export default api;

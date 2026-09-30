@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "Mga nilaktawang lokal na pangalan (${count}) — nakapangkat ayon sa dahilan",
   "Skipped rows (${count})": "Mga nilaktawang row (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "Lalabas ang kombinasyong ito sa screen ng Impormasyon ng Baka para sa mga magsasaka sa ${country}.",
-  "idle": "nakahinto"
+  "idle": "nakahinto",
+  "Too many attempts — try again in ${seconds} s.": "Masyadong maraming pagsubok — subukang muli sa loob ng ${seconds} segundo.",
+  "Too many attempts — please wait a moment and try again.": "Masyadong maraming pagsubok — maghintay sandali at subukang muli.",
+  "This account is temporarily locked. Try again later or reset your PIN.": "Pansamantalang naka-lock ang account na ito. Subukang muli mamaya o i-reset ang iyong PIN."
 }

@@ -6,11 +6,32 @@ import { numberField } from "@/lib/api-client/normalize";
 
 export const NETWORK_ERROR_MESSAGE = "Please make sure your device has internet connectivity.";
 
+// Rate limiting / lockout (audit A-20). Shown instead of the backend's
+// detail so the wording is consistent and translated.
+export const TOO_MANY_ATTEMPTS_MESSAGE = "Too many attempts — try again in ${seconds} s.";
+export const TOO_MANY_ATTEMPTS_NO_WAIT_MESSAGE =
+  "Too many attempts — please wait a moment and try again.";
+export const ACCOUNT_LOCKED_MESSAGE =
+  "This account is temporarily locked. Try again later or reset your PIN.";
+
+/** Seconds to wait from the error's Retry-After, if the backend sent one. */
+export function retryAfterSeconds(err: unknown): number | undefined {
+  return numberField(err, "retryAfter");
+}
+
 export function authErrorMessage(
   err: unknown,
   fallback: string,
   translate: (source: string) => string = (s) => s
 ): string {
+  const status = errorStatus(err);
+  if (status === 429) {
+    const wait = retryAfterSeconds(err);
+    return wait !== undefined
+      ? translate(TOO_MANY_ATTEMPTS_MESSAGE).replace("${seconds}", String(wait))
+      : translate(TOO_MANY_ATTEMPTS_NO_WAIT_MESSAGE);
+  }
+  if (status === 423) return translate(ACCOUNT_LOCKED_MESSAGE);
   if (err instanceof Error && err.message === "Network Error") {
     return translate(NETWORK_ERROR_MESSAGE);
   }

@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "বাদ পড়া স্থানীয় নাম (${count}) — কারণ অনুযায়ী সাজানো",
   "Skipped rows (${count})": "বাদ পড়া সারি (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "এই সমন্বয়টি ${country}-এর কৃষকদের জন্য গবাদি পশুর তথ্য স্ক্রিনে দেখা যাবে।",
-  "idle": "চলছে না"
+  "idle": "চলছে না",
+  "Too many attempts — try again in ${seconds} s.": "অনেক বেশি চেষ্টা — ${seconds} সেকেন্ড পরে আবার চেষ্টা করুন।",
+  "Too many attempts — please wait a moment and try again.": "অনেক বেশি চেষ্টা — অনুগ্রহ করে কিছুক্ষণ অপেক্ষা করে আবার চেষ্টা করুন।",
+  "This account is temporarily locked. Try again later or reset your PIN.": "এই অ্যাকাউন্টটি সাময়িকভাবে লক করা আছে। পরে আবার চেষ্টা করুন বা আপনার PIN রিসেট করুন।"
 }

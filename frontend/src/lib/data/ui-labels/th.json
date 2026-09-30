@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "ชื่อท้องถิ่นที่ข้าม (${count}) — จัดกลุ่มตามเหตุผล",
   "Skipped rows (${count})": "แถวที่ข้าม (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "ชุดนี้จะปรากฏในหน้าข้อมูลโคสำหรับเกษตรกรใน${country}",
-  "idle": "ว่าง"
+  "idle": "ว่าง",
+  "Too many attempts — try again in ${seconds} s.": "พยายามหลายครั้งเกินไป — ลองอีกครั้งใน ${seconds} วินาที",
+  "Too many attempts — please wait a moment and try again.": "พยายามหลายครั้งเกินไป — โปรดรอสักครู่แล้วลองอีกครั้ง",
+  "This account is temporarily locked. Try again later or reset your PIN.": "บัญชีนี้ถูกล็อกชั่วคราว ลองอีกครั้งภายหลังหรือรีเซ็ต PIN ของคุณ"
 }

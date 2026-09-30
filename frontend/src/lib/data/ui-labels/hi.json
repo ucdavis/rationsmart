@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "छोड़े गए स्थानीय नाम (${count}) — कारण के अनुसार समूहित",
   "Skipped rows (${count})": "छोड़ी गई पंक्तियां (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "यह संयोजन ${country} के किसानों के लिए मवेशी जानकारी स्क्रीन में दिखेगा।",
-  "idle": "रुका हुआ"
+  "idle": "रुका हुआ",
+  "Too many attempts — try again in ${seconds} s.": "बहुत अधिक प्रयास — ${seconds} सेकंड बाद फिर कोशिश करें।",
+  "Too many attempts — please wait a moment and try again.": "बहुत अधिक प्रयास — कृपया थोड़ी देर रुककर फिर कोशिश करें।",
+  "This account is temporarily locked. Try again later or reset your PIN.": "यह खाता अस्थायी रूप से लॉक है। बाद में फिर कोशिश करें या अपना PIN रीसेट करें।"
 }

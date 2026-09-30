@@ -9,20 +9,15 @@ import {
   setSessionCookie,
 } from "@/lib/session-cookie";
 import { asRecord, stringField } from "@/lib/api-client/normalize";
+import { BACKEND_HOST, BACKEND_PORT, BACKEND_PROTOCOL } from "@/lib/backend-origin";
 
 // Backend location comes ONLY from the environment (see .env.example). There
 // is deliberately no hardcoded IP fallback: a deploy with missing env vars
 // fails closed with a 500 instead of silently talking to some other backend.
-const BACKEND_HOST = process.env.BACKEND_HOST ?? "";
-const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
 // Label surfaced as `x-backend-env` so DevTools shows which backend served a
 // request (dev | prod | custom) without exposing the host itself.
 const BACKEND_ENV = process.env.BACKEND_ENV ?? "custom";
-// Upstream scheme (audit A-02). The backend is plain HTTP today (no TLS
-// terminator / hostname in front of it yet), so the default stays "http";
-// once TLS is in place set BACKEND_PROTOCOL=https and the proxy uses TLS
-// end-to-end with no code change.
-const BACKEND_PROTOCOL = process.env.BACKEND_PROTOCOL === "https" ? "https" : "http";
+// Upstream scheme: BACKEND_PROTOCOL in lib/backend-origin.ts (audit A-02).
 const transport = BACKEND_PROTOCOL === "https" ? https : http;
 
 // Upstream request timeout (UPSTREAM_TIMEOUT_MS, src/lib/timeouts.ts). Without

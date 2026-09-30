@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "Tên địa phương bị bỏ qua (${count}) — nhóm theo lý do",
   "Skipped rows (${count})": "Dòng bị bỏ qua (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "Tổ hợp này sẽ hiện trên màn hình Thông tin gia súc cho nông dân ở ${country}.",
-  "idle": "đang chờ"
+  "idle": "đang chờ",
+  "Too many attempts — try again in ${seconds} s.": "Quá nhiều lần thử — hãy thử lại sau ${seconds} giây.",
+  "Too many attempts — please wait a moment and try again.": "Quá nhiều lần thử — vui lòng đợi một lát rồi thử lại.",
+  "This account is temporarily locked. Try again later or reset your PIN.": "Tài khoản này tạm thời bị khóa. Hãy thử lại sau hoặc đặt lại PIN."
 }

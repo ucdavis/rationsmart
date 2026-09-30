@@ -877,5 +877,8 @@
   "Skipped local names (${count}) — grouped by reason": "Maqaalee naannoo irra darbaman (${count}) — sababaan gurmaa'e",
   "Skipped rows (${count})": "Tarreewwan irra darbaman (${count})",
   "The combination will appear in the Cattle Info screen for farmers in ${country}.": "Walitti makamni kun fuula Odeeffannoo Loonii keessatti qonnaan bultoota ${country}f ni mul'ata.",
-  "idle": "boqonnaa irra"
+  "idle": "boqonnaa irra",
+  "Too many attempts — try again in ${seconds} s.": "Yaaliin baay'ee ta'eera — sekondii ${seconds} booda irra deebi'ii yaali.",
+  "Too many attempts — please wait a moment and try again.": "Yaaliin baay'ee ta'eera — maaloo xiqqoo eegii irra deebi'ii yaali.",
+  "This account is temporarily locked. Try again later or reset your PIN.": "Herreegni kun yeroof cufameera. Booda irra deebi'ii yaali ykn PIN jijjiiri."
 }

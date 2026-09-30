@@ -124,3 +124,19 @@ describe("response interceptor — 401 unauthorized handling", () => {
     expect(handler).not.toHaveBeenCalled();
   });
 });
+
+describe("api — rate-limit Retry-After (audit A-20)", () => {
+  it("keeps Retry-After seconds on a 429 error", async () => {
+    const err = await extractorErrorFn({
+      response: { status: 429, headers: { "retry-after": "30" }, data: { detail: "Slow down" } },
+    }).catch((e: unknown) => e);
+    expect(err).toMatchObject({ status: 429, retryAfter: 30 });
+  });
+
+  it("leaves retryAfter unset when the header is missing", async () => {
+    const err = await extractorErrorFn({ response: { status: 429, data: {} } }).catch(
+      (e: unknown) => e
+    );
+    expect((err as { retryAfter?: number }).retryAfter).toBeUndefined();
+  });
+});
