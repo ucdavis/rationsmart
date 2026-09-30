@@ -3,26 +3,22 @@
 // (feed names/types/categories) via the backend. There is no backend
 // endpoint for UI-label translation — checked the live swagger
 // (dev backend /openapi.json) on 2026-07-13; every /v1/admin/translations/*
-// route is scoped to a feed_id. The only source for these strings is
-// docs/RationSmart_i18n_source.xlsx (554 rows, 9 locales). The ACTIVE
+// route is scoped to a feed_id. The strings live in the 9 per-language
+// JSON dictionaries under src/lib/data/ui-labels/. The ACTIVE
 // language is whatever is already persisted at user.preferred_language
 // (same field store.ts already documents as "used for label lookup"),
 // carried over by Zustand's existing persist middleware.
 //
-// Bundle-size note: the xlsx converts to ~270KB combined across all 9
-// languages. Bundling that statically added ~74KB to a single page's
-// First Load JS in testing (see git history around 2026-07-13) — most
-// users only ever need ONE language, so it's split into 9 per-language
+// Bundle-size note: the dictionaries are ~270KB combined across all 9
+// languages. Bundling them statically would add ~74KB to a page's First
+// Load JS — most users only ever need ONE language, so they're 9 per-language
 // flat JSON files (src/lib/data/ui-labels/<code>.json, ~30-50KB each)
 // and lazy-loaded via dynamic import() only when preferred_language
 // isn't "en". English users never download any of it.
 //
-// Regenerating the dictionary: re-run the conversion script (see the
-// commit that introduced this file) against an updated
-// docs/RationSmart_i18n_source.xlsx and overwrite the 9 files under
-// src/lib/data/ui-labels/. Keys are the exact English source string
-// (there is no separate key column in the sheet), so a changed English
-// string needs its row's key updated too or the lookup silently misses
+// Editing translations: keys are the exact English source string, so a
+// changed English string in the code needs its key updated in all 9 files
+// under src/lib/data/ui-labels/ too — otherwise the lookup silently misses
 // and falls back to English.
 
 import { createElement, Fragment, useEffect, useState, type ReactNode } from "react";

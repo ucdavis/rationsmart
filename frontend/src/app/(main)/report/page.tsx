@@ -336,8 +336,7 @@ export default function ReportPage() {
             the diet's cost-per-litre against that price and surfaces a
             positive (green) or negative (red) margin per litre.
             Computed client-side from existing response fields until
-            Maria ships a backend MilkCostMargin block on the response
-            (see docs/Search_Implmentation.md §12.5). */}
+            Maria ships a backend MilkCostMargin block on the response */}
         <MilkCostMarginCard
           reportCtx={reportCtx}
           reportData={reportData}
@@ -351,8 +350,7 @@ export default function ReportPage() {
 
         {/* Y3 §2.3 — Calf milk-feeding section. Only renders for animals
             in the "Baby Calf/Heifer" state. Backend will eventually ship
-            a CalfMilkFeedingPlan block on the response (see
-            docs/Search_Implmentation.md §14.3); until then the card
+            a CalfMilkFeedingPlan block on the response; until then the card
             shows the rule-of-thumb default (10% of body weight per day,
             split into 2 feedings, weaning ~8 weeks) using the cattle
             info the user already entered. */}

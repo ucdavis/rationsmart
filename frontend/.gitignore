@@ -44,3 +44,8 @@ Code_Audit_Report*.md
 # TypeScript incremental build cache
 *.tsbuildinfo
 coverage/
+
+# Internal documents — kept on the developer's machine, not shipped in the
+# repo handed to the client (specs, implementation notes, change history).
+/docs/
+/CLAUDE.md

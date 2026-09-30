@@ -42,7 +42,7 @@ export function MilkCostMarginCard({
 }) {
   if (!reportCtx.showMilkCostMarginCard) return null;
   // Prefer the backend-computed MilkCostMargin block when Maria
-  // ships it (see docs/Search_Implmentation.md §12.5 Option A).
+  // ships it.
   // Falls through to the client-side compute when the block is
   // absent. Either path produces the same UI.
   const serverMargin = reportData?.milk_cost_margin;
@@ -374,7 +374,7 @@ export function ForageConcentrateCard({
   t: Translate;
 }) {
   // Prefer the backend-computed ForageConcentrateRatio block
-  // when Maria ships it (see docs/Search_Implmentation.md §13.3).
+  // when Maria ships it.
   // Falls through to client-side compute when absent. Same UI.
   const serverRatio = reportData?.forage_concentrate_ratio;
   let forageKg = 0;

@@ -332,7 +332,7 @@ export const updateCustomFeed = (body: {
 export const getFeedClassification = () => api.get("/v1/feed-classification/structure");
 
 // Y3 §1.1.1 — feed search. Live backend endpoint per
-// docs/Search_Implmentation.md §9.1:
+// Search contract:
 //   GET /v1/animal/search-feeds?query=...&country_id=...&limit=20
 // JWT comes from the axios interceptor; no user_id query param.
 // Response is defensively parsed so the UI keeps working if the
