@@ -4,6 +4,7 @@
 
 import CustomSelect from "@/components/CustomSelect";
 import { COLORS } from "@/lib/colors";
+import { useT } from "@/lib/i18n-ui";
 
 export const inputStyle = {
   backgroundColor: COLORS.americanDiamond,
@@ -87,6 +88,7 @@ export function SelectInput({
   loading?: boolean;
   highlight?: boolean;
 }) {
+  const t = useT();
   // Outer gray-pill keeps the rounded chrome consistent with other fields;
   // CustomSelect renders its own zebra-striped popup matching Android's
   // DropDownListAdapter (mint/white alternating rows).
@@ -109,7 +111,7 @@ export function SelectInput({
         value={value}
         onChange={onChange}
         options={options}
-        placeholder={placeholder ?? "Select"}
+        placeholder={placeholder ?? t("Select")}
         disabled={disabled}
         loading={loading}
       />

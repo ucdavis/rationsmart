@@ -139,8 +139,8 @@ export default function AdminCountryLanguagePage() {
         <div className="flex rounded-2xl p-1" style={{ backgroundColor: COLORS.brightGrayNew }}>
           {(
             [
-              { key: "countries", label: "Countries & Languages" },
-              { key: "feeds", label: "Local Feed Names" },
+              { key: "countries", label: t("Countries & Languages") },
+              { key: "feeds", label: t("Local Feed Names") },
             ] as const
           ).map((t) => (
             <button

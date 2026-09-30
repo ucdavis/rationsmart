@@ -375,6 +375,7 @@ export default function ProfilePage() {
           </p>
           <div className="relative">
             <select
+              aria-label={t("Country")}
               value={selectedCountryId}
               onChange={(e) => setSelectedCountryId(e.target.value)}
               {...loadingFieldProps(
@@ -421,6 +422,7 @@ export default function ProfilePage() {
               </p>
               <div className="relative">
                 <select
+                  aria-label={t("Language")}
                   value={selectedLang}
                   onChange={(e) => setSelectedLang(e.target.value)}
                   {...loadingFieldProps(
@@ -562,7 +564,7 @@ export default function ProfilePage() {
             style={{
               border: `2px solid ${COLORS.darkAquamarineGreen}`,
               color: COLORS.darkAquamarineGreen,
-              backgroundColor: "white",
+              backgroundColor: COLORS.white,
               cursor: "pointer",
               borderRadius: 14,
               fontWeight: 700,
@@ -777,7 +779,7 @@ export default function ProfilePage() {
                 style={{
                   border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
-                  background: "white",
+                  background: COLORS.white,
                   cursor: "pointer",
                   borderRadius: 16,
                 }}
@@ -798,7 +800,7 @@ export default function ProfilePage() {
                 className="flex-1 py-3 font-bold flex items-center justify-center gap-2"
                 style={{
                   backgroundColor: COLORS.carminePink,
-                  color: "white",
+                  color: COLORS.white,
                   border: "none",
                   cursor: "pointer",
                   borderRadius: 16,
@@ -870,7 +872,9 @@ export default function ProfilePage() {
                       ? COLORS.darkAquamarineGreen
                       : COLORS.lightGrayNew,
                   color:
-                    deletePin.length === PIN_LENGTH && !isDeleting ? "white" : COLORS.spanishGray,
+                    deletePin.length === PIN_LENGTH && !isDeleting
+                      ? COLORS.white
+                      : COLORS.spanishGray,
                   border: "none",
                   cursor:
                     deletePin.length === PIN_LENGTH && !isDeleting ? "pointer" : "not-allowed",
@@ -950,7 +954,7 @@ export default function ProfilePage() {
               {t("Current PIN")}
             </p>
             <PinInput
-              label="Current PIN"
+              label={t("Current PIN")}
               value={currentPin}
               onChange={setCurrentPin}
               length={6}
@@ -964,7 +968,7 @@ export default function ProfilePage() {
               {t("New 6-digit PIN")}
             </p>
             <PinInput
-              label="New PIN"
+              label={t("New PIN")}
               value={newPin}
               onChange={setNewPin}
               length={6}
@@ -982,7 +986,7 @@ export default function ProfilePage() {
               {t("Confirm New PIN")}
             </p>
             <PinInput
-              label="Confirm new PIN"
+              label={t("Confirm new PIN")}
               value={confirmNewPin}
               onChange={setConfirmNewPin}
               length={6}

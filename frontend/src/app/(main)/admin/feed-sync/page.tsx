@@ -134,8 +134,8 @@ export default function AdminFeedSyncPage() {
         <div className="flex rounded-2xl p-1" style={{ backgroundColor: COLORS.brightGrayNew }}>
           {(
             [
-              { key: "sync", label: "Sync & Settings" },
-              { key: "history", label: "Run History" },
+              { key: "sync", label: t("Sync & Settings") },
+              { key: "history", label: t("Run History") },
             ] as const
           ).map((t) => (
             <button

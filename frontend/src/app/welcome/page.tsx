@@ -26,7 +26,7 @@ export default function WelcomePage() {
       <div className="px-3 flex justify-center">
         <Image
           src="/images/ic_welcome_image.png"
-          alt="Welcome illustration"
+          alt={t("Welcome illustration")}
           width={500}
           height={500}
           style={{ width: "100%", height: "auto", maxWidth: 400 }}

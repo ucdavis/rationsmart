@@ -20,6 +20,7 @@ import { toFeedReportDisplayDate } from "@/lib/validators";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { COLORS } from "@/lib/colors";
+import { useT } from "@/lib/i18n-ui";
 
 export interface FeedbackDetails {
   rating: number;
@@ -36,6 +37,7 @@ export default function FeedbackDetailsSheet({
   onClose: () => void;
 }) {
   // Hooks before the early return (rules-of-hooks).
+  const t = useT();
   useEscapeKey(!!details, onClose);
   if (!details) return null;
 
@@ -94,7 +96,7 @@ export default function FeedbackDetailsSheet({
         {/* Date + Category info tiles */}
         <div className="flex gap-3 mt-6 px-1">
           <InfoTile
-            label="Date"
+            label={t("Date")}
             value={toFeedReportDisplayDate(details.createdAt)}
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -117,7 +119,7 @@ export default function FeedbackDetailsSheet({
             }
           />
           <InfoTile
-            label="Category"
+            label={t("Category")}
             value={details.category || "N/A"}
             icon={
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
@@ -184,7 +186,7 @@ export default function FeedbackDetailsSheet({
             className="font-bold text-base"
             style={{ color: COLORS.darkAquamarineGreen, lineHeight: 1.5 }}
           >
-            {details.text?.trim() || "Feedback not provided!"}
+            {details.text?.trim() || t("Feedback not provided!")}
           </p>
         </div>
 

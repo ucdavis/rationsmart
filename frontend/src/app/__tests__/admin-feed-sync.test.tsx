@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within, act } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 
 const {
   back,
@@ -161,8 +161,8 @@ describe("Admin Feed Library Sync — Sync & Settings tab", () => {
     render(<AdminFeedSyncPage />);
     await screen.findByText("Automatic Scheduler");
     expect(screen.getByText("Configure the CLIMDES endpoint first")).toBeInTheDocument();
-    const toggleLabel = screen.getByLabelText("Enable automatic scheduler");
-    const toggle = within(toggleLabel).getByRole("checkbox") as HTMLInputElement;
+    // The accessible name sits on the checkbox itself (audit B-31).
+    const toggle = screen.getByRole("checkbox", { name: "Enable automatic scheduler" });
     expect(toggle).toBeDisabled();
   });
 

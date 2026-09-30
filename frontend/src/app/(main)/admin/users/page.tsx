@@ -151,7 +151,7 @@ export default function AdminUsersPage() {
     try {
       await toggleUserStatus(u.id, user.id, !u.is_active);
       setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
-      showSnackbar(`User ${!u.is_active ? "activated" : "deactivated"}`, "success");
+      showSnackbar(u.is_active ? t("User deactivated") : t("User activated"), "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("Toggle failed");
       showSnackbar(msg, "error");
@@ -807,7 +807,7 @@ export default function AdminUsersPage() {
                 margin: "20px 12px 0",
                 padding: "12px 0",
                 backgroundColor: COLORS.darkAquamarineGreen,
-                color: "white",
+                color: COLORS.white,
                 border: "none",
                 borderRadius: 12,
                 cursor: togglingId === selectedUser.id ? "not-allowed" : "pointer",
@@ -825,7 +825,7 @@ export default function AdminUsersPage() {
                 width: "calc(100% - 24px)",
                 margin: "20px 12px 0",
                 padding: "12px 0",
-                backgroundColor: "white",
+                backgroundColor: COLORS.white,
                 color: COLORS.darkAquamarineGreen,
                 border: `2px solid ${COLORS.darkAquamarineGreen}`,
                 borderRadius: 12,
@@ -883,7 +883,7 @@ export default function AdminUsersPage() {
                   padding: "10px 0",
                   borderRadius: 12,
                   border: `2px solid ${COLORS.darkAquamarineGreen}`,
-                  backgroundColor: "white",
+                  backgroundColor: COLORS.white,
                   color: COLORS.darkAquamarineGreen,
                   cursor: "pointer",
                   fontSize: 15,
@@ -904,7 +904,7 @@ export default function AdminUsersPage() {
                   borderRadius: 12,
                   border: "none",
                   backgroundColor: COLORS.carminePink,
-                  color: "white",
+                  color: COLORS.white,
                   cursor: "pointer",
                   fontSize: 15,
                 }}
@@ -966,7 +966,7 @@ export default function AdminUsersPage() {
                   padding: "10px 0",
                   borderRadius: 12,
                   border: `2px solid ${COLORS.darkAquamarineGreen}`,
-                  backgroundColor: "white",
+                  backgroundColor: COLORS.white,
                   color: COLORS.darkAquamarineGreen,
                   cursor: "pointer",
                   fontSize: 15,
@@ -989,7 +989,7 @@ export default function AdminUsersPage() {
                   backgroundColor: confirmAdmin.is_admin
                     ? COLORS.carminePink
                     : COLORS.darkAquamarineGreen,
-                  color: "white",
+                  color: COLORS.white,
                   cursor: "pointer",
                   fontSize: 15,
                 }}

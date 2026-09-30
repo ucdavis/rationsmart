@@ -16,6 +16,7 @@ import {
 import { COLUMN_WIDTH } from "@/lib/column";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
+import Spinner from "@/components/ui/Spinner";
 
 // Upload template — served same-origin by /api/feed-template, which keeps the
 // storage bucket out of the client bundle (audit C-07 / D-05).
@@ -390,18 +391,9 @@ export default function BulkUploadPage() {
     // uploading / downloading — animated rotating ring (matches Android
     // ic_uploading / ic_downloading which are animated drawables)
     return (
-      <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
-        <circle
-          cx="12"
-          cy="12"
-          r="9"
-          stroke={COLORS.white}
-          strokeWidth="3"
-          strokeDasharray="40"
-          strokeDashoffset="10"
-          strokeLinecap="round"
-        />
-      </svg>
+      <span style={{ color: COLORS.white, display: "inline-flex" }}>
+        <Spinner size={14} />
+      </span>
     );
   };
 
@@ -469,6 +461,7 @@ export default function BulkUploadPage() {
           </button>
           <input
             ref={fileRef}
+            aria-label={t("Feed file (CSV or Excel)")}
             type="file"
             accept=".csv,.xlsx,.xls"
             onChange={handleFileChange}

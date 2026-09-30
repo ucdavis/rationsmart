@@ -429,7 +429,8 @@ export function RunHistoryTab({
                               <span className="font-bold">
                                 {t("row")} {r.row ?? "—"}
                               </span>
-                              {r.fd_code ? ` · ${r.fd_code}` : ""} — {r.reason ?? "No reason given"}
+                              {r.fd_code ? ` · ${r.fd_code}` : ""} —{" "}
+                              {r.reason ?? t("No reason given")}
                             </div>
                           ))}
                           {filteredFailedRows.length === 0 && (

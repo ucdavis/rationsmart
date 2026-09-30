@@ -129,9 +129,9 @@ export function SyncSettingsTab({
       void doToggle("enable");
     } else {
       askConfirm(
-        "Disable automatic scheduler?",
-        "Automatic syncing will stop. Manual sync stays available.",
-        "Disable",
+        t("Disable automatic scheduler?"),
+        t("Automatic syncing will stop. Manual sync stays available."),
+        t("Disable"),
         true,
         () => doToggle("disable")
       );
@@ -163,7 +163,7 @@ export function SyncSettingsTab({
     try {
       const res = await updateFeedSyncConfig({ sync_day_of_week: day });
       setConfig(res.data);
-      showSnackbar(`Sync day set to ${capitalize(day)}`, "success");
+      showSnackbar(t("Sync day set to ${day}").replace("${day}", t(capitalize(day))), "success");
       const statusRes = await getFeedSyncSchedulerStatus();
       setStatus(statusRes.data);
     } catch (err: unknown) {
@@ -201,11 +201,14 @@ export function SyncSettingsTab({
             void reload();
             if (log.status === "success") {
               showSnackbar(
-                `Sync complete — ${log.inserted} added, ${log.updated} updated, ${log.skipped} rows skipped`,
+                t("Sync complete — ${inserted} added, ${updated} updated, ${skipped} rows skipped")
+                  .replace("${inserted}", String(log.inserted))
+                  .replace("${updated}", String(log.updated))
+                  .replace("${skipped}", String(log.skipped)),
                 "success"
               );
             } else {
-              showSnackbar(log.error_message ?? "Sync failed", "error");
+              showSnackbar(log.error_message ?? t("Sync failed"), "error");
             }
           }
         } catch {
@@ -231,7 +234,8 @@ export function SyncSettingsTab({
       if (httpStatus === 409) showSnackbar(t("A sync is already running"), "error");
       else if (httpStatus === 503)
         showSnackbar(t("Sync service unavailable — try again shortly"), "error");
-      else showSnackbar(err instanceof Error ? err.message : "Could not start the sync", "error");
+      else
+        showSnackbar(err instanceof Error ? err.message : t("Could not start the sync"), "error");
     } finally {
       setIsDispatching(false);
     }
@@ -246,7 +250,7 @@ export function SyncSettingsTab({
     // also enforce https and block private / link-local addresses, since it
     // is the one that connects.
     if (formEndpoint.trim() && !/^https:\/\//i.test(formEndpoint.trim())) {
-      setSettingsError("Endpoint URL must start with https://");
+      setSettingsError(t("Endpoint URL must start with https://"));
       return;
     }
     const body: Parameters<typeof updateFeedSyncConfig>[0] = {};
@@ -273,7 +277,7 @@ export function SyncSettingsTab({
       const statusRes = await getFeedSyncSchedulerStatus();
       setStatus(statusRes.data);
     } catch (err: unknown) {
-      setSettingsError(err instanceof Error ? err.message : "Could not save settings");
+      setSettingsError(err instanceof Error ? err.message : t("Could not save settings"));
     } finally {
       setIsSavingSettings(false);
     }
@@ -327,7 +331,7 @@ export function SyncSettingsTab({
               <p className="text-xs mt-0.5" style={{ color: COLORS.darkSilver }}>
                 {status.scheduler_enabled
                   ? `Syncs automatically every ${capitalize(status.sync_day_of_week)} at 00:00 UTC.`
-                  : "Automatic sync is off. You can still sync manually."}
+                  : t("Automatic sync is off. You can still sync manually.")}
               </p>
               {!canEnable && !status.scheduler_enabled && (
                 <p className="text-xs mt-0.5 font-bold" style={{ color: COLORS.webAmberText }}>
@@ -343,11 +347,6 @@ export function SyncSettingsTab({
             </div>
             <label
               className="toggle-switch flex-shrink-0"
-              aria-label={
-                status.scheduler_enabled
-                  ? "Disable automatic scheduler"
-                  : "Enable automatic scheduler"
-              }
               style={{
                 opacity: isTogglingScheduler || (!canEnable && !status.scheduler_enabled) ? 0.5 : 1,
                 cursor:
@@ -358,6 +357,11 @@ export function SyncSettingsTab({
             >
               <input
                 type="checkbox"
+                aria-label={
+                  status.scheduler_enabled
+                    ? t("Disable automatic scheduler")
+                    : t("Enable automatic scheduler")
+                }
                 checked={status.scheduler_enabled}
                 disabled={isTogglingScheduler || (!canEnable && !status.scheduler_enabled)}
                 onChange={handleToggleScheduler}
@@ -442,7 +446,7 @@ export function SyncSettingsTab({
               className="text-xs font-bold"
               style={{ color: isRunning ? COLORS.webAmberText : COLORS.darkSilver }}
             >
-              {t("status:")} {isRunning ? "running…" : "idle"}
+              {t("status:")} {isRunning ? t("running…") : "idle"}
             </span>
           </div>
         </div>
@@ -465,7 +469,7 @@ export function SyncSettingsTab({
                 color: lastResult.status === "success" ? COLORS.crayolaGreen : COLORS.carminePink,
               }}
             >
-              {lastResult.status === "success" ? "✅ Sync complete" : "❌ Sync failed"} —{" "}
+              {lastResult.status === "success" ? t("✅ Sync complete") : t("❌ Sync failed")} —{" "}
               {formatDateTime(lastResult.finished_at)}
             </p>
           </div>
@@ -487,7 +491,7 @@ export function SyncSettingsTab({
               </>
             ) : (
               <p style={{ color: COLORS.carminePink }}>
-                {lastResult.error_message ?? "An unexpected error occurred."}
+                {lastResult.error_message ?? t("An unexpected error occurred.")}
               </p>
             )}
             <button
@@ -546,7 +550,7 @@ export function SyncSettingsTab({
                 className="font-bold text-right break-all"
                 style={{ color: COLORS.raisinBlack }}
               >
-                {config.endpoint_url || "Not configured"}
+                {config.endpoint_url || t("Not configured")}
               </span>
             </div>
             <div className="flex justify-between gap-3">
@@ -567,7 +571,7 @@ export function SyncSettingsTab({
             <div className="flex justify-between gap-3">
               <span style={{ color: COLORS.darkSilver }}>{t("Token")}</span>
               <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
-                {config.auth_token_masked || "Not set"}
+                {config.auth_token_masked || t("Not set")}
               </span>
             </div>
           </div>
@@ -641,7 +645,7 @@ export function SyncSettingsTab({
               {!isReplacingToken ? (
                 <div className="flex items-center gap-2">
                   <div className="flex-1 rounded-xl px-4 py-3 text-sm" style={inputStyle}>
-                    {config.auth_token_masked || "Not set"}
+                    {config.auth_token_masked || t("Not set")}
                   </div>
                   <button
                     onClick={() => setIsReplacingToken(true)}
@@ -703,7 +707,7 @@ export function SyncSettingsTab({
                   cursor: isSavingSettings ? "not-allowed" : "pointer",
                 }}
               >
-                {isSavingSettings ? "Saving…" : "Save changes"}
+                {isSavingSettings ? t("Saving…") : t("Save changes")}
               </button>
             </div>
           </div>

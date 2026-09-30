@@ -81,6 +81,7 @@ export default function FeedFormSheet({
             </h3>
             <button
               onClick={() => setShowFeedModal(false)}
+              aria-label={t("Close")}
               style={{ background: "none", border: "none", cursor: "pointer" }}
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
@@ -159,6 +160,7 @@ export default function FeedFormSheet({
                 ) : (
                   <div className="relative">
                     <select
+                      aria-label={t("Country")}
                       value={feedForm.fd_country_name}
                       onChange={(e) => {
                         const c = countries.find((x) => x.name === e.target.value);
@@ -175,7 +177,7 @@ export default function FeedFormSheet({
                       className="appearance-none focus:outline-none pr-8"
                       style={{
                         ...inputStyle(false),
-                        color: feedForm.fd_country_name ? COLORS.raisinBlack : "#999",
+                        color: feedForm.fd_country_name ? COLORS.raisinBlack : COLORS.spanishGray,
                       }}
                     >
                       <option value="">{t("Select country")}</option>
@@ -213,6 +215,7 @@ export default function FeedFormSheet({
                 ) : (
                   <div className="relative">
                     <select
+                      aria-label={t("Feed Type")}
                       value={feedForm.fd_type}
                       disabled={!feedForm.fd_country_name}
                       onChange={(e) =>
@@ -226,7 +229,7 @@ export default function FeedFormSheet({
                       className="appearance-none focus:outline-none pr-8"
                       style={{
                         ...inputStyle(!feedForm.fd_country_name),
-                        color: feedForm.fd_type ? COLORS.raisinBlack : "#999",
+                        color: feedForm.fd_type ? COLORS.raisinBlack : COLORS.spanishGray,
                       }}
                     >
                       <option value="">
@@ -266,6 +269,7 @@ export default function FeedFormSheet({
                 ) : (
                   <div className="relative">
                     <select
+                      aria-label={t("Feed Category")}
                       value={feedForm.fd_category}
                       disabled={!feedForm.fd_type}
                       onChange={(e) =>
@@ -274,7 +278,7 @@ export default function FeedFormSheet({
                       className="appearance-none focus:outline-none pr-8"
                       style={{
                         ...inputStyle(!feedForm.fd_type),
-                        color: feedForm.fd_category ? COLORS.raisinBlack : "#999",
+                        color: feedForm.fd_category ? COLORS.raisinBlack : COLORS.spanishGray,
                       }}
                     >
                       <option value="">
@@ -436,7 +440,7 @@ export default function FeedFormSheet({
           style={{
             backgroundColor:
               isFeedFormValid && !isSavingFeed ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
-            color: isFeedFormValid && !isSavingFeed ? "white" : "#999",
+            color: isFeedFormValid && !isSavingFeed ? COLORS.white : COLORS.spanishGray,
             border: "none",
             cursor: isFeedFormValid && !isSavingFeed ? "pointer" : "not-allowed",
           }}

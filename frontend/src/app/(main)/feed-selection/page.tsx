@@ -1079,6 +1079,7 @@ export default function FeedSelectionPage() {
           <input
             ref={searchInputRef}
             type="text"
+            aria-label={t("Search feeds")}
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);

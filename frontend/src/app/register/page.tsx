@@ -253,6 +253,7 @@ export default function RegisterPage() {
         </p>
         <div className="px-3 relative">
           <select
+            aria-label={t("Country")}
             value={countryId}
             onChange={(e) => setCountryId(e.target.value)}
             disabled={loadingCountries}
@@ -296,6 +297,7 @@ export default function RegisterPage() {
         </p>
         <div className="px-3 relative">
           <select
+            aria-label={t("Language")}
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             disabled={loadingCountries}
@@ -367,7 +369,7 @@ export default function RegisterPage() {
             {t("Confirm PIN")}
           </p>
           <PinInput
-            label="Confirm PIN"
+            label={t("Confirm PIN")}
             value={confirmPin}
             onChange={setConfirmPin}
             disabled={!confirmPinEnabled}

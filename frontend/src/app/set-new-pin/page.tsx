@@ -205,7 +205,7 @@ function SetNewPinInner() {
               {t("Current 4-digit PIN")}
             </p>
             <PinInput
-              label="Old PIN"
+              label={t("Old PIN")}
               value={oldPin}
               onChange={setOldPin}
               length={LEGACY_PIN_LENGTH}
@@ -218,7 +218,7 @@ function SetNewPinInner() {
               {t("New 6-digit PIN")}
             </p>
             <PinInput
-              label="New PIN"
+              label={t("New PIN")}
               value={newPin}
               onChange={setNewPin_}
               length={6}
@@ -232,7 +232,7 @@ function SetNewPinInner() {
               {t("Confirm New PIN")}
             </p>
             <PinInput
-              label="Confirm new PIN"
+              label={t("Confirm new PIN")}
               value={confirmPin}
               onChange={setConfirmPin}
               length={6}

@@ -80,7 +80,7 @@ export function CountriesLanguagesTab({
   const handleActivateCountry = async (c: InactiveCountryRow) => {
     try {
       await toggleCountryStatus(c.id, "enable");
-      showSnackbar(`${c.name} activated`, "success");
+      showSnackbar(t("${country} activated").replace("${country}", c.name), "success");
       setShowActivate(false);
       // Optimistic: a freshly-activated country appears with no local
       // languages yet. Re-reading immediately can return stale data
@@ -109,15 +109,17 @@ export function CountriesLanguagesTab({
     const key = `country:${c.id}`;
     if (pendingKey.has(key)) return;
     askConfirm(
-      `Deactivate ${c.name}?`,
-      `${c.name} will be hidden from registration and profile screens. Existing users, feeds, and reports are unaffected.`,
-      "Deactivate",
+      t("Deactivate ${name}?").replace("${name}", c.name),
+      t(
+        "${name} will be hidden from registration and profile screens. Existing users, feeds, and reports are unaffected."
+      ).replace("${name}", c.name),
+      t("Deactivate"),
       true,
       async () => {
         setPendingKey((prev) => new Set(prev).add(key));
         try {
           await toggleCountryStatus(c.id, "disable");
-          showSnackbar(`${c.name} deactivated`, "success");
+          showSnackbar(t("${country} deactivated").replace("${country}", c.name), "success");
           // Optimistic: drop it from the enabled list immediately.
           setCountries((prev) => prev.filter((x) => x.id !== c.id));
         } catch (err: unknown) {
@@ -139,15 +141,24 @@ export function CountriesLanguagesTab({
     if (pendingKey.has(key)) return;
     const langName = allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
     askConfirm(
-      `Dis-associate ${langName} from ${c.name}?`,
-      "This Country/Language combination will no longer appear in the Cattle Info screen for farmers.",
-      "Dis-associate",
+      t("Dis-associate ${language} from ${country}?")
+        .replace("${language}", langName)
+        .replace("${country}", c.name),
+      t(
+        "This Country/Language combination will no longer appear in the Cattle Info screen for farmers."
+      ),
+      t("Dis-associate"),
       true,
       async () => {
         setPendingKey((prev) => new Set(prev).add(key));
         try {
           await unassignLanguageFromCountry(c.id, code);
-          showSnackbar(`${langName} removed from ${c.name}`, "success");
+          showSnackbar(
+            t("${language} removed from ${country}")
+              .replace("${language}", langName)
+              .replace("${country}", c.name),
+            "success"
+          );
           // Optimistic: drop the chip from this country immediately.
           setCountries((prev) =>
             prev.map((x) =>
@@ -174,7 +185,12 @@ export function CountriesLanguagesTab({
     const langName = allLanguages.find((l) => l.code === code)?.name ?? code.toUpperCase();
     try {
       await assignLanguageToCountry(assocFor.id, code);
-      showSnackbar(`${langName} associated with ${assocFor.name}`, "success");
+      showSnackbar(
+        t("${language} associated with ${country}")
+          .replace("${language}", langName)
+          .replace("${country}", assocFor.name),
+        "success"
+      );
       // Optimistic: add the chip to this country immediately.
       setCountries((prev) =>
         prev.map((x) =>
@@ -199,7 +215,13 @@ export function CountriesLanguagesTab({
       setPendingKey((prev) => new Set(prev).add(key));
       try {
         await patchLanguage(l.code, { is_active: !l.is_active });
-        showSnackbar(`${l.name} ${l.is_active ? "deactivated" : "activated"}`, "success");
+        showSnackbar(
+          t(l.is_active ? "${language} deactivated" : "${language} activated").replace(
+            "${language}",
+            l.name
+          ),
+          "success"
+        );
         // Optimistic: flip the row's active state immediately.
         setAllLanguages((prev) =>
           prev.map((x) => (x.code === l.code ? { ...x, is_active: !l.is_active } : x))
@@ -217,9 +239,11 @@ export function CountriesLanguagesTab({
     };
     if (l.is_active) {
       askConfirm(
-        `Deactivate ${l.name}?`,
-        `${l.name} stops resolving for every user in every country. Translations are kept.`,
-        "Deactivate",
+        t("Deactivate ${name}?").replace("${name}", l.name),
+        t(
+          "${name} stops resolving for every user in every country. Translations are kept."
+        ).replace("${name}", l.name),
+        t("Deactivate"),
         true,
         flip
       );
@@ -238,7 +262,7 @@ export function CountriesLanguagesTab({
     const name = regName.trim();
     try {
       await createLanguage({ code, name });
-      showSnackbar(`${name} registered`, "success");
+      showSnackbar(t("${language} registered").replace("${language}", name), "success");
       setShowRegister(false);
       setRegName("");
       setRegCode("");
@@ -319,7 +343,6 @@ export function CountriesLanguagesTab({
                   </div>
                   <label
                     className="toggle-switch flex-shrink-0"
-                    aria-label={`Deactivate ${c.name}`}
                     style={{
                       opacity: isPending ? 0.55 : 1,
                       cursor: isPending ? "wait" : "pointer",
@@ -327,6 +350,7 @@ export function CountriesLanguagesTab({
                   >
                     <input
                       type="checkbox"
+                      aria-label={`${t("Deactivate")} ${c.name}`}
                       checked
                       disabled={isPending}
                       onChange={() => handleDeactivateCountry(c)}
@@ -352,7 +376,9 @@ export function CountriesLanguagesTab({
                         <button
                           onClick={() => handleDisassociate(c, code)}
                           disabled={pendingKey.has(key)}
-                          aria-label={`Dis-associate ${langName} from ${c.name}`}
+                          aria-label={t("Dis-associate ${language} from ${country}")
+                            .replace("${language}", langName)
+                            .replace("${country}", c.name)}
                           className="flex items-center justify-center rounded-full"
                           style={{
                             width: 16,
@@ -442,7 +468,7 @@ export function CountriesLanguagesTab({
                 </p>
                 <p className="text-xs" style={{ color: COLORS.darkSilver }}>
                   {l.name} · {l.code}
-                  {!l.is_active && " · inactive"}
+                  {!l.is_active && t(" · inactive")}
                 </p>
               </div>
               {isEnglish ? (
@@ -458,11 +484,11 @@ export function CountriesLanguagesTab({
               ) : (
                 <label
                   className="toggle-switch flex-shrink-0"
-                  aria-label={`${l.is_active ? "Deactivate" : "Activate"} ${l.name}`}
                   style={{ opacity: isPending ? 0.55 : 1, cursor: isPending ? "wait" : "pointer" }}
                 >
                   <input
                     type="checkbox"
+                    aria-label={`${l.is_active ? t("Deactivate") : t("Activate")} ${l.name}`}
                     checked={l.is_active}
                     disabled={isPending}
                     onChange={() => handleToggleLanguage(l)}
@@ -710,7 +736,7 @@ export function CountriesLanguagesTab({
                 cursor: isRegistering ? "not-allowed" : "pointer",
               }}
             >
-              {isRegistering ? "Registering…" : "Register language"}
+              {isRegistering ? t("Registering…") : t("Register language")}
             </button>
           </div>
         </div>

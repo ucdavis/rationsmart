@@ -70,6 +70,7 @@ export default function FeedCategorySheet({
         </p>
         <div className="relative mb-3">
           <select
+            aria-label={t("Feed Type")}
             value={newCatTypeId}
             onChange={(e) => {
               setNewCatTypeId(e.target.value);
@@ -79,7 +80,7 @@ export default function FeedCategorySheet({
             className="w-full focus:outline-none appearance-none pr-8"
             style={{
               backgroundColor: COLORS.americanDiamond,
-              color: newCatTypeId ? COLORS.raisinBlack : "#999",
+              color: newCatTypeId ? COLORS.raisinBlack : COLORS.spanishGray,
               borderRadius: 16,
               padding: "12px 14px",
               fontSize: 14,
@@ -174,7 +175,8 @@ export default function FeedCategorySheet({
               newCatName.trim() && newCatTypeId && !isSavingCat
                 ? COLORS.darkAquamarineGreen
                 : COLORS.lightGrayNew,
-            color: newCatName.trim() && newCatTypeId && !isSavingCat ? "white" : "#999",
+            color:
+              newCatName.trim() && newCatTypeId && !isSavingCat ? COLORS.white : COLORS.spanishGray,
             border: "none",
             cursor: newCatName.trim() && newCatTypeId && !isSavingCat ? "pointer" : "not-allowed",
             padding: "12px 0",

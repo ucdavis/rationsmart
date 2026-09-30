@@ -195,7 +195,7 @@ export default function DietLimitsSheet({
               className="w-full py-4 rounded-xl font-bold text-base mt-2"
               style={{
                 backgroundColor: cantApply ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
-                color: cantApply ? COLORS.spanishGray : "white",
+                color: cantApply ? COLORS.spanishGray : COLORS.white,
                 border: "none",
                 cursor: cantApply ? "not-allowed" : "pointer",
               }}

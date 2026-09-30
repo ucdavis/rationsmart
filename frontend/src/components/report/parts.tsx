@@ -26,15 +26,15 @@ export function buildReportContext(category?: AnimalCategory | string | null): R
 
 export function StatusBadge({ status }: { status: string }) {
   const map: Record<string, { bg: string; text: string }> = {
-    Optimized: { bg: COLORS.goGreen, text: "#fff" },
-    Optimised: { bg: COLORS.goGreen, text: "#fff" },
-    "Not Optimized": { bg: COLORS.carminePink, text: "#fff" },
-    "Not Feasible": { bg: COLORS.carminePink, text: "#fff" },
-    Evaluation: { bg: COLORS.vividGamboge, text: "#fff" },
-    Evaluated: { bg: COLORS.vividGamboge, text: "#fff" },
-    ADVISORY: { bg: COLORS.vividGamboge, text: "#fff" },
-    INFEASIBLE: { bg: COLORS.carminePink, text: "#fff" },
-    OPTIMAL: { bg: COLORS.goGreen, text: "#fff" },
+    Optimized: { bg: COLORS.goGreen, text: COLORS.white },
+    Optimised: { bg: COLORS.goGreen, text: COLORS.white },
+    "Not Optimized": { bg: COLORS.carminePink, text: COLORS.white },
+    "Not Feasible": { bg: COLORS.carminePink, text: COLORS.white },
+    Evaluation: { bg: COLORS.vividGamboge, text: COLORS.white },
+    Evaluated: { bg: COLORS.vividGamboge, text: COLORS.white },
+    ADVISORY: { bg: COLORS.vividGamboge, text: COLORS.white },
+    INFEASIBLE: { bg: COLORS.carminePink, text: COLORS.white },
+    OPTIMAL: { bg: COLORS.goGreen, text: COLORS.white },
   };
   const colors = map[status] ?? { bg: COLORS.webDivider, text: COLORS.raisinBlack };
   return (

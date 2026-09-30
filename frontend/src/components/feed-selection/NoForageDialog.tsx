@@ -89,7 +89,7 @@ export default function NoForageDialog({
             display: "block",
             width: "calc(100% - 32px)",
             backgroundColor: COLORS.darkAquamarineGreen,
-            color: "white",
+            color: COLORS.white,
             borderRadius: 60,
             padding: "14px 0",
             border: "none",

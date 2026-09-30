@@ -541,7 +541,7 @@ export default function FeedRow({
     <div
       onClick={() => onActivate?.(item.id)}
       style={{
-        backgroundColor: "#fff",
+        backgroundColor: COLORS.white,
         borderRadius: 20,
         boxShadow: isActive
           ? `0 0 0 2px ${COLORS.darkAquamarineGreen}, 0 4px 14px rgba(6,78,59,0.18)`
@@ -879,6 +879,7 @@ export default function FeedRow({
           >
             <input
               type="checkbox"
+              aria-label={t("Set inclusion limits")}
               checked={item.inclusion_limits_enabled}
               onChange={() => {
                 if (!item.feed_uuid || rowLoading) return;

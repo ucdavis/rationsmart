@@ -121,7 +121,7 @@ export default function FeedTypeSheet({
               newTypeName.trim() && !isSavingType
                 ? COLORS.darkAquamarineGreen
                 : COLORS.lightGrayNew,
-            color: newTypeName.trim() && !isSavingType ? "white" : "#999",
+            color: newTypeName.trim() && !isSavingType ? COLORS.white : COLORS.spanishGray,
             border: "none",
             cursor: newTypeName.trim() && !isSavingType ? "pointer" : "not-allowed",
             padding: "12px 0",

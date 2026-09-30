@@ -118,18 +118,9 @@ export default function FeedEditDialog({
 
           {isLoadingEdit ? (
             <div className="flex items-center justify-center py-12">
-              <svg className="animate-spin" width="28" height="28" viewBox="0 0 24 24" fill="none">
-                <circle
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke={COLORS.darkAquamarineGreen}
-                  strokeWidth="3"
-                  strokeDasharray="40"
-                  strokeDashoffset="10"
-                  strokeLinecap="round"
-                />
-              </svg>
+              <span style={{ color: COLORS.darkAquamarineGreen, display: "inline-flex" }}>
+                <Spinner size={28} />
+              </span>
             </div>
           ) : (
             <>
@@ -321,7 +312,7 @@ export default function FeedEditDialog({
                 className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center"
                 style={{
                   backgroundColor: submitReady ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
-                  color: submitReady ? "white" : "#999",
+                  color: submitReady ? COLORS.white : COLORS.spanishGray,
                   border: "none",
                   cursor: submitReady ? "pointer" : "not-allowed",
                 }}

@@ -707,7 +707,9 @@ describe("Cattle Info — form labels (audit B-31)", () => {
     const labels = Array.from(container.querySelectorAll<HTMLLabelElement>("label[for]"));
     expect(labels.length).toBeGreaterThanOrEqual(7);
     for (const label of labels) {
-      expect(document.getElementById(label.htmlFor), label.htmlFor).toBeInstanceOf(HTMLInputElement);
+      expect(document.getElementById(label.htmlFor), label.htmlFor).toBeInstanceOf(
+        HTMLInputElement
+      );
     }
     expect(labels.map((l) => l.htmlFor)).toContain("ci-body_weight");
   });

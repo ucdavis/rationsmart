@@ -182,7 +182,7 @@ export default function ReportPage() {
       minute: "2-digit",
       hour12: true,
     });
-    return `${datePart} at ${timePart}`;
+    return t("${date} at ${time}").replace("${date}", datePart).replace("${time}", timePart);
   };
   // EvaluationResponse doesn't carry generated_date / user_name / simulation_id
   // at top level — fall back to the local store and current time. Recommendation
@@ -944,7 +944,7 @@ export default function ReportPage() {
             className="w-full py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5 mb-3"
             style={{
               backgroundColor: COLORS.darkAquamarineGreen,
-              color: "white",
+              color: COLORS.white,
               border: "none",
               cursor: "pointer",
             }}
@@ -1000,7 +1000,7 @@ export default function ReportPage() {
               className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
               style={{
                 backgroundColor: COLORS.darkAquamarineGreen,
-                color: "white",
+                color: COLORS.white,
                 border: "none",
                 cursor: "pointer",
               }}
@@ -1029,7 +1029,7 @@ export default function ReportPage() {
             style={{
               border: `2px solid ${COLORS.darkAquamarineGreen}`,
               color: COLORS.darkAquamarineGreen,
-              background: "white",
+              background: COLORS.white,
               cursor: "pointer",
             }}
           >
@@ -1043,7 +1043,7 @@ export default function ReportPage() {
             style={{
               backgroundColor:
                 isSaving || !reportIdForSave ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
-              color: isSaving || !reportIdForSave ? COLORS.spanishGray : "white",
+              color: isSaving || !reportIdForSave ? COLORS.spanishGray : COLORS.white,
               border: "none",
               cursor: isSaving || !reportIdForSave ? "not-allowed" : "pointer",
             }}
@@ -1055,7 +1055,7 @@ export default function ReportPage() {
               </>
             ) : (
               <>
-                <IcSave size={18} color={!reportIdForSave ? COLORS.spanishGray : "white"} />
+                <IcSave size={18} color={!reportIdForSave ? COLORS.spanishGray : COLORS.white} />
                 {t("Save Report")}
               </>
             )}

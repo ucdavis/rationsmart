@@ -1,13 +1,13 @@
 @font-face {
-  font-family: 'Nunito';
-  src: url('/fonts/nunito_regular.ttf') format('truetype');
+  font-family: "Nunito";
+  src: url("/fonts/nunito_regular.ttf") format("truetype");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Nunito';
-  src: url('/fonts/nunito_bold.ttf') format('truetype');
+  font-family: "Nunito";
+  src: url("/fonts/nunito_bold.ttf") format("truetype");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -17,18 +17,18 @@
 @tailwind utilities;
 
 :root {
-  --authentic-white: #F8FAF9;
-  --american-diamond: #F1F5F9;
-  --primary-dark: #064E3B;
-  --primary: #1CA069;
-  --honeydew: #E8F5F0;
-  --raisin-black: #231F20;
-  --dark-silver: #6D6D6D;
+  --authentic-white: #f8faf9;
+  --american-diamond: #f1f5f9;
+  --primary-dark: #064e3b;
+  --primary: #1ca069;
+  --honeydew: #e8f5f0;
+  --raisin-black: #231f20;
+  --dark-silver: #6d6d6d;
   --spanish-gray: #999999;
-  --light-gray-new: #D3D3D3;
-  --go-green: #05BC6D;
-  --carmine-pink: #E44A4A;
-  --sparkling-silver: #C9CBCC;
+  --light-gray-new: #d3d3d3;
+  --go-green: #05bc6d;
+  --carmine-pink: #e44a4a;
+  --sparkling-silver: #c9cbcc;
 }
 
 * {
@@ -38,9 +38,9 @@
 
 html,
 body {
-  font-family: var(--font-nunito), 'Nunito', sans-serif;
-  background-color: #F8FAF9;
-  color: #231F20;
+  font-family: var(--font-nunito), "Nunito", sans-serif;
+  background-color: #f8faf9;
+  color: #231f20;
   margin: 0;
   padding: 0;
   min-height: 100%;
@@ -55,7 +55,9 @@ body {
    bottom edge without exposing a white strip below the home indicator.
    The @supports fallback keeps older browsers on 100vh. */
 @supports (height: 100dvh) {
-  .min-h-screen { min-height: 100dvh; }
+  .min-h-screen {
+    min-height: 100dvh;
+  }
 }
 
 /* The centred 480-px column gives every browser-tab visitor a mobile-
@@ -74,7 +76,7 @@ body {
 input,
 select,
 textarea {
-  font-family: var(--font-nunito), 'Nunito', sans-serif;
+  font-family: var(--font-nunito), "Nunito", sans-serif;
   outline: none;
 }
 
@@ -97,17 +99,17 @@ textarea:focus {
    does, Firefox partially. The selected-row tint is the bit that
    most often shows up and was the visible delta the user noted. */
 select {
-  accent-color: #064E3B;
+  accent-color: #064e3b;
 }
 select option {
-  background-color: #FFFFFF;
-  color: #231F20;
+  background-color: #ffffff;
+  color: #231f20;
 }
 select option:checked {
   /* Currently-selected option in the open menu — light mint pill
      matching Android Spinner's selected-row highlight. */
-  background: linear-gradient(0deg, #E4F7EF 0%, #E4F7EF 100%);
-  color: #064E3B;
+  background: linear-gradient(0deg, #e4f7ef 0%, #e4f7ef 100%);
+  color: #064e3b;
 }
 
 ::-webkit-scrollbar {
@@ -117,22 +119,34 @@ select option:checked {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #C9CBCC;
+  background: #c9cbcc;
   border-radius: 4px;
 }
 
 @keyframes slideUp {
-  from { transform: translateY(120%); opacity: 0; }
-  to   { transform: translateY(0);    opacity: 1; }
+  from {
+    transform: translateY(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes slideDown {
-  from { transform: translateY(0);    opacity: 1; }
-  to   { transform: translateY(120%); opacity: 0; }
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(120%);
+    opacity: 0;
+  }
 }
 
 .snackbar-enter {
-  animation: slideUp 0.28s cubic-bezier(0.22,1,0.36,1) forwards;
+  animation: slideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 .snackbar-exit {
@@ -140,12 +154,16 @@ select option:checked {
 }
 
 @keyframes shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
 }
 
 .shimmer {
-  background: linear-gradient(90deg, #F1F5F9 25%, #E4E9F0 50%, #F1F5F9 75%);
+  background: linear-gradient(90deg, #f1f5f9 25%, #e4e9f0 50%, #f1f5f9 75%);
   background-size: 800px 100%;
   animation: shimmer 1.6s infinite;
 }
@@ -159,13 +177,18 @@ select option:checked {
   flex-shrink: 0;
 }
 
-.toggle-switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
 
 .toggle-slider {
   position: absolute;
   cursor: pointer;
   inset: 0;
-  background: #C9CBCC;
+  background: #c9cbcc;
   border-radius: 28px;
   transition: background 0.25s;
 }
@@ -180,22 +203,28 @@ select option:checked {
   background: white;
   border-radius: 50%;
   transition: transform 0.25s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
 }
 
-.toggle-switch input:checked + .toggle-slider { background: #1CA069; }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+.toggle-switch input:checked + .toggle-slider {
+  background: #1ca069;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
 
 /* Loading state for a toggle switch — same exact markup/dimensions as
    the real switch (see cattle-info's grazing toggle), just shimmering
    in place instead of showing its real on/off state. Declared after
    .toggle-slider so it wins the background at equal specificity. */
 .toggle-slider.shimmer {
-  background: linear-gradient(90deg, #F1F5F9 25%, #E4E9F0 50%, #F1F5F9 75%);
+  background: linear-gradient(90deg, #f1f5f9 25%, #e4e9f0 50%, #f1f5f9 75%);
   background-size: 800px 100%;
   animation: shimmer 1.6s infinite;
 }
-.toggle-slider.shimmer::before { opacity: 0; }
+.toggle-slider.shimmer::before {
+  opacity: 0;
+}
 
 /* iOS Safari zooms the page into any focused input whose text is under
    16 px. Pinch-zoom is enabled for accessibility (audit B-35), so give

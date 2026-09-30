@@ -1232,6 +1232,7 @@ export default function CattleInfoPage() {
                     <label className="toggle-switch">
                       <input
                         type="checkbox"
+                        aria-label={t("Grazing")}
                         checked={form.grazing}
                         disabled={fieldsLoading}
                         onChange={(e) => handleGrazingToggle(e.target.checked)}
@@ -1458,7 +1459,7 @@ export default function CattleInfoPage() {
           style={{
             border: `2px solid ${COLORS.darkAquamarineGreen}`,
             color: isResetting ? COLORS.darkSilver : COLORS.darkAquamarineGreen,
-            background: isResetting ? COLORS.americanDiamond : "white",
+            background: isResetting ? COLORS.americanDiamond : COLORS.white,
             paddingLeft: isResetting ? 24 : 40,
             paddingRight: isResetting ? 24 : 40,
             cursor: isResetting ? "wait" : "pointer",

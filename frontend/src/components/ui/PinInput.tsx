@@ -3,6 +3,7 @@
 import { useRef, KeyboardEvent, ClipboardEvent } from "react";
 import { LEGACY_PIN_LENGTH, PIN_LENGTH } from "@/lib/validators";
 import { COLORS } from "@/lib/colors";
+import { useT } from "@/lib/i18n-ui";
 
 interface PinInputProps {
   value: string;
@@ -36,6 +37,7 @@ export default function PinInput({
   reveal = false,
   label = "PIN",
 }: PinInputProps) {
+  const t = useT();
   // The number of refs has to be stable across renders, so we allocate
   // up to 6 ref slots and slice the visible set below. This keeps the
   // useRef call order constant (React rules of hooks).
@@ -110,7 +112,10 @@ export default function PinInput({
           inputMode="numeric"
           // Single digits must not be offered to password managers to save.
           autoComplete="off"
-          aria-label={`${label} digit ${index + 1} of ${length}`}
+          aria-label={t("${label} digit ${n} of ${total}")
+            .replace("${label}", label)
+            .replace("${n}", String(index + 1))
+            .replace("${total}", String(length))}
           maxLength={1}
           value={(digits[index] ?? "").trim() || ""}
           onChange={(e) => handleChange(index, e.target.value)}

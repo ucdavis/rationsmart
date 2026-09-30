@@ -328,7 +328,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                 className="w-full py-3 rounded-full font-bold"
                 style={{
                   backgroundColor: COLORS.darkAquamarineGreen,
-                  color: "white",
+                  color: COLORS.white,
                   border: "none",
                   cursor: "pointer",
                 }}
@@ -341,7 +341,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
                 style={{
                   border: `2px solid ${COLORS.darkAquamarineGreen}`,
                   color: COLORS.darkAquamarineGreen,
-                  background: "white",
+                  background: COLORS.white,
                   cursor: "pointer",
                 }}
               >

@@ -130,7 +130,7 @@ export default function InstallPrompt() {
           role="dialog"
           aria-modal="true"
           style={{
-            backgroundColor: "#fff",
+            backgroundColor: COLORS.white,
             borderRadius: "16px 16px 0 0",
             padding: "24px 24px 40px",
             width: "100%",
@@ -270,7 +270,7 @@ export default function InstallPrompt() {
               >
                 <span
                   style={{
-                    color: "#fff",
+                    color: COLORS.white,
                     fontSize: 13,
                     fontWeight: 700,
                   }}
@@ -312,7 +312,7 @@ export default function InstallPrompt() {
               padding: "14px",
               borderRadius: 999,
               backgroundColor: COLORS.darkAquamarineGreen,
-              color: "#fff",
+              color: COLORS.white,
               border: "none",
               fontWeight: 700,
               fontSize: 14,
@@ -366,7 +366,7 @@ export default function InstallPrompt() {
           <div style={{ flex: 1, minWidth: 0 }}>
             <p
               style={{
-                color: "#fff",
+                color: COLORS.white,
                 fontWeight: 700,
                 fontSize: 14,
                 margin: 0,
@@ -408,7 +408,7 @@ export default function InstallPrompt() {
             onClick={handleInstall}
             style={{
               backgroundColor: COLORS.crayolaGreen,
-              color: "#fff",
+              color: COLORS.white,
               border: "none",
               borderRadius: 999,
               padding: "8px 16px",

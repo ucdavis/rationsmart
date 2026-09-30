@@ -48,7 +48,7 @@ export default function TranslationCoverageCard({
       const res = await getTranslationCoverage(countryId, lang);
       setCoverage(res.data as CoverageReport);
     } catch (err: unknown) {
-      showSnackbar(err instanceof Error ? err.message : "Could not load coverage", "error");
+      showSnackbar(err instanceof Error ? err.message : t("Could not load coverage"), "error");
     } finally {
       setIsLoading(false);
     }
@@ -91,7 +91,7 @@ export default function TranslationCoverageCard({
           cursor: disabled ? "not-allowed" : "pointer",
         }}
       >
-        {isLoading ? "Loading…" : "Check Coverage"}
+        {isLoading ? t("Loading…") : t("Check Coverage")}
       </button>
       {rows.length > 0 && (
         <div className="mt-3 space-y-3">
@@ -101,17 +101,19 @@ export default function TranslationCoverageCard({
               <div key={label}>
                 <div className="flex items-baseline justify-between mb-1">
                   <p className="text-sm font-bold" style={{ color: COLORS.raisinBlack }}>
-                    {label}
+                    {t(label)}
                   </p>
                   <p className="text-xs" style={{ color: COLORS.darkSilver }}>
                     {translated ?? 0} / {total ?? 0}
-                    {missing != null && missing > 0 && ` · ${missing} missing`}
+                    {missing != null &&
+                      missing > 0 &&
+                      ` · ${t("${count} missing").replace("${count}", String(missing))}`}
                   </p>
                 </div>
                 <div
                   className="w-full rounded-full overflow-hidden"
                   role="progressbar"
-                  aria-label={`${label} translated`}
+                  aria-label={t("${label} translated").replace("${label}", t(label))}
                   aria-valuenow={p}
                   aria-valuemin={0}
                   aria-valuemax={100}

@@ -164,7 +164,7 @@ export function FeedNamesTab({
       setFeeds((prev) =>
         prev.map((f) => (f.feed_id === editingFeed.feed_id ? { ...f, translation: saved } : f))
       );
-      showSnackbar(`Saved ${editingFeed.fd_name}`, "success");
+      showSnackbar(t("Saved ${feed}").replace("${feed}", editingFeed.fd_name), "success");
       setEditingFeed(null);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not save name";
@@ -203,7 +203,7 @@ export function FeedNamesTab({
       );
       const blob = res.data as Blob;
       saveBlob(blob, fileName);
-      showSnackbar(`Downloaded ${fileName}`, "success");
+      showSnackbar(t("Downloaded ${file}").replace("${file}", fileName), "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not download workbook";
       showSnackbar(msg, "error");
@@ -222,10 +222,10 @@ export function FeedNamesTab({
     try {
       const res = await uploadTranslationWorkbook(selCountry.id, uploadFile);
       setUploadSummary(res.data as UploadSummary);
-      showSnackbar((res.data as UploadSummary)?.message ?? "Workbook imported", "success");
+      showSnackbar((res.data as UploadSummary)?.message ?? t("Workbook imported"), "success");
       setUploadFile(null);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Upload failed";
+      const msg = err instanceof Error ? err.message : t("Upload failed");
       showSnackbar(msg, "error");
     } finally {
       setIsUploading(false);
@@ -429,7 +429,7 @@ export function FeedNamesTab({
         <div className="px-4 py-3">
           <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
             {t("Export all feed names across languages for")}{" "}
-            {selCountry?.name ?? "the selected country"}{" "}
+            {selCountry?.name ?? t("the selected country")}{" "}
             {t("as a workbook, edit offline, then import to upsert in bulk.")}
           </p>
           <div className="flex gap-2 mb-3">
@@ -445,7 +445,7 @@ export function FeedNamesTab({
                 opacity: !selCountry ? 0.5 : 1,
               }}
             >
-              {isDownloading ? "Downloading…" : "↓ Export"}
+              {isDownloading ? t("Downloading…") : t("↓ Export")}
             </button>
             <button
               onClick={handleUpload}
@@ -461,11 +461,12 @@ export function FeedNamesTab({
                 cursor: isUploading || !uploadFile || !selCountry ? "not-allowed" : "pointer",
               }}
             >
-              {isUploading ? "Uploading…" : "↑ Import"}
+              {isUploading ? t("Uploading…") : t("↑ Import")}
             </button>
           </div>
           <input
             type="file"
+            aria-label={t("Translation workbook file")}
             accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             onChange={(e) => {
               const file = e.target.files?.[0] ?? null;
@@ -498,7 +499,7 @@ export function FeedNamesTab({
                       : COLORS.darkAquamarineGreen,
                 }}
               >
-                {uploadSummary.success === false ? "Import failed" : "Import summary"}
+                {uploadSummary.success === false ? t("Import failed") : t("Import summary")}
               </p>
               <div className="text-xs space-y-0.5" style={{ color: COLORS.raisinBlack }}>
                 <p>
@@ -552,11 +553,17 @@ export function FeedNamesTab({
             </label>
             <input
               id="feed-local-name"
-              aria-label={`Name in ${labelForLanguage(selLang)}`}
+              aria-label={t("Name in ${language}").replace(
+                "${language}",
+                labelForLanguage(selLang)
+              )}
               type="text"
               value={editValue}
               onChange={(e) => setEditValue(e.target.value)}
-              placeholder={`Type the ${labelForLanguage(selLang)} name…`}
+              placeholder={t("Type the ${language} name…").replace(
+                "${language}",
+                labelForLanguage(selLang)
+              )}
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-4"
               style={inputStyle}
               autoFocus
@@ -572,7 +579,11 @@ export function FeedNamesTab({
                 cursor: isSaving ? "not-allowed" : "pointer",
               }}
             >
-              {isSaving ? "Saving…" : editingFeed.translation ? "Update name" : "Save name"}
+              {isSaving
+                ? t("Saving…")
+                : editingFeed.translation
+                  ? t("Update name")
+                  : t("Save name")}
             </button>
             {editingFeed.translation && (
               <button
@@ -586,7 +597,7 @@ export function FeedNamesTab({
                   cursor: isDeleting ? "not-allowed" : "pointer",
                 }}
               >
-                {isDeleting ? "Deleting…" : "Delete this name"}
+                {isDeleting ? t("Deleting…") : t("Delete this name")}
               </button>
             )}
           </div>

@@ -387,9 +387,9 @@ export default function AdminFeedsPage() {
 
         <div className="px-3 mt-5 space-y-3">
           {[
-            { key: "types" as TabType, label: "Feed Type" },
-            { key: "categories" as TabType, label: "Feed Category" },
-            { key: "feeds" as TabType, label: "Feed" },
+            { key: "types" as TabType, label: t("Feed Type") },
+            { key: "categories" as TabType, label: t("Feed Category") },
+            { key: "feeds" as TabType, label: t("Feed") },
           ].map((c) => (
             <button
               key={c.key}

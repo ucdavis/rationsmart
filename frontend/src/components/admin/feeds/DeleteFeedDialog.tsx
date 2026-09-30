@@ -72,7 +72,7 @@ export default function DeleteFeedDialog({
             style={{
               border: `2px solid ${COLORS.darkAquamarineGreen}`,
               color: COLORS.darkAquamarineGreen,
-              background: "white",
+              background: COLORS.white,
               cursor: "pointer",
               borderRadius: 16,
             }}
@@ -92,7 +92,7 @@ export default function DeleteFeedDialog({
             className="flex-1 py-3 font-bold flex items-center justify-center gap-1.5"
             style={{
               backgroundColor: COLORS.carminePink,
-              color: "white",
+              color: COLORS.white,
               border: "none",
               cursor: "pointer",
               borderRadius: 16,
@@ -101,7 +101,7 @@ export default function DeleteFeedDialog({
             <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
               <path
                 d="M2 4h10M5 4V3h4v1M4 4v8h6V4H4Z"
-                stroke="white"
+                stroke={COLORS.white}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"

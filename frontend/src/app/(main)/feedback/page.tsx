@@ -218,6 +218,7 @@ export default function FeedbackPage() {
         {/* Textarea */}
         <div className="mx-3 mt-2.5">
           <textarea
+            aria-label={t("Feedback")}
             rows={5}
             value={text}
             onChange={(e) => setText(e.target.value)}

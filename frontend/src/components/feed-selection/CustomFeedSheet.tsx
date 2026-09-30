@@ -365,7 +365,7 @@ export default function CustomFeedSheet({
               className="w-full py-4 rounded-xl font-bold text-base flex items-center justify-center gap-2"
               style={{
                 backgroundColor: ready ? COLORS.darkAquamarineGreen : COLORS.lightGrayNew,
-                color: ready ? "white" : "#999",
+                color: ready ? COLORS.white : COLORS.spanishGray,
                 border: "none",
                 cursor: ready ? "pointer" : "not-allowed",
               }}
