@@ -96,8 +96,8 @@ export interface FeedItem {
   // Y3 §1.1.2 — per-feed inclusion limits. Toggle controls visibility AND
   // whether the bounds are sent to the optimizer. Both bounds independently
   // optional even when the toggle is on (blank min = NA, blank max = no
-  // upper bound). TODO(maria-y3): confirm payload key names —
-  // min_kg_per_day / max_kg_per_day suggested.
+  // upper bound). These are store names; on the wire they are
+  // min_kg_asfed / max_kg_asfed (openapi FeedWithPrice, see diet-request.ts).
   inclusion_limits_enabled: boolean;
   min_kg_per_day: number | null;
   max_kg_per_day: number | null;

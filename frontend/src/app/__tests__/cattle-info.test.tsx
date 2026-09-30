@@ -839,6 +839,9 @@ describe("Cattle Info — Simulation History", () => {
             feed_id: "uuid-1",
             price_per_kg: 5,
             quantity_as_fed: 10,
+            // Saved simulations echo the wire names (openapi FeedWithPrice).
+            min_kg_asfed: 1,
+            max_kg_asfed: "4",
           },
         ],
       },
@@ -862,6 +865,9 @@ describe("Cattle Info — Simulation History", () => {
     expect(feedSelections).toHaveLength(1);
     expect(feedSelections[0].feed_uuid).toBe("uuid-1");
     expect(feedSelections[0].feed_type_name).toBe("Forage");
+    expect(feedSelections[0].inclusion_limits_enabled).toBe(true);
+    expect(feedSelections[0].min_kg_per_day).toBe(1);
+    expect(feedSelections[0].max_kg_per_day).toBe(4);
 
     // Simulation Name is deliberately left BLANK on restore — the
     // backend echoes back exactly what was sent as simulation_id (mode

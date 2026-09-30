@@ -810,7 +810,7 @@ export default function ProfilePage() {
 
       {/* Submit PIN bottom sheet — mirrors Android dialog_submit_pin.xml:
           mint drag handle (bg_bottom_sheet_pin = go_green_15), bold
-          dark_aquamarine_green title, 4-digit PIN input, full-pill submit
+          dark_aquamarine_green title, PIN_LENGTH-digit PIN input, full-pill submit
           (light_gray_new disabled, dark_aquamarine_green enabled), then
           PoweredBy at the bottom. Tap-outside-to-dismiss. */}
       {showPinSheet && (

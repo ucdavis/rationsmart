@@ -395,21 +395,22 @@ export default function CattleInfoPage() {
               feed_id?: string;
               price_per_kg?: number | string | null;
               quantity_as_fed?: number | string | null;
-              // Y3 §1.1.2 — backend may echo these on simulation restore.
-              // TODO(maria-y3): confirm canonical keys on /fetch-simulation-details.
+              // Per-feed inclusion limits. The wire names are min_kg_asfed /
+              // max_kg_asfed (openapi FeedWithPrice — what diet-request.ts
+              // sends, so what the saved simulation echoes back);
+              // FetchSimulationDetailsResponse leaves feed_selection
+              // untyped, so the older min_kg_per_day names are still read.
+              min_kg_asfed?: number | string | null;
+              max_kg_asfed?: number | string | null;
               min_kg_per_day?: number | string | null;
               max_kg_per_day?: number | string | null;
             },
             idx: number
           ) => {
-            const minVal =
-              sel.min_kg_per_day != null && sel.min_kg_per_day !== ""
-                ? Number(sel.min_kg_per_day)
-                : null;
-            const maxVal =
-              sel.max_kg_per_day != null && sel.max_kg_per_day !== ""
-                ? Number(sel.max_kg_per_day)
-                : null;
+            const bound = (v: number | string | null | undefined) =>
+              v != null && v !== "" ? Number(v) : null;
+            const minVal = bound(sel.min_kg_asfed ?? sel.min_kg_per_day);
+            const maxVal = bound(sel.max_kg_asfed ?? sel.max_kg_per_day);
             return {
               id: `feed_restored_${idx}_${Date.now()}`,
               feed_type_id: sel.feed_type ? taxonomyId(sel.feed_type) : null,
