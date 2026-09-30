@@ -1639,6 +1639,14 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
   `SUPPORT_EMAIL` (lib/contact.ts), `inclusionBoundsCrossed()`.
 - **CustomSelect is a listbox:** options are `role="option"` (tests pick
   them with `findByRole("option", …)`), arrow keys move focus.
+- **Session = httpOnly cookie (A-04, 2026-09-30).** The proxy moves the
+  login JWT into `rs_session` (HttpOnly, SameSite=Strict, Secure on https,
+  Path=/api), strips it from the JSON, and adds `Authorization` itself. The
+  browser never holds the token; `User.token` is legacy-only and migrated
+  via `/api/session` (POST). Cookie-carrying non-GET calls must be
+  same-origin (CSRF). End a session with `endServerSession()` (NOT inside
+  `logout()`, which /login calls right after the cookie is set).
+  `BACKEND_PROTOCOL=https` switches the upstream hop to TLS (A-02).
 - **Pass 3 (2026-09-28):**
   - `src/lib/api.ts` is a **barrel**; code lives in
     `src/lib/api-client/{models,client,auth,feeds,reports,admin}.ts`. Add

@@ -441,3 +441,80 @@ describe("error handling", () => {
     expect(await res.json()).toEqual({ detail: "Redirect request error" });
   });
 });
+
+// ─── httpOnly session cookie (audit A-04) ─────────────────────────────────
+
+describe("session cookie", () => {
+  it("moves the login JWT into an httpOnly cookie and strips it from the body", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    httpMock.plans.push({
+      statusCode: 200,
+      headers: { "content-type": "application/json" },
+      chunks: [
+        JSON.stringify({
+          user: { id: "u1" },
+          token: { access_token: "a.b.c", token_type: "bearer", expires_in: 3600 },
+        }),
+      ],
+    });
+    const req = makeRequest(["v1", "auth", "login"], { method: "POST", body: "{}" });
+    const res = await callHandler(mod, req, ["v1", "auth", "login"]);
+    const cookie = res.headers.get("set-cookie") ?? "";
+    expect(cookie).toContain("rs_session=a.b.c");
+    expect(cookie.toLowerCase()).toContain("httponly");
+    expect(cookie.toLowerCase()).toContain("samesite=strict");
+    expect(cookie).toContain("Max-Age=3600");
+    const body = await res.json();
+    expect(JSON.stringify(body)).not.toContain("a.b.c");
+    expect(body.token).toEqual({ token_type: "bearer", expires_in: 3600, in_cookie: true });
+  });
+
+  it("attaches the cookie's token as the bearer on later calls", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    httpMock.plans.push({ statusCode: 200, chunks: ["{}"] });
+    const req = makeRequest(["v1", "animal", "simulations"], {
+      method: "GET",
+      headers: { cookie: "rs_session=x.y.z" },
+    });
+    await callHandler(mod, req, ["v1", "animal", "simulations"]);
+    expect(httpMock.calls[0].headers["authorization"]).toBe("Bearer x.y.z");
+    expect(httpMock.calls[0].headers["cookie"]).toBeUndefined();
+  });
+
+  it("rejects a cross-origin state-changing request that carries the cookie (CSRF)", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    const req = makeRequest(["v1", "animal", "save-report"], {
+      method: "POST",
+      body: "{}",
+      headers: { cookie: "rs_session=x.y.z", origin: "https://evil.example" },
+    });
+    const res = await callHandler(mod, req, ["v1", "animal", "save-report"]);
+    expect(res.status).toBe(403);
+    expect(httpMock.calls).toHaveLength(0);
+  });
+
+  it("drops the cookie when the backend says the token is dead (401)", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    httpMock.plans.push({ statusCode: 401, chunks: ['{"detail":"Token expired"}'] });
+    const req = makeRequest(["v1", "animal", "simulations"], {
+      method: "GET",
+      headers: { cookie: "rs_session=x.y.z" },
+    });
+    const res = await callHandler(mod, req, ["v1", "animal", "simulations"]);
+    expect(res.status).toBe(401);
+    expect(res.headers.get("set-cookie") ?? "").toMatch(/rs_session=;.*Max-Age=0/);
+  });
+});
+
+describe("response size cap (audit A-16)", () => {
+  it("returns 502 instead of buffering an oversized upstream body", async () => {
+    const mod = await loadHandler("10.0.0.1", "8000");
+    httpMock.plans.push({
+      statusCode: 200,
+      chunks: ["x".repeat(6 * 1024 * 1024), "x".repeat(6 * 1024 * 1024)],
+    });
+    const req = makeRequest(["v1", "admin", "export-feeds"], { method: "GET" });
+    const res = await callHandler(mod, req, ["v1", "admin", "export-feeds"]);
+    expect(res.status).toBe(502);
+  });
+});

@@ -1,10 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
-// AUDIT A-02 (deferred): the upstream hop is plain HTTP because the backend
-// only listens on http://<ip>:8000 — there is no TLS certificate or hostname
-// in front of it yet. Switching to node:https is a one-line change here once
-// the backend team puts a TLS terminator (ALB / reverse proxy) in front.
 import http from "node:http";
+import https from "node:https";
 import { UPSTREAM_TIMEOUT_MS } from "@/lib/timeouts";
+import {
+  clearSessionCookie,
+  isSameOriginRequest,
+  readSessionToken,
+  setSessionCookie,
+} from "@/lib/session-cookie";
 
 // Backend location comes ONLY from the environment (see .env.example). There
 // is deliberately no hardcoded IP fallback: a deploy with missing env vars
@@ -14,6 +17,12 @@ const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
 // Label surfaced as `x-backend-env` so DevTools shows which backend served a
 // request (dev | prod | custom) without exposing the host itself.
 const BACKEND_ENV = process.env.BACKEND_ENV ?? "custom";
+// Upstream scheme (audit A-02). The backend is plain HTTP today (no TLS
+// terminator / hostname in front of it yet), so the default stays "http";
+// once TLS is in place set BACKEND_PROTOCOL=https and the proxy uses TLS
+// end-to-end with no code change.
+const BACKEND_PROTOCOL = process.env.BACKEND_PROTOCOL === "https" ? "https" : "http";
+const transport = BACKEND_PROTOCOL === "https" ? https : http;
 
 // Upstream request timeout (UPSTREAM_TIMEOUT_MS, src/lib/timeouts.ts). Without
 // it, a backend that accepts the connection but never responds keeps the
@@ -24,6 +33,10 @@ const BACKEND_ENV = process.env.BACKEND_ENV ?? "custom";
 // Largest request body we'll buffer and forward (bulk-upload spreadsheets are
 // the biggest payloads). Vercel caps function bodies at 4.5 MB anyway.
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
+// Largest upstream response we buffer (exports are the biggest). Beyond this
+// the proxy aborts with a 502 rather than holding an unbounded body in memory
+// (audit A-16). Vercel also caps function responses at 4.5 MB.
+const MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
 
 // Only these request headers reach the backend. Everything else — cookies,
 // origin, x-forwarded-*, accept-encoding (we can't re-encode the response) —
@@ -62,6 +75,66 @@ function buildResponse(
   return new NextResponse(body, { status: res.statusCode ?? 200, headers });
 }
 
+/**
+ * POST /v1/auth/login: move the JWT out of the JSON body into the httpOnly
+ * session cookie (audit A-04). The body keeps `token_type` / `expires_in` so
+ * the client still knows when the session ends, but never sees the token.
+ */
+function captureLoginToken(req: NextRequest, res: NextResponse, body: Buffer): NextResponse {
+  if (res.status !== 200) return res;
+  let json: { token?: unknown } & Record<string, unknown>;
+  try {
+    json = JSON.parse(body.toString("utf8"));
+  } catch {
+    return res;
+  }
+  const tok = json.token;
+  const access =
+    typeof tok === "string"
+      ? tok
+      : tok &&
+          typeof tok === "object" &&
+          typeof (tok as { access_token?: unknown }).access_token === "string"
+        ? (tok as { access_token: string }).access_token
+        : null;
+  if (!access) return res;
+  const expiresIn =
+    tok && typeof tok === "object" ? (tok as { expires_in?: unknown }).expires_in : undefined;
+  const { access_token: _dropped, ...rest } =
+    tok && typeof tok === "object" ? (tok as Record<string, unknown>) : { access_token: access };
+  const out = NextResponse.json(
+    { ...json, token: { ...rest, in_cookie: true } },
+    {
+      status: res.status,
+      headers: res.headers,
+    }
+  );
+  setSessionCookie(req, out, access, typeof expiresIn === "number" ? expiresIn : undefined);
+  return out;
+}
+
+/** Collects a response stream, aborting past MAX_RESPONSE_BYTES. */
+function collect(
+  res: http.IncomingMessage,
+  onDone: (body: ReturnType<typeof Buffer.concat>) => void,
+  onTooLarge: () => void
+) {
+  const chunks: Buffer[] = [];
+  let size = 0;
+  res.on("data", (chunk: Buffer) => {
+    size += chunk.length;
+    if (size > MAX_RESPONSE_BYTES) {
+      res.destroy?.();
+      onTooLarge();
+      return;
+    }
+    chunks.push(chunk);
+  });
+  res.on("end", () => {
+    if (size <= MAX_RESPONSE_BYTES) onDone(Buffer.concat(chunks));
+  });
+}
+
 /** Should this upstream response be followed server-side (it never reaches the browser)? */
 function isFollowableRedirect(status: number, method: string): boolean {
   if (status === 307 || status === 308) return true;
@@ -93,6 +166,14 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
   }
   const search = req.nextUrl.search; // includes leading "?"
 
+  // Cookie-authenticated, state-changing calls must come from this app
+  // (CSRF defence in depth; the cookie is also SameSite=Strict).
+  const sessionToken = readSessionToken(req);
+  if (sessionToken && req.method !== "GET" && req.method !== "HEAD" && !isSameOriginRequest(req)) {
+    return NextResponse.json({ detail: "Forbidden" }, { status: 403 });
+  }
+  const isLogin = req.method === "POST" && path.join("/") === "v1/auth/login";
+
   // No trailing slash: all but one backend route is defined without it, and
   // FastAPI 307-redirects the slash-terminated form — which used to cost an
   // extra round trip (and a second POST body upload) on every call. The one
@@ -117,6 +198,11 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
       forwardHeaders[key] = value;
     }
   });
+  // The session cookie supplies the bearer token; an explicit Authorization
+  // header (sessions from before the cookie existed) still wins.
+  if (sessionToken && !forwardHeaders["authorization"] && !isLogin) {
+    forwardHeaders["authorization"] = `Bearer ${sessionToken}`;
+  }
   forwardHeaders["host"] = `${BACKEND_HOST}:${BACKEND_PORT}`;
   if (bodyBuffer) {
     forwardHeaders["content-length"] = String(bodyBuffer.byteLength);
@@ -137,6 +223,16 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
       clearTimeout(deadline);
       resolveOnce(res);
     };
+    const tooLarge = () =>
+      resolve(NextResponse.json({ detail: "Upstream response too large" }, { status: 502 }));
+    // A 401 on a cookie session means the token died server-side: drop the
+    // cookie so the next request doesn't keep presenting it.
+    const finish = (upstream: http.IncomingMessage, body: ReturnType<typeof Buffer.concat>) => {
+      let res = buildResponse(upstream, body);
+      if (isLogin) res = captureLoginToken(req, res, body);
+      else if (res.status === 401 && sessionToken) clearSessionCookie(req, res);
+      resolve(res);
+    };
 
     const options: http.RequestOptions = {
       hostname: BACKEND_HOST,
@@ -147,14 +243,14 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
       timeout: UPSTREAM_TIMEOUT_MS,
     };
 
-    const proxyReq = http.request(options, (proxyRes) => {
+    const proxyReq = transport.request(options, (proxyRes) => {
       const redirectStatus = proxyRes.statusCode ?? 200;
       const location = proxyRes.headers["location"];
 
       if (isFollowableRedirect(redirectStatus, req.method) && location) {
         // Re-issue to the same pinned host — only path+query are taken from
         // the Location header, so a redirect can never point us elsewhere.
-        const target = new URL(location, `http://${BACKEND_HOST}:${BACKEND_PORT}`);
+        const target = new URL(location, `${BACKEND_PROTOCOL}://${BACKEND_HOST}:${BACKEND_PORT}`);
         const redirectOpts: http.RequestOptions = {
           hostname: BACKEND_HOST,
           port: BACKEND_PORT,
@@ -164,10 +260,8 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
           timeout: UPSTREAM_TIMEOUT_MS,
         };
 
-        const redirectReq = http.request(redirectOpts, (redirectRes) => {
-          const chunks: Buffer[] = [];
-          redirectRes.on("data", (chunk: Buffer) => chunks.push(chunk));
-          redirectRes.on("end", () => resolve(buildResponse(redirectRes, Buffer.concat(chunks))));
+        const redirectReq = transport.request(redirectOpts, (redirectRes) => {
+          collect(redirectRes, (body) => finish(redirectRes, body), tooLarge);
           redirectRes.on("error", () =>
             resolve(NextResponse.json({ detail: "Redirect proxy error" }, { status: 502 }))
           );
@@ -190,9 +284,7 @@ async function handler(req: NextRequest, { params }: RouteContext): Promise<Next
       }
 
       // Normal response
-      const chunks: Buffer[] = [];
-      proxyRes.on("data", (chunk: Buffer) => chunks.push(chunk));
-      proxyRes.on("end", () => resolve(buildResponse(proxyRes, Buffer.concat(chunks))));
+      collect(proxyRes, (body) => finish(proxyRes, body), tooLarge);
       proxyRes.on("error", () =>
         resolve(NextResponse.json({ detail: "Response stream error" }, { status: 502 }))
       );

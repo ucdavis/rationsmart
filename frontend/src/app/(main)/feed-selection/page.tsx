@@ -502,7 +502,7 @@ export default function FeedSelectionPage() {
   const limitsApplyToAnimal = animalCategory !== "Baby Calf/Heifer";
 
   useEffect(() => {
-    if (!limitsApplyToAnimal || !user?.token) {
+    if (!limitsApplyToAnimal || !user?.id) {
       setLimitSpecs(null);
       setLimitSpecsError(null);
       return;
@@ -533,7 +533,7 @@ export default function FeedSelectionPage() {
     return () => {
       cancelled = true;
     };
-  }, [animalCategory, limitsApplyToAnimal, user?.token]);
+  }, [animalCategory, limitsApplyToAnimal, user?.id]);
 
   const limitSpecsLoading = limitsApplyToAnimal && !limitSpecs && !limitSpecsError;
   // Evaluation doesn't run the optimizer, so limits have nothing to act on.

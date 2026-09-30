@@ -21,10 +21,10 @@ export interface User {
   currency: string;
   pin: string; // 6-digit on the v1 backend; 4-digit accepted for legacy login only
   is_admin: boolean;
-  // v1 testing-branch addition: JWT issued by POST /v1/auth/login.
-  // Every animal/* and admin/* request gets this as `Authorization: Bearer <token>`.
-  // setTokenProvider() below wires the api.ts axios instance to read the
-  // latest token on every request.
+  // LEGACY ONLY. Since the httpOnly session cookie (audit A-04) the JWT
+  // never reaches JavaScript: the proxy stores it in `rs_session` and adds
+  // the Authorization header itself. This field is only set on sessions
+  // created before that change, and migrateLegacySession() clears it.
   token: string | null;
   /** Epoch ms when `token` expires (from TokenResponse.expires_in). Falls back to the JWT `exp` claim. */
   token_expires_at?: number;
@@ -205,17 +205,56 @@ export const useStore = create<AppState>()(
 // can read the latest JWT from the store on every request. Done as a
 // callback (not an import in api.ts) so we don't introduce a circular
 // dependency between api.ts and store.ts.
+// Since the httpOnly session cookie (audit A-04) the proxy attaches the
+// bearer token itself, so for new logins there is nothing to send here; a
+// token only exists on sessions created before the cookie, until
+// migrateLegacySession() moves it into the cookie.
 setTokenProvider(() => {
   const u = useStore.getState().user;
-  if (!u?.token) return null;
-  // An expired token is never sent: end the session now (same path as a
-  // 401) rather than letting the next screen half-load (audit A-14).
+  if (!u) return null;
+  // An expired session never sends another request: end it now (same path
+  // as a 401) rather than letting the next screen half-load (audit A-14).
   if (isSessionExpired(u)) {
     expireSession();
     return null;
   }
-  return u.token;
+  return u.token ?? null;
 });
+
+/**
+ * Tells the server to drop the httpOnly session cookie. Called wherever the
+ * user's session really ends (logout, expiry, account deletion, reinstall) —
+ * NOT by logout() itself, which /login also calls to wipe local state right
+ * after the new cookie has been set.
+ */
+export function endServerSession(): void {
+  if (typeof window === "undefined" || typeof fetch !== "function") return;
+  fetch("/api/session", { method: "DELETE", credentials: "same-origin", keepalive: true }).catch(
+    () => {}
+  );
+}
+
+/**
+ * Sessions created before the cookie kept the JWT in localStorage. Move it
+ * into the httpOnly cookie once, then forget it client-side (audit A-04).
+ */
+export async function migrateLegacySession(): Promise<void> {
+  const u = useStore.getState().user;
+  if (!u?.token || typeof fetch !== "function") return;
+  const exp = u.token_expires_at ?? jwtExpiryMs(u.token);
+  const expires_in = exp ? Math.max(0, Math.floor((exp - Date.now()) / 1000)) : undefined;
+  try {
+    const res = await fetch("/api/session", {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token: u.token, expires_in }),
+    });
+    if (res.ok) useStore.getState().setToken(null);
+  } catch {
+    // Keep sending the stored token; the next launch retries.
+  }
+}
 // i18n V2 — wire the active language to api.ts so every feed-related
 // helper can spread ?lang= via langParam() without reaching into the store.
 // Priority (top wins):
@@ -258,6 +297,7 @@ const sessionExpiredHandler = () => {
     // Reuse the store's logout to clear ALL session state, including
     // cattleInfo / feedSelections / reportData / dietLimits.
     useStore.getState().logout();
+    endServerSession();
     // Also surface a snackbar so the user sees WHY they got bounced.
     useStore.getState().showSnackbar("Session expired — please log in again", "info");
   } catch {

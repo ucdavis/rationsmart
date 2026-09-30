@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { useStore } from "@/lib/store";
+import { endServerSession, useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n-ui";
 import PoweredBy from "./PoweredBy";
 import {
@@ -95,6 +95,7 @@ export default function NavDrawer({ open, onClose }: NavDrawerProps) {
     setShowLogoutConfirm(false);
     onClose();
     logout();
+    endServerSession();
     router.replace("/welcome");
   };
 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useStore } from "@/lib/store";
+import { endServerSession, useStore } from "@/lib/store";
 import {
   updateUserProfile,
   deleteAccount,
@@ -211,6 +211,7 @@ export default function ProfilePage() {
       setShowPinSheet(false);
       setDeletePin("");
       logout();
+      endServerSession();
       router.replace("/welcome");
       showSnackbar(t("Account deleted. Sorry to see you go."), "info");
     } catch (err: unknown) {

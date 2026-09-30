@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { expireSession, isSessionExpired, useStore } from "@/lib/store";
+import { expireSession, isSessionExpired, migrateLegacySession, useStore } from "@/lib/store";
 import NavDrawer from "@/components/NavDrawer";
 import { DrawerContext } from "@/lib/DrawerContext";
 import { COLORS } from "@/lib/colors";
@@ -41,6 +41,12 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (hydrated && user && isSessionExpired(user)) expireSession();
   }, [hydrated, user]);
+
+  // Move a pre-cookie session's localStorage token into the httpOnly cookie.
+  const hasLegacyToken = !!user?.token;
+  useEffect(() => {
+    if (hydrated && hasLegacyToken) void migrateLegacySession();
+  }, [hydrated, hasLegacyToken]);
 
   if (!hydrated || !user) {
     return (

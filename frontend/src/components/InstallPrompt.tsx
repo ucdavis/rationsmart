@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n-ui";
-import { useStore } from "@/lib/store";
+import { endServerSession, useStore } from "@/lib/store";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { INSTALL_PROMPT_DELAY_MS } from "@/lib/ui-timings";
@@ -15,6 +15,7 @@ import { COLORS } from "@/lib/colors";
 // then clearStorage() drops the persisted blob.
 function resetForFreshInstall() {
   useStore.getState().logout();
+  endServerSession();
   useStore.persist.clearStorage();
 }
 
