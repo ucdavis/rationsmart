@@ -28,6 +28,11 @@ from .utilities import (
     replace_na_and_negatives,
 )
 
+# Round to 2 dp, passing None ("not applicable") through unchanged.
+def _round_or_none(value):
+    return None if value is None else round(value, 2)
+
+
 # Milk support prediction
 # Purpose: Estimate milk production supported by nutrient supply and derive cost/emission metrics.
 # Notes: Returns dict of milk support, intake status, cost per milk, and methane indicators.
@@ -61,11 +66,14 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
         # Milk supported by protein (kg/d)
         milk_protein_supported = max(0, MP_available / MP_per_kg_milk)
 
+        milk_supported = min(milk_energy_supported, milk_protein_supported)
+
         # Limiting factor
         limiting_factor = "Energy" if milk_energy_supported < milk_protein_supported else "Protein"
     else:
         milk_energy_supported = None
         milk_protein_supported = None
+        milk_supported = None
         limiting_factor = None
 
     # DMI evaluation
@@ -88,7 +96,7 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
     
     # Calculate feed cost per kg milk
     if is_lactating:
-        milk_produced = np.round(min(milk_energy_supported, milk_protein_supported), 2)
+        milk_produced = np.round(milk_supported, 2)
         feed_cost_per_l_milk = diet_cost_total_af / milk_produced if milk_produced > 0 else 0
     else:
         feed_cost_per_l_milk = None
@@ -134,9 +142,9 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
     
     return {
         "Milk_Target_Production": round(Trg_MilkProd, 2),
-        "Milk_Energy_Supported": round(milk_energy_supported, 2) if is_lactating else None,
-        "Milk_Protein_Supported": round(milk_protein_supported, 2) if is_lactating else None,
-        "Milk_Supported": round(min(milk_energy_supported, milk_protein_supported), 2) if is_lactating else None,
+        "Milk_Energy_Supported": _round_or_none(milk_energy_supported),
+        "Milk_Protein_Supported": _round_or_none(milk_protein_supported),
+        "Milk_Supported": _round_or_none(milk_supported),
         "Limiting_Nutrient": limiting_factor,
         "NEL_Available": round(NEL_available, 2),
         "MP_Available_kg": round(MP_Available_kg, 2),
@@ -146,7 +154,7 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
         "DMI_Difference": round(dmi_difference, 2),
         "DMI_Percent": round(dmi_percent, 2),
         "Diet_Cost_Total_AF": round(diet_cost_total_af, 2),
-        "Feed_Cost_Per_L_Milk": round(feed_cost_per_l_milk, 2) if is_lactating else None,
+        "Feed_Cost_Per_L_Milk": _round_or_none(feed_cost_per_l_milk),
         "CH4_MJ": round(CH4_MJ, 2),
         "CH4_grams": round(CH4, 2),
         "CH4_grams_per_kg_DMI": round(CH4_grams_per_kg_DMI, 2),
