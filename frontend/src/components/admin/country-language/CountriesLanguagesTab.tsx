@@ -14,16 +14,11 @@ import {
 } from "@/lib/api";
 import { useEscapeKey } from "@/lib/use-escape";
 import { COLORS } from "@/lib/colors";
-import {
-  CountryRow,
-  InactiveCountryRow,
-  SkeletonPickerRow,
-  SystemLanguage,
-  cardStyle,
-  inputStyle,
-  sheetOverlayStyle,
-} from "./shared";
+import { CountryRow, InactiveCountryRow, SystemLanguage, cardStyle } from "./shared";
 import { useT, fillText } from "@/lib/i18n-ui";
+import ActivateCountrySheet from "./ActivateCountrySheet";
+import AssociateLanguageSheet from "./AssociateLanguageSheet";
+import RegisterLanguageSheet from "./RegisterLanguageSheet";
 import { listFrom } from "@/lib/api-client/normalize";
 
 export function CountriesLanguagesTab({
@@ -507,247 +502,41 @@ export function CountriesLanguagesTab({
 
       {/* Activate-a-country sheet */}
       {showActivate && (
-        <div
-          className="fixed top-0 h-full z-50 flex flex-col justify-end"
-          style={sheetOverlayStyle}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowActivate(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
-            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-          >
-            <div className="flex justify-center mb-3">
-              <div
-                style={{
-                  width: 40,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: COLORS.goGreen15,
-                }}
-              />
-            </div>
-            <h3
-              className="text-center font-bold mb-1"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
-            >
-              {t("Activate a country")}
-            </h3>
-            <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
-              {t("RationSmart becomes available to farmers in the activated country.")}
-            </p>
-            {isLoadingInactive ? (
-              <div className="flex flex-col gap-2">
-                {[0, 1, 2].map((i) => (
-                  <SkeletonPickerRow key={i} />
-                ))}
-              </div>
-            ) : inactiveCountries.length === 0 ? (
-              <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>
-                {t("All registered countries are already enabled.")}
-              </p>
-            ) : (
-              <div className="flex flex-col gap-2">
-                {inactiveCountries.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => handleActivateCountry(c)}
-                    className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
-                    style={{
-                      border: `1px solid ${COLORS.gainsboro}`,
-                      background: COLORS.white,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <span className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {c.name}
-                    </span>
-                    <span
-                      className="text-xs font-bold"
-                      style={{ color: COLORS.darkAquamarineGreen }}
-                    >
-                      {t("Activate →")}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
+        <ActivateCountrySheet
+          handleActivateCountry={handleActivateCountry}
+          inactiveCountries={inactiveCountries}
+          isLoadingInactive={isLoadingInactive}
+          setShowActivate={setShowActivate}
+          t={t}
+        />
       )}
 
       {/* Associate-a-language sheet (per country) */}
-      {assocFor &&
-        (() => {
-          const available = allLanguages.filter(
-            (l) => l.is_active && !assocFor.languages.includes(l.code)
-          );
-          return (
-            <div
-              className="fixed top-0 h-full z-50 flex flex-col justify-end"
-              style={sheetOverlayStyle}
-              onClick={(e) => {
-                if (e.target === e.currentTarget) setAssocFor(null);
-              }}
-            >
-              <div
-                role="dialog"
-                aria-modal="true"
-                className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
-                style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-              >
-                <div className="flex justify-center mb-3">
-                  <div
-                    style={{
-                      width: 40,
-                      height: 6,
-                      borderRadius: 3,
-                      backgroundColor: COLORS.goGreen15,
-                    }}
-                  />
-                </div>
-                <h3
-                  className="text-center font-bold mb-1"
-                  style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
-                >
-                  {fillText(t("Associate a language — ${country}"), { country: assocFor.name })}
-                </h3>
-                <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
-                  {fillText(
-                    t(
-                      "The combination will appear in the Cattle Info screen for farmers in ${country}."
-                    ),
-                    { country: assocFor.name }
-                  )}
-                </p>
-                {available.length === 0 ? (
-                  <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>
-                    {t(
-                      "All active languages are already associated. Register or activate a language first."
-                    )}
-                  </p>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    {available.map((l) => (
-                      <button
-                        key={l.code}
-                        onClick={() => handleAssociate(l.code)}
-                        disabled={isAssociating}
-                        className="flex items-center justify-between px-3 py-2.5 rounded-xl text-left"
-                        style={{
-                          border: `1px solid ${COLORS.gainsboro}`,
-                          background: COLORS.white,
-                          cursor: isAssociating ? "wait" : "pointer",
-                        }}
-                      >
-                        <span className="font-bold text-sm" style={{ color: COLORS.raisinBlack }}>
-                          {labelForLanguage(l.code)}{" "}
-                          <span style={{ color: COLORS.darkSilver, fontWeight: 400 }}>
-                            · {l.name}
-                          </span>
-                        </span>
-                        <span
-                          className="text-xs font-bold"
-                          style={{ color: COLORS.darkAquamarineGreen }}
-                        >
-                          {t("Associate →")}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })()}
+      {assocFor && (
+        <AssociateLanguageSheet
+          allLanguages={allLanguages}
+          assocFor={assocFor}
+          handleAssociate={handleAssociate}
+          isAssociating={isAssociating}
+          setAssocFor={setAssocFor}
+          t={t}
+        />
+      )}
 
       {/* Register-a-language sheet — Name + Code only (see file-header note:
           the prototype's "Native name" field has nowhere to persist to on
           the real API, so it's not collected here). */}
       {showRegister && (
-        <div
-          className="fixed top-0 h-full z-50 flex flex-col justify-end"
-          style={sheetOverlayStyle}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setShowRegister(false);
-          }}
-        >
-          <div
-            role="dialog"
-            aria-modal="true"
-            className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
-            style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
-          >
-            <div className="flex justify-center mb-3">
-              <div
-                style={{
-                  width: 40,
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: COLORS.goGreen15,
-                }}
-              />
-            </div>
-            <h3
-              className="text-center font-bold mb-4"
-              style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
-            >
-              {t("Register a new language")}
-            </h3>
-            <label
-              htmlFor="new-language-name"
-              className="block text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: COLORS.darkSilver }}
-            >
-              {t("Language name (English)")}
-            </label>
-            <input
-              id="new-language-name"
-              aria-label={t("Language name (English)")}
-              type="text"
-              value={regName}
-              onChange={(e) => setRegName(e.target.value)}
-              placeholder={t("e.g. Swahili")}
-              maxLength={100}
-              className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-3"
-              style={inputStyle}
-            />
-            <label
-              htmlFor="new-language-code"
-              className="block text-xs font-bold uppercase tracking-wide mb-1"
-              style={{ color: COLORS.darkSilver }}
-            >
-              {t("ISO code")}
-            </label>
-            <input
-              id="new-language-code"
-              aria-label={t("ISO code")}
-              type="text"
-              value={regCode}
-              onChange={(e) => setRegCode(e.target.value.toLowerCase())}
-              placeholder={t("e.g. sw")}
-              maxLength={10}
-              className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"
-              style={inputStyle}
-            />
-            <button
-              onClick={handleRegister}
-              disabled={isRegistering}
-              className="w-full py-3 rounded-xl font-bold"
-              style={{
-                backgroundColor: isRegistering ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
-                color: COLORS.white,
-                border: "none",
-                cursor: isRegistering ? "not-allowed" : "pointer",
-              }}
-            >
-              {isRegistering ? t("Registering…") : t("Register language")}
-            </button>
-          </div>
-        </div>
+        <RegisterLanguageSheet
+          handleRegister={handleRegister}
+          isRegistering={isRegistering}
+          regCode={regCode}
+          regName={regName}
+          setRegCode={setRegCode}
+          setRegName={setRegName}
+          setShowRegister={setShowRegister}
+          t={t}
+        />
       )}
     </div>
   );
