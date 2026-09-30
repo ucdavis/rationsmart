@@ -54,9 +54,8 @@ the prod URL).
   `BACKEND_HOST=<PROD_BACKEND_IP>` / `BACKEND_PORT=8000`, deploy + alias to
   `rationsmart.vercel.app`. SSO disabled via REST API patch.
 - 2026-06-17: GitHub Actions workflow `.github/workflows/deploy-testing.yml`
-  was disabled (`gh workflow disable`). The job is still present in the
-  repo but listed as `disabled_manually`. **DO NOT re-enable without the
-  user asking.** The user wants manual deploys after a string of silent
+  was disabled (`gh workflow disable`), and deleted on 2026-09-30.
+  **Don't add a deploy workflow back without the user asking.** The user wants manual deploys after a string of silent
   deploy failures.
 
 ### How to ship a change to testing (the standard cycle)
@@ -1014,10 +1013,11 @@ and must stay. The doc at `docs/Search_Implmentation.md` had a §11
 about this rollout; it was removed in the revert.
 
 ### 10.16 Auto-deploy stays OFF
-The GH-Actions workflow `.github/workflows/deploy-testing.yml`
-exists but is `disabled_manually`, and since 2026-09-28 its trigger is
-`workflow_dispatch` only (no `push`), so it can't fire even in a repo copy
-where it isn't disabled. Re-enabling it without the user's
+The old GH-Actions deploy workflow (`deploy-testing.yml`) was **deleted on
+2026-09-30** (audit §2 / A-23): it was disabled, deploys are manual by
+standing instruction, and it was the only CI job that handled the Vercel
+token. Don't add a deploy workflow back without the user asking. CI keeps
+only `quality-gate.yml` (checks, never deploys). Re-enabling it without the user's
 explicit ask will get pushed back. Reason: a string of silent
 "successful" deploys that didn't actually update the live alias
 during the early Y3 work — manual `vercel deploy --prod --yes` +
@@ -1628,8 +1628,8 @@ untracked `docs/AUDIT_RESPONSE.local.md`). These are now invariants:
   (the live screen). `/admin/languages` is now also just a redirect there.
 - **Shared constants:** `PIN_LENGTH` / `LEGACY_PIN_LENGTH`
   (validators.ts), `API_TIMEOUT_MS` / `UPSTREAM_TIMEOUT_MS` (timeouts.ts).
-- **CI:** actions pinned by SHA, `permissions: contents: read`, deploy
-  workflow is `workflow_dispatch`-only with the token passed via env.
+- **CI:** actions pinned by SHA, `permissions: contents: read`; the deploy
+  workflow was deleted (deploys are manual `vercel deploy`).
 - **Shared building blocks (pass 2, 2026-09-28)** — reuse these, don't
   re-copy: `authErrorMessage()` (lib/errors.ts), `useEscapeKey()`
   (lib/use-escape.ts — every sheet/dialog gets `role="dialog"`

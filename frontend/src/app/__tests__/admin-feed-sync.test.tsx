@@ -401,6 +401,19 @@ describe("Admin Feed Library Sync — Sync & Settings tab", () => {
       expect(updateFeedSyncConfig).toHaveBeenCalledWith({ auth_token: "brand-new-secret" })
     );
   });
+
+  it("refuses to save a plain-http endpoint — the token would travel in cleartext (A-10)", async () => {
+    seedLoad();
+    render(<AdminFeedSyncPage />);
+    await screen.findByText("Automatic Scheduler");
+    fireEvent.click(screen.getByText("Edit"));
+    fireEvent.change(await screen.findByPlaceholderText("https://api.example.com/feed-library"), {
+      target: { value: "http://api.example.com/feed-library" },
+    });
+    fireEvent.click(screen.getByText("Save changes"));
+    expect(await screen.findByText("Endpoint URL must start with https://")).toBeInTheDocument();
+    expect(updateFeedSyncConfig).not.toHaveBeenCalled();
+  });
 });
 
 describe("Admin Feed Library Sync — Run History tab", () => {

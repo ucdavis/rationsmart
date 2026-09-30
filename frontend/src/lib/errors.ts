@@ -39,3 +39,5 @@ export function loginErrorMessage(
   if (status === 401 || status === 404) return translate(LOGIN_FAILED_MESSAGE);
   return authErrorMessage(err, fallback, translate);
 }
+export const RESEND_SENT_NEUTRAL_MESSAGE =
+  "If that email is registered and not yet verified, a new link has been sent.";

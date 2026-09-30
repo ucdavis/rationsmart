@@ -30,11 +30,26 @@ export function contentDispositionOf(headers: Record<string, unknown>): unknown 
 // 4.5 MB Vercel function body limit the proxy runs behind.
 export const MAX_UPLOAD_BYTES = 4 * 1024 * 1024;
 
+// MIME types each accepted extension may report. Pickers on some platforms
+// (Android, older Windows) report "" or application/octet-stream for
+// spreadsheets, so those are tolerated; anything else is refused (audit A-22).
+const MIME_BY_EXTENSION: Record<string, readonly string[]> = {
+  ".csv": ["text/csv", "application/csv", "text/plain", "application/vnd.ms-excel"],
+  ".xlsx": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+  ".xls": ["application/vnd.ms-excel"],
+};
+const GENERIC_MIME = new Set(["", "application/octet-stream"]);
+
 /** Returns an error message for an unacceptable file, or null when it's fine. */
 export function uploadFileProblem(file: File, allowedExtensions: readonly string[]): string | null {
   const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
   if (!allowedExtensions.includes(ext)) {
     return `Please choose a ${allowedExtensions.join(" / ")} file`;
+  }
+  const type = (file.type || "").toLowerCase();
+  const allowedTypes = MIME_BY_EXTENSION[ext];
+  if (allowedTypes && !GENERIC_MIME.has(type) && !allowedTypes.includes(type)) {
+    return "That file's type doesn't match its extension";
   }
   if (file.size > MAX_UPLOAD_BYTES) return "File is too large (max 4 MB)";
   if (file.size === 0) return "File is empty";

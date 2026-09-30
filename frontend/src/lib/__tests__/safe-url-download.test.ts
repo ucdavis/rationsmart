@@ -77,6 +77,21 @@ describe("uploadFileProblem (audit A-22)", () => {
     expect(uploadFileProblem(file("feeds.XLSX", 10), [".xlsx"])).toBeNull();
   });
 
+  it("checks the MIME type against the extension, tolerating generic types", () => {
+    const typed = (name: string, type: string) => new File(["x"], name, { type });
+    expect(
+      uploadFileProblem(
+        typed("a.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+        [".xlsx"]
+      )
+    ).toBeNull();
+    expect(uploadFileProblem(typed("a.xlsx", ""), [".xlsx"])).toBeNull();
+    expect(uploadFileProblem(typed("a.xlsx", "application/x-msdownload"), [".xlsx"])).toMatch(
+      /type/
+    );
+    expect(uploadFileProblem(typed("a.csv", "text/html"), [".csv"])).toMatch(/type/);
+  });
+
   it("rejects the wrong extension, empty files and oversized files", () => {
     expect(uploadFileProblem(file("feeds.exe", 10), [".xlsx"])).toMatch(/xlsx/);
     expect(uploadFileProblem(file("feeds.xlsx", 0), [".xlsx"])).toMatch(/empty/);

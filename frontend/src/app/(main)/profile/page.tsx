@@ -20,6 +20,7 @@ import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
+import { authErrorMessage } from "@/lib/errors";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? COLORS.authenticWhite : COLORS.americanDiamond,
@@ -255,11 +256,7 @@ export default function ProfilePage() {
       setNewPin("");
       setConfirmNewPin("");
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : "Could not change PIN. Please try again.";
-      showSnackbar(message, "error");
+      showSnackbar(authErrorMessage(err, "Could not change PIN. Please try again.", t), "error");
     } finally {
       setIsChangingPin(false);
     }

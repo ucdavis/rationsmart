@@ -235,12 +235,12 @@ export function SyncSettingsTab({
   const handleSaveSettings = async () => {
     if (!config) return;
     setSettingsError(null);
-    // A NEW endpoint must be https — the request carries the CLIMDES API
-    // key / bearer token. An already-saved http:// endpoint is left alone so
-    // other settings can still be saved; the backend should enforce https
-    // and block private address ranges too (it chooses where to connect).
-    const endpointChanged = formEndpoint.trim() !== (config.endpoint_url ?? "");
-    if (formEndpoint && endpointChanged && !/^https:\/\//i.test(formEndpoint.trim())) {
+    // The endpoint must be https — every sync sends the CLIMDES API key /
+    // bearer token to it (audit A-10). An http:// endpoint saved earlier has
+    // to be corrected before any setting can be saved. The backend should
+    // also enforce https and block private / link-local addresses, since it
+    // is the one that connects.
+    if (formEndpoint.trim() && !/^https:\/\//i.test(formEndpoint.trim())) {
       setSettingsError("Endpoint URL must start with https://");
       return;
     }

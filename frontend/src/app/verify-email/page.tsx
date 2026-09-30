@@ -28,6 +28,7 @@ import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
 import { cooldownSecondsLeft, markEmailSent } from "@/lib/email-cooldown";
+import { authErrorMessage, errorStatus, RESEND_SENT_NEUTRAL_MESSAGE } from "@/lib/errors";
 
 function VerifyEmailInner() {
   const router = useRouter();
@@ -60,11 +61,19 @@ function VerifyEmailInner() {
       const msg = (res.data as { message?: string })?.message;
       showSnackbar(msg ?? t("Verification email resent — check your inbox"), "success");
     } catch (err: unknown) {
-      const message =
-        err instanceof Error && err.message
-          ? err.message
-          : t("Could not resend the verification email. Please try again.");
-      showSnackbar(message, "error");
+      // The backend answers an unknown / already-verified address with 400 or
+      // 404. Reply exactly like a successful send so this screen can't be used
+      // to find out which emails have accounts (audit A-19).
+      const status = errorStatus(err);
+      if (status === 400 || status === 404) {
+        markEmailSent("resend-verification", email);
+        showSnackbar(t(RESEND_SENT_NEUTRAL_MESSAGE), "success");
+        return;
+      }
+      showSnackbar(
+        authErrorMessage(err, "Could not resend the verification email. Please try again.", t),
+        "error"
+      );
     } finally {
       setIsResending(false);
     }
