@@ -401,7 +401,7 @@ true (see §10.1).
 - Radio toggle Recommendation/Evaluation. In Evaluation mode every row
   also shows Quantity (kg/day) + computed Cost cell.
 - `FeedRow` per feed. **No row's feed type is locked** — the FEED 1 lock
-  and its Forage auto-default were removed on request (commit `614bcf9`).
+  and its Forage auto-default were removed on request (commit `4c7a940`).
   Instead the Feed Type options are Forage-first and the separate
   "Forage required" gate (`showNoForageDialog`) blocks Generate when no
   row is forage. `feedTypeLocked` still exists on FeedRow (default false)
@@ -645,7 +645,7 @@ has a stored name (the value is still displayed; toast would be a false
 alarm).
 
 **Default first row:** no row auto-selects a feed type any more (the
-FEED 1 → "Forage" default was removed in commit `614bcf9`); see §5.
+FEED 1 → "Forage" default was removed in commit `4c7a940`); see §5.
 
 **Edit dialog (pencil icon):**
 - On open, calls `checkInsertOrUpdate(country, item.feed_uuid, user.id)`
@@ -1000,7 +1000,7 @@ site data (also logs the user out).
 On 2026-06-19 the user asked to revert a planned `feed_code` rollout
 that would have made the payload prefer `fd_code` over the UUID on
 `POST /v1/animal/diet-recommendation` and `/v1/animal/evaluate-diet`.
-The revert is in commit `689f6c9`. The wire payload now sends
+The revert is in commit `3f15def`. The wire payload now sends
 `feed_id: item.feed_uuid` everywhere — no `?? feed_code` fallback,
 no `feed_code` field on `FeedItem`. If a future session sees
 `fd_code` in the swagger or in admin/feeds and considers "wiring it
@@ -1334,7 +1334,7 @@ translation effort and is unrelated to backend i18n V2.
 | I4 | Languages are DB data, not code | Don't hardcode the supported-languages list. Read `country.supported_languages` from `/v1/auth/countries` |
 | I5 | Translation work is country-scoped | Admin tooling (Phase 2) always filters by `country_id` |
 
-### 18.3 Phase 1 — frontend wiring (already shipped — commit `2f3eab5`)
+### 18.3 Phase 1 — frontend wiring (already shipped — commit `2dc7b9c`)
 
 `src/lib/store.ts`:
 - `User.preferred_language: string` (defaults to `"en"`)
@@ -1398,19 +1398,19 @@ match logic) when the user changes language.
 **Two admin screens, not three** — the original three-screen design was
 collapsed into a unified "Language Catalog" page after user feedback.
 History:
-- commit `1caf450` (2026-06-25): shipped 3 separate screens —
+- commit `798f706` (2026-06-25): shipped 3 separate screens —
   `/admin/translations`, `/admin/languages`, `/admin/country-languages`.
-- commit `6d9a5b9` (2026-06-29): merged `/admin/languages` +
+- commit `d3b27da` (2026-06-29): merged `/admin/languages` +
   `/admin/country-languages` into one page. The country-languages
   route now redirects to `/admin/languages`.
-- commit `d2d17cb` (2026-06-29): switched the merged page to
+- commit `b178e1d` (2026-06-29): switched the merged page to
   show ONLY enabled languages per country (was previously showing
   every catalog language under every country with toggles, which
   confused admins — "why does Vietnam need Hindi"). New flow: tap
   "+ Add Language" inside a country card to enable a NEW one.
-- commit `f3322db` (2026-06-29): added a "Seed Defaults" button
+- commit `518eba8` (2026-06-29): added a "Seed Defaults" button
   to assign the canonical rollout locales in one tap.
-- commit `52dd9d4` (2026-06-29): verbose `[seed]` console logging
+- commit `d451de9` (2026-06-29): verbose `[seed]` console logging
   on the seed action.
 
 Current screens and what they hit on the backend:
