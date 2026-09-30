@@ -29,6 +29,7 @@ import type { ReportContext } from "@/components/report/parts";
 import type { User } from "@/lib/store";
 
 import type { BannerTheme } from "@/components/report/parts";
+import { formatMoney } from "@/lib/money";
 
 export interface RecommendationSectionsProps {
   banner: BannerTheme;
@@ -123,7 +124,7 @@ export default function RecommendationSections({
               {/* Value + currency code suffix — Android "108,199.8 VND" */}
               <div className="flex items-baseline gap-1.5">
                 <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
-                  {Number(recReport.solution_summary.daily_cost).toFixed(2)}
+                  {formatMoney(recReport.solution_summary.daily_cost)}
                 </p>
                 <p style={{ color: COLORS.darkSilver, fontSize: 14 }}>{currencySymbol}</p>
               </div>

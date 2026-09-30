@@ -33,6 +33,7 @@ import type {
   FeedBreakdown,
   CostEffectiveDiet,
 } from "@/lib/api";
+import { formatMoney, roundMoney, sumMoney } from "@/lib/money";
 
 export default function ReportPage() {
   const router = useRouter();
@@ -281,19 +282,13 @@ export default function ReportPage() {
   const softLimitNotes = (recReport?.warnings ?? []).filter((w) => w && w.trim().length > 0);
 
   // Total cost sums for footers
-  const recTotalCost = recReport?.least_cost_diet
-    ? recReport.least_cost_diet.reduce(
-        (sum: number, r: CostEffectiveDiet) => sum + (Number(r.daily_cost) || 0),
-        0
-      )
-    : 0;
-
-  const evalTotalCost = evalReport?.feed_breakdown
-    ? evalReport.feed_breakdown.reduce(
-        (sum: number, r: FeedBreakdown) => sum + (Number(r.total_cost) || 0),
-        0
-      )
-    : 0;
+  // Cent-exact sums (audit B-25): the footer equals the rows the user sees.
+  const recTotalCost = sumMoney(
+    (recReport?.least_cost_diet ?? []).map((r: CostEffectiveDiet) => r.daily_cost)
+  );
+  const evalTotalCost = sumMoney(
+    (evalReport?.feed_breakdown ?? []).map((r: FeedBreakdown) => r.total_cost)
+  );
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
@@ -376,8 +371,10 @@ export default function ReportPage() {
               ? (evalReport?.cost_analysis?.total_diet_cost_as_fed ?? null)
               : (recReport?.total_diet_cost ?? recReport?.solution_summary?.daily_cost ?? null));
           if (dailyCost == null || dailyCost <= 0) return null;
-          const costPerLitre = serverMargin?.cost_per_litre ?? dailyCost / milkProduction;
-          const margin = serverMargin?.margin_per_litre ?? milkPrice - costPerLitre;
+          const costPerLitre = roundMoney(
+            serverMargin?.cost_per_litre ?? dailyCost / milkProduction
+          );
+          const margin = roundMoney(serverMargin?.margin_per_litre ?? milkPrice - costPerLitre);
           const isPositive = margin >= 0;
           // Color tokens chosen to match existing report banners
           // (dark_green_turquoise / carmine_pink theme).
@@ -420,7 +417,7 @@ export default function ReportPage() {
                   </p>
                   <div className="flex items-baseline gap-1">
                     <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
-                      {costPerLitre.toFixed(2)}
+                      {formatMoney(costPerLitre)}
                     </p>
                     <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{currencySymbol}</p>
                   </div>
@@ -444,7 +441,7 @@ export default function ReportPage() {
                   </p>
                   <div className="flex items-baseline gap-1">
                     <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
-                      {milkPrice.toFixed(2)}
+                      {formatMoney(milkPrice)}
                     </p>
                     <p style={{ color: COLORS.darkSilver, fontSize: 12 }}>{currencySymbol}</p>
                   </div>
@@ -469,7 +466,7 @@ export default function ReportPage() {
                   <div className="flex items-baseline gap-1" style={{ marginTop: 2 }}>
                     <p className="font-bold" style={{ color: accent, fontSize: 24 }}>
                       {isPositive ? "+" : "−"}
-                      {Math.abs(margin).toFixed(2)}
+                      {formatMoney(Math.abs(margin))}
                     </p>
                     <p className="font-bold" style={{ color: accent, fontSize: 13 }}>
                       {currencySymbol}/L
@@ -501,7 +498,7 @@ export default function ReportPage() {
                 {t("Across")} {milkProduction.toFixed(1)} L/day,
                 {isPositive ? ` ${t("net profit")}` : ` ${t("net loss")}`}{" "}
                 <span className="font-bold" style={{ color: accent }}>
-                  {(Math.abs(margin) * milkProduction).toFixed(2)} {currencySymbol}/day
+                  {formatMoney(Math.abs(margin) * milkProduction)} {currencySymbol}/day
                 </span>
               </p>
             </SCard>

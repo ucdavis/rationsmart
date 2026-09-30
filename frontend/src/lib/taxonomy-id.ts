@@ -12,5 +12,5 @@ export function taxonomyId(name: string): number {
     h ^= name.charCodeAt(i);
     h = Math.imul(h, 0x01000193);
   }
-  return (h >>> 0) || 1;
+  return h >>> 0 || 1;
 }
