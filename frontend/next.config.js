@@ -92,13 +92,12 @@ module.exports = withPWA({
   images: {
     unoptimized: true,
   },
-  // ESLint is available via `npm run lint` for standards checking, but it is
-  // NOT run during `next build`: the codebase predates linting and has
-  // intentional patterns (see CLAUDE.md §10) a fresh ruleset would flag, so
-  // gating deploys on a clean lint would break the manual deploy flow. Run
-  // `npm run lint` manually and triage findings against CLAUDE.md.
+  // `next build` runs ESLint (audit B-36): the codebase is lint-clean under
+  // next/core-web-vitals + @typescript-eslint/recommended, so an error now
+  // fails the build instead of shipping. Warnings are gated by
+  // `npm run lint` (--max-warnings 0) and the quality workflow.
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
   compiler: {
     removeConsole:

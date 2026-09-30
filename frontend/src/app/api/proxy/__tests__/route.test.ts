@@ -24,7 +24,8 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { EventEmitter } from "node:events";
-import { NextRequest } from "next/server";
+import { NextRequest, type NextResponse } from "next/server";
+import type { RequestOptions } from "node:http";
 
 interface PlanItem {
   /** Status code the mock backend responds with. Default 200. */
@@ -44,55 +45,64 @@ interface PlanItem {
 // factory closure below.
 const httpMock = vi.hoisted(() => {
   const plans: PlanItem[] = [];
-  const calls: any[] = [];
+  // Only the fields the route sets are asserted on.
+  const calls: (RequestOptions & { path: string; headers: Record<string, string> })[] = [];
   const writes: Buffer[][] = [];
 
-  const request = vi.fn((options: any, callback: (res: any) => void) => {
-    calls.push(options);
-    const plan = plans.shift();
-    if (!plan) {
-      throw new Error(`No mock plan queued for http.request call #${calls.length}`);
-    }
-
-    const myWrites: Buffer[] = [];
-    writes.push(myWrites);
-
-    const req: any = new EventEmitter();
-    req.write = vi.fn((chunk: Buffer) => {
-      myWrites.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
-    });
-    req.end = vi.fn(() => {
-      if (plan.reqError) {
-        // Simulate a connection-level failure (e.g. ECONNREFUSED) —
-        // the real http.ClientRequest never calls back with a
-        // response in this case, it only emits "error".
-        queueMicrotask(() => req.emit("error", new Error(plan.reqError)));
-        return;
+  const request = vi.fn(
+    (options: (typeof calls)[number], callback: (res: EventEmitter) => void) => {
+      calls.push(options);
+      const plan = plans.shift();
+      if (!plan) {
+        throw new Error(`No mock plan queued for http.request call #${calls.length}`);
       }
 
-      const res: any = new EventEmitter();
-      res.statusCode = plan.statusCode ?? 200;
-      res.headers = plan.headers ?? {};
+      const myWrites: Buffer[] = [];
+      writes.push(myWrites);
 
-      // Fire the response callback synchronously (mirrors real
-      // Node closely enough: listeners attached inside the
-      // callback are guaranteed to be registered before the data/
-      // end/error events below, which are queued as a *later*
-      // microtask).
-      callback(res);
-
-      queueMicrotask(() => {
-        if (plan.resError) {
-          res.emit("error", new Error(plan.resError));
+      const req = new EventEmitter() as EventEmitter & {
+        write: (chunk: Buffer) => void;
+        end: () => void;
+      };
+      req.write = vi.fn((chunk: Buffer) => {
+        myWrites.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      });
+      req.end = vi.fn(() => {
+        if (plan.reqError) {
+          // Simulate a connection-level failure (e.g. ECONNREFUSED) —
+          // the real http.ClientRequest never calls back with a
+          // response in this case, it only emits "error".
+          queueMicrotask(() => req.emit("error", new Error(plan.reqError)));
           return;
         }
-        for (const c of plan.chunks ?? []) res.emit("data", Buffer.from(c));
-        res.emit("end");
-      });
-    });
 
-    return req;
-  });
+        const res = new EventEmitter() as EventEmitter & {
+          statusCode: number;
+          headers: Record<string, string | string[]>;
+        };
+        res.statusCode = plan.statusCode ?? 200;
+        res.headers = plan.headers ?? {};
+
+        // Fire the response callback synchronously (mirrors real
+        // Node closely enough: listeners attached inside the
+        // callback are guaranteed to be registered before the data/
+        // end/error events below, which are queued as a *later*
+        // microtask).
+        callback(res);
+
+        queueMicrotask(() => {
+          if (plan.resError) {
+            res.emit("error", new Error(plan.resError));
+            return;
+          }
+          for (const c of plan.chunks ?? []) res.emit("data", Buffer.from(c));
+          res.emit("end");
+        });
+      });
+
+      return req;
+    }
+  );
 
   return { request, plans, calls, writes };
 });
@@ -129,7 +139,11 @@ function makeRequest(
   return new NextRequest(url, rest);
 }
 
-function callHandler(mod: any, req: NextRequest, path: string[]) {
+type RouteModule = Record<
+  "GET" | "POST" | "PUT" | "DELETE" | "PATCH",
+  (req: NextRequest, ctx: { params: Promise<{ path: string[] }> }) => Promise<NextResponse>
+>;
+function callHandler(mod: RouteModule, req: NextRequest, path: string[]) {
   const method = req.method as "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
   return mod[method](req, { params: Promise.resolve({ path }) });
 }
