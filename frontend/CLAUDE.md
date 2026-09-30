@@ -1497,10 +1497,14 @@ only way to say "use the engine's default for this animal".
 
 ### 19.2 `GET /v1/animal/diet-thresholds?physiological_state=` is the source of truth
 
-The Custom Diet Limits dialog binds its rows to this endpoint — range,
-default, unit, direction and enforcement all come from the response.
-**Do not hardcode ranges beside it**; they differ per state and are
-retuned server-side.
+The Custom Diet Limits dialog binds its rows to this endpoint for unit,
+direction and enforcement. **Superseded 2026-09-30 for range and default:**
+at the user's request the per-state `min` / `max` / `default` come from
+`src/lib/diet-limit-ranges.ts` (RFT_FD_Lib_Y2test.xlsx, sheet
+"Constraints") and **override** the endpoint's values; if the endpoint
+fails, the dialog is built from that table instead of being disabled.
+Edit the table when the sheet changes. Blank still omits the key (the
+engine's own default applies), so the engine must match the sheet.
 
 - Eight keys. Six are `pct_dm`; `nel_balance_max` (Mcal/day) and
   `mp_balance_max` (kg/day) are **absolute and must never be scaled**.
@@ -1514,8 +1518,8 @@ retuned server-side.
   the badges removed. `enforcement` stays on `DietThresholdSpec` (the
   payload contract still carries it) — **don't reintroduce the badge**.
 - Returns 422 for `Baby Calf/Heifer`; the dialog isn't rendered for it.
-- If the fetch fails the dialog stays **disabled**. No hardcoded
-  fallback — that's the drift this endpoint exists to remove.
+- If the fetch fails the dialog falls back to the sheet table (above);
+  it's disabled only for a state the table doesn't cover.
 - **Row order is client-side and fixed.** The endpoint returns the
   engine's order; the dialog re-sorts with `DIET_LIMIT_DISPLAY_ORDER` /
   `sortDietThresholds()` in api.ts (Forage NDF Min, NDF Max, Starch Max,

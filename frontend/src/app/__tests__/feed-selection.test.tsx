@@ -339,15 +339,15 @@ describe("feed-selection — Custom Diet Limits gating", () => {
     await waitFor(() => expect(getDietThresholds).toHaveBeenCalledWith("Dry Cow"));
   });
 
-  it("stays disabled when the ranges can't be fetched — no hardcoded fallback", async () => {
+  it("falls back to the Constraints-sheet ranges when the endpoint can't be fetched", async () => {
     getDietThresholds.mockReset().mockRejectedValue(new Error("offline"));
     useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
     await renderReady();
     const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
-    await waitFor(() => expect(btn).toBeDisabled());
-    expect(
-      screen.getByText("Diet limits unavailable — check your connection and reopen this screen.")
-    ).toBeInTheDocument();
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+    expect(await screen.findByText("Range 8 – 15 % (Default 15)")).toBeInTheDocument();
+    expect(screen.getByText("Range 0.1 – 1 kg/day (Default 1)")).toBeInTheDocument();
   });
 
   it("is not offered at all for a Baby Calf/Heifer, which has no editable limits", async () => {
@@ -373,10 +373,10 @@ describe("feed-selection — Custom Diet Limits gating", () => {
     expect(await screen.findByText("Ash Max (%)")).toBeInTheDocument();
     expect(screen.getByText("Energy Surplus Max (Mcal/day)")).toBeInTheDocument();
     expect(screen.getByText("Protein Surplus Max (kg/day)")).toBeInTheDocument();
-    // Range comes from the response, not from a client-side constant, and the
-    // engine default is stated in brackets (the per-row "leave blank" wording
-    // moved to the one line under the sheet title on 2026-09-22).
-    expect(screen.getByText("Range 1 – 15 % (Default 15)")).toBeInTheDocument();
+    // Range and default come from the Constraints sheet (lib/diet-limit-ranges),
+    // overriding the endpoint's 1 – 15; the default is stated in brackets.
+    expect(screen.getByText("Range 8 – 15 % (Default 15)")).toBeInTheDocument();
+    expect(screen.getByText("Range 30 – 100 % (Default 60)")).toBeInTheDocument();
     expect(screen.getByText("Default value will be applied if left blank")).toBeInTheDocument();
     // All eight are limits — the hard/soft TARGET/LIMIT badges were removed.
     expect(screen.queryByText("Target")).not.toBeInTheDocument();
@@ -903,7 +903,7 @@ describe("feed-selection — generateReport payloads", () => {
     expect(screen.getByRole("button", { name: "Generate Recommendation" })).toBeDisabled();
   });
 
-  it("sends no limits, and says so, when the limit ranges failed to load (audit B-06)", async () => {
+  it("still sends in-range limits, checked against the sheet, when the endpoint failed", async () => {
     getDietThresholds.mockReset().mockRejectedValue(new Error("offline"));
     recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-3" } });
     useStore.setState({
@@ -919,9 +919,7 @@ describe("feed-selection — generateReport payloads", () => {
     fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
 
     await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
-    expect("base_thresholds" in recommendDiet.mock.calls[0][0]).toBe(false);
-    expect(useStore.getState().snackbar?.message).toMatch(/Diet limits unavailable/);
-    // The saved limits survive for the next run.
+    expect(recommendDiet.mock.calls[0][0].base_thresholds).toEqual({ ash_max: 12 });
     expect(useStore.getState().dietLimits).toEqual({ ash_max: 12 });
   });
 

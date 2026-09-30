@@ -31,6 +31,7 @@ import type {
   FeedTaxonomyLabels,
 } from "@/lib/api";
 import { isForageType } from "@/lib/feed-type-aliases";
+import { applyDietLimitRanges, dietLimitSpecsFromTable } from "@/lib/diet-limit-ranges";
 import {
   anyNutrientInvalid,
   inclusionBoundIsInvalid,
@@ -517,19 +518,24 @@ export default function FeedSelectionPage() {
         if (Array.isArray(specs) && specs.length > 0) {
           // Sorted once, here, so the dialog rows and the pre-flight
           // out-of-range list read in the same (Maria's) order.
-          setLimitSpecs(sortDietThresholds(specs));
+          // Ranges/defaults come from the "Constraints" sheet
+          // (lib/diet-limit-ranges.ts), which wins over the endpoint's.
+          setLimitSpecs(sortDietThresholds(applyDietLimitRanges(animalCategory, specs)));
         } else {
-          setLimitSpecsError("Limits unavailable");
+          fallBackToTable();
         }
       })
       .catch(() => {
         if (cancelled) return;
-        // Deliberately NO hardcoded fallback. The ranges are per-state and
-        // are retuned server-side; a client-side copy would let the user
-        // enter a value the backend rejects, or silently over-constrain the
-        // diet. Better to say the tool is unavailable.
-        setLimitSpecsError("Limits unavailable");
+        fallBackToTable();
       });
+    // Endpoint down or empty: build the rows from the sheet so the dialog
+    // still works; "unavailable" only for a state the sheet doesn't cover.
+    function fallBackToTable() {
+      const fromTable = dietLimitSpecsFromTable(animalCategory);
+      if (fromTable) setLimitSpecs(sortDietThresholds(fromTable));
+      else setLimitSpecsError("Limits unavailable");
+    }
     return () => {
       cancelled = true;
     };
