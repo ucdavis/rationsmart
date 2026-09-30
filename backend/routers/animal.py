@@ -436,6 +436,10 @@ async def evaluate_diet(
     - `country_id` — UUID of the country.
 
     Response includes: intake evaluation, milk production analysis, cost analysis, methane estimate, and per-nutrient balance (surplus/deficit).
+    For a non-lactating animal (`Dry Cow`, `Heifer`) the milk-derived fields are `null` (not applicable):
+    `evaluation_summary.limiting_factor`, `milk_production_analysis.limiting_nutrient` and the three
+    `milk_supported_*` / `actual_milk_supported_*` values, `cost_analysis.feed_cost_per_kg_milk` and
+    `cost_analysis.margin_summary`.
     Returns `400` for invalid or missing feed data.
     """
     try:

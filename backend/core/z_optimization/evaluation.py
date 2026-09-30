@@ -37,22 +37,37 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
                                Trg_NEmilk_Milk, Trg_MilkTPp, Trg_MilkProd, An_LactDay,
                                An_BW, ingredient_amounts_DM, f_nd, An_StatePhys, animal_requirements):
         
-    MP_efficiency = 0.67          # NRC 2001 - high? 
-    # MP per kg milk (g/kg)
-    MP_per_kg_milk = (Trg_MilkTPp / 100) / MP_efficiency * 1000
-    
-    # Milk supported by energy (kg/d)
+    # Energy / protein left after maintenance, gestation and growth. Meaningful for every
+    # state -- they also feed nutrient_balance -- so they are computed unconditionally.
     NEL_available = Supply_NEl - An_NELm - An_NEgest - An_NELgain
-    milk_energy_supported = max(0, NEL_available / Trg_NEmilk_Milk)
-    
-    # Milk supported by protein (kg/d)
     MP_available = (Supply_MP * 1000) - (An_MPm + An_MPg + An_MPp)
-    milk_protein_supported = max(0, MP_available / MP_per_kg_milk)
     MP_Available_kg = MP_available / 1000
 
-    # Limiting factor
-    limiting_factor = "Energy" if milk_energy_supported < milk_protein_supported else "Protein"
-    
+    # Milk supported by energy / protein, the limiting nutrient and cost per litre are
+    # lactating cows only. A non-lactating state reaches here with Trg_MilkTPp = 0
+    # (diet_service._neutralize_lactation_fields), so MP_per_kg_milk would be 0 and the
+    # protein figure +/-inf -- the limiting factor and cost per litre were then artefacts
+    # of that division, not answers. None means "not applicable to this animal", never
+    # 0.0 (same convention as CH4_intensity below).
+    is_lactating = An_StatePhys == "Lactating Cow"
+    if is_lactating:
+        MP_efficiency = 0.67          # NRC 2001 - high?
+        # MP per kg milk (g/kg)
+        MP_per_kg_milk = (Trg_MilkTPp / 100) / MP_efficiency * 1000
+
+        # Milk supported by energy (kg/d)
+        milk_energy_supported = max(0, NEL_available / Trg_NEmilk_Milk)
+
+        # Milk supported by protein (kg/d)
+        milk_protein_supported = max(0, MP_available / MP_per_kg_milk)
+
+        # Limiting factor
+        limiting_factor = "Energy" if milk_energy_supported < milk_protein_supported else "Protein"
+    else:
+        milk_energy_supported = None
+        milk_protein_supported = None
+        limiting_factor = None
+
     # DMI evaluation
     dmi_difference = Supply_DMIn - Trg_Dt_DMIn
     dmi_percent = (Supply_DMIn / Trg_Dt_DMIn) * 100 if Trg_Dt_DMIn > 0 else 0
@@ -72,8 +87,11 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
     diet_cost_total_af = sum(inclusion_AF_kg_rounded * f_nd["Fd_Cost"])  
     
     # Calculate feed cost per kg milk
-    milk_produced = np.round(min(milk_energy_supported, milk_protein_supported), 2)
-    feed_cost_per_l_milk = diet_cost_total_af / milk_produced if milk_produced > 0 else 0
+    if is_lactating:
+        milk_produced = np.round(min(milk_energy_supported, milk_protein_supported), 2)
+        feed_cost_per_l_milk = diet_cost_total_af / milk_produced if milk_produced > 0 else 0
+    else:
+        feed_cost_per_l_milk = None
 
     Dt_DMInSum = sum(ingredient_amounts_DM)  # Total DM intake from all ingredients
 
@@ -116,9 +134,9 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
     
     return {
         "Milk_Target_Production": round(Trg_MilkProd, 2),
-        "Milk_Energy_Supported": round(milk_energy_supported, 2),
-        "Milk_Protein_Supported": round(milk_protein_supported, 2),
-        "Milk_Supported": round(min(milk_energy_supported, milk_protein_supported), 2),
+        "Milk_Energy_Supported": round(milk_energy_supported, 2) if is_lactating else None,
+        "Milk_Protein_Supported": round(milk_protein_supported, 2) if is_lactating else None,
+        "Milk_Supported": round(min(milk_energy_supported, milk_protein_supported), 2) if is_lactating else None,
         "Limiting_Nutrient": limiting_factor,
         "NEL_Available": round(NEL_available, 2),
         "MP_Available_kg": round(MP_Available_kg, 2),
@@ -128,7 +146,7 @@ def predict_total_milk_supported(Supply_NEl, Supply_MP, Supply_DMIn, Trg_Dt_DMIn
         "DMI_Difference": round(dmi_difference, 2),
         "DMI_Percent": round(dmi_percent, 2),
         "Diet_Cost_Total_AF": round(diet_cost_total_af, 2),
-        "Feed_Cost_Per_L_Milk": round(feed_cost_per_l_milk, 2),
+        "Feed_Cost_Per_L_Milk": round(feed_cost_per_l_milk, 2) if is_lactating else None,
         "CH4_MJ": round(CH4_MJ, 2),
         "CH4_grams": round(CH4, 2),
         "CH4_grams_per_kg_DMI": round(CH4_grams_per_kg_DMI, 2),
@@ -241,7 +259,13 @@ def evaluate_diet(
         ingredient_amounts_dm, f_nd_aug, animal_requirements, diet_summary_values
     )
     animal_inputs_df = rsm_create_animal_inputs_dataframe(animal_requirements)
-    milk_table = create_milk_production_dataframe(milk_support)
+    # No milk section for a non-lactating animal: every row but the (zeroed) target is None.
+    # The v1 report skips a table that is None.
+    milk_table = (
+        create_milk_production_dataframe(milk_support)
+        if milk_support.get("Milk_Supported") is not None
+        else None
+    )
     intake_table = create_intake_dataframe(milk_support)
     cost_table = create_cost_dataframe(milk_support)
 
@@ -369,6 +393,8 @@ def report_diet_eval(results_dict):
                 label = display_names.get(key, key)  # Use display name if available
                 if isinstance(value, (int, float)):
                     formatted_output += f"{label}: {value:.2f}\n"
+                elif value is None:
+                    formatted_output += f"{label}: n/a\n"   # not applicable (non-lactating)
                 else:
                     formatted_output += f"{label}: {value}\n"
     return formatted_output
@@ -451,4 +477,9 @@ def create_cost_dataframe(allowable_milk):
             "cost/L milk"
         ]
     }
-    return pd.DataFrame(cost_data).round(2)
+    cost_df = pd.DataFrame(cost_data)
+    # Feed_Cost_Per_L_Milk is None for a non-lactating animal -- drop the row rather than
+    # printing "None" in the report.
+    if allowable_milk.get("Feed_Cost_Per_L_Milk", 0) is None:
+        cost_df = cost_df.iloc[:1]
+    return cost_df.round(2)
