@@ -763,3 +763,56 @@ describe("Report — Methane Intensity is shown only for a Lactating Cow", () =>
     expect(screen.getByText("Methane Yield")).toBeInTheDocument();
   });
 });
+
+// Backend PR #51: milk metrics (Limiting Factor, Cost/Litre Milk, milk
+// production figures) are null for Dry Cow / Heifer. Show a row only when
+// the value is non-null AND the animal is lactating; reports saved before
+// the fix still carry old numbers, so the state check is the fallback.
+describe("Report — milk evaluation metrics only for a Lactating Cow (PR #51)", () => {
+  const withMilk = () =>
+    makeEvalResponse({
+      evaluation_summary: { limiting_factor: "Energy", overall_status: "Optimized" },
+    });
+
+  it("shows Limiting Factor and Cost/Litre Milk for a Lactating Cow", () => {
+    useStore.setState({ cattleInfo: baseCattleInfo(), reportData: withMilk() });
+    render(<ReportPage />);
+    expect(screen.getByText("Limiting Factor")).toBeInTheDocument();
+    expect(screen.getByText("Cost/Litre Milk")).toBeInTheDocument();
+  });
+
+  it.each(["Dry Cow", "Heifer"] as const)(
+    "hides them for %s even on an older report that still has the numbers",
+    (category) => {
+      useStore.setState({
+        cattleInfo: baseCattleInfo({ animal_category: category }),
+        reportData: withMilk(),
+      });
+      render(<ReportPage />);
+      expect(screen.queryByText("Limiting Factor")).not.toBeInTheDocument();
+      expect(screen.queryByText("Cost/Litre Milk")).not.toBeInTheDocument();
+      expect(screen.queryByText("Milk Production Analysis")).not.toBeInTheDocument();
+      // Not milk-based — stays.
+      expect(screen.getByText("Overall Status")).toBeInTheDocument();
+      expect(screen.getAllByText("Total Diet Cost").length).toBeGreaterThan(0);
+    }
+  );
+
+  it("hides null milk values instead of rendering a placeholder", () => {
+    const report = makeEvalResponse();
+    report.cost_analysis.feed_cost_per_kg_milk = null;
+    report.milk_production_analysis.milk_supported_by_energy_kg_per_day = null;
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ animal_category: "Dry Cow" }),
+      reportData: report,
+    });
+    const { unmount } = render(<ReportPage />);
+    expect(screen.queryByText("Cost/Litre Milk")).not.toBeInTheDocument();
+    unmount();
+    useStore.setState({ cattleInfo: baseCattleInfo(), reportData: report });
+    render(<ReportPage />);
+    expect(screen.queryByText("Cost/Litre Milk")).not.toBeInTheDocument();
+    expect(screen.queryByText("Energy-Supported")).not.toBeInTheDocument();
+    expect(screen.getByText("Protein-Supported")).toBeInTheDocument();
+  });
+});

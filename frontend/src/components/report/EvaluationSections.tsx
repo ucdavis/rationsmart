@@ -48,12 +48,20 @@ export default function EvaluationSections({
   reportCtx,
   t,
 }: EvaluationSectionsProps) {
+  // Milk metrics (backend PR #51): shown only when the value is non-null AND
+  // the animal is lactating. Dry Cow / Heifer now get null from the API, but
+  // reports saved before that fix still carry the old numbers, so the state
+  // check stays as a fallback.
+  const lactating = reportCtx.showMilkProductionSection;
+  const milkValue = <T,>(v: T | null | undefined): T | null => (lactating && v != null ? v : null);
+  const limitingFactor = milkValue(evalReport.evaluation_summary?.limiting_factor);
+  const costPerLitre = milkValue(evalReport.cost_analysis?.feed_cost_per_kg_milk);
+  const mpa = evalReport.milk_production_analysis;
   return (
     <>
       {/* Evaluation Summary */}
       {evalReport.evaluation_summary &&
-        (evalReport.evaluation_summary.overall_status ||
-          evalReport.evaluation_summary.limiting_factor) && (
+        (evalReport.evaluation_summary.overall_status || limitingFactor) && (
           <SCard title={t("Evaluation Summary")} icon={<IcEvaluationSummary />}>
             {evalReport.evaluation_summary.overall_status && (
               <div
@@ -66,7 +74,7 @@ export default function EvaluationSections({
                 <StatusBadge status={evalReport.evaluation_summary.overall_status} />
               </div>
             )}
-            {evalReport.evaluation_summary.limiting_factor && (
+            {limitingFactor && (
               <div
                 className="flex items-center justify-between rounded-xl px-3 py-2.5"
                 style={{ backgroundColor: COLORS.authenticWhite }}
@@ -75,7 +83,7 @@ export default function EvaluationSections({
                   {t("Limiting Factor")}
                 </span>
                 <span className="text-sm font-bold" style={{ color: COLORS.carminePink }}>
-                  {evalReport.evaluation_summary.limiting_factor}
+                  {limitingFactor}
                 </span>
               </div>
             )}
@@ -90,11 +98,14 @@ export default function EvaluationSections({
             value={`${fmt(evalReport.cost_analysis?.total_diet_cost_as_fed)}${currencySuffix}`}
             unit=""
           />
-          <MetricTile
-            label={t("Cost/Litre Milk")}
-            value={`${fmt(evalReport.cost_analysis?.feed_cost_per_kg_milk)}${currencySuffix}`}
-            unit={t("per litre")}
-          />
+          {/* Hidden → Total Diet Cost takes the full width (flex-1). */}
+          {costPerLitre != null && (
+            <MetricTile
+              label={t("Cost/Litre Milk")}
+              value={`${fmt(costPerLitre)}${currencySuffix}`}
+              unit={t("per litre")}
+            />
+          )}
         </div>
         {(evalReport.cost_analysis?.recommendations?.length > 0 ||
           (evalReport.cost_analysis?.warnings?.length ?? 0) > 0) && (
@@ -211,26 +222,32 @@ export default function EvaluationSections({
       {reportCtx.showMilkProductionSection && evalReport.milk_production_analysis && (
         <SCard title={t("Milk Production Analysis")} icon={<IcMilkProductionAnalysis />}>
           <div className="flex gap-3 mb-3 flex-wrap">
-            <MetricTile
-              label={t("Actual Milk")}
-              value={`${fmt(evalReport.milk_production_analysis.actual_milk_supported_kg_per_day, 1)}`}
-              unit={t("kg/day")}
-            />
+            {mpa?.actual_milk_supported_kg_per_day != null && (
+              <MetricTile
+                label={t("Actual Milk")}
+                value={`${fmt(mpa.actual_milk_supported_kg_per_day, 1)}`}
+                unit={t("kg/day")}
+              />
+            )}
             <MetricTile
               label={t("Target")}
               value={`${fmt(evalReport.milk_production_analysis.target_production_kg_per_day, 1)}`}
               unit={t("kg/day")}
             />
-            <MetricTile
-              label={t("Energy-Supported")}
-              value={`${fmt(evalReport.milk_production_analysis.milk_supported_by_energy_kg_per_day, 1)}`}
-              unit={t("kg/day")}
-            />
-            <MetricTile
-              label={t("Protein-Supported")}
-              value={`${fmt(evalReport.milk_production_analysis.milk_supported_by_protein_kg_per_day, 1)}`}
-              unit={t("kg/day")}
-            />
+            {mpa?.milk_supported_by_energy_kg_per_day != null && (
+              <MetricTile
+                label={t("Energy-Supported")}
+                value={`${fmt(mpa.milk_supported_by_energy_kg_per_day, 1)}`}
+                unit={t("kg/day")}
+              />
+            )}
+            {mpa?.milk_supported_by_protein_kg_per_day != null && (
+              <MetricTile
+                label={t("Protein-Supported")}
+                value={`${fmt(mpa.milk_supported_by_protein_kg_per_day, 1)}`}
+                unit={t("kg/day")}
+              />
+            )}
           </div>
           {evalReport.milk_production_analysis.limiting_nutrient && (
             <div
