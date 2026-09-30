@@ -359,7 +359,7 @@ The group layout (`src/app/(main)/layout.tsx`) enforces auth: redirects to
 `/welcome` if `!user` BUT only after `useStore.persist.hasHydrated()` is
 true (see §10.1).
 
-#### `/cattle-info` — Cattle form + simulation history (`src/app/(main)/cattle-info/page.tsx`, 1020 lines)
+#### `/cattle-info` — Cattle form + simulation history (`src/app/(main)/cattle-info/page.tsx`, ~580 lines; sections, restore mapping and field rules in `src/components/cattle-info/`)
 - Sections (each in a `SectionCard`):
   - **Simulation Details:** Simulation Name (text), Country (`SelectInput`,
     loaded from `getCountries`).
@@ -389,7 +389,7 @@ true (see §10.1).
   pushing to `/feed-selection`. Then `setCattleInfo(...)`, then push.
 - `requiredFilled` ports Android `FeedViewModel.enableButton()` exactly.
 
-#### `/feed-selection` — Diet recommend / evaluate (`src/app/(main)/feed-selection/page.tsx`, 996 lines)
+#### `/feed-selection` — Diet recommend / evaluate (`src/app/(main)/feed-selection/page.tsx`, ~550 lines; row state, custom feed, limit specs, Generate pre-flight and search UI in `src/components/feed-selection/`)
 - Toolbar: `type="back"`.
 - **Page initializes with 3 default FeedRow instances** (matches Android —
   if the store has fewer than 3 stored selections, the array is padded
@@ -435,7 +435,7 @@ true (see §10.1).
   sets `reportData` (with `mode` discriminator), `setDietLimits(limits)`,
   pushes `/report`. `GeneratingReportDialog` overlays during the request.
 
-#### `/report` — Diet report (`src/app/(main)/report/page.tsx`, 1101 lines)
+#### `/report` — Diet report (`src/app/(main)/report/page.tsx`, ~570 lines; sections in `src/components/report/`, Y3 cards in `Y3Cards.tsx`)
 - Reads `reportData` (union of `EvaluationResponse | RecommendationResponse`,
   discriminated by `mode`).
 - Sections in order:
@@ -485,7 +485,7 @@ true (see §10.1).
   `Not Feasible` / `INFEASIBLE` → red; `Evaluation` / `Evaluated` /
   `ADVISORY` → orange.
 
-#### `/profile` — User profile (`src/app/(main)/profile/page.tsx`, 555 lines)
+#### `/profile` — User profile (`src/app/(main)/profile/page.tsx`, ~585 lines; sheets / dialogs in `src/components/profile/`)
 - Inputs: Name (`cleanNameInput` again), Country (`SelectInput`).
 - API: `updateUserProfile(email, {name, country_id})` on save.
   - On country change, `setUser(...)` propagates the new `currency`,
@@ -539,7 +539,7 @@ Admin layout sets sage→mint gradient AND swaps `<meta theme-color>` to
 - Each card: name + email + country + active/inactive toggle. Tapping the
   toggle calls `toggleUserStatus(user_id, admin_user_id, is_active)`.
 
-#### `/admin/feeds` — Feed/Category/Type CRUD (`src/app/(main)/admin/feeds/page.tsx`, 1355 lines)
+#### `/admin/feeds` — Feed/Category/Type CRUD (`src/app/(main)/admin/feeds/page.tsx`, ~525 lines; tabs, landing and sheets in `src/components/admin/feeds/`)
 - **Two-level navigation**:
   - **Landing view** (`section === "landing"`): 3 nav cards — Feed Type,
     Feed Category, Feed. Each has a 4-px green accent bar on the left
@@ -623,7 +623,9 @@ after a successful or failed operation.
 
 ## 6. `FeedRow` deep dive — the most complex component
 
-Lives at `src/components/FeedRow.tsx` (803 lines). One row per feed in
+Lives at `src/components/FeedRow.tsx` (~585 lines; logic in `feed-row/useFeedCascade`,
+`useFeedEdit`, `useFeedRowSync`; `InclusionLimits` / `FieldBox` / `FeedEditDialog`
+are its sub-views). One row per feed in
 `/feed-selection`. Owns its own dropdown state per-row.
 
 **Props:** `item: FeedItem`, `index: number`, `showQuantity: boolean`
@@ -1215,10 +1217,14 @@ Fix: `gh auth switch -h github.com -u Aiyappa-DigitalGreen`.
 
 ## 14. What NOT to do
 
-- **Don't add files for the sake of decomposition.** Current component
-  granularity is intentional (FeedRow is large because the edit dialog
-  is co-located; splitting it would require lifting state and lose
-  the Android-`DialogFeedDetails` pattern).
+- **Don't add files for the sake of decomposition** — but keep pages and
+  components under ~600 lines. On 2026-09-30 the user asked for the large
+  files to be split (audit B-17): logic went into hooks / pure modules
+  next to the page (`src/components/<screen>/`), sheets and cards into
+  components with explicit props; state stays in the page. Pure mapping
+  and validation (`cattle-info/restore.ts`, `feed-selection/preflight.ts`)
+  is unit-tested. New code joins the right module rather than growing a
+  page back past the limit.
 - **Don't replace inline styles with Tailwind classes wholesale** — many
   components encode Android-exact pixel values (border-radius 16,
   padding 10/12, line-heights). Mixed is fine.
