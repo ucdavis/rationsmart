@@ -34,7 +34,7 @@ import {
   sheetOverlayStyle,
 } from "./shared";
 import TranslationCoverageCard from "./TranslationCoverageCard";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillText } from "@/lib/i18n-ui";
 import { listFrom, numberField } from "@/lib/api-client/normalize";
 
 export function FeedNamesTab({
@@ -345,11 +345,13 @@ export function FeedNamesTab({
               className="text-xs font-bold uppercase tracking-wide flex-1"
               style={{ color: COLORS.darkAquamarineGreen }}
             >
-              {t("3 · Feed names in")} {selLang ? labelForLanguage(selLang).toUpperCase() : ""}
+              {fillText(t("3 · Feed names in ${language}"), {
+                language: selLang ? labelForLanguage(selLang).toUpperCase() : "",
+              })}
             </p>
             {!isLoadingFeeds && (
               <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-                {doneCount} {t("of")} {feeds.length} {t("named")}
+                {fillText(t("${done} of ${total} named"), { done: doneCount, total: feeds.length })}
               </p>
             )}
           </div>
@@ -428,9 +430,12 @@ export function FeedNamesTab({
         </div>
         <div className="px-4 py-3">
           <p className="text-xs mb-3" style={{ color: COLORS.darkSilver, lineHeight: 1.5 }}>
-            {t("Export all feed names across languages for")}{" "}
-            {selCountry?.name ?? t("the selected country")}{" "}
-            {t("as a workbook, edit offline, then import to upsert in bulk.")}
+            {fillText(
+              t(
+                "Export all feed names across languages for ${country} as a workbook, edit offline, then import to upsert in bulk."
+              ),
+              { country: selCountry?.name ?? t("the selected country") }
+            )}
           </p>
           <div className="flex gap-2 mb-3">
             <button
@@ -503,9 +508,14 @@ export function FeedNamesTab({
               </p>
               <div className="text-xs space-y-0.5" style={{ color: COLORS.raisinBlack }}>
                 <p>
-                  {t("Feeds —")} {uploadSummary.feeds_inserted ?? 0} {t("added ·")}{" "}
-                  {uploadSummary.feeds_updated ?? 0} {t("updated ·")}{" "}
-                  {uploadSummary.feeds_skipped ?? 0} {t("unchanged")}
+                  {fillText(
+                    t("Feeds — ${added} added · ${updated} updated · ${unchanged} unchanged"),
+                    {
+                      added: uploadSummary.feeds_inserted ?? 0,
+                      updated: uploadSummary.feeds_updated ?? 0,
+                      unchanged: uploadSummary.feeds_skipped ?? 0,
+                    }
+                  )}
                 </p>
               </div>
             </div>
@@ -549,7 +559,7 @@ export function FeedNamesTab({
               className="block text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
-              {t("Name in")} {labelForLanguage(selLang)}
+              {fillText(t("Name in ${language}"), { language: labelForLanguage(selLang) })}
             </label>
             <input
               id="feed-local-name"

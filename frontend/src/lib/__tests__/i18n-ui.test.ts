@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { renderHook, waitFor, act } from "@testing-library/react";
-import { getUiLabel, useT } from "@/lib/i18n-ui";
+import { createElement } from "react";
+import { render, renderHook, waitFor, act } from "@testing-library/react";
+import { fillTemplate, fillText, getUiLabel, useT } from "@/lib/i18n-ui";
 import { useStore, type User } from "@/lib/store";
 
 const seedUser = (over: Partial<User> = {}): User => ({
@@ -156,5 +157,29 @@ describe("useT — lastUiLanguage must not leak while a user is signed in", () =
     });
     const { result } = renderHook(() => useT());
     await waitFor(() => expect(result.current("Continue")).toBe("Tiếp tục"));
+  });
+});
+
+describe("fillText / fillTemplate — whole-sentence templates", () => {
+  it("fills every slot, in whatever order the translation puts them", () => {
+    // Hindi puts the total before the number ("5 में से 2").
+    expect(fillText("${total} में से ${n}", { n: 2, total: 5 })).toBe("5 में से 2");
+    expect(fillText("Page ${N} of ${M}", { N: 1, M: 3 })).toBe("Page 1 of 3");
+  });
+
+  it("leaves an unknown slot untouched rather than blanking it", () => {
+    expect(fillText("Saved ${feed}", {})).toBe("Saved ${feed}");
+  });
+
+  it("fillTemplate places a React node (a bold name) inside the sentence", () => {
+    const { container } = render(
+      createElement(
+        "p",
+        null,
+        fillTemplate("${name} will lose admin access.", { name: createElement("b", null, "Asha") })
+      )
+    );
+    expect(container.querySelector("b")?.textContent).toBe("Asha");
+    expect(container.textContent).toBe("Asha will lose admin access.");
   });
 });

@@ -29,7 +29,7 @@ import {
   formatNextRun,
   inputStyle,
 } from "./shared";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillText } from "@/lib/i18n-ui";
 import { errorStatus } from "@/lib/errors";
 
 export function SyncSettingsTab({
@@ -340,8 +340,10 @@ export function SyncSettingsTab({
               )}
               {config.scheduler_toggled_by && (
                 <p className="text-xs mt-1" style={{ color: COLORS.spanishGray }}>
-                  {t("Last changed by")} {config.scheduler_toggled_by.slice(0, 8)}
-                  {t("… on")} {formatDateTime(config.scheduler_toggled_at)}
+                  {fillText(t("Last changed by ${user} on ${date}"), {
+                    user: config.scheduler_toggled_by.slice(0, 8),
+                    date: formatDateTime(config.scheduler_toggled_at),
+                  })}
                 </p>
               )}
             </div>
@@ -446,7 +448,7 @@ export function SyncSettingsTab({
               className="text-xs font-bold"
               style={{ color: isRunning ? COLORS.webAmberText : COLORS.darkSilver }}
             >
-              {t("status:")} {isRunning ? t("running…") : "idle"}
+              {t("status:")} {isRunning ? t("running…") : t("idle")}
             </span>
           </div>
         </div>
@@ -477,16 +479,25 @@ export function SyncSettingsTab({
             {lastResult.status === "success" ? (
               <>
                 <p>
-                  {lastResult.total_rows.toLocaleString()} {t("rows processed")}
+                  {fillText(t("${count} rows processed"), {
+                    count: lastResult.total_rows.toLocaleString(),
+                  })}
                 </p>
                 <p>
-                  {lastResult.inserted.toLocaleString()} {t("feeds added ·")}{" "}
-                  {lastResult.updated.toLocaleString()} {t("feeds updated ·")}{" "}
-                  {lastResult.skipped.toLocaleString()} {t("rows skipped")}
+                  {fillText(
+                    t("${added} feeds added · ${updated} feeds updated · ${skipped} rows skipped"),
+                    {
+                      added: lastResult.inserted.toLocaleString(),
+                      updated: lastResult.updated.toLocaleString(),
+                      skipped: lastResult.skipped.toLocaleString(),
+                    }
+                  )}
                 </p>
                 <p>
-                  {lastResult.translations_inserted.toLocaleString()} {t("local names saved ·")}{" "}
-                  {lastResult.translations_skipped.toLocaleString()} {t("local names skipped")}
+                  {fillText(t("${saved} local names saved · ${skipped} local names skipped"), {
+                    saved: lastResult.translations_inserted.toLocaleString(),
+                    skipped: lastResult.translations_skipped.toLocaleString(),
+                  })}
                 </p>
               </>
             ) : (

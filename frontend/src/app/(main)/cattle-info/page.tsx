@@ -763,7 +763,7 @@ export default function CattleInfoPage() {
           })}
         />
         <FieldError message={fieldError(key)} />
-        <AdjustedNote from={adjusted[fk]} label={t("Adjusted from")} />
+        <AdjustedNote from={adjusted[fk]} template={t("Adjusted from ${value}")} />
       </>
     );
   };
@@ -782,7 +782,7 @@ export default function CattleInfoPage() {
           loading={fieldsLoading}
           highlight={adjusted[fk] !== undefined}
         />
-        <AdjustedNote from={adjusted[fk]} label={t("Adjusted from")} />
+        <AdjustedNote from={adjusted[fk]} template={t("Adjusted from ${value}")} />
       </>
     );
   };
@@ -1427,7 +1427,10 @@ export default function CattleInfoPage() {
                         disabled={!form.grazing || fieldsLoading}
                       />
                       <FieldError message={fieldError("distance")} />
-                      <AdjustedNote from={adjusted.distance_walked} label={t("Adjusted from")} />
+                      <AdjustedNote
+                        from={adjusted.distance_walked}
+                        template={t("Adjusted from ${value}")}
+                      />
                     </>
                   )}
                 </div>

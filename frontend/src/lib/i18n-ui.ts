@@ -25,7 +25,7 @@
 // string needs its row's key updated too or the lookup silently misses
 // and falls back to English.
 
-import { useEffect, useState } from "react";
+import { createElement, Fragment, useEffect, useState, type ReactNode } from "react";
 import { useStore } from "./store";
 
 // Matches the rollout locale set already used for feed-data i18n
@@ -155,4 +155,27 @@ export function useT(langOverride?: string): (source: string) => string {
   }, [lang]);
 
   return (source: string) => getUiLabel(source, lang);
+}
+
+// Fill a translated template's `${name}` slots. Whole sentences are translated
+// with their slots in place — never glue translated fragments around a value,
+// because word order differs between languages ("Export … for ${country} as a
+// workbook" reads backwards in Hindi if split). Unknown slots are left as-is.
+const SLOT = /\$\{([A-Za-z_][A-Za-z0-9_]*)\}/g;
+
+export function fillText(template: string, values: Record<string, string | number>): string {
+  return template.replace(SLOT, (whole, name: string) =>
+    name in values ? String(values[name]) : whole
+  );
+}
+
+// Same, but a slot may be a React node (e.g. a bold user name inside a
+// confirmation sentence).
+export function fillTemplate(template: string, values: Record<string, ReactNode>): ReactNode[] {
+  return template.split(/(\$\{[A-Za-z_][A-Za-z0-9_]*\})/).map((part, i) => {
+    const name = /^\$\{([A-Za-z_][A-Za-z0-9_]*)\}$/.exec(part)?.[1];
+    return name !== undefined && name in values
+      ? createElement(Fragment, { key: i }, values[name])
+      : part;
+  });
 }

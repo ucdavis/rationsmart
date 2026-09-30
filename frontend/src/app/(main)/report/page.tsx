@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import Toolbar from "@/components/Toolbar";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillTemplate, fillText } from "@/lib/i18n-ui";
 import {
   ReportContext,
   buildReportContext,
@@ -480,11 +480,20 @@ export default function ReportPage() {
               </div>
               {/* Daily margin context line */}
               <p className="mt-2 ml-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
-                {t("Across")} {milkProduction.toFixed(1)} L/day,
-                {isPositive ? ` ${t("net profit")}` : ` ${t("net loss")}`}{" "}
-                <span className="font-bold" style={{ color: accent }}>
-                  {formatMoney(Math.abs(margin) * milkProduction)} {currencySymbol}/day
-                </span>
+                {fillTemplate(
+                  isPositive
+                    ? t("Across ${L}/day, net profit ${amount} ${currency}/day")
+                    : t("Across ${L}/day, net loss ${amount} ${currency}/day"),
+                  {
+                    L: `${milkProduction.toFixed(1)} L`,
+                    amount: (
+                      <span className="font-bold" style={{ color: accent }}>
+                        {formatMoney(Math.abs(margin) * milkProduction)}
+                      </span>
+                    ),
+                    currency: currencySymbol,
+                  }
+                )}
               </p>
             </SCard>
           );
@@ -977,7 +986,12 @@ export default function ReportPage() {
                 if (!pdfUrl) return;
                 const shareData = {
                   title: t("RationSmart Diet Report"),
-                  text: `${isEval ? t("Evaluation") : t("Recommendation")} ${t("report for simulation")} ${simulationId}`,
+                  text: fillText(
+                    isEval
+                      ? t("Evaluation report for simulation ${id}")
+                      : t("Recommendation report for simulation ${id}"),
+                    { id: simulationId }
+                  ),
                   url: pdfUrl,
                 };
                 try {

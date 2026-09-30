@@ -22,7 +22,7 @@ import {
   sheetOverlayStyle,
 } from "./shared";
 import { PAGE_SIZES } from "@/lib/pagination";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillText } from "@/lib/i18n-ui";
 
 const PAGE_SIZE = PAGE_SIZES.syncHistory;
 const ROWS_CHUNK = PAGE_SIZES.syncFailedRows;
@@ -156,7 +156,7 @@ export function RunHistoryTab({
             {t("Run History")}
           </p>
           <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-            {totalCount} {t("runs")}
+            {fillText(t("${count} runs"), { count: totalCount })}
           </p>
         </div>
 
@@ -237,7 +237,7 @@ export function RunHistoryTab({
               <span aria-hidden="true">‹</span> {t("Prev")}
             </button>
             <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-              {t("Page")} {page} {t("of")} {totalPages}
+              {fillText(t("Page ${N} of ${M}"), { N: page, M: totalPages })}
             </p>
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
@@ -330,13 +330,15 @@ export function RunHistoryTab({
                       {t("Feeds")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.inserted.toLocaleString()} {t("added")}
+                      {fillText(t("${count} added"), { count: openLog.inserted.toLocaleString() })}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.updated.toLocaleString()} {t("updated")}
+                      {fillText(t("${count} updated"), { count: openLog.updated.toLocaleString() })}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.skipped.toLocaleString()} {t("rows skipped")}
+                      {fillText(t("${count} rows skipped"), {
+                        count: openLog.skipped.toLocaleString(),
+                      })}
                     </p>
                   </div>
                   <div
@@ -350,13 +352,16 @@ export function RunHistoryTab({
                       {t("Local names")}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {(
-                        openLog.translations_inserted + openLog.translations_updated
-                      ).toLocaleString()}{" "}
-                      {t("saved")}
+                      {fillText(t("${count} saved"), {
+                        count: (
+                          openLog.translations_inserted + openLog.translations_updated
+                        ).toLocaleString(),
+                      })}
                     </p>
                     <p className="text-sm" style={{ color: COLORS.raisinBlack }}>
-                      {openLog.translations_skipped.toLocaleString()} {t("skipped")}
+                      {fillText(t("${count} skipped"), {
+                        count: openLog.translations_skipped.toLocaleString(),
+                      })}
                     </p>
                   </div>
                 </div>
@@ -379,8 +384,10 @@ export function RunHistoryTab({
                           className="font-bold text-sm"
                           style={{ color: COLORS.darkAquamarineGreen }}
                         >
-                          {rowsExpanded ? "▾" : "▸"} {t("Skipped rows (")}
-                          {openLog.failed_rows.length.toLocaleString()})
+                          {rowsExpanded ? "▾" : "▸"}{" "}
+                          {fillText(t("Skipped rows (${count})"), {
+                            count: openLog.failed_rows.length.toLocaleString(),
+                          })}
                         </p>
                       </button>
                       <button
@@ -427,7 +434,7 @@ export function RunHistoryTab({
                               }}
                             >
                               <span className="font-bold">
-                                {t("row")} {r.row ?? "—"}
+                                {fillText(t("Row ${n}"), { n: r.row ?? "—" })}
                               </span>
                               {r.fd_code ? ` · ${r.fd_code}` : ""} —{" "}
                               {r.reason ?? t("No reason given")}
@@ -454,9 +461,10 @@ export function RunHistoryTab({
                               padding: 0,
                             }}
                           >
-                            {t("Show")}{" "}
-                            {Math.min(ROWS_CHUNK, filteredFailedRows.length - rowsShown)}{" "}
-                            {t("more (of")} {filteredFailedRows.length.toLocaleString()})
+                            {fillText(t("Show ${count} more (of ${total})"), {
+                              count: Math.min(ROWS_CHUNK, filteredFailedRows.length - rowsShown),
+                              total: filteredFailedRows.length.toLocaleString(),
+                            })}
                           </button>
                         )}
                       </div>
@@ -482,9 +490,10 @@ export function RunHistoryTab({
                           className="font-bold text-sm"
                           style={{ color: COLORS.darkAquamarineGreen }}
                         >
-                          {transExpanded ? "▾" : "▸"} {t("Skipped local names (")}
-                          {openLog.skipped_translations.length.toLocaleString()}
-                          {t(") — grouped by reason")}
+                          {transExpanded ? "▾" : "▸"}{" "}
+                          {fillText(t("Skipped local names (${count}) — grouped by reason"), {
+                            count: openLog.skipped_translations.length.toLocaleString(),
+                          })}
                         </p>
                       </button>
                       <button

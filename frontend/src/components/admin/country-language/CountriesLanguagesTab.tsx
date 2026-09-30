@@ -23,7 +23,7 @@ import {
   inputStyle,
   sheetOverlayStyle,
 } from "./shared";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillText } from "@/lib/i18n-ui";
 import { listFrom } from "@/lib/api-client/normalize";
 
 export function CountriesLanguagesTab({
@@ -298,7 +298,7 @@ export function CountriesLanguagesTab({
             {t("Enabled Countries / Languages")}
           </p>
           <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-            {countries.length} {t("enabled")}
+            {fillText(t("${count} enabled"), { count: countries.length })}
           </p>
           <button
             onClick={openActivateSheet}
@@ -337,8 +337,12 @@ export function CountriesLanguagesTab({
                       {c.name}
                     </p>
                     <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-                      {extraLangs.length} {t("local language")}
-                      {extraLangs.length === 1 ? "" : "s"}
+                      {fillText(
+                        extraLangs.length === 1
+                          ? t("${count} local language")
+                          : t("${count} local languages"),
+                        { count: extraLangs.length }
+                      )}
                     </p>
                   </div>
                   <label
@@ -430,7 +434,7 @@ export function CountriesLanguagesTab({
             {t("Registered Languages")}
           </p>
           <p className="text-xs" style={{ color: COLORS.darkSilver }}>
-            {activeLangCount} {t("active")}
+            {fillText(t("${count} active"), { count: activeLangCount })}
           </p>
           <button
             onClick={() => setShowRegister(true)}
@@ -609,11 +613,15 @@ export function CountriesLanguagesTab({
                   className="text-center font-bold mb-1"
                   style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}
                 >
-                  {t("Associate a language —")} {assocFor.name}
+                  {fillText(t("Associate a language — ${country}"), { country: assocFor.name })}
                 </h3>
                 <p className="text-center text-sm mb-5" style={{ color: COLORS.darkSilver }}>
-                  {t("The combination will appear in the Cattle Info screen for farmers in")}{" "}
-                  {assocFor.name}.
+                  {fillText(
+                    t(
+                      "The combination will appear in the Cattle Info screen for farmers in ${country}."
+                    ),
+                    { country: assocFor.name }
+                  )}
                 </p>
                 {available.length === 0 ? (
                   <p className="text-sm text-center" style={{ color: COLORS.darkSilver }}>

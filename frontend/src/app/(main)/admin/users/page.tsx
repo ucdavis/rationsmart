@@ -11,7 +11,7 @@ import {
   type Country,
 } from "@/lib/api";
 import { formatTotalUsers } from "@/lib/validators";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillTemplate } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import CustomSelect from "@/components/CustomSelect";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
@@ -869,10 +869,13 @@ export default function AdminUsersPage() {
                 lineHeight: 1.4,
               }}
             >
-              <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
-                {confirmDeactivate.name}
-              </span>{" "}
-              {t("will no longer be able to sign in until reactivated.")}
+              {fillTemplate(t("${name} will no longer be able to sign in until reactivated."), {
+                name: (
+                  <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
+                    {confirmDeactivate.name}
+                  </span>
+                ),
+              })}
             </p>
             <div className="flex gap-3" style={{ marginTop: 20 }}>
               <button
@@ -948,14 +951,20 @@ export default function AdminUsersPage() {
                 lineHeight: 1.4,
               }}
             >
-              <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
-                {confirmAdmin.name}
-              </span>{" "}
-              {confirmAdmin.is_admin
-                ? t("will lose administrator access and become a regular user.")
-                : t(
-                    "will be granted full administrator access to manage users, feeds and settings."
-                  )}
+              {fillTemplate(
+                confirmAdmin.is_admin
+                  ? t("${name} will lose administrator access and become a regular user.")
+                  : t(
+                      "${name} will be granted full administrator access to manage users, feeds and settings."
+                    ),
+                {
+                  name: (
+                    <span className="font-bold" style={{ color: COLORS.raisinBlack }}>
+                      {confirmAdmin.name}
+                    </span>
+                  ),
+                }
+              )}
             </p>
             <div className="flex gap-3" style={{ marginTop: 20 }}>
               <button

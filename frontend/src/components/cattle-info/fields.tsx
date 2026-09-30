@@ -4,7 +4,7 @@
 
 import CustomSelect from "@/components/CustomSelect";
 import { COLORS } from "@/lib/colors";
-import { useT } from "@/lib/i18n-ui";
+import { useT, fillText } from "@/lib/i18n-ui";
 
 export const inputStyle = {
   backgroundColor: COLORS.americanDiamond,
@@ -63,11 +63,12 @@ export function FieldError({ message }: { message?: string }) {
 }
 // Amber ring + note on a value that was pulled into range on restore.
 export const ADJUSTED_RING: React.CSSProperties = { boxShadow: `0 0 0 2px ${COLORS.vividGamboge}` };
-export function AdjustedNote({ from, label }: { from?: string; label: string }) {
+// `template` is the translated "Adjusted from ${value}" sentence.
+export function AdjustedNote({ from, template }: { from?: string; template: string }) {
   if (from === undefined) return null;
   return (
     <p className="text-xs mt-1 ml-1" style={{ color: COLORS.vividGamboge }}>
-      {label} {from}
+      {fillText(template, { value: from })}
     </p>
   );
 }
