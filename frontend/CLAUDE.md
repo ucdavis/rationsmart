@@ -24,7 +24,13 @@ behaviour instead of reading the source ("you did not check Android code at
 all", "why are you not analzying"). **The rule is: read the Android XML layout
 or Kotlin source first, then implement against it. Never guess.**
 
-- GitHub repo: https://github.com/Aiyappa-DigitalGreen/RationSmart
+- GitHub repos (both private, kept in sync):
+  - https://github.com/Aiyappa-DigitalGreen/RationSmart — remote `origin`; branches main
+    (legacy prod), testing (current work), refinements-y3. Linked to the rationsmart-testing
+    Vercel project.
+  - https://github.com/Aiyappa-DigitalGreen/RationSmart-PWA — remote `pwa`; **only `main`**,
+    which carries the current project (= RationSmart `testing`). Not linked to Vercel.
+    Push with `git push pwa testing:main`; never recreate other branches there.
 - Backend dev: `<DEV_BACKEND_IP>:8000` (FastAPI)
 - Backend prod: `<PROD_BACKEND_IP>:8000` (FastAPI)
 
@@ -244,7 +250,8 @@ x-backend-host: <PROD_BACKEND_IP>:8000   # main branch still emits this
 1. **Push + deploy on every code change — manual only.** After any
    modification on the `testing` branch:
    ```
-   git push origin testing
+   git push origin testing          # RationSmart repo (linked to rationsmart-testing)
+   git push pwa testing:main        # RationSmart-PWA repo — its only branch is main
    vercel deploy --prod --yes
    vercel alias set <new-url> rationsmart-testing.vercel.app
    ```
@@ -1247,7 +1254,8 @@ Fix: `gh auth switch -h github.com -u Aiyappa-DigitalGreen`.
 # Standard deploy cycle on the testing branch (current dev URL)
 git add <files>
 git commit -m "<message>"
-git push origin testing                                          # source-of-truth only
+git push origin testing                                          # RationSmart repo
+git push pwa testing:main                                        # RationSmart-PWA (main only)
 vercel deploy --prod --yes                                       # prints the new hash URL
 vercel alias set <new-url> rationsmart-testing.vercel.app        # promote to canonical
 
