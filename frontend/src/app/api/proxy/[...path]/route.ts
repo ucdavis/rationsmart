@@ -1,7 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import http from "node:http";
 
-const BACKEND_HOST = process.env.BACKEND_HOST ?? "<DEV_BACKEND_IP>";
+// Env-only (no hardcoded fallback): the Vercel project must set BACKEND_HOST.
+const BACKEND_HOST = process.env.BACKEND_HOST ?? "";
+// Debug label for x-backend-env ("dev" / "prod"), set per Vercel project.
+const BACKEND_ENV = process.env.BACKEND_ENV ?? "custom";
 const BACKEND_PORT = parseInt(process.env.BACKEND_PORT ?? "8000", 10);
 
 const HOP_BY_HOP = new Set([
@@ -88,7 +91,7 @@ async function handler(
             // re-issue lands here, so without setting the headers here
             // most calls (auth/countries, fetch-simulation-details, etc.)
             // never expose the upstream host to the browser.
-            const env = BACKEND_HOST === "<PROD_BACKEND_IP>" ? "prod" : BACKEND_HOST === "<DEV_BACKEND_IP>" ? "dev" : "custom";
+            const env = BACKEND_ENV;
             resHeaders.set("x-backend-host", `${BACKEND_HOST}:${BACKEND_PORT}`);
             resHeaders.set("x-backend-env", env);
             resolve(
@@ -125,10 +128,10 @@ async function handler(
         });
         // Surface the upstream backend so the user can see in Chrome
         // DevTools (Network → Response Headers) which host actually
-        // served the request — "dev" (<DEV_BACKEND_IP>) or "prod"
-        // (<PROD_BACKEND_IP>). Helps debug dev/prod data mismatches without
+        // served the request — "dev" or "prod" (from BACKEND_ENV).
+        // Helps debug dev/prod data mismatches without
         // dropping to the terminal.
-        const env = BACKEND_HOST === "<PROD_BACKEND_IP>" ? "prod" : BACKEND_HOST === "<DEV_BACKEND_IP>" ? "dev" : "custom";
+        const env = BACKEND_ENV;
         resHeaders.set("x-backend-host", `${BACKEND_HOST}:${BACKEND_PORT}`);
         resHeaders.set("x-backend-env", env);
         resolve(
