@@ -83,7 +83,17 @@ export default function DietLimitsSheet({
         </div>
 
         {/* Scrollable — eight limits don't fit a bottom sheet otherwise. */}
-        <div style={{ maxHeight: "58vh", overflowY: "auto", marginRight: -4, paddingRight: 4 }}>
+        {/* Scrolling clips anything outside this box, including the inputs'
+            2 px focus ring — so pad every side and cancel it with a negative
+            margin: the ring fits, the layout doesn't move. */}
+        <div
+          style={{
+            maxHeight: "58vh",
+            overflowY: "auto",
+            margin: "-4px -4px 0",
+            padding: "4px 4px 0",
+          }}
+        >
           {(limitSpecs ?? []).map((spec) => {
             const { key, min, max, unit } = spec;
             const val = limits[key];
