@@ -751,6 +751,7 @@ export default function CattleInfoPage() {
     return (
       <>
         <input
+          id={`ci-${key}`}
           aria-label={label?.replace(/ \*$/, "")}
           type="number"
           inputMode={inputMode}
@@ -853,8 +854,9 @@ export default function CattleInfoPage() {
           }
         >
           <div className="px-3">
-            <FieldLabel>{t("Simulation Name *")}</FieldLabel>
+            <FieldLabel htmlFor="ci-simulation_name">{t("Simulation Name *")}</FieldLabel>
             <input
+              id="ci-simulation_name"
               aria-label={t("Simulation Name")}
               type="text"
               value={form.simulation_name}
@@ -1006,7 +1008,7 @@ export default function CattleInfoPage() {
                 [
                   "body_weight",
                   <>
-                    <FieldLabel>{t("Body Weight (BW; kg) *")}</FieldLabel>
+                    <FieldLabel htmlFor="ci-body_weight">{t("Body Weight (BW; kg) *")}</FieldLabel>
                     {specNumberInput(
                       "body_weight",
                       handleBodyWeight,
@@ -1018,7 +1020,7 @@ export default function CattleInfoPage() {
                 [
                   "bw_gain",
                   <>
-                    <FieldLabel>{t("BW Gain (kg/day) *")}</FieldLabel>
+                    <FieldLabel htmlFor="ci-bw_gain">{t("BW Gain (kg/day) *")}</FieldLabel>
                     {specNumberInput("bw_gain", handleBWGain, "decimal", t("BW Gain (kg/day) *"))}
                   </>,
                 ]
@@ -1027,14 +1029,14 @@ export default function CattleInfoPage() {
                 [
                   "bc_score",
                   <>
-                    <FieldLabel>{t("Body Condition Score *")}</FieldLabel>
+                    <FieldLabel htmlFor="ci-bc_score">{t("Body Condition Score *")}</FieldLabel>
                     {specNumberInput("bc_score", handleBCS, "decimal", t("Body Condition Score *"))}
                   </>,
                 ],
                 [
                   "days_in_milk",
                   <>
-                    <FieldLabel>{t("Days in Milk *")}</FieldLabel>
+                    <FieldLabel htmlFor="ci-days_in_milk">{t("Days in Milk *")}</FieldLabel>
                     {specNumberInput(
                       "days_in_milk",
                       handleDaysInMilk,
@@ -1059,7 +1061,9 @@ export default function CattleInfoPage() {
                 [
                   "days_of_pregnancy",
                   <>
-                    <FieldLabel>{t("Days of Pregnancy *")}</FieldLabel>
+                    <FieldLabel htmlFor="ci-days_of_pregnancy">
+                      {t("Days of Pregnancy *")}
+                    </FieldLabel>
                     {specNumberInput(
                       "days_of_pregnancy",
                       handleDaysOfPregnancy,
@@ -1089,7 +1093,7 @@ export default function CattleInfoPage() {
             <div className="px-3">
               {isVisible("milk_production") && (
                 <>
-                  <FieldLabel>{t("Milk Production (L) *")}</FieldLabel>
+                  <FieldLabel htmlFor="ci-milk_production">{t("Milk Production (L) *")}</FieldLabel>
                   {specNumberInput(
                     "milk_production",
                     handleMilkProduction,
@@ -1157,7 +1161,7 @@ export default function CattleInfoPage() {
             <div className="px-3">
               {isVisible("temperature") && (
                 <>
-                  <FieldLabel>{t("Avg Temperature (°C) *")}</FieldLabel>
+                  <FieldLabel htmlFor="ci-temperature">{t("Avg Temperature (°C) *")}</FieldLabel>
                   {specNumberInput(
                     "temperature",
                     handleAvgTemp,
@@ -1389,8 +1393,9 @@ export default function CattleInfoPage() {
 
                   {isVisible("distance") && (
                     <>
-                      <FieldLabel>{t("Distance Walked (km) *")}</FieldLabel>
+                      <FieldLabel htmlFor="ci-distance">{t("Distance Walked (km) *")}</FieldLabel>
                       <input
+                        id="ci-distance"
                         aria-label={t("Distance Walked (km)")}
                         type="number"
                         inputMode="decimal"

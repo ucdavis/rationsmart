@@ -175,14 +175,16 @@ function SetNewPinInner() {
               )}
             </p>
 
-            <p
-              className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
+            <label
+              htmlFor="set-new-pin-email"
+              className="block text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
               style={{ color: COLORS.darkSilver }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
-            </p>
+            </label>
             <input
+              id="set-new-pin-email"
               aria-label={t("Email Address")}
               type="email"
               autoComplete="email"

@@ -663,13 +663,15 @@ export function CountriesLanguagesTab({
             >
               {t("Register a new language")}
             </h3>
-            <p
-              className="text-xs font-bold uppercase tracking-wide mb-1"
+            <label
+              htmlFor="new-language-name"
+              className="block text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
               {t("Language name (English)")}
-            </p>
+            </label>
             <input
+              id="new-language-name"
               aria-label={t("Language name (English)")}
               type="text"
               value={regName}
@@ -679,13 +681,15 @@ export function CountriesLanguagesTab({
               className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-3"
               style={inputStyle}
             />
-            <p
-              className="text-xs font-bold uppercase tracking-wide mb-1"
+            <label
+              htmlFor="new-language-code"
+              className="block text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
               {t("ISO code")}
-            </p>
+            </label>
             <input
+              id="new-language-code"
               aria-label={t("ISO code")}
               type="text"
               value={regCode}

@@ -100,13 +100,15 @@ export default function DietLimitsSheet({
             const invalid = outOfRange || ndfConflict;
             return (
               <div key={key} className="mb-4">
-                <p
-                  className="text-xs font-bold uppercase mb-2"
+                <label
+                  htmlFor={`diet-limit-${key}`}
+                  className="block text-xs font-bold uppercase mb-2"
                   style={{ color: COLORS.raisinBlack }}
                 >
                   {t(DIET_LIMIT_LABELS[key] ?? key)} ({unitLabel})
-                </p>
+                </label>
                 <input
+                  id={`diet-limit-${key}`}
                   type="number"
                   inputMode="decimal"
                   aria-label={`${t(DIET_LIMIT_LABELS[key] ?? key)} (${unitLabel})`}

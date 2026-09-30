@@ -199,15 +199,17 @@ export default function RegisterPage() {
         </div>
 
         {/* Name */}
-        <p
-          className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
+        <label
+          htmlFor="register-name"
+          className="block text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
           style={labelStyle}
         >
           {t("Name")}
           <RequiredAsterisk />
-        </p>
+        </label>
         <div className="px-3">
           <input
+            id="register-name"
             aria-label={t("Name")}
             type="text"
             value={name}
@@ -219,15 +221,17 @@ export default function RegisterPage() {
         </div>
 
         {/* Email */}
-        <p
-          className="text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5"
+        <label
+          htmlFor="register-email"
+          className="block text-xs font-bold uppercase tracking-wide mt-3 ml-3 mb-1.5"
           style={labelStyle}
         >
           {t("Email Address")}
           <RequiredAsterisk />
-        </p>
+        </label>
         <div className="px-3">
           <input
+            id="register-email"
             aria-label={t("Email Address")}
             type="email"
             inputMode="email"

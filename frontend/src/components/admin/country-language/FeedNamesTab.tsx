@@ -115,9 +115,8 @@ export function FeedNamesTab({
         listFeedTranslations(f.feed_id).then((r) => ({
           feed_id: f.feed_id,
           translation:
-            listFrom<FeedTranslation>(r.data, "translations").find(
-              (t) => t.language === selLang
-            ) ?? null,
+            listFrom<FeedTranslation>(r.data, "translations").find((t) => t.language === selLang) ??
+            null,
         }))
       );
       if (cancelled) return;
@@ -544,13 +543,15 @@ export function FeedNamesTab({
             <h3 className="font-bold mb-4" style={{ color: COLORS.raisinBlack, fontSize: 17 }}>
               {editingFeed.fd_name}
             </h3>
-            <p
-              className="text-xs font-bold uppercase tracking-wide mb-1"
+            <label
+              htmlFor="feed-local-name"
+              className="block text-xs font-bold uppercase tracking-wide mb-1"
               style={{ color: COLORS.darkSilver }}
             >
               {t("Name in")} {labelForLanguage(selLang)}
-            </p>
+            </label>
             <input
+              id="feed-local-name"
               aria-label={`Name in ${labelForLanguage(selLang)}`}
               type="text"
               value={editValue}

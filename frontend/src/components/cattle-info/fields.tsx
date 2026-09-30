@@ -9,21 +9,25 @@ export const inputStyle = {
   backgroundColor: COLORS.americanDiamond,
   color: COLORS.raisinBlack,
 };
-export function FieldLabel({ children }: { children: React.ReactNode }) {
-  const cls = "text-xs font-bold uppercase tracking-wide mt-3 mb-1.5 ml-1";
+// A real <label> (audit B-31). Pass `htmlFor` for text / number inputs so
+// tapping the label focuses the field. Leave it off for dropdowns: a label
+// bound to CustomSelect's trigger button would REPLACE the button's
+// accessible name (the selected value, e.g. "India") with the label text.
+export function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  const cls = "block text-xs font-bold uppercase tracking-wide mt-3 mb-1.5 ml-1";
   const style = { color: COLORS.darkSilver };
   if (typeof children === "string" && children.endsWith(" *")) {
     return (
-      <p className={cls} style={style}>
+      <label htmlFor={htmlFor} className={cls} style={style}>
         {children.slice(0, -2)}
         <span style={{ color: COLORS.redRyb }}>{" *"}</span>
-      </p>
+      </label>
     );
   }
   return (
-    <p className={cls} style={style}>
+    <label htmlFor={htmlFor} className={cls} style={style}>
       {children}
-    </p>
+    </label>
   );
 }
 // UX: shimmer the REAL form fields in place while getCountries is in

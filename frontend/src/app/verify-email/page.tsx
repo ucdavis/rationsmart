@@ -153,14 +153,16 @@ function VerifyEmailInner() {
         </p>
 
         {/* Email field — pre-filled, editable so user can correct typos */}
-        <p
-          className="text-xs font-bold uppercase tracking-wide mt-6 mb-1.5 ml-1"
+        <label
+          htmlFor="verify-email-email"
+          className="block text-xs font-bold uppercase tracking-wide mt-6 mb-1.5 ml-1"
           style={{ color: COLORS.darkSilver }}
         >
           {t("Email Address")}
           <RequiredAsterisk />
-        </p>
+        </label>
         <input
+          id="verify-email-email"
           aria-label={t("Email Address")}
           type="email"
           autoComplete="email"

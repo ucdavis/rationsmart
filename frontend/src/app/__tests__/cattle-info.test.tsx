@@ -698,6 +698,21 @@ describe("Cattle Info — Language dropdown explicit English selection", () => {
   });
 });
 
+describe("Cattle Info — form labels (audit B-31)", () => {
+  it("every <label for> points at a rendered control, including the number inputs", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    const { container } = render(<CattleInfoPage />);
+    await formReady();
+    const labels = Array.from(container.querySelectorAll<HTMLLabelElement>("label[for]"));
+    expect(labels.length).toBeGreaterThanOrEqual(7);
+    for (const label of labels) {
+      expect(document.getElementById(label.htmlFor), label.htmlFor).toBeInstanceOf(HTMLInputElement);
+    }
+    expect(labels.map((l) => l.htmlFor)).toContain("ci-body_weight");
+  });
+});
+
 describe("Cattle Info — handleReset", () => {
   it("clears feedSelections, resets feedSelectionType to recommendation, nulls cattleInfo, and resets the form", async () => {
     getCountries.mockResolvedValueOnce({ data: [] });

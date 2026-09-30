@@ -113,9 +113,7 @@ export default function LoginPage() {
           preferred_language = d?.preferred_language ?? d?.registered_language ?? "en";
         }
         if (countriesRes.status === "fulfilled") {
-          const found = countriesRes.value.data.find(
-            (c) => String(c.id) === countryId
-          );
+          const found = countriesRes.value.data.find((c) => String(c.id) === countryId);
           currency = found?.currency ?? "";
         }
       } catch {
@@ -186,13 +184,14 @@ export default function LoginPage() {
         </div>
 
         {/* Email label + input */}
-        <p
-          className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
+        <label
+          htmlFor="login-email"
+          className="block text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
           style={{ color: COLORS.darkSilver }}
         >
           {t("Email Address")}
           <RequiredAsterisk />
-        </p>
+        </label>
         <div className="px-3">
           <input
             type="email"
@@ -355,13 +354,14 @@ export default function LoginPage() {
             </p>
 
             {/* Email label */}
-            <p
-              className="text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
+            <label
+              htmlFor="reset-pin-email"
+              className="block text-xs font-bold uppercase tracking-wide mt-5 ml-3 mb-1.5"
               style={{ color: COLORS.darkSilver }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
-            </p>
+            </label>
             <div className="px-3">
               <input
                 type="email"

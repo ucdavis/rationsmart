@@ -4,6 +4,7 @@
 // Feed Details (name / type / category) + Nutritional Information, laid out
 // per category (lib/nutrients.ts). Split out of feed-selection/page.tsx
 // (audit B-17); the page owns the state and the save handler.
+import { useId } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import CustomSelect from "@/components/CustomSelect";
 import Spinner from "@/components/ui/Spinner";
@@ -41,12 +42,18 @@ function CustomFeedNutrientInput({
   value: string;
   onChange: (v: string) => void;
 }) {
+  const id = useId();
   return (
     <div>
-      <p className="text-xs font-bold uppercase mb-1" style={{ color: COLORS.darkSilver }}>
+      <label
+        htmlFor={id}
+        className="block text-xs font-bold uppercase mb-1"
+        style={{ color: COLORS.darkSilver }}
+      >
         {label}
-      </p>
+      </label>
       <input
+        id={id}
         aria-label={label}
         type="number"
         inputMode="decimal"

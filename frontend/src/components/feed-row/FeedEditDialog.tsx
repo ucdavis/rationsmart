@@ -288,13 +288,15 @@ export default function FeedEditDialog({
                   <div className="grid grid-cols-2 gap-3 mb-5">
                     {fields.map((f) => (
                       <div key={f.key}>
-                        <p
-                          className="text-xs font-bold uppercase mb-1"
+                        <label
+                          htmlFor={`feed-edit-${f.key}`}
+                          className="block text-xs font-bold uppercase mb-1"
                           style={{ color: COLORS.darkSilver }}
                         >
                           {t(f.label)}
-                        </p>
+                        </label>
                         <input
+                          id={`feed-edit-${f.key}`}
                           aria-label={t(f.label)}
                           type="number"
                           inputMode="decimal"

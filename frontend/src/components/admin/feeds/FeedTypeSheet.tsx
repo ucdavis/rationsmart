@@ -56,11 +56,16 @@ export default function FeedTypeSheet({
         </h3>
 
         {/* FEED TYPE * label + input */}
-        <p className="font-bold uppercase mb-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
+        <label
+          htmlFor="feed-type-name"
+          className="block font-bold uppercase mb-1"
+          style={{ color: COLORS.darkSilver, fontSize: 12 }}
+        >
           {t("Feed Type")}
           <span style={{ color: COLORS.redRyb }}> *</span>
-        </p>
+        </label>
         <input
+          id="feed-type-name"
           aria-label={t("Feed Type")}
           type="text"
           value={newTypeName}
@@ -78,10 +83,15 @@ export default function FeedTypeSheet({
         />
 
         {/* DESCRIPTION label + multiline textarea (4:1 aspect, max 100 chars) */}
-        <p className="font-bold uppercase mb-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
+        <label
+          htmlFor="feed-type-description"
+          className="block font-bold uppercase mb-1"
+          style={{ color: COLORS.darkSilver, fontSize: 12 }}
+        >
           {t("Description")}
-        </p>
+        </label>
         <textarea
+          id="feed-type-description"
           value={newTypeDescription}
           onChange={(e) => setNewTypeDescription(e.target.value)}
           maxLength={100}

@@ -574,13 +574,15 @@ export function SyncSettingsTab({
         ) : (
           <div className="px-4 py-4 space-y-3">
             <div>
-              <p
-                className="text-xs font-bold uppercase tracking-wide mb-1"
+              <label
+                htmlFor="sync-endpoint-url"
+                className="block text-xs font-bold uppercase tracking-wide mb-1"
                 style={{ color: COLORS.darkSilver }}
               >
                 {t("Endpoint URL")}
-              </p>
+              </label>
               <input
+                id="sync-endpoint-url"
                 aria-label={t("Endpoint URL")}
                 type="text"
                 value={formEndpoint}
@@ -610,13 +612,15 @@ export function SyncSettingsTab({
             </div>
             {formAuthType === "api_key" && (
               <div>
-                <p
-                  className="text-xs font-bold uppercase tracking-wide mb-1"
+                <label
+                  htmlFor="sync-header-name"
+                  className="block text-xs font-bold uppercase tracking-wide mb-1"
                   style={{ color: COLORS.darkSilver }}
                 >
                   {t("Header name")}
-                </p>
+                </label>
                 <input
+                  id="sync-header-name"
                   aria-label={t("Header name")}
                   type="text"
                   value={formHeaderName}

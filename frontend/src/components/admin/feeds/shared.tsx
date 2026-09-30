@@ -2,6 +2,7 @@
 
 // Admin > Feed Management — types, form defaults and small inputs; split out of admin/feeds/page.tsx (audit B-17).
 
+import { useId } from "react";
 import { COLORS } from "@/lib/colors";
 
 export interface AdminFeedType {
@@ -82,13 +83,19 @@ export function NutrientInput({
   onChange: (v: string) => void;
   required?: boolean;
 }) {
+  const id = useId();
   return (
     <div>
-      <p className="text-xs font-bold uppercase mb-1" style={{ color: COLORS.darkSilver }}>
+      <label
+        htmlFor={id}
+        className="block text-xs font-bold uppercase mb-1"
+        style={{ color: COLORS.darkSilver }}
+      >
         {label}
         {required && " *"}
-      </p>
+      </label>
       <input
+        id={id}
         aria-label={label}
         type="number"
         inputMode="decimal"

@@ -125,14 +125,16 @@ export default function ForgotPinPage() {
             <p className="text-center text-sm mt-1" style={{ color: COLORS.darkSilver }}>
               {t("Enter your registered email to receive a reset link")}
             </p>
-            <p
-              className="text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
+            <label
+              htmlFor="forgot-pin-email"
+              className="block text-xs font-bold uppercase tracking-wide mt-5 mb-1.5"
               style={{ color: COLORS.darkSilver }}
             >
               {t("Email Address")}
               <RequiredAsterisk />
-            </p>
+            </label>
             <input
+              id="forgot-pin-email"
               aria-label={t("Email Address")}
               type="email"
               autoComplete="email"

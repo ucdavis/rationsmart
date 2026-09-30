@@ -107,11 +107,16 @@ export default function FeedCategorySheet({
 
         {/* FEED CATEGORY * input — disabled until type selected
                 (bright_gray bg when disabled). */}
-        <p className="font-bold uppercase mb-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
+        <label
+          htmlFor="feed-category-name"
+          className="block font-bold uppercase mb-1"
+          style={{ color: COLORS.darkSilver, fontSize: 12 }}
+        >
           {t("Feed Category")}
           <span style={{ color: COLORS.redRyb }}> *</span>
-        </p>
+        </label>
         <input
+          id="feed-category-name"
           aria-label={t("Feed Category")}
           type="text"
           value={newCatName}
@@ -131,10 +136,15 @@ export default function FeedCategorySheet({
         />
 
         {/* DESCRIPTION multiline — disabled until type selected */}
-        <p className="font-bold uppercase mb-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
+        <label
+          htmlFor="feed-category-description"
+          className="block font-bold uppercase mb-1"
+          style={{ color: COLORS.darkSilver, fontSize: 12 }}
+        >
           {t("Description")}
-        </p>
+        </label>
         <textarea
+          id="feed-category-description"
           value={newCatDescription}
           disabled={!newCatTypeId}
           onChange={(e) => setNewCatDescription(e.target.value)}

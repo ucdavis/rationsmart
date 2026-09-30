@@ -343,12 +343,18 @@ export default function ProfilePage() {
               jump when data arrives, just the shimmer/disabled/hidden-text
               treatment lifting off all three fields at once. */}
           {/* Name (editable) */}
-          <p className="text-xs font-bold uppercase tracking-wide mb-1.5 ml-1" style={labelStyle}>
+          <label
+            htmlFor="profile-name"
+            className="block text-xs font-bold uppercase tracking-wide mb-1.5 ml-1"
+            style={labelStyle}
+          >
             {t("Name *")}
-          </p>
+          </label>
           <input
+            id="profile-name"
             aria-label={t("Name")}
             type="text"
+            autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             {...loadingFieldProps(
