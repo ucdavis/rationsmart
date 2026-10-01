@@ -48,6 +48,11 @@ slowapi>=0.1.10
 # ── AWS ───────────────────────────────────────────────────────────────────────
 boto3==1.43.99
 
+# ── Azure (Phase 5 — verify this is still the latest stable 12.x release before
+#    bumping; picked from what was known-good at authoring time, not re-checked
+#    against PyPI in this environment, which had no network access) ────────────
+azure-storage-blob==12.24.0
+
 # ── Email ─────────────────────────────────────────────────────────────────────
 asgiref==3.12.1
 

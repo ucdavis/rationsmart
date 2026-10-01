@@ -141,9 +141,9 @@ def rec_pdf_report_generator(
             api_response, user_id, simulation_id, user_name, user_email, report_id
         )
 
-        from services.aws_service import aws_service
-        success, bucket_url, error_message = aws_service.upload_pdf_to_s3(
-            pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
+        from services.storage_service import storage_service
+        success, bucket_url, error_message = storage_service.upload_pdf(
+            user_id=user_id, report_id=report_id, pdf_data=pdf_bytes
         )
 
         # Persist result without importing ORM models
@@ -194,9 +194,9 @@ def eval_pdf_report_generator(
             api_response, user_id, simulation_id, user_name, user_email, report_id
         )
 
-        from services.aws_service import aws_service
-        success, bucket_url, _ = aws_service.upload_pdf_to_s3(
-            pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
+        from services.storage_service import storage_service
+        success, bucket_url, _ = storage_service.upload_pdf(
+            user_id=user_id, report_id=report_id, pdf_data=pdf_bytes
         )
 
         if success:
@@ -255,9 +255,9 @@ async def rec_pdf_report_generator_v2(
         if not pdf_bytes:
             raise RuntimeError("HTML-to-PDF conversion returned no bytes")
 
-        from services.aws_service import aws_service
-        success, bucket_url, error_message = aws_service.upload_pdf_to_s3(
-            pdf_data=pdf_bytes, user_id=user_id, report_id=report_id
+        from services.storage_service import storage_service
+        success, bucket_url, error_message = storage_service.upload_pdf(
+            user_id=user_id, report_id=report_id, pdf_data=pdf_bytes
         )
         if success:
             await db.execute(
