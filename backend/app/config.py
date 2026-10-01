@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 
 from pydantic_settings import BaseSettings
 
@@ -27,6 +28,14 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "ap-southeast-2"
     aws_s3_bucket: str = "ucd-reports"
+
+    # ── Storage provider selection ────────────────────────────────────────────
+    storage_provider: Literal["aws", "azure"] = "aws"  # default preserves current behavior
+
+    # ── Azure Blob Storage (Phase 5) ──────────────────────────────────────────
+    azure_storage_account_name: str = ""
+    azure_storage_account_key: str = ""
+    azure_storage_container: str = "ucd-reports"  # mirror aws_s3_bucket's default/naming
 
     # ── Security ──────────────────────────────────────────────────────────────
     jwt_secret_key: str

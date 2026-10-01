@@ -46,6 +46,11 @@ slowapi>=0.1.10
 # ── AWS ───────────────────────────────────────────────────────────────────────
 boto3==1.44.4
 
+# ── Azure (Phase 5 — verify this is still the latest stable 12.x release before
+#    bumping; picked from what was known-good at authoring time, not re-checked
+#    against PyPI in this environment, which had no network access) ────────────
+azure-storage-blob==12.24.0
+
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
 # 63.1 → 70.0 on 2026-11-20 (security release: 4 advisories). 70.0 needs tinycss2 ≥1.5,
 # cssselect2 ≥0.8, fonttools ≥4.59.2 and a URLFetcher-class url_fetcher (pdf_service).
