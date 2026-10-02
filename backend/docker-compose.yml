@@ -62,8 +62,12 @@ services:
 
   redis:
     image: redis:7-alpine
+    # Loopback only: the services above reach Redis over the compose network
+    # (redis://redis:6379), and Redis runs without a password, so it must not be
+    # published on the server's public interfaces. Host-side debugging and a local
+    # uvicorn against this Redis still work via localhost:6379.
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
