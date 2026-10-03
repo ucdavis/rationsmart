@@ -154,7 +154,7 @@ async def import_translation_workbook(
         lang_cols = [c for c in df.columns if c in active_lang_codes]
         if _COL_TYPE_SRC in df.columns:
             for _, row in df.iterrows():
-                src = clean_text(str(row.get(_COL_TYPE_SRC, "")))
+                src = str(row.get(_COL_TYPE_SRC, "")).strip()  # exported key: must match as stored
                 if not src:
                     continue
                 for lc in lang_cols:
@@ -173,7 +173,7 @@ async def import_translation_workbook(
         lang_cols = [c for c in df.columns if c in active_lang_codes]
         if _COL_CAT_SRC in df.columns:
             for _, row in df.iterrows():
-                src = clean_text(str(row.get(_COL_CAT_SRC, "")))
+                src = str(row.get(_COL_CAT_SRC, "")).strip()  # exported key: must match as stored
                 if not src:
                     continue
                 for lc in lang_cols:

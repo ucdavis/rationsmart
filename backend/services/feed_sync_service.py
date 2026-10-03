@@ -114,19 +114,28 @@ async def fetch_feed_library(config) -> Tuple[bytes, int]:
 
 # ── Cell helpers ──────────────────────────────────────────────────────────────
 
-def _cell_str(row, column: str, keep_joiners: bool = False) -> str:
-    """Series.get + NaN-safe clean → '' for blank/missing cells.
-
-    Invisible characters are dropped and no-break spaces become spaces
-    (services/text_cleaning.py), so names, codes and local names are stored
-    as they read. `keep_joiners` is for the local-language name only.
-    """
+def _cell_raw(row, column: str) -> str:
+    """Series.get + NaN-safe strip → '' for blank/missing cells (no cleaning)."""
     import pandas as pd
 
     value = row.get(column)
     if value is None or pd.isna(value):
         return ""
-    return clean_text(str(value), keep_joiners=keep_joiners)
+    return str(value).strip()
+
+
+def _cell_str(row, column: str, keep_joiners: bool = False) -> str:
+    """Like _cell_raw, plus invisible-character cleaning.
+
+    Invisible characters are dropped and no-break spaces become spaces
+    (services/text_cleaning.py), so names, codes and local names are stored
+    as they read. `keep_joiners` is for the local-language name only.
+
+    Values used to look up stored rows (code, country, type/category, name
+    collision) are tried cleaned first, then as _cell_raw: a row stored before
+    cleaning existed may still hold the characters, and must keep matching.
+    """
+    return clean_text(_cell_raw(row, column), keep_joiners=keep_joiners)
 
 
 def _coerce_numeric(value) -> Tuple[bool, Optional[float]]:
@@ -331,6 +340,7 @@ async def _run_import_pipeline(
     for idx, row in df.iterrows():
         row_num = int(idx) + 2  # Excel rows are 1-indexed; header is row 1
         fd_code = _cell_str(row, "fd_code")
+        raw_fd_code = _cell_raw(row, "fd_code")
         try:
             fd_name = _cell_str(row, "fd_name")
             if not fd_name:
@@ -341,6 +351,9 @@ async def _run_import_pipeline(
 
             country_name = _cell_str(row, "fd_country_name")
             country = await _country_for(country_name) if country_name else None
+            raw_country_name = _cell_raw(row, "fd_country_name")
+            if country is None and raw_country_name and raw_country_name != country_name:
+                country = await _country_for(raw_country_name)
             if country is None:
                 failed_rows.append({
                     "row": row_num, "fd_code": fd_code or None,
@@ -365,10 +378,15 @@ async def _run_import_pipeline(
                 continue
 
             # D18 — validate against the active taxonomy (canonical spellings + ids)
+            type_cell, cat_cell = _cell_str(row, "fd_type"), _cell_str(row, "fd_category")
             ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
-                type_by_name, cat_by_type_and_name,
-                _cell_str(row, "fd_type"), _cell_str(row, "fd_category"),
+                type_by_name, cat_by_type_and_name, type_cell, cat_cell,
             )
+            raw_type, raw_cat = _cell_raw(row, "fd_type"), _cell_raw(row, "fd_category")
+            if not ok and (raw_type, raw_cat) != (type_cell, cat_cell):
+                raw_result = resolve_taxonomy(type_by_name, cat_by_type_and_name, raw_type, raw_cat)
+                if raw_result[0]:  # keep the cleaned attempt's reason if both fail
+                    ok, reason, canon_type, canon_cat, type_id, cat_id = raw_result
             if not ok:
                 failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
                 continue
@@ -395,6 +413,17 @@ async def _run_import_pipeline(
             if fd_code:
                 data["fd_code"] = fd_code
                 feed = await feed_repo.get_by_code(fd_code)
+                if feed is None and raw_fd_code != fd_code:
+                    # Stored before cleaning existed, with the characters still in
+                    # its code: match it as-is, then store the clean code. Safe for
+                    # uq_feeds_fd_code, as no feed holds the clean code (above).
+                    feed = await feed_repo.get_by_code(raw_fd_code)
+                    if feed is not None:
+                        logger.info(
+                            "Feed import: row %s matched stored code %r; renamed to %r",
+                            row_num, raw_fd_code, fd_code,
+                        )
+                        feed.fd_code = fd_code  # update() whitelist omits fd_code
                 if feed is not None:
                     await feed_repo.update(feed, data)
                     feed.fd_country_id = country.id  # update() whitelist omits the FK
@@ -403,8 +432,19 @@ async def _run_import_pipeline(
                     data["id"] = stable_feed_uuid(fd_code)
                     feed = await feed_repo.create(data, country_id=str(country.id))
                     inserted += 1
+            elif raw_fd_code:
+                # The code cell held only invisible characters: not a real code,
+                # and not a deliberate blank (which mints an RS code below).
+                failed_rows.append({
+                    "row": row_num, "fd_code": None,
+                    "reason": "fd_code contains only invisible characters",
+                })
+                continue
             else:
                 existing_by_name = await feed_repo.get_by_name(fd_name)
+                raw_fd_name = _cell_raw(row, "fd_name")
+                if existing_by_name is None and raw_fd_name != fd_name:
+                    existing_by_name = await feed_repo.get_by_name(raw_fd_name)
                 if existing_by_name is not None:
                     failed_rows.append({
                         "row": row_num, "fd_code": None,
