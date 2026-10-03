@@ -10,7 +10,7 @@ Run inside the API container, from the folder holding docker-compose.yml:
     docker compose exec api python -m scripts_2.db_reset              # dry run
     docker compose exec api python -m scripts_2.db_reset --execute    # delete
 
-Flow: email + PIN of an active admin → row counts → (with --execute) typed
+Flow: email + 6-digit PIN of an active admin → row counts → (with --execute) typed
 confirmation of the database → pg_dump to --backup-dir, verified with
 pg_restore --list → all deletes in one transaction (rolled back if any kept
 table changes) → feeds:* keys cleared in Redis → one line appended to
@@ -35,7 +35,7 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 from app.config import settings
-from services.auth_service import verify_pin
+from services.auth_service import is_legacy_hash, verify_bcrypt_pin
 
 # Master data, never touched. system_metadata is v3's feed-cache flag: kept
 # while v3 code still reads it (unused-tables decision, section 3.4).
@@ -113,7 +113,9 @@ async def existing_tables(conn: AsyncConnection) -> Set[str]:
 async def authenticate(conn: AsyncConnection, email: str, pin: str):
     """Return (id, email_id) of an active admin, or raise ResetAbort.
 
-    One message for every failure, as the login endpoint does.
+    One message for an unknown email or wrong PIN, as the login endpoint does.
+    Only bcrypt (6-digit) PINs are accepted: an old 4-digit SHA-256 PIN is too
+    weak to gate a wipe, so that account must migrate its PIN in the app first.
     """
     result = await conn.execute(
         text(
@@ -123,7 +125,12 @@ async def authenticate(conn: AsyncConnection, email: str, pin: str):
         {"email": email.strip()},
     )
     row = result.first()
-    if row is None or not row.pin_hash or not verify_pin(pin, row.pin_hash):
+    if row is not None and row.pin_hash and is_legacy_hash(row.pin_hash):
+        raise ResetAbort(
+            "This account still has an old 4-digit PIN. Sign in to the app once "
+            "to set a 6-digit PIN, then run this script again."
+        )
+    if row is None or not row.pin_hash or not verify_bcrypt_pin(pin, row.pin_hash):
         raise ResetAbort("Email or PIN is not correct.")
     if not row.is_admin or not row.is_active:
         raise ResetAbort("Only an active RationSmart admin can run this script.")

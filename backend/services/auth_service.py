@@ -41,13 +41,24 @@ def verify_pin(pin: str, hashed_pin: str) -> bool:
     - Legacy SHA-256 (32-char hex salt + 64-char hex digest): old 4-digit PINs.
     """
     if hashed_pin.startswith("$2b$"):
-        return _bcrypt.checkpw(pin.encode(), hashed_pin.encode())
+        return verify_bcrypt_pin(pin, hashed_pin)
     # Legacy SHA-256 path
     if len(hashed_pin) < 96:
         return False
     salt, stored = hashed_pin[:32], hashed_pin[32:]
     computed = hashlib.sha256(f"{pin}{salt}".encode()).hexdigest()
     return secrets.compare_digest(computed, stored)
+
+
+def verify_bcrypt_pin(pin: str, hashed_pin: str) -> bool:
+    """Bcrypt-only check: False for any other hash format, never the legacy path.
+
+    For callers that must not accept an old 4-digit SHA-256 PIN (the admin
+    gate of scripts_2/db_reset.py).
+    """
+    if not hashed_pin.startswith("$2b$"):
+        return False
+    return _bcrypt.checkpw(pin.encode(), hashed_pin.encode())
 
 
 def is_legacy_hash(hashed_pin: str) -> bool:
