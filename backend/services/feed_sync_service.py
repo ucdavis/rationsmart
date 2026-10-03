@@ -36,6 +36,7 @@ from services.feed_service import (
     resolve_taxonomy,
     stable_feed_uuid,
 )
+from services.text_cleaning import clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -113,14 +114,19 @@ async def fetch_feed_library(config) -> Tuple[bytes, int]:
 
 # ── Cell helpers ──────────────────────────────────────────────────────────────
 
-def _cell_str(row, column: str) -> str:
-    """Series.get + NaN-safe strip → '' for blank/missing cells."""
+def _cell_str(row, column: str, keep_joiners: bool = False) -> str:
+    """Series.get + NaN-safe clean → '' for blank/missing cells.
+
+    Invisible characters are dropped and no-break spaces become spaces
+    (services/text_cleaning.py), so names, codes and local names are stored
+    as they read. `keep_joiners` is for the local-language name only.
+    """
     import pandas as pd
 
     value = row.get(column)
     if value is None or pd.isna(value):
         return ""
-    return str(value).strip()
+    return clean_text(str(value), keep_joiners=keep_joiners)
 
 
 def _coerce_numeric(value) -> Tuple[bool, Optional[float]]:
@@ -131,7 +137,7 @@ def _coerce_numeric(value) -> Tuple[bool, Optional[float]]:
         return True, None
     if isinstance(value, (int, float)):
         return True, float(value)
-    text = str(value).strip()
+    text = clean_text(str(value))
     if not text:
         return True, None
     if _DECIMAL_COMMA_RE.match(text):
@@ -415,7 +421,7 @@ async def _run_import_pipeline(
                 inserted += 1
 
             # Local-name translation branch (D13/D14/D15/D17)
-            local_name = _cell_str(row, "fd_name_local_language")
+            local_name = _cell_str(row, "fd_name_local_language", keep_joiners=True)
             if not local_name:
                 continue  # English-only row — nothing to translate
 

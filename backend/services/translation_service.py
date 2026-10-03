@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from repositories.translation_repository import TranslationRepository
 from repositories.user_repository import UserRepository
+from services.text_cleaning import clean_text
 
 # Sheet names — must stay stable for round-trip import
 _SHEET_FEEDS = "Feeds"
@@ -132,7 +133,7 @@ async def import_translation_workbook(
             summary["errors"].append(f"Feeds sheet: unknown column '{c}' — skipped")
 
         for _, row in df.iterrows():
-            feed_id = str(row.get(_COL_FEED_ID, "")).strip()
+            feed_id = clean_text(str(row.get(_COL_FEED_ID, "")))
             if not feed_id or feed_id not in valid_feed_ids:
                 if feed_id:
                     summary["errors"].append(
@@ -140,7 +141,7 @@ async def import_translation_workbook(
                     )
                 continue
             for lc in lang_cols:
-                val = str(row.get(lc, "")).strip()
+                val = clean_text(str(row.get(lc, "")), keep_joiners=True)
                 if not val:
                     summary["feeds_skipped"] += 1
                     continue
@@ -153,11 +154,11 @@ async def import_translation_workbook(
         lang_cols = [c for c in df.columns if c in active_lang_codes]
         if _COL_TYPE_SRC in df.columns:
             for _, row in df.iterrows():
-                src = str(row.get(_COL_TYPE_SRC, "")).strip()
+                src = clean_text(str(row.get(_COL_TYPE_SRC, "")))
                 if not src:
                     continue
                 for lc in lang_cols:
-                    val = str(row.get(lc, "")).strip()
+                    val = clean_text(str(row.get(lc, "")), keep_joiners=True)
                     if not val:
                         summary["types_skipped"] += 1
                         continue
@@ -172,11 +173,11 @@ async def import_translation_workbook(
         lang_cols = [c for c in df.columns if c in active_lang_codes]
         if _COL_CAT_SRC in df.columns:
             for _, row in df.iterrows():
-                src = str(row.get(_COL_CAT_SRC, "")).strip()
+                src = clean_text(str(row.get(_COL_CAT_SRC, "")))
                 if not src:
                     continue
                 for lc in lang_cols:
-                    val = str(row.get(lc, "")).strip()
+                    val = clean_text(str(row.get(lc, "")), keep_joiners=True)
                     if not val:
                         summary["categories_skipped"] += 1
                         continue
