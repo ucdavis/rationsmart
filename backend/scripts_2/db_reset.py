@@ -62,6 +62,13 @@ FEED_TABLES = frozenset({"feed_translations", "feeds"})
 BACKUP_PREFIX = "pre_db_reset_"
 LOG_NAME = "db_reset.log"
 
+# Backup limits: a hung connection or a lock held by another session must stop
+# the run with a message, not leave it waiting forever. Test's dump takes seconds.
+CONNECT_TIMEOUT_SECONDS = 30
+LOCK_WAIT_TIMEOUT = "60s"
+DUMP_TIMEOUT_SECONDS = 30 * 60
+VERIFY_TIMEOUT_SECONDS = 5 * 60
+
 
 class ResetAbort(Exception):
     """Stops the run before anything is deleted; the message is shown as-is."""
@@ -178,7 +185,11 @@ async def delete_rows(
 # ── Backup, cache, log ────────────────────────────────────────────────────────
 
 def _pg_env() -> Dict[str, str]:
-    return {**os.environ, "PGPASSWORD": settings.postgres_password}
+    return {
+        **os.environ,
+        "PGPASSWORD": settings.postgres_password,
+        "PGCONNECT_TIMEOUT": str(CONNECT_TIMEOUT_SECONDS),
+    }
 
 
 def _pg_conn_args() -> List[str]:
@@ -199,18 +210,25 @@ def backup_database(backup_dir: Path) -> Path:
     path = backup_dir / f"{BACKUP_PREFIX}{stamp}.dump"
     try:
         dump = subprocess.run(
-            ["pg_dump", "-Fc", *_pg_conn_args(), "-f", str(path)],
-            env=_pg_env(), capture_output=True, text=True,
+            ["pg_dump", "-Fc", f"--lock-wait-timeout={LOCK_WAIT_TIMEOUT}",
+             *_pg_conn_args(), "-f", str(path)],
+            env=_pg_env(), capture_output=True, text=True, timeout=DUMP_TIMEOUT_SECONDS,
         )
     except FileNotFoundError:
         raise ResetAbort("pg_dump is not installed in this container; rebuild the image.")
+    except subprocess.TimeoutExpired:
+        raise ResetAbort(f"Backup timed out after {DUMP_TIMEOUT_SECONDS // 60} minutes, nothing deleted.")
     if dump.returncode != 0:
         raise ResetAbort(f"Backup failed, nothing deleted:\n{dump.stderr.strip()}")
     if not path.is_file() or path.stat().st_size == 0:
         raise ResetAbort(f"Backup {path} is missing or empty, nothing deleted.")
-    check = subprocess.run(
-        ["pg_restore", "--list", str(path)], capture_output=True, text=True,
-    )
+    try:
+        check = subprocess.run(
+            ["pg_restore", "--list", str(path)],
+            capture_output=True, text=True, timeout=VERIFY_TIMEOUT_SECONDS,
+        )
+    except subprocess.TimeoutExpired:
+        raise ResetAbort(f"Checking backup {path} timed out, nothing deleted.")
     if check.returncode != 0:
         raise ResetAbort(f"Backup {path} cannot be read back, nothing deleted:\n{check.stderr.strip()}")
     return path
@@ -252,7 +270,12 @@ def _print_counts(title: str, counts: Dict[str, int]) -> None:
         print(f"  {table:<{width}}  {n:>7}")
 
 
-async def run(args, engine: AsyncEngine, ask=input, ask_secret=getpass.getpass) -> int:
+async def run(
+    args, engine: AsyncEngine, ask=input, ask_secret=getpass.getpass,
+    outcome: Optional[Dict[str, Path]] = None,
+) -> int:
+    """`outcome["backup"]` is set the moment the deletes commit, so main() can
+    report an interruption after that point truthfully."""
     label = database_label()
     print(f"Database: {label}")
     email = args.email or ask("Admin email: ")
@@ -285,13 +308,21 @@ async def run(args, engine: AsyncEngine, ask=input, ask_secret=getpass.getpass) 
     print(f"Backup written and verified: {backup}")
 
     async with engine.begin() as conn:  # one transaction: commits on exit, rolls back on any error
+        # Guards against rows vanishing from master tables (e.g. an unexpected
+        # CASCADE). Values in kept rows may change by design: ON DELETE SET NULL
+        # clears feed_sync_config.scheduler_toggled_by (and, with --keep-feeds,
+        # feeds.created_by) when they point at a deleted user.
         kept = sorted(KEEP_TABLES & await existing_tables(conn))
         before = await table_counts(conn, kept)
         deleted = await delete_rows(conn, tables, operator_id, args.keep_admins)
         after = await table_counts(conn, kept)
         if before != after:
             changed = [t for t in before if before[t] != after[t]]
-            raise ResetAbort(f"Kept table(s) changed ({', '.join(changed)}); rolled back, nothing deleted.")
+            raise ResetAbort(
+                f"Row count of kept table(s) changed ({', '.join(changed)}); rolled back, nothing deleted."
+            )
+    if outcome is not None:
+        outcome["backup"] = backup
     _print_counts("Deleted:", deleted)
 
     try:
@@ -320,27 +351,36 @@ def parse_args(argv: Optional[Sequence[str]] = None):
     return parser.parse_args(argv)
 
 
-async def _main(args) -> int:
+async def _main(args, outcome: Dict[str, Path]) -> int:
     url = settings.database_url.replace("postgresql://", "postgresql+asyncpg://")
     engine = create_async_engine(url, pool_size=1, max_overflow=0)
     try:
-        return await run(args, engine)
+        return await run(args, engine, outcome=outcome)
     finally:
         await engine.dispose()
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parse_args(argv)
+    outcome: Dict[str, Path] = {}
     try:
-        return asyncio.run(_main(args))
+        return asyncio.run(_main(args, outcome))
     except ResetAbort as exc:
         print(f"\nStopped: {exc}", file=sys.stderr)
         return 1
     except DBAPIError as exc:
-        print(f"\nStopped by a database error; the delete transaction was rolled back:\n{exc.orig}", file=sys.stderr)
+        # Before the transaction nothing was written; inside it, it rolled back.
+        print(f"\nStopped by a database error; nothing was deleted:\n{exc.orig}", file=sys.stderr)
         return 1
     except (KeyboardInterrupt, EOFError):
-        print("\nCancelled; nothing deleted.", file=sys.stderr)
+        backup = outcome.get("backup")
+        if backup is None:
+            print("\nCancelled; nothing deleted.", file=sys.stderr)
+        else:
+            print("\nCancelled after the reset was committed: the rows ARE deleted.", file=sys.stderr)
+            print(f"Backup: {backup}", file=sys.stderr)
+            print(f"To undo: {restore_command(backup)}", file=sys.stderr)
+            print(f"The line in {LOG_NAME} and the Redis clean-up may be missing.", file=sys.stderr)
         return 2
 
 
