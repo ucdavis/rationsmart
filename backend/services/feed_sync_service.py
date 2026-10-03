@@ -36,6 +36,7 @@ from services.feed_service import (
     resolve_taxonomy,
     stable_feed_uuid,
 )
+from services.text_cleaning import clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -113,14 +114,30 @@ async def fetch_feed_library(config) -> Tuple[bytes, int]:
 
 # ── Cell helpers ──────────────────────────────────────────────────────────────
 
-def _cell_str(row, column: str) -> str:
-    """Series.get + NaN-safe strip → '' for blank/missing cells."""
+def _cell_raw(row, column: str) -> str:
+    """Series.get + NaN-safe strip → '' for blank/missing cells (no cleaning)."""
     import pandas as pd
 
     value = row.get(column)
     if value is None or pd.isna(value):
         return ""
     return str(value).strip()
+
+
+def _cell_str(row, column: str, keep_joiners: bool = False) -> str:
+    """Like _cell_raw, plus invisible-character cleaning.
+
+    Invisible characters are dropped and no-break spaces become spaces
+    (services/text_cleaning.py), so names, codes and local names are stored
+    as they read. `keep_joiners` is for the local-language name only.
+
+    Values used to look up stored rows (code, country, type/category, name
+    collision) are tried cleaned and, when different, as _cell_raw: a row
+    stored before cleaning existed may still hold the characters, and must
+    keep matching. If the two find different stored rows, the import row
+    fails as ambiguous rather than picking one.
+    """
+    return clean_text(_cell_raw(row, column), keep_joiners=keep_joiners)
 
 
 def _coerce_numeric(value) -> Tuple[bool, Optional[float]]:
@@ -131,7 +148,7 @@ def _coerce_numeric(value) -> Tuple[bool, Optional[float]]:
         return True, None
     if isinstance(value, (int, float)):
         return True, float(value)
-    text = str(value).strip()
+    text = clean_text(str(value))
     if not text:
         return True, None
     if _DECIMAL_COMMA_RE.match(text):
@@ -325,6 +342,7 @@ async def _run_import_pipeline(
     for idx, row in df.iterrows():
         row_num = int(idx) + 2  # Excel rows are 1-indexed; header is row 1
         fd_code = _cell_str(row, "fd_code")
+        raw_fd_code = _cell_raw(row, "fd_code")
         try:
             fd_name = _cell_str(row, "fd_name")
             if not fd_name:
@@ -335,6 +353,20 @@ async def _run_import_pipeline(
 
             country_name = _cell_str(row, "fd_country_name")
             country = await _country_for(country_name) if country_name else None
+            raw_country_name = _cell_raw(row, "fd_country_name")
+            if raw_country_name and raw_country_name != country_name:
+                raw_country = await _country_for(raw_country_name)
+                if country is None:
+                    country = raw_country
+                elif raw_country is not None and raw_country.id != country.id:
+                    failed_rows.append({
+                        "row": row_num, "fd_code": fd_code or None,
+                        "reason": (
+                            f"fd_country_name '{country_name}' matches two countries "
+                            "(one with invisible characters in its name)"
+                        ),
+                    })
+                    continue
             if country is None:
                 failed_rows.append({
                     "row": row_num, "fd_code": fd_code or None,
@@ -359,10 +391,24 @@ async def _run_import_pipeline(
                 continue
 
             # D18 — validate against the active taxonomy (canonical spellings + ids)
+            type_cell, cat_cell = _cell_str(row, "fd_type"), _cell_str(row, "fd_category")
             ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
-                type_by_name, cat_by_type_and_name,
-                _cell_str(row, "fd_type"), _cell_str(row, "fd_category"),
+                type_by_name, cat_by_type_and_name, type_cell, cat_cell,
             )
+            raw_type, raw_cat = _cell_raw(row, "fd_type"), _cell_raw(row, "fd_category")
+            if (raw_type, raw_cat) != (type_cell, cat_cell):
+                raw_result = resolve_taxonomy(type_by_name, cat_by_type_and_name, raw_type, raw_cat)
+                if raw_result[0] and not ok:  # if both fail, keep the cleaned attempt's reason
+                    ok, reason, canon_type, canon_cat, type_id, cat_id = raw_result
+                elif raw_result[0] and (raw_result[4], raw_result[5]) != (type_id, cat_id):
+                    failed_rows.append({
+                        "row": row_num, "fd_code": fd_code or None,
+                        "reason": (
+                            f"fd_type/fd_category '{type_cell}'/'{cat_cell}' matches two "
+                            "taxonomy entries (one with invisible characters in its name)"
+                        ),
+                    })
+                    continue
             if not ok:
                 failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
                 continue
@@ -389,6 +435,28 @@ async def _run_import_pipeline(
             if fd_code:
                 data["fd_code"] = fd_code
                 feed = await feed_repo.get_by_code(fd_code)
+                if raw_fd_code != fd_code:
+                    # A feed stored before cleaning existed may hold the characters
+                    # in its code. If only it matches, update it and store the clean
+                    # code (safe for uq_feeds_fd_code: no feed holds the clean code).
+                    # If both codes match, they are two feeds: fail, don't pick one.
+                    raw_feed = await feed_repo.get_by_code(raw_fd_code)
+                    if raw_feed is not None and feed is None:
+                        logger.info(
+                            "Feed import: row %s matched stored code %r; renamed to %r",
+                            row_num, raw_fd_code, fd_code,
+                        )
+                        raw_feed.fd_code = fd_code  # update() whitelist omits fd_code
+                        feed = raw_feed
+                    elif raw_feed is not None and raw_feed.id != feed.id:
+                        failed_rows.append({
+                            "row": row_num, "fd_code": fd_code,
+                            "reason": (
+                                f"fd_code '{fd_code}' matches two stored feeds (one with "
+                                "invisible characters in its code); resolve the duplicate first"
+                            ),
+                        })
+                        continue
                 if feed is not None:
                     await feed_repo.update(feed, data)
                     feed.fd_country_id = country.id  # update() whitelist omits the FK
@@ -397,8 +465,19 @@ async def _run_import_pipeline(
                     data["id"] = stable_feed_uuid(fd_code)
                     feed = await feed_repo.create(data, country_id=str(country.id))
                     inserted += 1
+            elif raw_fd_code:
+                # The code cell held only invisible characters: not a real code,
+                # and not a deliberate blank (which mints an RS code below).
+                failed_rows.append({
+                    "row": row_num, "fd_code": None,
+                    "reason": "fd_code contains only invisible characters",
+                })
+                continue
             else:
                 existing_by_name = await feed_repo.get_by_name(fd_name)
+                raw_fd_name = _cell_raw(row, "fd_name")
+                if existing_by_name is None and raw_fd_name != fd_name:
+                    existing_by_name = await feed_repo.get_by_name(raw_fd_name)
                 if existing_by_name is not None:
                     failed_rows.append({
                         "row": row_num, "fd_code": None,
@@ -415,7 +494,7 @@ async def _run_import_pipeline(
                 inserted += 1
 
             # Local-name translation branch (D13/D14/D15/D17)
-            local_name = _cell_str(row, "fd_name_local_language")
+            local_name = _cell_str(row, "fd_name_local_language", keep_joiners=True)
             if not local_name:
                 continue  # English-only row — nothing to translate
 
