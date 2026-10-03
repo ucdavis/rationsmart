@@ -132,8 +132,10 @@ def _cell_str(row, column: str, keep_joiners: bool = False) -> str:
     as they read. `keep_joiners` is for the local-language name only.
 
     Values used to look up stored rows (code, country, type/category, name
-    collision) are tried cleaned first, then as _cell_raw: a row stored before
-    cleaning existed may still hold the characters, and must keep matching.
+    collision) are tried cleaned and, when different, as _cell_raw: a row
+    stored before cleaning existed may still hold the characters, and must
+    keep matching. If the two find different stored rows, the import row
+    fails as ambiguous rather than picking one.
     """
     return clean_text(_cell_raw(row, column), keep_joiners=keep_joiners)
 
@@ -352,8 +354,19 @@ async def _run_import_pipeline(
             country_name = _cell_str(row, "fd_country_name")
             country = await _country_for(country_name) if country_name else None
             raw_country_name = _cell_raw(row, "fd_country_name")
-            if country is None and raw_country_name and raw_country_name != country_name:
-                country = await _country_for(raw_country_name)
+            if raw_country_name and raw_country_name != country_name:
+                raw_country = await _country_for(raw_country_name)
+                if country is None:
+                    country = raw_country
+                elif raw_country is not None and raw_country.id != country.id:
+                    failed_rows.append({
+                        "row": row_num, "fd_code": fd_code or None,
+                        "reason": (
+                            f"fd_country_name '{country_name}' matches two countries "
+                            "(one with invisible characters in its name)"
+                        ),
+                    })
+                    continue
             if country is None:
                 failed_rows.append({
                     "row": row_num, "fd_code": fd_code or None,
@@ -383,10 +396,19 @@ async def _run_import_pipeline(
                 type_by_name, cat_by_type_and_name, type_cell, cat_cell,
             )
             raw_type, raw_cat = _cell_raw(row, "fd_type"), _cell_raw(row, "fd_category")
-            if not ok and (raw_type, raw_cat) != (type_cell, cat_cell):
+            if (raw_type, raw_cat) != (type_cell, cat_cell):
                 raw_result = resolve_taxonomy(type_by_name, cat_by_type_and_name, raw_type, raw_cat)
-                if raw_result[0]:  # keep the cleaned attempt's reason if both fail
+                if raw_result[0] and not ok:  # if both fail, keep the cleaned attempt's reason
                     ok, reason, canon_type, canon_cat, type_id, cat_id = raw_result
+                elif raw_result[0] and (raw_result[4], raw_result[5]) != (type_id, cat_id):
+                    failed_rows.append({
+                        "row": row_num, "fd_code": fd_code or None,
+                        "reason": (
+                            f"fd_type/fd_category '{type_cell}'/'{cat_cell}' matches two "
+                            "taxonomy entries (one with invisible characters in its name)"
+                        ),
+                    })
+                    continue
             if not ok:
                 failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
                 continue
@@ -413,17 +435,28 @@ async def _run_import_pipeline(
             if fd_code:
                 data["fd_code"] = fd_code
                 feed = await feed_repo.get_by_code(fd_code)
-                if feed is None and raw_fd_code != fd_code:
-                    # Stored before cleaning existed, with the characters still in
-                    # its code: match it as-is, then store the clean code. Safe for
-                    # uq_feeds_fd_code, as no feed holds the clean code (above).
-                    feed = await feed_repo.get_by_code(raw_fd_code)
-                    if feed is not None:
+                if raw_fd_code != fd_code:
+                    # A feed stored before cleaning existed may hold the characters
+                    # in its code. If only it matches, update it and store the clean
+                    # code (safe for uq_feeds_fd_code: no feed holds the clean code).
+                    # If both codes match, they are two feeds: fail, don't pick one.
+                    raw_feed = await feed_repo.get_by_code(raw_fd_code)
+                    if raw_feed is not None and feed is None:
                         logger.info(
                             "Feed import: row %s matched stored code %r; renamed to %r",
                             row_num, raw_fd_code, fd_code,
                         )
-                        feed.fd_code = fd_code  # update() whitelist omits fd_code
+                        raw_feed.fd_code = fd_code  # update() whitelist omits fd_code
+                        feed = raw_feed
+                    elif raw_feed is not None and raw_feed.id != feed.id:
+                        failed_rows.append({
+                            "row": row_num, "fd_code": fd_code,
+                            "reason": (
+                                f"fd_code '{fd_code}' matches two stored feeds (one with "
+                                "invisible characters in its code); resolve the duplicate first"
+                            ),
+                        })
+                        continue
                 if feed is not None:
                     await feed_repo.update(feed, data)
                     feed.fd_country_id = country.id  # update() whitelist omits the FK
