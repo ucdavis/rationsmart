@@ -18,6 +18,10 @@ services:
       - REDIS_URL=redis://redis:6379/0
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # scripts_2/db_reset.py writes its pre-reset pg_dump here: the repo root's
+    # backups/ (~/rationsmart/backups on the server, beside the deploy's dumps).
+    volumes:
+      - ../backups:/backups
     depends_on:
       redis:
         condition: service_healthy
