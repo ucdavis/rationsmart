@@ -13,9 +13,10 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from repositories.feed_repository import FeedRepository
+from repositories.feed_repository import FeedRepository, is_feed_name_conflict
 from repositories.user_repository import UserRepository
 
 logger = logging.getLogger(__name__)
@@ -217,7 +218,16 @@ async def create_feed(
     data["fd_code"] = fd_code
     data["id"] = stable_feed_uuid(fd_code)
 
-    feed = await repo.create(data, country_id=country_id)
+    # The name check above can race another writer; the unique name index
+    # (uq_feeds_fd_name_norm) is the backstop. A savepoint keeps the session
+    # usable so the caller can answer 400 instead of 500.
+    try:
+        async with db.begin_nested():
+            feed = await repo.create(data, country_id=country_id)
+    except IntegrityError as exc:
+        if not is_feed_name_conflict(exc):
+            raise
+        return False, f"Feed '{data['fd_name']}' already exists", None
     return True, "Feed created successfully", feed
 
 
@@ -256,7 +266,16 @@ async def update_feed(
         data["fd_type_id"] = type_id
         data["fd_category_id"] = cat_id
 
-    updated = await repo.update(feed, data)
+    # Read before the savepoint: rolling it back expires `feed`, and reading an
+    # expired attribute afterwards would need I/O outside the async context.
+    new_name = data.get("fd_name", feed.fd_name)
+    try:
+        async with db.begin_nested():  # see create_feed: the name index is the backstop
+            updated = await repo.update(feed, data)
+    except IntegrityError as exc:
+        if not is_feed_name_conflict(exc):
+            raise
+        return False, f"Another feed named '{new_name}' already exists", None
     return True, "Feed updated successfully", updated
 
 

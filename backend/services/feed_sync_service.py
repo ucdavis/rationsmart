@@ -3,8 +3,9 @@
 fetch_feed_library()  — HTTP GET on the configured endpoint (auth header per
                         config) returning the .xlsx bytes, held in memory.
 sync_feed_library()   — the full run: due-gate → fetch → parse → per-row
-                        upsert into `feeds` (keyed on fd_code, D5) + local-name
-                        translations via translation_service (D13/D15) → log.
+                        upsert into `feeds` (keyed on fd_code, D5; names unique
+                        and never renamed, U1-U4) + local-name translations via
+                        translation_service (D13/D15) → log.
 
 Transaction note: unlike request-path services (flush-only), this service
 COMMITS — it runs on a Celery worker session it owns, and the 'running' log
@@ -22,9 +23,14 @@ from datetime import date, datetime, timedelta, timezone  # noqa: F401 (date use
 from typing import Any, Dict, Optional, Tuple
 
 import httpx
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from repositories.feed_repository import FeedRepository
+from repositories.feed_repository import (
+    FeedRepository,
+    is_feed_name_conflict,
+    normalize_feed_name,
+)
 from repositories.feed_sync_repository import FeedSyncRepository
 from repositories.language_repository import LanguageRepository
 from repositories.translation_repository import TranslationRepository
@@ -318,6 +324,23 @@ async def _run_import_pipeline(
 
     country_cache: Dict[str, Optional[Any]] = {}
     country_lang_cache: Dict[str, set] = {}
+    # Feeds inserted by this run -> their row number, so a name clash with an
+    # earlier row of the same file can say so (unique-names plan §4.2).
+    inserted_rows: Dict[Any, int] = {}
+
+    async def _feed_with_name(name: str, raw_name: str):
+        """Stored feed already using this name (U1: library-wide), trying the
+        cleaned value, then the raw one when different (PR #54 pattern)."""
+        existing = await feed_repo.get_by_name(name)
+        if existing is None and raw_name and raw_name != name:
+            existing = await feed_repo.get_by_name(raw_name)
+        return existing
+
+    def _name_owner(existing) -> str:
+        earlier_row = inserted_rows.get(existing.id)
+        if earlier_row is not None:
+            return f"row {earlier_row} of this file"
+        return f"feed {existing.fd_code}"
 
     async def _country_for(name: str):
         key = name.lower()
@@ -343,200 +366,257 @@ async def _run_import_pipeline(
         row_num = int(idx) + 2  # Excel rows are 1-indexed; header is row 1
         fd_code = _cell_str(row, "fd_code")
         raw_fd_code = _cell_raw(row, "fd_code")
+        # Each row runs in a savepoint: a database error (e.g. the unique
+        # feed-name index) rolls back only this row, and the session stays
+        # usable for the next one. The row's counter changes are undone with it.
+        before = (inserted, updated, translations_inserted, translations_updated)
+        skipped_before = len(skipped_translations)
         try:
-            fd_name = _cell_str(row, "fd_name")
-            if not fd_name:
-                failed_rows.append(
-                    {"row": row_num, "fd_code": fd_code or None, "reason": "fd_name (English) is empty"}
-                )
-                continue
-
-            country_name = _cell_str(row, "fd_country_name")
-            country = await _country_for(country_name) if country_name else None
-            raw_country_name = _cell_raw(row, "fd_country_name")
-            if raw_country_name and raw_country_name != country_name:
-                raw_country = await _country_for(raw_country_name)
-                if country is None:
-                    country = raw_country
-                elif raw_country is not None and raw_country.id != country.id:
-                    failed_rows.append({
-                        "row": row_num, "fd_code": fd_code or None,
-                        "reason": (
-                            f"fd_country_name '{country_name}' matches two countries "
-                            "(one with invisible characters in its name)"
-                        ),
-                    })
+            async with db.begin_nested():
+                fd_name = _cell_str(row, "fd_name")
+                if not fd_name:
+                    failed_rows.append(
+                        {"row": row_num, "fd_code": fd_code or None, "reason": "fd_name (English) is empty"}
+                    )
                     continue
-            if country is None:
-                failed_rows.append({
-                    "row": row_num, "fd_code": fd_code or None,
-                    "reason": f"unknown country '{country_name}'" if country_name
-                    else "fd_country_name is missing",
-                })
-                continue
 
-            numeric_values: Dict[str, Optional[float]] = {}
-            bad_numeric = []
-            for col in numeric_columns:
-                ok, value = _coerce_numeric(row.get(col))
-                if ok:
-                    numeric_values[col] = value
-                else:
-                    bad_numeric.append(col)
-            if bad_numeric:
-                failed_rows.append({
-                    "row": row_num, "fd_code": fd_code or None,
-                    "reason": f"non-numeric value in: {', '.join(bad_numeric)}",
-                })
-                continue
-
-            # D18 — validate against the active taxonomy (canonical spellings + ids)
-            type_cell, cat_cell = _cell_str(row, "fd_type"), _cell_str(row, "fd_category")
-            ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
-                type_by_name, cat_by_type_and_name, type_cell, cat_cell,
-            )
-            raw_type, raw_cat = _cell_raw(row, "fd_type"), _cell_raw(row, "fd_category")
-            if (raw_type, raw_cat) != (type_cell, cat_cell):
-                raw_result = resolve_taxonomy(type_by_name, cat_by_type_and_name, raw_type, raw_cat)
-                if raw_result[0] and not ok:  # if both fail, keep the cleaned attempt's reason
-                    ok, reason, canon_type, canon_cat, type_id, cat_id = raw_result
-                elif raw_result[0] and (raw_result[4], raw_result[5]) != (type_id, cat_id):
-                    failed_rows.append({
-                        "row": row_num, "fd_code": fd_code or None,
-                        "reason": (
-                            f"fd_type/fd_category '{type_cell}'/'{cat_cell}' matches two "
-                            "taxonomy entries (one with invisible characters in its name)"
-                        ),
-                    })
-                    continue
-            if not ok:
-                failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
-                continue
-
-            data: Dict[str, Any] = {
-                "fd_name": fd_name,                       # English, as-is (I1)
-                "fd_type": canon_type,
-                "fd_category": canon_cat,
-                "fd_type_id": type_id,
-                "fd_category_id": cat_id,
-                "fd_country_name": country_name,
-                "fd_country_cd": _cell_str(row, "fd_country_cd") or None,
-                **numeric_values,
-            }
-
-            # ── fd_code resolution (bulk_upload_changes plan, D5) ────────────
-            # Present -> upsert-by-code, identical to a genuine CLIMDES row.
-            # Blank -> a RationSmart-native feed (a real CLIMDES row always
-            # populates fd_code, so this branch is effectively file-upload-
-            # only): guard against an admin who left it blank meaning "update
-            # by name" by checking for a name collision first, else
-            # auto-generate a unique RS-code the same way the single
-            # "Add Feed" screen already does.
-            if fd_code:
-                data["fd_code"] = fd_code
-                feed = await feed_repo.get_by_code(fd_code)
-                if raw_fd_code != fd_code:
-                    # A feed stored before cleaning existed may hold the characters
-                    # in its code. If only it matches, update it and store the clean
-                    # code (safe for uq_feeds_fd_code: no feed holds the clean code).
-                    # If both codes match, they are two feeds: fail, don't pick one.
-                    raw_feed = await feed_repo.get_by_code(raw_fd_code)
-                    if raw_feed is not None and feed is None:
-                        logger.info(
-                            "Feed import: row %s matched stored code %r; renamed to %r",
-                            row_num, raw_fd_code, fd_code,
-                        )
-                        raw_feed.fd_code = fd_code  # update() whitelist omits fd_code
-                        feed = raw_feed
-                    elif raw_feed is not None and raw_feed.id != feed.id:
+                country_name = _cell_str(row, "fd_country_name")
+                country = await _country_for(country_name) if country_name else None
+                raw_country_name = _cell_raw(row, "fd_country_name")
+                if raw_country_name and raw_country_name != country_name:
+                    raw_country = await _country_for(raw_country_name)
+                    if country is None:
+                        country = raw_country
+                    elif raw_country is not None and raw_country.id != country.id:
                         failed_rows.append({
-                            "row": row_num, "fd_code": fd_code,
+                            "row": row_num, "fd_code": fd_code or None,
                             "reason": (
-                                f"fd_code '{fd_code}' matches two stored feeds (one with "
-                                "invisible characters in its code); resolve the duplicate first"
+                                f"fd_country_name '{country_name}' matches two countries "
+                                "(one with invisible characters in its name)"
                             ),
                         })
                         continue
-                if feed is not None:
-                    await feed_repo.update(feed, data)
-                    feed.fd_country_id = country.id  # update() whitelist omits the FK
-                    updated += 1
-                else:
-                    data["id"] = stable_feed_uuid(fd_code)
-                    feed = await feed_repo.create(data, country_id=str(country.id))
-                    inserted += 1
-            elif raw_fd_code:
-                # The code cell held only invisible characters: not a real code,
-                # and not a deliberate blank (which mints an RS code below).
-                failed_rows.append({
-                    "row": row_num, "fd_code": None,
-                    "reason": "fd_code contains only invisible characters",
-                })
-                continue
-            else:
-                existing_by_name = await feed_repo.get_by_name(fd_name)
-                raw_fd_name = _cell_raw(row, "fd_name")
-                if existing_by_name is None and raw_fd_name != fd_name:
-                    existing_by_name = await feed_repo.get_by_name(raw_fd_name)
-                if existing_by_name is not None:
+                if country is None:
                     failed_rows.append({
-                        "row": row_num, "fd_code": None,
-                        "reason": (
-                            f"fd_code is missing and a feed named '{fd_name}' already "
-                            "exists — supply its fd_code to update it"
-                        ),
+                        "row": row_num, "fd_code": fd_code or None,
+                        "reason": f"unknown country '{country_name}'" if country_name
+                        else "fd_country_name is missing",
                     })
                     continue
-                fd_code = await make_unique_feed_code(feed_repo, fd_name)
-                data["fd_code"] = fd_code
-                data["id"] = stable_feed_uuid(fd_code)
-                feed = await feed_repo.create(data, country_id=str(country.id))
-                inserted += 1
 
-            # Local-name translation branch (D13/D14/D15/D17)
-            local_name = _cell_str(row, "fd_name_local_language", keep_joiners=True)
-            if not local_name:
-                continue  # English-only row — nothing to translate
+                numeric_values: Dict[str, Optional[float]] = {}
+                bad_numeric = []
+                for col in numeric_columns:
+                    ok, value = _coerce_numeric(row.get(col))
+                    if ok:
+                        numeric_values[col] = value
+                    else:
+                        bad_numeric.append(col)
+                if bad_numeric:
+                    failed_rows.append({
+                        "row": row_num, "fd_code": fd_code or None,
+                        "reason": f"non-numeric value in: {', '.join(bad_numeric)}",
+                    })
+                    continue
 
-            raw_code = _cell_str(row, "fd_language_cd")
-            code = raw_code.lower()
-            if not code or not _LANG_CODE_RE.match(code):
-                skipped_translations.append({
-                    "fd_code": fd_code, "language": raw_code or None,
-                    "reason": "blank/invalid fd_language_cd",
-                })
-                continue
-            if code == "en":
-                skipped_translations.append({
-                    "fd_code": fd_code, "language": "en",
-                    "reason": "language is 'en' — English is the baseline (I3)",
-                })
-                continue
-            if code not in active_languages:
-                skipped_translations.append({
-                    "fd_code": fd_code, "language": code,
-                    "reason": f"'{code}' is not a registered active language",
-                })
-                continue
-            if code not in await _assigned_codes(str(country.id)):
-                skipped_translations.append({
-                    "fd_code": fd_code, "language": code,
-                    "reason": f"'{code}' not assigned to {country.name}",
-                })
-                continue
+                # D18 — validate against the active taxonomy (canonical spellings + ids)
+                type_cell, cat_cell = _cell_str(row, "fd_type"), _cell_str(row, "fd_category")
+                ok, reason, canon_type, canon_cat, type_id, cat_id = resolve_taxonomy(
+                    type_by_name, cat_by_type_and_name, type_cell, cat_cell,
+                )
+                raw_type, raw_cat = _cell_raw(row, "fd_type"), _cell_raw(row, "fd_category")
+                if (raw_type, raw_cat) != (type_cell, cat_cell):
+                    raw_result = resolve_taxonomy(type_by_name, cat_by_type_and_name, raw_type, raw_cat)
+                    if raw_result[0] and not ok:  # if both fail, keep the cleaned attempt's reason
+                        ok, reason, canon_type, canon_cat, type_id, cat_id = raw_result
+                    elif raw_result[0] and (raw_result[4], raw_result[5]) != (type_id, cat_id):
+                        failed_rows.append({
+                            "row": row_num, "fd_code": fd_code or None,
+                            "reason": (
+                                f"fd_type/fd_category '{type_cell}'/'{cat_cell}' matches two "
+                                "taxonomy entries (one with invisible characters in its name)"
+                            ),
+                        })
+                        continue
+                if not ok:
+                    failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
+                    continue
 
-            translation_result = await translation_service.upsert_feed_translation(
-                db, str(feed.id), code, local_name
-            )
-            if translation_result.get("action") == "updated":
-                translations_updated += 1
-            else:
-                translations_inserted += 1
+                data: Dict[str, Any] = {
+                    "fd_name": fd_name,                       # English, as-is (I1)
+                    "fd_type": canon_type,
+                    "fd_category": canon_cat,
+                    "fd_type_id": type_id,
+                    "fd_category_id": cat_id,
+                    "fd_country_name": country_name,
+                    "fd_country_cd": _cell_str(row, "fd_country_cd") or None,
+                    **numeric_values,
+                }
+
+                # ── fd_code resolution (bulk_upload_changes plan, D5) ────────────
+                # Present -> upsert-by-code, identical to a genuine CLIMDES row.
+                # Blank -> a RationSmart-native feed (a real CLIMDES row always
+                # populates fd_code, so this branch is effectively file-upload-
+                # only): guard against an admin who left it blank meaning "update
+                # by name" by checking for a name collision first, else
+                # auto-generate a unique RS-code the same way the single
+                # "Add Feed" screen already does.
+                # Names (docs/dev_docs/climdes/unique_feed_names_IMPLEMENTATION_PLAN.md):
+                # an insert may not reuse a stored name (U1/U2), and an update may
+                # not change the name (U3; a case/spacing-only difference is not a
+                # change, U4). The unique index on the normalized name backs both.
+                raw_fd_name = _cell_raw(row, "fd_name")
+                if fd_code:
+                    data["fd_code"] = fd_code
+                    feed = await feed_repo.get_by_code(fd_code)
+                    matched_raw_code = False
+                    if raw_fd_code != fd_code:
+                        # A feed stored before cleaning existed may hold the characters
+                        # in its code. If only it matches, update it and store the clean
+                        # code (safe for uq_feeds_fd_code: no feed holds the clean code).
+                        # If both codes match, they are two feeds: fail, don't pick one.
+                        raw_feed = await feed_repo.get_by_code(raw_fd_code)
+                        if raw_feed is not None and feed is None:
+                            feed = raw_feed
+                            matched_raw_code = True
+                        elif raw_feed is not None and raw_feed.id != feed.id:
+                            failed_rows.append({
+                                "row": row_num, "fd_code": fd_code,
+                                "reason": (
+                                    f"fd_code '{fd_code}' matches two stored feeds (one with "
+                                    "invisible characters in its code); resolve the duplicate first"
+                                ),
+                            })
+                            continue
+                    if feed is not None:
+                        # U3: the import never renames a feed. Checked before any
+                        # change to `feed` (incl. the code rename below), so a
+                        # declined row leaves the stored feed untouched.
+                        stored_name = clean_text(feed.fd_name or "")
+                        if normalize_feed_name(stored_name) != normalize_feed_name(fd_name):
+                            failed_rows.append({
+                                "row": row_num, "fd_code": fd_code,
+                                "reason": (
+                                    f"fd_name differs from the stored name '{stored_name}' "
+                                    f"(incoming '{fd_name}'); renames are not accepted through "
+                                    "the sync. Rename the feed in RationSmart (Admin > Edit Feed) "
+                                    "and re-sync."
+                                ),
+                            })
+                            continue
+                        # U4: a case/spacing-only difference is not a rename; keep
+                        # the stored spelling (minus invisible characters).
+                        data["fd_name"] = stored_name
+                        if matched_raw_code:
+                            logger.info(
+                                "Feed import: row %s matched stored code %r; renamed to %r",
+                                row_num, raw_fd_code, fd_code,
+                            )
+                            feed.fd_code = fd_code  # update() whitelist omits fd_code
+                        await feed_repo.update(feed, data)
+                        feed.fd_country_id = country.id  # update() whitelist omits the FK
+                        updated += 1
+                    else:
+                        # U2: a new code may not reuse a name already in the library.
+                        existing_by_name = await _feed_with_name(fd_name, raw_fd_name)
+                        if existing_by_name is not None:
+                            failed_rows.append({
+                                "row": row_num, "fd_code": fd_code,
+                                "reason": (
+                                    f"fd_name '{fd_name}' is already used by "
+                                    f"{_name_owner(existing_by_name)}; not imported. Make the "
+                                    "name unique in CLIMDES (or the uploaded file)."
+                                ),
+                            })
+                            continue
+                        data["id"] = stable_feed_uuid(fd_code)
+                        feed = await feed_repo.create(data, country_id=str(country.id))
+                        inserted_rows[feed.id] = row_num
+                        inserted += 1
+                elif raw_fd_code:
+                    # The code cell held only invisible characters: not a real code,
+                    # and not a deliberate blank (which mints an RS code below).
+                    failed_rows.append({
+                        "row": row_num, "fd_code": None,
+                        "reason": "fd_code contains only invisible characters",
+                    })
+                    continue
+                else:
+                    existing_by_name = await _feed_with_name(fd_name, raw_fd_name)
+                    if existing_by_name is not None:
+                        failed_rows.append({
+                            "row": row_num, "fd_code": None,
+                            "reason": (
+                                f"fd_code is missing and fd_name '{fd_name}' is already used by "
+                                f"{_name_owner(existing_by_name)} — supply that feed's fd_code "
+                                "to update it"
+                            ),
+                        })
+                        continue
+                    fd_code = await make_unique_feed_code(feed_repo, fd_name)
+                    data["fd_code"] = fd_code
+                    data["id"] = stable_feed_uuid(fd_code)
+                    feed = await feed_repo.create(data, country_id=str(country.id))
+                    inserted_rows[feed.id] = row_num
+                    inserted += 1
+
+                # Local-name translation branch (D13/D14/D15/D17)
+                local_name = _cell_str(row, "fd_name_local_language", keep_joiners=True)
+                if not local_name:
+                    continue  # English-only row — nothing to translate
+
+                raw_code = _cell_str(row, "fd_language_cd")
+                code = raw_code.lower()
+                if not code or not _LANG_CODE_RE.match(code):
+                    skipped_translations.append({
+                        "fd_code": fd_code, "language": raw_code or None,
+                        "reason": "blank/invalid fd_language_cd",
+                    })
+                    continue
+                if code == "en":
+                    skipped_translations.append({
+                        "fd_code": fd_code, "language": "en",
+                        "reason": "language is 'en' — English is the baseline (I3)",
+                    })
+                    continue
+                if code not in active_languages:
+                    skipped_translations.append({
+                        "fd_code": fd_code, "language": code,
+                        "reason": f"'{code}' is not a registered active language",
+                    })
+                    continue
+                if code not in await _assigned_codes(str(country.id)):
+                    skipped_translations.append({
+                        "fd_code": fd_code, "language": code,
+                        "reason": f"'{code}' not assigned to {country.name}",
+                    })
+                    continue
+
+                translation_result = await translation_service.upsert_feed_translation(
+                    db, str(feed.id), code, local_name
+                )
+                if translation_result.get("action") == "updated":
+                    translations_updated += 1
+                else:
+                    translations_inserted += 1
 
         except Exception as exc:  # never let one bad row kill the run (UC-7)
-            failed_rows.append(
-                {"row": row_num, "fd_code": fd_code or None, "reason": str(exc)}
-            )
+            inserted, updated, translations_inserted, translations_updated = before
+            del skipped_translations[skipped_before:]
+            for feed_id in [k for k, v in inserted_rows.items() if v == row_num]:
+                del inserted_rows[feed_id]
+            if is_feed_name_conflict(exc):
+                reason = (
+                    f"fd_name '{_cell_str(row, 'fd_name')}' is already used by another feed "
+                    "(rejected by the database); not imported"
+                )
+            elif isinstance(exc, DBAPIError) and exc.orig is not None:
+                # The driver's first line, not str(exc): that carries the SQL
+                # statement and every bound value into the admin-visible log.
+                reason = str(exc.orig).splitlines()[0]
+            else:
+                reason = str(exc)
+            failed_rows.append({"row": row_num, "fd_code": fd_code or None, "reason": reason})
 
     # ── Finalize ─────────────────────────────────────────────────────────────
     counts = {

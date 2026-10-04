@@ -1,11 +1,13 @@
 import uuid
 from typing import Any, Dict, List, Optional, Tuple
 
-from sqlalchemy import and_, case, false, func, or_, select
+from sqlalchemy import Text, and_, case, false, func, literal, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
 
 from app.db.models import (
+    FEED_NAME_INDEX,
     CountryModel,
     CustomFeed,
     FeedCategory,
@@ -13,7 +15,28 @@ from app.db.models import (
     FeedType,
     FeedTranslation,
     VocabularyTranslation,
+    feed_name_key,
 )
+
+
+def normalize_feed_name(name: Optional[str]) -> str:
+    """Python-side feed-name key: trimmed, whitespace runs collapsed, lowercase.
+
+    For comparing two in-memory names (the sync's rename check, U3/U4). Close to
+    app.db.models.feed_name_key but not identical (Python's whitespace set is
+    wider than Postgres's), so database lookups never use it: they apply
+    feed_name_key to both sides and let Postgres decide what the index matches.
+    """
+    return " ".join((name or "").split()).lower()
+
+
+def is_feed_name_conflict(exc: Exception) -> bool:
+    """True if `exc` is the unique feed-name index rejecting a write.
+
+    Postgres names the violated constraint in double quotes in the message;
+    asyncpg's driver error is wrapped, so the message is the portable check.
+    """
+    return isinstance(exc, IntegrityError) and f'"{FEED_NAME_INDEX}"' in str(exc.orig)
 
 
 # Backslash, so it needs doubling in the Python literal and again for SQL's LIKE.
@@ -62,7 +85,7 @@ class FeedRepository:
 
     async def get_by_name(self, name: str) -> Optional[Feed]:
         result = await self.db.execute(
-            select(Feed).where(func.lower(Feed.fd_name) == func.lower(name))
+            select(Feed).where(feed_name_key(Feed.fd_name) == feed_name_key(literal(name, Text)))
         )
         return result.scalars().first()
 
