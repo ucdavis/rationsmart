@@ -10,8 +10,8 @@ import uuid
 
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, Date, DateTime,
-    ForeignKey, Integer, LargeBinary, Numeric, SmallInteger, String, Text,
-    UniqueConstraint,
+    ForeignKey, Index, Integer, LargeBinary, Numeric, SmallInteger, String, Text,
+    UniqueConstraint, literal_column,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.sql import func, text
@@ -99,6 +99,24 @@ class FeedCategory(Base):
     updated_at = Column(DateTime, server_default=func.current_timestamp())
 
 
+# Feed names are unique across the library on a normalized key: lowercase,
+# trimmed, runs of whitespace (no-break space included) collapsed to one space
+# (unique-names plan U1/U4, docs/dev_docs/climdes/unique_feed_names_IMPLEMENTATION_PLAN.md).
+# One definition serves the unique index below and FeedRepository.get_by_name;
+# migration e6f7a8b9c0d1 holds a literal copy (a test compares them). Postgres
+# uses the index only when the lookup's expression matches it exactly, so the
+# pattern is inlined as a constant, never a bind parameter.
+FEED_NAME_INDEX = "uq_feeds_fd_name_norm"
+_FEED_NAME_WHITESPACE = r"'[\s\u00a0]+'"  # Postgres regex; it decodes the \u escape
+
+
+def feed_name_key(expr):
+    """SQL comparison key for a feed-name expression (column or bound value)."""
+    return func.lower(func.trim(func.regexp_replace(
+        expr, literal_column(_FEED_NAME_WHITESPACE), literal_column("' '"), literal_column("'g'"),
+    )))
+
+
 class Feed(Base):
     __tablename__ = "feeds"
 
@@ -139,6 +157,9 @@ class Feed(Base):
     created_by = Column(UUID(as_uuid=True), ForeignKey("user_information.id", ondelete="SET NULL"), nullable=True)
     baseline_price = Column(Numeric(10, 2), nullable=True)
     baseline_currency = Column(String(3), nullable=True)
+
+
+Index(FEED_NAME_INDEX, feed_name_key(Feed.fd_name), unique=True)
 
 
 class CustomFeed(Base):
