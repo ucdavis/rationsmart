@@ -231,10 +231,11 @@ export function SyncSettingsTab({
 
   return (
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
-      {/* STATUS CARD */}
-      <div className="bg-white rounded-2xl overflow-hidden" style={cardStyle}>
+      {/* STATUS CARD — no overflow-hidden: it clipped the Sync day popup
+          (Sunday, the last option, was cut off). The header rounds itself. */}
+      <div className="bg-white rounded-2xl" style={cardStyle}>
         <div
-          className="px-4 py-3"
+          className="px-4 py-3 rounded-t-2xl"
           style={{
             backgroundColor: COLORS.brightGrayNew,
             borderBottom: `1px solid ${COLORS.americanDiamond}`,
@@ -321,6 +322,7 @@ export function SyncSettingsTab({
               onChange={handleDayChange}
               options={DAY_OPTIONS}
               disabled={isSavingDay}
+              popupMaxHeight={320}
               style={{
                 backgroundColor: COLORS.americanDiamond,
                 borderRadius: 14,

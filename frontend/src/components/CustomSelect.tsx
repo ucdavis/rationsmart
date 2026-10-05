@@ -44,6 +44,9 @@ interface CustomSelectProps {
    * plain English since most callers don't have a category with zero
    * results often enough to warrant a translated default. */
   emptyLabel?: string;
+  /** Popup height cap in px. Default 260 (~6.5 rows, so a long list shows
+   * it scrolls). Raise it for short fixed lists that should fit whole. */
+  popupMaxHeight?: number;
 }
 
 export default function CustomSelect({
@@ -58,6 +61,7 @@ export default function CustomSelect({
   transparentTrigger = false,
   loading = false,
   emptyLabel = "No options available",
+  popupMaxHeight = 260,
 }: CustomSelectProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -213,7 +217,7 @@ export default function CustomSelect({
             boxShadow: "0 6px 24px rgba(0,0,0,0.12)",
             overflow: "hidden",
             zIndex: 60,
-            maxHeight: 260,
+            maxHeight: popupMaxHeight,
             overflowY: "auto",
           }}
         >
