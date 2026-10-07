@@ -160,7 +160,7 @@ describe("bulkUploadFeeds", () => {
 
     expect(mockApi.post).toHaveBeenCalledTimes(1);
     const [url, body, config] = mockApi.post.mock.calls[0];
-    expect(url).toBe("/v1/admin/bulk-upload-feeds");
+    expect(url).toBe("/v1/admin/feed-sync/run-from-file");
     expect(body).toBeInstanceOf(FormData);
     expect((body as FormData).get("file")).toBe(file);
     // CRITICAL (CLAUDE.md §18.5): no headers key at all — letting the browser

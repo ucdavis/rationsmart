@@ -65,7 +65,13 @@ export const getAdminFeedbackStats = (_admin_user_id: string) =>
 export const exportAdminFeeds = (_admin_user_id: string) =>
   api.get("/v1/admin/export-feeds", { responseType: "blob" });
 
-// POST /v1/admin/bulk-upload-feeds (multipart, JWT-derived admin).
+// POST /v1/admin/feed-sync/run-from-file (multipart, JWT-derived admin).
+// Replaces the removed /v1/admin/bulk-upload-feeds: the workbook goes
+// through the same validate -> upsert -> translate pipeline as a CLIMDES
+// sync and is logged in the feed-sync run history (trigger_type
+// "file_upload"). Synchronous — the response is the finished run, same
+// shape as getFeedSyncLog(). 400 = bad file extension, 409 = a sync run
+// is already in progress.
 // CRITICAL: do NOT explicitly set the Content-Type header. When axios
 // hands a FormData body to the XHR layer, the browser auto-generates
 // `multipart/form-data; boundary=----WebKitFormBoundary...` with the
@@ -80,7 +86,7 @@ export const bulkUploadFeeds = (
 ) => {
   const form = new FormData();
   form.append("file", file);
-  return api.post("/v1/admin/bulk-upload-feeds", form, {
+  return api.post("/v1/admin/feed-sync/run-from-file", form, {
     onUploadProgress: (evt) => {
       if (onProgress && evt.total) {
         onProgress(Math.round((evt.loaded * 100) / evt.total));

@@ -134,6 +134,48 @@ describe("Bulk Upload — Upload Feed CSV", () => {
     expect(document.querySelector('[style*="width: 100%"]')).not.toBeNull();
   });
 
+  it("summarises a feed-sync run-from-file result (inserted / updated / skipped)", async () => {
+    bulkUploadFeeds.mockResolvedValueOnce({
+      data: {
+        success: true,
+        total_rows: 10,
+        inserted: 6,
+        updated: 3,
+        skipped: 1,
+        error_message: null,
+      },
+    });
+    render(<BulkUploadPage />);
+    selectCsvFile();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm upload" }));
+
+    await waitFor(() => expect(screen.getByText("Upload Successful")).toBeInTheDocument());
+    expect(
+      screen.getByText(/Processed 10 rows: 6 added, 3 updated, 1 skipped\./)
+    ).toBeInTheDocument();
+  });
+
+  it("shows Upload Failed with error_message when the run comes back success: false", async () => {
+    bulkUploadFeeds.mockResolvedValueOnce({
+      data: {
+        success: false,
+        total_rows: 0,
+        inserted: 0,
+        updated: 0,
+        skipped: 0,
+        error_message: "Missing column fd_code",
+      },
+    });
+    render(<BulkUploadPage />);
+    const file = selectCsvFile();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm upload" }));
+
+    await waitFor(() => expect(screen.getByText("Upload Failed")).toBeInTheDocument());
+    expect(screen.getByText("Missing column fd_code")).toBeInTheDocument();
+    // File stays selected so the admin can retry after fixing it
+    expect(screen.getByText(file.name)).toBeInTheDocument();
+  });
+
   it("shows an Upload Failed banner with the error message on rejection", async () => {
     bulkUploadFeeds.mockRejectedValueOnce(new Error("Malformed CSV headers"));
     render(<BulkUploadPage />);

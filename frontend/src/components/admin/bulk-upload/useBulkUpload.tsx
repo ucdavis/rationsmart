@@ -15,6 +15,7 @@ import {
   saveBlob,
 } from "@/lib/download";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
+import { asRecord, messageOf, numberField, stringField } from "@/lib/api-client/normalize";
 import { COLORS } from "@/lib/colors";
 import Spinner from "@/components/ui/Spinner";
 
@@ -33,6 +34,31 @@ function fillTemplate(template: string, vars: Record<string, string>): string {
     (acc, [key, value]) => acc.split(`\${${key}}`).join(value),
     template
   );
+}
+
+// Success text for a feed-sync run-from-file result (FeedSyncLogDetailResponse:
+// total_rows / inserted / updated / skipped). Falls back to a backend
+// `message`, then a generic line, if the counts aren't there.
+function uploadSummary(data: unknown, t: (s: string) => string): string {
+  const inserted = numberField(data, "inserted");
+  const updated = numberField(data, "updated");
+  const skipped = numberField(data, "skipped");
+  if (inserted == null || updated == null || skipped == null) {
+    return messageOf(data) ?? t("Feeds uploaded successfully.");
+  }
+  const total = numberField(data, "total_rows") ?? inserted + updated + skipped;
+  const summary = fillTemplate(
+    t("Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped."),
+    {
+      total: String(total),
+      inserted: String(inserted),
+      updated: String(updated),
+      skipped: String(skipped),
+    }
+  );
+  return skipped > 0
+    ? `${summary} ${t("See Feed Library Sync > Run History for the skipped rows.")}`
+    : summary;
 }
 
 // Upload / download status — mirrors Android adminVM.uploadFeedsResponse
@@ -94,8 +120,17 @@ export function useBulkUpload(user: User | null, showSnackbar: Snackbar, t: (s: 
     try {
       const res = await bulkUploadFeeds(user.id, selectedFile, (pct) => setUploadProgress(pct));
       setUploadProgress(100);
+      // The feed-sync run-from-file endpoint answers 200 with the finished
+      // run log even when the run itself failed (success: false +
+      // error_message), so the status comes from the body, not the HTTP code.
+      const run = asRecord(res.data);
+      if (run?.success === false) {
+        setUploadStatus("failed");
+        setUploadMessage(stringField(run, "error_message") ?? t("Could not upload feeds."));
+        return;
+      }
       setUploadStatus("successful");
-      setUploadMessage(res.data?.message ?? t("Feeds uploaded successfully."));
+      setUploadMessage(uploadSummary(res.data, t));
       setSelectedFile(null);
       if (fileRef.current) fileRef.current.value = "";
     } catch (err: unknown) {
