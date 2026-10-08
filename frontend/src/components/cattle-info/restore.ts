@@ -108,31 +108,12 @@ export function restoreForm(
     // i18n V2 — priority chain for the restored simulation's language:
     //   1. the backend response's simulation_language
     //   2. the current form's simulation_language (session continuity)
-    //   3. the restored country's first non-English supported language
-    //      (best-effort guess — better than the user's profile default,
-    //      which would be misleading for someone else's sim)
-    //   4. null (falls back to profile via langProvider)
-    simulation_language:
-      data.simulation_language ||
-      prev.simulation_language ||
-      primaryCountryLanguage(matchedCountry),
+    //   3. null (falls back to profile via langProvider)
+    // No guessing from the country's languages: the backend doesn't echo
+    // simulation_language, so that guess switched an English user to
+    // Vietnamese on every restore (QA row 2).
+    simulation_language: data.simulation_language || prev.simulation_language || null,
   };
-}
-
-function primaryCountryLanguage(country: Country | undefined): string | null {
-  return country?.supported_languages?.find((c) => c !== "en") ?? null;
-}
-
-/**
- * The language stored on cattleInfo for a restored run. Unlike the form it
- * skips "keep the current form's language": the store must describe the
- * restored simulation, not the previous one (Scenario 4).
- */
-export function restoredStoreLanguage(
-  data: SimulationDetails,
-  matchedCountry: Country | undefined
-): string | null {
-  return data.simulation_language || primaryCountryLanguage(matchedCountry);
 }
 
 function feedList(data: SimulationDetails): RestoredFeed[] {

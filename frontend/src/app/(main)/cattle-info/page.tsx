@@ -12,7 +12,6 @@ import {
   restoreFeedItems,
   restoreForm,
   restoredStateOf,
-  restoredStoreLanguage,
 } from "@/components/cattle-info/restore";
 // ─── State-driven field spec (GET /v1/animal/cattle-info-fields) ────────────
 // Which inputs render, what they prefill and what they accept all come from
@@ -314,7 +313,8 @@ export default function CattleInfoPage() {
       setCattleInfo({
         ...formToCattleInfo(
           restoredSpecs ? withHiddenDefaults(clamped.form, restoredSpecs) : clamped.form,
-          restoredStoreLanguage(details, matchedCountry)
+          // Same language the restored form shows (QA row 2).
+          clamped.form.simulation_language ?? null
         ),
         // Deliberately left blank on restore — see restoreForm.
         simulation_name: "",
@@ -399,7 +399,8 @@ export default function CattleInfoPage() {
         return resolved;
       })(),
     });
-    router.push("/feed-selection");
+    // A calf only needs its milk amount — skip feed selection (QA row 8).
+    router.push(form.animal_category === "Baby Calf/Heifer" ? "/calf-plan" : "/feed-selection");
   };
 
   // The reset itself finishes in microseconds; the user was reporting
@@ -559,7 +560,7 @@ export default function CattleInfoPage() {
             transition: "background-color 0.2s, color 0.2s",
           }}
         >
-          {t("Continue to Feed")}
+          {form.animal_category === "Baby Calf/Heifer" ? t("Continue") : t("Continue to Feed")}
         </button>
       </div>
 

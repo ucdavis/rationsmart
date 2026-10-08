@@ -1220,13 +1220,17 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     // Out of the calf range blocks Continue…
     fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "150" } });
     expect(screen.getByText("Value Range 30-100")).toBeInTheDocument();
-    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    // A calf skips feed selection, so the button no longer says "to Feed".
+    const continueBtn = screen.getByRole("button", { name: "Continue" });
     expect(continueBtn).toBeDisabled();
 
-    // …in range, it submits BW plus the spec defaults for everything hidden.
+    // …in range, it submits BW plus the spec defaults for everything hidden
+    // and goes straight to the milk plan (QA row 8).
     fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "55" } });
     expect(continueBtn).not.toBeDisabled();
     fireEvent.click(continueBtn);
+    expect(push).toHaveBeenCalledWith("/calf-plan");
+    expect(push).not.toHaveBeenCalledWith("/feed-selection");
     const ci = useStore.getState().cattleInfo!;
     expect(ci).toMatchObject({
       animal_category: "Baby Calf/Heifer",

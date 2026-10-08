@@ -15,6 +15,7 @@ import type {
 import { fillTemplate } from "@/lib/i18n-ui";
 import { formatMoney, roundMoney } from "@/lib/money";
 import { COLORS } from "@/lib/colors";
+import { calfMilkPlan } from "@/lib/calf-milk";
 import { IcCalfMilk } from "@/components/Icons";
 import { SCard, type ReportContext } from "./parts";
 
@@ -211,15 +212,19 @@ export function CalfMilkFeedingCard({
   if (!reportCtx.showCalfMilkFeedingSection || !cattleInfo) return null;
 
   const bw = Number(cattleInfo.body_weight ?? 0);
-  if (bw <= 0) return null;
-  // Backend-supplied plan (when present) wins; else compute the
-  // rule-of-thumb. cattleInfo.body_weight is in kg → 10% by mass
-  // ≈ 10% by volume for whole cow milk (density ~1.03 g/mL).
+  // Backend-supplied plan (when present) wins; else Maria's rule
+  // (src/lib/calf-milk.ts): 10% of body weight, each feeding rounded up.
   const serverPlan = reportData?.calf_milk_feeding_plan;
-  const dailyVolume = serverPlan?.daily_milk_volume_l ?? bw * 0.1;
-  const feedings = serverPlan?.feedings_per_day ?? 2;
+  const plan = calfMilkPlan(
+    bw,
+    serverPlan?.feedings_per_day ?? undefined,
+    serverPlan?.daily_milk_volume_l ?? undefined
+  );
+  if (!plan) return null;
+  const dailyVolume = plan.dailyTargetL;
+  const feedings = plan.feedingsPerDay;
   const weaningDays = serverPlan?.estimated_weaning_age_days ?? 56;
-  const perFeedingL = dailyVolume / Math.max(feedings, 1);
+  const perFeedingL = plan.perFeedingL;
   const notes = serverPlan?.notes ?? [
     t("Use clean, warm milk at 38–40°C; never cold from the fridge."),
     t("Replace whole milk with a quality milk replacer if cost is a concern."),

@@ -6,7 +6,6 @@ import {
   restoreFeedItems,
   restoreForm,
   restoredStateOf,
-  restoredStoreLanguage,
 } from "@/components/cattle-info/restore";
 import { EMPTY_FORM, type Country } from "@/components/cattle-info/form-model";
 
@@ -44,17 +43,14 @@ describe("restore — simulation history mapping", () => {
     });
   });
 
-  it("language: backend value, else the form's, else the country's first local language", () => {
+  it("language: backend value, else the form's, else null — never guessed from the country", () => {
     const prev = { ...EMPTY_FORM, simulation_language: "sw" };
     expect(
       restoreForm({ simulation_language: "hi" }, prev, india, "Heifer").simulation_language
     ).toBe("hi");
     expect(restoreForm({}, prev, india, "Heifer").simulation_language).toBe("sw");
-    expect(restoreForm({}, EMPTY_FORM, india, "Heifer").simulation_language).toBe("hi");
+    expect(restoreForm({}, EMPTY_FORM, india, "Heifer").simulation_language).toBeNull();
     expect(restoreForm({}, EMPTY_FORM, kenya, "Heifer").simulation_language).toBeNull();
-    // The store version never inherits the previous form's language.
-    expect(restoredStoreLanguage({}, india)).toBe("hi");
-    expect(restoredStoreLanguage({}, kenya)).toBeNull();
   });
 
   it("maps feed rows, preferring the wire names for inclusion bounds", () => {
