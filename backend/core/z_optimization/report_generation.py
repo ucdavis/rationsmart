@@ -11,9 +11,11 @@ This module contains all HTML report generation functionality:
 
 import base64
 import logging
+import math
 import numpy as np
 import pandas as pd
 import os
+import re
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -1153,6 +1155,67 @@ def build_report_context(
     }
 
 
+# The print/PDF view transposes the proportions, forage and concentrate tables:
+# one column per ingredient plus Total. WeasyPrint clips a table wider than the
+# page rather than shrinking it, so a long diet lost its right-hand columns
+# (Total first). The columns are split into blocks of at most
+# TRANSPOSED_MAX_COLUMNS, laid out on a fixed grid (label column + equal data
+# columns, same widths in every block) so a block can never outgrow the page,
+# whatever the font or feed names. Sized for the server's font (DejaVu Sans, the
+# only one in the image): at the print CSS's 11px a bold "Concentrate" is 76px
+# against a 78px data column, so headers don't break mid-word. Those two numbers
+# depend on the A4 page margins, the font, the 11px size, the 4px cell padding,
+# TRANSPOSED_LABEL_PCT and TRANSPOSED_MAX_COLUMNS: re-render a PDF if any changes.
+TRANSPOSED_MAX_COLUMNS = 6
+TRANSPOSED_LABEL_PCT = 16
+_TABLE_OPEN_TAG = re.compile(r"^<table\b([^>]*)>")
+
+
+def _transposed_column_blocks(n_cols, max_cols=None):
+    """Split n_cols columns into consecutive (start, stop) blocks of at most
+    max_cols, balanced so the last block isn't a lone column or two (8 -> 4 + 4)."""
+    if max_cols is None:
+        max_cols = TRANSPOSED_MAX_COLUMNS
+    if max_cols < 1:
+        raise ValueError(f"max_cols must be at least 1, got {max_cols}")
+    if n_cols <= 0:
+        return []
+    size = math.ceil(n_cols / math.ceil(n_cols / max_cols))
+    return [(start, min(start + size, n_cols)) for start in range(0, n_cols, size)]
+
+
+def _transposed_blocks_html(tdf, title_text=""):
+    """Render a transposed table as one or more column blocks. Every block uses
+    the first block's column widths, so a shorter last block lines up with the
+    ones above it; blocks after the first get a "(continued)" caption."""
+    blocks = _transposed_column_blocks(tdf.shape[1])
+    if not blocks:
+        return ""
+    data_pct = (100 - TRANSPOSED_LABEL_PCT) / (blocks[0][1] - blocks[0][0])
+    parts = []
+    for i, (start, stop) in enumerate(blocks):
+        width = TRANSPOSED_LABEL_PCT + (stop - start) * data_pct
+        colgroup = (
+            "<colgroup>"
+            + f"<col style='width: {100 * TRANSPOSED_LABEL_PCT / width:.2f}%'>"
+            + f"<col style='width: {100 * data_pct / width:.2f}%'>" * (stop - start)
+            + "</colgroup>"
+        )
+        table, found = _TABLE_OPEN_TAG.subn(
+            lambda m: f"<table{m.group(1)} style='width: {width:.2f}%'>{colgroup}",
+            tdf.iloc[:, start:stop].to_html(classes='transposed-table'),
+            count=1,
+        )
+        if not found:
+            # Without the width and colgroup the block may overflow the page
+            # again. Log rather than raise: the caller (diet_service) turns any
+            # exception into "no report HTML", which would lose the whole PDF.
+            logger.error("Transposed table block left unsized: to_html output does not start with <table>")
+        caption = f"<p class='table-continued'>{title_text} (continued)</p>" if i and title_text else ""
+        parts.append(f"<div class='table-block'>{caption}<div class='table-container'>{table}</div></div>")
+    return "".join(parts)
+
+
 def rsm_generate_report_v2(
     post_results,
     animal_requirements,
@@ -1545,6 +1608,10 @@ def rsm_generate_report_v2(
         td { padding: 4px 6px !important; }
         .wide-only { display: none !important; }
         .transposed-only { display: block !important; }
+        .transposed-table { table-layout: fixed; font-size: 11px !important; }
+        .transposed-table th, .transposed-table td { padding-left: 4px !important; padding-right: 4px !important; overflow-wrap: anywhere; }
+        .table-block { page-break-inside: avoid; break-inside: avoid; }
+        .table-continued { color: var(--primary-green); font-weight: 600; margin: 18px 0 0 0; }
         .table-container { overflow: visible !important; border: none !important; }
         .page-break { page-break-after: always !important; }
         .footnote { color: #004c99 !important; font-weight: 500 !important; margin-top: 10px !important; margin-bottom: 0 !important; }
@@ -1564,7 +1631,7 @@ def rsm_generate_report_v2(
                 html += f"<h2><img src='{title_icon}' class='section-icon'>{title_text}</h2>"
             else:
                 html += f"<h2><span class='emoji'>{title_icon}</span>{title_text}</h2>"
-        html += "<div class='table-container'>" + tdf.to_html(classes='transposed-table') + "</div>"
+        html += _transposed_blocks_html(tdf, title_text)
         if footer:
             html += footer
         html += "</div>"
