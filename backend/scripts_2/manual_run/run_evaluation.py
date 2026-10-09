@@ -41,6 +41,7 @@ from core.z_optimization.evaluation import evaluate_diet, report_diet_eval  # no
 from core.z_optimization.pdf_service import REPORT_ASSETS_DIR  # noqa: E402
 from core.z_optimization.report_generation import rsm_generate_report_v2  # noqa: E402
 from scripts_2.animal_inputs_loader import (  # noqa: E402
+    BABY_CALF_STATE,
     inject_asset_base,
     load_bulk_animals,
     load_single_animal,
@@ -58,6 +59,16 @@ FEED_SHEET = "Fd_selected"
 def _run_for_animal(record, feed_list, output_dir: Path, ts: str) -> None:
     animal_id = record["animal_id"]
     logger.info("\n=== Diet Evaluation — animal %s ===", animal_id)
+
+    # The API refuses this (services/diet_service.py::run_diet_evaluation): a baby
+    # calf is on a milk schedule, so there is no solid ration to evaluate, and the
+    # cow/heifer engine would score one against a defaulted milk target.
+    if record["animal_inputs"].get("An_StatePhys") == BABY_CALF_STATE:
+        logger.warning(
+            "Skipped: evaluation is not applicable to baby calves — no solid ration to "
+            "evaluate. Run Diet Recommendation for this animal to get its milk-feeding schedule."
+        )
+        return
 
     result = evaluate_diet(
         record["animal_inputs"],

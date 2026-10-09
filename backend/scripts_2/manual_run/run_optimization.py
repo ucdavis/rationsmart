@@ -36,10 +36,15 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from core.z_optimization.animal_requirements import (  # noqa: E402
+    rsm_calculate_an_requirements,
+    rsm_create_animal_inputs_dataframe,
+)
 from core.z_optimization.nsga3_runner import z_optimization_main  # noqa: E402
 from core.z_optimization.pdf_service import REPORT_ASSETS_DIR  # noqa: E402
 from core.z_optimization.report_generation import rsm_generate_report_v2  # noqa: E402
 from scripts_2.animal_inputs_loader import (  # noqa: E402
+    BABY_CALF_STATE,
     inject_asset_base,
     load_bulk_animals,
     load_single_animal,
@@ -54,11 +59,51 @@ DEFAULT_OUTPUT_DIR = ROOT / "scripts_2" / "manual_run" / "results"
 FEED_SHEET = "Fd_selected"
 
 
+def _write_report(html: str, output_dir: Path, animal_id, ts: str) -> None:
+    out = output_dir / f"diet_recommendation_{safe_animal_id(animal_id)}_{ts}.html"
+    out.write_text(inject_asset_base(html, REPORT_ASSETS_DIR), encoding="utf-8")
+    logger.info("report: %s", out)
+
+
+def _run_baby_calf(record, output_dir: Path, ts: str) -> None:
+    """Baby Calf/Heifer: the recommendation is the milk-feeding schedule, as in the app.
+
+    The optimizer has no calf constraint profile, so the API never calls it for
+    this state (services/diet_service.py::_run_baby_calf_recommendation): it
+    computes the requirements and renders the milk schedule. Mirror that here.
+    """
+    animal_id = record["animal_id"]
+    # The loader already zeroed the milk drivers; the API path also sends parity 0.
+    animal_requirements = rsm_calculate_an_requirements(dict(record["animal_inputs"], An_Parity=0))
+    logger.info(
+        "Baby Calf/Heifer: milk-feeding schedule, no solid-feed ration to optimize. "
+        "Milk: morning %.1f L, evening %.1f L, total %.1f L/day.",
+        float(animal_requirements.get("milk_morning") or 0),
+        float(animal_requirements.get("milk_evening") or 0),
+        float(animal_requirements.get("milk_total") or 0),
+    )
+    # Same minimal post_results the API renders for a calf: only the animal-inputs
+    # table; rsm_generate_report_v2 shows the milk schedule for this state.
+    post_results = {"animal_inputs": rsm_create_animal_inputs_dataframe(animal_requirements)}
+    html = rsm_generate_report_v2(
+        post_results=post_results,
+        animal_requirements=animal_requirements,
+        simulation_id="manual-run",
+        report_id=f"rec-{safe_animal_id(animal_id)}",
+        evaluation_mode=False,
+    )
+    _write_report(html, output_dir, animal_id, ts)
+
+
 def _run_for_animal(record, feed_list, output_dir: Path, ts: str) -> None:
     animal_id = record["animal_id"]
     animal_inputs = record["animal_inputs"]
     milk_price = record["milk_price_per_liter"]
     logger.info("\n=== Diet Recommendation — animal %s ===", animal_id)
+
+    if animal_inputs.get("An_StatePhys") == BABY_CALF_STATE:
+        _run_baby_calf(record, output_dir, ts)
+        return
 
     result = z_optimization_main(animal_inputs, feed_list)
 
@@ -89,9 +134,7 @@ def _run_for_animal(record, feed_list, output_dir: Path, ts: str) -> None:
         report_id=f"rec-{safe_animal_id(animal_id)}",
         evaluation_mode=False,
     )
-    out = output_dir / f"diet_recommendation_{safe_animal_id(animal_id)}_{ts}.html"
-    out.write_text(inject_asset_base(html, REPORT_ASSETS_DIR), encoding="utf-8")
-    logger.info("report: %s", out)
+    _write_report(html, output_dir, animal_id, ts)
 
 
 def main() -> None:

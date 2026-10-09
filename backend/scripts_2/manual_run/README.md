@@ -172,6 +172,21 @@ Everything the runners read comes from one workbook:
   feed. This is **required for Diet Evaluation** (it's the ration being
   scored) and **ignored for Diet Recommendation** (which decides its own mix).
 
+**The animal's physiological state (`An_StatePhys`)** changes what the run
+does, the same way it does in the app. Write it exactly as `Lactating Cow`,
+`Dry Cow`, `Heifer` or `Baby Calf/Heifer` (the app's dropdown shows these in the
+plural, e.g. "Baby calves/heifers", but this is the value it sends):
+
+- **Dry Cow, Heifer and Baby Calf/Heifer** — the milk inputs (milk production,
+  days in milk, milk protein %, milk fat %) must still be filled in, but they
+  are **ignored and treated as 0**, as in the app. The terminal says so when it
+  ignores a non-zero value.
+- **Baby Calf/Heifer, Diet Recommendation** — a calf is fed milk, so there is no
+  feed mix to work out: the report shows the **milk-feeding schedule**
+  (morning, evening and total litres per day), as in the app.
+- **Baby Calf/Heifer, Diet Evaluation** — **skipped**, with a message: there is no
+  feed ration to evaluate for a calf (the app refuses it too).
+
 Save the workbook and re-run — no restart or code change needed. If you edit
 this workbook, remember it's tracked in git like any other source file —
 commit your changes if you want them to stick around for the next person.
@@ -192,6 +207,9 @@ python -m scripts_2.manual_run.run_evaluation --file /path/to/your.xlsx --output
   `rationsmart/backend/` folder.
 - **`Input workbook not found`** — check `scripts_2/manual_run/` actually
   contains `RFT_FD_Lib_Y2test.xlsx`, or pass `--file` with a full path.
+- **"Skipped: evaluation is not applicable to baby calves"** — expected for a
+  `Baby Calf/Heifer` animal in Diet Evaluation; run Diet Recommendation for it
+  instead to get its milk-feeding schedule.
 - **A bulk run says one animal "failed" but keeps going** — by design: bulk
   mode logs the error for that one column and continues with the rest,
   rather than stopping the whole batch.
