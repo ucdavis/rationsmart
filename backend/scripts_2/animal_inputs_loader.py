@@ -193,7 +193,10 @@ def _build_record(
     neutralize_lactation_fields(animal_inputs, animal_id)
 
     ingredient_amounts_af: Optional[np.ndarray] = None
-    if n_feeds is not None:
+    # A calf has no feed ration: its ingredient rows may be blank, and the
+    # evaluation runner skips it anyway, so don't fail the load (in bulk mode,
+    # that would abort every other animal) over amounts nobody reads.
+    if n_feeds is not None and animal_inputs.get("An_StatePhys") != BABY_CALF_STATE:
         ingredient_amounts_af = _ingredient_amounts(df, value_col, n_feeds, sheet, animal_id)
 
     return {
