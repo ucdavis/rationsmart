@@ -1173,15 +1173,23 @@ _TABLE_OPEN_TAG = re.compile(r"^<table\b([^>]*)>")
 
 def _transposed_column_blocks(n_cols, max_cols=None):
     """Split n_cols columns into consecutive (start, stop) blocks of at most
-    max_cols, balanced so the last block isn't a lone column or two (8 -> 4 + 4)."""
+    max_cols, balanced so block sizes differ by at most one (8 -> 4 + 4,
+    31 -> 6 + 5 + 5 + 5 + 5 + 5) and the last block isn't a lone Total. The
+    first block is the widest, which _transposed_blocks_html relies on."""
     if max_cols is None:
         max_cols = TRANSPOSED_MAX_COLUMNS
     if max_cols < 1:
         raise ValueError(f"max_cols must be at least 1, got {max_cols}")
     if n_cols <= 0:
         return []
-    size = math.ceil(n_cols / math.ceil(n_cols / max_cols))
-    return [(start, min(start + size, n_cols)) for start in range(0, n_cols, size)]
+    n_blocks = math.ceil(n_cols / max_cols)
+    size, extra = divmod(n_cols, n_blocks)
+    blocks, start = [], 0
+    for i in range(n_blocks):
+        stop = start + size + (1 if i < extra else 0)
+        blocks.append((start, stop))
+        start = stop
+    return blocks
 
 
 def _transposed_blocks_html(tdf, title_text=""):
