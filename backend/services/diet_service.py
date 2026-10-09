@@ -314,6 +314,9 @@ def _neutralize_lactation_fields(animal_inputs: Dict[str, Any], physiological_st
     in whenever milk > 0 (not gated by state). Since the milk fields are optional for
     non-lactating states, we zero them here — server-side so it cannot be bypassed —
     rather than relying on the caller to send 0. Returns the same dict for convenience.
+
+    scripts_2/animal_inputs_loader.py (LACTATION_KEYS) applies the same rule on
+    engine key names for the manual runners; keep the two in sync.
     """
     if physiological_state != "Lactating Cow":
         animal_inputs["milk_production"] = 0   # Trg_MilkProd_L -> 0 (zeros An_NELlact, An_MPl, milk minerals)

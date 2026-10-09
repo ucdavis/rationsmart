@@ -18,11 +18,14 @@ located by column-A label, not by fixed row numbers.
 
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 # The engine-native keys rsm_calculate_an_requirements() consumes.
 REQUIRED_ANIMAL_KEYS = [
@@ -44,6 +47,17 @@ REQUIRED_ANIMAL_KEYS = [
 ]
 
 INGREDIENT_PREFIX = "ingredient"
+
+LACTATING_STATE = "Lactating Cow"
+BABY_CALF_STATE = "Baby Calf/Heifer"
+
+# Milk drivers the API zeroes for every non-lactating state before the engine
+# runs (services/diet_service.py::_neutralize_lactation_fields, on its wire
+# names milk_production / days_in_milk / tp_milk / fat_milk). The engine folds
+# lactation energy, protein and minerals in whenever milk > 0, whatever the
+# state, so without this a Dry Cow or Heifer here would get a lactating cow's
+# requirements and disagree with the app. Keep the two lists in sync.
+LACTATION_KEYS = ("Trg_MilkProd_L", "An_LactDay", "Trg_MilkTPp", "Trg_MilkFatp")
 
 
 def safe_animal_id(animal_id: Any) -> str:
@@ -96,6 +110,26 @@ def _is_number(value: Any) -> bool:
     if isinstance(value, (bool, np.bool_)):
         return False
     return isinstance(value, (int, float, np.integer, np.floating))
+
+
+def neutralize_lactation_fields(animal_inputs: Dict[str, Any], animal_id: str) -> List[str]:
+    """Zero the milk drivers in place for a non-lactating state, as the API does.
+
+    The workbook asks for every input whatever the state, so a tester's milk
+    figures for a Dry Cow, Heifer or calf are expected and ignored. Returns the
+    keys that held a non-zero value, which are logged so the tester can see it.
+    """
+    if animal_inputs.get("An_StatePhys") == LACTATING_STATE:
+        return []
+    ignored = [k for k in LACTATION_KEYS if _is_number(animal_inputs.get(k)) and animal_inputs[k] != 0]
+    for key in LACTATION_KEYS:
+        animal_inputs[key] = 0
+    if ignored:
+        logger.info(
+            "Animal %r is %s: ignoring its milk inputs %s (set to 0, as the app does).",
+            animal_id, animal_inputs.get("An_StatePhys"), ", ".join(ignored),
+        )
+    return ignored
 
 
 def _ingredient_amounts(
@@ -156,9 +190,13 @@ def _build_record(
         )
 
     animal_inputs = {k: raw[k] for k in REQUIRED_ANIMAL_KEYS}
+    neutralize_lactation_fields(animal_inputs, animal_id)
 
     ingredient_amounts_af: Optional[np.ndarray] = None
-    if n_feeds is not None:
+    # A calf has no feed ration: its ingredient rows may be blank, and the
+    # evaluation runner skips it anyway, so don't fail the load (in bulk mode,
+    # that would abort every other animal) over amounts nobody reads.
+    if n_feeds is not None and animal_inputs.get("An_StatePhys") != BABY_CALF_STATE:
         ingredient_amounts_af = _ingredient_amounts(df, value_col, n_feeds, sheet, animal_id)
 
     return {
