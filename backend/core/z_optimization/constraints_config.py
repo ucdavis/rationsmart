@@ -9,7 +9,10 @@ the optimization system, including:
 """
 
 import copy
-from typing import Dict, Iterable
+import logging
+from typing import Dict, Iterable, List, Tuple
+
+logger = logging.getLogger(__name__)
 
 # ===================================================================
 # Helper functions
@@ -44,7 +47,7 @@ def _build_profile(base_profile: Dict, override_sections: Dict) -> Dict:
 # Base thresholds (Lactating Cow) and per-state overrides
 BASE_THRESHOLDS = {
     # Constraints to be exposed in the UI
-    "nel_balance_max":        4.0,    # 2026-07-27: was 2.0
+    "nel_balance_max":        2.0,    # 2026-10-10: nutritionists' table (was 4.0 since 2026-07-27, 2.0 before)
     "mp_balance_max":         1.0,    # 2026-07-27: was 0.5
 
     "ndf_for_min":            0.20,
@@ -95,12 +98,12 @@ HEIFER_THRESHOLDS_OVERRIDE = {
     # As above: every key stated explicitly so none can drift with BASE_THRESHOLDS.
     # Constraints to be exposed in the UI
     "nel_balance_max":        2.0,    # 2026-07-27: restored (was inheriting BASE)
-    "mp_balance_max":         0.7,    # 2026-07-27: restored (was inheriting BASE)
-    "ndf_for_min":            0.19,
-    "ndf_max":                0.90,
+    "mp_balance_max":         0.5,    # 2026-10-10: nutritionists' table (was 0.7)
+    "ndf_for_min":            0.20,   # 2026-10-10: nutritionists' table (was 0.19)
+    "ndf_max":                0.70,   # 2026-10-10: nutritionists' table (was 0.90)
     "starch_max":             0.20,
     "ee_max":                 0.05,
-    "ash_max":                0.13,
+    "ash_max":                0.10,   # 2026-10-10: nutritionists' table (was 0.13)
     "conc_max":               0.50,
 
     # Backend ONLY constraints!!!!!!!!!!!!!
@@ -134,35 +137,70 @@ HEIFER_THRESHOLDS_OVERRIDE = {
 # them raw -- they are the only two limits in that block without a `* dmi_supply`,
 # because the values they bound are `nel_diet - An_NEL` and
 # `mp_ger - total_mp_requirement_kg`, which are already absolute. Dividing them by 100
-# would turn the 4.0 Mcal/day default into 0.04, which an ordinary 3 Mcal surplus
-# overshoots by 75x; both become hard constraints at hard_switch_gen, so every diet
+# would turn the 2.0 Mcal/day default into 0.02, which an ordinary 3 Mcal surplus
+# overshoots 150-fold; both become hard constraints at hard_switch_gen, so every diet
 # would come back infeasible. Any percent conversion must be driven off `unit` and
 # never applied field-by-field.
 #
-# direction decides which way "tighten" runs, and the two are NOT symmetric:
-#   "max" (a ceiling): tightening LOWERS it.  Range = [floor, that state's default].
-#                      `floor` exists only to keep a zero or negative limit out of the
-#                      optimizer -- a zero target makes compute_adequacy raise, which
-#                      _evaluate swallows into a 1e6 penalty for every individual.
-#   "min" (a floor):   tightening RAISES it.  Range = [that state's default, the default
-#                      of `ceiling_key`]. Applying the "max" rule to a floor inverts it:
-#                      it would permit ndf_for_min 20% -> 5%, weakening a hard forage-fibre
-#                      constraint fourfold, while rejecting a genuine tightening.
-#
-# In both cases the bound that does the real work is DERIVED from the animal's own
-# default, never stored here -- storing it would duplicate a number that already exists
-# in the profiles and let the two drift.
+# direction: "max" for a ceiling (seven of the eight), "min" for a floor (ndf_for_min).
+# It describes the limit for clients; the accepted range is UI_THRESHOLD_RANGES below,
+# which may sit on either side of the default (users may loosen as well as tighten).
 UI_THRESHOLD_SPEC: Dict[str, Dict] = {
-    "ash_max":         {"unit": "pct_dm",   "direction": "max", "floor":  1.0},
-    "ee_max":          {"unit": "pct_dm",   "direction": "max", "floor":  1.0},
-    "ndf_max":         {"unit": "pct_dm",   "direction": "max", "floor": 20.0},
-    "starch_max":      {"unit": "pct_dm",   "direction": "max", "floor":  1.0},
-    "conc_max":        {"unit": "pct_dm",   "direction": "max", "floor": 10.0},
-    "nel_balance_max": {"unit": "mcal_day", "direction": "max", "floor":  0.5},
-    "mp_balance_max":  {"unit": "kg_day",   "direction": "max", "floor":  0.1},
-    # The only floor in the set. Forage NDF is a subset of total NDF, so ndf_max is its
-    # natural ceiling -- physically derived rather than chosen.
-    "ndf_for_min":     {"unit": "pct_dm",   "direction": "min", "ceiling_key": "ndf_max"},
+    "ash_max":         {"unit": "pct_dm",   "direction": "max"},
+    "ee_max":          {"unit": "pct_dm",   "direction": "max"},
+    "ndf_max":         {"unit": "pct_dm",   "direction": "max"},
+    "starch_max":      {"unit": "pct_dm",   "direction": "max"},
+    "conc_max":        {"unit": "pct_dm",   "direction": "max"},
+    "nel_balance_max": {"unit": "mcal_day", "direction": "max"},
+    "mp_balance_max":  {"unit": "kg_day",   "direction": "max"},
+    # Forage NDF is a subset of total NDF; app.schemas.animal keeps ndf_for_min <= ndf_max.
+    "ndf_for_min":     {"unit": "pct_dm",   "direction": "min"},
+}
+
+# The (min, max) a caller may send, per physiological state and key, in WIRE units
+# (percentages as entered; Mcal/day and kg/day absolute). Transcribed from the
+# nutritionists' approved Constraints table (also the "Constraints" tab of
+# scripts_2/manual_run/RFT_FD_Lib_Y2test.xlsx), which the PWA's Custom Diet Limits
+# dialog shows. It replaces the earlier tighten-only rule ([floor, own default]), which
+# rejected values the nutritionists allow -- e.g. a Heifer's nel_balance_max of 3
+# (docs/defects/custom-diet-limits-nutritionist-ranges.md). Every lower bound is > 0:
+# a zero limit makes compute_adequacy raise, which _evaluate swallows into a 1e6
+# penalty for every individual. Each state's default must lie inside its range; that is
+# checked at import time below.
+UI_THRESHOLD_RANGES: Dict[str, Dict[str, Tuple[float, float]]] = {
+    "Lactating Cow": {
+        "ndf_for_min":     (15.0, 30.0),
+        "ndf_max":         (30.0, 100.0),
+        "starch_max":      (15.0, 30.0),
+        "conc_max":        (20.0, 80.0),
+        "ee_max":          (3.0, 7.0),
+        "ash_max":         (8.0, 15.0),
+        "nel_balance_max": (1.0, 4.0),
+        "mp_balance_max":  (0.1, 1.0),
+    },
+    "Dry Cow": {
+        # Interim: the table says 25 - 50 with a default of 20, which users could not type.
+        # The minimum is held at the default until the nutritionists answer (Q1 in
+        # docs/defects/custom-diet-limits-questions-for-nutritionists.md).
+        "ndf_for_min":     (20.0, 50.0),
+        "ndf_max":         (40.0, 100.0),
+        "starch_max":      (8.0, 25.0),
+        "conc_max":        (10.0, 80.0),
+        "ee_max":          (2.0, 7.0),
+        "ash_max":         (8.0, 15.0),
+        "nel_balance_max": (0.5, 3.0),
+        "mp_balance_max":  (0.1, 1.0),
+    },
+    "Heifer": {
+        "ndf_for_min":     (14.0, 40.0),
+        "ndf_max":         (30.0, 100.0),
+        "starch_max":      (8.0, 25.0),
+        "conc_max":        (10.0, 80.0),
+        "ee_max":          (2.0, 7.0),
+        "ash_max":         (8.0, 15.0),
+        "nel_balance_max": (0.1, 4.0),
+        "mp_balance_max":  (0.1, 1.0),
+    },
 }
 
 # Human-readable unit suffix for validation messages.
@@ -186,25 +224,30 @@ def to_engine_units(key: str, wire_value: float) -> float:
 
 
 # Purpose: The (min, max) a caller may send for `key` and `state`, in wire units.
-# Notes: TIGHTEN-ONLY. For a ceiling the animal's default is the maximum; for a floor it
-#        is the minimum. Raises KeyError for a state with no profile (Baby Calf/Heifer).
-def ui_threshold_bounds(key: str, state: str, *, profiles: Dict[str, Dict] = None):
-    spec = UI_THRESHOLD_SPEC[key]
-    thresholds = get_constraint_profile(state, profiles=profiles or CONSTRAINT_PROFILES)["thresholds"]
-    own_default = to_wire_units(key, thresholds[key])
-    if spec["direction"] == "min":
-        return own_default, to_wire_units(spec["ceiling_key"], thresholds[spec["ceiling_key"]])
-    return spec["floor"], own_default
+# Notes: Read from UI_THRESHOLD_RANGES; the range may lie on either side of the default.
+#        Raises KeyError for a state with no range (Baby Calf/Heifer), with the same
+#        descriptive message get_constraint_profile gives.
+def ui_threshold_bounds(key: str, state: str) -> Tuple[float, float]:
+    if state not in UI_THRESHOLD_RANGES:
+        get_constraint_profile(state)          # raises the descriptive KeyError
+    return UI_THRESHOLD_RANGES[state][key]
+
+
+# The widest (min, max) across every state, per key, in wire units. The table is static,
+# so this is computed once rather than per request.
+_UI_THRESHOLD_WIDEST = {
+    key: (min(r[key][0] for r in UI_THRESHOLD_RANGES.values()),
+          max(r[key][1] for r in UI_THRESHOLD_RANGES.values()))
+    for key in UI_THRESHOLD_SPEC
+}
 
 
 # Purpose: The widest (min, max) across every physiological state, in wire units.
 # Notes: A state-independent sanity bound for validators that cannot see the animal
 #        (BaseThresholds is a nested model with no access to cattle_info). The real,
 #        per-state bound is applied on the request model once the state is known.
-def ui_threshold_widest_bounds(key: str, *, profiles: Dict[str, Dict] = None):
-    profiles = profiles or CONSTRAINT_PROFILES
-    per_state = [ui_threshold_bounds(key, state, profiles=profiles) for state in profiles]
-    return min(lo for lo, _ in per_state), max(hi for _, hi in per_state)
+def ui_threshold_widest_bounds(key: str) -> Tuple[float, float]:
+    return _UI_THRESHOLD_WIDEST[key]
 
 
 # Purpose: How strictly the optimizer treats a UI-exposed constraint.
@@ -562,3 +605,40 @@ def get_constraint_profile(state: str, *, profiles: Dict[str, Dict] = None) -> D
             f"(Baby Calf/Heifer is handled by the milk-feeding short-circuit, not the optimizer.)"
         )
     return profiles[state]
+
+
+# Purpose: List every way UI_THRESHOLD_RANGES and the profiles disagree.
+# Notes: Each profiled state needs a range for every UI key and no others; a range must be
+#        0 < min <= max (and <= 100 for a percentage); the state's default must lie inside
+#        it, otherwise the value used when a field is left empty is one a user may not
+#        type; and the default forage-NDF minimum must not exceed the default total-NDF
+#        maximum, which app.schemas.animal relies on when only one of the two is sent.
+def ui_threshold_range_problems() -> List[str]:
+    problems = []
+    for state in sorted(set(UI_THRESHOLD_RANGES) - set(CONSTRAINT_PROFILES)):
+        problems.append(f"{state}: range table has a state with no profile")
+    for state, profile in CONSTRAINT_PROFILES.items():
+        ranges = UI_THRESHOLD_RANGES.get(state, {})
+        for key in sorted(set(ranges) - set(UI_THRESHOLD_SPEC)):
+            problems.append(f"{state}/{key}: range for an unknown key")
+        defaults = profile["thresholds"]
+        for key, spec in UI_THRESHOLD_SPEC.items():
+            if key not in ranges:
+                problems.append(f"{state}/{key}: no range")
+                continue
+            low, high = ranges[key]
+            default = to_wire_units(key, defaults[key])
+            if not 0 < low <= high or (spec["unit"] == "pct_dm" and high > 100):
+                problems.append(f"{state}/{key}: invalid range {low:g}-{high:g}")
+            elif not low <= default <= high:
+                problems.append(f"{state}/{key}: default {default:g} outside {low:g}-{high:g}")
+        if defaults["ndf_for_min"] > defaults["ndf_max"]:
+            problems.append(f"{state}: default ndf_for_min exceeds default ndf_max")
+    return problems
+
+
+# Logged rather than raised: this module is imported by every process (API, Celery,
+# optimizer pool, manual runner), so a table typo must not take them all down. The unit
+# tests assert the list is empty, which is where a bad edit should be caught.
+for _problem in ui_threshold_range_problems():
+    logger.error("UI_THRESHOLD_RANGES inconsistent: %s", _problem)

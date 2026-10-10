@@ -276,10 +276,10 @@ async def diet_thresholds(
 
     - `unit` — `pct_dm` values are percentages of dietary DM; `mcal_day` and `kg_day` are
       **absolute daily amounts** and must be sent unscaled.
-    - Limits may only be **tightened**, never loosened. For a ceiling (`direction: "max"`)
-      that means `max` equals the animal's own default; for a floor (`direction: "min"`,
-      i.e. `ndf_for_min`) it is `min` that equals the default, because tightening a floor
-      raises it.
+    - Any value from `min` to `max` is accepted. The range comes from the nutritionists'
+      table and may lie on either side of `default`, so a limit may be loosened as well as
+      tightened. `direction` says whether the limit is a ceiling (`max`) or a floor
+      (`min`, i.e. `ndf_for_min`).
     - `enforcement` — tightening a `hard` limit can return no diet at all (`INFEASIBLE`).
 
     Returns `422` for an unknown state, or for `Baby Calf/Heifer`, which is answered with a
@@ -398,10 +398,10 @@ async def diet_recommendation(
     two are **absolute daily amounts**: `nel_balance_max` in **Mcal/day** and
     `mp_balance_max` in **kg/day**. Do not scale the last two.
 
-    Limits may only be **tightened**, never loosened past the animal's own default, and the
-    accepted range therefore differs per physiological state. Call
-    `GET /v1/animal/diet-thresholds` for the exact range, default and unit rather than
-    hardcoding them. Out-of-range values return `422`; so does any value sent for a
+    Each limit accepts any value within its range for the animal's physiological state,
+    looser or stricter than the default. Call `GET /v1/animal/diet-thresholds` for the
+    exact range, default and unit rather than hardcoding them. `ndf_for_min` may not exceed
+    `ndf_max` (the state's default stands in for whichever is omitted). Out-of-range values return `422`; so does any value sent for a
     `Baby Calf/Heifer`, which is answered with a milk-feeding schedule and has no ration to
     constrain.
 
