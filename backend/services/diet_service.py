@@ -512,8 +512,8 @@ async def run_diet_recommendation(
         # Persist what the CALLER sent, not what the engine ran. reports.custom_constraints
         # is served by GET /simulations/{report_id}, which exists to reload a simulation
         # back into the form -- so it has to be in the same units the form posts. Storing
-        # engine units made that payload un-resubmittable: 0.06 comes back for a 6% ash
-        # entry and then fails validation as below the 1% floor.
+        # engine units made that payload un-resubmittable: 0.10 comes back for a 10% ash
+        # entry and then fails validation as below the 8% minimum.
         if custom_thresholds:
             persisted_thresholds = {
                 k: to_wire_units(k, v) for k, v in custom_thresholds.items()

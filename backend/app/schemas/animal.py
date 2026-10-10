@@ -329,21 +329,9 @@ class BaseThresholds(BaseModel):
         """Convert each supplied limit from its wire unit to the engine's."""
         return _normalise_threshold(info.field_name, v)
 
-    @model_validator(mode='after')
-    def forage_fibre_floor_below_total_fibre(self):
-        """A forage-NDF minimum above the total-NDF maximum is unsatisfiable.
-
-        Reachable: ndf_for_min may be raised as far as ndf_max's *default* while ndf_max
-        itself may be lowered to its floor, so a caller can ask for more forage fibre than
-        total fibre. The result would be a diet that cannot exist.
-        """
-        if self.ndf_for_min is not None and self.ndf_max is not None:
-            if self.ndf_for_min > self.ndf_max:
-                raise ValueError(
-                    "ndf_for_min (minimum forage fibre) cannot exceed ndf_max "
-                    "(maximum total fibre)"
-                )
-        return self
+    # ndf_for_min <= ndf_max is checked by DietRecommendationRequest.enforce_state_bounds,
+    # not here: when only one of the two is sent, the state's default stands in for the
+    # other, and only the request model knows the state.
 
 
 # ── Diet threshold discovery (GET /v1/animal/diet-thresholds) ────────────────
@@ -353,10 +341,8 @@ class DietThresholdSpec(BaseModel):
 
     key: str = Field(..., description="Field name to send inside `base_thresholds`")
     default: float = Field(..., description="Engine default for this animal, in `unit`")
-    min: float = Field(
-        ..., description="Smallest accepted value; equals `default` when `direction` is 'min'")
-    max: float = Field(
-        ..., description="Largest accepted value; equals `default` when `direction` is 'max'")
+    min: float = Field(..., description="Smallest accepted value, in `unit`")
+    max: float = Field(..., description="Largest accepted value, in `unit`")
     unit: str = Field(..., description="pct_dm (% of diet DM) | mcal_day | kg_day")
     direction: str = Field(..., description="'max' for a ceiling, 'min' for a floor")
     enforcement: str = Field(
@@ -429,15 +415,14 @@ class DietRecommendationRequest(BaseModel):
 
     @model_validator(mode='after')
     def enforce_state_bounds(self):
-        """Hold each supplied limit to the TIGHTEN-ONLY bound for this animal's state.
+        """Hold each supplied limit to this animal's state range.
 
         `BaseThresholds` can only range-check against the widest range in use across every
         state, because a nested model cannot see `cattle_info`. Here the state is known, so
-        each limit is held to that animal's own default -- a Heifer's ash ceiling is 13%
-        where a Lactating Cow's is 15%.
-
-        Direction matters: for a ceiling the default is the maximum, but for a floor such
-        as `ndf_for_min` it is the *minimum*, because tightening a floor raises it.
+        each limit is held to that state's range from the nutritionists' table
+        (`UI_THRESHOLD_RANGES`) -- a Heifer's nel_balance_max may be 0.1-4 Mcal/day, a Dry
+        Cow's 0.5-3. The range may lie on either side of the default: a limit may be
+        loosened as well as tightened.
         """
         supplied = {} if self.base_thresholds is None else {
             k: v for k, v in self.base_thresholds.model_dump().items() if v is not None
@@ -460,35 +445,24 @@ class DietRecommendationRequest(BaseModel):
         for key, engine_value in supplied.items():
             wire_value = to_wire_units(key, engine_value)
             low, high = ui_threshold_bounds(key, state)
-            if low <= wire_value <= high:
-                continue
-            # Each end means something different, so name it accurately: only the
-            # tighten-only end is this key's own default. Branch on direction explicitly --
-            # `ceiling_key` exists only on floors, and a condensed form here was misread in
-            # review as reaching it for a ceiling.
-            spec = UI_THRESHOLD_SPEC[key]
-            unit = UI_THRESHOLD_UNIT_LABELS[spec["unit"]]
-            tighten_only = "custom limits may only tighten a limit, not loosen it"
+            if not low <= wire_value <= high:
+                unit = UI_THRESHOLD_UNIT_LABELS[UI_THRESHOLD_SPEC[key]["unit"]]
+                raise ValueError(
+                    f"{key} must be between {low:g} and {high:g} {unit} for a {state}"
+                )
 
-            if spec["direction"] == "min":
-                # A floor. Its own default is the minimum; the most it can be is the
-                # ceiling_key default, which it cannot physically exceed.
-                if wire_value < low:
-                    why = f"its default for a {state}; {tighten_only}"
-                    bound, word = low, "at least"
-                else:
-                    why = f"the {spec['ceiling_key']} default for a {state}, which it cannot exceed"
-                    bound, word = high, "at most"
-            else:
-                # A ceiling. Its own default is the maximum; the floor is a fixed safety
-                # guard, identical for every state and already applied by BaseThresholds.
-                if wire_value > high:
-                    why = f"its default for a {state}; {tighten_only}"
-                    bound, word = high, "at most"
-                else:
-                    why = "the lowest value the optimizer can work with"
-                    bound, word = low, "at least"
-            raise ValueError(f"{key} must be {word} {bound:g} {unit} - {why}")
+        # Forage NDF is part of total NDF, so its minimum cannot exceed the total's maximum --
+        # otherwise the diet asked for cannot exist. The state's default stands in for
+        # whichever one is omitted, because that default is what the optimizer will use.
+        defaults = CONSTRAINT_PROFILES[state]["thresholds"]
+        ndf_for_min = supplied.get("ndf_for_min", defaults["ndf_for_min"])
+        ndf_max = supplied.get("ndf_max", defaults["ndf_max"])
+        if ndf_for_min > ndf_max:
+            raise ValueError(
+                f"ndf_for_min (minimum forage fibre, {to_wire_units('ndf_for_min', ndf_for_min):g}%) "
+                f"cannot exceed ndf_max (maximum total fibre, {to_wire_units('ndf_max', ndf_max):g}%) "
+                f"for a {state}"
+            )
         return self
 
     @model_validator(mode='before')
