@@ -47,7 +47,7 @@ def _build_profile(base_profile: Dict, override_sections: Dict) -> Dict:
 # Base thresholds (Lactating Cow) and per-state overrides
 BASE_THRESHOLDS = {
     # Constraints to be exposed in the UI
-    "nel_balance_max":        4.0,    # 2026-07-27: was 2.0
+    "nel_balance_max":        2.0,    # 2026-10-10: nutritionists' table (was 4.0 since 2026-07-27, 2.0 before)
     "mp_balance_max":         1.0,    # 2026-07-27: was 0.5
 
     "ndf_for_min":            0.20,
@@ -98,12 +98,12 @@ HEIFER_THRESHOLDS_OVERRIDE = {
     # As above: every key stated explicitly so none can drift with BASE_THRESHOLDS.
     # Constraints to be exposed in the UI
     "nel_balance_max":        2.0,    # 2026-07-27: restored (was inheriting BASE)
-    "mp_balance_max":         0.7,    # 2026-07-27: restored (was inheriting BASE)
-    "ndf_for_min":            0.19,
-    "ndf_max":                0.90,
+    "mp_balance_max":         0.5,    # 2026-10-10: nutritionists' table (was 0.7)
+    "ndf_for_min":            0.20,   # 2026-10-10: nutritionists' table (was 0.19)
+    "ndf_max":                0.70,   # 2026-10-10: nutritionists' table (was 0.90)
     "starch_max":             0.20,
     "ee_max":                 0.05,
-    "ash_max":                0.13,
+    "ash_max":                0.10,   # 2026-10-10: nutritionists' table (was 0.13)
     "conc_max":               0.50,
 
     # Backend ONLY constraints!!!!!!!!!!!!!
@@ -137,8 +137,8 @@ HEIFER_THRESHOLDS_OVERRIDE = {
 # them raw -- they are the only two limits in that block without a `* dmi_supply`,
 # because the values they bound are `nel_diet - An_NEL` and
 # `mp_ger - total_mp_requirement_kg`, which are already absolute. Dividing them by 100
-# would turn the 4.0 Mcal/day default into 0.04, which an ordinary 3 Mcal surplus
-# overshoots by 75x; both become hard constraints at hard_switch_gen, so every diet
+# would turn the 2.0 Mcal/day default into 0.02, which an ordinary 3 Mcal surplus
+# overshoots 150-fold; both become hard constraints at hard_switch_gen, so every diet
 # would come back infeasible. Any percent conversion must be driven off `unit` and
 # never applied field-by-field.
 #

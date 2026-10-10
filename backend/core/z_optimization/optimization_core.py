@@ -728,7 +728,7 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
     # that state. With the gate lifted, a hardcoded lookup would have the pre-check judge a
     # Dry Cow against lactating limits: overriding only ash_max, five of six thresholds
     # would diverge from the solver (ndf_max .60 vs .90, starch .26 vs .18, ee .07 vs .05,
-    # conc .80 vs .50, nel_balance 4.0 vs 1.5).
+    # conc .80 vs .50, nel_balance 2.0 vs 1.5).
     effective_thr = None
     if custom_thresholds:
         state_phys = animal_requirements.get("An_StatePhys")

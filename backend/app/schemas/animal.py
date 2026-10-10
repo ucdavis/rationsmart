@@ -311,7 +311,7 @@ class BaseThresholds(BaseModel):
     conc_max: Optional[float] = Field(
         None, description="Max total concentrates, % of diet DM (e.g. 80 for 80%)")
     nel_balance_max: Optional[float] = Field(
-        None, description="Max energy surplus over requirement, **Mcal/day** (e.g. 4.0) - not a percentage")
+        None, description="Max energy surplus over requirement, **Mcal/day** (e.g. 2.0) - not a percentage")
     mp_balance_max: Optional[float] = Field(
         None, description="Max metabolizable-protein surplus over requirement, **kg/day** (e.g. 1.0) - not a percentage")
 
