@@ -9,8 +9,8 @@
 // Leaving a field blank still omits the key (§19.1), i.e. the ENGINE's own
 // default applies — keep the engine in step with the "default" column.
 //
-// Known sheet oddity, copied as given: Dry Cow ndf_for_min default (20)
-// sits below its min (25).
+// Dry Cow ndf_for_min: the sheet says min 25 / default 20 (default below
+// min); aligned with the backend to min 20 on 2026-10-12 at the user's request.
 import type { DietLimits } from "@/lib/api-client/models";
 import type { DietThresholdSpec } from "@/lib/api-client/diet";
 
@@ -29,7 +29,7 @@ export const DIET_LIMIT_RANGES: Record<string, StateRanges> = {
     mp_balance_max: { min: 0.1, max: 1, default: 1 },
   },
   "Dry Cow": {
-    ndf_for_min: { min: 25, max: 50, default: 20 },
+    ndf_for_min: { min: 20, max: 50, default: 20 },
     ndf_max: { min: 40, max: 100, default: 90 },
     starch_max: { min: 8, max: 25, default: 18 },
     conc_max: { min: 10, max: 80, default: 50 },
