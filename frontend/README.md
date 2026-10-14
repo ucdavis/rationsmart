@@ -1,0 +1,163 @@
+# RationSmart PWA
+
+A Progressive Web App for **RationSmart**, the cattle-feed ration formulation
+tool. It is the web version of the RationSmart Android app: farmers and
+extension workers enter cattle details, pick available feeds, and get a
+least-cost, nutritionally balanced diet with a downloadable report.
+
+Built with **Next.js 14 (App Router)**, React 18, TypeScript, Tailwind CSS and
+Zustand. Installable on phones and desktops, with an offline fallback page.
+
+---
+
+## Features
+
+**For users**
+- Registration and login with email + 6-digit PIN, email verification,
+  forgot-PIN / reset-PIN flows
+- Cattle information (lactating, dry, calf), feed selection and custom feeds
+- Diet recommendation and evaluation, calf feeding plan
+- Saved diet reports with PDF download
+- Profile, feedback, help and terms screens
+- Multi-language UI (English plus Amharic, Bengali, Hindi, Indonesian,
+  Nepali, Afaan Oromo, and more from the backend)
+
+**For admins**
+- User management
+- Feed library: browse/edit feeds, bulk upload from spreadsheet, scheduled
+  feed-library sync
+- Countries, languages and translations
+- Feedback and report review, Excel exports
+
+---
+
+## Getting started
+
+### Prerequisites
+- Node.js **20** (see `.nvmrc`)
+- Access to a RationSmart backend (FastAPI, v1 API)
+
+### Setup
+
+```bash
+git clone https://github.com/Aiyappa-DigitalGreen/RationSmart-PWA.git
+cd RationSmart-PWA
+npm install
+cp .env.example .env.development   # then fill in the backend values
+npm run dev                        # http://localhost:3000
+```
+
+### Environment variables
+
+Set these in `.env.development` locally, or on the hosting project for
+deploys. See `.env.example` for the full annotated list.
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `BACKEND_HOST` | yes | Backend host name or IP |
+| `BACKEND_PORT` | yes | Backend port (usually `8000`) |
+| `BACKEND_PROTOCOL` | yes | `http` or `https` |
+| `BACKEND_ENV` | no | Label shown in the `x-backend-env` response header (`dev` / `prod` / `custom`) |
+| `DISABLE_PWA` | no | `true` skips the service worker (useful on test deployments) |
+| `NEXT_PUBLIC_DEBUG_API` | no | `true` logs API traffic in the browser console. **Never enable for real users.** |
+| `FEED_TEMPLATE_URL` | no | Where the bulk-upload Excel template is fetched from |
+
+If the backend variables are missing, the proxy returns a 500 rather than
+guessing a backend.
+
+---
+
+## Scripts
+
+| Command | What it does |
+|---|---|
+| `npm run dev` | Start the dev server |
+| `npm run build` | Production build |
+| `npm start` | Serve the production build |
+| `npm test` | Run the test suite (Vitest) |
+| `npm run test:coverage` | Tests with coverage thresholds |
+| `npm run lint` | ESLint (zero warnings allowed) |
+| `npm run lint:promises` | Checks for unhandled promises |
+| `npm run typecheck` | TypeScript check for app and tests |
+| `npm run format:check` | Prettier check |
+
+---
+
+## How it works
+
+```
+Browser ──► Next.js app ──► /api/proxy/* ──► RationSmart backend (/v1/*)
+                 │
+                 └── /api/session   (httpOnly session cookie)
+```
+
+- **API proxy** (`src/app/api/proxy/[...path]`): every backend call goes
+  through this server-side route. The browser never talks to the backend
+  directly, so the backend address stays out of the client. Only an
+  allow-list of headers is forwarded each way, and request/response sizes are
+  capped.
+- **Session**: the login token (JWT) is kept in an httpOnly cookie, not in
+  `localStorage`, and the proxy attaches it as `Authorization: Bearer …`.
+- **PWA**: service worker and offline page via `@ducanh2912/next-pwa`.
+  Disabled in development and when `DISABLE_PWA=true`.
+
+### Project structure
+
+```
+src/
+  app/
+    (main)/          signed-in screens: cattle-info, feed-selection, report,
+                     reports, calf-plan, profile, feedback, admin/*
+    login/ register/ verify-email/ forgot-pin/ set-new-pin/ welcome/ help/ terms/
+    api/             proxy, session, feed-template routes
+  components/        UI components grouped by screen (admin, report, feed-row, ui …)
+  lib/
+    api-client/      typed backend calls (auth, diet, feeds, reports, admin)
+    data/ui-labels/  bundled UI translations
+    store.ts         Zustand app state
+public/              icons, fonts, manifest, offline page
+```
+
+---
+
+## Quality checks (CI)
+
+`.github/workflows/quality-gate.yml` runs on every push and pull request to
+`main` and `testing`: locked install (`npm ci`), lint, promise lint,
+typecheck, format check and tests with coverage. `npm audit` also runs, but
+for information only. **CI never deploys.**
+
+Run the same checks locally before pushing:
+
+```bash
+npm run lint && npm run lint:promises && npm run typecheck && npm run format:check && npm run test:coverage
+```
+
+---
+
+## Deployment
+
+The app is hosted on **Vercel**. Deploys are **manual on purpose**; pushing
+to GitHub does not release anything.
+
+```bash
+vercel deploy --prod --yes          # build and deploy
+vercel alias set <deploy-url> <your-domain>
+```
+
+Set the environment variables above on the Vercel project first.
+
+---
+
+## Branches
+
+`main` holds the current code (v1 API client). In the RationSmart repo,
+`testing` is the working branch and is kept in sync with `main`.
+
+---
+
+## Access
+
+This repository is **private**. If the link shows a 404, ask the repository
+owner to add your GitHub account as a collaborator, then accept the
+invitation from your email or https://github.com/notifications.
