@@ -8,7 +8,7 @@ from pathlib import Path
 
 import logging
 
-from .utilities import format_value_with_unit, safe_float, ensure_json_safe
+from .utilities import format_value_with_unit, safe_float, ensure_json_safe, milk_margin_message
 from .diet_tables import (
     forage_concentrate_ratio_from_proportions,
     compute_forage_concentrate_ratio,
@@ -71,20 +71,18 @@ def _build_margin_summary(milk_price, cost_per_liter, daily_cost, milk_qty, curr
 
     milk_price = float(milk_price)
     margin_per_liter = round(milk_price - cost_per_liter, 2)
-    abs_margin = abs(margin_per_liter)
     # Space multi-char currency codes ("VND 3.00") but not symbols ("$3.00"),
     # matching the HTML report banner's currency_display.
     cur = currency + " " if len(currency) > 1 else currency
 
+    # `comparison` keys are a stable API contract; only the human text changed.
     if margin_per_liter > 0:
         comparison = "profitable"
-        message = f"Cost per liter is {cur}{abs_margin:.2f} below your milk rate — profitable"
     elif margin_per_liter < 0:
         comparison = "loss"
-        message = f"Cost per liter is {cur}{abs_margin:.2f} above your milk rate — loss"
     else:
         comparison = "break_even"
-        message = "Cost per liter equals your milk rate — break-even"
+    message = milk_margin_message(margin_per_liter, cur)
 
     return {
         "milk_price": round(milk_price, 2),
