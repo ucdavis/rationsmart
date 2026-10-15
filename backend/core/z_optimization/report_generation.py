@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_INTAKE_LABEL
 
 # Import from utilities
-from .utilities import rename_variable, replace_na_and_negatives, milk_margin_message
+from .utilities import milk_margin_message
 from .diet_tables import forage_concentrate_ratio_from_proportions
 
 # Purpose: Compute weighted mineral absorption coefficients from forage/concentrate totals.
