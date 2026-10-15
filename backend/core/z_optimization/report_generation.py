@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_INTAKE_LABEL
 
 # Import from utilities
-from .utilities import rename_variable, replace_na_and_negatives
+from .utilities import rename_variable, replace_na_and_negatives, milk_margin_message
 from .diet_tables import forage_concentrate_ratio_from_proportions
 
 # Purpose: Compute weighted mineral absorption coefficients from forage/concentrate totals.
@@ -1435,14 +1435,8 @@ def rsm_generate_report_v2(
         margin_sign = "+" if margin_per_liter >= 0 else "−"
         abs_margin = abs(margin_per_liter)
         abs_iofc = abs(daily_iofc)
-        # Explicit profitability verdict (mirrors solution_summary.margin_summary.message).
-        margin_rounded = round(margin_per_liter, 2)
-        if margin_rounded > 0:
-            verdict_text = f"Cost per liter is {currency_display}{abs_margin:.2f} below your milk rate — profitable"
-        elif margin_rounded < 0:
-            verdict_text = f"Cost per liter is {currency_display}{abs_margin:.2f} above your milk rate — loss"
-        else:
-            verdict_text = "Cost per liter equals your milk rate — break-even"
+        # Revenue-vs-feed-cost verdict (same text as solution_summary.margin_summary.message).
+        verdict_text = milk_margin_message(round(margin_per_liter, 2), currency_display)
         margin_banner_html = (
             f"<div class='margin-section'>"
             f"<h3 class='margin-section-title'>Milk Price Economics</h3>"

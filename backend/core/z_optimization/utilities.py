@@ -368,6 +368,21 @@ def format_value_with_unit(value, unit):
     return f"{value:.2f} {unit}"
 
 
+def milk_margin_message(margin_per_liter, currency_display):
+    """Verdict line comparing milk revenue with feed cost, per liter.
+
+    Shared by the HTML report banner and the API's margin_summary.message so the
+    two read the same. Only feed cost is counted (not labour, water, vet care…),
+    so the wording avoids "profit"/"loss". `margin_per_liter` must already be
+    rounded to 2 dp; `currency_display` is the spaced/unspaced currency prefix.
+    """
+    if margin_per_liter > 0:
+        return f"Milk revenue exceeds feed costs by {currency_display}{abs(margin_per_liter):.2f} per liter"
+    if margin_per_liter < 0:
+        return f"Feed costs exceed milk revenue by {currency_display}{abs(margin_per_liter):.2f} per liter"
+    return "Milk revenue equals feed costs per liter"
+
+
 def safe_float(value):
     """Coerce *value* to float; returns 0.0 on failure."""
     if value is None or value == '':
