@@ -211,7 +211,7 @@ export function BalanceRow({
         style={{ color: isPositive ? COLORS.goGreen : COLORS.carminePink }}
       >
         {isPositive ? "+" : ""}
-        {Number(value).toFixed(3)} {unit}
+        {Number(value).toFixed(2)} {unit}
       </span>
     </div>
   );

@@ -167,7 +167,7 @@ export default function EvaluationSections({
                 className="w-16 text-right text-sm font-bold"
                 style={{ color: COLORS.darkAquamarineGreen }}
               >
-                {fmt(row.quantity_as_fed_kg_per_day, 1)}
+                {fmt(row.quantity_as_fed_kg_per_day)}
               </span>
               <span
                 className="w-16 text-right text-sm font-bold"
@@ -186,12 +186,12 @@ export default function EvaluationSections({
           <div className="flex gap-3 mb-3">
             <MetricTile
               label={t("Actual Intake")}
-              value={`${fmt(evalReport.intake_evaluation.actual_intake_kg_per_day, 1)} ${t("kg")}`}
+              value={`${fmt(evalReport.intake_evaluation.actual_intake_kg_per_day)} ${t("kg")}`}
               unit={t("per day")}
             />
             <MetricTile
               label={t("Target Intake")}
-              value={`${fmt(evalReport.intake_evaluation.target_intake_kg_per_day, 1)} ${t("kg")}`}
+              value={`${fmt(evalReport.intake_evaluation.target_intake_kg_per_day)} ${t("kg")}`}
               unit={t("per day")}
             />
           </div>
@@ -225,26 +225,26 @@ export default function EvaluationSections({
             {mpa?.actual_milk_supported_kg_per_day != null && (
               <MetricTile
                 label={t("Actual Milk")}
-                value={`${fmt(mpa.actual_milk_supported_kg_per_day, 1)}`}
+                value={`${fmt(mpa.actual_milk_supported_kg_per_day)}`}
                 unit={t("kg/day")}
               />
             )}
             <MetricTile
               label={t("Target")}
-              value={`${fmt(evalReport.milk_production_analysis.target_production_kg_per_day, 1)}`}
+              value={`${fmt(evalReport.milk_production_analysis.target_production_kg_per_day)}`}
               unit={t("kg/day")}
             />
             {mpa?.milk_supported_by_energy_kg_per_day != null && (
               <MetricTile
                 label={t("Energy-Supported")}
-                value={`${fmt(mpa.milk_supported_by_energy_kg_per_day, 1)}`}
+                value={`${fmt(mpa.milk_supported_by_energy_kg_per_day)}`}
                 unit={t("kg/day")}
               />
             )}
             {mpa?.milk_supported_by_protein_kg_per_day != null && (
               <MetricTile
                 label={t("Protein-Supported")}
-                value={`${fmt(mpa.milk_supported_by_protein_kg_per_day, 1)}`}
+                value={`${fmt(mpa.milk_supported_by_protein_kg_per_day)}`}
                 unit={t("kg/day")}
               />
             )}
@@ -336,7 +336,7 @@ export default function EvaluationSections({
           <div className="grid grid-cols-2 gap-3">
             <MetricTile
               label={t("CH₄ Production")}
-              value={`${fmt(evalReport.methane_analysis.methane_production_g_per_day, 1)}`}
+              value={`${fmt(evalReport.methane_analysis.methane_production_g_per_day)}`}
               unit={t("g/day")}
             />
             {/* Per kg of ENERGY-CORRECTED MILK — meaningless without
@@ -352,13 +352,15 @@ export default function EvaluationSections({
             )}
             <MetricTile
               label={t("CH₄ Yield")}
-              value={`${fmt(evalReport.methane_analysis.methane_yield_g_per_kg_dmi, 3)}`}
+              value={`${fmt(evalReport.methane_analysis.methane_yield_g_per_kg_dmi)}`}
               unit={t("g/kg DMI")}
             />
+            {/* Ym, matching the PDF's "Methane Conversion Rate (Ym)" row.
+                The MJ/day emission figure isn't on the PDF, so it's not shown. */}
             <MetricTile
-              label={t("CH₄ Emission")}
-              value={`${fmt(evalReport.methane_analysis.methane_emission_mj_per_day, 1)}`}
-              unit={t("MJ/day")}
+              label={t("Methane Conversion Rate (Ym)")}
+              value={`${fmt(evalReport.methane_analysis["Ym (%)"])}`}
+              unit="%"
             />
           </div>
           {evalReport.methane_analysis.classification && (

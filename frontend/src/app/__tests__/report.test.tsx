@@ -816,3 +816,32 @@ describe("Report — milk evaluation metrics only for a Lactating Cow (PR #51)",
     expect(screen.getByText("Protein-Supported")).toBeInTheDocument();
   });
 });
+
+describe("Report — evaluation Environment Impact matches the PDF (QA 2026-10-12)", () => {
+  it("shows Ym (%) instead of the MJ/day emission, and every value with 2 decimals", () => {
+    const base = makeEvalResponse();
+    useStore.setState({
+      reportData: makeEvalResponse({
+        methane_analysis: {
+          ...base.methane_analysis,
+          methane_production_g_per_day: 276.34,
+          methane_yield_g_per_kg_dmi: 26.84,
+          methane_intensity_g_per_kg_ecm: 13.07,
+          "Ym (%)": 8.76,
+          methane_emission_mj_per_day: 15.3,
+        },
+        nutrient_balance: { ...base.nutrient_balance, energy_balance_mcal: 7.01 },
+      }),
+    });
+    render(<ReportPage />);
+
+    expect(screen.getByText("Methane Conversion Rate (Ym)")).toBeInTheDocument();
+    expect(screen.getByText("8.76")).toBeInTheDocument();
+    expect(screen.queryByText("CH₄ Emission")).toBeNull();
+    expect(screen.queryByText("15.30")).toBeNull();
+    expect(screen.getByText("276.34")).toBeInTheDocument();
+    expect(screen.getByText("26.84")).toBeInTheDocument();
+    expect(screen.getByText("13.07")).toBeInTheDocument();
+    expect(screen.getByText(/\+7\.01\s+Mcal/)).toBeInTheDocument();
+  });
+});
