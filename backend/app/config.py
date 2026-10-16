@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     # ── Redis ─────────────────────────────────────────────────────────────────
     redis_url: str = "redis://localhost:6379/0"
 
+    # ── Feed library wipe (DELETE /v1/admin/feeds) ────────────────────────────
+    # Off unless a server's .env turns it on (Test only); the backup goes to
+    # backup_dir first (~/rationsmart/backups, mounted at /backups in the api).
+    allow_feed_library_wipe: bool = False
+    backup_dir: str = "/backups"
+
     # ── CORS ──────────────────────────────────────────────────────────────────
     allowed_origins: str = "http://localhost:3000,http://localhost:8080"
 

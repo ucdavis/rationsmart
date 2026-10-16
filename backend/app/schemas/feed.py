@@ -211,3 +211,17 @@ class AdminExportResponse(BaseModel):
     file_url: str
     file_name: str
     total_records: int
+
+
+class FeedLibraryWipeRequest(BaseModel):
+    """Body of DELETE /v1/admin/feeds; not needed for a dry run."""
+    confirm: str = Field(..., max_length=64, description='Must be exactly "DELETE ALL FEEDS".')
+
+
+class FeedLibraryWipeResponse(BaseModel):
+    success: bool
+    dry_run: bool
+    message: str
+    feeds: int = Field(..., description="Feeds deleted (dry run: that would be deleted).")
+    feed_translations: int = Field(..., description="Feed translations deleted (dry run: that would be deleted).")
+    backup_file: Optional[str] = Field(None, description="pg_dump taken before the wipe; null on a dry run.")
