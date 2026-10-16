@@ -292,7 +292,13 @@ export function fieldErrorFor(
   if (key === "distance" && form.grazing && min != null && n < min) {
     return t("Distance walked must be at least 1 km");
   }
-  if (min != null && max != null) return t(`Value Range ${min}-${max}`);
+  // Translate the template, then fill it: ranges come from the backend per
+  // state, so a pre-filled "Value Range 350-720" key would miss for most.
+  if (min != null && max != null) {
+    return t("Value Range ${min}-${max}")
+      .replace("${min}", String(min))
+      .replace("${max}", String(max));
+  }
   return min != null ? `≥ ${min}` : `≤ ${max}`;
 }
 

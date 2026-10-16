@@ -10,6 +10,7 @@ import { FEED_LIBRARY_CONFIRM_PHRASE } from "@/lib/api";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { COLORS } from "@/lib/colors";
 import { useEscapeKey } from "@/lib/use-escape";
+import { fillTemplate, fillText } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import type { useBulkDelete } from "./useBulkDelete";
 
@@ -78,9 +79,11 @@ export function FeedLibraryWipeDialog({
           className="block text-sm font-bold mt-4"
           style={{ color: COLORS.raisinBlack }}
         >
-          {t("Type")}{" "}
-          <span style={{ color: COLORS.carminePink }}>{FEED_LIBRARY_CONFIRM_PHRASE}</span>{" "}
-          {t("to confirm")}
+          {fillTemplate(t("Type ${phrase} to confirm"), {
+            phrase: (
+              <span style={{ color: COLORS.carminePink }}>{FEED_LIBRARY_CONFIRM_PHRASE}</span>
+            ),
+          })}
         </label>
         <input
           id="feed-wipe-confirm"
@@ -165,7 +168,10 @@ export default function BulkDeleteSection({
           {t("Feed library")}
         </p>
         <p className="mt-1" style={{ color: COLORS.darkSilver, fontSize: 13 }}>
-          {`${counts.feeds.toLocaleString("en-US")} ${t("feeds")}, ${counts.translations.toLocaleString("en-US")} ${t("translations")}`}
+          {fillText(t("${feeds} feeds, ${translations} translations"), {
+            feeds: counts.feeds.toLocaleString("en-US"),
+            translations: counts.translations.toLocaleString("en-US"),
+          })}
         </p>
         <p className="mt-2" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
           {t(
@@ -194,10 +200,16 @@ export default function BulkDeleteSection({
           >
             <p>{t("To reload the library:")}</p>
             <p className="mt-1">
-              <Link href="/admin/feed-sync" className="font-bold underline">
-                {t("Open Feed Library Sync")}
-              </Link>{" "}
-              {t("and tap Sync now, or upload a feed workbook in Upload above.")}
+              {fillTemplate(
+                t("${link} and tap Sync now, or upload a feed workbook in Upload above."),
+                {
+                  link: (
+                    <Link href="/admin/feed-sync" className="font-bold underline">
+                      {t("Open Feed Library Sync")}
+                    </Link>
+                  ),
+                }
+              )}
             </p>
           </div>
         )}

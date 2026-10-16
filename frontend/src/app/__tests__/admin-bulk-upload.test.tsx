@@ -299,9 +299,7 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     // The "hi" dictionary lazy-loads via dynamic import() — findBy waits for it.
     await screen.findByText("चारा प्रबंधन"); // Feed Management (toolbar title)
     expect(screen.getByText("डेटा सिंक")).toBeInTheDocument(); // Data Sync
-    // Heading renamed to "Bulk Upload / Download / Delete" — no dictionary
-    // entry yet, so it falls back to English.
-    expect(screen.getByText("Bulk Upload / Download / Delete")).toBeInTheDocument();
+    expect(screen.getByText("बल्क अपलोड / डाउनलोड / हटाएं")).toBeInTheDocument();
     expect(screen.getByText("अपलोड")).toBeInTheDocument(); // Upload (section header)
     expect(screen.getByText("डाउनलोड")).toBeInTheDocument(); // Download (section header)
     expect(screen.queryByText("Feed Management")).not.toBeInTheDocument();

@@ -40,19 +40,27 @@ const MIME_BY_EXTENSION: Record<string, readonly string[]> = {
 };
 const GENERIC_MIME = new Set(["", "application/octet-stream"]);
 
-/** Returns an error message for an unacceptable file, or null when it's fine. */
-export function uploadFileProblem(file: File, allowedExtensions: readonly string[]): string | null {
+/**
+ * Returns an error message for an unacceptable file, or null when it's fine.
+ * Pass `t` to get it translated — the extension message is a template, so it
+ * must be translated before its `${types}` slot is filled.
+ */
+export function uploadFileProblem(
+  file: File,
+  allowedExtensions: readonly string[],
+  t: (s: string) => string = (s) => s
+): string | null {
   const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
   if (!allowedExtensions.includes(ext)) {
-    return `Please choose a ${allowedExtensions.join(" / ")} file`;
+    return t("Please choose a ${types} file").replace("${types}", allowedExtensions.join(" / "));
   }
   const type = (file.type || "").toLowerCase();
   const allowedTypes = MIME_BY_EXTENSION[ext];
   if (allowedTypes && !GENERIC_MIME.has(type) && !allowedTypes.includes(type)) {
-    return "That file's type doesn't match its extension";
+    return t("That file's type doesn't match its extension");
   }
-  if (file.size > MAX_UPLOAD_BYTES) return "File is too large (max 4 MB)";
-  if (file.size === 0) return "File is empty";
+  if (file.size > MAX_UPLOAD_BYTES) return t("File is too large (max 4 MB)");
+  if (file.size === 0) return t("File is empty");
   return null;
 }
 

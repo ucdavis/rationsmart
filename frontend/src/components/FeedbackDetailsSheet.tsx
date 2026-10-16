@@ -74,7 +74,7 @@ export default function FeedbackDetailsSheet({
           className="text-center font-bold"
           style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
         >
-          Your Rating
+          {t("Your Rating")}
         </p>
 
         {/* 5-star row */}
@@ -173,7 +173,7 @@ export default function FeedbackDetailsSheet({
             marginLeft: 4,
           }}
         >
-          Your Feedback
+          {t("Your Feedback")}
         </p>
         <div
           className="mt-2 rounded-2xl px-4 py-4"
@@ -201,7 +201,7 @@ export default function FeedbackDetailsSheet({
             cursor: "pointer",
           }}
         >
-          Close
+          {t("Close")}
         </button>
       </div>
     </div>

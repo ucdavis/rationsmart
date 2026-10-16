@@ -98,7 +98,7 @@ export function WorkbookCard({
           accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
           onChange={(e) => {
             const file = e.target.files?.[0] ?? null;
-            const problem = file && uploadFileProblem(file, [".xlsx", ".xls"]);
+            const problem = file && uploadFileProblem(file, [".xlsx", ".xls"], t);
             if (problem) {
               e.target.value = "";
               showSnackbar(problem, "error");

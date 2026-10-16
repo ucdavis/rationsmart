@@ -90,11 +90,11 @@ export function useBulkUpload(user: User | null, showSnackbar: Snackbar, t: (s: 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
-    const problem = uploadFileProblem(file, [".csv", ".xlsx", ".xls"]);
+    const problem = uploadFileProblem(file, [".csv", ".xlsx", ".xls"], t);
     if (problem) {
       e.target.value = "";
       setUploadStatus("failed");
-      setUploadMessage(t(problem));
+      setUploadMessage(problem);
       return;
     }
     setSelectedFile(file);
