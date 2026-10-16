@@ -46,9 +46,13 @@ async def _run_async(force, log_id, triggered_by):
             if log_id is not None:
                 # A manual run's row is created by the API before dispatch; if the
                 # run failed before the service could close it, close it here
-                # (a no-op when the service already did).
-                async with sessions() as db:
-                    await feed_sync_service.close_crashed_run(db, log_id, exc)
+                # (a no-op when the service already did). Best effort: a failure
+                # here must not replace the run's own exception.
+                try:
+                    async with sessions() as db:
+                        await feed_sync_service.close_crashed_run(db, log_id, exc)
+                except Exception:
+                    logger.exception("Could not close feed sync run %s after it failed", log_id)
             raise
     finally:
         await engine.dispose()

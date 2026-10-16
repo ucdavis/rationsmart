@@ -31,7 +31,7 @@ from repositories.feed_repository import (
     is_feed_name_conflict,
     normalize_feed_name,
 )
-from repositories.feed_sync_repository import STALE_RUN_AFTER, FeedSyncRepository
+from repositories.feed_sync_repository import STALE_RUN_AFTER, FeedSyncRepository, hold_sync_lock
 from repositories.language_repository import LanguageRepository
 from repositories.translation_repository import TranslationRepository
 from repositories.user_repository import UserRepository
@@ -233,6 +233,16 @@ async def sync_feed_library(
         logger.warning("Feed sync: another run is already in progress — skipping")
         return {"ran": False, "reason": "another run is already in progress"}
 
+    # The row check above is for the admin panel; the lock is the guarantee
+    # that no other run writes feeds while this one does.
+    async with hold_sync_lock(db.bind) as locked:
+        if not locked:
+            return await _refuse_locked(db, log_id)
+        return await _sync_locked(db, sync_repo, config, force, log_id, triggered_by)
+
+
+async def _sync_locked(db, sync_repo, config, force, log_id, triggered_by) -> Dict[str, Any]:
+    """The sync itself, run while holding the sync lock."""
     if log_id is not None:
         log = await sync_repo.get_log(log_id)
         if log is None:
@@ -269,6 +279,18 @@ async def sync_feed_library(
     except Exception as exc:
         await close_crashed_run(db, log_uuid, exc)
         raise
+
+
+async def _refuse_locked(db: AsyncSession, log_id) -> Dict[str, Any]:
+    """Another run holds the sync lock. A manual run's row was created by the
+    API before dispatch, so close it instead of leaving it 'running'."""
+    logger.warning("Feed sync: another run holds the sync lock — skipping")
+    if log_id is not None:
+        await FeedSyncRepository(db).fail_running_log(
+            log_id, "Another sync or upload was running; this run did not start."
+        )
+        await db.commit()
+    return {"ran": False, "reason": "another run is already in progress"}
 
 
 # ── Shared import pipeline (bulk_upload_changes plan §8 Phase 2) ──────────────
@@ -671,17 +693,22 @@ async def run_file_upload_import(
         logger.warning("File-upload import: another run is already in progress — refused")
         return {"ran": False, "reason": "another run is already in progress"}
 
-    log = await sync_repo.create_log("file_upload", triggered_by=triggered_by)
-    await db.commit()  # make the 'running' row visible to pollers/other callers
+    async with hold_sync_lock(db.bind) as locked:
+        if not locked:
+            logger.warning("File-upload import: another run holds the sync lock — refused")
+            return {"ran": False, "reason": "another run is already in progress"}
 
-    log_uuid = log.id
-    try:
-        result = await _run_import_pipeline(db, content, log, http_status=None)
-        await db.commit()
-        return result
-    except Exception as exc:
-        await close_crashed_run(db, log_uuid, exc)
-        raise
+        log = await sync_repo.create_log("file_upload", triggered_by=triggered_by)
+        await db.commit()  # make the 'running' row visible to pollers/other callers
+
+        log_uuid = log.id
+        try:
+            result = await _run_import_pipeline(db, content, log, http_status=None)
+            await db.commit()
+            return result
+        except Exception as exc:
+            await close_crashed_run(db, log_uuid, exc)
+            raise
 
 
 async def close_crashed_run(db: AsyncSession, log_id, exc: BaseException) -> None:
