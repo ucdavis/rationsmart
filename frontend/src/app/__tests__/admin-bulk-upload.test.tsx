@@ -297,8 +297,8 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     render(<BulkUploadPage />);
 
     // The "hi" dictionary lazy-loads via dynamic import() — findBy waits for it.
-    await screen.findByText("चारा प्रबंधन"); // Feed Management (toolbar title)
-    expect(screen.getByText("डेटा सिंक")).toBeInTheDocument(); // Data Sync
+    await screen.findByText("पशु आहार प्रबंधन"); // Feed Management (toolbar title)
+    expect(screen.getByText("डेटा समन्वयन")).toBeInTheDocument(); // Data Sync
     expect(screen.getByText("बल्क अपलोड / डाउनलोड / हटाएं")).toBeInTheDocument();
     expect(screen.getByText("अपलोड")).toBeInTheDocument(); // Upload (section header)
     expect(screen.getByText("डाउनलोड")).toBeInTheDocument(); // Download (section header)
@@ -309,10 +309,10 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     render(<BulkUploadPage />);
 
-    await screen.findByText("चारा अपलोड करें"); // UPLOAD FEEDS
+    await screen.findByText("पशु आहार अपलोड करें"); // UPLOAD FEEDS
     expect(screen.getByText("CSV या Excel ब्राउज़ करने के लिए टैप करें")).toBeInTheDocument(); // Tap to browse CSV or Excel
     expect(
-      screen.getByText("* केवल आपके डिवाइस पर संग्रहीत फ़ाइलें समर्थित हैं।")
+      screen.getByText("* केवल आपके डिवाइस में संग्रहीत फाइलें ही समर्थित हैं।")
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /टेम्पलेट डाउनलोड करें/ })).toBeInTheDocument(); // Download Template
   });
@@ -321,16 +321,16 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     render(<BulkUploadPage />);
 
-    await screen.findByText("STANDARD"); // untranslated in the sheet (same word) — still exercises the key
+    await screen.findByText("मानक"); // STANDARD
     expect(screen.getByText("चारा")).toBeInTheDocument(); // Feeds
-    expect(screen.getByText("FILTERED")).toBeInTheDocument(); // untranslated in the sheet
-    expect(screen.getByText("कस्टम चारा")).toBeInTheDocument(); // Custom Feeds
+    expect(screen.getByText("छँटा हुआ")).toBeInTheDocument(); // FILTERED
+    expect(screen.getByText("कस्टम पशु आहार")).toBeInTheDocument(); // Custom Feeds
 
     bulkUploadFeeds.mockImplementationOnce(() => new Promise(() => {})); // never resolves — keeps "uploading" visible
     selectCsvFile();
     fireEvent.click(screen.getByRole("button", { name: /अपलोड की पुष्टि करें/ })); // Confirm upload aria-label
     await screen.findByText("अपलोड हो रहा है"); // Uploading (banner title)
-    expect(screen.getByText("आपके चारे अपलोड किए जा रहे हैं।")).toBeInTheDocument(); // Your feeds are being uploaded.
+    expect(screen.getByText("आपके पशु आहार अपलोड किए जा रहे हैं।")).toBeInTheDocument(); // Your feeds are being uploaded.
   });
 });
 

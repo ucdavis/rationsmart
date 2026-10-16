@@ -89,7 +89,7 @@ describe("Admin landing — admin user", () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) } as never);
     render(<AdminPage />);
     await screen.findByText("स्वागत है"); // WELCOME
-    expect(screen.getByText("व्यवस्थापक")).toBeInTheDocument(); // Admin (toolbar title)
+    expect(screen.getByText("प्रशासक")).toBeInTheDocument(); // Admin (toolbar title)
     // getByText's default normalizer collapses the embedded "\n" to a space.
     expect(screen.getByText("उपयोगकर्ता प्रबंधन")).toBeInTheDocument(); // User\nManagement
     expect(screen.queryByText("WELCOME")).not.toBeInTheDocument();

@@ -83,16 +83,15 @@ describe("SplashOverlay", () => {
     }).not.toThrow();
   });
 
-  // UI-label translation (src/lib/i18n-ui.ts) — "RationSmart" / "POWERED BY"
-  // / "DigitalGreen" are pass-through rows in every locale (brand names
-  // aren't actually translated), so this asserts no crash and identical
-  // visible branding text with a Hindi user signed in.
-  it("still renders the branding text unchanged with preferred_language 'hi' (brand pass-through rows)", async () => {
+  // UI-label translation (src/lib/i18n-ui.ts) — the brand names "RationSmart"
+  // and "DigitalGreen" are pass-through rows in every locale; "POWERED BY" is
+  // translated (reviewed sheet, 2026-10-16).
+  it("keeps the brand names and translates POWERED BY with preferred_language 'hi'", async () => {
     pathnameRef.current = "/";
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     const { container } = render(<SplashOverlay />);
-    await waitFor(() => expect(container.textContent).toContain("RationSmart"));
-    expect(container.textContent).toContain("POWERED BY");
+    await waitFor(() => expect(container.textContent).toContain("द्वारा संचालित"));
+    expect(container.textContent).toContain("RationSmart");
     expect(container.textContent).toContain("DigitalGreen");
   });
 });

@@ -53,8 +53,8 @@ describe("Help & Support page", () => {
     // The "hi" dictionary lazy-loads via dynamic import() — findBy waits
     // for it to resolve rather than assuming it's already in the cache.
     await screen.findByText("सहायता एवं समर्थन"); // Help & Support
-    expect(screen.getByText("उपयोगकर्ता मैनुअल")).toBeInTheDocument(); // User Manual
-    expect(screen.getByText("सामान्य प्रश्न")).toBeInTheDocument(); // FAQs
+    expect(screen.getByText("उपयोगकर्ता मार्गदर्शिका")).toBeInTheDocument(); // User Manual
+    expect(screen.getByText("सामान्यतःपुछे जाने वाले प्रश्न")).toBeInTheDocument(); // FAQs
     expect(screen.getByText("संपर्क करें")).toBeInTheDocument(); // Contact Us
     expect(screen.queryByText("Help & Support")).not.toBeInTheDocument();
   });

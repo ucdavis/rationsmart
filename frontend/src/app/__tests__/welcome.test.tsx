@@ -53,7 +53,7 @@ describe("Welcome page", () => {
     render(<WelcomePage />);
     // The multi-line tagline is one dictionary key with an embedded \n —
     // dictionary lazy-loads via dynamic import(), so wait for it.
-    await screen.findByText(/स्मार्ट चारा/);
+    await screen.findByText(/संतुलित आहार प्रणाली/);
     expect(screen.getByRole("button", { name: /जारी रखें/ })).toBeInTheDocument();
   });
 });

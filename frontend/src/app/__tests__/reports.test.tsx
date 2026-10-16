@@ -161,8 +161,8 @@ describe("Reports — UI-label translation", () => {
 
     // The "hi" dictionary lazy-loads via dynamic import() — findBy waits
     // for it to resolve rather than assuming it's already in the cache.
-    await screen.findByText("चारा रिपोर्ट"); // toolbar title "Feed Reports"
-    expect(screen.getByText("कोई सहेजी गई रिपोर्ट नहीं")).toBeInTheDocument(); // No saved reports
+    await screen.findByText("पशु आहार रिपोर्ट"); // toolbar title "Feed Reports"
+    expect(screen.getByText("कोई सहेजी गई रिपोर्ट उपलब्ध नहीं है।")).toBeInTheDocument(); // No saved reports
     expect(screen.getByText("रिपोर्ट बनाएं")).toBeInTheDocument(); // Create Report
     expect(screen.queryByText("Feed Reports")).not.toBeInTheDocument();
   });
@@ -174,6 +174,6 @@ describe("Reports — UI-label translation", () => {
 
     await screen.findByText("सिमुलेशन ID"); // Simulation ID
     expect(screen.getByRole("button", { name: "रिपोर्ट देखें" })).toBeInTheDocument(); // View Report
-    expect(screen.getByRole("button", { name: "विस्तृत करें" })).toBeInTheDocument(); // Expand aria-label
+    expect(screen.getByRole("button", { name: "विस्तार करें" })).toBeInTheDocument(); // Expand aria-label
   });
 });

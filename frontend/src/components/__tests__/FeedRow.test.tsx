@@ -833,7 +833,7 @@ describe("UI-label i18n — simulation_language override", () => {
     // digit substitution — the dictionary keeps "FEED" as-is per the
     // sheet (loanword), so we assert on a translated label instead that
     // has an unambiguous Hindi rendering.
-    await screen.findByText("चारा प्रकार"); // "Feed Type"
+    await screen.findByText("आहार प्रकार"); // "Feed Type"
     expect(screen.queryByText("Feed Type")).not.toBeInTheDocument();
   });
 
@@ -852,7 +852,7 @@ describe("UI-label i18n — simulation_language override", () => {
         onDelete={vi.fn()}
       />
     );
-    await screen.findByText("चारा प्रकार"); // "Feed Type"
+    await screen.findByText("आहार प्रकार"); // "Feed Type"
   });
 
   it("the inclusion-limits toggle label translates to Hindi", async () => {

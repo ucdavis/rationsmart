@@ -293,7 +293,7 @@ describe("Admin reports — i18n (Hindi)", () => {
 
     render(<AdminReportsPage />);
 
-    await screen.findByText("चारा रिपोर्ट"); // Feed Reports (toolbar title)
+    await screen.findByText("पशु आहार रिपोर्ट"); // Feed Reports (toolbar title)
     expect(screen.getByText("रिपोर्ट देखें")).toBeInTheDocument(); // View Report
     expect(screen.getByText("मूल्यांकन")).toBeInTheDocument(); // Evaluation (translated display value)
     expect(screen.queryByText("Feed Reports")).not.toBeInTheDocument();

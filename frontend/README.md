@@ -80,6 +80,35 @@ guessing a backend.
 | `npm run lint:promises` | Checks for unhandled promises |
 | `npm run typecheck` | TypeScript check for app and tests |
 | `npm run format:check` | Prettier check |
+| `npm run i18n:check` | Every UI label is translated in all 9 languages (CI runs this) |
+| `npm run i18n:sheet -- <csv>` | Compare the translation sheet with the app (`--apply`, `--missing <out.csv>`) |
+
+---
+
+## Translations (UI labels)
+
+Screen text is translated in the app, not by the backend. Translations live in
+`src/lib/data/ui-labels/<code>.json` (Hindi, Filipino, Indonesian, Thai,
+Vietnamese, Bengali, Nepali, Amharic, Oromo), keyed by the exact English text.
+The reviewed wording comes from the shared sheet
+`RationSmart_Multilingual_Labels.xlsx` (tab "All Strings"), which also holds
+Tigrigna, French and Arabic.
+
+When you add or change text on screen:
+
+1. Wrap it in `t()`. If it contains a value, translate the whole sentence as a
+   template and fill it afterwards: `fillText(t("Deleted ${n} feeds."), { n })`.
+   Don't build the string first (`` t(`Deleted ${n} feeds.`) `` never matches),
+   and don't glue translated pieces together.
+2. Add the English text and its translation to all 9 JSON files. Keep every
+   `${placeholder}` exactly as in English.
+3. Add a row for it to the sheet, with all 12 languages.
+4. Run `npm run i18n:check`. CI fails if a label is missing from any language,
+   a translation breaks a placeholder, or text skips `t()`.
+
+To pull in reviewers' edits, download the sheet's "All Strings" tab as CSV and
+run `npm run i18n:sheet -- all-strings.csv --apply`. Use
+`--missing new-rows.csv` to export the labels the sheet doesn't have yet.
 
 ---
 

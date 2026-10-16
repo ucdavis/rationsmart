@@ -103,7 +103,7 @@ describe("Set New PIN — UI-label translation (src/lib/i18n-ui.ts)", () => {
   it("translates the toolbar heading + Update PIN button when preferred_language is 'hi'", async () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     render(<SetNewPinPage />);
-    await screen.findByText("अपना PIN अपग्रेड करें"); // Upgrade Your PIN
+    await screen.findByText("अपना PIN अपग्रेड (उन्नत ) करें"); // Upgrade Your PIN
     expect(screen.getByRole("button", { name: /PIN अपडेट करें/ })).toBeInTheDocument(); // Update PIN
   });
 });

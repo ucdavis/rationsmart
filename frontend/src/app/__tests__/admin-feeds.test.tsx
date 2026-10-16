@@ -567,9 +567,9 @@ describe("Admin Feeds — UI-label translation (preferred_language: hi)", () => 
     render(<AdminFeedsPage />);
     await waitForLoaded();
 
-    await screen.findByText("चारा प्रबंधन"); // Feed Management (toolbar title)
-    expect(screen.getByRole("button", { name: "चारा प्रकार" })).toBeInTheDocument(); // Feed Type
-    expect(screen.getByRole("button", { name: "चारा श्रेणी" })).toBeInTheDocument(); // Feed Category
+    await screen.findByText("पशु आहार प्रबंधन"); // Feed Management (toolbar title)
+    expect(screen.getByRole("button", { name: "आहार प्रकार" })).toBeInTheDocument(); // Feed Type
+    expect(screen.getByRole("button", { name: "पशु आहार श्रेणी" })).toBeInTheDocument(); // Feed Category
     expect(screen.getByRole("button", { name: "चारा" })).toBeInTheDocument(); // Feed
     expect(screen.queryByText("Feed Management")).not.toBeInTheDocument();
   });
@@ -580,14 +580,14 @@ describe("Admin Feeds — UI-label translation (preferred_language: hi)", () => 
     render(<AdminFeedsPage />);
     await waitForLoaded();
 
-    fireEvent.click(await screen.findByRole("button", { name: "चारा प्रकार" })); // Feed Type nav card
+    fireEvent.click(await screen.findByRole("button", { name: "आहार प्रकार" })); // Feed Type nav card
     await screen.findByText("प्रबंधन"); // Management subheader confirms sub-section loaded
 
     fireEvent.click(screen.getByRole("button", { name: "चारा प्रकार जोड़ें" })); // Add feed type (aria-label now translated)
 
     expect(await screen.findByText("चारा प्रकार जोड़ें")).toBeInTheDocument(); // Add Feed Type heading
-    expect(screen.getByPlaceholderText("जैसे Forage")).toBeInTheDocument(); // e.g. Forage
-    expect(screen.getByRole("button", { name: "जमा करें" })).toBeInTheDocument(); // Submit
+    expect(screen.getByPlaceholderText("जैसे चारा")).toBeInTheDocument(); // e.g. Forage
+    expect(screen.getByRole("button", { name: "प्रस्तुत करें" })).toBeInTheDocument(); // Submit
     expect(screen.getByRole("button", { name: "रद्द करें" })).toBeInTheDocument(); // Cancel
   });
 
@@ -598,7 +598,7 @@ describe("Admin Feeds — UI-label translation (preferred_language: hi)", () => 
     render(<AdminFeedsPage />);
     await waitForLoaded();
 
-    fireEvent.click(await screen.findByRole("button", { name: "चारा प्रकार" }));
+    fireEvent.click(await screen.findByRole("button", { name: "आहार प्रकार" }));
     await waitFor(() => expect(screen.getByText("Forage")).toBeInTheDocument());
 
     fireEvent.click(screen.getByRole("button", { name: "प्रकार हटाएं" })); // Delete type — this aria-label DOES have a Hindi dictionary entry

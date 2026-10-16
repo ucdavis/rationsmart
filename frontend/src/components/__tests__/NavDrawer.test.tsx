@@ -187,7 +187,7 @@ describe("NavDrawer", () => {
     render(<NavDrawer open onClose={() => {}} />);
 
     await screen.findByText("प्रोफ़ाइल"); // Profile
-    expect(screen.getByText("चारा रिपोर्ट")).toBeInTheDocument(); // Feed Reports
+    expect(screen.getByText("पशु आहार रिपोर्ट")).toBeInTheDocument(); // Feed Reports
     expect(screen.getByText("सहायता एवं समर्थन")).toBeInTheDocument(); // Help & Support
     expect(screen.getByText("प्रतिक्रिया")).toBeInTheDocument(); // Feedback
     expect(screen.getByText("नियम और शर्तें")).toBeInTheDocument(); // Terms & Conditions

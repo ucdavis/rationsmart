@@ -72,7 +72,7 @@ describe("getUiLabel — pure lookup against the in-memory cache", () => {
   it("translates a multi-line source string (embedded \\n) verbatim as one dictionary key", () => {
     const source = "Smart feeding.\nMaximum yield.\nMinimal cost.";
     const hi = getUiLabel(source, "hi");
-    expect(hi).toContain("स्मार्ट चारा");
+    expect(hi).toContain("संतुलित आहार प्रणाली");
     expect(hi).not.toBe(source);
   });
 

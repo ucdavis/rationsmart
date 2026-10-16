@@ -60,6 +60,11 @@ jobs:
       - name: Format check
         run: npm run format:check
 
+      # Every label in the code exists in all 9 UI-label dictionaries, with
+      # its ${placeholders} intact, and no visible text bypasses t().
+      - name: UI-label translations
+        run: npm run i18n:check
+
       - name: Tests (with coverage floors)
         run: npm run test:coverage
 

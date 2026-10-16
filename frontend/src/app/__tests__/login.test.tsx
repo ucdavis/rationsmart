@@ -77,8 +77,8 @@ describe("Login — UI-label translation (src/lib/i18n-ui.ts)", () => {
       } as never,
     });
     render(<LoginPage />);
-    await screen.findByText("ईमेल पता");
-    expect(screen.getByText("PIN दर्ज करें")).toBeInTheDocument();
+    await screen.findByText("ईमेल पता/ ई-मेल आईडी");
+    expect(screen.getByText("PIN कोड दर्ज करें")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "आगे बढ़ें" })).toBeInTheDocument();
   });
 
@@ -91,8 +91,8 @@ describe("Login — UI-label translation (src/lib/i18n-ui.ts)", () => {
   it("renders in Hindi post-logout — no user, only lastUiLanguage set", async () => {
     useStore.setState({ user: null, lastUiLanguage: "hi" } as never);
     render(<LoginPage />);
-    await screen.findByText("ईमेल पता");
-    expect(screen.getByText("PIN दर्ज करें")).toBeInTheDocument();
+    await screen.findByText("ईमेल पता/ ई-मेल आईडी");
+    expect(screen.getByText("PIN कोड दर्ज करें")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "आगे बढ़ें" })).toBeInTheDocument();
   });
 });

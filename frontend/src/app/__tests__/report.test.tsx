@@ -645,8 +645,8 @@ describe("Report — UI-label i18n via cattleInfo.simulation_language", () => {
       reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
     });
     render(<ReportPage />);
-    await screen.findByText("सिमुलेशन स्थिति"); // Simulation Status (Notes banner)
-    expect(screen.getByRole("button", { name: /नया केस/ })).toBeInTheDocument(); // New Case
+    await screen.findByText("विश्लेषण की स्थिति"); // Simulation Status (Notes banner)
+    expect(screen.getByRole("button", { name: /नया विवरण दर्ज करें/ })).toBeInTheDocument(); // New Case
     expect(screen.getByRole("button", { name: /रिपोर्ट सहेजें/ })).toBeInTheDocument(); // Save Report
   });
 });

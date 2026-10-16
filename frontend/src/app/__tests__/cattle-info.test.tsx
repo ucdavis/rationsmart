@@ -1002,10 +1002,10 @@ describe("Cattle Info — UI-label i18n (own simulation_language, not just profi
     render(<CattleInfoPage />);
     // The "hi" dictionary lazy-loads via dynamic import() — findBy waits
     // for it to resolve rather than assuming it's already in the cache.
-    await screen.findByText("मवेशी जानकारी"); // Cattle Info (toolbar title)
-    expect(screen.getByText("सिमुलेशन विवरण")).toBeInTheDocument(); // Simulation Details
+    await screen.findByText("पशुओ से संबंधित जानकारी"); // Cattle Info (toolbar title)
+    expect(screen.getByText("सिमुलेशन (अनुकरण) विवरण")).toBeInTheDocument(); // Simulation Details
     expect(screen.getByText("पशु विशेषताएं")).toBeInTheDocument(); // Animal Characteristics
-    expect(screen.getByText("चारा पर जारी रखें")).toBeInTheDocument(); // Continue to Feed
+    expect(screen.getByText("फीड (आहार) जारी रखें")).toBeInTheDocument(); // Continue to Feed
     expect(screen.queryByText("Cattle Info")).not.toBeInTheDocument();
   });
 
@@ -1039,8 +1039,8 @@ describe("Cattle Info — UI-label i18n (own simulation_language, not just profi
       } as CattleInfo,
     });
     render(<CattleInfoPage />);
-    await screen.findByText("मवेशी जानकारी"); // Cattle Info
-    expect(screen.getByText("सिमुलेशन विवरण")).toBeInTheDocument(); // Simulation Details
+    await screen.findByText("पशुओ से संबंधित जानकारी"); // Cattle Info
+    expect(screen.getByText("सिमुलेशन (अनुकरण) विवरण")).toBeInTheDocument(); // Simulation Details
   });
 
   it("reacts LIVE to a Language dropdown pick — before Continue is clicked, other static labels on the page re-translate immediately", async () => {

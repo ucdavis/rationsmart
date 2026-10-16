@@ -267,7 +267,7 @@ describe("Feedback — UI-label translation", () => {
     expect(screen.getByText("ऐप को रेट करें")).toBeInTheDocument(); // Rate The App
     expect(screen.getByText("प्रतिक्रिया श्रेणी")).toBeInTheDocument(); // Feedback Category
     expect(screen.getByText("सामान्य")).toBeInTheDocument(); // General (category label)
-    expect(screen.getByText("प्रतिक्रिया जमा करें")).toBeInTheDocument(); // Submit Feedback
+    expect(screen.getByText("प्रतिक्रिया भेजे")).toBeInTheDocument(); // Submit Feedback
     expect(screen.getByText("आपकी प्रतिक्रियाएं")).toBeInTheDocument(); // Your Feedbacks
     expect(screen.queryByText("Feedback Category")).not.toBeInTheDocument();
   });

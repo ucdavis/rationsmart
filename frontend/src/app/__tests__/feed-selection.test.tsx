@@ -991,9 +991,9 @@ describe("feed-selection — UI-label i18n (simulation_language override)", () =
     });
     render(<FeedSelectionPage />);
 
-    await screen.findByText("चारा चयन"); // "Feed Selection" (toolbar title)
-    expect(screen.getByText("कस्टम आहार सीमाएं")).toBeInTheDocument(); // "Custom Diet Limits"
-    expect(screen.getByText("कस्टम चारा")).toBeInTheDocument(); // "Custom Feed"
+    await screen.findByText("पशु आहार का चयन"); // "Feed Selection" (toolbar title)
+    expect(screen.getByText("अनुकूलित आहार सीमाएँ")).toBeInTheDocument(); // "Custom Diet Limits"
+    expect(screen.getByText("अनुकूलित पशु आहार")).toBeInTheDocument(); // "Custom Feed"
     expect(screen.queryByText("Feed Selection")).not.toBeInTheDocument();
   });
 

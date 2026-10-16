@@ -341,7 +341,7 @@ describe("Admin feedback — i18n (Hindi)", () => {
     render(<AdminFeedbackPage />);
 
     await screen.findByText("प्रतिक्रिया प्रबंधन"); // Feedback Management (toolbar title)
-    expect(screen.getByText("समग्र अंतर्दृष्टि")).toBeInTheDocument(); // Aggregated Insights
+    expect(screen.getByText("समेकित विश्लेषण")).toBeInTheDocument(); // Aggregated Insights
     expect(screen.getByText("कुल प्रतिक्रियाएं")).toBeInTheDocument(); // Total Feedbacks
     expect(screen.queryByText("Feedback Management")).not.toBeInTheDocument();
   });
