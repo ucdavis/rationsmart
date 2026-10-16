@@ -243,27 +243,32 @@ async def sync_feed_library(
         )
         await db.commit()  # make the 'running' row visible to pollers
 
-    # ── Fetch ────────────────────────────────────────────────────────────────
-    # Fetch failures are the only retryable kind (D23) — the Celery task
-    # retries them with backoff, reusing this run's log row.
+    log_uuid = log.id
     try:
-        content, http_status = await fetch_feed_library(config)
-    except FeedSyncFetchError as exc:
-        await sync_repo.finalize_log(
-            log, "failed", error_message=str(exc), http_status=exc.http_status
-        )
-        await sync_repo.touch_last_run(config, success=False)
-        await db.commit()
-        logger.error("Feed sync failed: %s", exc)
-        return {
-            "ran": True, "log_id": str(log.id), "status": "failed",
-            "error": str(exc), "retryable": True,
-        }
+        # ── Fetch ────────────────────────────────────────────────────────────
+        # Fetch failures are the only retryable kind (D23) — the Celery task
+        # retries them with backoff, reusing this run's log row.
+        try:
+            content, http_status = await fetch_feed_library(config)
+        except FeedSyncFetchError as exc:
+            await sync_repo.finalize_log(
+                log, "failed", error_message=str(exc), http_status=exc.http_status
+            )
+            await sync_repo.touch_last_run(config, success=False)
+            await db.commit()
+            logger.error("Feed sync failed: %s", exc)
+            return {
+                "ran": True, "log_id": str(log.id), "status": "failed",
+                "error": str(exc), "retryable": True,
+            }
 
-    result = await _run_import_pipeline(db, content, log, http_status=http_status)
-    await sync_repo.touch_last_run(config, success=(result.get("status") == "success"))
-    await db.commit()
-    return result
+        result = await _run_import_pipeline(db, content, log, http_status=http_status)
+        await sync_repo.touch_last_run(config, success=(result.get("status") == "success"))
+        await db.commit()
+        return result
+    except Exception as exc:
+        await close_crashed_run(db, log_uuid, exc)
+        raise
 
 
 # ── Shared import pipeline (bulk_upload_changes plan §8 Phase 2) ──────────────
@@ -669,6 +674,31 @@ async def run_file_upload_import(
     log = await sync_repo.create_log("file_upload", triggered_by=triggered_by)
     await db.commit()  # make the 'running' row visible to pollers/other callers
 
-    result = await _run_import_pipeline(db, content, log, http_status=None)
-    await db.commit()
-    return result
+    log_uuid = log.id
+    try:
+        result = await _run_import_pipeline(db, content, log, http_status=None)
+        await db.commit()
+        return result
+    except Exception as exc:
+        await close_crashed_run(db, log_uuid, exc)
+        raise
+
+
+async def close_crashed_run(db: AsyncSession, log_id, exc: BaseException) -> None:
+    """Roll back a run that raised, and mark its log row failed so it doesn't
+    stay 'running'. Best effort: if the database itself is the problem this
+    fails too, and the row is closed later by
+    FeedSyncRepository.fail_stale_runs. The exception text stays in the log
+    file; the row (shown in the admin panel) only gets its type.
+    """
+    logger.exception("Feed sync run %s crashed", log_id)
+    message = f"Run stopped by an unexpected error ({type(exc).__name__}). See the worker log."
+    try:
+        await db.rollback()
+        await FeedSyncRepository(db).fail_running_log(log_id, message)
+        await db.commit()
+    except Exception:
+        logger.exception(
+            "Could not close crashed feed sync run %s; it is closed as stale after 30 minutes",
+            log_id,
+        )

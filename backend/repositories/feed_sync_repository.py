@@ -5,9 +5,10 @@ flush only — the caller (router or Celery task session context) commits,
 matching the repo-wide convention.
 """
 import uuid
+from datetime import timedelta
 from typing import Any, Dict, Optional, Tuple
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import FeedSyncConfig, FeedSyncLog
@@ -21,6 +22,12 @@ _CONFIG_FIELDS = {
     "auth_token",
     "sync_day_of_week",
 }
+
+
+# A real run takes seconds (fetch timeout 120 s, import a few seconds); a row
+# still 'running' after this long belongs to a process that died mid-run.
+STALE_RUN_AFTER = timedelta(minutes=30)
+STALE_RUN_MESSAGE = "Run did not finish within 30 minutes; closed as failed. See the worker log."
 
 
 class FeedSyncRepository:
@@ -105,7 +112,13 @@ class FeedSyncRepository:
         return result.scalars().first()
 
     async def get_running_log(self) -> Optional[FeedSyncLog]:
-        """Return the in-progress run, if any (overlap guard)."""
+        """Return the in-progress run, if any (overlap guard).
+
+        Runs left 'running' for over STALE_RUN_AFTER are closed as failed first
+        (`fail_stale_runs`), so a run whose process died cannot block syncs,
+        uploads and the feed-library wipe forever. Caller commits, as usual.
+        """
+        await self.fail_stale_runs()
         result = await self.db.execute(
             select(FeedSyncLog)
             .where(FeedSyncLog.status == "running")
@@ -113,6 +126,34 @@ class FeedSyncRepository:
             .limit(1)
         )
         return result.scalars().first()
+
+    async def fail_stale_runs(self) -> int:
+        """Close every run still 'running' after STALE_RUN_AFTER; return how many."""
+        result = await self.db.execute(
+            update(FeedSyncLog)
+            .where(
+                FeedSyncLog.status == "running",
+                FeedSyncLog.started_at < func.now() - STALE_RUN_AFTER,
+            )
+            .values(status="failed", finished_at=func.now(), error_message=STALE_RUN_MESSAGE)
+            .execution_options(synchronize_session=False)
+        )
+        return result.rowcount or 0
+
+    async def fail_running_log(self, log_id, message: str) -> bool:
+        """Close one run as failed if it is still 'running' (a crashed run).
+        Uses an UPDATE, not the ORM object, so it works after a rollback."""
+        try:
+            log_uuid = uuid.UUID(str(log_id))  # Celery kwargs arrive as str
+        except (TypeError, ValueError):
+            return False
+        result = await self.db.execute(
+            update(FeedSyncLog)
+            .where(FeedSyncLog.id == log_uuid, FeedSyncLog.status == "running")
+            .values(status="failed", finished_at=func.now(), error_message=message)
+            .execution_options(synchronize_session=False)
+        )
+        return bool(result.rowcount)
 
     async def list_logs(
         self, page: int = 1, page_size: int = 20
