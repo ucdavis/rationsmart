@@ -27,7 +27,10 @@ _CONFIG_FIELDS = {
 # A real run takes seconds (fetch timeout 120 s, import a few seconds); a row
 # still 'running' after this long belongs to a process that died mid-run.
 STALE_RUN_AFTER = timedelta(minutes=30)
-STALE_RUN_MESSAGE = "Run did not finish within 30 minutes; closed as failed. See the worker log."
+STALE_RUN_MESSAGE = (
+    f"Run did not finish within {int(STALE_RUN_AFTER.total_seconds() // 60)} minutes; "
+    "closed as failed. See the worker log."
+)
 
 
 class FeedSyncRepository:

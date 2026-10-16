@@ -31,7 +31,7 @@ from repositories.feed_repository import (
     is_feed_name_conflict,
     normalize_feed_name,
 )
-from repositories.feed_sync_repository import FeedSyncRepository
+from repositories.feed_sync_repository import STALE_RUN_AFTER, FeedSyncRepository
 from repositories.language_repository import LanguageRepository
 from repositories.translation_repository import TranslationRepository
 from repositories.user_repository import UserRepository
@@ -699,6 +699,6 @@ async def close_crashed_run(db: AsyncSession, log_id, exc: BaseException) -> Non
         await db.commit()
     except Exception:
         logger.exception(
-            "Could not close crashed feed sync run %s; it is closed as stale after 30 minutes",
-            log_id,
+            "Could not close crashed feed sync run %s; it is closed as stale after %s",
+            log_id, STALE_RUN_AFTER,
         )
