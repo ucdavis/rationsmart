@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "Naproseso ang ${total} row: ${inserted} naidagdag, ${updated} na-update, ${skipped} nilaktawan.",
   "See Feed Library Sync > Run History for the skipped rows.": "Tingnan ang Pag-sync ng Feed Library > Kasaysayan ng Run para sa mga nilaktawang row.",
   "Value Range ${min}-${max}": "Saklaw ng Halaga ${min}-${max}",
-  "Please choose a ${types} file": "Pumili ng ${types} na file"
+  "Please choose a ${types} file": "Pumili ng ${types} na file",
+  "Syncs automatically every ${day} at 00:00 UTC.": "Awtomatikong nagsi-sync tuwing ${day} nang 00:00 UTC."
 }

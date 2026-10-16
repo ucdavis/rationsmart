@@ -268,7 +268,9 @@ export function SyncSettingsTab({
               </p>
               <p className="text-xs mt-0.5" style={{ color: COLORS.darkSilver }}>
                 {status.scheduler_enabled
-                  ? `Syncs automatically every ${capitalize(status.sync_day_of_week)} at 00:00 UTC.`
+                  ? fillText(t("Syncs automatically every ${day} at 00:00 UTC."), {
+                      day: t(capitalize(status.sync_day_of_week)),
+                    })
                   : t("Automatic sync is off. You can still sync manually.")}
               </p>
               {!canEnable && !status.scheduler_enabled && (

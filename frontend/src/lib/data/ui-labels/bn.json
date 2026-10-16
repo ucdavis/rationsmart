@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "${total}টি সারি প্রক্রিয়া করা হয়েছে: ${inserted}টি যোগ, ${updated}টি আপডেট, ${skipped}টি বাদ।",
   "See Feed Library Sync > Run History for the skipped rows.": "বাদ পড়া সারিগুলোর জন্য ফিড লাইব্রেরি সিঙ্ক > সিঙ্কের ইতিহাস দেখুন।",
   "Value Range ${min}-${max}": "মান পরিসর ${min}-${max}",
-  "Please choose a ${types} file": "অনুগ্রহ করে একটি ${types} ফাইল বেছে নিন"
+  "Please choose a ${types} file": "অনুগ্রহ করে একটি ${types} ফাইল বেছে নিন",
+  "Syncs automatically every ${day} at 00:00 UTC.": "প্রতি ${day} 00:00 UTC-তে স্বয়ংক্রিয়ভাবে সিঙ্ক হয়।"
 }

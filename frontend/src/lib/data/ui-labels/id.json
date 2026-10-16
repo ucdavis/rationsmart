@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "${total} baris diproses: ${inserted} ditambahkan, ${updated} diperbarui, ${skipped} dilewati.",
   "See Feed Library Sync > Run History for the skipped rows.": "Lihat Sinkronisasi Pustaka Pakan > Riwayat Proses untuk baris yang dilewati.",
   "Value Range ${min}-${max}": "Rentang Nilai ${min}-${max}",
-  "Please choose a ${types} file": "Pilih file ${types}"
+  "Please choose a ${types} file": "Pilih file ${types}",
+  "Syncs automatically every ${day} at 00:00 UTC.": "Sinkronisasi otomatis setiap ${day} pukul 00:00 UTC."
 }

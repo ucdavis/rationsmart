@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "${total} ረድፎች ተሰርተዋል፦ ${inserted} ታክለዋል፣ ${updated} ተዘምነዋል፣ ${skipped} ተዘለዋል።",
   "See Feed Library Sync > Run History for the skipped rows.": "ለተዘለሉ ረድፎች የመኖ ቤተ-መጻሕፍት ማመሳሰል > የሩጫ ታሪክ ይመልከቱ።",
   "Value Range ${min}-${max}": "የእሴት ክልል ${min}-${max}",
-  "Please choose a ${types} file": "እባክዎ የ${types} ፋይል ይምረጡ"
+  "Please choose a ${types} file": "እባክዎ የ${types} ፋይል ይምረጡ",
+  "Syncs automatically every ${day} at 00:00 UTC.": "በየ${day} በ00:00 UTC በራስ-ሰር ይመሳሰላል።"
 }

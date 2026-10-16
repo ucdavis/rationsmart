@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "ประมวลผล ${total} แถว: เพิ่ม ${inserted} อัปเดต ${updated} ข้าม ${skipped}",
   "See Feed Library Sync > Run History for the skipped rows.": "ดูแถวที่ข้ามได้ที่ ซิงค์คลังอาหาร > ประวัติการซิงค์",
   "Value Range ${min}-${max}": "ช่วงค่า ${min}-${max}",
-  "Please choose a ${types} file": "โปรดเลือกไฟล์ ${types}"
+  "Please choose a ${types} file": "โปรดเลือกไฟล์ ${types}",
+  "Syncs automatically every ${day} at 00:00 UTC.": "ซิงค์อัตโนมัติทุก${day} เวลา 00:00 UTC"
 }

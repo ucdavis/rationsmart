@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "Đã xử lý ${total} dòng: thêm ${inserted}, cập nhật ${updated}, bỏ qua ${skipped}.",
   "See Feed Library Sync > Run History for the skipped rows.": "Xem Đồng bộ thư viện thức ăn > Lịch sử chạy để biết các dòng bị bỏ qua.",
   "Value Range ${min}-${max}": "Phạm vi giá trị ${min}-${max}",
-  "Please choose a ${types} file": "Vui lòng chọn tệp ${types}"
+  "Please choose a ${types} file": "Vui lòng chọn tệp ${types}",
+  "Syncs automatically every ${day} at 00:00 UTC.": "Tự động đồng bộ vào mỗi ${day} lúc 00:00 UTC."
 }

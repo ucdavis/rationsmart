@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "Tarreen ${total} hojjetameera: ${inserted} dabalame, ${updated} haaromfame, ${skipped} darbame.",
   "See Feed Library Sync > Run History for the skipped rows.": "Tarreewwan darbaman ilaaluuf Walsimsiisa Kuusaa Nyaataa > Seenaa Hojii ilaali.",
   "Value Range ${min}-${max}": "Hangii Gatii ${min}-${max}",
-  "Please choose a ${types} file": "Maaloo faayilii ${types} filadhu"
+  "Please choose a ${types} file": "Maaloo faayilii ${types} filadhu",
+  "Syncs automatically every ${day} at 00:00 UTC.": "${day} hundumaa sa'aatii 00:00 UTC irratti ofumaan walsimsiisa."
 }

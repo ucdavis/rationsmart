@@ -903,5 +903,6 @@
   "Processed ${total} rows: ${inserted} added, ${updated} updated, ${skipped} skipped.": "${total} पंक्तियाँ संसाधित: ${inserted} जोड़ी गईं, ${updated} अपडेट की गईं, ${skipped} छोड़ी गईं।",
   "See Feed Library Sync > Run History for the skipped rows.": "छोड़ी गई पंक्तियों के लिए चारा लाइब्रेरी सिंक > रन इतिहास देखें।",
   "Value Range ${min}-${max}": "मान सीमा ${min}-${max}",
-  "Please choose a ${types} file": "कृपया ${types} फ़ाइल चुनें"
+  "Please choose a ${types} file": "कृपया ${types} फ़ाइल चुनें",
+  "Syncs automatically every ${day} at 00:00 UTC.": "हर ${day} को 00:00 UTC पर अपने आप सिंक होता है।"
 }
