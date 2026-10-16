@@ -92,7 +92,7 @@
   "Value Range 1-59": "የእሴት ክልል 1-59",
   "Milk Protein % *": "የወተት ፕሮቲን % *",
   "Milk Fat % *": "የወተት ስብ % *",
-  "Milk Price (${user.currency}/L)": "የወተት ዋጋ (${user.currency}/L)",
+  "Milk Price (${user.currency}/L)": "የወተት ዋጋ (${user.currency}/ሊ)",
   "Optional": "አማራጭ",
   "Environment": "አካባቢ",
   "Avg Temperature (°C) *": "አማካይ ሙቀት (°ሴንቲግሬድ) *",
