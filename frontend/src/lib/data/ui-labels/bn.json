@@ -272,7 +272,7 @@
   "Methane Yield": "মিথেন গ্যাস উৎপাদন হার",
   "Methane Intensity": "মিথেন গ্যাসের তীব্রতা",
   "Methane Conversion Rate (Ym %)": "মিথেন রূপান্তর হার (Ym %)",
-  "Methane Conversion Rate (Ym)": "Methane Conversion Rate (Ym)",
+  "Methane Conversion Rate (Ym)": "মিথেন রূপান্তর হার (Ym)",
   "* Ym (%) = percentage of energy intake lost as methane.": "* Ym (%) = মোট গ্রহণকৃত শক্তির যে অংশ মিথেন হিসেবে ক্ষয় হয়",
   "Notes": "মন্তব্য",
   "Simulation Status": "সিমুলেশনের অবস্থা",
