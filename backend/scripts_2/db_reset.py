@@ -9,6 +9,11 @@ Run inside the API container, from the folder holding docker-compose.yml:
 
     docker compose exec api python -m scripts_2.db_reset              # dry run
     docker compose exec api python -m scripts_2.db_reset --execute    # delete
+    docker compose exec api python -m scripts_2.db_reset --feeds-only --execute
+
+--feeds-only deletes only the feed library (feeds and feed_translations);
+users, custom feeds, reports and master data stay. Admins get the same wipe
+as DELETE /v1/admin/feeds (services/feed_library_wipe.py).
 
 Flow: email + 6-digit PIN of an active admin → row counts → (with --execute) typed
 confirmation of the database → pg_dump to --backup-dir, verified with
@@ -23,8 +28,6 @@ docs/dev_docs/database_info/database_info.md, section 3.5.
 import argparse
 import asyncio
 import getpass
-import os
-import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,7 +38,9 @@ from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
 
 from app.config import settings
+from services import db_backup, feed_library_wipe
 from services.auth_service import is_legacy_hash, verify_bcrypt_pin
+from services.db_backup import LOG_NAME, append_log, restore_command
 
 # Master data, never touched. system_metadata is v3's feed-cache flag: kept
 # while v3 code still reads it (unused-tables decision, section 3.4).
@@ -57,17 +62,9 @@ WIPE_ORDER: Tuple[str, ...] = (
     "user_information",
 )
 
-FEED_TABLES = frozenset({"feed_translations", "feeds"})
+FEED_TABLES = frozenset(feed_library_wipe.FEED_LIBRARY_TABLES)
 
 BACKUP_PREFIX = "pre_db_reset_"
-LOG_NAME = "db_reset.log"
-
-# Backup limits: a hung connection or a lock held by another session must stop
-# the run with a message, not leave it waiting forever. Test's dump takes seconds.
-CONNECT_TIMEOUT_SECONDS = 30
-LOCK_WAIT_TIMEOUT = "60s"
-DUMP_TIMEOUT_SECONDS = 30 * 60
-VERIFY_TIMEOUT_SECONDS = 5 * 60
 
 
 class ResetAbort(Exception):
@@ -94,6 +91,15 @@ def plan_tables(existing: Set[str], keep_feeds: bool) -> Tuple[List[str], List[s
         [t for t in wanted if t in existing],
         [t for t in wanted if t not in existing],
     )
+
+
+def plan_feed_library(existing: Set[str]) -> List[str]:
+    """Tables --feeds-only empties, in order. No unclassified-table check here:
+    the wipe itself refuses to change any other table."""
+    missing = [t for t in feed_library_wipe.FEED_LIBRARY_TABLES if t not in existing]
+    if missing:
+        raise ResetAbort("Feed library table(s) not found: " + ", ".join(missing))
+    return list(feed_library_wipe.FEED_LIBRARY_TABLES)
 
 
 def user_filter(keep_admins: bool) -> str:
@@ -184,54 +190,12 @@ async def delete_rows(
 
 # ── Backup, cache, log ────────────────────────────────────────────────────────
 
-def _pg_env() -> Dict[str, str]:
-    return {
-        **os.environ,
-        "PGPASSWORD": settings.postgres_password,
-        "PGCONNECT_TIMEOUT": str(CONNECT_TIMEOUT_SECONDS),
-    }
-
-
-def _pg_conn_args() -> List[str]:
-    return [
-        "-h", settings.postgres_host, "-p", str(settings.postgres_port),
-        "-U", settings.postgres_user, "-d", settings.postgres_db,
-    ]
-
-
-def backup_database(backup_dir: Path) -> Path:
-    """pg_dump -Fc into backup_dir, then prove it reads back. Raises ResetAbort."""
-    if not backup_dir.is_dir():
-        raise ResetAbort(
-            f"Backup folder {backup_dir} does not exist. On the server it is "
-            "~/rationsmart/backups, mounted into the api container by docker-compose.yml."
-        )
-    stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    path = backup_dir / f"{BACKUP_PREFIX}{stamp}.dump"
+def backup_database(backup_dir: Path, prefix: str = BACKUP_PREFIX) -> Path:
+    """pg_dump into backup_dir and prove it reads back (services/db_backup.py). Raises ResetAbort."""
     try:
-        dump = subprocess.run(
-            ["pg_dump", "-Fc", f"--lock-wait-timeout={LOCK_WAIT_TIMEOUT}",
-             *_pg_conn_args(), "-f", str(path)],
-            env=_pg_env(), capture_output=True, text=True, timeout=DUMP_TIMEOUT_SECONDS,
-        )
-    except FileNotFoundError:
-        raise ResetAbort("pg_dump is not installed in this container; rebuild the image.")
-    except subprocess.TimeoutExpired:
-        raise ResetAbort(f"Backup timed out after {DUMP_TIMEOUT_SECONDS // 60} minutes, nothing deleted.")
-    if dump.returncode != 0:
-        raise ResetAbort(f"Backup failed, nothing deleted:\n{dump.stderr.strip()}")
-    if not path.is_file() or path.stat().st_size == 0:
-        raise ResetAbort(f"Backup {path} is missing or empty, nothing deleted.")
-    try:
-        check = subprocess.run(
-            ["pg_restore", "--list", str(path)],
-            capture_output=True, text=True, timeout=VERIFY_TIMEOUT_SECONDS,
-        )
-    except subprocess.TimeoutExpired:
-        raise ResetAbort(f"Checking backup {path} timed out, nothing deleted.")
-    if check.returncode != 0:
-        raise ResetAbort(f"Backup {path} cannot be read back, nothing deleted:\n{check.stderr.strip()}")
-    return path
+        return db_backup.backup_database(backup_dir, prefix)
+    except db_backup.BackupError as exc:
+        raise ResetAbort(str(exc))
 
 
 async def clear_feed_cache() -> int:
@@ -248,19 +212,6 @@ async def clear_feed_cache() -> int:
         await client.aclose()
 
 
-def append_log(backup_dir: Path, line: str) -> None:
-    with open(backup_dir / LOG_NAME, "a", encoding="utf-8") as fh:
-        fh.write(line + "\n")
-
-
-def restore_command(backup: Path) -> str:
-    return (
-        "docker compose exec -T api sh -c 'PGPASSWORD=\"$POSTGRES_PASSWORD\" pg_restore "
-        "--clean --if-exists --no-owner -h \"$POSTGRES_HOST\" -p \"$POSTGRES_PORT\" "
-        f"-U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\" {backup}'"
-    )
-
-
 # ── Orchestration ─────────────────────────────────────────────────────────────
 
 def _print_counts(title: str, counts: Dict[str, int]) -> None:
@@ -268,6 +219,31 @@ def _print_counts(title: str, counts: Dict[str, int]) -> None:
     width = max((len(t) for t in counts), default=10)
     for table, n in counts.items():
         print(f"  {table:<{width}}  {n:>7}")
+
+
+async def _reset_rows(conn: AsyncConnection, tables: Sequence[str], operator_id, keep_admins: bool) -> Dict[str, int]:
+    # Guards against rows vanishing from master tables (e.g. an unexpected
+    # CASCADE). Values in kept rows may change by design: ON DELETE SET NULL
+    # clears feed_sync_config.scheduler_toggled_by (and, with --keep-feeds,
+    # feeds.created_by) when they point at a deleted user.
+    kept = sorted(KEEP_TABLES & await existing_tables(conn))
+    before = await table_counts(conn, kept)
+    deleted = await delete_rows(conn, tables, operator_id, keep_admins)
+    after = await table_counts(conn, kept)
+    if before != after:
+        changed = [t for t in before if before[t] != after[t]]
+        raise ResetAbort(
+            f"Row count of kept table(s) changed ({', '.join(changed)}); rolled back, nothing deleted."
+        )
+    return deleted
+
+
+async def _wipe_feed_library(conn: AsyncConnection) -> Dict[str, int]:
+    # Every table but the two feed-library ones must keep its row count.
+    try:
+        return await feed_library_wipe.wipe_feed_library(conn)
+    except feed_library_wipe.FeedWipeAbort as exc:
+        raise ResetAbort(str(exc))
 
 
 async def run(
@@ -284,9 +260,14 @@ async def run(
     async with engine.connect() as conn:  # read-only; rolled back on close
         operator_id, operator_email = await authenticate(conn, email, pin)
         print(f"Authenticated as {operator_email}; this account is kept.")
-        tables, missing = plan_tables(await existing_tables(conn), args.keep_feeds)
-        if missing:
-            print("Already gone, skipped: " + ", ".join(missing))
+        if args.feeds_only:
+            tables = plan_feed_library(await existing_tables(conn))
+            print("--feeds-only: only the feed library and its translations go;"
+                  " users, custom feeds, reports and master data stay.")
+        else:
+            tables, missing = plan_tables(await existing_tables(conn), args.keep_feeds)
+            if missing:
+                print("Already gone, skipped: " + ", ".join(missing))
         if args.keep_feeds:
             print("--keep-feeds: the feed library and its translations stay.")
         if args.keep_admins:
@@ -304,23 +285,16 @@ async def run(
 
     backup_dir = Path(args.backup_dir)
     print("Backing up ...")
-    backup = backup_database(backup_dir)
+    backup = backup_database(
+        backup_dir, feed_library_wipe.BACKUP_PREFIX if args.feeds_only else BACKUP_PREFIX,
+    )
     print(f"Backup written and verified: {backup}")
 
     async with engine.begin() as conn:  # one transaction: commits on exit, rolls back on any error
-        # Guards against rows vanishing from master tables (e.g. an unexpected
-        # CASCADE). Values in kept rows may change by design: ON DELETE SET NULL
-        # clears feed_sync_config.scheduler_toggled_by (and, with --keep-feeds,
-        # feeds.created_by) when they point at a deleted user.
-        kept = sorted(KEEP_TABLES & await existing_tables(conn))
-        before = await table_counts(conn, kept)
-        deleted = await delete_rows(conn, tables, operator_id, args.keep_admins)
-        after = await table_counts(conn, kept)
-        if before != after:
-            changed = [t for t in before if before[t] != after[t]]
-            raise ResetAbort(
-                f"Row count of kept table(s) changed ({', '.join(changed)}); rolled back, nothing deleted."
-            )
+        if args.feeds_only:
+            deleted = await _wipe_feed_library(conn)
+        else:
+            deleted = await _reset_rows(conn, tables, operator_id, args.keep_admins)
     if outcome is not None:
         outcome["backup"] = backup
     _print_counts("Deleted:", deleted)
@@ -344,11 +318,20 @@ def parse_args(argv: Optional[Sequence[str]] = None):
         description="Reset the RationSmart database for a QA round (admin only). Dry run unless --execute.",
     )
     parser.add_argument("--execute", action="store_true", help="back up, then delete (default: dry run)")
+    parser.add_argument("--feeds-only", action="store_true",
+                        help="delete only the feed library (feeds, feed_translations); everything else stays")
     parser.add_argument("--keep-feeds", action="store_true", help="keep the feed library and its translations")
     parser.add_argument("--keep-admins", action="store_true", help="keep every admin account, not just yours")
     parser.add_argument("--email", help="admin email (prompted if omitted)")
     parser.add_argument("--backup-dir", default="/backups", help="where the pg_dump goes (default: /backups)")
-    return parser.parse_args(argv)
+    args = parser.parse_args(argv)
+    # --feeds-only deletes no users and keeps nothing else to choose from, so
+    # neither --keep-* flag means anything beside it. (Not an argparse
+    # mutually exclusive group: that would also refuse --keep-feeds --keep-admins.)
+    for flag in ("keep_feeds", "keep_admins"):
+        if args.feeds_only and getattr(args, flag):
+            parser.error(f"argument --{flag.replace('_', '-')}: not allowed with argument --feeds-only")
+    return args
 
 
 async def _main(args, outcome: Dict[str, Path]) -> int:

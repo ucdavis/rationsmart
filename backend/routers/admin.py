@@ -1,14 +1,18 @@
 import logging
 import math
 from datetime import datetime, timezone
+from pathlib import Path
 from typing import List, Optional, Tuple
 
-from fastapi import APIRouter, BackgroundTasks, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.dependencies import get_db, require_admin_user
+from app.feed_cache import invalidate_feeds_cache
 from app.db.models import FeedCategory, FeedType, UserInformationModel
 from app.schemas.auth import (
     AdminUserListResponse,
@@ -31,6 +35,8 @@ from app.schemas.feed import (
     AdminFeedTypeRequest,
     AdminFeedTypeResponse,
     FeedDetailsResponse,
+    FeedLibraryWipeRequest,
+    FeedLibraryWipeResponse,
 )
 from app.schemas.report import (
     AdminFeedbackListResponse,
@@ -74,7 +80,10 @@ from repositories.feed_sync_repository import FeedSyncRepository
 from repositories.language_repository import LanguageRepository
 from repositories.report_repository import ReportRepository
 from repositories.user_repository import UserRepository
-from services import email_service, feed_service, feed_sync_service, report_service, translation_service
+from services import (
+    db_backup, email_service, feed_library_wipe, feed_service, feed_sync_service,
+    report_service, translation_service,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin"])
@@ -392,6 +401,116 @@ async def delete_feed(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
     await db.commit()
     return {"success": True, "message": message}
+
+
+@router.delete(
+    "/feeds",
+    response_model=FeedLibraryWipeResponse,
+    summary="Delete the whole standard feed library (admin, Test only)",
+)
+async def wipe_feed_library(
+    dry_run: bool = Query(False, description="Only count what would be deleted."),
+    body: Optional[FeedLibraryWipeRequest] = Body(None),
+    admin_user: UserInformationModel = Depends(require_admin_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Empty `feeds` and `feed_translations`. Feed types, categories and their
+    translations, custom feeds, users, reports and the CLIMDES sync settings and
+    history stay. Same wipe as `scripts_2/db_reset.py --feeds-only`.
+
+    **Requires:** Bearer JWT with admin privileges, and `ALLOW_FEED_LIBRARY_WIPE=true`
+    in the server's `.env` (off by default, so production refuses).
+
+    **`?dry_run=true`:** returns the row counts only; no body needed.
+
+    **Real run:** body `{"confirm": "DELETE ALL FEEDS"}`. A `pg_dump` of the whole
+    database is written to `BACKUP_DIR` first; then both tables are emptied in one
+    transaction, rolled back if any other table changes; then the Redis feed cache
+    is cleared and a line is added to `db_reset.log` beside the backup.
+
+    An already empty library returns at once, without a backup.
+
+    Errors: `403` disabled on this server · `400` missing or wrong confirmation ·
+    `409` a feed sync is running, or another table changed during the wipe (rolled
+    back) · `500` the backup failed. Nothing is deleted in any error case; the
+    details are in the API log.
+    """
+    if not settings.allow_feed_library_wipe:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Feed library wipe is disabled on this server",
+        )
+    if await FeedSyncRepository(db).get_running_log() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="A feed sync is running; try again when it has finished",
+        )
+
+    counts = await feed_library_wipe.count_feed_library(db)
+    if dry_run:
+        return FeedLibraryWipeResponse(
+            success=True, dry_run=True, message="Dry run: nothing deleted", **counts,
+        )
+    if body is None or body.confirm != feed_library_wipe.CONFIRM_PHRASE:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Send {{"confirm": "{feed_library_wipe.CONFIRM_PHRASE}"}} to delete the feed library',
+        )
+    if not any(counts.values()):
+        return FeedLibraryWipeResponse(
+            success=True, dry_run=False, message="Feed library is already empty", **counts,
+        )
+
+    backup_dir = Path(settings.backup_dir)
+    try:
+        backup = await run_in_threadpool(
+            db_backup.backup_database, backup_dir, feed_library_wipe.BACKUP_PREFIX,
+        )
+    except db_backup.BackupError as exc:
+        # pg_dump's stderr names hosts, users and paths: log it, don't return it.
+        logger.error("Feed library wipe stopped, backup failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Backup failed; nothing deleted. See the API log for details.",
+        )
+
+    try:
+        deleted = await feed_library_wipe.wipe_feed_library(db)
+    except feed_library_wipe.FeedWipeAbort as exc:
+        await db.rollback()
+        logger.error("Feed library wipe rolled back (backup %s): %s", backup.name, exc)
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Another table changed during the wipe; rolled back, nothing deleted. Try again.",
+        )
+    await db.commit()
+
+    summary = ", ".join(f"{t}={n}" for t, n in deleted.items())
+    logger.warning(
+        "Feed library wiped by %s (backup %s): %s", admin_user.email_id, backup.name, summary,
+    )
+    try:
+        await invalidate_feeds_cache()
+    except Exception as exc:  # committed already; the cache expires within 5 minutes
+        logger.warning("Feed library wipe: could not clear the Redis feed cache: %s", exc)
+    try:
+        stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        label = f"{settings.postgres_host}:{settings.postgres_port}/{settings.postgres_db}"
+        db_backup.append_log(
+            backup_dir, f"{stamp}\t{admin_user.email_id}\t{label} (API)\t{backup.name}\t{summary}",
+        )
+    except OSError as exc:
+        logger.warning("Feed library wipe: could not write %s: %s", db_backup.LOG_NAME, exc)
+
+    return FeedLibraryWipeResponse(
+        success=True,
+        dry_run=False,
+        message="Feed library deleted",
+        feeds=deleted["feeds"],
+        feed_translations=deleted["feed_translations"],
+        backup_file=backup.name,
+    )
 
 
 # ── Export (bulk-upload template) ─────────────────────────────────────────────
