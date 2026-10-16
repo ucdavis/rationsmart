@@ -33,7 +33,7 @@ export default function ActivateCountrySheet({
       <div
         role="dialog"
         aria-modal="true"
-        className="bg-white rounded-t-2xl px-5 pt-5 pb-8"
+        className="bg-white rounded-t-2xl px-5 pt-5 pb-8 max-h-[85vh] overflow-y-auto overscroll-contain"
         style={{ boxShadow: "0 -4px 24px rgba(0,0,0,0.12)" }}
       >
         <div className="flex justify-center mb-3">
