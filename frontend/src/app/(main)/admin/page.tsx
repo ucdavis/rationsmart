@@ -40,7 +40,7 @@ const adminCards: AdminCard[] = [
     icon: <IcFeedbackManagement size={28} color={COLORS.darkAquamarineGreen} />,
   },
   {
-    title: "Bulk Upload &\nExport Feed",
+    title: "Bulk Upload /\nDownload / Delete",
     href: "/admin/bulk-upload",
     icon: <IcBulkUpload size={28} color={COLORS.darkAquamarineGreen} />,
   },

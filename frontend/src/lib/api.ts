@@ -120,6 +120,7 @@ export {
   downloadTranslationWorkbook,
   exportAdminFeeds,
   exportCustomFeeds,
+  FEED_LIBRARY_CONFIRM_PHRASE,
   getAdminFeedCategories,
   getAdminFeedTypes,
   getAdminFeedbackStats,
@@ -137,6 +138,7 @@ export {
   listFeedTranslations,
   listLanguages,
   patchLanguage,
+  previewFeedLibraryWipe,
   runFeedSyncNow,
   toggleCountryStatus,
   toggleFeedSyncScheduler,
@@ -147,5 +149,7 @@ export {
   updateFeedSyncConfig,
   uploadTranslationWorkbook,
   upsertFeedTranslation,
+  wipeFeedLibrary,
 } from "./api-client/admin";
+export type { FeedLibraryWipeResult } from "./api-client/admin";
 export { default } from "./api-client/client";

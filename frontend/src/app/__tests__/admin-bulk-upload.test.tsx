@@ -1,12 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 
-const { replace, back, bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds } = vi.hoisted(() => ({
+const {
+  replace,
+  back,
+  bulkUploadFeeds,
+  exportAdminFeeds,
+  exportCustomFeeds,
+  previewFeedLibraryWipe,
+  wipeFeedLibrary,
+} = vi.hoisted(() => ({
   replace: vi.fn(),
   back: vi.fn(),
   bulkUploadFeeds: vi.fn(),
   exportAdminFeeds: vi.fn(),
   exportCustomFeeds: vi.fn(),
+  previewFeedLibraryWipe: vi.fn(),
+  wipeFeedLibrary: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -15,7 +25,14 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds };
+  return {
+    ...actual,
+    bulkUploadFeeds,
+    exportAdminFeeds,
+    exportCustomFeeds,
+    previewFeedLibraryWipe,
+    wipeFeedLibrary,
+  };
 });
 
 import BulkUploadPage from "@/app/(main)/admin/bulk-upload/page";
@@ -55,6 +72,11 @@ beforeEach(() => {
   bulkUploadFeeds.mockReset();
   exportAdminFeeds.mockReset();
   exportCustomFeeds.mockReset();
+  previewFeedLibraryWipe.mockReset();
+  wipeFeedLibrary.mockReset();
+  // Default: the server has the wipe switched off (production) — the Bulk
+  // Delete section stays hidden and the other suites are unaffected.
+  previewFeedLibraryWipe.mockRejectedValue(Object.assign(new Error("Forbidden"), { status: 403 }));
   useStore.setState({
     user: seedUser(),
     cattleInfo: null,
@@ -277,7 +299,9 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     // The "hi" dictionary lazy-loads via dynamic import() — findBy waits for it.
     await screen.findByText("चारा प्रबंधन"); // Feed Management (toolbar title)
     expect(screen.getByText("डेटा सिंक")).toBeInTheDocument(); // Data Sync
-    expect(screen.getByText("चारा निर्यात और अपलोड")).toBeInTheDocument(); // Feed Export & Upload
+    // Heading renamed to "Bulk Upload / Download / Delete" — no dictionary
+    // entry yet, so it falls back to English.
+    expect(screen.getByText("Bulk Upload / Download / Delete")).toBeInTheDocument();
     expect(screen.getByText("अपलोड")).toBeInTheDocument(); // Upload (section header)
     expect(screen.getByText("डाउनलोड")).toBeInTheDocument(); // Download (section header)
     expect(screen.queryByText("Feed Management")).not.toBeInTheDocument();
@@ -309,5 +333,137 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     fireEvent.click(screen.getByRole("button", { name: /अपलोड की पुष्टि करें/ })); // Confirm upload aria-label
     await screen.findByText("अपलोड हो रहा है"); // Uploading (banner title)
     expect(screen.getByText("आपके चारे अपलोड किए जा रहे हैं।")).toBeInTheDocument(); // Your feeds are being uploaded.
+  });
+});
+
+// Bulk Delete — DELETE /v1/admin/feeds. The section only shows when the dry
+// run succeeds; the dialog's Delete button needs the exact phrase.
+describe("Bulk Delete — feed library wipe", () => {
+  const dryRun = (feeds: number, feed_translations: number) => ({
+    data: {
+      success: true,
+      dry_run: true,
+      message: "",
+      feeds,
+      feed_translations,
+      backup_file: null,
+    },
+  });
+
+  async function openDialog() {
+    previewFeedLibraryWipe.mockReset();
+    previewFeedLibraryWipe.mockResolvedValueOnce(dryRun(224, 60));
+    previewFeedLibraryWipe.mockResolvedValueOnce(dryRun(225, 61));
+    render(<BulkUploadPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Delete feed library" }));
+    await screen.findByRole("dialog");
+    return screen.getByLabelText(/to confirm/) as HTMLInputElement;
+  }
+  const deleteBtn = () => screen.getByRole("button", { name: "Delete" });
+
+  it("renames the page heading", () => {
+    render(<BulkUploadPage />);
+    expect(screen.getByText("Bulk Upload / Download / Delete")).toBeInTheDocument();
+  });
+
+  it("hides the section when the dry run returns 403", async () => {
+    render(<BulkUploadPage />);
+    await waitFor(() => expect(previewFeedLibraryWipe).toHaveBeenCalled());
+    expect(screen.queryByRole("button", { name: "Delete feed library" })).not.toBeInTheDocument();
+  });
+
+  it("shows the current counts when the dry run succeeds", async () => {
+    previewFeedLibraryWipe.mockReset();
+    previewFeedLibraryWipe.mockResolvedValue(dryRun(224, 60));
+    render(<BulkUploadPage />);
+    expect(await screen.findByText("224 feeds, 60 translations")).toBeInTheDocument();
+  });
+
+  it("re-runs the dry run on click and shows the fresh counts in the dialog", async () => {
+    await openDialog();
+    expect(previewFeedLibraryWipe).toHaveBeenCalledTimes(2);
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toHaveTextContent("225");
+    expect(dialog).toHaveTextContent("61");
+  });
+
+  it("enables Delete only on the exact phrase (case-sensitive, no trim)", async () => {
+    const input = await openDialog();
+    expect(deleteBtn()).toBeDisabled();
+    for (const wrong of [
+      "delete all feeds",
+      "DELETE ALL FEEDS ",
+      " DELETE ALL FEEDS",
+      "DELETE ALL",
+    ]) {
+      fireEvent.change(input, { target: { value: wrong } });
+      expect(deleteBtn()).toBeDisabled();
+    }
+    fireEvent.change(input, { target: { value: "DELETE ALL FEEDS" } });
+    expect(deleteBtn()).toBeEnabled();
+  });
+
+  it("on success closes the dialog, toasts counts + backup, zeroes the counts and links to Feed Sync", async () => {
+    wipeFeedLibrary.mockResolvedValueOnce({
+      data: {
+        success: true,
+        dry_run: false,
+        message: "Feed library deleted",
+        feeds: 225,
+        feed_translations: 61,
+        backup_file: "pre_feed_wipe_20261016_101500.dump",
+      },
+    });
+    const input = await openDialog();
+    fireEvent.change(input, { target: { value: "DELETE ALL FEEDS" } });
+    fireEvent.click(deleteBtn());
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(wipeFeedLibrary).toHaveBeenCalledWith("DELETE ALL FEEDS");
+    expect(useStore.getState().snackbar?.message).toBe(
+      "Deleted 225 feeds and 61 translations. Backup: pre_feed_wipe_20261016_101500.dump"
+    );
+    expect(screen.getByText("0 feeds, 0 translations")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Open Feed Library Sync" })).toHaveAttribute(
+      "href",
+      "/admin/feed-sync"
+    );
+  });
+
+  it("on 409 keeps the dialog open, shows the server's message and doesn't retry", async () => {
+    wipeFeedLibrary.mockRejectedValueOnce(
+      Object.assign(new Error("A feed sync is running; try again when it has finished"), {
+        status: 409,
+      })
+    );
+    const input = await openDialog();
+    fireEvent.change(input, { target: { value: "DELETE ALL FEEDS" } });
+    fireEvent.click(deleteBtn());
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "A feed sync is running; try again when it has finished"
+    );
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(wipeFeedLibrary).toHaveBeenCalledTimes(1);
+    expect(screen.getByText("225 feeds, 61 translations")).toBeInTheDocument();
+  });
+
+  it("maps 500 to the backup-failed message", async () => {
+    wipeFeedLibrary.mockRejectedValueOnce(Object.assign(new Error("x"), { status: 500 }));
+    const input = await openDialog();
+    fireEvent.change(input, { target: { value: "DELETE ALL FEEDS" } });
+    fireEvent.click(deleteBtn());
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Backup failed, so nothing was deleted. Contact the backend team."
+    );
+  });
+
+  it("can't be closed while the delete is in flight", async () => {
+    wipeFeedLibrary.mockImplementationOnce(() => new Promise(() => {}));
+    const input = await openDialog();
+    fireEvent.change(input, { target: { value: "DELETE ALL FEEDS" } });
+    fireEvent.click(deleteBtn());
+    await screen.findByText("Deleting...");
+    expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

@@ -44,6 +44,9 @@ import {
   listCountriesWithLanguages,
   assignLanguageToCountry,
   unassignLanguageFromCountry,
+  previewFeedLibraryWipe,
+  wipeFeedLibrary,
+  FEED_LIBRARY_CONFIRM_PHRASE,
 } from "@/lib/api";
 
 beforeEach(() => {
@@ -388,5 +391,28 @@ describe("language catalog CRUD (4.1-4.6)", () => {
     mockApi.delete.mockResolvedValueOnce({ data: {} });
     await unassignLanguageFromCountry("7", "hi");
     expect(mockApi.delete).toHaveBeenCalledWith("/v1/admin/countries/7/languages/hi");
+  });
+});
+
+// ─── Bulk Delete (feed library wipe) ────────────────────────────────────────
+
+describe("feed library wipe", () => {
+  it("previewFeedLibraryWipe DELETEs /v1/admin/feeds with dry_run=true and no body", async () => {
+    mockApi.delete.mockResolvedValueOnce({ data: {} });
+    await previewFeedLibraryWipe();
+    expect(mockApi.delete).toHaveBeenCalledWith("/v1/admin/feeds", {
+      params: { dry_run: true },
+    });
+    expect(mockApi.delete.mock.calls[0][1]).not.toHaveProperty("data");
+  });
+
+  it("wipeFeedLibrary sends the confirmation in axios' `data` option (not as config)", async () => {
+    mockApi.delete.mockResolvedValueOnce({ data: {} });
+    await wipeFeedLibrary(FEED_LIBRARY_CONFIRM_PHRASE);
+    expect(FEED_LIBRARY_CONFIRM_PHRASE).toBe("DELETE ALL FEEDS");
+    expect(mockApi.delete).toHaveBeenCalledWith("/v1/admin/feeds", {
+      data: { confirm: "DELETE ALL FEEDS" },
+    });
+    expect(mockApi.delete.mock.calls[0][1]).not.toHaveProperty("params");
   });
 });

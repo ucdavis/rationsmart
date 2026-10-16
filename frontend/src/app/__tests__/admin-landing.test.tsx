@@ -57,7 +57,7 @@ describe("Admin landing — admin user", () => {
       ["User Management", "/admin/users"],
       ["Feed Management", "/admin/feeds"],
       ["Feedback Management", "/admin/feedback"],
-      ["Bulk Upload & Export Feed", "/admin/bulk-upload"],
+      ["Bulk Upload / Download / Delete", "/admin/bulk-upload"],
       ["Feed Reports", "/admin/reports"],
       ["Country/ Language", "/admin/country-language"],
       ["Feed Library Sync", "/admin/feed-sync"],

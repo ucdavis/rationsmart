@@ -4,6 +4,10 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import Toolbar from "@/components/Toolbar";
 import { useBulkUpload } from "@/components/admin/bulk-upload/useBulkUpload";
+import { useBulkDelete } from "@/components/admin/bulk-upload/useBulkDelete";
+import BulkDeleteSection, {
+  FeedLibraryWipeDialog,
+} from "@/components/admin/bulk-upload/BulkDeleteSection";
 import { useT } from "@/lib/i18n-ui";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
@@ -53,6 +57,7 @@ export default function BulkUploadPage() {
     downloadBanner,
     renderStatusIcon,
   } = useBulkUpload(user, showSnackbar, t);
+  const bulkDelete = useBulkDelete(showSnackbar, t);
 
   return (
     <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
@@ -62,7 +67,7 @@ export default function BulkUploadPage() {
       <div className="ml-3 mt-5">
         <p style={{ color: COLORS.darkSilver, fontSize: 14 }}>{t("Data Sync")}</p>
         <p className="font-bold" style={{ color: COLORS.raisinBlack, fontSize: 20 }}>
-          {t("Feed Export & Upload")}
+          {t("Bulk Upload / Download / Delete")}
         </p>
       </div>
 
@@ -434,7 +439,12 @@ export default function BulkUploadPage() {
             </>
           )}
         </div>
+
+        {/* ── DELETE ── (hidden unless the server allows the wipe) */}
+        <BulkDeleteSection bulkDelete={bulkDelete} t={t} />
       </div>
+
+      <FeedLibraryWipeDialog bulkDelete={bulkDelete} t={t} />
 
       {/* Fixed bottom Download Template button (gradient) */}
       <div

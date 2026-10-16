@@ -95,6 +95,26 @@ export const bulkUploadFeeds = (
   });
 };
 
+// DELETE /v1/admin/feeds — empty the whole standard feed library (feeds +
+// feed translations; types, categories and custom feeds stay). The server
+// takes a pg_dump first. Off unless the server sets ALLOW_FEED_LIBRARY_WIPE
+// (403 otherwise — production refuses). `?dry_run=true` only counts.
+// The real run's body MUST go in axios' `data` option: api.delete(url, body)
+// treats the body as config, sends nothing, and the server answers 400.
+export interface FeedLibraryWipeResult {
+  success: boolean;
+  dry_run: boolean;
+  message: string;
+  feeds: number;
+  feed_translations: number;
+  backup_file: string | null;
+}
+export const FEED_LIBRARY_CONFIRM_PHRASE = "DELETE ALL FEEDS";
+export const previewFeedLibraryWipe = () =>
+  api.delete<FeedLibraryWipeResult>("/v1/admin/feeds", { params: { dry_run: true } });
+export const wipeFeedLibrary = (confirm: string) =>
+  api.delete<FeedLibraryWipeResult>("/v1/admin/feeds", { data: { confirm } });
+
 // GET /v1/admin/get-all-reports/ — JWT-derived admin
 export const getAdminReports = (_user_id: string, page = 1, page_size = 20) =>
   api.get("/v1/admin/get-all-reports/", { params: { page, page_size } });
