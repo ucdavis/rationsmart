@@ -228,19 +228,9 @@ export function CalfMilkFeedingCard({
   const notes = serverPlan?.notes ?? [
     t("Use clean, warm milk at 38–40°C; never cold from the fridge."),
     t("Replace whole milk with a quality milk replacer if cost is a concern."),
-    t("Wean gradually over 7–10 days once the calf eats 1.5–2 kg of starter daily."),
   ];
   return (
     <SCard title={t("Calf Milk Feeding")} icon={<IcCalfMilk />}>
-      {/* Without a backend plan these figures are the rule of thumb
-          above, not an engine result — say so (audit D-02). */}
-      {!serverPlan && (
-        <p className="text-xs mb-2" style={{ color: COLORS.darkSilver }}>
-          {t(
-            "Estimated from body weight using general guidance — not calculated by the ration engine."
-          )}
-        </p>
-      )}
       {/* Three tiles: daily volume, per-feeding split, weaning age */}
       <div className="grid grid-cols-3 gap-2 mb-3">
         <div
@@ -347,18 +337,18 @@ export function CalfMilkFeedingCard({
           ))}
         </div>
       )}
-      <p
-        className="mt-2 ml-1"
-        style={{
-          color: COLORS.darkSilver,
-          fontSize: 11,
-          fontStyle: "italic",
-        }}
-      >
-        {serverPlan
-          ? t("Plan from server. Adjust with vet guidance.")
-          : t("Default plan — 10% of body weight per day. Backend will refine when available.")}
-      </p>
+      {serverPlan && (
+        <p
+          className="mt-2 ml-1"
+          style={{
+            color: COLORS.darkSilver,
+            fontSize: 11,
+            fontStyle: "italic",
+          }}
+        >
+          {t("Plan from server. Adjust with vet guidance.")}
+        </p>
+      )}
     </SCard>
   );
 }
