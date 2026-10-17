@@ -20,6 +20,8 @@ import uuid
 from datetime import datetime
 from html.parser import HTMLParser
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlsplit
+from urllib.request import url2pathname
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -232,6 +234,47 @@ def eval_pdf_report_generator(
 # report_generation.py:rsm_generate_report_v2) — this base_url is where WeasyPrint
 # resolves them from at conversion time.
 REPORT_ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+_REPORT_ASSETS_REAL = os.path.realpath(REPORT_ASSETS_DIR)
+
+
+class BlockedResourceError(ValueError):
+    """Report HTML referenced a resource outside the allowed set."""
+
+
+def report_url_fetcher(url: str, *args, **kwargs):
+    """WeasyPrint url_fetcher for report PDFs: bundled assets and data: URIs only.
+
+    Report HTML carries user-typed text (feed and simulation names), so it is not
+    trusted. WeasyPrint's default fetcher follows any URL it finds -- an internal
+    http(s) address, or a local file that it then embeds in the PDF. Allowed:
+      * data: URIs -- inline content; reports stored before icons were referenced by
+        filename embed them this way;
+      * local file: URLs that resolve inside REPORT_ASSETS_DIR (symlinks and ../ are
+        resolved before the check).
+    Anything else raises BlockedResourceError; WeasyPrint logs it and renders the PDF
+    without that resource.
+    """
+    from weasyprint.urls import default_url_fetcher
+
+    parts = urlsplit(url)
+    scheme = parts.scheme.lower()
+    if scheme == "data":
+        return default_url_fetcher(url, *args, **kwargs)
+    if scheme == "file" and parts.netloc in ("", "localhost"):
+        path = os.path.realpath(url2pathname(parts.path))
+        if os.path.commonpath([path, _REPORT_ASSETS_REAL]) == _REPORT_ASSETS_REAL:
+            return default_url_fetcher(url, *args, **kwargs)
+    raise BlockedResourceError(f"report PDF may not load {scheme or 'relative'} URLs outside its assets")
+
+
+def html_to_pdf(html_content: str, base_url: Optional[str] = REPORT_ASSETS_DIR) -> bytes:
+    """Render report HTML to PDF bytes, loading only what report_url_fetcher allows.
+
+    Every report PDF must go through here rather than calling WeasyPrint directly.
+    """
+    from weasyprint import HTML
+
+    return HTML(string=html_content, base_url=base_url, url_fetcher=report_url_fetcher).write_pdf()
 
 
 async def rec_pdf_report_generator_v2(
@@ -250,8 +293,7 @@ async def rec_pdf_report_generator_v2(
     """
     try:
         logger.info("V2 PDF generation starting for report=%s", report_id)
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html_content, base_url=REPORT_ASSETS_DIR).write_pdf()
+        pdf_bytes = html_to_pdf(html_content)
         if not pdf_bytes:
             raise RuntimeError("HTML-to-PDF conversion returned no bytes")
 
@@ -684,8 +726,7 @@ def generate_diet_recommendation_pdf(
         html_content = _transpose_feed_tables(html_content)
         html_content = _reorder_sections_for_pdf(html_content)
         html_content = _optimize_html_for_pdf(html_content)
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html_content).write_pdf()
+        pdf_bytes = html_to_pdf(html_content, base_url=None)
         logger.info("PDF V3 generated successfully. Size: %d bytes", len(pdf_bytes))
         return pdf_bytes
     except Exception as e:
@@ -713,8 +754,7 @@ def generate_diet_evaluation_pdf(
             html_content = f.read()
         logger.info("Successfully read Evaluation HTML file: %s", html_file_path)
         html_content = _optimize_html_for_pdf(html_content)
-        from weasyprint import HTML
-        pdf_bytes = HTML(string=html_content).write_pdf()
+        pdf_bytes = html_to_pdf(html_content, base_url=None)
         logger.info("Evaluation PDF V3 generated. Size: %d bytes", len(pdf_bytes))
         return pdf_bytes
     except Exception as e:

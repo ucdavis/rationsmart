@@ -1232,6 +1232,16 @@ def _transposed_blocks_html(tdf, title_text=""):
 _SIMULATION_MODE_SUFFIXES = (" (Recommendation)", " (Evaluation)")
 
 
+def _cells_escaped(df):
+    """Copy of df with every string cell HTML-escaped, for to_html(escape=False).
+
+    Some tables need escape=False because their column headers carry markup
+    ("Amount Fresh<br/>(Kg/day)"), but their cells hold user-typed text such as custom
+    feed names, which must print as text.
+    """
+    return df.apply(lambda col: col.map(lambda v: _escape_html(v) if isinstance(v, str) else v))
+
+
 def display_simulation_name(simulation_id) -> str:
     """simulation_id as shown in the report header: one trailing mode suffix removed."""
     name = "" if simulation_id is None else str(simulation_id)
@@ -1321,7 +1331,8 @@ def rsm_generate_report_v2(
         for msg in post_messages:
             if not isinstance(msg, str):
                 continue
-            clean_msg = msg.strip()
+            # Engine messages are plain text and may quote feed names: escape them.
+            clean_msg = _escape_html(msg.strip())
             if not clean_msg:
                 lis.append("<li>&nbsp;</li>")
             elif clean_msg.startswith("Diet status:"):
@@ -1682,7 +1693,7 @@ def rsm_generate_report_v2(
         if calf_feeding_table is not None and not calf_feeding_table.empty:
             calf_table_html = (
                 "<div class='table-container'>"
-                + calf_feeding_table.to_html(index=False, classes='diet-table', escape=False)
+                + calf_feeding_table.to_html(index=False, classes='diet-table')
                 + "</div>"
             )
         body_parts = [
@@ -1713,7 +1724,7 @@ def rsm_generate_report_v2(
             (margin_banner_html if report_context["show_milk_price_comparison"] else ""),
             "</div>",
             f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{'Diet' if evaluation_mode else 'Least Cost Diet'}</h2>",
-            "<div class='table-container'>" + dt_results.to_html(index=False, classes='diet-table', escape=False) + "</div>",
+            "<div class='table-container'>" + _cells_escaped(dt_results).to_html(index=False, classes='diet-table', escape=False) + "</div>",
             messages_html, "</div>",
             env_impact_html,
             f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>Animal Information</h2>",
