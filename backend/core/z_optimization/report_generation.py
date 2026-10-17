@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 import os
 import re
+from html import escape as _escape_html
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -1224,6 +1225,22 @@ def _transposed_blocks_html(tdf, title_text=""):
     return "".join(parts)
 
 
+# The PWA appends the diet mode to simulation_id ("Sim 1 (Recommendation)") so one
+# simulation name gets a separate Simulation History entry per mode. The report title
+# already names the mode, so the header shows the name without it. The stored
+# simulation_id is unchanged.
+_SIMULATION_MODE_SUFFIXES = (" (Recommendation)", " (Evaluation)")
+
+
+def display_simulation_name(simulation_id) -> str:
+    """simulation_id as shown in the report header: one trailing mode suffix removed."""
+    name = "" if simulation_id is None else str(simulation_id)
+    for suffix in _SIMULATION_MODE_SUFFIXES:
+        if name.endswith(suffix) and name[: -len(suffix)].strip():
+            return name[: -len(suffix)]
+    return name
+
+
 def rsm_generate_report_v2(
     post_results,
     animal_requirements,
@@ -1648,10 +1665,12 @@ def rsm_generate_report_v2(
         "<div class='container'>",
         f"<div class='header'><h1><img src='{icon_header}' class='header-icon'> {'Evaluation Report' if evaluation_mode else 'Recommendation Report'}</h1>",
         "<div class='report-meta'>",
-        f"<div class='meta-item'><strong>User</strong><span>{user_name}</span></div>",
-        f"<div class='meta-item'><strong>Simulation</strong><span>{simulation_id}</span></div>",
-        f"<div class='meta-item'><strong>Report ID</strong><span>{report_id}</span></div>",
-        f"<div class='meta-item'><strong>Country</strong><span>{country_name}</span></div>",
+        # User-typed values: escaped, so they print as text and cannot inject markup
+        # into the HTML that WeasyPrint later renders server-side.
+        f"<div class='meta-item'><strong>User</strong><span>{_escape_html(str(user_name))}</span></div>",
+        f"<div class='meta-item'><strong>Simulation</strong><span>{_escape_html(display_simulation_name(simulation_id))}</span></div>",
+        f"<div class='meta-item'><strong>Report ID</strong><span>{_escape_html(str(report_id))}</span></div>",
+        f"<div class='meta-item'><strong>Country</strong><span>{_escape_html(str(country_name))}</span></div>",
         f"<div class='meta-item'><strong>Generated</strong><span>{report_date}</span></div>",
         "</div></div>",
         "<div class='content'>",

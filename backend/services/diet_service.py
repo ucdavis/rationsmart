@@ -334,6 +334,8 @@ def _render_report_html(
     report_id: str,
     evaluation_mode: bool = False,
     currency: str = "$",
+    user_name: Optional[str] = None,
+    country_name: Optional[str] = None,
 ) -> Optional[str]:
     """Render report HTML for Report.report_html at compute time.
 
@@ -343,10 +345,19 @@ def _render_report_html(
     string). Defensive: a bug in the report renderer must never break diet
     computation — logs and returns None (report_html stays null; PDF generation
     later just has nothing to convert) rather than raising.
+
+    user_name / country_name fill the report header (see _report_header_names); a
+    missing value leaves the renderer's default in place.
     """
     try:
         from core.z_optimization.report_generation import rsm_generate_report_v2
 
+        # A name that could not be resolved falls back to the renderer's defaults.
+        names = {}
+        if user_name:
+            names["user_name"] = user_name
+        if country_name:
+            names["country_name"] = country_name
         return rsm_generate_report_v2(
             post_results=post_results,
             animal_requirements=animal_requirements,
@@ -354,10 +365,39 @@ def _render_report_html(
             report_id=report_id,
             evaluation_mode=evaluation_mode,
             currency=currency,
+            **names,
         )
     except Exception:
         logger.error("Report HTML generation failed (report=%s)", report_id, exc_info=True)
         return None
+
+
+async def _report_header_names(
+    db: AsyncSession, user_id: str, country_id: Optional[str]
+) -> Tuple[Optional[str], Optional[str]]:
+    """(user name, country name) for the report header.
+
+    The user is the one who ran the simulation (the authenticated caller); the country
+    is the simulation's country from the request, which may differ from the user's
+    profile country. Either is None when it cannot be resolved. Like _render_report_html,
+    this is display-only and must never break the diet computation, so a failed lookup
+    is logged and falls back to the renderer's defaults. The lookups run in a savepoint:
+    a database error inside it rolls back only the savepoint, so the caller's
+    transaction (which still has to save the report) stays usable.
+    """
+    try:
+        cid = str(_uuid_mod.UUID(str(country_id))) if country_id else None
+    except ValueError:
+        cid = None  # a malformed id would fail the query inside this transaction
+    try:
+        async with db.begin_nested():
+            user_repo = UserRepository(db)
+            user = await user_repo.get_by_id(user_id)
+            country = await user_repo.get_country_by_id(cid) if cid else None
+        return (user.name if user else None), (country.name if country else None)
+    except Exception:
+        logger.warning("Report header: could not resolve user/country names (user=%s)", user_id, exc_info=True)
+        return None, None
 
 
 async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id: str) -> Dict[str, Any]:
@@ -410,9 +450,11 @@ async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id:
     # already handles that gracefully for the "Baby Calf/Heifer" profile (only
     # the animal-inputs + calf-feeding-schedule tables get rendered for it).
     post_results = {"animal_inputs": rsm_create_animal_inputs_dataframe(animal_requirements)}
+    user_name, country_name = await _report_header_names(db, user_id, request.country_id)
     report_html = _render_report_html(
         post_results, animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id,
+        user_name=user_name, country_name=country_name,
     )
 
     report_repo = ReportRepository(db)
@@ -592,9 +634,11 @@ async def run_diet_recommendation(
     )
 
     # 5 — Render report HTML (PDF generation happens later, at save time)
+    user_name, country_name = await _report_header_names(db, user_id, request.country_id)
     report_html = _render_report_html(
         post_results, result.animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id, currency=currency,
+        user_name=user_name, country_name=country_name,
     )
 
     # 6 — Persist report record
@@ -735,10 +779,13 @@ async def run_diet_evaluation(
         type_map=type_map,
     )
 
+    # Country is already resolved above (the request's country); only the user is needed.
+    user_name, _ = await _report_header_names(db, user_id, None)
     report_html = _render_report_html(
         eval_result.get("post_results", {}), eval_result.get("animal_requirements", {}),
         simulation_id=request.simulation_id, report_id=report_id,
         evaluation_mode=True, currency=request.currency,
+        user_name=user_name, country_name=country_name,
     )
 
     report_repo = ReportRepository(db)
