@@ -49,35 +49,11 @@ const adminCards: AdminCard[] = [
     href: "/admin/reports",
     icon: <IcReportNav size={28} color={COLORS.darkAquamarineGreen} />,
   },
-  // i18n V2 Phase 2 — translation tools. "Translations" opens the Feed Names
-  // tab of Country/Language, which now has the workbook, per-feed editor and
-  // coverage check (the separate /admin/translations screen was merged in).
-  {
-    title: "Translations",
-    href: "/admin/country-language?tab=feeds",
-    icon: (
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-        <path
-          d="M3 5h12M9 3v2M5 7c0 6 4 8 4 8M3 17l4-8 4 8M5 14h4"
-          stroke={COLORS.darkAquamarineGreen}
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <path
-          d="M13 21l4-8 4 8M15 18h4"
-          stroke={COLORS.darkAquamarineGreen}
-          strokeWidth="1.8"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    ),
-  },
   // Country/Language (new) — enable/disable countries + languages, associate
   // languages per country, and set local (translated) feed names. Replaces
-  // the Language Catalog tile on the landing grid (2026-07-20) — the old
-  // /admin/languages route still exists but is no longer linked from here.
+  // the Language Catalog tile on the landing grid (2026-07-20). Its Feed Names
+  // tab (?tab=feeds) holds the translation workbook, per-feed names and
+  // coverage, so there's no separate Translations tile (removed 2026-10-17).
   {
     title: "Country/\nLanguage",
     href: "/admin/country-language",
