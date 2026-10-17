@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -559,6 +559,34 @@ async def export_custom_feeds(
         iter([file_bytes]),
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# Empty bulk-upload workbook: the export's 21 columns, header row only. Kept as a
+# static file (not generated) so its formatting survives — bold headers, frozen
+# top row, column widths. A unit test pins its headers to the export contract.
+FEED_TEMPLATE_PATH = Path(__file__).resolve().parent.parent / "app" / "assets" / "rs_template_feed_upload.xlsx"
+
+
+@router.get("/feed-template", summary="Download the empty feed bulk-upload template (admin)")
+async def download_feed_template(
+    admin_user: UserInformationModel = Depends(require_admin_user),
+):
+    """
+    Download the empty `.xlsx` template for `POST /v1/admin/feed-sync/run-from-file`:
+    the same 21 columns as `GET /v1/admin/export-feeds`, header row only. Admin only.
+
+    Replaces the old Android-era template on S3, whose columns the import rejects.
+
+    **Requires:** Bearer JWT with admin privileges.
+    """
+    if not FEED_TEMPLATE_PATH.is_file():
+        logger.error("Feed upload template missing at %s", FEED_TEMPLATE_PATH)
+        raise HTTPException(status_code=500, detail="Feed upload template is not available")
+    return FileResponse(
+        FEED_TEMPLATE_PATH,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        filename=FEED_TEMPLATE_PATH.name,
     )
 
 
