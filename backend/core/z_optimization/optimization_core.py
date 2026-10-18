@@ -35,6 +35,7 @@ from .constraints_adequacy import compute_adequacy, summarize_constraint_result
 from .feasibility import feasibility_precheck
 from .diet_supply import rsm_diet_supply
 from .rationsmart_warnings import pre_feasibility_warnings
+from .report_text import CAP_MINERAL_MAX, CAP_MINERAL_MIN, CAP_UREA_MAX
 
 ########################################################
 # Optimization BOUNDS
@@ -129,20 +130,17 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
         mineral_max_proportion = mineral_max_kg / trg
         for idx in mineral_indices:
             if explicit_max_mask[idx] and mineral_max_proportion < xu[idx] - _B_TOL:
-                _warn(
-                    f"{feed_names[idx]}: entered maximum {xu[idx] * trg:.3f} kg DM/day was "
-                    f"reduced to {mineral_max_kg:.3f} kg DM/day by the mineral safety limit."
-                )
+                _warn(CAP_MINERAL_MAX.format(
+                    feed=feed_names[idx], entered=f"{xu[idx] * trg:.3f}", limit=f"{mineral_max_kg:.3f}",
+                ))
             xu[idx] = min(xu[idx], mineral_max_proportion)
             xl[idx] = max(xl[idx], mineral_min_proportion)
             # Fix inconsistent mineral bounds
             if xl[idx] > xu[idx]:
                 logger.warning("Mineral bound conflict for %s, adjusting min to max", feed_names[idx])
-                _warn(
-                    f"{feed_names[idx]}: the required mineral minimum of "
-                    f"{mineral_min_kg:.3f} kg DM/day could not be met because the entered "
-                    f"maximum limits it to {xu[idx] * trg:.3f} kg DM/day."
-                )
+                _warn(CAP_MINERAL_MIN.format(
+                    feed=feed_names[idx], minimum=f"{mineral_min_kg:.3f}", entered=f"{xu[idx] * trg:.3f}",
+                ))
                 xl[idx] = xu[idx]
             logger.debug("Mineral bounds: %s %.1f%% - %.1f%%", feed_names[idx], xl[idx]*100, xu[idx]*100)
     
@@ -161,11 +159,10 @@ def rsm_bounds_xlxu(f_nd, animal_requirements, categories=None, custom_threshold
         per_feed_limit = urea_limit / float(urea_indices.size)
         for idx in urea_indices:
             if explicit_max_mask[idx] and per_feed_limit < xu[idx] - _B_TOL:
-                _warn(
-                    f"{feed_names[idx]}: entered maximum {xu[idx] * trg:.3f} kg DM/day was "
-                    f"reduced to {per_feed_limit * trg:.3f} kg DM/day by the urea safety "
-                    f"limit (shared across {urea_indices.size} urea feed(s))."
-                )
+                _warn(CAP_UREA_MAX.format(
+                    feed=feed_names[idx], entered=f"{xu[idx] * trg:.3f}",
+                    limit=f"{per_feed_limit * trg:.3f}", count=urea_indices.size,
+                ))
             xu[idx] = min(xu[idx], per_feed_limit)
             logger.debug("Urea cap: %s <= %.2f%% of DMI", feed_names[idx], per_feed_limit * 100)
     

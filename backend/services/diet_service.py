@@ -461,6 +461,7 @@ async def _run_baby_calf_recommendation(
         rsm_create_animal_inputs_dataframe,
     )
     from core.z_optimization.reporting import build_calf_recommendation_response
+    from core.z_optimization.report_text import translator
 
     cattle = request.cattle_info
     animal_inputs = {
@@ -489,6 +490,7 @@ async def _run_baby_calf_recommendation(
         cattle_info=cattle,
         simulation_id=request.simulation_id,
         report_id=report_id,
+        translate=translator(lang),
     )
 
     # No ration was optimized (milk-only path) — build a minimal post_results with
@@ -548,6 +550,7 @@ async def run_diet_recommendation(
     from core.z_optimization.constraints_config import to_wire_units
     from core.z_optimization.nsga3_runner import z_optimization_main
     from core.z_optimization.reporting import build_diet_response
+    from core.z_optimization.report_text import translator
 
     cattle = request.cattle_info
 
@@ -669,6 +672,7 @@ async def run_diet_recommendation(
         user_name="",
         currency=currency,
         name_map=name_map,
+        translate=translator(lang),
     )
 
     # 5 — Render report HTML (PDF generation happens later, at save time)

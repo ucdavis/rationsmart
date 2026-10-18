@@ -3,12 +3,13 @@ import logging
 import numpy as np
 import pandas as pd
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from pathlib import Path
 
 import logging
 
 from .utilities import format_value_with_unit, safe_float, ensure_json_safe, milk_margin_message
+from .report_text import translate_message, translator
 from .diet_tables import (
     forage_concentrate_ratio_from_proportions,
     compute_forage_concentrate_ratio,
@@ -16,6 +17,14 @@ from .diet_tables import (
 
 logger = logging.getLogger(__name__)
 
+
+
+# Fixed recommendation sentences (also rows of report_text.xlsx).
+SUCCESS_RECOMMENDATION = "Continue monitoring animal performance and adjust as needed."
+CALF_RECOMMENDATION = (
+    "Feed milk only, split between morning and evening. Solid-feed ration "
+    "formulation does not apply to a baby calf (milk intake only, up to ~8 weeks of age)."
+)
 
 def _build_animal_information(cattle_info, env_grazing):
     """
@@ -103,6 +112,7 @@ def build_diet_response(
     user_name: str,
     currency: str = "$",
     name_map: Optional[Dict[str, str]] = None,
+    translate: Optional[Callable[..., str]] = None,
 ) -> Dict[str, Any]:
     """
     SINGLE SOURCE OF TRUTH: Builds the formatted JSON response for both
@@ -112,8 +122,15 @@ def build_diet_response(
     diet row gains a localized `display_name` (additive — English `feed_name` is
     preserved). Applied at the display layer only; the optimizer's English names
     are untouched.
+
+    translate: optional report_text.translator(lang). Puts the three message lists the
+    app shows (additional_information.violated_parameters / recommendations and
+    `warnings`) in the user's language; English for anything without a translation.
+    Status fields the app branches on (diet_status, diet_rating, worst_constraints)
+    stay English.
     """
     name_map = name_map or {}
+    t = translate or translator(None)
     post_results = optimization_results.get('post_results', {})
     
     # Get derived grazing status from engine results
@@ -282,7 +299,7 @@ def build_diet_response(
                             recommendations.append(a)
             else:
                 # For SUCCESS, we can add a positive recommendation
-                recommendations.append("Continue monitoring animal performance and adjust as needed.")
+                recommendations.append(SUCCESS_RECOMMENDATION)
     except Exception as e:
         logger.warning(f"Advice engine failed or disabled: {str(e)}")
 
@@ -344,9 +361,9 @@ def build_diet_response(
         'environmental_impact': environmental_impact,
         'additional_information': {
             'diet_status': diet_status_val,
-            'violated_parameters': violated_params_list,
+            'violated_parameters': [translate_message(m, t, name_map) for m in violated_params_list],
             'worst_constraints': post_results.get('worst_constraints', []),
-            'recommendations': recommendations[:1]
+            'recommendations': [t(r) for r in recommendations[:1]]
         },
         # Two kinds of "we could not fully honour what you asked for", both of which used
         # to be invisible to a caller that only read `status`:
@@ -359,7 +376,10 @@ def build_diet_response(
         # Only *advisory* breaches belong here. post_feasibility_warnings marks a breach
         # `critical` when a hard constraint failed; those already drive diet_status and
         # allow_report, and repeating them as warnings would read as duplicate errors.
-        'warnings': list(post_results.get('bound_warnings') or []) + advisory_warnings,
+        'warnings': [
+            translate_message(m, t, name_map)
+            for m in list(post_results.get('bound_warnings') or []) + advisory_warnings
+        ],
     }
 
     return ensure_json_safe(response_data)
@@ -369,6 +389,7 @@ def build_calf_recommendation_response(
     cattle_info: Any,
     simulation_id: str,
     report_id: str,
+    translate: Optional[Callable[..., str]] = None,
 ) -> Dict[str, Any]:
     """Build the API response for a Baby Calf/Heifer recommendation.
 
@@ -410,10 +431,7 @@ def build_calf_recommendation_response(
             "dry_matter_intake": format_value_with_unit(round(dmi, 2), "kg/day"),
             "intake_pct_bw": format_value_with_unit(intake_pct_bw, "%BW"),
         },
-        "recommendations": [
-            "Feed milk only, split between morning and evening. Solid-feed ration "
-            "formulation does not apply to a baby calf (milk intake only, up to ~8 weeks of age)."
-        ],
+        "recommendations": [(translate or translator(None))(CALF_RECOMMENDATION)],
         "warnings": [],
     }
     return ensure_json_safe(response_data)

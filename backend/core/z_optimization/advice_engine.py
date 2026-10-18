@@ -41,6 +41,17 @@ CONSTRAINT_ADVICE = {
     "tree_legume_max": "Tree and shrub forages are important for a balanced diet. Consider increasing their proportion to improve nutritional quality.",
 }
 
+# General advice when no constraint-specific advice applies (also in report_text.xlsx).
+ADVICE_MORE_DIVERSE = (
+    "To reach a more optimal balance, try adding more diverse feed options such as "
+    "high-quality green fodder or energy supplements."
+)
+ADVICE_ADD_FORAGE = (
+    "Consider adding basic forages such as grass or straw to support a more balanced "
+    "and healthy diet."
+)
+
+
 def get_recommendations(worst_constraints: List[Dict[str, Any]], feed_data: List[Dict[str, Any]]) -> List[str]:
     """
     Generate actionable recommendations based on the worst-performing constraints.
@@ -60,13 +71,13 @@ def get_recommendations(worst_constraints: List[Dict[str, Any]], feed_data: List
     if not recommendations:
         # Fallback for generic failures
         # recommendations.append("Unable to find a perfect balance with the current selection. Try adding more diverse feed options, specifically high-quality green fodder and energy supplements.")
-        recommendations.append("To reach a more optimal balance, try adding more diverse feed options such as high-quality green fodder or energy supplements.")
+        recommendations.append(ADVICE_MORE_DIVERSE)
 
     # 3. Categorical check (Optional improvement)
     # Check if there's a complete lack of certain categories in selected feeds
     categories = {f.get('fd_category', '').lower() for f in feed_data}
     if 'forage' not in str(categories) and 'grass' not in str(categories) and 'legume' not in str(categories):
         # recommendations.append("Warning: Your selection appears to be missing basic forages. Adding grass or straw is usually required for a healthy diet.")
-        recommendations.append("Consider adding basic forages such as grass or straw to support a more balanced and healthy diet.")
+        recommendations.append(ADVICE_ADD_FORAGE)
 
     return recommendations
