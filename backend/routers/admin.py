@@ -839,7 +839,9 @@ async def export_translation_workbook(
     **Query parameter:** `country_id` — UUID of the country.
 
     Sheets: **Feeds** (one row per feed, columns = language codes for this country),
-    **Feed Types**, **Feed Categories**. Cells are pre-filled with any translations
+    **Feed Types**, **Feed Categories**. The two vocabulary sheets list every active
+    type/category (plus any other value the country's feeds or translations use),
+    not only those the country's feeds use. Cells are pre-filled with any translations
     already in the DB. Empty cells = not yet translated. Use the returned file as
     the import template for `POST /v1/admin/translations/workbook`.
     """

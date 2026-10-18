@@ -43,8 +43,8 @@ async def export_translation_workbook(
     lang_codes = await repo.get_country_language_codes(country_id)
     feeds = await repo.get_country_feeds(country_id)
     feed_trans_map = await repo.get_feed_translations_map(country_id)
-    types = await repo.get_distinct_types(country_id)
-    cats = await repo.get_distinct_categories(country_id)
+    types = await repo.get_export_types(country_id)
+    cats = await repo.get_export_categories(country_id)
     type_trans_map = await repo.get_vocabulary_translations_map(country_id, "feed_type")
     cat_trans_map = await repo.get_vocabulary_translations_map(country_id, "feed_category")
 
