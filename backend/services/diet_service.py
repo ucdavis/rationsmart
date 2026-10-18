@@ -336,6 +336,9 @@ def _render_report_html(
     currency: str = "$",
     user_name: Optional[str] = None,
     country_name: Optional[str] = None,
+    lang: str = "en",
+    name_map: Optional[Dict[str, str]] = None,
+    type_map: Optional[Dict[str, str]] = None,
 ) -> Optional[str]:
     """Render report HTML for Report.report_html at compute time.
 
@@ -347,7 +350,8 @@ def _render_report_html(
     later just has nothing to convert) rather than raising.
 
     user_name / country_name fill the report header (see _report_header_names); a
-    missing value leaves the renderer's default in place.
+    missing value leaves the renderer's default in place. lang / name_map / type_map
+    put the feed names and types in the user's language (the rest stays English).
     """
     try:
         from core.z_optimization.report_generation import rsm_generate_report_v2
@@ -365,11 +369,52 @@ def _render_report_html(
             report_id=report_id,
             evaluation_mode=evaluation_mode,
             currency=currency,
+            lang=lang,
+            name_map=name_map,
+            type_map=type_map,
             **names,
         )
     except Exception:
         logger.error("Report HTML generation failed (report=%s)", report_id, exc_info=True)
         return None
+
+
+async def _feed_translation_maps(
+    db: AsyncSession, feed_data_list: List[Dict[str, Any]], country_id: Optional[str], lang: str
+) -> Tuple[Dict[str, str], Dict[str, str]]:
+    """({english feed name: translation}, {english feed type: translation}) for lang.
+
+    Names come from feed_translations, types from vocabulary_translations (country-
+    scoped). Both are display-only, so a failed lookup must not fail the diet: each
+    runs in its own savepoint (the transaction that later saves the report stays
+    usable) and falls back to {} — English — with a warning. Empty for English.
+    """
+    name_map: Dict[str, str] = {}
+    type_map: Dict[str, str] = {}
+    if lang == "en" or not feed_data_list:
+        return name_map, type_map
+    repo = FeedRepository(db)
+    try:
+        async with db.begin_nested():
+            id_name_map = await repo.get_name_translation_map(
+                [f["feed_id"] for f in feed_data_list], lang
+            )
+        name_map = {
+            f["fd_name"]: id_name_map[f["feed_id"]]
+            for f in feed_data_list
+            if f["feed_id"] in id_name_map
+        }
+    except Exception:
+        logger.warning("Feed name translations (%s) unavailable; English names used", lang, exc_info=True)
+    try:
+        async with db.begin_nested():
+            type_map = await repo.get_vocabulary_translation_map(
+                country_id, "feed_type", lang,
+                [f["fd_type"] for f in feed_data_list if f.get("fd_type")],
+            )
+    except Exception:
+        logger.warning("Feed type translations (%s) unavailable; English types used", lang, exc_info=True)
+    return name_map, type_map
 
 
 async def _report_header_names(
@@ -400,7 +445,9 @@ async def _report_header_names(
         return None, None
 
 
-async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id: str) -> Dict[str, Any]:
+async def _run_baby_calf_recommendation(
+    db: AsyncSession, request: Any, user_id: str, lang: str = "en"
+) -> Dict[str, Any]:
     """Baby Calf/Heifer recommendation: return the milk-feeding schedule directly.
 
     A baby calf has no least-cost solid-feed ration to solve — the recommendation IS
@@ -454,7 +501,7 @@ async def _run_baby_calf_recommendation(db: AsyncSession, request: Any, user_id:
     report_html = _render_report_html(
         post_results, animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id,
-        user_name=user_name, country_name=country_name,
+        user_name=user_name, country_name=country_name, lang=lang,
     )
 
     report_repo = ReportRepository(db)
@@ -508,7 +555,7 @@ async def run_diet_recommendation(
     # IS the milk-feeding schedule. Short-circuit before feed resolution and the
     # optimizer (which has no calf constraint profile and would raise).
     if cattle.physiological_state == "Baby Calf/Heifer":
-        return await _run_baby_calf_recommendation(db, request, user_id)
+        return await _run_baby_calf_recommendation(db, request, user_id, lang=lang)
 
     # 1 — Resolve feeds
     feed_data_list, missing = await _build_feed_data_list(db, request.feed_selection, user_id)
@@ -611,17 +658,8 @@ async def run_diet_recommendation(
         pass
 
     # Localize feed names at response-build time (main process — the pool worker
-    # has no DB session). {english_fd_name: translated_name} from feed_translations.
-    name_map: Dict[str, str] = {}
-    if lang != "en":
-        id_name_map = await FeedRepository(db).get_name_translation_map(
-            [f["feed_id"] for f in feed_data_list], lang
-        )
-        name_map = {
-            f["fd_name"]: id_name_map[f["feed_id"]]
-            for f in feed_data_list
-            if f["feed_id"] in id_name_map
-        }
+    # has no DB session). Feed types are used by the report only.
+    name_map, type_map = await _feed_translation_maps(db, feed_data_list, request.country_id, lang)
 
     response = build_diet_response(
         optimization_results=result_dict,
@@ -639,6 +677,7 @@ async def run_diet_recommendation(
         post_results, result.animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id, currency=currency,
         user_name=user_name, country_name=country_name,
+        lang=lang, name_map=name_map, type_map=type_map,
     )
 
     # 6 — Persist report record
@@ -745,25 +784,9 @@ async def run_diet_evaluation(
         eval_post = eval_result.get("post_results")
         if isinstance(eval_post, dict):
             eval_post["milk_price"] = cattle.milk_price
-    # Localize feed names (feed_translations) and feed types (vocabulary_translations,
-    # country-scoped) at response-build time. Display layer only — the engine's
-    # internal English names stay English.
-    name_map: Dict[str, str] = {}
-    type_map: Dict[str, str] = {}
-    if lang != "en":
-        repo = FeedRepository(db)
-        id_name_map = await repo.get_name_translation_map(
-            [f["feed_id"] for f in feed_data_list], lang
-        )
-        name_map = {
-            f["fd_name"]: id_name_map[f["feed_id"]]
-            for f in feed_data_list
-            if f["feed_id"] in id_name_map
-        }
-        type_map = await repo.get_vocabulary_translation_map(
-            request.country_id, "feed_type", lang,
-            [f["fd_type"] for f in feed_data_list if f.get("fd_type")],
-        )
+    # Localize feed names and types at response-build time. Display layer only — the
+    # engine's internal English names stay English.
+    name_map, type_map = await _feed_translation_maps(db, feed_data_list, request.country_id, lang)
 
     report_id = f"eval-{_uuid_mod.uuid4().hex[:8]}"
     response = build_evaluation_response(
@@ -786,6 +809,7 @@ async def run_diet_evaluation(
         simulation_id=request.simulation_id, report_id=report_id,
         evaluation_mode=True, currency=request.currency,
         user_name=user_name, country_name=country_name,
+        lang=lang, name_map=name_map, type_map=type_map,
     )
 
     report_repo = ReportRepository(db)

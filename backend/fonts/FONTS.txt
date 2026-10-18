@@ -1,0 +1,20 @@
+Report PDF fonts (installed into the image by the Dockerfile).
+
+All fonts: Noto, (c) The Noto Project Authors, SIL Open Font License 1.1 (OFL.txt).
+Downloaded 2026-10-18 from https://github.com/notofonts/notofonts.github.io
+(fonts/<Family>/hinted/ttf/). Latin, Vietnamese, Swahili, Hausa etc. use DejaVu,
+which the image already has. Checked by tests/unit/test_report_local_language.py.
+
+File                               Version   Used for                                       Source project
+NotoNaskhArabic-Regular/Bold.ttf   2.021     Arabic (right to left)                         https://github.com/notofonts/arabic
+NotoSansBengali-Regular/Bold.ttf   3.011     Bengali, Assamese                              https://github.com/notofonts/bengali
+NotoSansDevanagari-Regular/Bold.ttf 2.007     Hindi, Marathi, Nepali, Rajasthani, Haryanvi   https://github.com/notofonts/devanagari
+NotoSansEthiopic-Regular/Bold.ttf  2.102     Amharic, Tigrinya                              https://github.com/notofonts/ethiopic
+NotoSansGujarati-Regular/Bold.ttf  2.106     Gujarati                                       https://github.com/notofonts/gujarati
+NotoSansGurmukhi-Regular/Bold.ttf  2.004     Punjabi                                        https://github.com/notofonts/gurmukhi
+NotoSansKannada-Regular/Bold.ttf   2.006     Kannada                                        https://github.com/notofonts/kannada
+NotoSansMalayalam-Regular/Bold.ttf 2.104     Malayalam                                      https://github.com/notofonts/malayalam
+NotoSansOriya-Regular/Bold.ttf     2.007     Odia                                           https://github.com/notofonts/oriya
+NotoSansTamil-Regular/Bold.ttf     2.004     Tamil                                          https://github.com/notofonts/tamil
+NotoSansTelugu-Regular/Bold.ttf    2.005     Telugu                                         https://github.com/notofonts/telugu
+NotoSansThai-Regular/Bold.ttf      2.002     Thai                                           https://github.com/notofonts/thai

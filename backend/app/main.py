@@ -33,6 +33,16 @@ async def lifespan(app: FastAPI):
     if settings.redis_url:
         await init_redis(settings.redis_url)
 
+    # Report text (report_text.xlsx): log untranslated rows, broken placeholders and
+    # characters no installed font draws. Never blocks startup.
+    try:
+        from core.z_optimization.report_text import report_text_problems
+
+        for problem in report_text_problems():
+            logger.warning("Report text: %s", problem)
+    except Exception:
+        logger.error("Report text check failed", exc_info=True)
+
     logger.info(
         "RationSmart API starting up (optimization pool: %d workers)",
         settings.optimization_pool_workers,

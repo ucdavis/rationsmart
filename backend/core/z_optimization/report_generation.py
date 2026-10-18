@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_INTAKE_LABEL
 
 # Import from utilities
+from .report_text import text_direction, translator
 from .utilities import milk_margin_message
 from .diet_tables import forage_concentrate_ratio_from_proportions
 
@@ -1193,10 +1194,11 @@ def _transposed_column_blocks(n_cols, max_cols=None):
     return blocks
 
 
-def _transposed_blocks_html(tdf, title_text=""):
+def _transposed_blocks_html(tdf, title_text="", continued="(continued)"):
     """Render a transposed table as one or more column blocks. Every block uses
     the first block's column widths, so a shorter last block lines up with the
-    ones above it; blocks after the first get a "(continued)" caption."""
+    ones above it; blocks after the first get a "(continued)" caption
+    (`continued`, already escaped, in the report's language)."""
     blocks = _transposed_column_blocks(tdf.shape[1])
     if not blocks:
         return ""
@@ -1220,7 +1222,7 @@ def _transposed_blocks_html(tdf, title_text=""):
             # again. Log rather than raise: the caller (diet_service) turns any
             # exception into "no report HTML", which would lose the whole PDF.
             logger.error("Transposed table block left unsized: to_html output does not start with <table>")
-        caption = f"<p class='table-continued'>{title_text} (continued)</p>" if i and title_text else ""
+        caption = f"<p class='table-continued'>{title_text} {continued}</p>" if i and title_text else ""
         parts.append(f"<div class='table-block'>{caption}<div class='table-container'>{table}</div></div>")
     return "".join(parts)
 
@@ -1242,6 +1244,103 @@ def _cells_escaped(df):
     return df.apply(lambda col: col.map(lambda v: _escape_html(v) if isinstance(v, str) else v))
 
 
+def _localize_feed_columns(df, name_map=None, type_map=None):
+    """Copy of df with "Ingredient Name" / "Ingredient Type" cells translated.
+
+    name_map / type_map are {english: translated}; a value without a translation
+    (and the Total row) keeps its English text. Returns df itself when there is
+    nothing to translate.
+    """
+    columns = {"Ingredient Name": name_map, "Ingredient Type": type_map}
+    if df is None or df.empty or not any(m and col in df.columns for col, m in columns.items()):
+        return df
+    df = df.copy()
+    for col, mapping in columns.items():
+        if mapping and col in df.columns:
+            df[col] = df[col].map(lambda v: mapping.get(v, v) if isinstance(v, str) else v)
+    return df
+
+
+# Right-to-left reports (report_text.RTL_LANGUAGES): mirror what the main style
+# block pins to the left. Naskh is named first because DejaVu, the default font, also
+# has Arabic letters but draws them less well. WeasyPrint 63.1 (pinned) raises an
+# AssertionError laying out any overflow:hidden box in a right-to-left page, so every
+# such box is made visible here; check for new ones when the main style changes.
+_RTL_STYLE = """
+    <style>
+      body { font-family: 'Noto Naskh Arabic', 'DejaVu Sans', sans-serif; direction: rtl; }
+      .container, .profile-bar-bg, .metric-item, .table-container { overflow: visible !important; }
+      th { text-align: right; }
+      .section-icon { margin-right: 0; margin-left: 10px; }
+      .header-icon { margin-right: 0; margin-left: 12px; }
+      .emoji { margin-right: 0; margin-left: 10px; }
+      .message-card { border-left: none; border-right: 4px solid #E9967A; }
+      .margin-verdict { text-align: right; }
+      .ltr { direction: ltr; unicode-bidi: embed; display: inline-block; }
+    </style>
+"""
+
+# Pieces of the engine's Notes messages (rationsmart_warnings.post_feasibility_warnings,
+# feasibility.feasibility_postcheck) that the report translates. The engine and the
+# API keep the English sentences; a line that does not match prints as it is.
+NOTE_HEADLINES = (
+    "Below requirements / outside selected limits",
+    "Below requirements / selected limits",
+    "Outside limits",
+    "No diet found within selected limits",
+)
+NOTE_SECTION_LABELS = ("Violated parameters:", "Key issues:", "Critical issues:")
+NOTE_DIRECTIONS = ("below minimum", "above maximum", "not meeting target")
+_NOTE_ITEM = re.compile(
+    r"^(?P<critical>Critical - )?(?P<name>[^:]+): (?P<direction>"
+    + "|".join(map(re.escape, NOTE_DIRECTIONS))
+    + r")(?: \((?P<detail>.*)\))?$"
+)
+
+
+def _translate_note(message, t):
+    """'[Critical - ]<limit name>: <direction>[ (<detail>)]' with the limit name, the
+    direction and the words result / target / of DM translated; numbers and units kept.
+    Any other message is returned unchanged."""
+    m = _NOTE_ITEM.match(message)
+    if not m:
+        return message
+    out = f"{t('Critical')} - " if m.group("critical") else ""
+    out += f"{t(m.group('name'))}: {t(m.group('direction'))}"
+    detail = m.group("detail")
+    if detail is not None:
+        detail = re.sub(r"\b(result|target) = ", lambda w: f"{t(w.group(1))} = ", detail)
+        detail = detail.replace(" of DM", f" {t('of DM')}")
+        out += f" ({detail})"
+    return out
+
+
+def _translate_table(df, t, cell_columns=("Parameter", "Value")):
+    """Copy of df with headers and the text cells of `cell_columns` passed through t
+    (report_text.translator). Numbers are left alone."""
+    if df is None or getattr(df, "empty", True):
+        return df
+    df = df.rename(columns=lambda c: t(c) if isinstance(c, str) else c)
+    for english_col in cell_columns:
+        name = t(english_col)
+        if name in df.columns:
+            df[name] = df[name].map(lambda v: t(v) if isinstance(v, str) else v)
+    return df
+
+
+def _translate_feed_table(df, t, headers=True):
+    """Copy of a feed table with its headers (optional) and the "Total" row label
+    passed through t. Feed names/types are not report text: see _localize_feed_columns."""
+    if df is None or getattr(df, "empty", True):
+        return df
+    df = df.copy()
+    if "Ingredient Name" in df.columns:
+        df["Ingredient Name"] = df["Ingredient Name"].map(lambda v: t(v) if v == "Total" else v)
+    if headers:
+        df = df.rename(columns=lambda c: t(c) if isinstance(c, str) else c)
+    return df
+
+
 def display_simulation_name(simulation_id) -> str:
     """simulation_id as shown in the report header: one trailing mode suffix removed."""
     name = "" if simulation_id is None else str(simulation_id)
@@ -1260,6 +1359,9 @@ def rsm_generate_report_v2(
     evaluation_mode=False,
     country_name="Unknown",
     currency="$",
+    lang="en",
+    name_map=None,
+    type_map=None,
 ):
     """
     Enhanced HTML report generation with PDF-parity features (icon-based layout,
@@ -1268,6 +1370,10 @@ def rsm_generate_report_v2(
     Returns the HTML content as a string (for Report.report_html) — icons are
     referenced by filename, not embedded, so WeasyPrint must be given
     base_url=pdf_service.REPORT_ASSETS_DIR when converting this to a PDF later.
+
+    lang sets <html lang>. name_map / type_map ({english: translated}, from
+    feed_translations / vocabulary_translations) localize the feed names and types
+    shown in the tables; the engine data and every other label stay English.
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     icon_header_path = os.path.join(current_dir, "assets", "report_header.png")
@@ -1299,6 +1405,14 @@ def rsm_generate_report_v2(
     icon_prod = os.path.basename(icon_prod_path)
     icon_daily_cost = os.path.basename(icon_daily_cost_path)
     icon_water = os.path.basename(icon_water_path)
+
+    # Fixed report text in the user's language (report_text.xlsx; English fallback).
+    # t() returns plain text for DataFrame cells/headers (to_html escapes them); h()
+    # escapes it for the f-strings below. Numbers and units stay as they are.
+    t = translator(lang)
+
+    def h(text, **values):
+        return _escape_html(t(text, **values))
 
     animal_inputs = ensure_df(post_results.get('animal_inputs'))
     dt_proportions = ensure_df(post_results.get('dt_proportions'))
@@ -1332,24 +1446,25 @@ def rsm_generate_report_v2(
             if not isinstance(msg, str):
                 continue
             # Engine messages are plain text and may quote feed names: escape them.
-            clean_msg = _escape_html(msg.strip())
-            if not clean_msg:
+            # Known pieces are translated (_translate_note); anything else stays English.
+            raw_msg = msg.strip()
+            if not raw_msg:
                 lis.append("<li>&nbsp;</li>")
-            elif clean_msg.startswith("Diet status:"):
+            elif raw_msg.startswith("Diet status:"):
                 label = "Diet status:"
-                value = clean_msg[len(label):].strip()
-                lis.append(f"<li>{label} <span class='note-value'><b>{value}</b></span></li>")
-            elif any(clean_msg.startswith(p) for p in ["Violated parameters:", "Key issues:", "Critical issues:"]):
+                value = raw_msg[len(label):].strip()
+                lis.append(f"<li>{h(label)} <span class='note-value'><b>{h(value)}</b></span></li>")
+            elif any(raw_msg.startswith(p) for p in NOTE_SECTION_LABELS):
                 if lis:
                     lis.append("<li>&nbsp;</li>")
-                lis.append(f"<li>{clean_msg}</li>")
+                lis.append(f"<li>{h(raw_msg)}</li>")
             else:
-                lis.append(f"<li><span class='note-value'><b>{clean_msg}</b></span></li>")
+                lis.append(f"<li><span class='note-value'><b>{_escape_html(_translate_note(raw_msg, t))}</b></span></li>")
         note_items = "\n".join(lis)
         if note_items:
             notes_html = f"""
             <div class='message-card'>
-                <div class='message-title'>Notes</div>
+                <div class='message-title'>{h("Notes")}</div>
                 <ul class='message-list'>{note_items}</ul>
             </div>"""
 
@@ -1389,10 +1504,15 @@ def rsm_generate_report_v2(
     # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
     # None when there is no formulated ration (empty diet / calf milk-only path).
     forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(dt_proportions, dt_forages)
+    ratio_display = (forage_concentrate_ratio or "").replace(':', ' : ')
+    if forage_concentrate_ratio and text_direction(lang) == "rtl":
+        # A right-to-left label reads Forage first from the right, but the bidi
+        # algorithm keeps "60 : 40" left to right: swap the numbers and pin the order.
+        ratio_display = "<span class='ltr'>" + " : ".join(reversed(forage_concentrate_ratio.split(":"))) + "</span>"
     fc_ratio_card = (
         f"    <div class='summary-card'><img src='{icon_forage}' class='summary-icon'>"
-        f"<span class='summary-lab'>Forage:Concentrate</span>"
-        f"<span class='summary-val'>{forage_concentrate_ratio.replace(':', ' : ')}</span></div>"
+        f"<span class='summary-lab'>{h('Forage:Concentrate')}</span>"
+        f"<span class='summary-val'>{ratio_display}</span></div>"
         if forage_concentrate_ratio else ""
     )
 
@@ -1412,9 +1532,9 @@ def rsm_generate_report_v2(
     if (ndf_bw is not None and np.isfinite(ndf_bw)) or (forage_ndf_bw is not None and np.isfinite(forage_ndf_bw)):
         parts = []
         if ndf_bw is not None and np.isfinite(ndf_bw):
-            parts.append(f"<strong>NDF %BW</strong> = {ndf_bw:.2f}% (target < 1.2%)")
+            parts.append(f"<strong>{h('NDF %BW')}</strong> = {ndf_bw:.2f}% ({h('target')} < 1.2%)")
         if forage_ndf_bw is not None and np.isfinite(forage_ndf_bw):
-            parts.append(f"<strong>Forage NDF %BW</strong> = {forage_ndf_bw:.2f}% (target < 1.0%)")
+            parts.append(f"<strong>{h('Forage NDF %BW')}</strong> = {forage_ndf_bw:.2f}% ({h('target')} < 1.0%)")
         forage_footnote_html = f"<p class='footnote'>{' | '.join(parts)}</p>"
 
     # Per-state report shaping (all four physiological states). Filters the animal-input
@@ -1445,9 +1565,34 @@ def rsm_generate_report_v2(
     dt_forages_display = format_feed_df(dt_forages)
     dt_concentrates_display = format_feed_df(dt_concentrates)
 
+    # Feed names/types in the user's language, on the display copies only: the
+    # logic above (concentrate filter, Total rows) matches the English values.
+    dt_results = _localize_feed_columns(dt_results, name_map, type_map)
+    dt_proportions_display = _localize_feed_columns(dt_proportions_display, name_map, type_map)
+    dt_forages_display = _localize_feed_columns(dt_forages_display, name_map, type_map)
+    dt_concentrates_display = _localize_feed_columns(dt_concentrates_display, name_map, type_map)
+
+    # Report text for the tables: headers, row labels and fixed values ("Crossbred",
+    # "Flat", "Total"). Last, because everything above matches the English labels.
+    # The diet table renders unescaped (its headers carry <br/>): each header part is
+    # translated and escaped here, its cells by _cells_escaped below.
+    dt_results = _translate_feed_table(dt_results, t, headers=False)
+    dt_results.columns = [
+        "<br/>".join(_escape_html(t(part)) for part in str(col).split("<br/>"))
+        for col in dt_results.columns
+    ]
+    dt_proportions_display = _translate_feed_table(dt_proportions_display, t)
+    dt_forages_display = _translate_feed_table(dt_forages_display, t)
+    dt_concentrates_display = _translate_feed_table(dt_concentrates_display, t)
+    animal_inputs = _translate_table(animal_inputs, t)
+    An_Requirements = _translate_table(An_Requirements, t)
+    if calf_feeding_table is not None:
+        calf_feeding_table = _translate_table(calf_feeding_table, t, cell_columns=("Feeding Time",))
+
     currency_display = currency + " " if len(currency) > 1 else currency
     from datetime import datetime as _dt
-    report_date = _dt.now().strftime("%b %d, %Y %H:%M")
+    # Numeric, so no English month name appears in a localized report.
+    report_date = _dt.now().strftime("%Y-%m-%d %H:%M")
 
     # Milk price & profit margin banner (optional). Uses the same yield denominator
     # (milk_den) and daily_cost already computed for the Cost / Liter card.
@@ -1464,18 +1609,18 @@ def rsm_generate_report_v2(
         abs_margin = abs(margin_per_liter)
         abs_iofc = abs(daily_iofc)
         # Revenue-vs-feed-cost verdict (same text as solution_summary.margin_summary.message).
-        verdict_text = milk_margin_message(round(margin_per_liter, 2), currency_display)
+        verdict_text = _escape_html(milk_margin_message(round(margin_per_liter, 2), currency_display, translate=t))
         margin_banner_html = (
             f"<div class='margin-section'>"
-            f"<h3 class='margin-section-title'>Milk Price Economics</h3>"
+            f"<h3 class='margin-section-title'>{h('Milk Price Economics')}</h3>"
             f"<div class='margin-banner {margin_cls}'>"
-            f"<div class='margin-cell'><span class='margin-lab'>Milk Price / Liter</span>"
+            f"<div class='margin-cell'><span class='margin-lab'>{h('Milk Price / Liter')}</span>"
             f"<span class='margin-val'>{currency_display}{milk_price:.2f}</span></div>"
-            f"<div class='margin-cell'><span class='margin-lab'>Cost / Liter</span>"
+            f"<div class='margin-cell'><span class='margin-lab'>{h('Cost / Liter')}</span>"
             f"<span class='margin-val'>{currency_display}{cost_per_liter:.2f}</span></div>"
-            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Margin / Liter</span>"
+            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>{h('Margin / Liter')}</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_margin:.2f}</span></div>"
-            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>Income Over Feed Cost</span>"
+            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>{h('Income Over Feed Cost')}</span>"
             f"<span class='margin-val'>{margin_sign}{currency_display}{abs_iofc:.2f}</span></div>"
             f"</div>"
             f"<div class='margin-verdict {margin_cls}'>{verdict_text}</div>"
@@ -1505,31 +1650,31 @@ def rsm_generate_report_v2(
         w_int = min(100, (float(m_int) / 25) * 100) if m_int else 0
         methane_intensity_row_html = f"""
             <div class='profile-row'>
-                <div class='profile-info'><span>Methane Intensity</span><span>{m_int} g/kg ECM</span></div>
+                <div class='profile-info'><span>{h("Methane Intensity")}</span><span>{m_int} g/kg ECM</span></div>
                 <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_int}%; background: #ef4444;'></div></div>
             </div>"""
 
     env_impact_html = f"""
     <div class='section'>
-        <h2><img src='{icon_env}' class='section-icon'>Environmental Impact</h2>
+        <h2><img src='{icon_env}' class='section-icon'>{h("Environmental Impact")}</h2>
         <div class='env-scorecard'>
             <div class='profile-row'>
-                <div class='profile-info'><span>Methane Production</span><span>{m_prod} g/day</span></div>
+                <div class='profile-info'><span>{h("Methane Production")}</span><span>{m_prod} g/day</span></div>
                 <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_prod}%;'></div></div>
             </div>
             <div class='profile-row'>
-                <div class='profile-info'><span>Methane Yield</span><span>{m_yield} g/kg DMI</span></div>
+                <div class='profile-info'><span>{h("Methane Yield")}</span><span>{m_yield} g/kg DMI</span></div>
                 <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_yield}%; background: #eab308;'></div></div>
             </div>{methane_intensity_row_html}
             <div class='profile-row'>
-                <div class='profile-info'><span>Methane Conversion Rate (Ym)</span><span>{m_ym} %</span></div>
+                <div class='profile-info'><span>{h("Methane Conversion Rate (Ym)")}</span><span>{m_ym} %</span></div>
                 <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_ym}%; background: #3b82f6;'></div></div>
             </div>
             <div class='classification-container'>
-                <span class='classification-label'>Classification :</span>
-                <span class='classification-tag'>{str(m_class).upper()}</span>
+                <span class='classification-label'>{h("Classification :")}</span>
+                <span class='classification-tag'>{_escape_html(t(str(m_class)).upper())}</span>
             </div>
-            <p class='footnote'>*Ym(%) = Percentage of energy intake lost as methane.</p>
+            <p class='footnote'>{h("*Ym(%) = Percentage of energy intake lost as methane.")}</p>
         </div>
     </div>
     """
@@ -1661,28 +1806,30 @@ def rsm_generate_report_v2(
                 html += f"<h2><img src='{title_icon}' class='section-icon'>{title_text}</h2>"
             else:
                 html += f"<h2><span class='emoji'>{title_icon}</span>{title_text}</h2>"
-        html += _transposed_blocks_html(tdf, title_text)
+        html += _transposed_blocks_html(tdf, title_text, continued=h("(continued)"))
         if footer:
             html += footer
         html += "</div>"
         return html
 
     # Shared document head (doctype + meta + title + style + header/meta block + open content)
+    rtl = text_direction(lang) == "rtl"
+    dir_attr = " dir='rtl'" if rtl else ""
     head_parts = [
-        "<!DOCTYPE html><html><head>",
+        f"<!DOCTYPE html><html lang='{_escape_html(str(lang or 'en'))}'{dir_attr}><head>",
         "<meta charset='utf-8'/><meta name='viewport' content='width=device-width, initial-scale=1.0'>",
-        f"<title>{'Diet Evaluation' if evaluation_mode else 'Diet Recommendation'}</title>",
-        style, "</head><body>",
+        f"<title>{h('Diet Evaluation') if evaluation_mode else h('Diet Recommendation')}</title>",
+        style, *([_RTL_STYLE] if rtl else []), "</head><body>",
         "<div class='container'>",
-        f"<div class='header'><h1><img src='{icon_header}' class='header-icon'> {'Evaluation Report' if evaluation_mode else 'Recommendation Report'}</h1>",
+        f"<div class='header'><h1><img src='{icon_header}' class='header-icon'> {h('Evaluation Report') if evaluation_mode else h('Recommendation Report')}</h1>",
         "<div class='report-meta'>",
         # User-typed values: escaped, so they print as text and cannot inject markup
         # into the HTML that WeasyPrint later renders server-side.
-        f"<div class='meta-item'><strong>User</strong><span>{_escape_html(str(user_name))}</span></div>",
-        f"<div class='meta-item'><strong>Simulation</strong><span>{_escape_html(display_simulation_name(simulation_id))}</span></div>",
-        f"<div class='meta-item'><strong>Report ID</strong><span>{_escape_html(str(report_id))}</span></div>",
-        f"<div class='meta-item'><strong>Country</strong><span>{_escape_html(str(country_name))}</span></div>",
-        f"<div class='meta-item'><strong>Generated</strong><span>{report_date}</span></div>",
+        f"<div class='meta-item'><strong>{h('User')}</strong><span>{_escape_html(str(user_name))}</span></div>",
+        f"<div class='meta-item'><strong>{h('Simulation')}</strong><span>{_escape_html(display_simulation_name(simulation_id))}</span></div>",
+        f"<div class='meta-item'><strong>{h('Report ID')}</strong><span>{_escape_html(str(report_id))}</span></div>",
+        f"<div class='meta-item'><strong>{h('Country')}</strong><span>{_escape_html(str(country_name))}</span></div>",
+        f"<div class='meta-item'><strong>{h('Generated')}</strong><span>{report_date}</span></div>",
         "</div></div>",
         "<div class='content'>",
     ]
@@ -1697,50 +1844,50 @@ def rsm_generate_report_v2(
                 + "</div>"
             )
         body_parts = [
-            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>Solution Summary</h2>",
+            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>{h('Solution Summary')}</h2>",
             "<div class='summary-grid'>",
-            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{report_context['summary_metric_label']}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{h(report_context['summary_metric_label'])}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
             "</div></div>",
-            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>Milk Feeding Schedule</h2>",
+            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Milk Feeding Schedule')}</h2>",
             calf_table_html,
-            "<p class='footnote'>Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a baby calf.</p>",
+            f"<p class='footnote'>{h('Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a baby calf.')}</p>",
             "</div>",
-            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>Animal Information</h2>",
+            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>{h('Animal Information')}</h2>",
             "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
-            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>Nutritional Requirements</h2>",
+            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>{h('Nutritional Requirements')}</h2>",
             "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
             "</div></div></body></html>",
         ]
     else:
         body_parts = [
-            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>Solution Summary</h2>",
+            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>{h('Solution Summary')}</h2>",
             "<div class='summary-grid'>",
-            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{report_context['summary_metric_label']}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
-            f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>Daily Cost</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
-            f"    <div class='summary-card'><img src='{icon_env}' class='summary-icon'><span class='summary-lab'>Methane</span><span class='summary-val'>{m_prod} g/day</span></div>",
-            f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>Water Intake</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
+            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{h(report_context['summary_metric_label'])}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>{h('Daily Cost')}</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
+            f"    <div class='summary-card'><img src='{icon_env}' class='summary-icon'><span class='summary-lab'>{h('Methane')}</span><span class='summary-val'>{m_prod} g/day</span></div>",
+            f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>{h('Water Intake')}</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
             fc_ratio_card,
             "</div>",
             (margin_banner_html if report_context["show_milk_price_comparison"] else ""),
             "</div>",
-            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{'Diet' if evaluation_mode else 'Least Cost Diet'}</h2>",
+            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Diet') if evaluation_mode else h('Least Cost Diet')}</h2>",
             "<div class='table-container'>" + _cells_escaped(dt_results).to_html(index=False, classes='diet-table', escape=False) + "</div>",
             messages_html, "</div>",
             env_impact_html,
-            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>Animal Information</h2>",
+            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>{h('Animal Information')}</h2>",
             "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
-            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>Nutritional Requirements</h2>",
+            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>{h('Nutritional Requirements')}</h2>",
             "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
-            f"<div class='section wide-only'><h2><img src='{icon_prop}' class='section-icon'>Nutrient Proportions (%)</h2>",
+            f"<div class='section wide-only'><h2><img src='{icon_prop}' class='section-icon'>{h('Nutrient Proportions (%)')}</h2>",
             "<div class='table-container'>" + dt_proportions_display.to_html(index=False, classes='proportions-table') + "</div></div>",
-            _transpose_to_html(dt_proportions_display, icon_prop, "Nutrient Proportions", is_img=True),
-            f"<div class='section wide-only'><h2><img src='{icon_forage}' class='section-icon'>Forage Details</h2>",
+            _transpose_to_html(dt_proportions_display, icon_prop, h("Nutrient Proportions"), is_img=True),
+            f"<div class='section wide-only'><h2><img src='{icon_forage}' class='section-icon'>{h('Forage Details')}</h2>",
             "<div class='table-container'>" + dt_forages_display.to_html(index=False, classes='forage-table') + "</div>",
             forage_footnote_html, "</div>",
-            _transpose_to_html(dt_forages_display, icon_forage, "Forage Details", footer=forage_footnote_html, is_img=True),
-            f"<div class='section wide-only'><h2><img src='{icon_concentrate}' class='section-icon'>Concentrate Details</h2>",
+            _transpose_to_html(dt_forages_display, icon_forage, h("Forage Details"), footer=forage_footnote_html, is_img=True),
+            f"<div class='section wide-only'><h2><img src='{icon_concentrate}' class='section-icon'>{h('Concentrate Details')}</h2>",
             "<div class='table-container'>" + dt_concentrates_display.to_html(index=False, classes='concentrate-table') + "</div></div>",
-            _transpose_to_html(dt_concentrates_display, icon_concentrate, "Concentrate Details", is_img=True),
+            _transpose_to_html(dt_concentrates_display, icon_concentrate, h("Concentrate Details"), is_img=True),
             "</div>",
             "</div>",
             "</div></div></body></html>",
