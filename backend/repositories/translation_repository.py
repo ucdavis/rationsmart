@@ -4,8 +4,16 @@ from typing import Optional
 from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import InstrumentedAttribute
 
-from app.db.models import CountryLanguage, Feed, FeedTranslation, VocabularyTranslation
+from app.db.models import (
+    CountryLanguage,
+    Feed,
+    FeedCategory,
+    FeedTranslation,
+    FeedType,
+    VocabularyTranslation,
+)
 
 
 class TranslationRepository:
@@ -44,23 +52,49 @@ class TranslationRepository:
         )
         return {str(row[0]) for row in result.all()}
 
-    async def get_distinct_types(self, country_id: str) -> list[str]:
-        result = await self.db.execute(
-            select(Feed.fd_type)
-            .where(Feed.fd_country_id == country_id, Feed.fd_type.isnot(None))
-            .distinct()
-            .order_by(Feed.fd_type)
+    async def get_export_types(self, country_id: str) -> list[str]:
+        """English feed-type names for the workbook's Feed Types sheet."""
+        return await self._export_vocabulary(
+            country_id, "feed_type", FeedType.type_name, FeedType, Feed.fd_type
         )
-        return [row[0] for row in result.all()]
 
-    async def get_distinct_categories(self, country_id: str) -> list[str]:
-        result = await self.db.execute(
-            select(Feed.fd_category)
-            .where(Feed.fd_country_id == country_id, Feed.fd_category.isnot(None))
-            .distinct()
-            .order_by(Feed.fd_category)
+    async def get_export_categories(self, country_id: str) -> list[str]:
+        """English feed-category names for the workbook's Feed Categories sheet."""
+        return await self._export_vocabulary(
+            country_id, "feed_category", FeedCategory.category_name, FeedCategory, Feed.fd_category
         )
-        return [row[0] for row in result.all()]
+
+    async def _export_vocabulary(
+        self,
+        country_id: str,
+        kind: str,
+        name_col: InstrumentedAttribute,
+        master: type[FeedType] | type[FeedCategory],
+        feed_col: InstrumentedAttribute,
+    ) -> list[str]:
+        """Every value an admin may need to translate, alphabetical: the active
+        master list, plus any value the country's feeds or existing translations
+        carry that is not in it. Feeds alone were not enough: translations for
+        values no feed uses were missing from the export, and those values
+        could not be translated ahead of time."""
+        master_rows = await self.db.execute(
+            select(name_col).where(master.is_active == True)  # noqa: E712
+        )
+        feed_rows = await self.db.execute(
+            select(feed_col)
+            .where(Feed.fd_country_id == country_id, feed_col.isnot(None))
+            .distinct()
+        )
+        vocab_rows = await self.db.execute(
+            select(VocabularyTranslation.source_value)
+            .where(
+                VocabularyTranslation.country_id == country_id,
+                VocabularyTranslation.kind == kind,
+            )
+            .distinct()
+        )
+        rows = master_rows.all() + feed_rows.all() + vocab_rows.all()
+        return sorted({row[0] for row in rows if row[0]}, key=str.casefold)
 
     # ── Translation maps (for workbook export) ────────────────────────────────
 
