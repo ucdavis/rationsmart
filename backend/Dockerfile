@@ -38,6 +38,13 @@ RUN apt-get update && apt-get install -y \
     && apt-get autoremove -y \
     && rm -rf /var/lib/apt/lists/*
 
+# Report PDF fonts for non-Latin scripts (Noto, SIL OFL: fonts/OFL.txt): Devanagari,
+# Bengali, Thai, Ethiopic, Arabic and the Indian scripts. DejaVu (pulled in with the
+# Pango libs) covers Latin; fontconfig falls back to these per character, so the report
+# CSS does not name them. Kept after pip so a font change does not reinstall packages.
+COPY fonts/ /usr/share/fonts/truetype/rationsmart/
+RUN fc-cache -f
+
 COPY . /app
 
 EXPOSE 8000
