@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_INTAKE_LABEL
 
 # Import from utilities
-from .report_text import text_direction, translator
+from .report_text import NOTE_SECTION_LABELS, text_direction, translate_message, translator
 from .utilities import milk_margin_message
 from .diet_tables import forage_concentrate_ratio_from_proportions
 
@@ -1280,41 +1280,6 @@ _RTL_STYLE = """
     </style>
 """
 
-# Pieces of the engine's Notes messages (rationsmart_warnings.post_feasibility_warnings,
-# feasibility.feasibility_postcheck) that the report translates. The engine and the
-# API keep the English sentences; a line that does not match prints as it is.
-NOTE_HEADLINES = (
-    "Below requirements / outside selected limits",
-    "Below requirements / selected limits",
-    "Outside limits",
-    "No diet found within selected limits",
-)
-NOTE_SECTION_LABELS = ("Violated parameters:", "Key issues:", "Critical issues:")
-NOTE_DIRECTIONS = ("below minimum", "above maximum", "not meeting target")
-_NOTE_ITEM = re.compile(
-    r"^(?P<critical>Critical - )?(?P<name>[^:]+): (?P<direction>"
-    + "|".join(map(re.escape, NOTE_DIRECTIONS))
-    + r")(?: \((?P<detail>.*)\))?$"
-)
-
-
-def _translate_note(message, t):
-    """'[Critical - ]<limit name>: <direction>[ (<detail>)]' with the limit name, the
-    direction and the words result / target / of DM translated; numbers and units kept.
-    Any other message is returned unchanged."""
-    m = _NOTE_ITEM.match(message)
-    if not m:
-        return message
-    out = f"{t('Critical')} - " if m.group("critical") else ""
-    out += f"{t(m.group('name'))}: {t(m.group('direction'))}"
-    detail = m.group("detail")
-    if detail is not None:
-        detail = re.sub(r"\b(result|target) = ", lambda w: f"{t(w.group(1))} = ", detail)
-        detail = detail.replace(" of DM", f" {t('of DM')}")
-        out += f" ({detail})"
-    return out
-
-
 def _translate_table(df, t, cell_columns=("Parameter", "Value")):
     """Copy of df with headers and the text cells of `cell_columns` passed through t
     (report_text.translator). Numbers are left alone."""
@@ -1446,7 +1411,7 @@ def rsm_generate_report_v2(
             if not isinstance(msg, str):
                 continue
             # Engine messages are plain text and may quote feed names: escape them.
-            # Known pieces are translated (_translate_note); anything else stays English.
+            # Known pieces are translated (translate_message); anything else stays English.
             raw_msg = msg.strip()
             if not raw_msg:
                 lis.append("<li>&nbsp;</li>")
@@ -1459,7 +1424,7 @@ def rsm_generate_report_v2(
                     lis.append("<li>&nbsp;</li>")
                 lis.append(f"<li>{h(raw_msg)}</li>")
             else:
-                lis.append(f"<li><span class='note-value'><b>{_escape_html(_translate_note(raw_msg, t))}</b></span></li>")
+                lis.append(f"<li><span class='note-value'><b>{_escape_html(translate_message(raw_msg, t))}</b></span></li>")
         note_items = "\n".join(lis)
         if note_items:
             notes_html = f"""

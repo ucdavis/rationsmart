@@ -16,6 +16,7 @@ import functools
 import glob
 import logging
 import os
+import re
 import string
 from dataclasses import dataclass, field
 from typing import Callable, Dict, Iterable, List, Optional
@@ -125,6 +126,89 @@ def translator(lang: Optional[str]) -> Callable[..., str]:
             return text.format(**values)
 
     return t
+
+
+# ── Engine messages ──────────────────────────────────────────────────────────
+# Pieces of the engine's diet messages (rationsmart_warnings.post_feasibility_warnings,
+# feasibility.feasibility_postcheck) translated for the report and the app screen. The
+# engine keeps English; a line that does not match is shown as it is.
+NOTE_HEADLINES = (
+    "Below requirements / outside selected limits",
+    "Below requirements / selected limits",
+    "Outside limits",
+    "No diet found within selected limits",
+)
+NOTE_SECTION_LABELS = ("Violated parameters:", "Key issues:", "Critical issues:")
+NOTE_DIRECTIONS = ("below minimum", "above maximum", "not meeting target")
+_NOTE_ITEM = re.compile(
+    r"^(?P<critical>Critical - )?(?P<name>[^:]+): (?P<direction>"
+    + "|".join(map(re.escape, NOTE_DIRECTIONS))
+    + r")(?: \((?P<detail>.*)\))?$"
+)
+
+
+def translate_note(message, t):
+    """'[Critical - ]<limit name>: <direction>[ (<detail>)]' with the limit name, the
+    direction and the words result / target / of DM translated; numbers and units kept.
+    Any other message is returned unchanged."""
+    m = _NOTE_ITEM.match(message)
+    if not m:
+        return message
+    out = f"{t('Critical')} - " if m.group("critical") else ""
+    out += f"{t(m.group('name'))}: {t(m.group('direction'))}"
+    detail = m.group("detail")
+    if detail is not None:
+        detail = re.sub(r"\b(result|target) = ", lambda w: f"{t(w.group(1))} = ", detail)
+        detail = detail.replace(" of DM", f" {t('of DM')}")
+        out += f" ({detail})"
+    return out
+
+
+# Safety-cap warnings (optimization_core.compute_bounds, "B2"): the engine builds them
+# from these templates, so the wording here and there cannot drift apart. Numbers are
+# pre-formatted strings; {feed} is the feed name.
+CAP_MINERAL_MAX = (
+    "{feed}: entered maximum {entered} kg DM/day was reduced to {limit} kg DM/day "
+    "by the mineral safety limit."
+)
+CAP_MINERAL_MIN = (
+    "{feed}: the required mineral minimum of {minimum} kg DM/day could not be met "
+    "because the entered maximum limits it to {entered} kg DM/day."
+)
+CAP_UREA_MAX = (
+    "{feed}: entered maximum {entered} kg DM/day was reduced to {limit} kg DM/day "
+    "by the urea safety limit (shared across {count} urea feed(s))."
+)
+CAP_TEMPLATES = (CAP_MINERAL_MAX, CAP_MINERAL_MIN, CAP_UREA_MAX)
+
+
+def _template_regex(template):
+    """Anchored regex for a template: {feed} matches any text, other fields a number.
+    One unbounded group per pattern keeps matching linear on user-typed feed names."""
+    pattern = ""
+    for literal, field_name, _, _ in string.Formatter().parse(template):
+        pattern += re.escape(literal)
+        if field_name:
+            pattern += f"(?P<{field_name}>.+)" if field_name == "feed" else f"(?P<{field_name}>[0-9][0-9.]*)"
+    return re.compile(f"^{pattern}$")
+
+
+_CAP_PATTERNS = tuple((template, _template_regex(template)) for template in CAP_TEMPLATES)
+
+
+def translate_message(message, t, name_map=None):
+    """One engine message in the user's language: a safety-cap warning (feed name
+    localized through name_map, numbers kept), a diet note (translate_note), or a
+    fixed sentence looked up as a whole. English for anything unknown."""
+    for template, pattern in _CAP_PATTERNS:
+        m = pattern.match(message)
+        if m:
+            values = m.groupdict()
+            values["feed"] = (name_map or {}).get(values["feed"], values["feed"])
+            return t(template, **values)
+    if _NOTE_ITEM.match(message):
+        return translate_note(message, t)
+    return t(message)
 
 
 def _is_latin_or_common(ch: str) -> bool:
