@@ -379,6 +379,44 @@ def _render_report_html(
         return None
 
 
+async def _feed_translation_maps(
+    db: AsyncSession, feed_data_list: List[Dict[str, Any]], country_id: Optional[str], lang: str
+) -> Tuple[Dict[str, str], Dict[str, str]]:
+    """({english feed name: translation}, {english feed type: translation}) for lang.
+
+    Names come from feed_translations, types from vocabulary_translations (country-
+    scoped). Both are display-only, so a failed lookup must not fail the diet: each
+    runs in its own savepoint (the transaction that later saves the report stays
+    usable) and falls back to {} — English — with a warning. Empty for English.
+    """
+    name_map: Dict[str, str] = {}
+    type_map: Dict[str, str] = {}
+    if lang == "en" or not feed_data_list:
+        return name_map, type_map
+    repo = FeedRepository(db)
+    try:
+        async with db.begin_nested():
+            id_name_map = await repo.get_name_translation_map(
+                [f["feed_id"] for f in feed_data_list], lang
+            )
+        name_map = {
+            f["fd_name"]: id_name_map[f["feed_id"]]
+            for f in feed_data_list
+            if f["feed_id"] in id_name_map
+        }
+    except Exception:
+        logger.warning("Feed name translations (%s) unavailable; English names used", lang, exc_info=True)
+    try:
+        async with db.begin_nested():
+            type_map = await repo.get_vocabulary_translation_map(
+                country_id, "feed_type", lang,
+                [f["fd_type"] for f in feed_data_list if f.get("fd_type")],
+            )
+    except Exception:
+        logger.warning("Feed type translations (%s) unavailable; English types used", lang, exc_info=True)
+    return name_map, type_map
+
+
 async def _report_header_names(
     db: AsyncSession, user_id: str, country_id: Optional[str]
 ) -> Tuple[Optional[str], Optional[str]]:
@@ -620,24 +658,8 @@ async def run_diet_recommendation(
         pass
 
     # Localize feed names at response-build time (main process — the pool worker
-    # has no DB session). {english_fd_name: translated_name} from feed_translations.
-    # Feed types (vocabulary_translations, country-scoped) are used by the report only.
-    name_map: Dict[str, str] = {}
-    type_map: Dict[str, str] = {}
-    if lang != "en":
-        repo = FeedRepository(db)
-        id_name_map = await repo.get_name_translation_map(
-            [f["feed_id"] for f in feed_data_list], lang
-        )
-        name_map = {
-            f["fd_name"]: id_name_map[f["feed_id"]]
-            for f in feed_data_list
-            if f["feed_id"] in id_name_map
-        }
-        type_map = await repo.get_vocabulary_translation_map(
-            request.country_id, "feed_type", lang,
-            [f["fd_type"] for f in feed_data_list if f.get("fd_type")],
-        )
+    # has no DB session). Feed types are used by the report only.
+    name_map, type_map = await _feed_translation_maps(db, feed_data_list, request.country_id, lang)
 
     response = build_diet_response(
         optimization_results=result_dict,
@@ -762,25 +784,9 @@ async def run_diet_evaluation(
         eval_post = eval_result.get("post_results")
         if isinstance(eval_post, dict):
             eval_post["milk_price"] = cattle.milk_price
-    # Localize feed names (feed_translations) and feed types (vocabulary_translations,
-    # country-scoped) at response-build time. Display layer only — the engine's
-    # internal English names stay English.
-    name_map: Dict[str, str] = {}
-    type_map: Dict[str, str] = {}
-    if lang != "en":
-        repo = FeedRepository(db)
-        id_name_map = await repo.get_name_translation_map(
-            [f["feed_id"] for f in feed_data_list], lang
-        )
-        name_map = {
-            f["fd_name"]: id_name_map[f["feed_id"]]
-            for f in feed_data_list
-            if f["feed_id"] in id_name_map
-        }
-        type_map = await repo.get_vocabulary_translation_map(
-            request.country_id, "feed_type", lang,
-            [f["fd_type"] for f in feed_data_list if f.get("fd_type")],
-        )
+    # Localize feed names and types at response-build time. Display layer only — the
+    # engine's internal English names stay English.
+    name_map, type_map = await _feed_translation_maps(db, feed_data_list, request.country_id, lang)
 
     report_id = f"eval-{_uuid_mod.uuid4().hex[:8]}"
     response = build_evaluation_response(
