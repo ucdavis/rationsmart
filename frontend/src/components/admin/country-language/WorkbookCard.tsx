@@ -73,7 +73,7 @@ export function WorkbookCard({
               opacity: !selCountry ? 0.5 : 1,
             }}
           >
-            {isDownloading ? t("Downloading…") : t("↓ Export")}
+            {isDownloading ? t("Downloading…") : t("Download")}
           </button>
           <button
             onClick={handleUpload}
@@ -89,7 +89,7 @@ export function WorkbookCard({
               cursor: isUploading || !uploadFile || !selCountry ? "not-allowed" : "pointer",
             }}
           >
-            {isUploading ? t("Uploading…") : t("↑ Import")}
+            {isUploading ? t("Uploading…") : t("Upload")}
           </button>
         </div>
         <input

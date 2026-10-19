@@ -21,6 +21,7 @@ import {
   getAdminFeedbacks,
   getAdminFeedbackStats,
   exportAdminFeeds,
+  downloadFeedTemplate,
   bulkUploadFeeds,
   getAdminReports,
   getAdminFeeds,
@@ -155,8 +156,16 @@ describe("exportAdminFeeds / exportCustomFeeds", () => {
   });
 });
 
+describe("downloadFeedTemplate", () => {
+  it("GETs the backend template as a blob", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: new Blob() });
+    await downloadFeedTemplate();
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/admin/feed-template", { responseType: "blob" });
+  });
+});
+
 describe("bulkUploadFeeds", () => {
-  it("POSTs a multipart FormData body without an explicit Content-Type header", async () => {
+  it("POSTs a multipart FormData body with a multipart Content-Type", async () => {
     mockApi.post.mockResolvedValueOnce({ data: { success: true } });
     const file = new File(["a,b,c"], "feeds.csv", { type: "text/csv" });
     await bulkUploadFeeds("admin-1", file);
@@ -166,9 +175,9 @@ describe("bulkUploadFeeds", () => {
     expect(url).toBe("/v1/admin/feed-sync/run-from-file");
     expect(body).toBeInstanceOf(FormData);
     expect((body as FormData).get("file")).toBe(file);
-    // CRITICAL (CLAUDE.md §18.5): no headers key at all — letting the browser
-    // set the multipart boundary is what makes the upload parseable server-side.
-    expect(config).not.toHaveProperty("headers");
+    // Without it the instance's JSON default makes axios send `{"file":{}}`
+    // (see api-upload-body.test.ts for the real-axios check).
+    expect(config.headers).toEqual({ "Content-Type": "multipart/form-data" });
     expect(config).toHaveProperty("onUploadProgress");
   });
 
@@ -312,7 +321,7 @@ describe("downloadTranslationWorkbook", () => {
 });
 
 describe("uploadTranslationWorkbook", () => {
-  it("POSTs a multipart FormData with country_id as a query param, no explicit Content-Type", async () => {
+  it("POSTs a multipart FormData with country_id as a query param and a multipart Content-Type", async () => {
     mockApi.post.mockResolvedValueOnce({ data: {} });
     const file = new File(["x"], "workbook.xlsx");
     await uploadTranslationWorkbook("7", file);
@@ -320,7 +329,10 @@ describe("uploadTranslationWorkbook", () => {
     expect(url).toBe("/v1/admin/translations/workbook");
     expect(body).toBeInstanceOf(FormData);
     expect((body as FormData).get("file")).toBe(file);
-    expect(config).toEqual({ params: { country_id: "7" } });
+    expect(config).toEqual({
+      params: { country_id: "7" },
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   });
 });
 

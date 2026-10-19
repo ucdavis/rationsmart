@@ -5,7 +5,12 @@
 // upload template. Split out of admin/bulk-upload/page.tsx (audit B-17).
 
 import { useRef, useState } from "react";
-import { bulkUploadFeeds, exportAdminFeeds, exportCustomFeeds } from "@/lib/api";
+import {
+  bulkUploadFeeds,
+  downloadFeedTemplate,
+  exportAdminFeeds,
+  exportCustomFeeds,
+} from "@/lib/api";
 import type { User } from "@/lib/store";
 import { isSameOrigin, safeExternalUrl } from "@/lib/safe-url";
 import {
@@ -14,14 +19,13 @@ import {
   uploadFileProblem,
   saveBlob,
 } from "@/lib/download";
-import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { asRecord, messageOf, numberField, stringField } from "@/lib/api-client/normalize";
 import { COLORS } from "@/lib/colors";
 import Spinner from "@/components/ui/Spinner";
 
-// Upload template — served same-origin by /api/feed-template, which keeps the
-// storage bucket out of the client bundle (audit C-07 / D-05).
-const FEED_TEMPLATE_URL = "/api/feed-template";
+// Upload template — GET /v1/admin/feed-template (has the mandatory fd_code /
+// fd_language_cd columns). Saved under the backend's own file name.
+const FEED_TEMPLATE_FILENAME = "rs_template_feed_upload.xlsx";
 
 // Fills `${key}` placeholder tokens in a translated template. Only used
 // for the two messages on this page whose dictionary entries carry
@@ -139,15 +143,22 @@ export function useBulkUpload(user: User | null, showSnackbar: Snackbar, t: (s: 
     }
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     setIsDownloadingTemplate(true);
-    // Same-origin (/api/feed-template), so triggerDownload's <a download>
-    // path saves it directly under the corrected filename.
-    triggerDownload(FEED_TEMPLATE_URL, "feeds_table_template.xlsx");
-    setTimeout(() => {
-      setIsDownloadingTemplate(false);
+    try {
+      const res = await downloadFeedTemplate();
+      const blob = res.data as Blob;
+      if (blob.size === 0) {
+        showSnackbar(t("Backend returned an empty file."), "error");
+        return;
+      }
+      saveBlob(blob, FEED_TEMPLATE_FILENAME);
       showSnackbar(t("Template downloaded"), "success");
-    }, ACTION_FEEDBACK_MS);
+    } catch (err: unknown) {
+      showSnackbar(err instanceof Error ? err.message : t("An unexpected error occurred"), "error");
+    } finally {
+      setIsDownloadingTemplate(false);
+    }
   };
 
   const triggerDownload = (url: string, filename: string) => {

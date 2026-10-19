@@ -65,6 +65,17 @@ export const getAdminFeedbackStats = (_admin_user_id: string) =>
 export const exportAdminFeeds = (_admin_user_id: string) =>
   api.get("/v1/admin/export-feeds", { responseType: "blob" });
 
+// GET /v1/admin/feed-template — the current bulk-upload template (has the
+// mandatory fd_code / fd_language_cd columns), served as an xlsx binary
+// (rs_template_feed_upload.xlsx). Replaces the old Android-era S3 file,
+// which those columns are missing from, so every upload built on it was
+// rejected. Admin JWT, like export-feeds.
+export const downloadFeedTemplate = () =>
+  api.get("/v1/admin/feed-template", { responseType: "blob" });
+
+// Overrides the instance's JSON default for FormData uploads (see below).
+const MULTIPART_HEADERS = { "Content-Type": "multipart/form-data" };
+
 // POST /v1/admin/feed-sync/run-from-file (multipart, JWT-derived admin).
 // Replaces the removed /v1/admin/bulk-upload-feeds: the workbook goes
 // through the same validate -> upsert -> translate pipeline as a CLIMDES
@@ -72,13 +83,13 @@ export const exportAdminFeeds = (_admin_user_id: string) =>
 // "file_upload"). Synchronous — the response is the finished run, same
 // shape as getFeedSyncLog(). 400 = bad file extension, 409 = a sync run
 // is already in progress.
-// CRITICAL: do NOT explicitly set the Content-Type header. When axios
-// hands a FormData body to the XHR layer, the browser auto-generates
-// `multipart/form-data; boundary=----WebKitFormBoundary...` with the
-// correct boundary parameter. Setting "multipart/form-data" by hand
-// strips the boundary, so FastAPI can't parse the multipart and
-// rejects the upload (typically 400 / 422 "Body is invalid"). Letting
-// axios / the browser populate the header is what makes uploads work.
+// CRITICAL: uploads MUST pass MULTIPART_HEADERS. The shared instance
+// defaults to Content-Type: application/json, and axios serialises a
+// FormData body under a JSON content type as JSON — `{"file":{}}` — so
+// the file never leaves the browser and FastAPI answers 422 "Field
+// required". With the multipart header axios keeps the FormData, then
+// (in a browser) drops the header so the browser writes
+// `multipart/form-data; boundary=…` itself.
 export const bulkUploadFeeds = (
   _admin_user_id: string,
   file: File,
@@ -87,6 +98,7 @@ export const bulkUploadFeeds = (
   const form = new FormData();
   form.append("file", file);
   return api.post("/v1/admin/feed-sync/run-from-file", form, {
+    headers: MULTIPART_HEADERS,
     onUploadProgress: (evt) => {
       if (onProgress && evt.total) {
         onProgress(Math.round((evt.loaded * 100) / evt.total));
@@ -177,14 +189,14 @@ export const downloadTranslationWorkbook = (country_id: string) =>
     responseType: "blob",
   });
 
-// 3.2 — workbook upload. Content-Type is left to the browser so the
-// multipart boundary param is generated correctly (same pattern as
-// bulkUploadFeeds — see CLAUDE.md note on this).
+// 3.2 — workbook upload. Needs MULTIPART_HEADERS for the same reason as
+// bulkUploadFeeds: without it the JSON default sends `{"file":{}}`.
 export const uploadTranslationWorkbook = (country_id: string, file: File) => {
   const form = new FormData();
   form.append("file", file);
   return api.post("/v1/admin/translations/workbook", form, {
     params: { country_id },
+    headers: MULTIPART_HEADERS,
   });
 };
 

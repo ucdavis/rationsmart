@@ -60,7 +60,6 @@ deploys. See `.env.example` for the full annotated list.
 | `BACKEND_ENV` | no | Label shown in the `x-backend-env` response header (`dev` / `prod` / `custom`) |
 | `DISABLE_PWA` | no | `true` skips the service worker (useful on test deployments) |
 | `NEXT_PUBLIC_DEBUG_API` | no | `true` logs API traffic in the browser console. **Never enable for real users.** |
-| `FEED_TEMPLATE_URL` | no | Where the bulk-upload Excel template is fetched from |
 
 If the backend variables are missing, the proxy returns a 500 rather than
 guessing a backend.
@@ -138,7 +137,7 @@ src/
     (main)/          signed-in screens: cattle-info, feed-selection, report,
                      reports, calf-plan, profile, feedback, admin/*
     login/ register/ verify-email/ forgot-pin/ set-new-pin/ welcome/ help/ terms/
-    api/             proxy, session, feed-template routes
+    api/             proxy, session routes
   components/        UI components grouped by screen (admin, report, feed-row, ui …)
   lib/
     api-client/      typed backend calls (auth, diet, feeds, reports, admin)

@@ -117,6 +117,7 @@ export {
   deleteAdminFeedCategory,
   deleteAdminFeedType,
   deleteFeedTranslation,
+  downloadFeedTemplate,
   downloadTranslationWorkbook,
   exportAdminFeeds,
   exportCustomFeeds,

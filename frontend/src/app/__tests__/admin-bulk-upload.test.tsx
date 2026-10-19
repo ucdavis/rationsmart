@@ -5,6 +5,7 @@ const {
   replace,
   back,
   bulkUploadFeeds,
+  downloadFeedTemplate,
   exportAdminFeeds,
   exportCustomFeeds,
   previewFeedLibraryWipe,
@@ -13,6 +14,7 @@ const {
   replace: vi.fn(),
   back: vi.fn(),
   bulkUploadFeeds: vi.fn(),
+  downloadFeedTemplate: vi.fn(),
   exportAdminFeeds: vi.fn(),
   exportCustomFeeds: vi.fn(),
   previewFeedLibraryWipe: vi.fn(),
@@ -28,6 +30,7 @@ vi.mock("@/lib/api", async () => {
   return {
     ...actual,
     bulkUploadFeeds,
+    downloadFeedTemplate,
     exportAdminFeeds,
     exportCustomFeeds,
     previewFeedLibraryWipe,
@@ -70,6 +73,7 @@ beforeEach(() => {
   replace.mockClear();
   back.mockClear();
   bulkUploadFeeds.mockReset();
+  downloadFeedTemplate.mockReset();
   exportAdminFeeds.mockReset();
   exportCustomFeeds.mockReset();
   previewFeedLibraryWipe.mockReset();
@@ -261,9 +265,10 @@ describe("Bulk Upload — Export Custom Feeds (orange theme)", () => {
 });
 
 describe("Bulk Upload — Download Template", () => {
-  // Served same-origin by /api/feed-template (audit C-07): the S3 bucket
-  // never appears in the client, and the download keeps a proper filename.
-  it("downloads /api/feed-template as feeds_table_template.xlsx, no new tab", async () => {
+  // GET /v1/admin/feed-template — the current template with the mandatory
+  // fd_code / fd_language_cd columns (the old S3 file lacks them).
+  it("saves the backend template as rs_template_feed_upload.xlsx, no new tab", async () => {
+    downloadFeedTemplate.mockResolvedValueOnce({ data: new Blob(["xlsx"]), headers: {} });
     const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
     const clicks: { href: string; download: string }[] = [];
     const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
@@ -275,13 +280,32 @@ describe("Bulk Upload — Download Template", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /Download Template/ }));
 
+    await waitFor(() => expect(useStore.getState().snackbar?.message).toBe("Template downloaded"));
+    expect(downloadFeedTemplate).toHaveBeenCalledTimes(1);
     expect(openSpy).not.toHaveBeenCalled();
-    expect(clicks[0]?.href).toContain("/api/feed-template");
-    expect(clicks[0]?.download).toBe("feeds_table_template.xlsx");
-    await waitFor(() => expect(useStore.getState().snackbar?.message).toBe("Template downloaded"), {
-      timeout: 1000,
-    });
+    expect(clicks[0]?.href).toBe("blob:mock-url");
+    expect(clicks[0]?.download).toBe("rs_template_feed_upload.xlsx");
     openSpy.mockRestore();
+    clickSpy.mockRestore();
+  });
+
+  it("shows an error snackbar and saves nothing when the template request fails", async () => {
+    downloadFeedTemplate.mockRejectedValueOnce(
+      Object.assign(new Error("Admin access required"), { status: 403 })
+    );
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+    render(<BulkUploadPage />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Download Template/ }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Admin access required",
+        type: "error",
+      })
+    );
+    expect(clickSpy).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /Download Template/ })).not.toBeDisabled();
     clickSpy.mockRestore();
   });
 });
