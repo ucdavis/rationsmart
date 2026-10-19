@@ -100,9 +100,9 @@ describe("getUiLabel — pure lookup against the in-memory cache", () => {
 
   it("stays in English, and asks only once, for a language the sheet has no column for", async () => {
     const spy = vi.spyOn(globalThis, "fetch");
-    useStore.setState({ user: seedUser({ preferred_language: "sw" }) });
+    useStore.setState({ user: seedUser({ preferred_language: "zz" }) });
     const { result, rerender } = renderHook(() => useT());
-    await waitFor(() => expect(spy).toHaveBeenCalledWith("/api/ui-labels/sw", expect.anything()));
+    await waitFor(() => expect(spy).toHaveBeenCalledWith("/api/ui-labels/zz", expect.anything()));
     const res = await spy.mock.results[0]?.value;
     expect(res.status).toBe(404);
     rerender();
