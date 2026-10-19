@@ -95,3 +95,21 @@ beforeEach(() => {
 // test's successful send doesn't block the next test's.
 import { resetEmailCooldowns } from "./src/lib/email-cooldown";
 beforeEach(() => resetEmailCooldowns());
+
+// UI labels come from the server route /api/ui-labels/<code> (built from
+// src/lib/data/ui-labels.xlsx). jsdom has no server, so answer those requests
+// from the same spreadsheet with the same parser; everything else goes to the
+// real fetch. Parsed on first use, so tests that never switch language pay
+// nothing.
+import { LABEL_SHEET_PATH, dictionaryFor, readLabelSheet } from "./src/lib/ui-labels-sheet.mjs";
+let labelSheet: ReturnType<typeof readLabelSheet> | undefined;
+const realFetch = globalThis.fetch;
+globalThis.fetch = async (input, init) => {
+  const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+  const lang = /^\/api\/ui-labels\/([^/?#]+)$/.exec(url)?.[1];
+  if (lang === undefined) return realFetch(input, init);
+  labelSheet ??= readLabelSheet(LABEL_SHEET_PATH);
+  const sheet = await labelSheet;
+  if (!sheet.languages.some((l) => l.code === lang)) return new Response(null, { status: 404 });
+  return Response.json(dictionaryFor(sheet, lang));
+};

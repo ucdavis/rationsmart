@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { createElement } from "react";
 import { render, renderHook, waitFor, act } from "@testing-library/react";
 import { fillTemplate, fillText, getUiLabel, useT } from "@/lib/i18n-ui";
@@ -24,7 +24,8 @@ beforeEach(() => {
   useStore.setState({ user: null, lastUiLanguage: "en" });
 });
 
-// Each language's dictionary is lazy-loaded via dynamic import() and
+// Each language's dictionary is fetched from /api/ui-labels/<code> (answered
+// from the spreadsheet by vitest.setup.ts) and
 // cached at module scope — once a test in this file loads "hi" (say),
 // it stays warm for every later test, same as a real session. Tests
 // below are ordered so a language is loaded via useT()+waitFor before
@@ -95,6 +96,25 @@ describe("getUiLabel — pure lookup against the in-memory cache", () => {
 
   it("falls back to English for a language code that isn't in the rollout set", () => {
     expect(getUiLabel("Continue", "fr")).toBe("Continue");
+  });
+
+  it("stays in English, and asks only once, for a language the sheet has no column for", async () => {
+    const spy = vi.spyOn(globalThis, "fetch");
+    useStore.setState({ user: seedUser({ preferred_language: "sw" }) });
+    const { result, rerender } = renderHook(() => useT());
+    await waitFor(() => expect(spy).toHaveBeenCalledWith("/api/ui-labels/sw", expect.anything()));
+    const res = await spy.mock.results[0]?.value;
+    expect(res.status).toBe(404);
+    rerender();
+    expect(result.current("Continue")).toBe("Continue");
+    renderHook(() => useT());
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  it("never requests a malformed language code", () => {
+    const spy = vi.spyOn(globalThis, "fetch");
+    renderHook(() => useT("../hi"));
+    expect(spy).not.toHaveBeenCalled();
   });
 
   it("falls back to English for a known rollout code whose dictionary hasn't been loaded in this session yet", () => {

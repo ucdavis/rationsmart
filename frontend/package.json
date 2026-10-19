@@ -16,12 +16,12 @@
     "lint:promises": "eslint --no-eslintrc --no-inline-config -c .eslintrc.promises.js \"src/**/*.{ts,tsx}\" --ignore-pattern \"**/__tests__/**\"",
     "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
-    "i18n:check": "node scripts/i18n-check.mjs",
-    "i18n:sheet": "node scripts/i18n-check.mjs --sheet"
+    "i18n:check": "node scripts/i18n-check.mjs"
   },
   "dependencies": {
     "@ducanh2912/next-pwa": "^10.2.9",
     "axios": "^1.18.1",
+    "exceljs": "^4.4.0",
     "next": "^14.2.35",
     "react": "^18",
     "react-dom": "^18",

@@ -1,30 +1,32 @@
 #!/usr/bin/env node
 // UI-label translation gate — rules in CLAUDE.md §21.
 //
-//   npm run i18n:check                       code ↔ dictionaries (CI runs this)
-//   npm run i18n:sheet -- <sheet.csv>        sheet ↔ dictionaries report
-//        [--apply]                           copy the sheet's wording into the dictionaries
-//        [--missing <out.csv>]               write rows for labels the sheet lacks
+//   npm run i18n:check                       code ↔ spreadsheet (CI runs this)
+//   npm run i18n:check -- --add-missing      append a row for every label the
+//                                            code uses but the sheet lacks
+//                                            (English + screen filled; the
+//                                            translations are left for you)
 //
-// <sheet.csv> is the "All Strings" tab of RationSmart_Multilingual_Labels.xlsx
-// (Drive) downloaded as CSV. The sheet is the reviewed source of truth for
-// wording; the dictionaries in src/lib/data/ui-labels/ are what the app loads.
+// The spreadsheet is src/lib/data/ui-labels.xlsx: column A is the English
+// text, then one column per language whose header ends in its code —
+// "Hindi (hi)". The app serves exactly those columns (/api/ui-labels/<code>).
 //
 // What `check` enforces:
 //   1. Every string that reaches t() / showSnackbar() — literals, constants,
-//      label maps and label/title/... properties — exists in all 9 dictionaries.
-//   2. Every dictionary has the same keys, no empty values, and each
-//      translation keeps its ${placeholders} (only the English plural ${s} may
-//      be dropped).
+//      label maps and label/title/... properties — has a row in the sheet.
+//   2. Every language column has a translation in every row, and each keeps
+//      its ${placeholders} (only the English plural ${s} may be dropped).
+//      No English text appears twice.
 //   3. No visible JSX text or display-prop literal bypasses t().
 
 import fs from "node:fs";
 import path from "node:path";
 import ts from "typescript";
+import ExcelJS from "exceljs";
+import { LABEL_SHEET_PATH, cellText, placeholdersMatch, readLabelSheet } from "../src/lib/ui-labels-sheet.mjs";
 
 const ROOT = process.cwd();
-const DICT_DIR = path.join(ROOT, "src/lib/data/ui-labels");
-const LANGS = ["hi", "tl", "id", "th", "vi", "bn", "ne", "am", "om"];
+const SHEET = path.join(ROOT, LABEL_SHEET_PATH);
 
 // Deliberately English in every language: units, codes, protocol tokens.
 const KEEP_ENGLISH = new Set([
@@ -46,19 +48,8 @@ const NON_VISIBLE_ATTRS = new Set([
 // The only aria-* attributes a screen reader reads out (the rest are states).
 const SPOKEN_ARIA = new Set(["aria-label", "aria-valuetext", "aria-placeholder", "aria-roledescription"]);
 const TRANSLATING_CALLS = /^(t|fillText|fillTemplate|getUiLabel|labelForLanguage|current)$/;
-const SLOT = /\$\{[\w.]+\}/g;
 
 // ── shared helpers ────────────────────────────────────────────────────────────
-const slots = (s) => (s.match(SLOT) ?? []).sort();
-const sameSlots = (en, tr) => {
-  const want = slots(en), got = slots(tr);
-  const eq = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
-  return eq(want, got) || eq(want.filter((x) => x !== "${s}"), got);
-};
-const norm = (s) => String(s ?? "").replace(/[ \t]*\n[ \t]*/g, "\n").trim();
-const readDicts = () =>
-  Object.fromEntries(LANGS.map((l) => [l, JSON.parse(fs.readFileSync(path.join(DICT_DIR, `${l}.json`), "utf8"))]));
-const writeDict = (l, d) => fs.writeFileSync(path.join(DICT_DIR, `${l}.json`), JSON.stringify(d, null, 2) + "\n");
 const hasWords = (s) => {
   const words = s.replace(/\$\{[^}]*\}/g, " ").match(/[A-Za-z]{3,}/g) ?? [];
   // ALL-CAPS tokens (HTTP, UTC) and brand names don't need translating.
@@ -166,56 +157,42 @@ function scanSource() {
 }
 
 // ── check mode ────────────────────────────────────────────────────────────────
-function check() {
-  const dicts = readDicts();
+async function check() {
+  const sheet = await readLabelSheet(SHEET);
   const { labels, bypass } = scanSource();
   const problems = [];
-  const allKeys = new Set(LANGS.flatMap((l) => Object.keys(dicts[l])));
-  for (const [k, locs] of labels) {
-    const miss = LANGS.filter((l) => !(k in dicts[l]));
-    if (miss.length) problems.push(`missing in ${miss.length === LANGS.length ? "ALL languages" : miss.join(",")}: ${JSON.stringify(k)}  (${locs[0]})`);
-  }
-  for (const k of allKeys)
-    for (const l of LANGS) {
-      const v = dicts[l][k];
-      if (v === undefined) problems.push(`${l}.json lacks key present in other dictionaries: ${JSON.stringify(k)}`);
-      else if (!v.trim()) problems.push(`${l}.json has an empty value: ${JSON.stringify(k)}`);
-      else if (!sameSlots(k, v)) problems.push(`${l}.json placeholders differ from English: ${JSON.stringify(k)} → ${JSON.stringify(v)}`);
+  const langs = sheet.languages.map((l) => l.code);
+  if (!langs.length) problems.push(`${LABEL_SHEET_PATH}: no language columns — headers need a code, e.g. "Hindi (hi)"`);
+  const seen = new Set(langs);
+  if (seen.size !== langs.length) problems.push(`${LABEL_SHEET_PATH}: a language code appears in two column headers`);
+
+  const rowOf = new Map();
+  for (const row of sheet.rows) {
+    if (rowOf.has(row.en)) problems.push(`row ${row.line} repeats the English text of row ${rowOf.get(row.en).line}: ${JSON.stringify(row.en)}`);
+    else rowOf.set(row.en, row);
+    for (const code of langs) {
+      const v = row.cells[code];
+      if (!v.trim()) problems.push(`row ${row.line} ${code}: no translation for ${JSON.stringify(row.en)}`);
+      else if (!placeholdersMatch(row.en, v)) problems.push(`row ${row.line} ${code}: placeholders differ from English: ${JSON.stringify(row.en)} → ${JSON.stringify(v)}`);
     }
+  }
+  const missing = [...labels.keys()].filter((k) => !rowOf.has(k));
+  for (const k of missing) problems.push(`not in the sheet: ${JSON.stringify(k)}  (${labels.get(k)[0]})`);
   for (const b of bypass) problems.push(`not translated (bypasses t()): ${b}`);
 
-  console.log(`i18n: ${labels.size} labels in code, ${allKeys.size} dictionary keys × ${LANGS.length} languages`);
+  console.log(`i18n: ${labels.size} labels in code, ${sheet.rows.length} sheet rows × ${langs.length} languages (${langs.join(", ")})`);
   if (problems.length) {
     console.error(`\n${problems.length} problem(s):\n  ${problems.join("\n  ")}`);
-    console.error("\nFix: wrap text in t(), add the label + translations to every file in src/lib/data/ui-labels/ and to the Drive sheet (CLAUDE.md §21).");
+    console.error(
+      `\nFix: wrap text in t(), and give every label a row in ${LABEL_SHEET_PATH} with all language columns filled (CLAUDE.md §21).` +
+        (missing.length ? `\n     npm run i18n:check -- --add-missing appends the ${missing.length} missing row(s).` : "")
+    );
     process.exit(1);
   }
   console.log("i18n: OK");
 }
 
-// ── sheet mode ────────────────────────────────────────────────────────────────
-const SHEET_LANG = { Hindi: "hi", Filipino: "tl", Indonesian: "id", Thai: "th", Vietnamese: "vi", Bengali: "bn", Nepali: "ne", Amharic: "am", Oromo: "om", Tigrigna: "ti", French: "fr", Arabic: "ar" };
-
-function parseCsv(text) {
-  const rows = []; let row = [], field = "", q = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (q) {
-      if (ch === '"' && text[i + 1] === '"') { field += '"'; i++; }
-      else if (ch === '"') q = false;
-      else field += ch;
-    } else if (ch === '"') q = true;
-    else if (ch === ",") { row.push(field); field = ""; }
-    else if (ch === "\n" || ch === "\r") {
-      if (ch === "\r" && text[i + 1] === "\n") i++;
-      row.push(field); rows.push(row); row = []; field = "";
-    } else field += ch;
-  }
-  if (field || row.length) { row.push(field); rows.push(row); }
-  return rows;
-}
-const csvCell = (v) => (/[",\n\r]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
-
+// ── add-missing mode ──────────────────────────────────────────────────────────
 function screenOf(loc) {
   const p = loc.split(":")[0];
   const named = { "cattle-info": "Animal Inputs", "feed-selection": "Feed Selection", report: "Report", reports: "Saved Reports", profile: "Profile", feedback: "Feedback", "calf-plan": "Calf Plan", login: "Login", register: "Register", "forgot-pin": "Forgot PIN", "set-new-pin": "Set New PIN", "verify-email": "Verify Email", welcome: "Welcome", terms: "Terms", help: "Help", "feed-row": "Component: FeedRow" };
@@ -227,73 +204,25 @@ function screenOf(loc) {
   return "Constants";
 }
 
-function sheet(csvPath, { apply, missingOut }) {
-  const rows = parseCsv(fs.readFileSync(csvPath, "utf8"));
-  const header = rows[0];
-  const enCol = header.findIndex((h) => /^Source \(English\)/.test(h));
-  if (enCol < 0) throw new Error(`No "Source (English)" column in ${csvPath}`);
-  const cols = {};
-  header.forEach((h, i) => { const name = Object.keys(SHEET_LANG).find((n) => h.startsWith(n)); if (name) cols[SHEET_LANG[name]] = i; });
-
-  const dicts = readDicts();
-  const byNorm = new Map(Object.keys(dicts.hi).map((k) => [norm(k), k]));
-  const sheetKeys = new Set();
-  const diffs = Object.fromEntries(LANGS.map((l) => [l, 0]));
-  const badCells = [];
-  let applied = 0;
-  rows.slice(1).forEach((r, idx) => {
-    const en = norm(r[enCol]);
-    if (!en) return;
-    sheetKeys.add(en);
-    const key = byNorm.get(en);
-    if (!key) return;
-    const lead = key.match(/^\s*/)[0], trail = key.match(/\s*$/)[0];
-    for (const l of LANGS) {
-      let v = norm(r[cols[l]]);
-      if (!v) continue;
-      if (!sameSlots(key, v)) {
-        // Reviewers sometimes translate the slot names (${min} → ${नयुनतम}): restore them in order.
-        const got = v.match(/\$\{[^}]*\}/g) ?? [], want = key.match(SLOT) ?? [];
-        if (want.length && got.length === want.length) { let i = 0; v = v.replace(/\$\{[^}]*\}/g, () => want[i++]); }
-        else { badCells.push(`row ${idx + 2} ${l}: ${JSON.stringify(key)} → ${JSON.stringify(v)}`); continue; }
-      }
-      if (!key.includes("\n")) v = v.replace(/\n/g, " ");
-      const nv = lead + v + trail;
-      if (dicts[l][key] !== nv) { diffs[l]++; if (apply) { dicts[l][key] = nv; applied++; } }
-    }
-  });
-  if (apply) LANGS.forEach((l) => writeDict(l, dicts[l]));
-
+async function addMissing() {
+  const sheet = await readLabelSheet(SHEET);
+  const have = new Set(sheet.rows.map((r) => r.en));
   const { labels } = scanSource();
-  const missing = [...labels.keys()].filter((k) => !sheetKeys.has(norm(k)));
-  console.log(`sheet: ${sheetKeys.size} strings · app labels missing from sheet: ${missing.length}`);
-  console.log(`cells where sheet ≠ app: ${JSON.stringify(diffs)}${apply ? ` → applied ${applied}` : " (run with --apply to take the sheet's wording)"}`);
-  if (badCells.length) console.log(`\nsheet cells with broken placeholders (app keeps its own text — fix in the sheet):\n  ${badCells.join("\n  ")}`);
-  if (missingOut) {
-    const order = Object.entries(cols).sort((a, b) => a[1] - b[1]);
-    const width = Math.max(header.length, ...order.map(([, i]) => i + 1));
-    const lines = missing.map((k) => {
-      const cells = Array(width).fill("");
-      cells[0] = [...new Set(labels.get(k).map(screenOf))].join(" | ");
-      cells[enCol] = k;
-      for (const [l, i] of order) cells[i] = dicts[l]?.[k] ?? "";
-      return cells.map(csvCell).join(",");
-    });
-    fs.writeFileSync(missingOut, [header.map(csvCell).join(","), ...lines].join("\n") + "\n");
-    console.log(`\nwrote ${missing.length} row(s) to ${missingOut} — Tigrigna/French/Arabic columns are blank and still need translating.`);
-  } else if (missing.length) {
-    console.log(`\nadd these to the sheet (or rerun with --missing <out.csv>):\n  ${missing.slice(0, 40).map((k) => JSON.stringify(k)).join("\n  ")}${missing.length > 40 ? `\n  … ${missing.length - 40} more` : ""}`);
+  const missing = [...labels.keys()].filter((k) => !have.has(k));
+  if (!missing.length) return console.log("i18n: every label already has a row");
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(SHEET);
+  const ws = wb.worksheets[0];
+  let screenCol = 0;
+  ws.getRow(1).eachCell((cell, col) => { if (/^screen/i.test(cellText(cell.value).trim())) screenCol = col; });
+  for (const k of missing) {
+    const row = ws.addRow([]);
+    row.getCell(1).value = k;
+    if (screenCol) row.getCell(screenCol).value = [...new Set(labels.get(k).map(screenOf))].join(" | ");
   }
-  if (missing.length || badCells.length) process.exitCode = 1;
+  await wb.xlsx.writeFile(SHEET);
+  console.log(`i18n: appended ${missing.length} row(s) to ${LABEL_SHEET_PATH} — fill in every language column:\n  ${missing.map((k) => JSON.stringify(k)).join("\n  ")}`);
 }
 
 // ── entry ─────────────────────────────────────────────────────────────────────
-const args = process.argv.slice(2);
-if (args[0] === "--sheet") {
-  const csv = args[1];
-  if (!csv) { console.error("usage: npm run i18n:sheet -- <sheet.csv> [--apply] [--missing <out.csv>]"); process.exit(2); }
-  const mi = args.indexOf("--missing");
-  sheet(csv, { apply: args.includes("--apply"), missingOut: mi > 0 ? args[mi + 1] : null });
-} else {
-  check();
-}
+await (process.argv.includes("--add-missing") ? addMissing() : check());

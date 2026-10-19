@@ -3,72 +3,60 @@
 // (feed names/types/categories) via the backend. There is no backend
 // endpoint for UI-label translation — checked the live swagger
 // (dev backend /openapi.json) on 2026-07-13; every /v1/admin/translations/*
-// route is scoped to a feed_id. The strings live in the 9 per-language
-// JSON dictionaries under src/lib/data/ui-labels/. The ACTIVE
-// language is whatever is already persisted at user.preferred_language
-// (same field store.ts already documents as "used for label lookup"),
-// carried over by Zustand's existing persist middleware.
+// route is scoped to a feed_id. The ACTIVE language is whatever is already
+// persisted at user.preferred_language (same field store.ts already documents
+// as "used for label lookup"), carried over by Zustand's persist middleware.
 //
-// Bundle-size note: the dictionaries are ~270KB combined across all 9
-// languages. Bundling them statically would add ~74KB to a page's First
-// Load JS — most users only ever need ONE language, so they're 9 per-language
-// flat JSON files (src/lib/data/ui-labels/<code>.json, ~30-50KB each)
-// and lazy-loaded via dynamic import() only when preferred_language
-// isn't "en". English users never download any of it.
+// Where the strings live: src/lib/data/ui-labels.xlsx — column A is the
+// English text, then one column per language whose header ends in its code,
+// "Hindi (hi)" (CLAUDE.md §21). The frontend server turns each column into
+// /api/ui-labels/<code> at build time (src/app/api/ui-labels/[lang]/route.ts),
+// so a new column is a new language with no code change here.
+//
+// Bundle-size note: most users only ever need ONE language, so each one is
+// fetched on demand (~30-50KB) only when the language isn't "en" — English
+// users never download any of it, and nobody downloads the spreadsheet.
 //
 // Editing translations: keys are the exact English source string, so a
-// changed English string in the code needs its key updated in all 9 files
-// under src/lib/data/ui-labels/ too — otherwise the lookup silently misses
-// and falls back to English.
+// changed English string in the code needs column A of its row changed in
+// the spreadsheet too — otherwise the lookup silently misses and falls back
+// to English.
 
 import { createElement, Fragment, useEffect, useState, type ReactNode } from "react";
 import { useStore } from "./store";
 
-// Matches the rollout locale set already used for feed-data i18n
-// (see LANGUAGE_NATIVE_LABELS in api.ts) minus "en" and "sw" — neither
-// appears as a translated column in the source sheet.
-export type UiLangCode = "hi" | "tl" | "id" | "th" | "vi" | "bn" | "ne" | "am" | "om";
-
-const UI_LANG_CODES: readonly UiLangCode[] = ["hi", "tl", "id", "th", "vi", "bn", "ne", "am", "om"];
-
-function isUiLangCode(lang: string): lang is UiLangCode {
-  return (UI_LANG_CODES as readonly string[]).includes(lang);
-}
-
 type LangDict = Record<string, string>;
 
-// Per-language loaders — one dynamic import() per code so webpack emits
-// a separate chunk per language instead of one combined bundle.
-const LANG_LOADERS: Record<UiLangCode, () => Promise<{ default: LangDict }>> = {
-  hi: () => import("./data/ui-labels/hi.json"),
-  tl: () => import("./data/ui-labels/tl.json"),
-  id: () => import("./data/ui-labels/id.json"),
-  th: () => import("./data/ui-labels/th.json"),
-  vi: () => import("./data/ui-labels/vi.json"),
-  bn: () => import("./data/ui-labels/bn.json"),
-  ne: () => import("./data/ui-labels/ne.json"),
-  am: () => import("./data/ui-labels/am.json"),
-  om: () => import("./data/ui-labels/om.json"),
-};
+// Same shape the route serves; anything else is never requested.
+const isLabelLangCode = (lang: string) => /^[a-z]{2,3}$/.test(lang);
+
+function fetchDict(lang: string): Promise<LangDict> {
+  return fetch(`/api/ui-labels/${lang}`, { credentials: "same-origin" }).then((res) => {
+    // No column for this language in the sheet: English, and don't ask again.
+    if (res.status === 404) return {};
+    if (!res.ok) throw new Error(`UI labels for ${lang}: HTTP ${res.status}`);
+    return res.json() as Promise<LangDict>;
+  });
+}
 
 // Module-level cache — once a language is loaded during a session,
 // every component reuses the same dictionary + in-flight promise
-// instead of re-importing it per component.
-const dictCache = new Map<UiLangCode, LangDict>();
-const loadingPromises = new Map<UiLangCode, Promise<LangDict>>();
+// instead of re-fetching it per component.
+const dictCache = new Map<string, LangDict>();
+const loadingPromises = new Map<string, Promise<LangDict>>();
 
-function loadDict(lang: UiLangCode): Promise<LangDict> {
+function loadDict(lang: string): Promise<LangDict> {
   const cached = dictCache.get(lang);
   if (cached) return Promise.resolve(cached);
   let promise = loadingPromises.get(lang);
   if (!promise) {
-    promise = LANG_LOADERS[lang]().then(
-      (mod) => {
-        dictCache.set(lang, mod.default);
-        return mod.default;
+    promise = fetchDict(lang).then(
+      (dict) => {
+        dictCache.set(lang, dict);
+        return dict;
       },
       (err) => {
-        // A failed chunk load (flaky network) must not be cached as a
+        // A failed load (flaky network) must not be cached as a
         // rejected promise forever — drop it so the next render retries.
         loadingPromises.delete(lang);
         throw err;
@@ -83,13 +71,13 @@ function loadDict(lang: UiLangCode): Promise<LangDict> {
  * Synchronous lookup — translates `source` (the exact English string as
  * it appears in the sheet) into `lang`, using ONLY whatever is already
  * loaded in the in-memory cache. Falls back to `source` itself when the
- * language is "en", isn't a known rollout code, hasn't finished loading
+ * language is "en", isn't a language code, hasn't finished loading
  * yet, or the string isn't in the dictionary — so an untranslated,
  * unknown, or not-yet-loaded string never renders blank. Components
  * should use `useT()` instead, which also triggers the load.
  */
 export function getUiLabel(source: string, lang: string): string {
-  if (!source || lang === "en" || !isUiLangCode(lang)) return source;
+  if (!source || lang === "en" || !isLabelLangCode(lang)) return source;
   const dict = dictCache.get(lang);
   if (!dict) return source;
   return dict[source] ?? source;
@@ -98,7 +86,7 @@ export function getUiLabel(source: string, lang: string): string {
 /**
  * Component hook — returns a `t(source)` function bound to the user's
  * current preferred_language by default. Triggers the lazy per-language
- * import on first use of a non-English language (cached for the rest of
+ * fetch on first use of a non-English language (cached for the rest of
  * the session) and re-renders the caller once it resolves. Falls back
  * to "en" (English source unchanged) when there's no signed-in user yet
  * (pre-login screens), matching every other i18n V2 fallback chain.
@@ -136,7 +124,7 @@ export function useT(langOverride?: string): (source: string) => string {
   const [, setLoadedTick] = useState(0);
 
   useEffect(() => {
-    if (lang === "en" || !isUiLangCode(lang) || dictCache.has(lang)) return;
+    if (lang === "en" || !isLabelLangCode(lang) || dictCache.has(lang)) return;
     let cancelled = false;
     loadDict(lang)
       .then(() => {
