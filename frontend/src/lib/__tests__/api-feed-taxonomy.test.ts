@@ -52,6 +52,36 @@ describe("getFeedTypes", () => {
     });
   });
 
+  // "Complete diet" is in the catalogue but no country has feeds of it yet,
+  // so unique-feed-type omits it. getFeedTypes adds every active catalogue
+  // type, in the catalogue's sort_order.
+  const routeTypes = (countryTypes: unknown, catalog: unknown[] | Error) =>
+    mockApi.get.mockImplementation((url: string) => {
+      if (url === "/v1/animal/unique-feed-type/7") return Promise.resolve({ data: countryTypes });
+      if (url === "/v1/feed-classification/get-feed-types")
+        return catalog instanceof Error ? Promise.reject(catalog) : Promise.resolve({ data: catalog });
+      return Promise.reject(new Error(`unexpected ${url}`));
+    });
+
+  it("adds active catalogue types the country lacks, ordered by sort_order", async () => {
+    routeTypes({ feed_types: ["Concentrate", "Forage", "Country Only"] }, [
+      { id: "c", type_name: "Complete diet", sort_order: 3, is_active: true },
+      { id: "f", type_name: "Forage", sort_order: 1, is_active: true },
+      { id: "x", type_name: "Retired", sort_order: 4, is_active: false },
+      { id: "k", type_name: "Concentrate", sort_order: 2, is_active: true },
+    ]);
+    const res = await getFeedTypes("7");
+    expect(res.data).toEqual({
+      feed_types: ["Forage", "Concentrate", "Complete diet", "Country Only"],
+    });
+  });
+
+  it("returns the country list unchanged when the catalogue fails", async () => {
+    routeTypes({ feed_types: ["Forage"] }, new Error("offline"));
+    const res = await getFeedTypes("7");
+    expect(res.data).toEqual({ feed_types: ["Forage"] });
+  });
+
   it("getFeedTypesLocalized is the same function reference (simple alias)", () => {
     expect(getFeedTypesLocalized).toBe(getFeedTypes);
   });
@@ -82,15 +112,20 @@ describe("getFeedCategories", () => {
   const CLASSIFICATION_TYPES = [
     { id: "type-forage", type_name: "Forage" },
     { id: "type-conc", type_name: "Concentrate" },
+    { id: "type-complete", type_name: "Complete diet" },
   ];
   const routeGet = (
     countryCategories: unknown,
     perType: Record<string, unknown[]> = {},
-    opts: { typesFail?: boolean } = {}
+    opts: { typesFail?: boolean; countryTypes?: string[] } = {}
   ) =>
     mockApi.get.mockImplementation((url: string) => {
       if (url === "/v1/animal/unique-feed-category")
         return Promise.resolve({ data: countryCategories });
+      if (url === "/v1/animal/unique-feed-type/7")
+        return Promise.resolve({
+          data: { feed_types: opts.countryTypes ?? ["Forage", "Concentrate"] },
+        });
       if (url === "/v1/feed-classification/get-feed-types")
         return opts.typesFail
           ? Promise.reject(new Error("offline"))
@@ -144,6 +179,16 @@ describe("getFeedCategories", () => {
     });
     const res = await getFeedCategories("Forage", "7");
     expect(res.data).toEqual(["Some Country Only Category"]);
+  });
+
+  // A catalogue-only type (no feeds in the country yet) gets the catalogue's
+  // categories, not every category in the country.
+  it("offers the catalogue categories for a type the country has no feeds of", async () => {
+    routeGet(["Energy Source", "Grass/Legume Forage"], {
+      "type-complete": [{ category_name: "Complete diet" }],
+    });
+    const res = await getFeedCategories("Complete diet", "7");
+    expect(res.data).toEqual({ feed_categories: ["Complete diet"] });
   });
 });
 

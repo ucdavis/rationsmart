@@ -42,8 +42,42 @@ import { asRecord, listFrom, stringField } from "./normalize";
 // (that endpoint separately returns display_name and DOES honor an
 // explicit non-English lang — see getFeedSubCategories/
 // fetchFeedTaxonomyLabels below).
-export const getFeedTypes = (country_id: string, _user_id?: string) =>
+const getCountryFeedTypes = (country_id: string) =>
   api.get(`/v1/animal/unique-feed-type/${country_id}`, { params: { lang: "en" } });
+
+// unique-feed-type lists only the types that already have feeds in the
+// country, so a type the admin just added to the catalogue ("Complete diet",
+// 2026-09-22) never showed up until feeds were tagged with it. The user asked
+// (2026-10-22) for every active catalogue type to be offered: the country
+// list is merged with /v1/feed-classification/get-feed-types and ordered by
+// the catalogue's sort_order (Forage, Concentrate, Complete diet). A
+// country-only type the catalogue lacks is kept, after the catalogue ones.
+// If the catalogue fails, the country list is returned unchanged.
+export const getFeedTypes = async (country_id: string, _user_id?: string) => {
+  const res = await getCountryFeedTypes(country_id);
+  let catalog: FeedClassificationType[];
+  try {
+    catalog = await feedTypeCatalog();
+  } catch {
+    return res;
+  }
+  const countryNames = parseFeedTypeOptions(res.data).map((o) => o.name);
+  const active = catalog
+    .filter((t) => t.type_name && t.is_active !== false)
+    .sort((a, b) => (a.sort_order ?? Infinity) - (b.sort_order ?? Infinity));
+  if (active.length === 0) return res;
+  const catalogKeys = new Set(active.map((t) => normalizeTaxonomyName(t.type_name)));
+  const merged = [
+    ...active.map(
+      (t) =>
+        countryNames.find(
+          (n) => normalizeTaxonomyName(n) === normalizeTaxonomyName(t.type_name)
+        ) ?? (t.type_name as string)
+    ),
+    ...countryNames.filter((n) => !catalogKeys.has(normalizeTaxonomyName(n))),
+  ];
+  return { ...res, data: { feed_types: merged } };
+};
 
 export const getFeedTypesLocalized = getFeedTypes;
 
@@ -69,7 +103,12 @@ export const getFeedTypesLocalized = getFeedTypes;
 // Every failure path degrades to "no filtering" — the pre-existing behaviour.
 // A taxonomy mismatch must never empty the dropdown: an over-broad list is a
 // nuisance, an empty one is a dead end ("just the arrows, nothing loads").
-type FeedClassificationType = { id?: string; type_name?: string };
+type FeedClassificationType = {
+  id?: string;
+  type_name?: string;
+  sort_order?: number;
+  is_active?: boolean;
+};
 type FeedClassificationCategory = { category_name?: string; name?: string };
 
 const normalizeTaxonomyName = (v: unknown): string =>
@@ -80,20 +119,26 @@ const normalizeTaxonomyName = (v: unknown): string =>
 let feedTypeCatalogPromise: Promise<FeedClassificationType[]> | null = null;
 const categoryNamesByTypeId = new Map<string, Promise<string[]>>();
 
-async function allowedCategoryNamesForType(feed_type: string): Promise<Set<string> | null> {
+function feedTypeCatalog(): Promise<FeedClassificationType[]> {
+  if (!feedTypeCatalogPromise) {
+    feedTypeCatalogPromise = api
+      .get("/v1/feed-classification/get-feed-types", { params: { lang: "en" } })
+      .then((r) => (Array.isArray(r.data) ? (r.data as FeedClassificationType[]) : []))
+      .catch((err) => {
+        // Don't let one transient failure poison the cache for the session.
+        feedTypeCatalogPromise = null;
+        throw err;
+      });
+  }
+  return feedTypeCatalogPromise;
+}
+
+// The catalogue's category names for a type, in catalogue order; null when
+// the type isn't in the catalogue or the lookup fails.
+async function catalogCategoryNamesForType(feed_type: string): Promise<string[] | null> {
   if (!feed_type) return null;
   try {
-    if (!feedTypeCatalogPromise) {
-      feedTypeCatalogPromise = api
-        .get("/v1/feed-classification/get-feed-types", { params: { lang: "en" } })
-        .then((r) => (Array.isArray(r.data) ? (r.data as FeedClassificationType[]) : []))
-        .catch((err) => {
-          // Don't let one transient failure poison the cache for the session.
-          feedTypeCatalogPromise = null;
-          throw err;
-        });
-    }
-    const catalog = await feedTypeCatalogPromise;
+    const catalog = await feedTypeCatalog();
     const typeId = catalog.find(
       (t) => normalizeTaxonomyName(t.type_name) === normalizeTaxonomyName(feed_type)
     )?.id;
@@ -117,10 +162,15 @@ async function allowedCategoryNamesForType(feed_type: string): Promise<Set<strin
       categoryNamesByTypeId.set(typeId, namesPromise);
     }
     const names = await namesPromise;
-    return names.length > 0 ? new Set(names.map(normalizeTaxonomyName)) : null;
+    return names.length > 0 ? names : null;
   } catch {
     return null;
   }
+}
+
+async function allowedCategoryNamesForType(feed_type: string): Promise<Set<string> | null> {
+  const names = await catalogCategoryNamesForType(feed_type);
+  return names ? new Set(names.map(normalizeTaxonomyName)) : null;
 }
 
 // Pulls the category rows out of whichever wrapper the backend used, without
@@ -135,6 +185,18 @@ const categoryRowName = (row: unknown): string => {
   if (typeof row === "string") return row;
   return stringField(row, "category_name") ?? stringField(row, "name") ?? "";
 };
+
+// True when unique-feed-type lists the type for this country (or when that
+// can't be checked — the caller then keeps its old fallback).
+async function typeHasCountryFeeds(feed_type: string, country_id: string): Promise<boolean> {
+  try {
+    const res = await getCountryFeedTypes(country_id);
+    const key = normalizeTaxonomyName(feed_type);
+    return parseFeedTypeOptions(res.data).some((o) => normalizeTaxonomyName(o.name) === key);
+  } catch {
+    return true;
+  }
+}
 
 /**
  * Clears the feed-classification caches above. Exists for tests only — the
@@ -159,9 +221,19 @@ export const getFeedCategories = async (
   const allowed = await allowedCategoryNamesForType(feed_type);
   if (!allowed) return res;
   const filtered = rows.filter((row) => allowed.has(normalizeTaxonomyName(categoryRowName(row))));
-  // Empty intersection means the two vocabularies disagree, not that the type
-  // has no categories. Keep the unfiltered list.
-  if (filtered.length === 0) return res;
+  if (filtered.length === 0) {
+    // A catalogue-only type (offered by getFeedTypes but with no feeds in
+    // this country yet, e.g. "Complete diet") has no categories in the
+    // country list at all — offer the catalogue's own categories instead of
+    // every category in the country.
+    if (!(await typeHasCountryFeeds(feed_type, country_id))) {
+      const names = await catalogCategoryNamesForType(feed_type);
+      if (names) return { ...res, data: { feed_categories: names } };
+    }
+    // Otherwise the two vocabularies disagree, not that the type has no
+    // categories. Keep the unfiltered list.
+    return res;
+  }
   return { ...res, data: filtered };
 };
 

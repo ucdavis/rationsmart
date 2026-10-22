@@ -73,6 +73,10 @@ describe("feed-selection preflight", () => {
     expect(run({ items: [row({ feed_type_name: "Concentrate" })] })).toEqual({ kind: "noForage" });
   });
 
+  it("accepts a Complete diet feed in place of a forage", () => {
+    expect(run({ items: [row({ feed_type_name: "Complete diet" })] })).toEqual({ kind: "ok" });
+  });
+
   it("rejects a typed 0 bound and a minimum above the maximum", () => {
     const zero = row({ inclusion_limits_enabled: true, min_kg_per_day: 0 });
     const crossed = row({ inclusion_limits_enabled: true, min_kg_per_day: 5, max_kg_per_day: 2 });

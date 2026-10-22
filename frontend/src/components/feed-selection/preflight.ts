@@ -4,7 +4,7 @@
 
 import { ANIMAL_CATEGORY_LABELS, DIET_LIMIT_LABELS } from "@/lib/api";
 import type { AnimalCategory, DietLimits, DietThresholdSpec, FeedItem } from "@/lib/api";
-import { isForageType } from "@/lib/feed-type-aliases";
+import { isCompleteDietType, isForageType } from "@/lib/feed-type-aliases";
 import { inclusionBoundIsInvalid, inclusionBoundsCrossed } from "@/lib/validators";
 
 // Range check for one limit. The endpoint gives an explicit min AND max for
@@ -97,9 +97,12 @@ export function generatePreflight({
   // recommendation AND evaluation modes per the user's spec. A "Forage"
   // means at least one row whose feed_type_name resolves to Forage
   // (English identity OR any localized alias — see feed-type-aliases.ts)
-  // AND has a populated feed_uuid (actually picked, not just typed).
+  // AND has a populated feed_uuid (actually picked, not just typed). A
+  // Complete diet feed already contains forage, so it counts too.
   const hasForage = items.some(
-    (item) => isForageType(item.feed_type_name) && item.feed_uuid !== null
+    (item) =>
+      (isForageType(item.feed_type_name) || isCompleteDietType(item.feed_type_name)) &&
+      item.feed_uuid !== null
   );
   if (!hasForage) {
     return { kind: "noForage" };

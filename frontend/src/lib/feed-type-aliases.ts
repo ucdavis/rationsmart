@@ -17,8 +17,17 @@ export const ROUGHAGE_ALIASES: ReadonlySet<string> = new Set([
   "Roughage", // en
 ]);
 
+// "Complete diet" (catalogue type added 2026-09-22) — a ration that already
+// carries its forage, so it satisfies the Forage-required gate (user, 2026-10-22).
+export const COMPLETE_DIET_ALIASES: ReadonlySet<string> = new Set([
+  "Complete diet", // en — backend type_name, lowercase "d"
+]);
+
 export const isForageType = (name: string | null | undefined): boolean =>
   !!name && FORAGE_ALIASES.has(name);
 
 export const isRoughageType = (name: string | null | undefined): boolean =>
   !!name && ROUGHAGE_ALIASES.has(name);
+
+export const isCompleteDietType = (name: string | null | undefined): boolean =>
+  !!name && COMPLETE_DIET_ALIASES.has(name);

@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { useStore } from "@/lib/store";
 import { calculateCost } from "@/lib/validators";
@@ -58,6 +59,14 @@ interface FeedRowProps {
    *  English identity when a mapping is missing. */
   taxonomyLabels?: FeedTaxonomyLabels;
 }
+
+// Feed Type radios: one row, a column per type (at most 3, then wrap).
+// `auto` tracks shrink to fit, so a long label wraps on narrow phones
+// instead of pushing the last radio onto a new row.
+const feedTypeGridStyle = (count: number): CSSProperties => ({
+  gridTemplateColumns: `repeat(${Math.min(Math.max(count, 1), 3)}, auto)`,
+  justifyContent: "space-between",
+});
 
 export default function FeedRow({
   item,
@@ -255,21 +264,21 @@ export default function FeedRow({
 
       {/* Row 2 — Feed Type radio. Matches the visual language of the
           Diet Recommendation / Diet Evaluation radios on the same page:
-          plain circle + label, no surrounding box. Two-column grid so
-          Forage and Concentrate line up vertically across cards. */}
+          plain circle + label, no surrounding box. One row with a column
+          per type (Forage, Concentrate, Complete diet) so they line up
+          vertically across cards; a long label wraps inside its column. */}
       <div style={{ padding: "0 10px 24px" }}>
         <p className="text-xs font-bold uppercase mb-2 ml-1" style={{ color: COLORS.darkSilver }}>
           {t("Feed Type")}
           <span style={{ color: COLORS.redRyb }}>{" *"}</span>
         </p>
         {loadingTypes ? (
-          // Same 2-column radio grid as the real content below (feed
-          // types are always exactly Forage/Concentrate in practice —
-          // see CLAUDE.md §6), just non-interactive with a shimmering
-          // label bar instead of real text, so there's no layout shift
-          // once feedTypes populates.
-          <div className="grid grid-cols-2 gap-3 ml-1">
-            {[0, 1].map((i) => (
+          // Same radio grid as the real content below (three types —
+          // Forage / Concentrate / Complete diet — in practice), just
+          // non-interactive with a shimmering label bar instead of real
+          // text, so there's no layout shift once feedTypes populates.
+          <div className="grid gap-3 ml-1" style={feedTypeGridStyle(3)}>
+            {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center gap-2">
                 <span
                   style={{
@@ -282,13 +291,13 @@ export default function FeedRow({
                 />
                 <span
                   className="shimmer rounded"
-                  style={{ width: 70, height: 12, borderRadius: 4 }}
+                  style={{ width: 60, height: 12, borderRadius: 4 }}
                 />
               </div>
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 ml-1">
+          <div className="grid gap-3 ml-1" style={feedTypeGridStyle(feedTypes.length)}>
             {feedTypes.map((ft) => {
               const selected = item.feed_type_name === ft.name;
               return (
@@ -355,7 +364,7 @@ export default function FeedRow({
                       fontSize: 14,
                       fontWeight: selected ? 700 : 400,
                       color: selected ? COLORS.darkAquamarineGreen : COLORS.darkSilver,
-                      whiteSpace: "nowrap",
+                      textAlign: "left",
                     }}
                   >
                     {taxonomyLabels?.types?.[ft.name] ?? ft.display}

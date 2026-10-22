@@ -678,7 +678,7 @@ describe("parse-error isolation (success handler throws ≠ load failure)", () =
 // just shimmering and non-interactive, instead of being swapped for a
 // bare placeholder div — so there's no layout drift once data arrives.
 describe("loading shimmer uses the real elements (not a separate skeleton div)", () => {
-  it("Feed Type: shows a 2-radio shimmer placeholder (same grid) while loadingTypes, then the real Forage/Concentrate radios", async () => {
+  it("Feed Type: shows a 3-radio shimmer placeholder (same grid) while loadingTypes, then the real Forage/Concentrate/Complete diet radios", async () => {
     let resolveTypes!: (v: { data: string[] }) => void;
     getFeedTypes.mockReturnValueOnce(
       new Promise((resolve) => {
@@ -696,14 +696,18 @@ describe("loading shimmer uses the real elements (not a separate skeleton div)",
     );
 
     expect(screen.queryByText("Forage")).not.toBeInTheDocument();
-    const grid = container.querySelector(".grid.grid-cols-2.gap-3.ml-1");
+    const grid = container.querySelector<HTMLElement>(".grid.gap-3.ml-1");
     expect(grid).not.toBeNull();
-    expect(grid!.querySelectorAll(".shimmer").length).toBe(2);
+    expect(grid!.querySelectorAll(".shimmer").length).toBe(3);
 
-    resolveTypes({ data: ["Forage", "Concentrate"] });
+    resolveTypes({ data: ["Forage", "Concentrate", "Complete diet"] });
     await screen.findByText("Forage");
     expect(screen.getByText("Concentrate")).toBeInTheDocument();
-    expect(container.querySelectorAll(".grid.grid-cols-2.gap-3.ml-1 .shimmer").length).toBe(0);
+    expect(screen.getByText("Complete diet")).toBeInTheDocument();
+    // All three sit in one row, one column each.
+    const loaded = container.querySelector<HTMLElement>(".grid.gap-3.ml-1");
+    expect(loaded!.style.gridTemplateColumns).toBe("repeat(3, auto)");
+    expect(container.querySelectorAll(".grid.gap-3.ml-1 .shimmer").length).toBe(0);
   });
 
   it("Feed Category: shimmers the same FieldBox+CustomSelect in place while loadingCats, then shows the real dropdown", async () => {
