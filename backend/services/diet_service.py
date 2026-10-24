@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import CustomFeed, Feed, Report
+from app.db.models import CustomFeed, Report
 from repositories.feed_repository import FeedRepository
 from repositories.report_repository import ReportRepository
 from repositories.user_repository import UserRepository
