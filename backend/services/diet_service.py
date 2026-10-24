@@ -18,7 +18,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.db.models import CustomFeed, Feed, FeedAnalytics, Report
+from app.db.models import CustomFeed, Feed, Report
 from repositories.feed_repository import FeedRepository
 from repositories.report_repository import ReportRepository
 from repositories.user_repository import UserRepository
@@ -837,15 +837,6 @@ async def run_diet_evaluation(
     )
     await report_repo.save(new_report)
     return response
-
-
-# ── Feed analytics ────────────────────────────────────────────────────────────
-
-async def save_feed_analytics(db: AsyncSession, data: Dict[str, Any]) -> FeedAnalytics:
-    """Persist a feed analytics record. Caller must commit."""
-    record = FeedAnalytics(**data)
-    await ReportRepository(db).save_feed_analytics(record)
-    return record
 
 
 # ── Custom feed operations ────────────────────────────────────────────────────

@@ -7,14 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.limiter import limiter
 
 from app.dependencies import get_current_user, get_db, get_language_authenticated
-from app.db.models import FeedAnalytics, UserInformationModel
+from app.db.models import UserInformationModel
 from app.schemas.animal import (
     CattleInfoFieldsResponse,
     DietEvaluationRequest,
     DietRecommendationRequest,
     DietThresholdsResponse,
-    FeedAnalyticsCreate,
-    FeedAnalyticsResponse,
     normalise_physiological_state,
 )
 from app.schemas.animal_field_spec import field_spec_for_state
@@ -448,30 +446,6 @@ async def evaluate_diet(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     await db.commit()
     return result
-
-
-# ── Feed analytics ────────────────────────────────────────────────────────────
-
-@router.post("/feed-analytics", response_model=FeedAnalyticsResponse,
-             summary="Record feed usage analytics")
-async def save_feed_analytics(
-    body: FeedAnalyticsCreate,
-    current_user: UserInformationModel = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Save a feed analytics event (e.g. which feeds the user interacted with during a session).
-
-    **Requires:** Bearer JWT.
-
-    **Mandatory body fields:** `feed_id` (UUID), `event_type` (string describing the action).
-
-    Used for usage tracking and improving feed recommendations.
-    """
-    record = await diet_service.save_feed_analytics(db, body.dict())
-    await db.commit()
-    await db.refresh(record)
-    return FeedAnalyticsResponse.from_orm(record)
 
 
 # ── Custom feed CRUD ──────────────────────────────────────────────────────────

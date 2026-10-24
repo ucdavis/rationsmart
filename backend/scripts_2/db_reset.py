@@ -52,7 +52,7 @@ KEEP_TABLES = frozenset({
 # reports.user_id is NO ACTION; never TRUNCATE ... CASCADE, which would follow
 # feeds.created_by / feed_sync_config.scheduler_toggled_by and empty those too.
 WIPE_ORDER: Tuple[str, ...] = (
-    "user_feedback", "reports", "feed_analytics",
+    "user_feedback", "reports",
     "custom_feeds", "feed_sync_log",
     "feed_translations", "feeds",
     "user_information",
