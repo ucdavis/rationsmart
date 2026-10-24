@@ -30,14 +30,25 @@ _FEEDS_META = {_COL_FEED_ID, _COL_FD_CODE, _COL_COUNTRY_NAME, _COL_EN_NAME}
 _VOCAB_META = {_COL_TYPE_SRC, _COL_COUNTRY_NAME}
 
 
-def _language_columns(columns, lang_codes) -> list[tuple[str, str]]:
+def _language_columns(columns, lang_codes, sheet: str, errors: list) -> list[tuple[str, str]]:
     """[(header, stored code)] for headers naming one of the country's languages,
-    compared case-insensitively ('PT-br' finds 'pt-BR')."""
-    pairs = []
+    compared case-insensitively ('PT-br' finds 'pt-BR').
+
+    Two headers naming the same language ('hi' and 'HI') would overwrite each
+    other, so both are skipped and reported in `errors`.
+    """
+    by_code: dict[str, list] = {}
     for header in columns:
         code = match_language_code(str(header), lang_codes)
         if code is not None:
-            pairs.append((header, code))
+            by_code.setdefault(code, []).append(header)
+    pairs = []
+    for code, headers in by_code.items():
+        if len(headers) > 1:
+            names = ", ".join(f"'{h}'" for h in headers)
+            errors.append(f"{sheet} sheet: columns {names} are all language '{code}' — skipped")
+        else:
+            pairs.append((headers[0], code))
     return pairs
 
 
@@ -139,9 +150,11 @@ async def import_translation_workbook(
     # ── Feeds sheet ────────────────────────────────────────────────────────────
     if _SHEET_FEEDS in sheets:
         df = sheets[_SHEET_FEEDS].fillna("")
-        lang_cols = _language_columns(df.columns, active_lang_codes)
-        lang_headers = {header for header, _ in lang_cols}
-        unknown = [c for c in df.columns if c not in _FEEDS_META and c not in lang_headers]
+        lang_cols = _language_columns(df.columns, active_lang_codes, _SHEET_FEEDS, summary["errors"])
+        unknown = [
+            c for c in df.columns
+            if c not in _FEEDS_META and match_language_code(str(c), active_lang_codes) is None
+        ]
         for c in unknown:
             summary["errors"].append(f"Feeds sheet: unknown column '{c}' — skipped")
 
@@ -164,7 +177,7 @@ async def import_translation_workbook(
     # ── Feed Types sheet ──────────────────────────────────────────────────────
     if _SHEET_TYPES in sheets:
         df = sheets[_SHEET_TYPES].fillna("")
-        lang_cols = _language_columns(df.columns, active_lang_codes)
+        lang_cols = _language_columns(df.columns, active_lang_codes, _SHEET_TYPES, summary["errors"])
         if _COL_TYPE_SRC in df.columns:
             for _, row in df.iterrows():
                 src = str(row.get(_COL_TYPE_SRC, "")).strip()  # exported key: must match as stored
@@ -183,7 +196,7 @@ async def import_translation_workbook(
     # ── Feed Categories sheet ─────────────────────────────────────────────────
     if _SHEET_CATS in sheets:
         df = sheets[_SHEET_CATS].fillna("")
-        lang_cols = _language_columns(df.columns, active_lang_codes)
+        lang_cols = _language_columns(df.columns, active_lang_codes, _SHEET_CATS, summary["errors"])
         if _COL_CAT_SRC in df.columns:
             for _, row in df.iterrows():
                 src = str(row.get(_COL_CAT_SRC, "")).strip()  # exported key: must match as stored

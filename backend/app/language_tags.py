@@ -108,13 +108,19 @@ def match_language_code(
     With fallback, also tries fallback_chain ('pt-br' finds 'pt'). Never calls
     langcodes, so it is safe for public input. None when nothing matches.
     """
-    text = str(raw or "").strip().replace("_", "-")
-    if not text or len(text) > MAX_TAG_LENGTH:
+    original = str(raw or "").strip()
+    if not original or len(original) > MAX_TAG_LENGTH:
         return None
-    by_lower = {str(c).lower(): c for c in codes}
-    candidates = fallback_chain(text) if fallback else [text]
-    for candidate in candidates:
-        found = by_lower.get(candidate.lower())
+    codes = [str(c) for c in codes]
+    # The spelling as sent first, so a stored 'pt_br' still matches itself.
+    exact = {c.lower(): c for c in codes}
+    if original.lower() in exact:
+        return exact[original.lower()]
+    # Then with '_' read as '-' on both sides, and the fallback chain if asked.
+    by_tag = {c.lower().replace("_", "-"): c for c in codes}
+    text = original.replace("_", "-")
+    for candidate in (fallback_chain(text) if fallback else [text]):
+        found = by_tag.get(candidate.lower())
         if found is not None:
             return found
     return None
