@@ -1,8 +1,8 @@
 """
 ORM models — ground truth from pg_dump taken 2026-06-12 (Task 2.1).
 
-15 tables modelled; alembic_version excluded. Unused legacy tables were dropped
-in migration f7a8b9c0d1e2.
+14 tables modelled; alembic_version excluded. Unused legacy tables were dropped
+in migrations f7a8b9c0d1e2 and a8b9c0d1e2f3.
 Single Base from app.db.base — no second declarative_base() anywhere.
 Foreign keys declared to match the live DB constraints.
 """
@@ -10,7 +10,7 @@ Foreign keys declared to match the live DB constraints.
 import uuid
 
 from sqlalchemy import (
-    Boolean, CheckConstraint, Column, Date, DateTime,
+    Boolean, CheckConstraint, Column, DateTime,
     ForeignKey, Index, Integer, LargeBinary, Numeric, SmallInteger, String, Text,
     UniqueConstraint, literal_column,
 )
@@ -207,25 +207,6 @@ class CustomFeed(Base):
     # Nullable; populated by the custom-feed create/update path. See T1 note above.
     fd_category_id = Column(UUID(as_uuid=True), ForeignKey("feed_categories.id"), nullable=True)
     fd_type_id = Column(UUID(as_uuid=True), ForeignKey("feed_types.id"), nullable=True)
-
-
-class FeedAnalytics(Base):
-    __tablename__ = "feed_analytics"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    da_name = Column(String(100), nullable=False)
-    da_phone_num = Column(String(100), nullable=False)
-    country_cd = Column(String(3), nullable=False)
-    country_name = Column(String(100), nullable=False)
-    animal_info = Column(Text, nullable=False)
-    sys_rcmd = Column(Text, nullable=False)
-    cust_rcmd = Column(Text, nullable=False)
-    farmer_name = Column(Text, nullable=False)
-    farmer_phone_num = Column(String(100), nullable=False)
-    rcmd_dt = Column(Date, nullable=False, server_default=func.current_date())
-    farmer_adopted = Column(Boolean, nullable=True)
-    created_on = Column(DateTime, nullable=False, server_default=func.current_timestamp())
-    updated_on = Column(DateTime, nullable=False, server_default=func.current_timestamp())
 
 
 class Report(Base):
@@ -448,7 +429,6 @@ __all__ = [
     "FeedCategory",
     "Feed",
     "CustomFeed",
-    "FeedAnalytics",
     "Report",
     "UserFeedback",
     "Language",
