@@ -35,7 +35,7 @@ aiofiles==25.1.0
 multidict==6.9.1
 yarl==1.25.1
 propcache==0.5.4
-Brotli==1.2.0
+Brotli==1.2.1
 websockets==17.1
 
 # ── Cache / Queue ─────────────────────────────────────────────────────────────
