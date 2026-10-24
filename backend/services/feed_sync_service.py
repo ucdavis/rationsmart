@@ -26,6 +26,7 @@ import httpx
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.language_tags import match_language_code, try_canonical_language_tag
 from repositories.feed_repository import (
     FeedRepository,
     is_feed_name_conflict,
@@ -58,9 +59,6 @@ MANDATORY_COLUMNS = {
     "fd_code", "fd_name", "fd_country_name", "fd_language_cd",
     "fd_type", "fd_category",
 }
-
-# D17: ISO 639-1 two-letter codes only (post trim/lowercase).
-_LANG_CODE_RE = re.compile(r"^[a-z]{2}$")
 
 # D24: decimal-comma numerics ("88,8") are a locale artifact, not junk.
 _DECIMAL_COMMA_RE = re.compile(r"^\d+,\d+$")
@@ -592,9 +590,13 @@ async def _run_import_pipeline(
                 if not local_name:
                     continue  # English-only row — nothing to translate
 
+                # D17 (revised 2026-10-24): any BCP 47 code; was 2-letter ISO 639-1
+                # only. A registered code matches as stored (any case, also a
+                # pre-BCP 47 row like 'tl'), else its standard form ('BEN' -> 'bn').
                 raw_code = _cell_str(row, "fd_language_cd")
-                code = raw_code.lower()
-                if not code or not _LANG_CODE_RE.match(code):
+                code = (match_language_code(raw_code, active_languages)
+                        or try_canonical_language_tag(raw_code))
+                if not code:
                     skipped_translations.append({
                         "fd_code": fd_code, "language": raw_code or None,
                         "reason": "blank/invalid fd_language_cd",

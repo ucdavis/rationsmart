@@ -204,17 +204,21 @@ async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession =
     if body.country_id is not None and not await repo.get_country_by_id(body.country_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid country selected")
 
-    if body.preferred_language is not None:
+    preferred_language = body.preferred_language
+    if preferred_language is not None:
         from app.lang import get_active_languages
+        from app.language_tags import match_language_code
         active = await get_active_languages(db)
-        if body.preferred_language not in active:
+        # Case-insensitive ('HI' -> 'hi'); the stored spelling is saved.
+        preferred_language = match_language_code(preferred_language, active)
+        if preferred_language is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Language '{body.preferred_language}' is not available",
             )
 
     await repo.update_profile(
-        user, name=body.name, country_id=body.country_id, preferred_language=body.preferred_language
+        user, name=body.name, country_id=body.country_id, preferred_language=preferred_language
     )
     await db.commit()
     return await _user_response(user, db)

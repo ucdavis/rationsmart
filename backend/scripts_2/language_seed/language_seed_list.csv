@@ -1,0 +1,206 @@
+language_code,language_name,code_length,already_in_db,countries
+aa,Afar,2,no,Djibouti
+abr,Abron,3,no,Ghana
+aeb,Tunisian Arabic,3,no,Tunisia
+af,Afrikaans,2,no,Namibia; South Africa
+ak,Akan,2,no,Ghana
+am,Amharic,2,yes,Ethiopia
+apc,North Levantine Arabic,3,no,Israel; Jordan; Lebanon; Syria; Turkey
+apd,Sudanese Arabic,3,no,Sudan
+ar,Arabic,2,no,Algeria; Bahrain; Chad; Comoros; Egypt; Iraq; Israel; Jordan; Kuwait; Lebanon; Libya; Mauritania; Morocco; Oman; Qatar; Saudi Arabia; Somalia; South Sudan; Sudan; Syria; Tunisia; United Arab Emirates; Yemen
+arq,Algerian Arabic,3,no,Algeria
+ary,Moroccan Arabic,3,no,Morocco
+arz,Egyptian Arabic,3,no,Egypt
+as,Assamese,2,no,(report workbook)
+ay,Aymara,2,no,Bolivia
+az,Azerbaijani,2,no,Azerbaijan; Iran
+bar,Bavarian,3,no,Austria; Germany
+bci,Baoulé,3,no,Ivory Coast
+be,Belarusian,2,no,Belarus
+bej,Beja,3,no,Sudan
+bem,Bemba,3,no,Zambia
+bg,Bulgarian,2,no,Bulgaria; Moldova
+bgc,Haryanvi,3,no,(report workbook)
+bho,Bhojpuri,3,no,Mauritius; Nepal
+bi,Bislama,2,no,Vanuatu
+bm,Bambara,2,no,Mali
+bn,Bangla,2,no,Bangladesh; India
+bs,Bosnian,2,no,Bosnia and Herzegovina
+ca,Catalan,2,no,Andorra; Spain
+ceb,Cebuano,3,no,Philippines
+chk,Chuukese,3,no,Micronesia
+ckb,Central Kurdish,3,no,Iraq
+cop,Coptic,3,no,Egypt
+crs,Seselwa Creole French,3,no,Seychelles
+cs,Czech,2,no,Czech Republic; Slovakia
+da,Danish,2,no,Denmark
+de,German,2,no,Austria; Belgium; Czech Republic; Denmark; Finland; France; Germany; Greece; Hungary; Kazakhstan; Liechtenstein; Lithuania; Luxembourg; Netherlands; Poland; Slovakia; Slovenia; Switzerland; United Kingdom
+dje,Zarma,3,no,Niger
+dv,Divehi,2,no,Maldives
+dyu,Dyula,3,no,Burkina Faso
+dz,Dzongkha,2,no,Bhutan
+ee,Ewe,2,no,Ghana; Togo
+el,Greek,2,no,Cyprus; Greece
+es,Spanish,2,no,Andorra; Argentina; Belize; Bolivia; Chile; Colombia; Costa Rica; Cuba; Dominican Republic; Ecuador; El Salvador; Equatorial Guinea; France; Guatemala; Honduras; Mexico; Nicaragua; Panama; Peru; Philippines; Portugal; Romania; Spain; United Kingdom; United States; Uruguay; Venezuela
+et,Estonian,2,no,Estonia
+fa,Persian,2,no,Afghanistan; Iran; Qatar
+fan,Fang,3,no,Equatorial Guinea
+ff,Fula,2,no,Guinea; Mauritania; Senegal
+ffm,Maasina Fulfulde,3,no,Mali
+fi,Finnish,2,no,Estonia; Finland
+fil,Filipino,3,no,Philippines
+fj,Fijian,2,no,Fiji
+fon,Fon,3,no,Benin
+fr,French,2,no,Algeria; Andorra; Austria; Belgium; Benin; Burkina Faso; Burundi; Cameroon; Canada; Central African Republic; Chad; Congo; Cyprus; Democratic Republic of the Congo; Djibouti; Equatorial Guinea; France; Gabon; Germany; Greece; Guinea; Guinea-Bissau; Haiti; Ireland; Italy; Ivory Coast; Lebanon; Luxembourg; Madagascar; Mali; Malta; Mauritania; Mauritius; Monaco; Morocco; Netherlands; Niger; Portugal; Romania; Rwanda; Sao Tome and Principe; Senegal; Seychelles; Switzerland; Togo; Tunisia; United Kingdom; Vanuatu
+ga,Irish,2,no,Ireland
+gil,Gilbertese,3,no,Kiribati
+gl,Galician,2,no,Spain
+gn,Guarani,2,no,Paraguay
+gsw,Swiss German,3,no,Liechtenstein; Switzerland
+gu,Gujarati,2,no,(report workbook)
+ha,Hausa,2,no,Niger
+hak,Hakka Chinese,3,no,Taiwan
+haz,Hazaragi,3,no,Afghanistan
+he,Hebrew,2,no,Israel
+hi,Hindi,2,yes,Fiji; India
+hif,Fiji Hindi,3,no,Fiji
+hr,Croatian,2,no,Bosnia and Herzegovina; Croatia; Slovenia
+ht,Haitian Creole,2,no,Haiti
+hu,Hungarian,2,no,Hungary
+hy,Armenian,2,no,Armenia
+id,Indonesian,2,yes,Indonesia
+ig,Igbo,2,no,Nigeria
+is,Icelandic,2,no,Iceland
+it,Italian,2,no,Italy; Malta; San Marino; Vatican City
+ja,Japanese,2,no,Japan
+jam,Jamaican Creole English,3,no,Jamaica
+jv,Javanese,2,no,Indonesia
+ka,Georgian,2,no,Georgia
+kea,Kabuverdianu,3,no,Cape Verde
+ki,Kikuyu,2,no,Kenya
+kj,Kuanyama,2,no,Namibia
+kjg,Khmu,3,no,Laos
+kk,Kazakh,2,no,Kazakhstan; Mongolia
+km,Khmer,2,no,Cambodia
+kmb,Kimbundu,3,no,Angola
+kn,Kannada,2,yes,(report workbook)
+ko,Korean,2,no,North Korea; South Korea
+kos,Kosraean,3,no,Micronesia
+kpe,Kpelle,3,no,Liberia
+kri,Krio,3,no,Sierra Leone
+ku,Kurdish,2,no,Syria; Turkey
+ky,Kyrgyz,2,no,Kyrgyzstan
+la,Latin,2,no,Vatican City
+lah,Western Panjabi,3,no,Pakistan
+lb,Luxembourgish,2,no,Luxembourg
+lg,Ganda,2,no,Uganda
+lmo,Lombard,3,no,Italy
+lo,Lao,2,no,Laos
+lt,Lithuanian,2,no,Lithuania
+ltg,Latgalian,3,no,Latvia
+lua,Luba-Lulua,3,no,Democratic Republic of the Congo
+luy,Luyia,3,no,Kenya
+lv,Latvian,2,no,Latvia
+mai,Maithili,3,no,Nepal
+man,Mandingo,3,no,Gambia; Guinea
+men,Mende,3,no,Sierra Leone
+mfe,Morisyen,3,no,Mauritius
+mg,Malagasy,2,no,Madagascar
+mh,Marshallese,2,no,Marshall Islands
+mk,Macedonian,2,no,North Macedonia
+ml,Malayalam,2,no,United Arab Emirates
+mn,Mongolian,2,no,Mongolia
+mos,Mossi,3,no,Burkina Faso
+mr,Marathi,2,no,(report workbook)
+ms,Malay,2,no,Brunei; Malaysia; Singapore
+mt,Maltese,2,no,Malta
+mxc,Manyika,3,no,Zimbabwe
+my,Burmese,2,no,Myanmar
+mzn,Mazanderani,3,no,Iran
+na,Nauru,2,no,Nauru
+nan,Min Nan Chinese,3,no,Taiwan
+nb,Norwegian Bokmål,2,no,Norway
+nd,North Ndebele,2,no,Zimbabwe
+ndc,Ndau,3,no,Mozambique
+ne,Nepali,2,no,Bhutan; Nepal
+ng,Ndonga,2,no,Namibia
+nl,Dutch,2,no,Belgium; Netherlands; Suriname
+nn,Norwegian Nynorsk,2,no,Norway
+no,Norwegian,2,no,Norway
+nod,Northern Thai,3,no,Thailand
+nus,Nuer,3,no,South Sudan
+ny,Nyanja,2,no,Malawi; Zambia
+nyn,Nyankole,3,no,Uganda
+om,Oromo,2,no,Ethiopia
+or,Odia,2,no,(report workbook)
+pa,Punjabi,2,no,Pakistan
+pau,Palauan,3,no,Palau
+pcm,Nigerian Pidgin,3,no,Nigeria
+pis,Pijin,3,no,Solomon Islands
+pl,Polish,2,no,Poland
+pon,Pohnpeian,3,no,Micronesia
+ps,Pashto,2,no,Afghanistan
+pt,Portuguese,2,no,Angola; Brazil; Cape Verde; Guinea-Bissau; Mozambique; Portugal; Sao Tome and Principe; Timor-Leste
+puu,Punu,3,no,Gabon
+qu,Quechua,2,no,Bolivia; Ecuador; Peru
+quc,Kʼicheʼ,3,no,Guatemala
+qug,Chimborazo Highland Quichua,3,no,Ecuador
+raj,Rajasthani,3,no,(report workbook)
+rkt,Rangpuri,3,no,Bangladesh
+rn,Rundi,2,no,Burundi
+ro,Romanian,2,no,Moldova; Romania
+ru,Russian,2,no,Belarus; Bulgaria; Estonia; Georgia; Kazakhstan; Kyrgyzstan; Latvia; Lithuania; Poland; Russia; Tajikistan; Turkmenistan; Ukraine; Uzbekistan
+rw,Kinyarwanda,2,no,Rwanda
+sg,Sango,2,no,Central African Republic
+shn,Shan,3,no,Myanmar
+si,Sinhala,2,no,Sri Lanka
+sk,Slovak,2,no,Czech Republic; Slovakia
+sl,Slovenian,2,no,Slovenia
+sm,Samoan,2,no,Samoa
+sn,Shona,2,no,Zimbabwe
+so,Somali,2,no,Djibouti; Somalia
+sq,Albanian,2,no,Albania; Montenegro; North Macedonia; Serbia
+sr,Serbian,2,no,Bosnia and Herzegovina; Montenegro; Serbia
+srn,Sranan Tongo,3,no,Suriname
+ss,Swati,2,no,Eswatini
+st,Southern Sotho,2,no,Lesotho
+su,Sundanese,2,no,Indonesia
+suk,Sukuma,3,no,Tanzania
+sv,Swedish,2,no,Denmark; Finland; Sweden
+sw,Swahili,2,yes,Democratic Republic of the Congo; Kenya; Tanzania; Uganda
+syl,Sylheti,3,no,Bangladesh
+ta,Tamil,2,no,Sri Lanka
+te,Telugu,2,no,India
+tem,Timne,3,no,Sierra Leone
+tet,Tetum,3,no,Timor-Leste
+tg,Tajik,2,no,Tajikistan
+th,Thai,2,yes,Thailand
+ti,Tigrinya,2,no,Eritrea; Ethiopia
+tig,Tigre,3,no,Eritrea
+tk,Turkmen,2,no,Turkmenistan
+tly,Talysh,3,no,Azerbaijan
+tn,Tswana,2,no,Botswana
+to,Tongan,2,no,Tonga
+toi,Tonga (Zambia),3,no,Zambia
+tpi,Tok Pisin,3,no,Papua New Guinea
+tr,Turkish,2,no,Bulgaria; Cyprus; Turkey
+tsj,Tshangla,3,no,Bhutan
+tts,Northeastern Thai,3,no,Thailand
+tum,Tumbuka,3,no,Malawi
+tvl,Tuvalu,3,no,Tuvalu
+uk,Ukrainian,2,no,Moldova; Ukraine
+umb,Umbundu,3,no,Angola
+ur,Urdu,2,no,Pakistan
+uz,Uzbek,2,no,Turkmenistan; Uzbekistan
+vi,Vietnamese,2,yes,Vietnam
+vmw,Makhuwa,3,no,Mozambique
+wni,Ndzwani Comorian,3,no,Comoros
+wo,Wolof,2,no,Senegal
+wuu,Wu Chinese,3,no,China
+xh,Xhosa,2,no,South Africa
+xmf,Mingrelian,3,no,Georgia
+yo,Yoruba,2,no,Benin; Nigeria
+yue,Cantonese,3,no,China
+zdj,Ngazidja Comorian,3,no,Comoros
+zh,Chinese,2,no,Brunei; China; Malaysia; Singapore; Taiwan
+zu,Zulu,2,no,Eswatini; Lesotho; South Africa

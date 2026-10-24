@@ -1,9 +1,10 @@
 from typing import Optional
 
-from sqlalchemy import delete, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import CountryLanguage, CountryModel, Language
+from app.language_tags import try_canonical_language_tag
 
 
 class LanguageRepository:
@@ -13,7 +14,8 @@ class LanguageRepository:
     # ── Language CRUD ─────────────────────────────────────────────────────────
 
     async def create(self, code: str, name: str) -> Language:
-        lang = Language(code=code.strip().lower(), name=name.strip(), is_active=True)
+        # Callers pass the standard BCP 47 form; lowercasing would break 'pt-BR'.
+        lang = Language(code=code.strip(), name=name.strip(), is_active=True)
         self.db.add(lang)
         await self.db.flush()
         return lang
@@ -25,8 +27,20 @@ class LanguageRepository:
         return list(result.scalars().all())
 
     async def get_by_code(self, code: str) -> Optional[Language]:
+        """The language `code` names: the stored code compared case-insensitively
+        first, so a row stored before BCP 47 (e.g. 'tl') is still found; then the
+        code's standard form ('BEN' -> 'bn'). Use the returned row's `code`."""
+        text_code = (code or "").strip()
+        lang = await self._find(text_code)
+        if lang is None:
+            tag = try_canonical_language_tag(text_code)
+            if tag and tag.lower() != text_code.lower():
+                lang = await self._find(tag)
+        return lang
+
+    async def _find(self, code: str) -> Optional[Language]:
         result = await self.db.execute(
-            select(Language).where(Language.code == code.strip().lower())
+            select(Language).where(func.lower(Language.code) == code.lower())
         )
         return result.scalars().first()
 
@@ -69,7 +83,9 @@ class LanguageRepository:
         return [(c, sorted(lang_map.get(str(c.id), []))) for c in countries]
 
     async def assign(self, country_id: str, code: str) -> bool:
-        """Insert (country_id, code) if not already present. Returns True when inserted."""
+        """Insert (country_id, code) if not already present. Returns True when inserted.
+
+        `code` is a stored languages.code (take it from get_by_code)."""
         existing = (
             await self.db.execute(
                 select(CountryLanguage).where(
@@ -87,7 +103,9 @@ class LanguageRepository:
         return True
 
     async def unassign(self, country_id: str, code: str) -> bool:
-        """Remove (country_id, code). Returns True when a row was deleted."""
+        """Remove (country_id, code). Returns True when a row was deleted.
+
+        `code` is a stored languages.code (take it from get_by_code)."""
         result = await self.db.execute(
             delete(CountryLanguage).where(
                 CountryLanguage.country_id == country_id,

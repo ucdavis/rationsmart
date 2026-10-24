@@ -111,7 +111,9 @@ def translator(lang: Optional[str]) -> Callable[..., str]:
     ones (no "{amount.x}" lookups, no "{amount:>99}" format specs); otherwise the
     English sentence is used.
     """
-    table = {} if not lang or lang == "en" else load_report_text(REPORT_TEXT_FILE).translations.get(lang, {})
+    translations = load_report_text(REPORT_TEXT_FILE).translations if lang and lang != "en" else {}
+    # 'pt-BR' uses its own column, else the base language's ('pt'), else English.
+    table = translations.get(lang) or translations.get(str(lang).split("-")[0]) or {}
 
     def t(text: str, **values) -> str:
         """The translation of text (English when there is none), placeholders filled."""
