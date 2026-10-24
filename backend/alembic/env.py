@@ -16,9 +16,9 @@ if config.config_file_name is not None:
 
 target_metadata = Base.metadata
 
-# feeds_dup is a backup table with no PK; alembic_version is Alembic-internal.
-# Exclude both from autogenerate so they never appear in generated migrations.
-EXCLUDED_TABLES = {"feeds_dup", "alembic_version"}
+# alembic_version is Alembic-internal; exclude it from autogenerate so it never
+# appears in generated migrations.
+EXCLUDED_TABLES = {"alembic_version"}
 
 
 def include_object(obj, name, type_, reflected, compare_to):

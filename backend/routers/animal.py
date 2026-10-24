@@ -653,7 +653,7 @@ async def fetch_simulation_details(
     return FetchSimulationDetailsResponse(success=True, **details)
 
 
-# ── PDF reports (diet_reports table) ─────────────────────────────────────────
+# ── PDF reports (reports table) ──────────────────────────────────────────────
 
 @router.post("/reports/pdf", response_model=SaveReportResponse,
              summary="Get (or generate on demand) the PDF for a saved report")

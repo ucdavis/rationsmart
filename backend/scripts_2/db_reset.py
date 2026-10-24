@@ -1,7 +1,7 @@
 """Reset the RationSmart database for a fresh QA round (admin only).
 
-Deletes users, reports, feedback, custom feeds, the feed library and the
-legacy feed tables; keeps master data (taxonomy, countries, languages,
+Deletes users, reports, feedback, custom feeds and the feed library; keeps
+master data (taxonomy, countries, languages,
 translations of types/categories, CLIMDES sync settings, migration head).
 The admin who runs it is the only account left.
 
@@ -42,23 +42,19 @@ from services import db_backup, feed_library_wipe
 from services.auth_service import is_legacy_hash, verify_bcrypt_pin
 from services.db_backup import LOG_NAME, append_log, restore_command
 
-# Master data, never touched. system_metadata is v3's feed-cache flag: kept
-# while v3 code still reads it (unused-tables decision, section 3.4).
+# Master data, never touched.
 KEEP_TABLES = frozenset({
-    "alembic_version", "breeds", "country", "country_languages",
-    "feed_categories", "feed_sync_config", "feed_types", "languages",
-    "system_metadata", "vocabulary_translations",
+    "alembic_version", "country", "country_languages", "feed_categories",
+    "feed_sync_config", "feed_types", "languages", "vocabulary_translations",
 })
 
 # Emptied in this order. reports goes before user_information because
 # reports.user_id is NO ACTION; never TRUNCATE ... CASCADE, which would follow
 # feeds.created_by / feed_sync_config.scheduler_toggled_by and empty those too.
 WIPE_ORDER: Tuple[str, ...] = (
-    "user_feedback", "reports", "diet_reports", "feed_analytics",
+    "user_feedback", "reports", "feed_analytics",
     "custom_feeds", "feed_sync_log",
     "feed_translations", "feeds",
-    "feed_country_pricing", "feed_country_availability", "master_feeds",
-    "feeds_dup",
     "user_information",
 )
 
