@@ -1,0 +1,51 @@
+# Dependencies
+node_modules/
+
+# Next.js build output
+.next/
+out/
+
+# PWA generated files (regenerated at build time)
+public/sw.js
+public/workbox-*.js
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Vercel
+.vercel
+
+# Claude Code local session settings
+.claude/
+
+# Local-only env for `next dev` (copy .env.example → .env.development)
+.env.development
+
+# Internal notes that must never be published (audit C-01 / C-04)
+docs/backend-security-brief.html
+docs/SESSION_HANDOFF.md
+docs/*.local.md
+CLAUDE.local.md
+Code_Audit_Report*.md
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+coverage/
+
+# Internal documents — kept on the developer's machine, not shipped in the
+# repo handed to the client (specs, implementation notes, change history).
+/docs/
+/CLAUDE.md

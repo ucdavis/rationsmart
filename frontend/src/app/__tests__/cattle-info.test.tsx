@@ -1,0 +1,1359 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+
+const { push, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields } =
+  vi.hoisted(() => ({
+    push: vi.fn(),
+    getCountries: vi.fn(),
+    getUserReports: vi.fn(),
+    getSimulationDetails: vi.fn(),
+    getCattleInfoFields: vi.fn(),
+  }));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, back: vi.fn(), replace: vi.fn() }),
+}));
+
+vi.mock("@/lib/api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  return { ...actual, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields };
+});
+
+import CattleInfoPage from "@/app/(main)/cattle-info/page";
+import { useStore, type User, type CattleInfo, type FeedItem } from "@/lib/store";
+
+const seedUser = (over: Partial<User> = {}): User => ({
+  id: "u-1",
+  name: "Aiyappa",
+  email: "aiyappa@dg.org",
+  country: "India",
+  country_id: "1",
+  country_code: "IN",
+  currency: "INR",
+  pin: "123456",
+  is_admin: false,
+  token: "jwt",
+  registered_language: "en",
+  preferred_language: "en",
+  ...over,
+});
+
+// ---- GET /v1/animal/cattle-info-fields fixture ----------------------------
+// Transcribed from the backend spec table (state-driven-field-defaults plan
+// §2, 2026-09-23). Cells: [default, min, max] or null when hidden for that
+// state. Hidden fields carry the D4 submit values.
+type Cell = [unknown, number | null, number | null] | null;
+const L = "Lactating Cow",
+  D = "Dry Cow",
+  H = "Heifer",
+  C = "Baby Calf/Heifer";
+const SPEC_ROWS: {
+  key: string;
+  type: "number" | "enum" | "boolean";
+  options?: string[];
+  hidden: unknown; // value submitted when hidden
+  cells: Record<string, Cell>;
+}[] = [
+  {
+    key: "breed",
+    type: "enum",
+    options: ["Holstein", "Crossbred", "Indigenous"],
+    hidden: "Crossbred",
+    cells: {
+      [L]: ["Crossbred", null, null],
+      [D]: ["Crossbred", null, null],
+      [H]: ["Crossbred", null, null],
+      [C]: null,
+    },
+  },
+  {
+    key: "body_weight",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [400, 250, 720], [D]: [400, 250, 720], [H]: [160, 100, 500], [C]: [40, 30, 100] },
+  },
+  {
+    key: "bw_gain",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [0.2, 0, 1], [D]: [0.2, 0, 2], [H]: [0.5, 0, 2], [C]: null },
+  },
+  {
+    key: "bc_score",
+    type: "number",
+    hidden: 3,
+    cells: { [L]: [3, 1, 5], [D]: [3, 1, 5], [H]: null, [C]: null },
+  },
+  {
+    key: "days_in_milk",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [100, 0, 400], [D]: null, [H]: null, [C]: null },
+  },
+  {
+    key: "milk_production",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [15, 1, 35], [D]: null, [H]: null, [C]: null },
+  },
+  {
+    key: "tp_milk",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [3, 2.6, 4.2], [D]: null, [H]: null, [C]: null },
+  },
+  {
+    key: "fat_milk",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [3.5, 2.5, 6.5], [D]: null, [H]: null, [C]: null },
+  },
+  {
+    key: "parity",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [1, 1, 11], [D]: [1, 1, 11], [H]: null, [C]: null },
+  },
+  {
+    key: "days_of_pregnancy",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [40, 0, 280], [D]: [0, 0, 280], [H]: [0, 0, 280], [C]: null },
+  },
+  {
+    key: "temperature",
+    type: "number",
+    hidden: 25,
+    cells: { [L]: [25, 5, 45], [D]: [25, 5, 45], [H]: [25, 5, 45], [C]: null },
+  },
+  {
+    key: "grazing",
+    type: "boolean",
+    hidden: false,
+    cells: {
+      [L]: [false, null, null],
+      [D]: [false, null, null],
+      [H]: [false, null, null],
+      [C]: null,
+    },
+  },
+  {
+    key: "distance",
+    type: "number",
+    hidden: 0,
+    cells: { [L]: [0, 0, 15], [D]: [0, 0, 15], [H]: [0, 0, 15], [C]: null },
+  },
+  {
+    key: "topography",
+    type: "enum",
+    options: ["Flat", "Hilly", "Mountainous"],
+    hidden: "Flat",
+    cells: {
+      [L]: ["Flat", null, null],
+      [D]: ["Flat", null, null],
+      [H]: ["Flat", null, null],
+      [C]: null,
+    },
+  },
+  {
+    key: "milk_price",
+    type: "number",
+    hidden: null,
+    cells: { [L]: [null, 0, null], [D]: null, [H]: null, [C]: null },
+  },
+];
+
+function specResponse(state: string) {
+  return {
+    data: {
+      physiological_state: state,
+      fields: SPEC_ROWS.map((r) => {
+        const cell = r.cells[state];
+        return {
+          key: r.key,
+          label: r.key,
+          unit: null,
+          visible: cell !== null,
+          type: r.type,
+          default: cell ? cell[0] : r.hidden,
+          min: cell ? cell[1] : null,
+          max: cell ? cell[2] : null,
+          options: r.options ?? null,
+          ...(r.key === "distance" ? { when_grazing_on: { default: 1, min: 1 } } : {}),
+        };
+      }),
+    },
+  };
+}
+
+const countries = [
+  {
+    id: "1",
+    name: "India",
+    code: "IN",
+    country_code: "IN",
+    currency: "INR",
+    supported_languages: ["en", "hi"],
+  },
+  { id: "2", name: "Vietnam", code: "VN", country_code: "VN", currency: "VND" },
+];
+
+beforeEach(() => {
+  push.mockClear();
+  getCountries.mockReset();
+  getUserReports.mockReset();
+  getSimulationDetails.mockReset();
+  getCattleInfoFields.mockReset();
+  getCattleInfoFields.mockImplementation((state: string) => Promise.resolve(specResponse(state)));
+  useStore.setState({
+    user: null,
+    cattleInfo: null,
+    feedSelectionType: "recommendation",
+    feedSelections: [],
+    reportData: null,
+    dietLimits: {},
+    snackbar: null,
+  });
+});
+
+// The history button renders immediately, but the animal fields stay
+// shimmered/disabled until BOTH getCountries and the state's field spec
+// resolve — wait for Body Weight to become editable.
+async function formReady() {
+  await screen.findByRole("button", { name: "Simulation history" });
+  await waitFor(() =>
+    expect(
+      (screen.getByText("Body Weight (BW; kg)").nextElementSibling as HTMLInputElement).disabled
+    ).toBe(false)
+  );
+}
+
+// ---- CustomSelect helpers -------------------------------------------------
+// CustomSelect (src/components/CustomSelect.tsx) is NOT a native <select> —
+// it's a <button> trigger + a popup of option <button>s, both rendered
+// inside the same wrapper element that immediately follows the FieldLabel's
+// <p> in the JSX (see cattle-info/page.tsx SelectInput). FieldLabel strips
+// the trailing " *" into a separate <span>, so the label <p>'s own text node
+// is the label text minus " *" — that's what we query on.
+async function dropdownWrapper(labelText: string): Promise<HTMLElement> {
+  // Country/Language render behind a loading skeleton until getCountries
+  // resolves (see FieldSkeleton in cattle-info/page.tsx) — findByText
+  // waits for that swap instead of assuming the label is already mounted.
+  const label = await screen.findByText(labelText);
+  return label.nextElementSibling as HTMLElement;
+}
+
+async function openDropdown(labelText: string): Promise<HTMLElement> {
+  const wrapper = await dropdownWrapper(labelText);
+  const trigger = within(wrapper).getAllByRole("button")[0];
+  fireEvent.click(trigger);
+  return wrapper;
+}
+
+async function chooseOption(wrapper: HTMLElement, optionLabel: string) {
+  // Popup rows are role="option" (CustomSelect listbox semantics), so this
+  // can't collide with the trigger button showing the same label.
+  fireEvent.click(await within(wrapper).findByRole("option", { name: optionLabel }));
+}
+
+async function selectCountry(name: string) {
+  const wrapper = await openDropdown("Country");
+  await chooseOption(wrapper, name);
+}
+
+async function selectMilkFields(protein = "3.0", fat = "4.0") {
+  const proteinWrapper = await openDropdown("Milk Protein %");
+  await chooseOption(proteinWrapper, protein);
+  const fatWrapper = await openDropdown("Milk Fat %");
+  await chooseOption(fatWrapper, fat);
+}
+
+function fillSimulationName(name = "Test Sim") {
+  const nameInput = screen.getByRole("textbox") as HTMLInputElement;
+  fireEvent.change(nameInput, { target: { value: name } });
+}
+
+function inputAfterLabel(labelText: string): HTMLInputElement {
+  return screen.getByText(labelText).nextElementSibling as HTMLInputElement;
+}
+
+// Fills every field the requiredFilled gate needs EXCEPT grazing/distance
+// (default numeric fields already ship valid values per EMPTY_FORM).
+async function fillBaselineRequired(countryName = "India") {
+  fillSimulationName();
+  await selectCountry(countryName);
+  await selectMilkFields("3.0", "4.0");
+}
+
+// ---------------------------------------------------------------------------
+
+describe("Cattle Info — field validation handlers", () => {
+  it("handleBodyWeight: flags out-of-range against the spec (Lactating 250-720) but keeps the typed value, clears the error back in range", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+    const bwInput = inputAfterLabel("Body Weight (BW; kg)");
+    expect(bwInput.value).toBe("400"); // Lactating Cow spec default
+
+    fireEvent.change(bwInput, { target: { value: "800" } });
+    expect(bwInput.value).toBe("800");
+    expect(screen.getByText("Value Range 250-720")).toBeInTheDocument();
+
+    fireEvent.change(bwInput, { target: { value: "500" } });
+    expect(bwInput.value).toBe("500");
+    expect(screen.queryByText("Value Range 250-720")).toBeNull();
+  });
+
+  it("handleMilkProduction: flags out-of-range against the spec (1-35)", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+    const mpInput = inputAfterLabel("Milk Production (L)");
+
+    fireEvent.change(mpInput, { target: { value: "40" } });
+    expect(mpInput.value).toBe("40");
+    expect(screen.getByText("Value Range 1-35")).toBeInTheDocument();
+
+    fireEvent.change(mpInput, { target: { value: "30" } });
+    expect(mpInput.value).toBe("30");
+    expect(screen.queryByText("Value Range 1-35")).toBeNull();
+  });
+
+  it("handleBCS: flags out-of-range (1-5) with the exact Android-ported message", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+    const bcsInput = inputAfterLabel("Body Condition Score");
+
+    fireEvent.change(bcsInput, { target: { value: "6" } });
+    expect(screen.getByText("Value Range 1-5")).toBeInTheDocument();
+
+    fireEvent.change(bcsInput, { target: { value: "4" } });
+    expect(screen.queryByText("Value Range 1-5")).toBeNull();
+  });
+
+  it('handleBCS: a leading-dot edit (".5") is rejected — the field reverts to its last valid value', async () => {
+    // Android parity comment: "clears if starts with '.'" — handleBCS
+    // returns early without calling setState, so React's controlled-input
+    // sync restores the DOM to the last committed value (spec default "3").
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+    const bcsInput = inputAfterLabel("Body Condition Score");
+    expect(bcsInput.value).toBe("3");
+
+    fireEvent.change(bcsInput, { target: { value: ".5" } });
+    expect(bcsInput.value).toBe("3");
+  });
+
+  it("handleBWGain: a leading-dot edit is rejected the same way", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+    const gainInput = inputAfterLabel("BW Gain (kg/day)");
+    expect(gainInput.value).toBe("0.2");
+
+    fireEvent.change(gainInput, { target: { value: ".9" } });
+    expect(gainInput.value).toBe("0.2");
+
+    fireEvent.change(gainInput, { target: { value: "2" } });
+    expect(screen.getByText("Value Range 0-1")).toBeInTheDocument();
+  });
+});
+
+describe("Cattle Info — Active Grazing toggle", () => {
+  it("keeps Distance Walked + Topography rendered; disabled + neutralised to 0 when OFF, enabled when ON", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    // Grazing contract: the fields are ALWAYS rendered (no longer hidden).
+    expect(screen.getByText("Distance Walked (km)")).toBeInTheDocument();
+    expect(screen.getByText("Topography")).toBeInTheDocument();
+    expect(screen.getByText("Flat")).toBeInTheDocument();
+    expect(screen.getByText("Hilly")).toBeInTheDocument();
+
+    const distanceInput = inputAfterLabel("Distance Walked (km)");
+    // Grazing defaults OFF → field disabled and neutralised to "0".
+    expect(distanceInput.disabled).toBe(true);
+    expect(distanceInput.value).toBe("0");
+
+    const grazingToggle = screen.getByRole("checkbox");
+    fireEvent.click(grazingToggle);
+    // ON → field enabled for entry.
+    expect(distanceInput.disabled).toBe(false);
+
+    fireEvent.click(grazingToggle);
+    // OFF again → disabled and back to 0.
+    expect(distanceInput.disabled).toBe(true);
+    expect(distanceInput.value).toBe("0");
+  });
+
+  it("shows a min-distance error when grazing is ON and distance < 1 km", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    fireEvent.click(screen.getByRole("checkbox")); // grazing ON
+    const distanceInput = inputAfterLabel("Distance Walked (km)");
+
+    // A sub-1 value (e.g. restored / pasted) is flagged...
+    fireEvent.change(distanceInput, { target: { value: "0.5" } });
+    expect(screen.getByText("Distance walked must be at least 1 km")).toBeInTheDocument();
+
+    // ...and clears once the value is >= 1.
+    fireEvent.change(distanceInput, { target: { value: "2" } });
+    expect(screen.queryByText("Distance walked must be at least 1 km")).toBeNull();
+  });
+});
+
+describe("Cattle Info — requiredFilled gate (Continue to Feed)", () => {
+  it("is disabled on the initial empty form (Simulation Name blank)", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
+  });
+
+  it("stays disabled when grazing is ON but Distance Walked is empty", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("India");
+    fireEvent.click(screen.getByRole("checkbox")); // grazing ON → distance raised to 1
+    fireEvent.change(inputAfterLabel("Distance Walked (km)"), { target: { value: "" } });
+
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
+  });
+
+  it("enables once every currently-relevant required field (incl. Distance Walked) is filled", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("India");
+    fireEvent.click(screen.getByRole("checkbox")); // grazing ON
+    const distInput = inputAfterLabel("Distance Walked (km)");
+    fireEvent.change(distInput, { target: { value: "5" } });
+
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).not.toBeDisabled();
+  });
+
+  it("enables with only the baseline fields when grazing stays OFF (distance/topography not required)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("India");
+
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).not.toBeDisabled();
+  });
+});
+
+describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
+  it("calls setUser with the newly-selected country's currency/country_code BEFORE navigating to /feed-selection", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({
+      user: seedUser({ country_id: "1", country: "India", country_code: "IN", currency: "INR" }),
+    });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("Vietnam");
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    expect(push).toHaveBeenCalledWith("/feed-selection");
+    const u = useStore.getState().user!;
+    expect(u.country_id).toBe("2");
+    expect(u.country).toBe("Vietnam");
+    expect(u.country_code).toBe("VN");
+    expect(u.currency).toBe("VND");
+  });
+
+  it("does NOT touch the user object when the country is left unchanged", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    const originalUser = seedUser({
+      country_id: "1",
+      country: "India",
+      country_code: "IN",
+      currency: "INR",
+    });
+    useStore.setState({ user: originalUser });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("India");
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    expect(push).toHaveBeenCalledWith("/feed-selection");
+    expect(useStore.getState().user).toEqual(originalUser);
+  });
+});
+
+describe("Cattle Info — whole-page loading shimmer (real elements, not a separate skeleton layout)", () => {
+  // Every field ultimately depends on the same getCountries() call
+  // resolving before the form is fully meaningful. Originally only
+  // Country+Language got a loading treatment while every other section
+  // rendered instantly with EMPTY_FORM defaults — a jarring mix of
+  // "ready" and "loading" on the same screen. Then a hand-built parallel
+  // skeleton tree replaced the whole form during load — but an
+  // approximated skeleton risks drifting from the real field layout.
+  // The real form (same SectionCards, same FieldLabels, same
+  // input/SelectInput/toggle elements) now ALWAYS renders; only each
+  // field's own appearance (shimmer background, hidden value, disabled)
+  // changes while loading, so there is zero layout difference between
+  // the loading and loaded states — it's literally the same DOM.
+  it("shimmers every real field in place while countries are fetching, then the same elements become interactive", async () => {
+    let resolveCountries!: (v: { data: typeof countries }) => void;
+    getCountries.mockReturnValueOnce(
+      new Promise((resolve) => {
+        resolveCountries = resolve;
+      })
+    );
+    useStore.setState({ user: seedUser({ country_id: "1" }) });
+    const { container } = render(<CattleInfoPage />);
+
+    // The real form is mounted immediately — same labels, same
+    // Simulation History button, same section structure.
+    expect(screen.getByRole("button", { name: "Simulation history" })).toBeInTheDocument();
+    expect(screen.getByText("Country")).toBeInTheDocument();
+    expect(screen.getByText("Breed Selection")).toBeInTheDocument();
+
+    // But the actual fields are shimmering + non-interactive: the
+    // Simulation Name input is disabled with the shimmer class...
+    const simNameInput = screen.getByText("Simulation Name").nextElementSibling as HTMLInputElement;
+    expect(simNameInput).toBeDisabled();
+    expect(simNameInput.className).toContain("shimmer");
+    // ...the Country dropdown trigger is disabled...
+    const countryWrapper = screen.getByText("Country").nextElementSibling as HTMLElement;
+    expect(countryWrapper.className).toContain("shimmer");
+    expect(within(countryWrapper).getByRole("button")).toBeDisabled();
+    // ...and the grazing toggle switch is shimmering too.
+    const toggleSlider = container.querySelector(".toggle-slider");
+    expect(toggleSlider?.className).toContain("shimmer");
+    expect(container.querySelectorAll(".shimmer").length).toBeGreaterThan(10);
+
+    resolveCountries({ data: countries });
+
+    // Once resolved, the SAME elements become fully interactive.
+    await waitFor(() => expect(simNameInput).not.toBeDisabled());
+    expect(simNameInput.className).not.toContain("shimmer");
+    await waitFor(() => expect(within(countryWrapper).getByRole("button")).not.toBeDisabled());
+    expect(countryWrapper.className).not.toContain("shimmer");
+    expect(container.querySelectorAll(".shimmer").length).toBe(0);
+
+    await fillBaselineRequired("India");
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).not.toBeDisabled();
+  });
+});
+
+describe("Cattle Info — Language dropdown explicit English selection", () => {
+  // Regression coverage: explicitly picking "English" for a specific
+  // simulation used to be stored as `simulation_language: null` (meant
+  // to signal "no override, inherit profile"). For a user whose PROFILE
+  // language is non-English, that made an explicit English pick
+  // indistinguishable from "never touched the dropdown" — so restoring
+  // the simulation later fell through to a country-language guess
+  // instead of honoring the English the user actually chose. The fix
+  // stores whatever the user picks verbatim, including "en".
+  //
+  // Seeded as "sw" (Swahili), not "hi": since the cattle-info UI-label
+  // i18n rollout (src/lib/i18n-ui.ts), the page's own labels now render
+  // live in whatever language `form.simulation_language || user.
+  // preferred_language` resolves to. "sw" is a real feed-data language
+  // (see LANGUAGE_NATIVE_LABELS in api.ts) but deliberately has NO UI
+  // dictionary bundle (UI_LANG_CODES in i18n-ui.ts excludes it — the
+  // source spreadsheet never had a Swahili column), so it exercises the
+  // exact same "profile default isn't English" scenario this test needs
+  // without flipping the rendered labels this test queries by English
+  // text into another language.
+  it("storing English explicitly persists 'en' (not null) through handleContinue", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("India");
+
+    const langWrapper = await openDropdown("Language");
+    await chooseOption(langWrapper, "English");
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    expect(push).toHaveBeenCalledWith("/feed-selection");
+    expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
+  });
+
+  it("an untouched Language dropdown persists null (inherit profile default) when the profile language IS valid for the selected country", async () => {
+    // "sw" has no UI-label dictionary (see i18n-ui.ts's rollout set), so
+    // giving India "sw" support here keeps the page rendered in English
+    // (compatible with the shared fillBaselineRequired/selectMilkFields
+    // helpers, which look up English label text) while still exercising
+    // the "profile language IS valid for this country" branch.
+    getCountries.mockResolvedValueOnce({
+      data: [{ ...countries[0], supported_languages: ["en", "sw"] }, countries[1]],
+    });
+    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    await fillBaselineRequired("India");
+    // Deliberately do NOT touch the Language dropdown.
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    expect(useStore.getState().cattleInfo?.simulation_language).toBeNull();
+  });
+
+  // Regression coverage for a real reported bug: profile=Hindi, cattle-info's
+  // Language dropdown visually showed "English" (since India's fixture here
+  // doesn't list "sw" as supported), but the OLD code saved `null` regardless
+  // — which downstream (feed-selection/report) resolves straight back to the
+  // profile's "sw", NOT the "English" the dropdown had just displayed. Only
+  // an explicit save of the resolved fallback ("en") keeps what's saved in
+  // agreement with what was shown.
+  it("an untouched Language dropdown pins the resolved fallback when the profile language is NOT valid for the selected country", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "1", preferred_language: "sw" }) });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    await fillBaselineRequired("India");
+    // Deliberately do NOT touch the Language dropdown — "sw" isn't in
+    // India's supported_languages, so the dropdown itself should already
+    // be displaying "English" as a fallback.
+    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
+  });
+});
+
+describe("Cattle Info — form labels (audit B-31)", () => {
+  it("every <label for> points at a rendered control, including the number inputs", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    const { container } = render(<CattleInfoPage />);
+    await formReady();
+    const labels = Array.from(container.querySelectorAll<HTMLLabelElement>("label[for]"));
+    expect(labels.length).toBeGreaterThanOrEqual(7);
+    for (const label of labels) {
+      expect(document.getElementById(label.htmlFor), label.htmlFor).toBeInstanceOf(
+        HTMLInputElement
+      );
+    }
+    expect(labels.map((l) => l.htmlFor)).toContain("ci-body_weight");
+  });
+});
+
+describe("Cattle Info — handleReset", () => {
+  it("clears feedSelections, resets feedSelectionType to recommendation, nulls cattleInfo, and resets the form", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    const priorFeedItem: FeedItem = {
+      id: "f1",
+      feed_type_id: 1,
+      feed_type_name: "Forage",
+      category_id: 1,
+      category_name: "Grass",
+      sub_category_id: 1,
+      sub_category_name: "Napier",
+      feed_uuid: "uuid-1",
+      price_per_kg: 5,
+      quantity_kg: 2,
+      inclusion_limits_enabled: false,
+      min_kg_per_day: null,
+      max_kg_per_day: null,
+    };
+    const priorCattleInfo: CattleInfo = {
+      simulation_name: "Old Sim",
+      country: "India",
+      country_id: "1",
+      breed: "Holstein",
+      body_weight: 500,
+      body_weight_gain: 0.2,
+      body_condition_score: 3,
+      parity: 1,
+      days_in_milk: 100,
+      days_of_pregnancy: 40,
+      milk_production: 15,
+      milk_protein_percent: 3,
+      milk_fat_percent: 4,
+      average_temperature: 25,
+      grazing: false,
+      distance: 0,
+      topography: "Flat",
+      milk_price: null,
+      animal_category: "Lactating Cow",
+      simulation_language: null,
+    };
+    useStore.setState({
+      user: seedUser(),
+      cattleInfo: priorCattleInfo,
+      feedSelectionType: "evaluation",
+      feedSelections: [priorFeedItem],
+    });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    const nameInput = screen.getByRole("textbox") as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "Something typed" } });
+    expect(nameInput.value).toBe("Something typed");
+
+    fireEvent.click(screen.getByRole("button", { name: /^Reset/ }));
+
+    expect(useStore.getState().feedSelections).toEqual([]);
+    expect(useStore.getState().feedSelectionType).toBe("recommendation");
+    expect(useStore.getState().cattleInfo).toBeNull();
+    expect(nameInput.value).toBe("");
+  });
+});
+
+describe("Cattle Info — Simulation History", () => {
+  it("opens the history modal and lists getUserReports(user.id) results", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    getUserReports.mockResolvedValueOnce({
+      data: {
+        simulations: [
+          {
+            report_id: "R-1",
+            simulation_id: "SIM-1",
+            country_name: "India",
+            created_at: "2026-01-01T00:00:00Z",
+          },
+        ],
+      },
+    });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    await waitFor(() => expect(getUserReports).toHaveBeenCalledWith("u-1"));
+    expect(await screen.findByText("SIM-1")).toBeInTheDocument();
+    expect(screen.getByText("Country: India")).toBeInTheDocument();
+  });
+
+  it("loadSimulation → getSimulationDetails populates the form and sets feedSelectionType to EVALUATION when quantity_as_fed is present", async () => {
+    // Local country fixture (India with NO non-English supported_languages)
+    // rather than the shared `countries` const: loadSimulation's i18n V2
+    // restore logic (§ "hydrate simulation_language" comment in the page)
+    // best-effort-guesses the country's first non-English supported
+    // language for a restored sim with no simulation_language on the
+    // response. The shared `countries` fixture's India entry supports
+    // "hi", which would flip this test's own cattle-info UI labels
+    // (queried below by their English text via inputAfterLabel) into
+    // Hindi — a real, intentional side effect of the cattle-info UI-label
+    // i18n rollout, but irrelevant to what this test actually verifies
+    // (feed-selection restoration), so it's isolated here.
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }],
+    });
+    getUserReports.mockResolvedValueOnce({
+      data: { simulations: [{ report_id: "R-1", simulation_id: "SIM-1", country_name: "India" }] },
+    });
+    getSimulationDetails.mockResolvedValueOnce({
+      data: {
+        simulation_id: "SIM-1",
+        country_name: "India",
+        cattle_info: {
+          breed: "Holstein",
+          body_weight: 400,
+          bw_gain: 0.5,
+          bc_score: 3.5,
+          days_in_milk: 120,
+          days_of_pregnancy: 60,
+          parity: 2,
+          milk_production: 20,
+          tp_milk: 3.2,
+          fat_milk: 4.0,
+          temperature: 22,
+          grazing: false,
+          distance: 0,
+          topography: "Flat",
+        },
+        feed_selection: [
+          {
+            feed_type: "Forage",
+            feed_category: "Grass",
+            feed_name: "Napier",
+            feed_id: "uuid-1",
+            price_per_kg: 5,
+            quantity_as_fed: 10,
+            // Saved simulations echo the wire names (openapi FeedWithPrice).
+            min_kg_asfed: 1,
+            max_kg_asfed: "4",
+          },
+        ],
+      },
+    });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    const row = await screen.findByText("SIM-1");
+    fireEvent.click(row);
+
+    await waitFor(() => expect(getSimulationDetails).toHaveBeenCalledWith("R-1", "u-1"));
+    await waitFor(() => expect(useStore.getState().feedSelectionType).toBe("evaluation"));
+
+    const feedSelections = useStore.getState().feedSelections;
+    expect(feedSelections).toHaveLength(1);
+    expect(feedSelections[0].feed_uuid).toBe("uuid-1");
+    expect(feedSelections[0].feed_type_name).toBe("Forage");
+    expect(feedSelections[0].inclusion_limits_enabled).toBe(true);
+    expect(feedSelections[0].min_kg_per_day).toBe(1);
+    expect(feedSelections[0].max_kg_per_day).toBe(4);
+
+    // Simulation Name is deliberately left BLANK on restore — the
+    // backend echoes back exactly what was sent as simulation_id (mode
+    // suffix included, see buildDietSimulationId in api.ts), which isn't
+    // a name that should repopulate the editable field. Every other
+    // field still restores normally.
+    const nameInput = screen.getByRole("textbox") as HTMLInputElement;
+    expect(nameInput.value).toBe("");
+    expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("400");
+
+    expect(useStore.getState().cattleInfo?.simulation_name).toBe("");
+  });
+
+  it("loadSimulation leaves Simulation Name blank even when the restored simulation_id carries a mode suffix", async () => {
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }],
+    });
+    getUserReports.mockResolvedValueOnce({
+      data: {
+        simulations: [
+          { report_id: "R-3", simulation_id: "Sim 1 (Recommendation)", country_name: "India" },
+        ],
+      },
+    });
+    getSimulationDetails.mockResolvedValueOnce({
+      data: {
+        simulation_id: "Sim 1 (Recommendation)",
+        country_name: "India",
+        cattle_info: { breed: "Holstein", body_weight: 400 },
+        feed_selection: [],
+      },
+    });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    const row = await screen.findByText("Sim 1 (Recommendation)");
+    fireEvent.click(row);
+
+    await waitFor(() => expect(getSimulationDetails).toHaveBeenCalledWith("R-3", "u-1"));
+
+    const nameInput = screen.getByRole("textbox") as HTMLInputElement;
+    await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("400"));
+    expect(nameInput.value).toBe("");
+    expect(useStore.getState().cattleInfo?.simulation_name).toBe("");
+  });
+
+  it("loadSimulation sets feedSelectionType to RECOMMENDATION when quantity_as_fed is absent", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    getUserReports.mockResolvedValueOnce({
+      data: { simulations: [{ report_id: "R-2", simulation_id: "SIM-2", country_name: "India" }] },
+    });
+    getSimulationDetails.mockResolvedValueOnce({
+      data: {
+        simulation_id: "SIM-2",
+        country_name: "India",
+        cattle_info: {
+          breed: "Holstein",
+          body_weight: 400,
+          bw_gain: 0.5,
+          bc_score: 3.5,
+          days_in_milk: 120,
+          days_of_pregnancy: 60,
+          parity: 2,
+          milk_production: 20,
+          tp_milk: 3.2,
+          fat_milk: 4.0,
+          temperature: 22,
+          grazing: false,
+          distance: 0,
+          topography: "Flat",
+        },
+        feed_selection: [
+          {
+            feed_type: "Forage",
+            feed_category: "Grass",
+            feed_name: "Napier",
+            feed_id: "uuid-2",
+            price_per_kg: 5,
+            quantity_as_fed: null,
+          },
+        ],
+      },
+    });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    // The whole form now renders behind a loading skeleton until
+    // getCountries resolves (see CattleInfoSkeleton) — wait for a
+    // real-form-only marker (absent from the skeleton) before
+    // interacting with any field.
+    await formReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    const row = await screen.findByText("SIM-2");
+    fireEvent.click(row);
+
+    await waitFor(() => expect(getSimulationDetails).toHaveBeenCalledWith("R-2", "u-1"));
+    await waitFor(() => expect(useStore.getState().feedSelections).toHaveLength(1));
+    expect(useStore.getState().feedSelectionType).toBe("recommendation");
+  });
+});
+
+// UI-label i18n (src/lib/i18n-ui.ts) — cattle-info is the one screen that
+// resolves its display language from its OWN per-simulation selection
+// (`form.simulation_language`, seeded from `cattleInfo.simulation_language`
+// on mount) rather than the profile-wide `user.preferred_language` every
+// other screen defaults to. `useT(langOverride)` is called on this page as
+// `useT(form.simulation_language || user?.preferred_language || "en")` —
+// see the doc comment on useT() in i18n-ui.ts for why.
+describe("Cattle Info — UI-label i18n (own simulation_language, not just profile)", () => {
+  it("falls back to user.preferred_language when no cattleInfo is stored yet (no simulation_language to inherit)", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+    render(<CattleInfoPage />);
+    // The "hi" dictionary lazy-loads via dynamic import() — findBy waits
+    // for it to resolve rather than assuming it's already in the cache.
+    await screen.findByText("पशुओ से संबंधित जानकारी"); // Cattle Info (toolbar title)
+    expect(screen.getByText("सिमुलेशन (अनुकरण) विवरण")).toBeInTheDocument(); // Simulation Details
+    expect(screen.getByText("पशु विशेषताएं")).toBeInTheDocument(); // Animal Characteristics
+    expect(screen.getByText("फीड (आहार) जारी रखें")).toBeInTheDocument(); // Continue to Feed
+    expect(screen.queryByText("Cattle Info")).not.toBeInTheDocument();
+  });
+
+  it("prefers the restored cattleInfo.simulation_language over user.preferred_language on initial mount", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({
+      user: seedUser({ preferred_language: "en" }),
+      cattleInfo: {
+        simulation_name: "Old Sim",
+        country: "India",
+        country_id: "1",
+        breed: "Holstein",
+        body_weight: 500,
+        body_weight_gain: 0.2,
+        body_condition_score: 3,
+        parity: 1,
+        days_in_milk: 100,
+        days_of_pregnancy: 40,
+        milk_production: 15,
+        milk_protein_percent: 3,
+        milk_fat_percent: 4,
+        average_temperature: 25,
+        grazing: false,
+        distance: 0,
+        topography: "Flat",
+        milk_price: null,
+        animal_category: "Lactating Cow",
+        // The stored simulation's own language — this, not the profile's
+        // "en", is what should drive the form's labels on mount.
+        simulation_language: "hi",
+      } as CattleInfo,
+    });
+    render(<CattleInfoPage />);
+    await screen.findByText("पशुओ से संबंधित जानकारी"); // Cattle Info
+    expect(screen.getByText("सिमुलेशन (अनुकरण) विवरण")).toBeInTheDocument(); // Simulation Details
+  });
+
+  it("reacts LIVE to a Language dropdown pick — before Continue is clicked, other static labels on the page re-translate immediately", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ preferred_language: "en" }) });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    // Still English before any interaction.
+    expect(screen.getByText("Animal Characteristics")).toBeInTheDocument();
+
+    // Country must be picked first — the Language dropdown's own options
+    // (native-script labels) come from the selected country's
+    // supported_languages, per the existing i18n V2 Phase 1 wiring.
+    await selectCountry("India");
+
+    const langWrapper = await openDropdown("Language");
+    await chooseOption(langWrapper, "हिन्दी"); // native-script label for "hi"
+
+    // The user has NOT clicked Continue to Feed. A completely different
+    // section heading elsewhere on the page must already be translated —
+    // this is the whole point of passing the form's live pending
+    // simulation_language as useT's langOverride instead of the committed
+    // store value.
+    await screen.findByText("पशु विशेषताएं"); // Animal Characteristics
+    expect(screen.queryByText("Animal Characteristics")).not.toBeInTheDocument();
+
+    // And the committed store value hasn't changed yet — proving this is
+    // driven by the form's local pending state, not cattleInfo.
+    expect(useStore.getState().cattleInfo).toBeNull();
+  });
+
+  it("falls back to English when the stored simulation_language has no UI dictionary (e.g. 'sw', a feed-data-only rollout language)", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({ user: seedUser({ preferred_language: "sw" }) });
+    render(<CattleInfoPage />);
+    await formReady();
+    expect(screen.getByText("Cattle Info")).toBeInTheDocument();
+    expect(screen.getByText("Simulation Details")).toBeInTheDocument();
+  });
+
+  // Regression test for the exact reported bug: profile=Hindi, a country
+  // that doesn't support Hindi selected on cattle-info (so the Language
+  // dropdown visually falls back to showing "English"), yet the OLD code
+  // still saved cattleInfo.simulation_language as null — which
+  // feed-selection/report resolve straight back to the Hindi PROFILE
+  // language, showing Hindi feed data right after a screen that visually
+  // said English. What's SAVED must always agree with what's DISPLAYED.
+  it("saves 'en' (matching the dropdown's displayed fallback) when profile=Hindi but the selected country doesn't support Hindi — not null, which would silently resolve back to Hindi downstream", async () => {
+    // Vietnam's fixture entry has no supported_languages at all (treated
+    // as "only English"), so Hindi is never valid for it.
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "2", preferred_language: "hi" }) });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    await fillBaselineRequired("Vietnam");
+    // The dropdown must be showing English — this is the "cattle info
+    // language is english" half of the bug report.
+    expect(screen.getByRole("button", { name: "English" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "हिन्दी" })).not.toBeInTheDocument();
+
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+    fireEvent.click(continueBtn);
+
+    // What gets saved (and what feed-selection/report will resolve
+    // their language from) must match what the dropdown displayed.
+    expect(useStore.getState().cattleInfo?.simulation_language).toBe("en");
+  });
+});
+
+// ─── Days in Milk is lactation-only (QA row 9) ────────────────────────────
+// It was rendered (and required) for every animal category, so a Heifer was
+// being asked for a lactation input. toCattleInfoPayload already sends 0 for
+// non-lactating states, so hiding it changes the form, not the wire payload.
+describe("Cattle Info — Days in Milk only applies to a Lactating Cow", () => {
+  async function pickCategory(label: string) {
+    const wrapper = await openDropdown("Physiological State");
+    await chooseOption(wrapper, label);
+  }
+
+  it("is shown for a Lactating Cow", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    // FieldLabel splits the trailing " *" into its own span, so match the
+    // label text without it.
+    expect(screen.getByText("Days in Milk")).toBeInTheDocument();
+  });
+
+  it("disappears for a Heifer and stops gating Continue", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    fillSimulationName();
+    await selectCountry("India");
+    await pickCategory("Heifers");
+
+    await waitFor(() => expect(screen.queryByText("Days in Milk")).not.toBeInTheDocument());
+    // Milk Protein / Milk Fat aren't asked for either, so Continue must be
+    // reachable without them — proving Days in Milk left requiredFilled too.
+    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(continueBtn).not.toBeDisabled());
+
+    fireEvent.click(continueBtn);
+    expect(useStore.getState().cattleInfo?.animal_category).toBe("Heifer");
+  });
+});
+
+describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields)", () => {
+  async function pickCategory(label: string) {
+    const wrapper = await openDropdown("Physiological State");
+    await chooseOption(wrapper, label);
+  }
+
+  it("fetches the spec for the initial state and prefills its defaults", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    expect(getCattleInfoFields).toHaveBeenCalledWith("Lactating Cow");
+    expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("400");
+    expect(inputAfterLabel("Days of Pregnancy").value).toBe("40");
+    expect(inputAfterLabel("Distance Walked (km)").value).toBe("0");
+    const breed = await dropdownWrapper("Breed Selection");
+    expect(within(breed).getAllByRole("button")[0]).toHaveTextContent("Crossbred");
+    const protein = await dropdownWrapper("Milk Protein %");
+    expect(within(protein).getAllByRole("button")[0]).toHaveTextContent("3.0");
+    // Topography gains a third option.
+    expect(screen.getByText("Mountainous")).toBeInTheDocument();
+  });
+
+  it("re-fetches on a state change and swaps in that state's defaults", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    await pickCategory("Heifers");
+    await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("160"));
+    expect(getCattleInfoFields).toHaveBeenCalledWith("Heifer");
+    expect(inputAfterLabel("BW Gain (kg/day)").value).toBe("0.5");
+    expect(inputAfterLabel("Days of Pregnancy").value).toBe("0");
+    // Heifer hides BCS, Parity and every milk field.
+    expect(screen.queryByText("Body Condition Score")).toBeNull();
+    expect(screen.queryByText("Parity")).toBeNull();
+    expect(screen.queryByText("Milk Production")).toBeNull();
+  });
+
+  it("Baby Calf/Heifer renders only Body Weight — and still submits every field", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await formReady();
+    fillSimulationName();
+    await selectCountry("India");
+
+    await pickCategory("Baby calves/heifers");
+    await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("40"));
+    for (const hidden of [
+      "Breed Selection",
+      "BW Gain (kg/day)",
+      "Body Condition Score",
+      "Days of Pregnancy",
+      "Parity",
+      "Avg Temperature (°C)",
+      "Active Grazing",
+      "Distance Walked (km)",
+    ]) {
+      expect(screen.queryByText(hidden)).toBeNull();
+    }
+    expect(screen.queryByText("Reproductive Data")).toBeNull();
+    expect(screen.queryByText("Environment")).toBeNull();
+
+    // Out of the calf range blocks Continue…
+    fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "150" } });
+    expect(screen.getByText("Value Range 30-100")).toBeInTheDocument();
+    // A calf skips feed selection, so the button no longer says "to Feed".
+    const continueBtn = screen.getByRole("button", { name: "Continue" });
+    expect(continueBtn).toBeDisabled();
+
+    // …in range, it submits BW plus the spec defaults for everything hidden
+    // and goes straight to the milk plan (QA row 8).
+    fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "55" } });
+    expect(continueBtn).not.toBeDisabled();
+    fireEvent.click(continueBtn);
+    expect(push).toHaveBeenCalledWith("/calf-plan");
+    expect(push).not.toHaveBeenCalledWith("/feed-selection");
+    const ci = useStore.getState().cattleInfo!;
+    expect(ci).toMatchObject({
+      animal_category: "Baby Calf/Heifer",
+      body_weight: 55,
+      breed: "Crossbred",
+      average_temperature: 25,
+      body_condition_score: 3,
+      grazing: false,
+      distance: 0,
+      topography: "Flat",
+      parity: 0,
+      milk_price: null,
+    });
+  });
+
+  it("hidden fields go out as their default, not what the previous state left in the form", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await formReady();
+    fillSimulationName();
+    await selectCountry("India");
+
+    fireEvent.change(inputAfterLabel("Milk Production (L)"), { target: { value: "30" } });
+    await pickCategory("Dry cows");
+    await waitFor(() => expect(screen.queryByText("Milk Production (L)")).toBeNull());
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue to Feed" }));
+    const ci = useStore.getState().cattleInfo!;
+    expect(ci.animal_category).toBe("Dry Cow");
+    expect(ci.milk_production).toBe(0);
+    expect(ci.days_of_pregnancy).toBe(0); // Dry Cow default, not Lactating's 40
+  });
+
+  it("grazing ON raises distance to the 1 km floor; OFF drops it back to 0", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    const distance = inputAfterLabel("Distance Walked (km)");
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(distance.value).toBe("1");
+    expect(screen.queryByText("Distance walked must be at least 1 km")).toBeNull();
+
+    fireEvent.change(distance, { target: { value: "16" } });
+    expect(screen.getByText("Value Range 1-15")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox"));
+    expect(distance.value).toBe("0");
+  });
+
+  it("restoring a simulation clamps out-of-range values into the RESTORED state's range and flags them", async () => {
+    // English-only India so the restore's language guess doesn't flip the
+    // labels to Hindi (see the loadSimulation test above).
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: "1", name: "India", code: "IN", country_code: "IN", currency: "INR" }],
+    });
+    getUserReports.mockResolvedValueOnce({
+      data: { simulations: [{ report_id: "r-1", simulation_id: "Old run" }] },
+    });
+    getSimulationDetails.mockResolvedValueOnce({
+      data: {
+        country_name: "India",
+        cattle_info: {
+          physiological_state: "Lactating Cow",
+          breed: "Crossbreed", // legacy spelling — mapped silently
+          body_weight: 500,
+          bw_gain: 1.5, // above the new max of 1
+          bc_score: 3,
+          days_in_milk: 100,
+          days_of_pregnancy: 40,
+          parity: 2,
+          milk_production: 20,
+          tp_milk: 2.5, // the old default, below the new 2.6 floor
+          fat_milk: 4,
+          temperature: 25,
+          grazing: false,
+          distance: 0,
+          topography: "Flat",
+        },
+        feed_selection: [],
+      },
+    });
+    useStore.setState({ user: seedUser() });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    fireEvent.click(await screen.findByText("Old run"));
+
+    await waitFor(() => expect(inputAfterLabel("BW Gain (kg/day)").value).toBe("1"));
+    expect(screen.getByText("Adjusted from 1.5")).toBeInTheDocument();
+    const protein = await dropdownWrapper("Milk Protein %");
+    expect(within(protein).getAllByRole("button")[0]).toHaveTextContent("2.6");
+    expect(screen.getByText("Adjusted from 2.5")).toBeInTheDocument();
+    // In-range values and the breed alias are not flagged.
+    expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("500");
+    const breed = await dropdownWrapper("Breed Selection");
+    expect(within(breed).getAllByRole("button")[0]).toHaveTextContent("Crossbred");
+    expect(screen.getAllByText(/^Adjusted from/)).toHaveLength(2);
+    // The store carries the clamped values, not the raw restored ones.
+    expect(useStore.getState().cattleInfo).toMatchObject({
+      body_weight_gain: 1,
+      milk_protein_percent: 2.6,
+      breed: "Crossbred",
+    });
+
+    // Editing a flagged field clears its flag.
+    fireEvent.change(inputAfterLabel("BW Gain (kg/day)"), { target: { value: "0.4" } });
+    expect(screen.queryByText("Adjusted from 1.5")).toBeNull();
+  });
+
+  it("keeps the form locked with Continue disabled when the spec can't be loaded — no hardcoded fallback", async () => {
+    getCattleInfoFields.mockReset();
+    getCattleInfoFields.mockRejectedValue(new Error("boom"));
+    getCountries.mockResolvedValueOnce({ data: countries });
+    render(<CattleInfoPage />);
+    await screen.findByRole("button", { name: "Simulation history" });
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe("Could not load cattle info fields")
+    );
+    expect(inputAfterLabel("Body Weight (BW; kg)").disabled).toBe(true);
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
+  });
+});

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<p>Open browser console and run the script below to generate and download icons</p>
+<canvas id="c192" width="192" height="192"></canvas>
+<canvas id="c512" width="512" height="512"></canvas>
+<script>
+function drawIcon(canvas, size) {
+  const ctx = canvas.getContext('2d');
+  const s = size;
+  // Background
+  const grad = ctx.createLinearGradient(0, 0, s, s);
+  grad.addColorStop(0, '#1CA069');
+  grad.addColorStop(1, '#064E3B');
+  ctx.fillStyle = grad;
+  ctx.roundRect(0, 0, s, s, s * 0.2);
+  ctx.fill();
+  // Scale factor
+  const f = s / 192;
+  ctx.scale(f, f);
+  // Cow body
+  ctx.beginPath();
+  ctx.ellipse(96, 120, 54, 44, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  ctx.fill();
+  // Ears
+  ctx.beginPath();
+  ctx.ellipse(44, 98, 16, 24, -0.3, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(148, 98, 16, 24, 0.3, 0, Math.PI * 2);
+  ctx.fill();
+  // Horns
+  ctx.beginPath();
+  ctx.moveTo(60, 82);
+  ctx.quadraticCurveTo(44, 54, 52, 38);
+  ctx.strokeStyle = 'white';
+  ctx.lineWidth = 9;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(132, 82);
+  ctx.quadraticCurveTo(148, 54, 140, 38);
+  ctx.stroke();
+  // Eyes
+  ctx.beginPath();
+  ctx.arc(78, 114, 9, 0, Math.PI * 2);
+  ctx.fillStyle = '#064E3B';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(114, 114, 9, 0, Math.PI * 2);
+  ctx.fill();
+  // Eye highlights
+  ctx.beginPath();
+  ctx.arc(81, 111, 3, 0, Math.PI * 2);
+  ctx.fillStyle = 'white';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(117, 111, 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Nostrils
+  ctx.beginPath();
+  ctx.ellipse(85, 134, 7, 5, 0, 0, Math.PI * 2);
+  ctx.fillStyle = 'rgba(6,78,59,0.35)';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(107, 134, 7, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Leaf
+  ctx.beginPath();
+  ctx.moveTo(142, 52);
+  ctx.bezierCurveTo(158, 36, 178, 42, 172, 62);
+  ctx.bezierCurveTo(166, 78, 148, 74, 142, 52);
+  ctx.fillStyle = 'rgba(232,245,240,0.9)';
+  ctx.fill();
+}
+const c192 = document.getElementById('c192');
+const c512 = document.getElementById('c512');
+drawIcon(c192, 192);
+drawIcon(c512, 512);
+// Download links
+['c192','c512'].forEach(id => {
+  const c = document.getElementById(id);
+  const a = document.createElement('a');
+  a.href = c.toDataURL('image/png');
+  a.download = id === 'c192' ? 'icon-192.png' : 'icon-512.png';
+  a.textContent = 'Download ' + a.download;
+  document.body.appendChild(a);
+  document.body.appendChild(document.createElement('br'));
+});
+</script>
+</body>
+</html>

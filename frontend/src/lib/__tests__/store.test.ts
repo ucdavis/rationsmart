@@ -1,0 +1,334 @@
+import { describe, it, expect, beforeEach } from "vitest";
+import { useStore, type User } from "@/lib/store";
+
+// Helper — a fully-populated User object used across tests.
+const makeUser = (over: Partial<User> = {}): User => ({
+  id: "u-1",
+  name: "Aiyappa",
+  email: "aiyappa@digitalgreen.org",
+  country: "India",
+  country_id: "1",
+  country_code: "IN",
+  currency: "INR",
+  pin: "123456",
+  is_admin: false,
+  token: "jwt-abc",
+  registered_language: "hi",
+  preferred_language: "hi",
+  ...over,
+});
+
+// Reset store to its documented initial state before every test.
+beforeEach(() => {
+  useStore.setState({
+    user: null,
+    cattleInfo: null,
+    feedSelectionType: "recommendation",
+    feedSelections: [],
+    reportData: null,
+    dietLimits: {},
+    snackbar: null,
+    lastUiLanguage: "en",
+  });
+});
+
+describe("store initial state", () => {
+  it("has the documented defaults", () => {
+    const s = useStore.getState();
+    expect(s.user).toBeNull();
+    expect(s.cattleInfo).toBeNull();
+    expect(s.feedSelectionType).toBe("recommendation");
+    expect(s.feedSelections).toEqual([]);
+    expect(s.reportData).toBeNull();
+    expect(s.dietLimits).toEqual({});
+    expect(s.snackbar).toBeNull();
+    expect(s.lastUiLanguage).toBe("en");
+  });
+});
+
+describe("setUser", () => {
+  it("stores the user in state", () => {
+    useStore.getState().setUser(makeUser());
+    expect(useStore.getState().user?.id).toBe("u-1");
+    expect(useStore.getState().user?.name).toBe("Aiyappa");
+  });
+
+  it("side-effects: writes user_id to localStorage", () => {
+    useStore.getState().setUser(makeUser({ id: "abc-123" }));
+    expect(window.localStorage.getItem("user_id")).toBe("abc-123");
+  });
+
+  // lastUiLanguage mirrors the signed-in user's preferred_language — see
+  // the "survives logout" test below for why this field exists at all.
+  it("mirrors preferred_language onto lastUiLanguage", () => {
+    useStore.getState().setUser(makeUser({ preferred_language: "vi" }));
+    expect(useStore.getState().lastUiLanguage).toBe("vi");
+  });
+
+  it("falls back to 'en' for lastUiLanguage when preferred_language is falsy", () => {
+    useStore.getState().setUser(makeUser({ preferred_language: "" as never }));
+    expect(useStore.getState().lastUiLanguage).toBe("en");
+  });
+});
+
+describe("setToken", () => {
+  it("updates the JWT on the current user", () => {
+    useStore.getState().setUser(makeUser({ token: "old-token" }));
+    useStore.getState().setToken("new-token");
+    expect(useStore.getState().user?.token).toBe("new-token");
+  });
+
+  it("accepts null to clear the token", () => {
+    useStore.getState().setUser(makeUser());
+    useStore.getState().setToken(null);
+    expect(useStore.getState().user?.token).toBeNull();
+  });
+
+  it("is a no-op when no user is signed in", () => {
+    useStore.getState().setToken("orphan-token");
+    expect(useStore.getState().user).toBeNull();
+  });
+});
+
+describe("logout", () => {
+  it("clears the full session tree", () => {
+    const s = useStore.getState();
+    s.setUser(makeUser());
+    s.setCattleInfo({} as never);
+    s.setFeedSelectionType("evaluation");
+    s.setFeedSelections([{ id: "row-1" } as never]);
+    s.setReportData({ mode: "recommendation" } as never);
+    s.setDietLimits({ ash: 10 } as never);
+
+    s.logout();
+
+    const after = useStore.getState();
+    expect(after.user).toBeNull();
+    expect(after.cattleInfo).toBeNull();
+    expect(after.feedSelectionType).toBe("recommendation");
+    expect(after.feedSelections).toEqual([]);
+    expect(after.reportData).toBeNull();
+    expect(after.dietLimits).toEqual({});
+  });
+
+  it("removes the localStorage user_id side effect", () => {
+    window.localStorage.setItem("user_id", "u-1");
+    useStore.getState().logout();
+    expect(window.localStorage.getItem("user_id")).toBeNull();
+  });
+
+  // The whole point of lastUiLanguage: pre-login screens (Welcome/Login/
+  // Register/etc.) need SOMETHING to read a language from once `user` is
+  // null post-logout. Deliberately NOT cleared by logout() — user
+  // reported the auth flow reverting to English every time they logged
+  // out, because useT() previously had nothing to fall back to but "en".
+  it("does NOT clear lastUiLanguage — the auth flow must stay in the last-used language after logout", () => {
+    useStore.getState().setUser(makeUser({ preferred_language: "hi" }));
+    expect(useStore.getState().lastUiLanguage).toBe("hi");
+
+    useStore.getState().logout();
+
+    expect(useStore.getState().user).toBeNull();
+    expect(useStore.getState().lastUiLanguage).toBe("hi");
+  });
+});
+
+describe("setCattleInfo", () => {
+  it("stores the info object", () => {
+    const info = { simulation_name: "run-1", country: "India" } as never;
+    useStore.getState().setCattleInfo(info);
+    expect(useStore.getState().cattleInfo).toEqual(info);
+  });
+});
+
+describe("setFeedSelectionType", () => {
+  it.each(["recommendation", "evaluation"] as const)("accepts %s", (mode) => {
+    useStore.getState().setFeedSelectionType(mode);
+    expect(useStore.getState().feedSelectionType).toBe(mode);
+  });
+});
+
+describe("setFeedSelections", () => {
+  it("replaces the array", () => {
+    useStore.getState().setFeedSelections([{ id: "a" } as never]);
+    expect(useStore.getState().feedSelections).toHaveLength(1);
+    useStore.getState().setFeedSelections([]);
+    expect(useStore.getState().feedSelections).toEqual([]);
+  });
+});
+
+describe("setReportData", () => {
+  it("stores the report", () => {
+    const data = { mode: "evaluation" } as never;
+    useStore.getState().setReportData(data);
+    expect(useStore.getState().reportData).toEqual(data);
+  });
+});
+
+describe("setDietLimits", () => {
+  it("stores partial limits", () => {
+    useStore.getState().setDietLimits({ ash: 10 } as never);
+    expect(useStore.getState().dietLimits).toEqual({ ash: 10 });
+  });
+  it("replaces (does NOT merge) existing limits", () => {
+    useStore.getState().setDietLimits({ ash: 10 } as never);
+    useStore.getState().setDietLimits({ ee: 7 } as never);
+    expect(useStore.getState().dietLimits).toEqual({ ee: 7 });
+  });
+});
+
+describe("snackbar", () => {
+  it("showSnackbar with default type 'info'", () => {
+    useStore.getState().showSnackbar("Saved");
+    expect(useStore.getState().snackbar).toEqual({
+      message: "Saved",
+      type: "info",
+      visible: true,
+    });
+  });
+
+  it.each(["success", "error", "info"] as const)(
+    "showSnackbar honours explicit type %s",
+    (type) => {
+      useStore.getState().showSnackbar("m", type);
+      expect(useStore.getState().snackbar?.type).toBe(type);
+    }
+  );
+
+  it("hideSnackbar flips visible false but keeps the message", () => {
+    useStore.getState().showSnackbar("bye", "success");
+    useStore.getState().hideSnackbar();
+    expect(useStore.getState().snackbar).toEqual({
+      message: "bye",
+      type: "success",
+      visible: false,
+    });
+  });
+
+  it("hideSnackbar when nothing is showing is safe", () => {
+    useStore.getState().hideSnackbar();
+    expect(useStore.getState().snackbar).toBeNull();
+  });
+});
+
+describe("persist integration", () => {
+  it("hydrates the persisted user on write", () => {
+    useStore.getState().setUser(makeUser({ name: "Bob" }));
+    const raw = window.localStorage.getItem("rationsmart-storage");
+    expect(raw).toBeTruthy();
+    const parsed = JSON.parse(raw as string);
+    expect(parsed.state.user.name).toBe("Bob");
+  });
+
+  it("persist only partializes documented fields (no snackbar) — reportData IS persisted", () => {
+    // Bug fixed 2026-07-15: reportData used to be excluded here, on the
+    // assumption the user always views a just-generated report in the
+    // same tab session. In practice the report page could show "No
+    // Report" if the tab reloaded (e.g. mobile OS reclaiming a
+    // backgrounded tab) moments after a successful generate — the
+    // report existed server-side and was in memory a second ago, but a
+    // fresh page load reset reportData back to null. Persisting it
+    // means a reload lands back on the report just produced instead of
+    // losing it; "New Case" / Reset still explicitly null it out.
+    useStore.getState().setUser(makeUser());
+    useStore.getState().setReportData({ mode: "evaluation" } as never);
+    useStore.getState().showSnackbar("hi");
+    const raw = window.localStorage.getItem("rationsmart-storage");
+    const parsed = JSON.parse(raw as string);
+    expect(parsed.state.reportData).toEqual({ mode: "evaluation" });
+    expect(parsed.state.reportMeta.userId).toBe(makeUser().id);
+    expect(parsed.state.snackbar).toBeUndefined();
+    // But user + feedSelections + cattleInfo etc. ARE persisted
+    expect(parsed.state.user).toBeDefined();
+    expect(parsed.state.feedSelectionType).toBeDefined();
+  });
+});
+
+describe("registered_language field (i18n V2)", () => {
+  it("both fields co-exist on the User type", () => {
+    useStore.getState().setUser(
+      makeUser({
+        registered_language: "hi",
+        preferred_language: "vi",
+      })
+    );
+    const u = useStore.getState().user!;
+    expect(u.registered_language).toBe("hi");
+    expect(u.preferred_language).toBe("vi");
+  });
+
+  it("registered_language is optional (legacy persisted users)", () => {
+    // Simulates a user who was logged in before the field was added.
+    useStore.getState().setUser({ ...makeUser(), registered_language: undefined } as User);
+    expect(useStore.getState().user?.registered_language).toBeUndefined();
+    expect(useStore.getState().user?.preferred_language).toBeDefined();
+  });
+});
+
+describe("pendingPinReset (audit A-03)", () => {
+  it("is held in memory but never written to localStorage", () => {
+    useStore.getState().setUser(makeUser());
+    useStore.getState().setPendingPinReset({ email: "legacy@x.com", oldPin: "1234" });
+    expect(useStore.getState().pendingPinReset?.oldPin).toBe("1234");
+    const persisted = localStorage.getItem("rationsmart-storage") ?? "";
+    expect(persisted).not.toContain("pendingPinReset");
+    expect(persisted).not.toContain("1234");
+  });
+
+  it("is cleared by logout", () => {
+    useStore.getState().setPendingPinReset({ email: "a@b.co", oldPin: "1234" });
+    useStore.getState().logout();
+    expect(useStore.getState().pendingPinReset).toBeNull();
+  });
+});
+
+describe("session expiry (audit A-14)", () => {
+  const b64 = (o: object) => btoa(JSON.stringify(o)).replace(/=+$/, "");
+  const jwt = (exp: number) => `${b64({ alg: "HS256" })}.${b64({ exp })}.sig`;
+
+  it("reads the JWT exp claim", async () => {
+    const { jwtExpiryMs } = await import("@/lib/store");
+    expect(jwtExpiryMs(jwt(1_000))).toBe(1_000_000);
+    expect(jwtExpiryMs("not-a-jwt")).toBeNull();
+  });
+
+  it("prefers token_expires_at, falls back to the JWT exp", async () => {
+    const { isSessionExpired } = await import("@/lib/store");
+    expect(isSessionExpired({ token: jwt(10), token_expires_at: 50_000 }, 20_000)).toBe(false);
+    expect(isSessionExpired({ token: jwt(10), token_expires_at: undefined }, 20_000)).toBe(true);
+    expect(isSessionExpired({ token: "opaque", token_expires_at: undefined }, 20_000)).toBe(false);
+  });
+});
+
+describe("persisted report is bounded (audit A-24)", () => {
+  const blob = (reportMeta: unknown, userId = "u-1") =>
+    JSON.stringify({
+      state: { user: { id: userId, name: "A" }, reportData: { mode: "evaluation" }, reportMeta },
+      version: 0,
+    });
+
+  it("restores a fresh report for the same user", async () => {
+    localStorage.setItem("rationsmart-storage", blob({ userId: "u-1", savedAt: Date.now() }));
+    await useStore.persist.rehydrate();
+    expect(useStore.getState().reportData).toEqual({ mode: "evaluation" });
+  });
+
+  it("drops a report older than the TTL", async () => {
+    const { REPORT_TTL_MS } = await import("@/lib/store");
+    localStorage.setItem(
+      "rationsmart-storage",
+      blob({ userId: "u-1", savedAt: Date.now() - REPORT_TTL_MS - 1 })
+    );
+    await useStore.persist.rehydrate();
+    expect(useStore.getState().reportData).toBeNull();
+  });
+
+  it("drops a report generated by a different user", async () => {
+    localStorage.setItem(
+      "rationsmart-storage",
+      blob({ userId: "someone-else", savedAt: Date.now() }, "u-1")
+    );
+    await useStore.persist.rehydrate();
+    expect(useStore.getState().reportData).toBeNull();
+  });
+});
