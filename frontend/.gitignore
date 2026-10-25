@@ -15,6 +15,18 @@ public/workbox-*.js
 .env.development.local
 .env.test.local
 .env.production.local
+# Any other env file too; only the placeholder template is tracked.
+.env.*
+!.env.example
+
+# Secrets and credentials — never committed (the repo is public)
+*.pem
+*.key
+*.p12
+*.pfx
+*credentials*
+*secret*
+service-account*.json
 
 # OS
 .DS_Store

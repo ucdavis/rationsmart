@@ -1,0 +1,15 @@
+# Code owners are asked to review PRs that touch their paths. The ruleset does
+# not require their approval ("Require review from Code Owners" is off), so
+# this only routes review requests. The last matching line wins.
+
+*                                             @satishbagali
+/backend/                                     @satishbagali
+/frontend/                                    @Aiyappa-DigitalGreen
+
+# Shared files that affect both apps
+/.github/workflows/frontend-quality-gate.yml  @Aiyappa-DigitalGreen @satishbagali
+/.github/dependabot.yml                       @Aiyappa-DigitalGreen @satishbagali
+/.coderabbit.yaml                             @Aiyappa-DigitalGreen @satishbagali
+/README.md                                    @Aiyappa-DigitalGreen @satishbagali
+
+/.github/CODEOWNERS                           @satishbagali

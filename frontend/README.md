@@ -39,9 +39,12 @@ Zustand. Installable on phones and desktops, with an offline fallback page.
 
 ### Setup
 
+The PWA lives in the `frontend/` folder of the RationSmart monorepo (the API
+is in `backend/`). Run every command below from `frontend/`.
+
 ```bash
-git clone https://github.com/Aiyappa-DigitalGreen/RationSmart-PWA.git
-cd RationSmart-PWA
+git clone https://github.com/ucdavis/rationsmart.git
+cd rationsmart/frontend
 npm install
 cp .env.example .env.development   # then fill in the backend values
 npm run dev                        # http://localhost:3000
@@ -150,10 +153,11 @@ public/              icons, fonts, manifest, offline page
 
 ## Quality checks (CI)
 
-`.github/workflows/quality-gate.yml` runs on every push and pull request to
-`main` and `testing`: locked install (`npm ci`), lint, promise lint,
-typecheck, format check and tests with coverage. `npm audit` also runs, but
-for information only. **CI never deploys.**
+`.github/workflows/frontend-quality-gate.yml` (at the repo root) runs on every
+push and pull request to `main` that changes `frontend/`: locked install
+(`npm ci`), lint, promise lint, typecheck, format check, UI-label check and
+tests with coverage. `npm audit` also runs, but for information only.
+**CI never deploys.**
 
 Run the same checks locally before pushing:
 
@@ -165,27 +169,23 @@ npm run lint && npm run lint:promises && npm run typecheck && npm run format:che
 
 ## Deployment
 
-The app is hosted on **Vercel**. Deploys are **manual on purpose**; pushing
-to GitHub does not release anything.
+Deploys are **manual on purpose**; pushing to GitHub does not release
+anything. The app is moving from **Vercel** to **Azure**; the new setup is not
+decided yet. Until it is live, the current Vercel site keeps serving users and
+urgent fixes are deployed from this folder:
 
 ```bash
 vercel deploy --prod --yes          # build and deploy
 vercel alias set <deploy-url> <your-domain>
 ```
 
-Set the environment variables above on the Vercel project first.
+The app needs a Node server (`npm run build` + `npm start`), not static
+hosting: the `/api/proxy` and `/api/session` routes run server-side.
 
 ---
 
-## Branches
+## Branches and pull requests
 
-`main` holds the current code (v1 API client). In the RationSmart repo,
-`testing` is the working branch and is kept in sync with `main`.
-
----
-
-## Access
-
-This repository is **private**. If the link shows a 404, ask the repository
-owner to add your GitHub account as a collaborator, then accept the
-invitation from your email or https://github.com/notifications.
+`main` holds the current code. Work on a feature branch and open a pull
+request to `main`; direct pushes are not allowed. Code owners are listed in
+`.github/CODEOWNERS` at the repo root.
