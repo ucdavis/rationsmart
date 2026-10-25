@@ -59,7 +59,9 @@ describe("getFeedTypes", () => {
     mockApi.get.mockImplementation((url: string) => {
       if (url === "/v1/animal/unique-feed-type/7") return Promise.resolve({ data: countryTypes });
       if (url === "/v1/feed-classification/get-feed-types")
-        return catalog instanceof Error ? Promise.reject(catalog) : Promise.resolve({ data: catalog });
+        return catalog instanceof Error
+          ? Promise.reject(catalog)
+          : Promise.resolve({ data: catalog });
       return Promise.reject(new Error(`unexpected ${url}`));
     });
 

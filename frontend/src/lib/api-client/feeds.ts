@@ -70,9 +70,8 @@ export const getFeedTypes = async (country_id: string, _user_id?: string) => {
   const merged = [
     ...active.map(
       (t) =>
-        countryNames.find(
-          (n) => normalizeTaxonomyName(n) === normalizeTaxonomyName(t.type_name)
-        ) ?? (t.type_name as string)
+        countryNames.find((n) => normalizeTaxonomyName(n) === normalizeTaxonomyName(t.type_name)) ??
+        (t.type_name as string)
     ),
     ...countryNames.filter((n) => !catalogKeys.has(normalizeTaxonomyName(n))),
   ];
