@@ -3,18 +3,21 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.language_tags import canonical_language_tag
+
 
 class LanguageCreateRequest(BaseModel):
-    code: str = Field(..., max_length=10, description="BCP 47 language code, e.g. 'hi', 'vi'")
+    code: str = Field(
+        ..., max_length=10,
+        description="BCP 47 language code, e.g. 'hi', 'fil', 'pt-BR'. Stored in its standard "
+                    "form ('BEN' -> 'bn', 'tl' -> 'fil'); invalid codes are refused",
+    )
     name: str = Field(..., min_length=1, max_length=100, description="Display name, e.g. 'Hindi'")
 
     @field_validator("code", mode="before")
     @classmethod
     def normalise_code(cls, v: str) -> str:
-        v = v.strip().lower()
-        if not v:
-            raise ValueError("Language code cannot be empty")
-        return v
+        return canonical_language_tag(v)
 
     @field_validator("name", mode="before")
     @classmethod

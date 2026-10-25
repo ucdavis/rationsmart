@@ -111,11 +111,18 @@ def translator(lang: Optional[str]) -> Callable[..., str]:
     ones (no "{amount.x}" lookups, no "{amount:>99}" format specs); otherwise the
     English sentence is used.
     """
-    table = {} if not lang or lang == "en" else load_report_text(REPORT_TEXT_FILE).translations.get(lang, {})
+    tables = []
+    if lang and lang != "en":
+        from app.language_tags import fallback_chain  # lazy: core/ has no module-level app imports
+
+        translations = load_report_text(REPORT_TEXT_FILE).translations
+        # Per sentence: 'pt-BR' column, else 'pt', else English. Never across
+        # scripts: 'sr-Latn' does not use an 'sr' (Cyrillic) column.
+        tables = [translations[code] for code in fallback_chain(str(lang)) if code in translations]
 
     def t(text: str, **values) -> str:
         """The translation of text (English when there is none), placeholders filled."""
-        out = table.get(text, text)
+        out = next((table[text] for table in tables if text in table), text)
         if not values:
             return out
         if out is not text and _placeholders(out) != _placeholders(text):
