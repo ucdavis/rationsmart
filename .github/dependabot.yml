@@ -48,6 +48,28 @@ updates:
         patterns:
           - "*"
 
+  # Frontend (PWA). Minor + patch bumps arrive as one grouped PR; major versions
+  # (e.g. next 14 -> 16) are planned upgrades with the frontend owner, not bot PRs.
+  # Security updates are separate and still open for any version.
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+      - "javascript"
+    open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      frontend-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
