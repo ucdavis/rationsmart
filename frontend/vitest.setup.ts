@@ -1,6 +1,13 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+// findBy* / waitFor give up after 1 s by default. Screens that load a UI-label
+// dictionary first can take just over that on a shared CI runner (seen at
+// 1066 ms on GitHub Actions after React 19), so allow 3 s (under vitest's 5 s
+// per-test limit, so a real miss still reports this clear error). Passing tests are
+// not slowed down: the wait ends as soon as the element appears.
+configure({ asyncUtilTimeout: 3000 });
 
 // jsdom 23 in vitest ships a `localStorage` stub that lacks setItem /
 // getItem / removeItem / clear on its prototype (only "length" and the
