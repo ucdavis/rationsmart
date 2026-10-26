@@ -18,14 +18,17 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       reporter: ["text", "html"],
-      // Floors set just under the measured baseline (2026-09-28: statements /
-      // lines 83.4 %, branches 79.7 %, functions 71.7 %) so coverage can only
+      // Floors set just under the measured baseline so coverage can only
       // ratchet up. Raise them as tests are added (audit B-38).
+      // Re-measured 2026-10-26 after vitest 1 → 5: its v8 coverage maps
+      // results to the source AST and counts more branches (?? / ?.), so the
+      // same 909 tests now read statements 81.8 %, lines 84.8 %, branches
+      // 73.9 %, functions 77.7 % (was 83.4 / 83.4 / 79.7 / 71.7 on vitest 1).
       thresholds: {
-        statements: 83,
-        lines: 83,
-        branches: 79,
-        functions: 71,
+        statements: 81,
+        lines: 84,
+        branches: 73,
+        functions: 77,
       },
       include: ["src/**/*.{ts,tsx}"],
       exclude: [

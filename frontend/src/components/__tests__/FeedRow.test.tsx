@@ -985,7 +985,7 @@ describe("stale non-ASCII feed_type_name / category_name self-heal", () => {
 });
 
 describe("feed swap resets the old feed's values (audit B-12)", () => {
-  const props = (item: FeedItem, onUpdate: ReturnType<typeof vi.fn>) => ({
+  const props = (item: FeedItem, onUpdate: (id: string, updates: Partial<FeedItem>) => void) => ({
     item,
     index: 0,
     showQuantity: true,
