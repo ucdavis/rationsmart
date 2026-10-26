@@ -133,9 +133,8 @@ function isFollowableRedirect(status: number, method: string): boolean {
   );
 }
 
-// Next 14 passes `params` as a plain object; Next 15 passes a Promise.
-// Accept both so `await params` is correct either way.
-type RouteContext = { params: { path: string[] } | Promise<{ path: string[] }> };
+// Next 15+ passes route `params` as a Promise.
+type RouteContext = { params: Promise<{ path: string[] }> };
 
 async function handler(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   if (!BACKEND_HOST) {

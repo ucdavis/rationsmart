@@ -50,7 +50,7 @@ const keepConsole =
 // - connect-src 'self': XHR/fetch/WebSocket can only reach this origin, so a
 //   script that did get injected couldn't send the JWT anywhere else;
 // - img-src 'self' data: blob: — no third-party image beacons either.
-// script-src still needs 'unsafe-inline': Next 14 App Router emits inline
+// script-src still needs 'unsafe-inline': the Next App Router emits inline
 // bootstrap scripts, and giving them nonces would force every page to render
 // dynamically (no static pages, no SW precache). style-src needs it for the
 // inline style attributes used throughout. Moving the JWT to an httpOnly
@@ -92,13 +92,9 @@ module.exports = withPWA({
   images: {
     unoptimized: true,
   },
-  // `next build` runs ESLint (audit B-36): the codebase is lint-clean under
-  // next/core-web-vitals + @typescript-eslint/recommended, so an error now
-  // fails the build instead of shipping. Warnings are gated by
-  // `npm run lint` (--max-warnings 0) and the quality workflow.
-  eslint: {
-    ignoreDuringBuilds: false,
-  },
+  // Lint gate (audit B-36): Next 16 removed linting from `next build` (and
+  // the `eslint` option), so lint errors are caught by `npm run lint`
+  // (--max-warnings 0) in the frontend quality gate instead.
   compiler: {
     removeConsole:
       process.env.NODE_ENV === "production" && !keepConsole

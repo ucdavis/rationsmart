@@ -7,7 +7,7 @@ use.
 | Folder | What it is | Stack |
 |---|---|---|
 | [`backend/`](backend/) | API, optimization engine, reports, feed-library sync | FastAPI, PostgreSQL, Celery + Redis, pymoo |
-| [`frontend/`](frontend/) | PWA (web app); see [`frontend/README.md`](frontend/README.md) | Next.js 14, React 18, TypeScript |
+| [`frontend/`](frontend/) | PWA (web app); see [`frontend/README.md`](frontend/README.md) | Next.js 16, React 19, TypeScript |
 
 ## Getting started
 

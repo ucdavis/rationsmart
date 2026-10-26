@@ -4,7 +4,7 @@ import { GET, generateStaticParams } from "@/app/api/ui-labels/[lang]/route";
 import { LABEL_SHEET_PATH, readLabelSheet } from "@/lib/ui-labels-sheet.mjs";
 
 const get = (lang: string) =>
-  GET(new Request(`http://localhost/api/ui-labels/${lang}`), { params: { lang } });
+  GET(new Request(`http://localhost/api/ui-labels/${lang}`), { params: Promise.resolve({ lang }) });
 
 describe("/api/ui-labels/[lang]", () => {
   it("builds one static page per language column of the spreadsheet", async () => {

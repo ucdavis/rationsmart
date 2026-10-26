@@ -30,10 +30,12 @@ export async function generateStaticParams() {
   return languages.map(({ code }) => ({ lang: code }));
 }
 
-export async function GET(_req: Request, { params }: { params: { lang: string } }) {
+// Next 15+ passes route `params` as a Promise.
+export async function GET(_req: Request, { params }: { params: Promise<{ lang: string }> }) {
+  const { lang } = await params;
   const s = await labelSheet();
-  if (!isLabelLangCode(params.lang) || !s.languages.some((l) => l.code === params.lang)) {
+  if (!isLabelLangCode(lang) || !s.languages.some((l) => l.code === lang)) {
     return NextResponse.json({ detail: "Not found" }, { status: 404 });
   }
-  return NextResponse.json(dictionaryFor(s, params.lang));
+  return NextResponse.json(dictionaryFor(s, lang));
 }

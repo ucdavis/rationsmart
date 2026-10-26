@@ -5,7 +5,7 @@ tool. It is the web version of the RationSmart Android app: farmers and
 extension workers enter cattle details, pick available feeds, and get a
 least-cost, nutritionally balanced diet with a downloadable report.
 
-Built with **Next.js 14 (App Router)**, React 18, TypeScript, Tailwind CSS and
+Built with **Next.js 16 (App Router)**, React 19, TypeScript, Tailwind CSS and
 Zustand. Installable on phones and desktops, with an offline fallback page.
 
 ---
@@ -34,7 +34,7 @@ Zustand. Installable on phones and desktops, with an offline fallback page.
 ## Getting started
 
 ### Prerequisites
-- Node.js **20** (see `.nvmrc`)
+- Node.js **22** (see `.nvmrc`)
 - Access to a RationSmart backend (FastAPI, v1 API)
 
 ### Setup

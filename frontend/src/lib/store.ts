@@ -336,6 +336,7 @@ const sessionExpiredHandler = () => {
   if (typeof window !== "undefined") {
     // Full navigation (not router.push) because we're outside the React
     // tree here and the current route may be an auth-gated one.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination -- see above
     window.location.href = "/login";
   }
 };
