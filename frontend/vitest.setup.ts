@@ -1,13 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { afterEach, beforeEach, vi } from "vitest";
-import { cleanup, configure } from "@testing-library/react";
-
-// findBy* / waitFor give up after 1 s by default. Screens that load a UI-label
-// dictionary first can take just over that on a shared CI runner (seen at
-// 1066 ms on GitHub Actions after React 19), so allow 3 s (under vitest's 5 s
-// per-test limit, so a real miss still reports this clear error). Passing tests are
-// not slowed down: the wait ends as soon as the element appears.
-configure({ asyncUtilTimeout: 3000 });
+import { afterEach, beforeEach, inject, vi } from "vitest";
+import { cleanup } from "@testing-library/react";
 
 // jsdom 23 in vitest ships a `localStorage` stub that lacks setItem /
 // getItem / removeItem / clear on its prototype (only "length" and the
@@ -106,17 +99,14 @@ beforeEach(() => resetEmailCooldowns());
 // UI labels come from the server route /api/ui-labels/<code> (built from
 // src/lib/data/ui-labels.xlsx). jsdom has no server, so answer those requests
 // from the same spreadsheet with the same parser; everything else goes to the
-// real fetch. Parsed on first use, so tests that never switch language pay
-// nothing.
-import { LABEL_SHEET_PATH, dictionaryFor, readLabelSheet } from "./src/lib/ui-labels-sheet.mjs";
-let labelSheet: ReturnType<typeof readLabelSheet> | undefined;
+// real fetch. The sheet is parsed once per run in vitest.global-setup.ts.
+import { dictionaryFor } from "./src/lib/ui-labels-sheet.mjs";
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (input, init) => {
   const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
   const lang = /^\/api\/ui-labels\/([^/?#]+)$/.exec(url)?.[1];
   if (lang === undefined) return realFetch(input, init);
-  labelSheet ??= readLabelSheet(LABEL_SHEET_PATH);
-  const sheet = await labelSheet;
+  const sheet = inject("uiLabelSheet");
   if (!sheet.languages.some((l) => l.code === lang)) return new Response(null, { status: 404 });
   return Response.json(dictionaryFor(sheet, lang));
 };

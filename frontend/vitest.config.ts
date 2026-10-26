@@ -7,6 +7,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     globals: true,
+    globalSetup: ["./vitest.global-setup.ts"],
     setupFiles: ["./vitest.setup.ts"],
     // Each test file gets a fresh module graph — and so a fresh Zustand store
     // and fresh module-level caches — so state can't leak between files
