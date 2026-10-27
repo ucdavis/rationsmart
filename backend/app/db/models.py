@@ -15,7 +15,7 @@ import uuid
 
 from sqlalchemy import (
     Boolean, CheckConstraint, Column, DateTime,
-    ForeignKey, ForeignKeyConstraint, Index, Integer, LargeBinary, Numeric, SmallInteger, String, Text,
+    ForeignKey, Index, Integer, LargeBinary, Numeric, SmallInteger, String, Text,
     UniqueConstraint, literal_column,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID
@@ -35,13 +35,11 @@ class CountryModel(Base):
     currency = Column(String(10), nullable=True, comment="Currency code for the country (e.g., USD, EUR, INR)")
     is_active = Column(Boolean, nullable=False, server_default=text("false"), default=False, comment="Boolean flag to control if country is active for user registration")
 
-    # Indexes below mirror the live DB (db_model_alignment plan). idx_country_name and
-    # idx_country_code duplicate the unique constraints and are dropped in PR-2.
+    # Indexes mirror the live DB (db_model_alignment plan); migration c0d1e2f3a4b5
+    # dropped the ones that duplicated a unique constraint.
     __table_args__ = (
         Index("idx_country_active_new", is_active, name, postgresql_where=text("is_active = true")),
-        Index("idx_country_code", country_code),
         Index("idx_country_is_active", is_active),
-        Index("idx_country_name", name),
     )
 
 
@@ -88,9 +86,7 @@ class UserInformationModel(Base):
         Index("idx_user_admin_level", admin_level, postgresql_where=text("admin_level IS NOT NULL")),
         Index("idx_user_admin_verification", id, is_admin, postgresql_where=text("is_admin = true")),
         Index("idx_user_country", country_id),
-        Index("idx_user_country_id", country_id),  # duplicate of idx_user_country; dropped in PR-2
         Index("idx_user_created_at", created_at),
-        Index("idx_user_email", email_id),  # duplicate of the email_id unique constraint; dropped in PR-2
         Index("idx_user_information_is_active", is_active),
         Index("idx_user_information_is_admin", is_admin),
         Index("idx_user_status_check", id, is_active, postgresql_where=text("is_active = true")),
@@ -193,23 +189,16 @@ class Feed(Base):
     updated_at = Column(DateTime, server_default=func.current_timestamp())
     fd_category_id = Column(UUID(as_uuid=True), ForeignKey("feed_categories.id"), nullable=True, comment="Foreign key reference to feed_categories.id for data integrity validation")
     fd_type_id = Column(UUID(as_uuid=True), ForeignKey("feed_types.id"), nullable=True)
-    # The DB has two FK constraints for created_by: feeds_created_by_fkey (this column's)
-    # and fk_feeds_created_by (a duplicate from a manual ALTER TABLE, declared in
-    # __table_args__ so the model mirrors the DB; dropped in PR-2).
     created_by = Column(UUID(as_uuid=True), ForeignKey("user_information.id", ondelete="SET NULL"), nullable=True)
     baseline_price = Column(Numeric(10, 2), nullable=True)
     baseline_currency = Column(String(3), nullable=True)
 
     __table_args__ = (
         UniqueConstraint("fd_code", name="uq_feeds_fd_code"),
-        ForeignKeyConstraint(
-            ["created_by"], ["user_information.id"], name="fk_feeds_created_by", ondelete="SET NULL",
-        ),
         Index("idx_feeds_country_id", fd_country_id),
         Index("idx_feeds_country_type", fd_country_id, fd_type, fd_category),
         Index("idx_feeds_created_by", created_by),
         Index("idx_feeds_fd_category_id", fd_category_id),
-        Index("idx_feeds_fd_country_id", fd_country_id),  # duplicate of idx_feeds_country_id; dropped in PR-2
         Index("idx_feeds_filter_composite", fd_type, fd_category, fd_country_id),
         {"comment": "Updated: Removed deprecated fd_country column - use fd_country_name instead"},
     )
@@ -265,7 +254,6 @@ class CustomFeed(Base):
 
     __table_args__ = (
         Index("idx_custom_feeds_country_id", fd_country_id),
-        Index("idx_custom_feeds_feed_code", fd_code),  # duplicate of the fd_code unique constraint; dropped in PR-2
         Index("idx_custom_feeds_user_filter", user_id, fd_type, fd_category, fd_country_id),
         Index("idx_custom_feeds_user_id", user_id),
         {"comment": "Custom feeds created by users, replica of feeds table with user_id foreign key"},
@@ -301,7 +289,6 @@ class Report(Base):
             postgresql_where=text("save_report = true"),
         ),
         Index("idx_reports_created_at", created_at),
-        Index("idx_reports_report_id", report_id),  # duplicate of the report_id unique constraint; dropped in PR-2
         Index("idx_reports_report_type", report_type),
         Index("idx_reports_type_created", report_type, created_at.desc()),
         Index("idx_reports_user_id", user_id),
@@ -327,7 +314,6 @@ class UserFeedback(Base):
 
     __table_args__ = (
         CheckConstraint("overall_rating >= 1 AND overall_rating <= 5", name="user_feedback_overall_rating_check"),
-        Index("idx_user_feedback_admin", created_at.desc()),  # same as idx_user_feedback_created_at; dropped in PR-2
         Index("idx_user_feedback_created_at", created_at),
         Index("idx_user_feedback_feedback_type", feedback_type),
         Index("idx_user_feedback_rating", overall_rating),
@@ -389,8 +375,6 @@ class FeedTranslation(Base):
 
     __table_args__ = (
         UniqueConstraint("feed_id", "language", name="uq_feed_translations_feed_lang"),
-        # Duplicate of uq_feed_translations_feed_lang; dropped in PR-2.
-        Index("idx_feed_translations_feed_lang", feed_id, language),
     )
 
 
