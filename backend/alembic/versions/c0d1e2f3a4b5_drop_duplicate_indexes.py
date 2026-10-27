@@ -9,6 +9,13 @@ No CASCADE and IF EXISTS, as in f7a8b9c0d1e2. One transaction: all ten go, or
 none. downgrade() recreates each one exactly as pg_get_indexdef /
 pg_get_constraintdef printed it on Test on 2026-10-27.
 
+Each DROP INDEX briefly takes an exclusive lock on its table. A long
+transaction on that table (e.g. a CLIMDES feed sync on feeds) would make the
+drop wait, and every app query on the table would queue behind it. So both
+directions set a 5 s lock_timeout: on a busy table the migration fails fast,
+rolls back with nothing changed, and is simply run again later. Check that no
+feed sync is running before applying.
+
 Revision ID: c0d1e2f3a4b5
 Revises: b9c0d1e2f3a4
 Create Date: 2026-10-27 00:00:00.000000
@@ -49,18 +56,23 @@ DUPLICATE_INDEXES = {
         "CREATE INDEX idx_user_country_id ON public.user_information USING btree (country_id)",
 }
 
+# Bounded wait for each table lock (SET LOCAL: this migration's transaction only).
+LOCK_TIMEOUT_SQL = "SET LOCAL lock_timeout = '5s'"
+
 # kept: feeds_created_by_fkey (same columns, target and ON DELETE)
 DUPLICATE_FK = "fk_feeds_created_by"
 DUPLICATE_FK_DEF = "FOREIGN KEY (created_by) REFERENCES user_information(id) ON DELETE SET NULL"
 
 
 def upgrade() -> None:
+    op.execute(LOCK_TIMEOUT_SQL)
     for name in DUPLICATE_INDEXES:
         op.execute(f'DROP INDEX IF EXISTS public."{name}"')
     op.execute(f'ALTER TABLE public.feeds DROP CONSTRAINT IF EXISTS "{DUPLICATE_FK}"')
 
 
 def downgrade() -> None:
+    op.execute(LOCK_TIMEOUT_SQL)
     for ddl in DUPLICATE_INDEXES.values():
         op.execute(ddl.replace("CREATE INDEX ", "CREATE INDEX IF NOT EXISTS ", 1))
     op.execute(
