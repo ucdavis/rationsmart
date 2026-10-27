@@ -11,8 +11,13 @@ On the Test server: docker compose exec -T api python -m scripts_2.schema_drift_
 
 Exit code 0 = no drift, 1 = drift (each difference is printed), 2 = usage error.
 The comparison uses the same rules as `alembic revision --autogenerate`
-(app/db/schema_compare.py), so "no drift" means autogenerate would write nothing.
-It does not see triggers or functions; the baseline migration owns those.
+(app/db/schema_compare.py), so "no drift" means autogenerate would write nothing,
+plus a definition check of the expression index Alembic cannot compare.
+
+What it compares: tables, columns, types, nullability, comments, indexes, unique
+and foreign-key constraints, and CHECK constraints **by name** (a changed
+condition under the same name is not seen). What it does not: server defaults,
+triggers and functions (the baseline migration owns those).
 """
 import argparse
 import pathlib
@@ -61,12 +66,13 @@ def compare(connection) -> list[str]:
     """Differences between the models and the connection's database (read-only)."""
     from app.db.base import Base
     import app.db.models  # noqa: F401 — registers every model on Base.metadata
-    from app.db.schema_compare import COMPARE_OPTS, include_object
+    from app.db.schema_compare import COMPARE_OPTS, check_expression_indexes, include_object
 
     ctx = MigrationContext.configure(
         connection, opts={"include_object": include_object, **COMPARE_OPTS},
     )
-    return [_describe(d) for d in _flatten(compare_metadata(ctx, Base.metadata))]
+    diffs = [_describe(d) for d in _flatten(compare_metadata(ctx, Base.metadata))]
+    return diffs + check_expression_indexes(connection)
 
 
 def build_fresh(engine) -> None:
