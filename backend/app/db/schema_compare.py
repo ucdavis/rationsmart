@@ -58,3 +58,19 @@ def check_expression_indexes(connection) -> list[str]:
         elif actual != expected:
             problems.append(f"modify_index: {name}  db={actual!r}  expected={expected!r}")
     return problems
+
+
+def check_invalid_indexes(connection) -> list[str]:
+    """Indexes Postgres marks invalid (e.g. a failed CREATE INDEX CONCURRENTLY).
+
+    Alembic compares definitions only. An invalid index keeps its definition but
+    is not used for queries, and an invalid unique index does not guarantee
+    uniqueness, so each one is reported as drift.
+    """
+    rows = connection.execute(text(
+        "SELECT c.relname FROM pg_index i "
+        "JOIN pg_class c ON c.oid = i.indexrelid "
+        "JOIN pg_namespace n ON n.oid = c.relnamespace "
+        "WHERE n.nspname = 'public' AND NOT i.indisvalid ORDER BY c.relname"
+    ))
+    return [f"invalid_index: {name}" for (name,) in rows]
