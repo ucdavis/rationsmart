@@ -8,6 +8,9 @@ from alembic import context
 from app.config import settings
 from app.db.base import Base
 from app.db import models  # registers all 15 tables on Base.metadata  # noqa: F401
+# Indexes, comments and constraints are all compared; the few exclusions live in
+# app/db/schema_compare.py, shared with scripts_2/schema_drift_check.py.
+from app.db.schema_compare import COMPARE_OPTS, include_object
 
 config = context.config
 
@@ -15,20 +18,6 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-
-# alembic_version is Alembic-internal; exclude it from autogenerate so it never
-# appears in generated migrations.
-EXCLUDED_TABLES = {"alembic_version"}
-
-
-def include_object(obj, name, type_, reflected, compare_to):
-    if type_ == "table" and name in EXCLUDED_TABLES:
-        return False
-    # Indexes are performance-tuning concerns managed outside Alembic migrations.
-    # Excluding them keeps autogenerate output clean.
-    if type_ == "index":
-        return False
-    return True
 
 
 def run_migrations_offline() -> None:
@@ -44,7 +33,26 @@ def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def _run_on(connection) -> None:
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        include_object=include_object,
+        include_schemas=False,
+        **COMPARE_OPTS,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
 def run_migrations_online() -> None:
+    # A caller (scripts_2/schema_drift_check.py, tests) may hand over its own
+    # connection to migrate a database other than the one in .env.
+    connection = config.attributes.get("connection")
+    if connection is not None:
+        _run_on(connection)
+        return
+
     cfg = config.get_section(config.config_ini_section, {})
     cfg["sqlalchemy.url"] = settings.database_url
 
@@ -55,16 +63,7 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(
-            connection=connection,
-            target_metadata=target_metadata,
-            include_object=include_object,
-            compare_type=True,
-            compare_server_default=False,  # server defaults are DB-side; not tracked in ORM
-            include_schemas=False,
-        )
-        with context.begin_transaction():
-            context.run_migrations()
+        _run_on(connection)
 
 
 if context.is_offline_mode():
