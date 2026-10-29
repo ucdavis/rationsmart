@@ -67,6 +67,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  delete (window as Window & { __rsInstallEvent?: Event }).__rsInstallEvent;
   vi.useRealTimers();
   vi.restoreAllMocks();
 });
@@ -261,6 +262,30 @@ describe("InstallPrompt", () => {
     await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
       timeout: 3000,
     });
+  });
+
+  it("picks up a beforeinstallprompt captured before hydration (window.__rsInstallEvent)", async () => {
+    const early = new Event("beforeinstallprompt") as Event & {
+      prompt: () => Promise<void>;
+      userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
+    };
+    early.prompt = vi.fn().mockResolvedValue(undefined);
+    early.userChoice = Promise.resolve({ outcome: "accepted" });
+    (window as Window & { __rsInstallEvent?: Event }).__rsInstallEvent = early;
+    window.localStorage.setItem("rationsmart-installed", "1");
+
+    render(<InstallPrompt />);
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
+      { timeout: 3000 }
+    );
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Install" }));
+      await early.userChoice;
+      await Promise.resolve();
+    });
+    expect(early.prompt).toHaveBeenCalledOnce();
   });
 
   // UI-label translation (src/lib/i18n-ui.ts) — banner text + Install
