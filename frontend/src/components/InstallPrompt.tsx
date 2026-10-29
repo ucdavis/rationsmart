@@ -150,6 +150,11 @@ export default function InstallPrompt() {
   useEscapeKey(visible && showSteps, () => setShowSteps(false));
 
   if (!visible || installed) return null;
+  // Off iOS, only offer install once Chromium has fired beforeinstallprompt.
+  // No event means the app is already installed (or not installable), and
+  // falling back to the manual "Add to Home screen" steps would create a
+  // second, Chrome-badged shortcut next to the installed app.
+  if (!isIOS && !installEvent) return null;
 
   if (showSteps) {
     return (
