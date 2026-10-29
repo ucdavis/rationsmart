@@ -1,0 +1,36 @@
+name: rationsmart-frontend
+
+# The backend runs from its own compose project (backend/docker-compose.yml). Both
+# join the shared "rationsmart_edge" network, where the API is reachable as
+# http://api:8000, so start the backend first. The frontend publishes no host port;
+# the gateway (../gateway) proxies to it as frontend:3000. For local use without the
+# gateway, put `ports: ["3000:3000"]` in docker-compose.override.yml.
+# Override any value below in a local .env file next to this one.
+#
+# Image: pulled from the registry when available, otherwise built (see deploy.sh).
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        DISABLE_PWA: ${DISABLE_PWA:-}
+    image: ${IMAGE_REGISTRY:-ghcr.io/ucdavis}/rationsmart-pwa:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    networks:
+      - edge
+    environment:
+      BACKEND_HOST: ${BACKEND_HOST:-api}
+      BACKEND_PORT: ${BACKEND_PORT:-8000}
+      BACKEND_PROTOCOL: ${BACKEND_PROTOCOL:-http}
+      BACKEND_ENV: ${BACKEND_ENV:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:3000/manifest.json"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+
+networks:
+  edge:
+    name: rationsmart_edge
+    external: true
