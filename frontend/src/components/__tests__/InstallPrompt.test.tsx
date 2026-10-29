@@ -68,6 +68,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe("InstallPrompt", () => {
@@ -85,6 +86,7 @@ describe("InstallPrompt", () => {
 
   it("renders the 'Install RationSmart' banner after the splash delay when not standalone", async () => {
     render(<InstallPrompt />);
+    dispatchBeforeInstallPrompt();
 
     expect(screen.queryByText("Install RationSmart")).toBeNull();
 
@@ -96,15 +98,14 @@ describe("InstallPrompt", () => {
 
   it("captures beforeinstallprompt and calls .prompt() on the captured event when Install is clicked", async () => {
     render(<InstallPrompt />);
-    await waitFor(
-      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
-      { timeout: 3000 }
-    );
-
     const evt = dispatchBeforeInstallPrompt({
       prompt: vi.fn().mockResolvedValue(undefined),
       userChoice: Promise.resolve({ outcome: "accepted" as const }),
     });
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
+      { timeout: 3000 }
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Install" }));
@@ -137,15 +138,14 @@ describe("InstallPrompt", () => {
   it("clears localStorage['rationsmart-storage'] on accepted install outcome (landmine 10.12)", async () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { user: { id: "stale" } } }));
     render(<InstallPrompt />);
-    await waitFor(
-      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
-      { timeout: 3000 }
-    );
-
     const evt = dispatchBeforeInstallPrompt({
       prompt: vi.fn().mockResolvedValue(undefined),
       userChoice: Promise.resolve({ outcome: "accepted" as const }),
     });
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
+      { timeout: 3000 }
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Install" }));
@@ -159,15 +159,14 @@ describe("InstallPrompt", () => {
   it("does NOT clear localStorage when the install prompt is dismissed", async () => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { user: { id: "kept" } } }));
     render(<InstallPrompt />);
-    await waitFor(
-      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
-      { timeout: 3000 }
-    );
-
     const evt = dispatchBeforeInstallPrompt({
       prompt: vi.fn().mockResolvedValue(undefined),
       userChoice: Promise.resolve({ outcome: "dismissed" as const }),
     });
+    await waitFor(
+      () => expect(screen.getByRole("button", { name: "Install" })).toBeInTheDocument(),
+      { timeout: 3000 }
+    );
 
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: "Install" }));
@@ -195,6 +194,7 @@ describe("InstallPrompt", () => {
   it("dismiss (X) button hides the banner without touching localStorage", async () => {
     window.localStorage.setItem(STORAGE_KEY, "keep-me");
     render(<InstallPrompt />);
+    dispatchBeforeInstallPrompt();
     await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
       timeout: 3000,
     });
@@ -219,6 +219,7 @@ describe("InstallPrompt", () => {
 
   it("hides the banner and remembers the install when 'appinstalled' fires", async () => {
     render(<InstallPrompt />);
+    dispatchBeforeInstallPrompt();
     await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
       timeout: 3000,
     });
@@ -242,11 +243,32 @@ describe("InstallPrompt", () => {
     expect(window.localStorage.getItem("rationsmart-installed")).toBeNull();
   });
 
+  it("does not render the banner off iOS when beforeinstallprompt never fires (already installed)", async () => {
+    vi.useFakeTimers();
+    render(<InstallPrompt />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(screen.queryByText("Install RationSmart")).toBeNull();
+  });
+
+  it("renders the banner on iOS without beforeinstallprompt (manual Share → Add flow)", async () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (iPhone)");
+    render(<InstallPrompt />);
+
+    await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+      timeout: 3000,
+    });
+  });
+
   // UI-label translation (src/lib/i18n-ui.ts) — banner text + Install
   // button translate when preferred_language is 'hi'.
   it("translates the banner title, subtitle, and Install button when preferred_language is 'hi'", async () => {
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     render(<InstallPrompt />);
+    dispatchBeforeInstallPrompt();
 
     await waitFor(() => expect(screen.getByText("RationSmart इंस्टॉल करें")).toBeInTheDocument(), {
       timeout: 3000,
@@ -257,6 +279,7 @@ describe("InstallPrompt", () => {
   });
 
   it("translates the Got it steps sheet when preferred_language is 'hi'", async () => {
+    vi.spyOn(navigator, "userAgent", "get").mockReturnValue("Mozilla/5.0 (iPhone)");
     useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
     render(<InstallPrompt />);
     await waitFor(
