@@ -23,7 +23,6 @@ docs/dev_docs/azure_migration/v1_Master_Data_Export_Plan.md.
 import argparse
 import hashlib
 import os
-import pathlib
 import re
 import subprocess
 import sys
@@ -38,9 +37,9 @@ from sqlalchemy.engine import Connection, Engine
 from sqlalchemy.exc import DBAPIError
 
 from app.config import settings
-from services.db_backup import LOCK_WAIT_TIMEOUT, LOG_NAME, _pg_conn_args, _pg_env, append_log
+from services.db_backup import LOCK_WAIT_TIMEOUT, _pg_conn_args, _pg_env, append_log
 
-_BACKEND = pathlib.Path(__file__).resolve().parents[1]
+_BACKEND = Path(__file__).resolve().parents[1]
 
 # Copied, in FK order (pg_dump orders the data itself; this order is for people).
 INCLUDE: Tuple[str, ...] = (
@@ -165,15 +164,21 @@ def code_head() -> str:
 
 # ── Database + pg_dump ────────────────────────────────────────────────────────
 
-def read_source(conn: Connection) -> Tuple[str, str, Dict[str, int]]:
-    """(snapshot id, revision, row counts) inside the caller's REPEATABLE READ
-    transaction; the snapshot is exported first so pg_dump sees the same data."""
+def read_snapshot(conn: Connection) -> Tuple[str, str]:
+    """(snapshot id, revision) inside the caller's REPEATABLE READ transaction;
+    the snapshot is exported first so pg_dump sees the same data."""
     snapshot = conn.execute(text("SELECT pg_export_snapshot()")).scalar_one()
     revision = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+    return snapshot, revision
+
+
+def read_counts(conn: Connection) -> Dict[str, int]:
+    """Classify every table, then count the included ones (same transaction).
+    Runs after the revision check: a database behind the code may lack a new
+    table, and "deploy first" is the useful message then."""
     tables = {r[0] for r in conn.execute(text("SELECT tablename FROM pg_tables WHERE schemaname = 'public'"))}
     check_tables(tables)
-    counts = {t: conn.execute(text(f'SELECT count(*) FROM public."{t}"')).scalar_one() for t in INCLUDE}
-    return snapshot, revision, counts
+    return {t: conn.execute(text(f'SELECT count(*) FROM public."{t}"')).scalar_one() for t in INCLUDE}
 
 
 def run_pg_dump(snapshot: str) -> bytes:
@@ -251,12 +256,13 @@ def run(args, engine: Engine, dump=run_pg_dump, now=None) -> int:
     # snapshot lives as long as it does, so pg_dump runs inside the block.
     with engine.connect().execution_options(isolation_level="REPEATABLE READ") as conn:
         conn.execute(text("SET TRANSACTION READ ONLY"))
-        snapshot, revision, counts = read_source(conn)
+        snapshot, revision = read_snapshot(conn)
         if revision != head:
             raise ExportAbort(
                 f"Database is at revision {revision}, the code at {head}. "
                 "Deploy so both match, then export."
             )
+        counts = read_counts(conn)
         body = dump(snapshot)
 
     sql = preamble(revision, args.commit, stamp).encode() + body + postamble().encode()
