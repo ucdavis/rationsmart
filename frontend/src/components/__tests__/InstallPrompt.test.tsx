@@ -61,6 +61,7 @@ function dispatchBeforeInstallPrompt(
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
   setStandalone(false);
   useStore.setState({ user: null });
 });
@@ -202,6 +203,43 @@ describe("InstallPrompt", () => {
 
     expect(screen.queryByText("Install RationSmart")).toBeNull();
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe("keep-me");
+  });
+
+  it("does not render the banner in a browser tab once this browser has installed the app", async () => {
+    window.localStorage.setItem("rationsmart-installed", "1");
+    vi.useFakeTimers();
+    render(<InstallPrompt />);
+
+    await act(async () => {
+      vi.advanceTimersByTime(2000);
+    });
+
+    expect(screen.queryByText("Install RationSmart")).toBeNull();
+  });
+
+  it("hides the banner and remembers the install when 'appinstalled' fires", async () => {
+    render(<InstallPrompt />);
+    await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+      timeout: 3000,
+    });
+
+    await act(async () => {
+      window.dispatchEvent(new Event("appinstalled"));
+    });
+
+    expect(screen.queryByText("Install RationSmart")).toBeNull();
+    expect(window.localStorage.getItem("rationsmart-installed")).toBe("1");
+  });
+
+  it("shows the banner again if beforeinstallprompt fires after an uninstall (clears the stale flag)", async () => {
+    window.localStorage.setItem("rationsmart-installed", "1");
+    render(<InstallPrompt />);
+    dispatchBeforeInstallPrompt();
+
+    await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+      timeout: 3000,
+    });
+    expect(window.localStorage.getItem("rationsmart-installed")).toBeNull();
   });
 
   // UI-label translation (src/lib/i18n-ui.ts) — banner text + Install
