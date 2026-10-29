@@ -92,13 +92,22 @@ export default function InstallPrompt() {
 
     // Chromium only fires this when the app is NOT installed, so it also
     // overrides a stale installed flag left behind by an uninstall.
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
+    const capture = (e: BeforeInstallPromptEvent) => {
+      setInstallEvent(e);
       writeInstalledFlag(false);
       setInstalled(false);
     };
+    const handler = (e: Event) => {
+      e.preventDefault();
+      capture(e as BeforeInstallPromptEvent);
+    };
     window.addEventListener("beforeinstallprompt", handler);
+
+    // The event usually fires before hydration; the beforeInteractive
+    // script in layout.tsx stashes it for us.
+    const early = (window as Window & { __rsInstallEvent?: BeforeInstallPromptEvent })
+      .__rsInstallEvent;
+    if (early) capture(early);
 
     // Android only removes the home-screen shortcut when the user "uninstalls"
     // the PWA — it does NOT clear localStorage. So stale auth data from a
