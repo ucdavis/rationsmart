@@ -1,0 +1,130 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useStore } from "@/lib/store";
+import { SNACKBAR_EXIT_MS, SNACKBAR_REMOVE_MS, SNACKBAR_VISIBLE_MS } from "@/lib/ui-timings";
+import { COLORS } from "@/lib/colors";
+import { useT } from "@/lib/i18n-ui";
+
+export default function Snackbar() {
+  const t = useT();
+  const snackbar = useStore((s) => s.snackbar);
+  const hideSnackbar = useStore((s) => s.hideSnackbar);
+  const [exiting, setExiting] = useState(false);
+
+  useEffect(() => {
+    if (!snackbar?.visible) return;
+    setExiting(false);
+
+    const dismissTimer = setTimeout(() => {
+      setExiting(true);
+    }, SNACKBAR_VISIBLE_MS);
+
+    const removeTimer = setTimeout(() => {
+      hideSnackbar();
+      setExiting(false);
+    }, SNACKBAR_REMOVE_MS);
+
+    return () => {
+      clearTimeout(dismissTimer);
+      clearTimeout(removeTimer);
+    };
+  }, [snackbar?.visible, hideSnackbar]);
+
+  if (!snackbar || !snackbar.visible) return null;
+
+  // Matches Android showCustomSnackBar (Ext.kt):
+  // SUCCESS = dark_aquamarine_green #064E3B / white text
+  // ERROR   = mustard #FFDB58 / raisin_black #231F20 text
+  // INFO    = azure #007BFF / white text
+  const styleMap = {
+    success: { bg: COLORS.darkAquamarineGreen, text: COLORS.white },
+    error: { bg: COLORS.mustard, text: COLORS.raisinBlack },
+    info: { bg: COLORS.azure, text: COLORS.white },
+  };
+  const s = styleMap[snackbar.type];
+
+  const iconMap = {
+    success: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M5 12l5 5L20 7"
+          stroke={s.text}
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+    error: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke={s.text} strokeWidth="2" />
+        <path d="M12 7v6M12 16v1" stroke={s.text} strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    ),
+    info: (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" stroke={s.text} strokeWidth="2" />
+        <path d="M12 8v6M12 16v1" stroke={s.text} strokeWidth="2.2" strokeLinecap="round" />
+      </svg>
+    ),
+  };
+
+  return (
+    <div
+      // Announced by screen readers without moving focus; errors interrupt.
+      role={snackbar.type === "error" ? "alert" : "status"}
+      aria-live={snackbar.type === "error" ? "assertive" : "polite"}
+      className={exiting ? "snackbar-exit" : "snackbar-enter"}
+      style={{
+        // Android: gravity = TOP | CENTER_HORIZONTAL (snackbar shows at top)
+        position: "fixed",
+        top: "calc(env(safe-area-inset-top, 0px) + 12px)",
+        left: 12,
+        right: 12,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        padding: "12px 12px 12px 14px",
+        borderRadius: 16,
+        backgroundColor: s.bg,
+        color: s.text,
+        fontWeight: 700,
+        fontSize: 16,
+        boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
+        maxWidth: 420,
+        margin: "0 auto",
+      }}
+    >
+      <div style={{ flexShrink: 0 }}>{iconMap[snackbar.type]}</div>
+      {/* Translated at render time too, so messages raised outside React
+          (store.ts session expiry) are localised. t() returns its input on a
+          dictionary miss, so already-translated and backend text pass through. */}
+      <span style={{ flex: 1 }}>{t(snackbar.message)}</span>
+      {/* Close button — white circle with the snackbar's bg color as the X tint (matches Android cv_close) */}
+      <button
+        onClick={() => {
+          setExiting(true);
+          setTimeout(() => hideSnackbar(), SNACKBAR_EXIT_MS);
+        }}
+        style={{
+          background: COLORS.white,
+          border: "none",
+          cursor: "pointer",
+          padding: 6,
+          borderRadius: 999,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          flexShrink: 0,
+        }}
+        aria-label={t("Dismiss")}
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M2 2L12 12M12 2L2 12" stroke={s.bg} strokeWidth="2" strokeLinecap="round" />
+        </svg>
+      </button>
+    </div>
+  );
+}

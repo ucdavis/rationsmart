@@ -1,0 +1,204 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n-ui";
+import Toolbar from "@/components/Toolbar";
+import {
+  IcFeedManagement,
+  IcUserManagement,
+  IcFeedbackManagement,
+  IcReportNav,
+  IcBulkUpload,
+} from "@/components/Icons";
+import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
+
+interface AdminCard {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+}
+
+// Titles use \n to render on 2 lines (matches Android string resources).
+// English source strings stay as the identity/lookup key (see i18n-ui.ts)
+// — card.title is passed through t() at render time, not translated here.
+const adminCards: AdminCard[] = [
+  {
+    title: "User\nManagement",
+    href: "/admin/users",
+    icon: <IcUserManagement size={28} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    title: "Feed\nManagement",
+    href: "/admin/feeds",
+    icon: <IcFeedManagement size={28} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    title: "Feedback\nManagement",
+    href: "/admin/feedback",
+    icon: <IcFeedbackManagement size={28} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    title: "Bulk Upload /\nDownload / Delete",
+    href: "/admin/bulk-upload",
+    icon: <IcBulkUpload size={28} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    title: "Feed\nReports",
+    href: "/admin/reports",
+    icon: <IcReportNav size={28} color={COLORS.darkAquamarineGreen} />,
+  },
+  // Country/Language (new) — enable/disable countries + languages, associate
+  // languages per country, and set local (translated) feed names. Replaces
+  // the Language Catalog tile on the landing grid (2026-07-20). Its Feed Names
+  // tab (?tab=feeds) holds the translation workbook, per-feed names and
+  // coverage, so there's no separate Translations tile (removed 2026-10-17).
+  {
+    title: "Country/\nLanguage",
+    href: "/admin/country-language",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z"
+          stroke={COLORS.darkAquamarineGreen}
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+        <circle cx="12" cy="9" r="2.5" stroke={COLORS.darkAquamarineGreen} strokeWidth="1.6" />
+      </svg>
+    ),
+  },
+  // CLIMDES Feed Library Sync (new) — configure the external feed-catalogue
+  // connection, toggle the weekly auto-import, trigger a manual sync, and
+  // audit past runs. See the CLIMDES admin UI design doc.
+  {
+    title: "Feed Library\nSync",
+    href: "/admin/feed-sync",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M4 4v5h5M20 20v-5h-5"
+          stroke={COLORS.darkAquamarineGreen}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <path
+          d="M4.5 15a8 8 0 0014.2 3.4M19.5 9A8 8 0 005.3 5.6"
+          stroke={COLORS.darkAquamarineGreen}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
+];
+
+export default function AdminPage() {
+  const router = useRouter();
+  const user = useStore((s) => s.user);
+  const t = useT();
+
+  useEffect(() => {
+    if (user && !user.is_admin) {
+      router.replace("/cattle-info");
+    }
+  }, [user, router]);
+
+  if (!user?.is_admin) {
+    return (
+      <div
+        className="flex flex-col items-center justify-center min-h-screen px-6 text-center"
+        style={{ backgroundColor: COLORS.white }}
+      >
+        <Toolbar type="back" title={t("Admin")} onBack={() => router.back()} />
+        <div
+          className="flex items-center justify-center rounded-full mb-5 mt-10"
+          style={{ width: 80, height: 80, backgroundColor: "rgba(228,74,74,0.2)" }}
+        >
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="15" stroke={COLORS.carminePink} strokeWidth="2" />
+            <path
+              d="M18 12v8M18 23v1"
+              stroke={COLORS.carminePink}
+              strokeWidth="2.2"
+              strokeLinecap="round"
+            />
+          </svg>
+        </div>
+        <p className="text-xl font-bold mb-2" style={{ color: COLORS.carminePink }}>
+          {t("Access Denied")}
+        </p>
+        <p className="text-sm" style={{ color: COLORS.darkSilver }}>
+          {t("You do not have admin permissions to view this page.")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col min-h-screen" style={{ background: ADMIN_BACKGROUND }}>
+      <Toolbar type="back" title={t("Admin")} onBack={() => router.back()} />
+
+      {/* WELCOME / name greeting */}
+      <div className="px-3 mt-5">
+        <p className="text-xs" style={{ color: COLORS.deepForest, letterSpacing: "0.05em" }}>
+          {t("WELCOME")}
+        </p>
+        <p
+          className="font-bold"
+          style={{ color: COLORS.darkAquamarineGreen, fontSize: 20, marginTop: 2 }}
+        >
+          {user.name}
+        </p>
+      </div>
+
+      <div className="px-3 mt-5 pb-8">
+        {/* Grid of admin cards — 2 per row */}
+        <div className="grid grid-cols-2 gap-3">
+          {adminCards.map((card) => (
+            <button
+              key={card.title}
+              onClick={() => router.push(card.href)}
+              className="flex flex-col items-start bg-white py-8 px-5"
+              style={{
+                borderRadius: 30,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.07)",
+                border: "none",
+                cursor: "pointer",
+                transition: "transform 0.12s",
+              }}
+              onMouseDown={(e) => (e.currentTarget.style.transform = "scale(0.96)")}
+              onMouseUp={(e) => (e.currentTarget.style.transform = "scale(1)")}
+              onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            >
+              <div
+                className="flex items-center justify-center mb-5"
+                style={{
+                  width: 48,
+                  height: 48,
+                  backgroundColor: COLORS.mintWhisper,
+                  borderRadius: 16,
+                }}
+              >
+                {card.icon}
+              </div>
+              <p
+                className="text-base font-bold text-left"
+                style={{
+                  color: COLORS.darkAquamarineGreen,
+                  whiteSpace: "pre-line",
+                  lineHeight: 1.25,
+                }}
+              >
+                {t(card.title)}
+              </p>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}

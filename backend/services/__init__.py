@@ -6,7 +6,7 @@ from services.email_service import email_service
 from services.storage_service import storage_service, AWSStorageService, StorageService
 from services.diet_service import (
     run_diet_recommendation, run_diet_evaluation,
-    get_feed_details, save_feed_analytics,
+    get_feed_details,
     get_unique_feed_types, get_unique_feed_categories, get_feed_names,
     check_insert_or_update, insert_custom_feed, update_custom_feed,
 )

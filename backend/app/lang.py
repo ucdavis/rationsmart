@@ -3,7 +3,8 @@ Language resolution (i18n V2 plan, Phase 2).
 
 Provides:
   get_active_languages(db)  — DB-backed, Redis-cached set of active codes.
-  resolve_language(...)     — pure priority resolver: ?lang= > user pref > 'en'.
+  resolve_language(...)     — pure priority resolver: ?lang= > user pref > 'en',
+                              each candidate tried as a BCP 47 fallback chain.
   invalidate_lang_cache()   — called by Phase 5 admin endpoints on language changes.
 
 Invariants (V2 §2):
@@ -23,6 +24,7 @@ from app.feed_cache import (
     invalidate_lang_cache,  # re-exported for callers that import from here
     set_lang_codes_in_cache,
 )
+from app.language_tags import match_language_code
 
 logger = logging.getLogger(__name__)
 
@@ -62,10 +64,13 @@ def resolve_language(
     """Resolve the effective language for a request (pure — no I/O).
 
     Priority (V2 §2.1): ?lang= query param > user.preferred_language > 'en'.
-    A candidate is accepted only if it is in `active`. 'en' is the hard fallback
-    (I3) and is returned even if it is absent from `active`.
+    Each candidate is matched case-insensitively ('HI' -> 'hi'), most specific
+    first ('pt-BR' -> 'pt', never across scripts); a code is accepted only if
+    it is in `active`. 'en' is the hard fallback (I3) and is returned even if
+    it is absent from `active`. No langcodes call: ?lang= is public input.
     """
     for candidate in (query_param, user_preferred):
-        if candidate and candidate in active:
-            return candidate
+        found = match_language_code(candidate, active, fallback=True)
+        if found:
+            return found
     return "en"

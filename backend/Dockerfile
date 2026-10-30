@@ -1,4 +1,9 @@
-FROM python:3.12-slim
+# Base pinned by digest: the server keeps no tagged copy of the base, so an
+# unpinned tag is re-resolved on every build and each new Docker Hub release
+# rebuilt every layer (full pip install, ~10 min) even with no code change.
+# Updates come as a monthly Dependabot "docker" PR (.github/dependabot.yml).
+# Latest digest: docker buildx imagetools inspect python:3.12-slim
+FROM python:3.12-slim@sha256:6b25cbe6577518889d553cdd5a5da97d259348d8f6e45b527dd731caaba27a07
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

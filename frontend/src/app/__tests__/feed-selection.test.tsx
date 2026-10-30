@@ -1,0 +1,1010 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+
+const {
+  push,
+  back,
+  getFeedTypes,
+  getFeedCategories,
+  getFeedSubCategories,
+  fetchFeedTaxonomyLabels,
+  searchFeeds,
+  recommendDiet,
+  evaluateDiet,
+  insertCustomFeed,
+  updateCustomFeed,
+  checkInsertOrUpdate,
+  getDietThresholds,
+  getCountries,
+} = vi.hoisted(() => ({
+  push: vi.fn(),
+  back: vi.fn(),
+  getFeedTypes: vi.fn(),
+  getFeedCategories: vi.fn(),
+  getFeedSubCategories: vi.fn(),
+  fetchFeedTaxonomyLabels: vi.fn(),
+  searchFeeds: vi.fn(),
+  recommendDiet: vi.fn(),
+  evaluateDiet: vi.fn(),
+  insertCustomFeed: vi.fn(),
+  updateCustomFeed: vi.fn(),
+  checkInsertOrUpdate: vi.fn(),
+  getDietThresholds: vi.fn(),
+  getCountries: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, back, replace: vi.fn() }),
+}));
+
+vi.mock("@/lib/api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  return {
+    ...actual,
+    getFeedTypes,
+    getFeedCategories,
+    getFeedSubCategories,
+    fetchFeedTaxonomyLabels,
+    searchFeeds,
+    recommendDiet,
+    evaluateDiet,
+    insertCustomFeed,
+    updateCustomFeed,
+    checkInsertOrUpdate,
+    getDietThresholds,
+    getCountries,
+  };
+});
+
+import FeedSelectionPage from "@/app/(main)/feed-selection/page";
+import { useStore, type User } from "@/lib/store";
+import { toCattleInfoPayload, type CattleInfo, type FeedItem } from "@/lib/api";
+
+// ─── Fixtures ──────────────────────────────────────────────────────────────
+
+let feedIdCounter = 0;
+function mkFeed(overrides: Partial<FeedItem> = {}): FeedItem {
+  return {
+    id: `test_feed_${++feedIdCounter}`,
+    feed_type_id: null,
+    feed_type_name: "",
+    category_id: null,
+    category_name: "",
+    sub_category_id: null,
+    sub_category_name: "",
+    feed_uuid: null,
+    price_per_kg: null,
+    quantity_kg: null,
+    inclusion_limits_enabled: false,
+    min_kg_per_day: null,
+    max_kg_per_day: null,
+    ...overrides,
+  };
+}
+
+// A row that is fully valid (identity + price[+qty]) AND is a Forage row —
+// satisfies both isValid() and the Y3 "at least one Forage" gate so tests
+// can drive all the way to generateReport() without extra plumbing.
+function mkValidForageRow(overrides: Partial<FeedItem> = {}): FeedItem {
+  return mkFeed({
+    feed_type_name: "Forage",
+    category_name: "Green Fodder",
+    sub_category_name: "Napier Grass",
+    feed_uuid: "uuid-forage-1",
+    price_per_kg: 10,
+    ...overrides,
+  });
+}
+
+function mkCattleInfo(overrides: Partial<CattleInfo> = {}): CattleInfo {
+  return {
+    simulation_name: "Sim-1",
+    country: "India",
+    country_id: "1",
+    breed: "Local",
+    body_weight: 450,
+    body_weight_gain: 0.5,
+    body_condition_score: 3,
+    parity: 2,
+    days_in_milk: 100,
+    days_of_pregnancy: 0,
+    milk_production: 10,
+    milk_protein_percent: 3.2,
+    milk_fat_percent: 4,
+    average_temperature: 28,
+    grazing: false,
+    distance: 0,
+    topography: "Flat",
+    milk_price: null,
+    animal_category: "Lactating Cow",
+    simulation_language: null,
+    ...overrides,
+  };
+}
+
+function seedUser(overrides: Partial<User> = {}): User {
+  return {
+    id: "u-1",
+    name: "Aiyappa",
+    email: "aiyappa@dg.org",
+    country: "India",
+    country_id: "1",
+    country_code: "IN",
+    currency: "INR",
+    pin: "123456",
+    is_admin: false,
+    token: "jwt",
+    registered_language: "en",
+    preferred_language: "en",
+    ...overrides,
+  };
+}
+
+// A trimmed but faithful slice of GET /v1/animal/diet-thresholds for a
+// Lactating Cow: `max` equals the animal's own default (tighten-only), the
+// floor sits above zero, and `ndf_for_min` is the one `direction: "min"` key.
+const LACTATING_THRESHOLDS = [
+  {
+    key: "ash_max",
+    default: 15,
+    min: 1,
+    max: 15,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "hard",
+  },
+  {
+    key: "ee_max",
+    default: 7,
+    min: 1,
+    max: 7,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "soft",
+  },
+  {
+    key: "ndf_max",
+    default: 60,
+    min: 20,
+    max: 60,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "soft",
+  },
+  {
+    key: "starch_max",
+    default: 26,
+    min: 1,
+    max: 26,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "soft",
+  },
+  {
+    key: "conc_max",
+    default: 80,
+    min: 10,
+    max: 80,
+    unit: "pct_dm",
+    direction: "max",
+    enforcement: "hard",
+  },
+  {
+    key: "ndf_for_min",
+    default: 20,
+    min: 20,
+    max: 60,
+    unit: "pct_dm",
+    direction: "min",
+    enforcement: "hard",
+  },
+  {
+    key: "nel_balance_max",
+    default: 4,
+    min: 0.5,
+    max: 4,
+    unit: "mcal_day",
+    direction: "max",
+    enforcement: "hard_after_switch",
+  },
+  {
+    key: "mp_balance_max",
+    default: 1,
+    min: 0.1,
+    max: 1,
+    unit: "kg_day",
+    direction: "max",
+    enforcement: "hard_after_switch",
+  },
+];
+
+beforeEach(() => {
+  push.mockClear();
+  back.mockClear();
+
+  getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
+  getFeedCategories.mockReset().mockResolvedValue({ data: [] });
+  getFeedSubCategories
+    .mockReset()
+    .mockResolvedValue({ data: { standard_feeds: [], custom_feeds: [] } });
+  fetchFeedTaxonomyLabels.mockReset().mockResolvedValue({ types: {}, categories: {} });
+  searchFeeds.mockReset().mockResolvedValue({ data: [] });
+  recommendDiet.mockReset();
+  evaluateDiet.mockReset();
+  insertCustomFeed.mockReset();
+  updateCustomFeed.mockReset();
+  checkInsertOrUpdate.mockReset();
+  // Custom Diet Limits ranges come from the backend per physiological state
+  // (GET /v1/animal/diet-thresholds) — the dialog is disabled until they
+  // arrive, so every render needs this resolved.
+  getDietThresholds.mockReset().mockResolvedValue({
+    data: { physiological_state: "Lactating Cow", thresholds: LACTATING_THRESHOLDS },
+  });
+
+  useStore.setState({
+    user: seedUser(),
+    cattleInfo: mkCattleInfo(),
+    feedSelectionType: "recommendation",
+    feedSelections: [],
+    reportData: null,
+    dietLimits: {},
+    snackbar: null,
+  });
+});
+
+// Renders and waits for every row's cascade fetch to settle (Generate
+// button text flips from "Loading feed data…" to its steady-state label).
+async function renderReady() {
+  render(<FeedSelectionPage />);
+  await waitFor(() => {
+    expect(screen.queryByText(/Loading feed data/)).not.toBeInTheDocument();
+  });
+}
+
+function feedHeaders() {
+  return screen.getAllByText(/^FEED \d+$/);
+}
+
+// ─── 1. Row count / 3-row minimum pad (CLAUDE.md §11) ───────────────────────
+
+describe("feed-selection — row count / padding", () => {
+  it("pads up to 3 rows when the store has 0 stored selections", async () => {
+    useStore.setState({ feedSelections: [] });
+    await renderReady();
+    expect(feedHeaders().map((n) => n.textContent)).toEqual(["FEED 1", "FEED 2", "FEED 3"]);
+  });
+
+  it("shows exactly 5 rows for a restored simulation with 5 stored items (no padding down)", async () => {
+    const items = Array.from({ length: 5 }, (_, i) =>
+      mkValidForageRow({ feed_uuid: `uuid-${i}`, sub_category_name: `Feed ${i}` })
+    );
+    useStore.setState({ feedSelections: items });
+    await renderReady();
+    expect(feedHeaders()).toHaveLength(5);
+  });
+
+  it("pads a single stored item up to 3 rows total", async () => {
+    useStore.setState({ feedSelections: [mkValidForageRow()] });
+    await renderReady();
+    expect(feedHeaders()).toHaveLength(3);
+  });
+});
+
+// ─── 2. First-row Feed Type lock ─────────────────────────────────────────────
+//
+// The FEED 1 type lock was removed in commit 614bcf9 ("remove FEED 1 type
+// lock"), replaced by Forage-first dropdown ordering + the separate "Forage
+// required" gate (showNoForageDialog) that blocks Generate. CLAUDE.md §5
+// documents this. `feedTypeLocked` still exists as a FeedRow prop (default
+// false) but the page never passes it. These tests catch a regression if
+// locking is ever reintroduced.
+describe("feed-selection — first row Feed Type is not locked", () => {
+  it("row 1's Feed Type radios are NOT disabled in recommendation mode", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const card1 = screen.getByText("FEED 1").closest('[id^="feed-card-"]') as HTMLElement;
+    const forageBtn = within(card1).getByRole("button", { name: "Forage" });
+    expect(forageBtn).not.toBeDisabled();
+  });
+
+  it("row 1's Feed Type radios are NOT disabled in evaluation mode either", async () => {
+    useStore.setState({ feedSelectionType: "evaluation", feedSelections: [] });
+    await renderReady();
+    const card1 = screen.getByText("FEED 1").closest('[id^="feed-card-"]') as HTMLElement;
+    const forageBtn = within(card1).getByRole("button", { name: "Forage" });
+    expect(forageBtn).not.toBeDisabled();
+  });
+});
+
+// ─── 3. Custom Diet Limits disabled in evaluation mode ──────────────────────
+
+describe("feed-selection — Custom Diet Limits gating", () => {
+  it("is enabled in recommendation mode, disabled in evaluation mode", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Diet Evaluation" }));
+    await waitFor(() => expect(btn).toBeDisabled());
+  });
+
+  it("asks the backend for THIS animal's ranges, not a hardcoded table", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [],
+      cattleInfo: mkCattleInfo({ animal_category: "Dry Cow" }),
+    });
+    await renderReady();
+    await waitFor(() => expect(getDietThresholds).toHaveBeenCalledWith("Dry Cow"));
+  });
+
+  it("falls back to the Constraints-sheet ranges when the endpoint can't be fetched", async () => {
+    getDietThresholds.mockReset().mockRejectedValue(new Error("offline"));
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+    expect(await screen.findByText("Range 8 – 15 % (Default 15)")).toBeInTheDocument();
+    expect(screen.getByText("Range 0.1 – 1 kg/day (Default 1)")).toBeInTheDocument();
+  });
+
+  it("is not offered at all for a Baby Calf/Heifer, which has no editable limits", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [],
+      cattleInfo: mkCattleInfo({ animal_category: "Baby Calf/Heifer" }),
+    });
+    await renderReady();
+    expect(screen.queryByRole("button", { name: "Custom Diet Limits" })).not.toBeInTheDocument();
+    expect(getDietThresholds).not.toHaveBeenCalled();
+  });
+
+  it("renders every limit the endpoint returns, with its unit and per-state range", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+
+    // A percentage key and both absolute-unit keys, so a future blanket
+    // "divide everything by 100" can't slip through unnoticed.
+    expect(await screen.findByText("Ash Max (%)")).toBeInTheDocument();
+    expect(screen.getByText("Energy Surplus Max (Mcal/day)")).toBeInTheDocument();
+    expect(screen.getByText("Protein Surplus Max (kg/day)")).toBeInTheDocument();
+    // Range and default come from the Constraints sheet (lib/diet-limit-ranges),
+    // overriding the endpoint's 1 – 15; the default is stated in brackets.
+    expect(screen.getByText("Range 8 – 15 % (Default 15)")).toBeInTheDocument();
+    expect(screen.getByText("Range 30 – 100 % (Default 60)")).toBeInTheDocument();
+    expect(screen.getByText("Default value will be applied if left blank")).toBeInTheDocument();
+    // All eight are limits — the hard/soft TARGET/LIMIT badges were removed.
+    expect(screen.queryByText("Target")).not.toBeInTheDocument();
+    expect(screen.queryByText("Limit")).not.toBeInTheDocument();
+  });
+
+  it("orders the limits as specified, not as the endpoint returned them", async () => {
+    // LACTATING_THRESHOLDS deliberately arrives in the engine's own order
+    // (ash, ee, ndf, starch, conc, ndf_for_min, nel, mp) — nothing here
+    // passes unless the client re-sorts it.
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    const btn = screen.getByRole("button", { name: "Custom Diet Limits" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+    await screen.findByText("Ash Max (%)");
+
+    const expected = [
+      "Forage NDF Min (%)",
+      "NDF Max — Fiber (%)",
+      "Starch Max (%)",
+      "Concentrate Max (%)",
+      "EE Max — Fat (%)",
+      "Ash Max (%)",
+      "Energy Surplus Max (Mcal/day)",
+      "Protein Surplus Max (kg/day)",
+    ];
+    const rendered = expected
+      .map((label) => screen.getByText(label))
+      .map((node) => ({ node, label: node.textContent }));
+    // Document order of the label nodes must match `expected` exactly.
+    const inDocOrder = [...rendered].sort((a, b) =>
+      a.node.compareDocumentPosition(b.node) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1
+    );
+    expect(inDocOrder.map((r) => r.label)).toEqual(expected);
+  });
+
+  it("blocks Generate when a saved limit is out of range for the current animal", async () => {
+    // starch_max 26 is legal for a Lactating Cow but above a Dry Cow's 18.
+    getDietThresholds.mockReset().mockResolvedValue({
+      data: {
+        physiological_state: "Dry Cow",
+        thresholds: LACTATING_THRESHOLDS.map((sp) =>
+          sp.key === "starch_max" ? { ...sp, default: 18, max: 18 } : sp
+        ),
+      },
+    });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      cattleInfo: mkCattleInfo({ animal_category: "Dry Cow" }),
+      feedSelections: [mkValidForageRow()],
+      dietLimits: { starch_max: 26 },
+    });
+    await renderReady();
+    await waitFor(() => expect(getDietThresholds).toHaveBeenCalled());
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(useStore.getState().snackbar?.message).toContain("out of range"));
+    expect(recommendDiet).not.toHaveBeenCalled();
+  });
+});
+
+// ─── 3a. Per-feed inclusion limits — a typed 0 is not "no limit" ───────────
+// min_kg_asfed / max_kg_asfed are `exclusiveMinimum: 0` in the v1 schema, so
+// a 0 comes back as a 422. Omitting the key is how you say "no bound", which
+// means a 0 can only be something the user actively typed. Flag it and block
+// Generate — never coerce it to an omitted key, because silently discarding
+// what the user asked for is the defect, not the fix.
+describe("feed-selection — inclusion limits reject a typed 0", () => {
+  it("blocks Generate and explains what to do instead", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow({ inclusion_limits_enabled: true, max_kg_per_day: 0 })],
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe(
+        "Enter a value greater than 0, or leave the field empty for no limit. To exclude a feed, remove it from the selection."
+      )
+    );
+    expect(recommendDiet).not.toHaveBeenCalled();
+    // The 0 stays on screen — it is not rewritten or dropped behind the
+    // user's back.
+    expect(useStore.getState().feedSelections[0].max_kg_per_day).toBe(0);
+  });
+
+  it("blocks Generate when the minimum is above the maximum (audit B-14)", async () => {
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [
+        mkValidForageRow({ inclusion_limits_enabled: true, min_kg_per_day: 5, max_kg_per_day: 2 }),
+      ],
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe("Minimum can't be more than the maximum.")
+    );
+    expect(recommendDiet).not.toHaveBeenCalled();
+  });
+
+  it("still sends a legitimate positive bound", async () => {
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-3" } });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow({ inclusion_limits_enabled: true, max_kg_per_day: 2.5 })],
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+    expect(recommendDiet.mock.calls[0][0].feed_selection[0]).toEqual({
+      feed_id: "uuid-forage-1",
+      price_per_kg: 10,
+      max_kg_asfed: 2.5,
+    });
+  });
+});
+
+// ─── 3b. Search result keeps the target card highlighted ────────────────────
+
+describe("feed-selection — search result highlights the filled card", () => {
+  it("leaves the landed card marked Selected (active ring) after picking a result", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    searchFeeds.mockReset().mockResolvedValue({
+      data: [
+        {
+          feed_uuid: "sugar-1",
+          feed_name: "Sugarcane tops, Wet season",
+          feed_type: "Forage",
+          feed_category: "By-Product/Other-Forage",
+          display_name: "Sugarcane tops, Wet season",
+          display_type: "Forage",
+          display_category: "By-Product/Other-Forage",
+        },
+      ],
+    });
+    await renderReady();
+
+    // No card is active to begin with — nothing shows "Selected".
+    expect(screen.queryByText("Selected")).not.toBeInTheDocument();
+
+    // Type a query; the debounced search resolves and a result appears.
+    const searchBox = screen.getByPlaceholderText(/Search feeds/i);
+    fireEvent.change(searchBox, { target: { value: "sugar" } });
+    const result = await screen.findByText("Sugarcane tops, Wet season");
+
+    // Pick it → it lands in a card, and that card must stay highlighted so
+    // the user can see where the feed went (regression: this used to clear
+    // the active row to null, leaving no indication).
+    fireEvent.click(result);
+    await waitFor(() => expect(screen.getByText("Selected")).toBeInTheDocument());
+  });
+});
+
+describe("feed-selection — stale search responses (audit B-07)", () => {
+  it("a slow response for an older query never overwrites the newer results", async () => {
+    const row = (name: string) => ({
+      feed_uuid: name,
+      feed_name: name,
+      feed_type: "Forage",
+      feed_category: "Grass",
+      display_name: name,
+      display_type: "Forage",
+      display_category: "Grass",
+    });
+    let resolveOld: (v: unknown) => void = () => {};
+    searchFeeds
+      .mockReset()
+      .mockImplementationOnce(() => new Promise((r) => (resolveOld = r)))
+      .mockResolvedValueOnce({ data: [row("Maize silage")] });
+    await renderReady();
+
+    const box = screen.getByPlaceholderText(/Search feeds/i);
+    fireEvent.change(box, { target: { value: "mai" } });
+    await waitFor(() => expect(searchFeeds).toHaveBeenCalledTimes(1));
+    fireEvent.change(box, { target: { value: "maize" } });
+    await screen.findByText("Maize silage");
+
+    // The first (older) request finally answers — it must be ignored.
+    resolveOld({ data: [row("Mango leaves")] });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(screen.queryByText("Mango leaves")).not.toBeInTheDocument();
+    expect(screen.getByText("Maize silage")).toBeInTheDocument();
+  });
+});
+
+// ─── 3c. Concurrent cascade writes must not clobber Category ────────────────
+
+describe("feed-selection — search pick keeps Category (no cascade clobber)", () => {
+  it("keeps category_id after a picked feed's cascades resolve out of order", async () => {
+    // Root-cause regression: after a search pick, FeedRow's category cascade
+    // sets category_id, then the sub-category cascade resolves later and
+    // issues its own onUpdate. With updateItem built off a stale `items`
+    // closure, that later write rebuilt from a snapshot where category_id was
+    // still null and wiped it — so the Feed filled but Category went blank.
+    // Here the sub-category fetch resolves AFTER the category fetch and
+    // returns a slightly different feed name, forcing that second onUpdate.
+    useStore.setState({ feedSelectionType: "evaluation", feedSelections: [] });
+    getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
+    getFeedCategories.mockReset().mockImplementation((feedType: string) =>
+      Promise.resolve({
+        data:
+          feedType === "Forage"
+            ? [
+                {
+                  category_name: "By-Product/Other-Forage",
+                  display_category: "By-Product/Other-Forage",
+                },
+              ]
+            : [{ category_name: "Grain", display_category: "Grain" }],
+      })
+    );
+    getFeedSubCategories.mockReset().mockImplementation((feedType: string, category: string) => {
+      if (feedType === "Forage" && category === "By-Product/Other-Forage") {
+        // Resolve later than the category cascade, and return a name that
+        // differs from what search stored so the sub-category cascade fires
+        // its own onUpdate (the clobbering write under the old code).
+        return new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                data: {
+                  standard_feeds: [{ feed_id: "sugar-1", fd_name: "Sugarcane tops (Wet)" }],
+                  custom_feeds: [],
+                },
+              }),
+            30
+          )
+        );
+      }
+      return Promise.resolve({ data: { standard_feeds: [], custom_feeds: [] } });
+    });
+    searchFeeds.mockReset().mockResolvedValue({
+      data: [
+        {
+          feed_uuid: "sugar-1",
+          feed_name: "Sugarcane tops, Wet season",
+          feed_type: "Forage",
+          feed_category: "By-Product/Other-Forage",
+          display_name: "Sugarcane tops, Wet season",
+          display_type: "Forage",
+          display_category: "By-Product/Other-Forage",
+        },
+      ],
+    });
+
+    await renderReady();
+    const card1 = () => screen.getByText("FEED 1").closest('[id^="feed-card-"]') as HTMLElement;
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds|Search to fill/i), {
+      target: { value: "sugar" },
+    });
+    fireEvent.click(await screen.findByText("Sugarcane tops, Wet season"));
+
+    // Category must remain populated even after the late sub-category write.
+    await waitFor(() =>
+      expect(within(card1()).queryByText(/By-Product\/Other-Forage/)).toBeInTheDocument()
+    );
+    // And stay populated after the delayed cascade fully settles.
+    await new Promise((r) => setTimeout(r, 60));
+    expect(within(card1()).queryByText(/By-Product\/Other-Forage/)).toBeInTheDocument();
+  });
+});
+
+// ─── 3d. Category shows even when the category-list endpoint omits it ───────
+
+describe("feed-selection — picked feed's Category shows despite list mismatch", () => {
+  it("displays the category from a picked feed even if getFeedCategories omits it", async () => {
+    // Real backend inconsistency: /search-feeds reports the feed's category
+    // as "By-Product/Other-Forage", but /unique-feed-category for Forage does
+    // NOT return that exact string — so the cascade can't match it. The row
+    // still has a picked feed_uuid + category_name, so the Category dropdown
+    // must display it rather than going blank.
+    //
+    // CRUCIAL: seed the row with feed_type_name already "Forage" (as FEED 1
+    // shows in the real app). Picking a Forage feed then leaves feed_type_name
+    // UNCHANGED, so the category cascade (which keys off feed_type_name) must
+    // still re-run off the category_name change — otherwise category_id is
+    // never set and the field stays blank until a refresh.
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      feedSelections: [mkFeed({ feed_type_name: "Forage" })],
+    });
+    getFeedTypes.mockReset().mockResolvedValue({ data: ["Forage", "Concentrate"] });
+    getFeedCategories.mockReset().mockResolvedValue({
+      data: [{ category_name: "Green Fodder", display_category: "Green Fodder" }],
+    });
+    getFeedSubCategories.mockReset().mockResolvedValue({
+      data: {
+        standard_feeds: [{ feed_id: "sugar-1", fd_name: "Sugarcane tops, Wet season" }],
+        custom_feeds: [],
+      },
+    });
+    searchFeeds.mockReset().mockResolvedValue({
+      data: [
+        {
+          feed_uuid: "sugar-1",
+          feed_name: "Sugarcane tops, Wet season",
+          feed_type: "Forage",
+          feed_category: "By-Product/Other-Forage",
+          display_name: "Sugarcane tops, Wet season",
+          display_type: "Forage",
+          display_category: "By-Product/Other-Forage",
+        },
+      ],
+    });
+
+    await renderReady();
+    const card1 = () => screen.getByText("FEED 1").closest('[id^="feed-card-"]') as HTMLElement;
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds|Search to fill/i), {
+      target: { value: "sugar" },
+    });
+    fireEvent.click(await screen.findByText("Sugarcane tops, Wet season"));
+
+    await waitFor(() =>
+      expect(within(card1()).queryByText("By-Product/Other-Forage")).toBeInTheDocument()
+    );
+  });
+});
+
+// ─── 4. Recommendation / Evaluation toggle reveals Quantity + Cost ──────────
+
+describe("feed-selection — mode toggle", () => {
+  it("hides Quantity/Cost in recommendation mode, shows them per-row in evaluation mode", async () => {
+    useStore.setState({ feedSelectionType: "recommendation", feedSelections: [] });
+    await renderReady();
+    expect(screen.queryAllByText(/Quantity/)).toHaveLength(0);
+    expect(screen.queryAllByText(/^Cost/)).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole("button", { name: "Diet Evaluation" }));
+    await waitFor(() => {
+      expect(screen.getAllByText(/Quantity/)).toHaveLength(3);
+      expect(screen.getAllByText(/^Cost/)).toHaveLength(3);
+    });
+  });
+});
+
+// ─── 5. Add More Feed ────────────────────────────────────────────────────────
+
+describe("feed-selection — Add More Feed", () => {
+  it("appends a new empty row and syncs the store", async () => {
+    useStore.setState({ feedSelections: [] });
+    await renderReady();
+    expect(feedHeaders()).toHaveLength(3);
+
+    fireEvent.click(screen.getByRole("button", { name: /Add More Feed/ }));
+
+    await waitFor(() => expect(feedHeaders()).toHaveLength(4));
+    expect(useStore.getState().feedSelections).toHaveLength(4);
+    // The new row is a fresh, fully-empty FeedItem.
+    const last = useStore.getState().feedSelections[3];
+    expect(last.feed_uuid).toBeNull();
+    expect(last.feed_type_name).toBe("");
+  });
+});
+
+// ─── 6. handleGenerateClick pre-flight validation ───────────────────────────
+
+describe("feed-selection — Incomplete Feeds pre-flight", () => {
+  it("blocks on a partially-filled row and lists it, ignoring fully-empty rows", async () => {
+    const validRow = mkValidForageRow();
+    const partialRow = mkFeed({ feed_type_name: "Concentrate" }); // type started, nothing else
+    useStore.setState({ feedSelections: [validRow, partialRow] }); // pads 1 empty row to reach 3
+    await renderReady();
+
+    const generateBtn = screen.getByRole("button", { name: "Generate Recommendation" });
+    expect(generateBtn).not.toBeDisabled(); // validRow alone satisfies isValid()
+
+    fireEvent.click(generateBtn);
+
+    expect(await screen.findByText("Incomplete Feeds")).toBeInTheDocument();
+    // The dialog's bullet row renders "• {name}" as a single text node —
+    // scoped to avoid matching the "Concentrate" radio label in FeedRow.
+    expect(screen.getByText("• Concentrate")).toBeInTheDocument();
+    expect(recommendDiet).not.toHaveBeenCalled();
+    expect(evaluateDiet).not.toHaveBeenCalled();
+  });
+
+  it("proceeds straight to generateReport when every non-empty row is fully valid", async () => {
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "R1" } });
+    const validRow = mkValidForageRow();
+    useStore.setState({ feedSelections: [validRow] }); // pads to 3 with 2 empty rows — ignored
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    expect(screen.queryByText("Incomplete Feeds")).not.toBeInTheDocument();
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+  });
+});
+
+// ─── 7. generateReport payload shapes ────────────────────────────────────────
+
+describe("feed-selection — generateReport payloads", () => {
+  it("evaluation mode calls evaluateDiet with the right shape", async () => {
+    evaluateDiet.mockResolvedValueOnce({ data: { report_id: "EVAL-1" } });
+    const cattleInfo = mkCattleInfo();
+    const validRow = mkValidForageRow({ quantity_kg: 3 });
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo,
+      feedSelections: [validRow],
+      user: seedUser(),
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+
+    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
+    expect(evaluateDiet).toHaveBeenCalledWith({
+      user_id: "u-1",
+      country_id: cattleInfo.country_id,
+      currency: "INR",
+      simulation_id: `${cattleInfo.simulation_name} (Evaluation)`,
+      cattle_info: toCattleInfoPayload(cattleInfo),
+      feed_evaluation: [{ feed_id: "uuid-forage-1", quantity_as_fed: 3, price_per_kg: 10 }],
+    });
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/report"));
+    expect(useStore.getState().reportData).toEqual({ report_id: "EVAL-1", mode: "evaluation" });
+  });
+
+  it("blocks an evaluation with a 0 quantity (audit B-14)", async () => {
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo: mkCattleInfo(),
+      feedSelections: [mkValidForageRow({ quantity_kg: 0 })],
+      user: seedUser(),
+    });
+    await renderReady();
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe(
+        "Enter a quantity greater than 0 for every feed, or remove the feed."
+      )
+    );
+    expect(evaluateDiet).not.toHaveBeenCalled();
+  });
+
+  it("derives a missing currency from the simulation's country (audit D-03)", async () => {
+    evaluateDiet.mockResolvedValueOnce({ data: { report_id: "EVAL-2" } });
+    const cattleInfo = mkCattleInfo();
+    getCountries.mockResolvedValueOnce({
+      data: [{ id: cattleInfo.country_id, name: "X", currency: "KES" }],
+    });
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo,
+      feedSelections: [mkValidForageRow({ quantity_kg: 3 })],
+      user: seedUser({ currency: "" }),
+    });
+    await renderReady();
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
+    expect(evaluateDiet.mock.calls[0][0].currency).toBe("KES");
+    expect(useStore.getState().user?.currency).toBe("KES");
+  });
+
+  it("refuses to price the diet when no currency can be found — never silently USD", async () => {
+    getCountries.mockResolvedValueOnce({ data: [] });
+    useStore.setState({
+      feedSelectionType: "evaluation",
+      cattleInfo: mkCattleInfo(),
+      feedSelections: [mkValidForageRow({ quantity_kg: 3 })],
+      user: seedUser({ currency: "" }),
+    });
+    await renderReady();
+    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
+    await waitFor(() => expect(useStore.getState().snackbar?.type).toBe("error"));
+    expect(evaluateDiet).not.toHaveBeenCalled();
+  });
+
+  // CONTRACT CHANGE 2026-09-21: we no longer merge a hardcoded copy of
+  // Android's defaults under the user's limits. The backend now converts
+  // percent → fraction and enforces a per-physiological-state range, so
+  // those constants started binding (over-constraining lactating diets,
+  // 422-ing Dry Cow / Heifer ones). Only user-set keys go on the wire.
+  it("recommendation mode sends ONLY the limits the user actually set", async () => {
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-1" } });
+    const cattleInfo = mkCattleInfo();
+    const validRow = mkValidForageRow();
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      cattleInfo,
+      feedSelections: [validRow],
+      dietLimits: { ash_max: 12 }, // user's saved Custom Diet Limits — partial override
+      user: seedUser(),
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+    expect(recommendDiet).toHaveBeenCalledWith({
+      user_id: "u-1",
+      country_id: cattleInfo.country_id,
+      simulation_id: `${cattleInfo.simulation_name} (Recommendation)`,
+      cattle_info: toCattleInfoPayload(cattleInfo),
+      feed_selection: [{ feed_id: "uuid-forage-1", price_per_kg: 10 }],
+      base_thresholds: { ash_max: 12 },
+    });
+
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/report"));
+    expect(useStore.getState().reportData).toEqual({ report_id: "REC-1", mode: "recommendation" });
+  });
+
+  it("keeps Generate disabled while the limit ranges are still loading (audit B-06)", async () => {
+    getDietThresholds.mockReset().mockImplementation(() => new Promise(() => {}));
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+      dietLimits: { ash_max: 12 },
+    });
+    await renderReady();
+    expect(screen.getByRole("button", { name: "Generate Recommendation" })).toBeDisabled();
+  });
+
+  it("still sends in-range limits, checked against the sheet, when the endpoint failed", async () => {
+    getDietThresholds.mockReset().mockRejectedValue(new Error("offline"));
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-3" } });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+      dietLimits: { ash_max: 12 },
+    });
+    await renderReady();
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Generate Recommendation" })).not.toBeDisabled()
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+    expect(recommendDiet.mock.calls[0][0].base_thresholds).toEqual({ ash_max: 12 });
+    expect(useStore.getState().dietLimits).toEqual({ ash_max: 12 });
+  });
+
+  it("recommendation mode OMITS base_thresholds entirely when no custom limits are set", async () => {
+    recommendDiet.mockResolvedValueOnce({ data: { report_id: "REC-2" } });
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+      dietLimits: {},
+    });
+    await renderReady();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    await waitFor(() => expect(recommendDiet).toHaveBeenCalledTimes(1));
+    const payload = recommendDiet.mock.calls[0][0];
+    // An omitted key is the ONLY way to say "use the engine defaults for
+    // this animal's physiological state" — {} would be a no-op object and
+    // 0 would be rejected with a 422.
+    expect("base_thresholds" in payload).toBe(false);
+  });
+});
+
+// ─── 8. GeneratingReportDialog overlay ───────────────────────────────────────
+
+describe("feed-selection — Generating Report overlay", () => {
+  it("shows the modal while the request is in flight and hides it after resolution", async () => {
+    let resolveFn: (v: unknown) => void = () => {};
+    recommendDiet.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveFn = resolve;
+        })
+    );
+    useStore.setState({
+      feedSelectionType: "recommendation",
+      feedSelections: [mkValidForageRow()],
+    });
+    await renderReady();
+
+    expect(screen.queryByText("Generating your report")).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Generate Recommendation" }));
+
+    expect(await screen.findByText("Generating your report")).toBeInTheDocument();
+
+    resolveFn({ data: { report_id: "R1" } });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Generating your report")).not.toBeInTheDocument();
+    });
+    expect(push).toHaveBeenCalledWith("/report");
+  });
+});
+
+// ─── 9. UI-label i18n — per-simulation language override ────────────────────
+//
+// This screen resolves display language from cattleInfo.simulation_language
+// (the COMMITTED store value) ahead of user.preferred_language — the exact
+// same priority chain feed-data i18n's langProvider already uses (see
+// src/lib/store.ts / CLAUDE.md §18.3). cattle-info/page.tsx uses a DIFFERENT,
+// live form-pending resolution and is out of scope here.
+describe("feed-selection — UI-label i18n (simulation_language override)", () => {
+  it("renders the toolbar title and custom-buttons row in Hindi when cattleInfo.simulation_language is 'hi', even though user.preferred_language stays 'en'", async () => {
+    useStore.setState({
+      cattleInfo: mkCattleInfo({ simulation_language: "hi" }),
+      user: seedUser({ preferred_language: "en" }),
+      feedSelections: [],
+    });
+    render(<FeedSelectionPage />);
+
+    await screen.findByText("पशु आहार का चयन"); // "Feed Selection" (toolbar title)
+    expect(screen.getByText("अनुकूलित आहार सीमाएँ")).toBeInTheDocument(); // "Custom Diet Limits"
+    expect(screen.getByText("अनुकूलित पशु आहार")).toBeInTheDocument(); // "Custom Feed"
+    expect(screen.queryByText("Feed Selection")).not.toBeInTheDocument();
+  });
+
+  it("translates the Diet Recommendation / Diet Evaluation radio labels", async () => {
+    useStore.setState({
+      cattleInfo: mkCattleInfo({ simulation_language: "hi" }),
+      feedSelections: [],
+    });
+    render(<FeedSelectionPage />);
+
+    await screen.findByText("आहार सिफारिश"); // "Diet Recommendation"
+    expect(screen.getByText("आहार मूल्यांकन")).toBeInTheDocument(); // "Diet Evaluation"
+  });
+});

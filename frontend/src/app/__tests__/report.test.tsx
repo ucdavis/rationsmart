@@ -1,0 +1,847 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+
+const { push, back, saveReport } = vi.hoisted(() => ({
+  push: vi.fn(),
+  back: vi.fn(),
+  saveReport: vi.fn(),
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, back, replace: vi.fn() }),
+}));
+
+vi.mock("@/lib/api", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
+  return { ...actual, saveReport };
+});
+
+import ReportPage from "@/app/(main)/report/page";
+import { useStore, type User } from "@/lib/store";
+import type {
+  EvaluationResponse,
+  RecommendationResponse,
+  CattleInfo,
+  ReportInfo,
+  FeedItem,
+} from "@/lib/api";
+
+// jsdom normalizes inline hex colors to rgb(...) when read back via
+// getComputedStyle / jest-dom's toHaveStyle. Convert our expected Android
+// hex tokens (from CLAUDE.md §12 / §5) to the same format so the
+// assertions compare like-for-like (see src/components/__tests__/Toolbar.test.tsx
+// for the existing precedent of this pattern).
+function hexToRgb(hex: string): string {
+  const clean = hex.replace("#", "");
+  const r = parseInt(clean.slice(0, 2), 16);
+  const g = parseInt(clean.slice(2, 4), 16);
+  const b = parseInt(clean.slice(4, 6), 16);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+function seedUser(over: Partial<User> = {}): User {
+  return {
+    id: "u-1",
+    name: "Aiyappa",
+    email: "aiyappa@dg.org",
+    country: "Philippines",
+    country_id: "3",
+    country_code: "PH",
+    currency: "PHP",
+    pin: "123456",
+    is_admin: false,
+    token: "jwt",
+    registered_language: "en",
+    preferred_language: "en",
+    ...over,
+  };
+}
+
+function baseCattleInfo(over: Partial<CattleInfo> = {}): CattleInfo {
+  return {
+    simulation_name: "Sim A",
+    country: "Philippines",
+    country_id: "3",
+    breed: "Cross Bred",
+    body_weight: 450,
+    body_weight_gain: 0.5,
+    body_condition_score: 3,
+    parity: 2,
+    days_in_milk: 100,
+    days_of_pregnancy: 60,
+    milk_production: 12,
+    milk_protein_percent: 3.2,
+    milk_fat_percent: 3.8,
+    average_temperature: 28,
+    grazing: false,
+    distance: 0,
+    topography: "Flat",
+    milk_price: null,
+    animal_category: "Lactating Cow",
+    simulation_language: null,
+    ...over,
+  };
+}
+
+function makeEvalResponse(over: Partial<EvaluationResponse> = {}): EvaluationResponse {
+  return {
+    mode: "evaluation",
+    report_id: "R-EVAL-1",
+    simulation_id: "SIM-1",
+    currency: "PHP",
+    cost_analysis: {
+      currency: "PHP",
+      feed_cost_per_kg_milk: 5.25,
+      total_diet_cost_as_fed: 120.5,
+      recommendations: [],
+      warnings: [],
+    },
+    evaluation_summary: { limiting_factor: null, overall_status: "Optimized" },
+    feed_breakdown: [
+      {
+        contribution_percent: 60,
+        currency: "PHP",
+        feed_id: "uuid-1",
+        feed_name: "Napier Grass",
+        feed_type: "Forage",
+        price_per_kg: 5,
+        quantity_dm_kg_per_day: 3,
+        quantity_as_fed_kg_per_day: 10,
+        total_cost: 50,
+      },
+    ],
+    intake_evaluation: {
+      intake_difference_kg_per_day: 0.5,
+      actual_intake_kg_per_day: 12,
+      intake_percentage: 96,
+      intake_status: "Optimized",
+      target_intake_kg_per_day: 12.5,
+      recommendations: [],
+      warnings: [],
+    },
+    methane_analysis: {
+      classification: "Low",
+      methane_yield_g_per_kg_dmi: 20,
+      methane_conversion_range: "6-7%",
+      "Ym (%)": 6.5,
+      methane_emission_mj_per_day: 15,
+      methane_intensity_g_per_kg_ecm: 12,
+      methane_production_g_per_day: 250,
+      recommendations: [],
+      warnings: [],
+    },
+    milk_production_analysis: {
+      actual_milk_supported_kg_per_day: 10,
+      energy_available_mcal: 20,
+      limiting_nutrient: null,
+      milk_supported_by_energy_kg_per_day: 11,
+      milk_supported_by_protein_kg_per_day: 10,
+      target_production_kg_per_day: 12,
+      protein_available_g: 500,
+      recommendations: [],
+      warnings: [],
+    },
+    nutrient_balance: {
+      calcium_balance_kg: 0.1,
+      energy_balance_mcal: 0.2,
+      ndf_balance_kg: -0.1,
+      phosphorus_balance_kg: 0.05,
+      protein_balance_kg: 0.3,
+      recommendations: [],
+      warnings: [],
+    },
+    ...over,
+  };
+}
+
+function makeRecResponse(
+  over: Partial<RecommendationResponse> = {},
+  reportInfoOver: Partial<ReportInfo> = {}
+): RecommendationResponse {
+  return {
+    mode: "recommendation",
+    additional_information: {
+      diet_status: "OK",
+      recommendations: [],
+      violated_parameters: [],
+      warnings: [],
+    },
+    least_cost_diet: [
+      {
+        currency: "PHP",
+        daily_cost: 60,
+        feed_name: "Napier Grass",
+        price_per_kg: 5,
+        quantity_kg_per_day: 12,
+      },
+    ],
+    environmental_impact: {
+      classification: "Low",
+      "Ym (%)": "6.2",
+      methane_intensity_grams_per_kg_ecm: "12",
+      methane_production_grams_per_day: "220",
+      methane_yield_grams_per_kg_dmi: "18",
+    },
+    report_info: {
+      diet_rating: "OPTIMAL",
+      generated_date: "2026-07-01T10:00:00Z",
+      user_name: "Aiyappa",
+      report_id: "R-REC-1",
+      simulation_id: "SIM-2",
+      ...reportInfoOver,
+    },
+    solution_summary: { daily_cost: 60, dry_matter_intake: "12.5 kg", milk_production: "10.2 L" },
+    total_diet_cost: 60,
+    ...over,
+  };
+}
+
+beforeEach(() => {
+  push.mockClear();
+  back.mockClear();
+  saveReport.mockReset();
+  useStore.setState({
+    user: seedUser(),
+    cattleInfo: baseCattleInfo(),
+    feedSelectionType: "recommendation",
+    feedSelections: [],
+    reportData: null,
+    dietLimits: {},
+    snackbar: null,
+  });
+});
+
+// ─── 1. Diet Status banner color/icon/title per report_info.diet_rating ────
+// The banner lives INSIDE the Notes card (SCard title="Notes"), themed by
+// `banner` in the page source. Because showNotesCard = !isOptimalOrUnknown,
+// the "OPTIMAL / else → green" branch of `banner` is computed but never
+// actually rendered — see the dedicated test below and the final report.
+describe("Report — Diet Status banner theme by diet_rating", () => {
+  it("ADVISORY renders the orange-family theme (title #FF7800, body #FF9800)", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }) });
+    render(<ReportPage />);
+    expect(screen.getByText("Simulation Status")).toHaveStyle({ color: hexToRgb("#FF7800") });
+    expect(screen.getByText("Solution has safety/nutritional violations")).toHaveStyle({
+      color: hexToRgb("#FF9800"),
+    });
+  });
+
+  it("ERROR_NO_BEST renders the red theme (title #FC2E20, body #E44A4A)", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ERROR_NO_BEST" }) });
+    render(<ReportPage />);
+    expect(screen.getByText("Simulation Status")).toHaveStyle({ color: hexToRgb("#FC2E20") });
+    expect(screen.getByText("No optimized solution found")).toHaveStyle({
+      color: hexToRgb("#E44A4A"),
+    });
+  });
+
+  it("ERROR_PRECHECK shares the same red theme as the other ERROR_* ratings", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ERROR_PRECHECK" }) });
+    render(<ReportPage />);
+    expect(screen.getByText("No optimized solution found")).toHaveStyle({
+      color: hexToRgb("#E44A4A"),
+    });
+  });
+
+  it("INFEASIBLE renders the green-ish theme (title #1CA069, body #064E3B) — intentional Android parity, not a bug", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "INFEASIBLE" }) });
+    render(<ReportPage />);
+    expect(screen.getByText("Simulation Status")).toHaveStyle({ color: hexToRgb("#1CA069") });
+    expect(screen.getByText("Solution has safety/nutritional violations")).toHaveStyle({
+      color: hexToRgb("#064E3B"),
+    });
+  });
+
+  it("OPTIMAL never shows the banner at all — showNotesCard hides the entire containing Notes card", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }) });
+    render(<ReportPage />);
+    expect(screen.queryByText("Simulation Status")).toBeNull();
+    expect(screen.queryByText("Optimized solution found")).toBeNull();
+  });
+});
+
+// ─── 2. showSolutionSections = !isErrorState ───────────────────────────────
+describe("Report — showSolutionSections = !isErrorState", () => {
+  it("hides Solution Summary / Cost-Effective Diet / Environmental Impact for an ERROR_* rating", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ERROR_NO_RESULT" }) });
+    render(<ReportPage />);
+    expect(screen.queryByText("Solution Summary")).toBeNull();
+    expect(screen.queryByText("Cost-Effective Diet")).toBeNull();
+    expect(screen.queryByText("Environmental Impact")).toBeNull();
+  });
+
+  it("shows Solution Summary / Cost-Effective Diet / Environmental Impact for a non-error rating (ADVISORY)", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }) });
+    render(<ReportPage />);
+    expect(screen.getByText("Solution Summary")).toBeInTheDocument();
+    expect(screen.getByText("Cost-Effective Diet")).toBeInTheDocument();
+    expect(screen.getByText("Environmental Impact")).toBeInTheDocument();
+  });
+});
+
+// ─── 3. showNotesCard = !isOptimalOrUnknown ─────────────────────────────────
+describe("Report — showNotesCard = !isOptimalOrUnknown", () => {
+  it("hides the Notes card when rating is OPTIMAL", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }) });
+    render(<ReportPage />);
+    expect(screen.queryByText("Notes")).toBeNull();
+  });
+
+  it("shows the Notes card for ADVISORY", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }) });
+    render(<ReportPage />);
+    expect(screen.getByText("Notes")).toBeInTheDocument();
+  });
+});
+
+// ─── 4. mode discriminator ──────────────────────────────────────────────────
+describe("Report — mode discriminator", () => {
+  it("evaluation mode renders Evaluation-only sections and hides Recommendation-only sections", () => {
+    useStore.setState({ reportData: makeEvalResponse() });
+    render(<ReportPage />);
+
+    expect(screen.getByText("Cost Analysis")).toBeInTheDocument();
+    expect(screen.getByText("Evaluation Summary")).toBeInTheDocument();
+    expect(screen.getByText("Feed Breakdown")).toBeInTheDocument();
+    expect(screen.getByText("Dry Matter Intake")).toBeInTheDocument();
+    expect(screen.getByText("Milk Production Analysis")).toBeInTheDocument();
+    expect(screen.getByText("Nutrient Balance")).toBeInTheDocument();
+    expect(screen.getByText("Environment Impact")).toBeInTheDocument();
+
+    expect(screen.queryByText("Solution Summary")).toBeNull();
+    expect(screen.queryByText("Cost-Effective Diet")).toBeNull();
+    expect(screen.queryByText("Environmental Impact")).toBeNull();
+  });
+
+  it("recommendation mode renders Recommendation-only sections and hides Evaluation-only sections", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }) });
+    render(<ReportPage />);
+
+    expect(screen.getByText("Solution Summary")).toBeInTheDocument();
+    expect(screen.getByText("Cost-Effective Diet")).toBeInTheDocument();
+    expect(screen.getByText("Total Diet Cost")).toBeInTheDocument();
+    expect(screen.getByText("Environmental Impact")).toBeInTheDocument();
+
+    expect(screen.queryByText("Cost Analysis")).toBeNull();
+    expect(screen.queryByText("Evaluation Summary")).toBeNull();
+    expect(screen.queryByText("Feed Breakdown")).toBeNull();
+    // NB: "Dry Matter Intake" as a plain string also appears as a small
+    // label inside Recommendation's own Solution Summary card, so it's
+    // not a safe negative-assertion string here. "Actual Intake" /
+    // "Target Intake" are MetricTile labels unique to Evaluation's
+    // intake_evaluation card and don't collide with anything in
+    // Recommendation mode.
+    expect(screen.queryByText("Actual Intake")).toBeNull();
+    expect(screen.queryByText("Target Intake")).toBeNull();
+    expect(screen.queryByText("Milk Production Analysis")).toBeNull();
+    expect(screen.queryByText("Nutrient Balance")).toBeNull();
+    expect(screen.queryByText("Environment Impact")).toBeNull();
+  });
+});
+
+// ─── 5. Notes card content ──────────────────────────────────────────────────
+describe("Report — Notes card content", () => {
+  it("concatenates recommendations + warnings, and lists violated_parameters with empties filtered", () => {
+    useStore.setState({
+      reportData: makeRecResponse(
+        {
+          additional_information: {
+            diet_status: "ADVISORY",
+            recommendations: ["Increase protein intake"],
+            warnings: ["Watch calcium levels"],
+            violated_parameters: ["NDF exceeded", "", "   "],
+          },
+        },
+        { diet_rating: "ADVISORY" }
+      ),
+    });
+    render(<ReportPage />);
+
+    expect(screen.getByText("Violated Parameters:")).toBeInTheDocument();
+    expect(screen.getByText("NDF exceeded")).toBeInTheDocument();
+    // Blank / whitespace-only violated_parameters entries are filtered out —
+    // only ONE bullet should exist under the heading.
+    const violatedHeading = screen.getByText("Violated Parameters:");
+    const listContainer = violatedHeading.nextElementSibling as HTMLElement;
+    expect(listContainer.children.length).toBe(1);
+
+    expect(screen.getByText("Recommendations & Warnings:")).toBeInTheDocument();
+    expect(screen.getByText("Increase protein intake")).toBeInTheDocument();
+    expect(screen.getByText("Watch calcium levels")).toBeInTheDocument();
+  });
+
+  it('shows the "No recommendation/warnings available!" placeholder when both source arrays are empty', () => {
+    useStore.setState({
+      reportData: makeRecResponse(
+        {
+          additional_information: {
+            diet_status: "ADVISORY",
+            recommendations: [],
+            warnings: [],
+            violated_parameters: [],
+          },
+        },
+        { diet_rating: "ADVISORY" }
+      ),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("No recommendation/warnings available!")).toBeInTheDocument();
+    // No "Violated Parameters:" heading when osPoints is empty.
+    expect(screen.queryByText("Violated Parameters:")).toBeNull();
+  });
+});
+
+// ─── 6. Currency rendering — raw code suffix, never Intl currency style ────
+// Priority (CLAUDE.md §5, audit B-05): cost_analysis.currency, then the
+// response's top-level currency, then user.currency. A restored report keeps
+// the currency it was priced in even after the profile's country changes.
+describe("Report — currency rendering (raw suffix, real priority order)", () => {
+  it("cost_analysis.currency wins over user.currency when both are present", () => {
+    useStore.setState({
+      user: seedUser({ currency: "VND" }),
+      reportData: makeEvalResponse({
+        cost_analysis: {
+          currency: "PHP",
+          feed_cost_per_kg_milk: 5.25,
+          total_diet_cost_as_fed: 120.5,
+          recommendations: [],
+          warnings: [],
+        },
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("120.50 PHP")).toBeInTheDocument();
+    expect(screen.queryByText(/VND/)).toBeNull();
+  });
+
+  it("uses cost_analysis.currency when user.currency is empty", () => {
+    useStore.setState({
+      user: seedUser({ currency: "" }),
+      reportData: makeEvalResponse({
+        cost_analysis: {
+          currency: "PHP",
+          feed_cost_per_kg_milk: 5.25,
+          total_diet_cost_as_fed: 120.5,
+          recommendations: [],
+          warnings: [],
+        },
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("120.50 PHP")).toBeInTheDocument();
+  });
+
+  it("renders as a raw code suffix — never an Intl.NumberFormat currency glyph", () => {
+    useStore.setState({
+      user: seedUser({ currency: "VND" }),
+      reportData: makeEvalResponse(),
+    });
+    render(<ReportPage />);
+    expect(screen.queryByText(/₫|₱/)).toBeNull();
+    expect(screen.getByText("120.50 PHP")).toBeInTheDocument();
+  });
+});
+
+// ─── 7. Bottom action bar ───────────────────────────────────────────────────
+describe('Report — "New Case" button', () => {
+  it("navigates to /cattle-info", () => {
+    useStore.setState({ reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }) });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /New Case/ }));
+    expect(push).toHaveBeenCalledWith("/cattle-info");
+  });
+
+  it("does NOT clear feedSelections or reset feedSelectionType — current source deliberately preserves them (diverges from CLAUDE.md §5's documented behavior)", () => {
+    const existingSelections: FeedItem[] = [
+      {
+        id: "f1",
+        feed_type_id: 1,
+        feed_type_name: "Forage",
+        category_id: 1,
+        category_name: "Grass",
+        sub_category_id: 1,
+        sub_category_name: "Napier",
+        feed_uuid: "u1",
+        price_per_kg: 5,
+        quantity_kg: 10,
+      } as FeedItem,
+    ];
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+      feedSelections: existingSelections,
+      feedSelectionType: "evaluation",
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /New Case/ }));
+    expect(useStore.getState().feedSelections.length).toBe(1);
+    expect(useStore.getState().feedSelectionType).toBe("evaluation");
+  });
+});
+
+describe('Report — "Save Report" + "View PDF"', () => {
+  it("POSTs saveReport({report_id, user_id}) and opens the PDF from bucket_url", async () => {
+    saveReport.mockResolvedValueOnce({
+      data: { success: true, message: "Saved!", bucket_url: "https://x/1.pdf" },
+    });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-99" }),
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
+    await waitFor(() => expect(saveReport).toHaveBeenCalledWith("R-REC-99", "u-1"));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument()
+    );
+
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    fireEvent.click(screen.getByRole("button", { name: /View PDF/ }));
+    expect(openSpy).toHaveBeenCalledWith("https://x/1.pdf", "_blank", "noopener,noreferrer");
+  });
+
+  it("falls back to report.bucket_url when the top-level bucket_url is absent", async () => {
+    saveReport.mockResolvedValueOnce({
+      data: { success: true, report: { bucket_url: "https://x/2.pdf" } },
+    });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-2" }),
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument()
+    );
+
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    fireEvent.click(screen.getByRole("button", { name: /View PDF/ }));
+    expect(openSpy).toHaveBeenCalledWith("https://x/2.pdf", "_blank", "noopener,noreferrer");
+  });
+
+  it("falls back to pdf_url when neither bucket_url variant is present", async () => {
+    saveReport.mockResolvedValueOnce({
+      data: { success: true, pdf_url: "https://x/3.pdf" },
+    });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-3" }),
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View PDF/ })).toBeInTheDocument()
+    );
+
+    const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    fireEvent.click(screen.getByRole("button", { name: /View PDF/ }));
+    expect(openSpy).toHaveBeenCalledWith("https://x/3.pdf", "_blank", "noopener,noreferrer");
+  });
+
+  // Regression coverage: per the v1 swagger, SaveReportResponse's
+  // `success` and `error_message` fields are independent — a save can
+  // succeed (report persisted) while error_message separately explains
+  // that PDF generation (POST /v1/animal/reports/pdf) isn't implemented
+  // yet. The old code treated ANY error_message as a hard failure
+  // (regardless of `success`) and bailed out with an error toast before
+  // ever confirming the report was actually saved.
+  it("success:true + error_message (PDF-pending) shows an info toast, not an error — and does NOT early-return", async () => {
+    saveReport.mockResolvedValueOnce({
+      data: {
+        success: true,
+        message: "Report saved",
+        error_message: "PDF generation not yet implemented",
+        bucket_url: null,
+      },
+    });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-4" }),
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
+    await waitFor(() => expect(saveReport).toHaveBeenCalled());
+
+    await waitFor(() => {
+      const snap = useStore.getState().snackbar;
+      expect(snap?.type).toBe("info");
+      expect(snap?.message).toContain("PDF generation not yet implemented");
+    });
+    // No PDF link should appear since bucket_url is null, but this must
+    // NOT be treated the same as a save failure.
+    expect(screen.queryByRole("button", { name: /View PDF/ })).not.toBeInTheDocument();
+  });
+
+  it("success:false still shows a hard error toast", async () => {
+    saveReport.mockResolvedValueOnce({
+      data: { success: false, error_message: "Simulation not found", message: "Save failed" },
+    });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-5" }),
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
+
+    await waitFor(() => {
+      const snap = useStore.getState().snackbar;
+      expect(snap?.type).toBe("error");
+      expect(snap?.message).toBe("Simulation not found");
+    });
+    expect(screen.queryByRole("button", { name: /View PDF/ })).not.toBeInTheDocument();
+  });
+});
+
+// ─── 9. UI-label i18n (src/lib/i18n-ui.ts) — per-simulation language ───────
+// This screen (cattle-info → feed-selection → report) resolves its display
+// language from cattleInfo.simulation_language FIRST, falling back to
+// user.preferred_language, then "en" — the same priority chain store.ts's
+// langProvider already uses for feed-data i18n (see useT's langOverride doc
+// comment in src/lib/i18n-ui.ts). These tests seed cattleInfo directly
+// (rather than going through the cattle-info form) since this suite only
+// exercises the Report page in isolation.
+describe("Report — UI-label i18n via cattleInfo.simulation_language", () => {
+  it("translates section headings and the toolbar title to Hindi when cattleInfo.simulation_language is 'hi'", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    // "hi" dictionary lazy-loads via dynamic import() — findBy waits for it.
+    await screen.findByText("सिफारिश रिपोर्ट"); // Recommendation Report (toolbar)
+    expect(screen.getByText("रिपोर्ट विवरण")).toBeInTheDocument(); // Report Details
+    expect(screen.getByText("पशु विशेषताएं")).toBeInTheDocument(); // Animal Characteristics
+    expect(screen.queryByText("Report Details")).not.toBeInTheDocument();
+  });
+
+  it("translates the Evaluation Report toolbar title + Cost Analysis heading in evaluation mode", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeEvalResponse(),
+    });
+    render(<ReportPage />);
+    await screen.findByText("मूल्यांकन रिपोर्ट"); // Evaluation Report
+    expect(screen.getByText("लागत विश्लेषण")).toBeInTheDocument(); // Cost Analysis
+  });
+
+  it("falls back to user.preferred_language when cattleInfo.simulation_language is null/unset", async () => {
+    useStore.setState({
+      user: seedUser({ preferred_language: "hi" }),
+      cattleInfo: baseCattleInfo({ simulation_language: null }),
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    await screen.findByText("रिपोर्ट विवरण"); // Report Details
+  });
+
+  it("prioritizes cattleInfo.simulation_language over user.preferred_language when both are set", async () => {
+    useStore.setState({
+      user: seedUser({ preferred_language: "vi" }),
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    await screen.findByText("रिपोर्ट विवरण"); // Report Details (Hindi wins)
+    expect(screen.queryByText("Report Details")).not.toBeInTheDocument();
+  });
+
+  it("translates the Diet Status banner title and the bottom action bar buttons to Hindi", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ simulation_language: "hi" }),
+      reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
+    });
+    render(<ReportPage />);
+    await screen.findByText("विश्लेषण की स्थिति"); // Simulation Status (Notes banner)
+    expect(screen.getByRole("button", { name: /नया विवरण दर्ज करें/ })).toBeInTheDocument(); // New Case
+    expect(screen.getByRole("button", { name: /रिपोर्ट सहेजें/ })).toBeInTheDocument(); // Save Report
+  });
+});
+
+// ─── 8. StatusBadge color mapping ───────────────────────────────────────────
+// Confirmed rendered on this page: Evaluation Summary's "Overall Status"
+// row and Intake Evaluation's "Status" row (evaluation mode only).
+describe("Report — StatusBadge color mapping", () => {
+  it("Optimized → green (#05BC6D)", () => {
+    useStore.setState({
+      reportData: makeEvalResponse({
+        evaluation_summary: { limiting_factor: null, overall_status: "Optimized" },
+        // Default fixture also sets intake_status: "Optimized", which would
+        // render a second identical badge — null it out so this test
+        // exercises exactly one StatusBadge instance.
+        intake_evaluation: {
+          intake_difference_kg_per_day: 0.5,
+          actual_intake_kg_per_day: 12,
+          intake_percentage: 96,
+          intake_status: null,
+          target_intake_kg_per_day: 12.5,
+          recommendations: [],
+          warnings: [],
+        },
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Optimized")).toHaveStyle({ backgroundColor: hexToRgb("#05BC6D") });
+  });
+
+  it("Not Feasible → red (#E44A4A)", () => {
+    useStore.setState({
+      reportData: makeEvalResponse({
+        intake_evaluation: {
+          intake_difference_kg_per_day: 0.5,
+          actual_intake_kg_per_day: 12,
+          intake_percentage: 96,
+          intake_status: "Not Feasible",
+          target_intake_kg_per_day: 12.5,
+          recommendations: [],
+          warnings: [],
+        },
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Not Feasible")).toHaveStyle({ backgroundColor: hexToRgb("#E44A4A") });
+  });
+
+  it("Evaluation → orange (#FF9800)", () => {
+    useStore.setState({
+      reportData: makeEvalResponse({
+        evaluation_summary: { limiting_factor: null, overall_status: "Evaluation" },
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Evaluation")).toHaveStyle({ backgroundColor: hexToRgb("#FF9800") });
+  });
+});
+
+// ─── Diet Limit Notes — the backend's top-level `warnings` ──────────────────
+// Soft limits (ndf_max / starch_max / ee_max) are only penalised in the cost
+// objective, so the diet can exceed them and still be a valid, successful
+// run. The engine reports the breach in a top-level `warnings` array. It must
+// read as advisory, and it must survive the OPTIMAL case — which is exactly
+// when the Notes card is hidden, so it cannot live inside that card.
+describe("Report — Diet Limit Notes (top-level warnings)", () => {
+  it("renders the advisory card even when the rating is OPTIMAL", () => {
+    useStore.setState({
+      reportData: makeRecResponse({
+        warnings: ["Fat Content: above maximum (result = 2.66% of DM; target = 2.00% of DM)"],
+      }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Diet Limit Notes")).toBeInTheDocument();
+    expect(
+      screen.getByText("Fat Content: above maximum (result = 2.66% of DM; target = 2.00% of DM)")
+    ).toBeInTheDocument();
+    // The Notes card is hidden on OPTIMAL — proving the advisory can't be
+    // folded into it.
+    expect(screen.queryByText("Notes")).not.toBeInTheDocument();
+  });
+
+  it("renders nothing when the backend omits `warnings` (not yet deployed)", () => {
+    useStore.setState({ reportData: makeRecResponse() });
+    render(<ReportPage />);
+    expect(screen.queryByText("Diet Limit Notes")).not.toBeInTheDocument();
+  });
+});
+
+// ─── Methane Intensity is lactation-only (QA row 12) ───────────────────────
+// Intensity is g CH4 per kg of ENERGY-CORRECTED MILK. A dry cow, heifer or
+// calf produces none, so the figure is meaningless for them. Per the backend
+// owner: the engine still calculates it, it just must not be displayed.
+// Production / yield / Ym are per-day or per-kg-DMI and stay visible.
+describe("Report — Methane Intensity is shown only for a Lactating Cow", () => {
+  it("shows it for a Lactating Cow", () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ animal_category: "Lactating Cow" }),
+      reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Methane Intensity")).toBeInTheDocument();
+  });
+
+  it.each(["Dry Cow", "Heifer", "Baby Calf/Heifer"] as const)("hides it for %s", (category) => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ animal_category: category }),
+      reportData: makeRecResponse({}, { diet_rating: "ADVISORY" }),
+    });
+    render(<ReportPage />);
+    expect(screen.queryByText("Methane Intensity")).not.toBeInTheDocument();
+    // The other three methane metrics are not milk-relative, so they stay.
+    expect(screen.getByText("Methane Production")).toBeInTheDocument();
+    expect(screen.getByText("Methane Yield")).toBeInTheDocument();
+  });
+});
+
+// Backend PR #51: milk metrics (Limiting Factor, Cost/Litre Milk, milk
+// production figures) are null for Dry Cow / Heifer. Show a row only when
+// the value is non-null AND the animal is lactating; reports saved before
+// the fix still carry old numbers, so the state check is the fallback.
+describe("Report — milk evaluation metrics only for a Lactating Cow (PR #51)", () => {
+  const withMilk = () =>
+    makeEvalResponse({
+      evaluation_summary: { limiting_factor: "Energy", overall_status: "Optimized" },
+    });
+
+  it("shows Limiting Factor and Cost/Litre Milk for a Lactating Cow", () => {
+    useStore.setState({ cattleInfo: baseCattleInfo(), reportData: withMilk() });
+    render(<ReportPage />);
+    expect(screen.getByText("Limiting Factor")).toBeInTheDocument();
+    expect(screen.getByText("Cost/Litre Milk")).toBeInTheDocument();
+  });
+
+  it.each(["Dry Cow", "Heifer"] as const)(
+    "hides them for %s even on an older report that still has the numbers",
+    (category) => {
+      useStore.setState({
+        cattleInfo: baseCattleInfo({ animal_category: category }),
+        reportData: withMilk(),
+      });
+      render(<ReportPage />);
+      expect(screen.queryByText("Limiting Factor")).not.toBeInTheDocument();
+      expect(screen.queryByText("Cost/Litre Milk")).not.toBeInTheDocument();
+      expect(screen.queryByText("Milk Production Analysis")).not.toBeInTheDocument();
+      // Not milk-based — stays.
+      expect(screen.getByText("Overall Status")).toBeInTheDocument();
+      expect(screen.getAllByText("Total Diet Cost").length).toBeGreaterThan(0);
+    }
+  );
+
+  it("hides null milk values instead of rendering a placeholder", () => {
+    const report = makeEvalResponse();
+    report.cost_analysis.feed_cost_per_kg_milk = null;
+    report.milk_production_analysis.milk_supported_by_energy_kg_per_day = null;
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ animal_category: "Dry Cow" }),
+      reportData: report,
+    });
+    const { unmount } = render(<ReportPage />);
+    expect(screen.queryByText("Cost/Litre Milk")).not.toBeInTheDocument();
+    unmount();
+    useStore.setState({ cattleInfo: baseCattleInfo(), reportData: report });
+    render(<ReportPage />);
+    expect(screen.queryByText("Cost/Litre Milk")).not.toBeInTheDocument();
+    expect(screen.queryByText("Energy-Supported")).not.toBeInTheDocument();
+    expect(screen.getByText("Protein-Supported")).toBeInTheDocument();
+  });
+});
+
+describe("Report — evaluation Environment Impact matches the PDF (QA 2026-10-12)", () => {
+  it("shows Ym (%) instead of the MJ/day emission, and every value with 2 decimals", () => {
+    const base = makeEvalResponse();
+    useStore.setState({
+      reportData: makeEvalResponse({
+        methane_analysis: {
+          ...base.methane_analysis,
+          methane_production_g_per_day: 276.34,
+          methane_yield_g_per_kg_dmi: 26.84,
+          methane_intensity_g_per_kg_ecm: 13.07,
+          "Ym (%)": 8.76,
+          methane_emission_mj_per_day: 15.3,
+        },
+        nutrient_balance: { ...base.nutrient_balance, energy_balance_mcal: 7.01 },
+      }),
+    });
+    render(<ReportPage />);
+
+    expect(screen.getByText("Methane Conversion Rate (Ym)")).toBeInTheDocument();
+    expect(screen.getByText("8.76")).toBeInTheDocument();
+    expect(screen.queryByText("CH₄ Emission")).toBeNull();
+    expect(screen.queryByText("15.30")).toBeNull();
+    expect(screen.getByText("276.34")).toBeInTheDocument();
+    expect(screen.getByText("26.84")).toBeInTheDocument();
+    expect(screen.getByText("13.07")).toBeInTheDocument();
+    expect(screen.getByText(/\+7\.01\s+Mcal/)).toBeInTheDocument();
+  });
+});

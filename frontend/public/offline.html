@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RationSmart — Offline</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Nunito', 'Segoe UI', sans-serif;
+      background: linear-gradient(160deg, #1CA069 0%, #064E3B 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      text-align: center;
+      padding: 24px;
+    }
+    .icon {
+      width: 96px;
+      height: 96px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+    }
+    h1 { font-size: 28px; font-weight: 800; margin-bottom: 12px; }
+    p { font-size: 16px; opacity: 0.85; line-height: 1.6; max-width: 300px; margin: 0 auto 32px; }
+    button {
+      background: white;
+      color: #1CA069;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    button:hover { background: #E8F5F0; }
+  </style>
+</head>
+<body>
+  <div class="icon">
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M10 36C10 36 8 28 14 22C20 16 26 18 30 16C34 14 36 8 36 8C36 8 42 12 42 20C42 28 36 30 32 32C28 34 26 40 26 40L10 36Z" fill="white" opacity="0.9"/>
+      <circle cx="38" cy="14" r="4" fill="white" opacity="0.7"/>
+      <path d="M16 38C16 38 12 44 18 46C24 48 28 44 28 40" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+    </svg>
+  </div>
+  <h1>You're Offline</h1>
+  <p>RationSmart needs an internet connection to calculate rations and sync your data. Please check your connection and try again.</p>
+  <button onclick="window.location.reload()">Try Again</button>
+</body>
+</html>

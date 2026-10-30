@@ -313,6 +313,9 @@ def issue_token(user: UserInformationModel) -> Dict[str, Any]:
         "is_admin": user.is_admin,
         "iat": now,
         "exp": now + timedelta(minutes=expire_minutes),
+        # Unique per token: without it two logins in the same second get the same
+        # token, so logging one out (app/token_revocation.py) revoked the other.
+        "jti": secrets.token_hex(16),
     }
     token = jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
     return {

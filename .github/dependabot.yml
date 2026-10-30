@@ -38,6 +38,8 @@ updates:
       - dependency-name: "autograd"
       - dependency-name: "cma"
       - dependency-name: "dill"
+      # Language-code standard forms come from its data; a bump can change stored codes.
+      - dependency-name: "langcodes"
       # SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), breaking Alembic (#42).
       - dependency-name: "sqlalchemy"
         versions: [">=2.1"]
@@ -58,3 +60,19 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  # backend/Dockerfile pins python:3.12-slim by digest so builds hit the cache;
+  # this opens a PR when Docker Hub publishes a newer 3.12-slim. The first deploy
+  # after merging rebuilds every layer: check /health, a diet run and a PDF.
+  - package-ecosystem: "docker"
+    directory: "/backend"
+    schedule:
+      interval: "monthly"
+    cooldown:
+      default-days: 7
+    labels:
+      - "dependencies"
+    ignore:
+      # Security refreshes of 3.12 only; moving to 3.13+ is a deliberate upgrade.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
