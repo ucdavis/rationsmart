@@ -2,7 +2,7 @@ import logging
 from typing import AsyncGenerator, Optional
 
 import jwt as _jwt
-from fastapi import Depends, HTTPException, Query, Request, status
+from fastapi import Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -44,56 +44,17 @@ async def _user_from_jwt(token: str, db: AsyncSession) -> UserInformationModel:
 
 
 async def get_current_user(
-    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ) -> UserInformationModel:
     """
-    Resolve the calling user from a Bearer JWT (preferred) or a legacy
-    user_id / email_id in the request body (deprecated, mobile transition).
+    Resolve the calling user from a Bearer JWT; anything else is a 401.
 
-    Remove the legacy fallback once mobile confirms JWT works in production.
+    A user_id / email_id in the request body is never trusted: the old
+    fallback that accepted one let anyone act as any user, admins included.
     """
-    from repositories.user_repository import UserRepository
-
-    # ── Primary path: Bearer JWT ──────────────────────────────────────────────
     if credentials and credentials.credentials:
         return await _user_from_jwt(credentials.credentials, db)
-
-    # ── Legacy fallback: user_id or email_id in request body ─────────────────
-    body: dict = {}
-    try:
-        body = request.state._cached_body  # type: ignore[attr-defined]
-    except AttributeError:
-        try:
-            body = await request.json()
-            request.state._cached_body = body
-        except Exception:
-            body = {}
-
-    repo = UserRepository(db)
-
-    user_id: Optional[str] = body.get("user_id")
-    if user_id:
-        logger.warning(
-            "DEPRECATED: user_id in request body used for auth (endpoint=%s). "
-            "Switch to Bearer JWT.",
-            request.url.path,
-        )
-        user = await repo.get_by_id(user_id)
-        if user and user.is_active:
-            return user
-
-    email_id: Optional[str] = body.get("email_id")
-    if email_id:
-        logger.warning(
-            "DEPRECATED: email_id in request body used for auth (endpoint=%s). "
-            "Switch to Bearer JWT.",
-            request.url.path,
-        )
-        user = await repo.get_by_email(email_id)
-        if user and user.is_active:
-            return user
 
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -111,7 +72,6 @@ async def require_admin_user(
 
 
 async def get_optional_current_user(
-    request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer),
     db: AsyncSession = Depends(get_db),
 ) -> Optional[UserInformationModel]:
@@ -121,7 +81,7 @@ async def get_optional_current_user(
     still resolve a language from ?lang= without requiring a Bearer token.
     """
     try:
-        return await get_current_user(request, credentials, db)
+        return await get_current_user(credentials, db)
     except HTTPException:
         return None
 
