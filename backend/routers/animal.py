@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -181,12 +181,14 @@ async def list_feeds(
     country_id: str = None,
     feed_type_id: str = None,
     feed_category_id: str = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     lang: str = Depends(get_language_authenticated),
 ):
     """
-    Return a summary list of all standard feeds, with optional country filter.
+    Return a paginated summary list of standard feeds, with optional country filter.
 
     **Requires:** Bearer JWT.
 
@@ -194,12 +196,15 @@ async def list_feeds(
     - `country_id` — UUID to scope feeds to a specific country.
     - `feed_type_id` — filter by feed type UUID.
     - `feed_category_id` — filter by feed category UUID.
+    - `page` (default 1), `page_size` (default 20, max 100) — pagination. `total` counts every
+      matching feed, so keep paging until `page * page_size >= total`.
 
     Response fields per item: `id`, `fd_name`, `fd_type`, `fd_category`, plus localized
     `display_name`, `display_type`, `display_category`.
     For full nutritional data, call `GET /v1/animal/feed-details/{feed_id}`.
     """
     rows, total = await FeedRepository(db).get_all_localized(
+        skip=(page - 1) * page_size, limit=page_size,
         country_id=country_id, lang=lang,
         feed_type_id=feed_type_id, feed_category_id=feed_category_id,
     )
@@ -217,6 +222,8 @@ async def list_feeds(
             for row in rows
         ],
         "total": total,
+        "page": page,
+        "page_size": page_size,
     }
 
 
