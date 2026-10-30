@@ -38,6 +38,10 @@ updates:
       - dependency-name: "autograd"
       - dependency-name: "cma"
       - dependency-name: "dill"
+      # pymoo requires alive-progress, which pins about-time==4.2.1 exactly (#89).
+      - dependency-name: "alive-progress"
+      - dependency-name: "about-time"
+      - dependency-name: "grapheme"
       # Language-code standard forms come from its data; a bump can change stored codes.
       - dependency-name: "langcodes"
       # SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), breaking Alembic (#42).
