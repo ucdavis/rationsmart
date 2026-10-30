@@ -168,15 +168,31 @@ async def get_countries(db: AsyncSession = Depends(get_db)):
     return [_country_schema(c, lang_map.get(str(c.id), [])) for c in countries]
 
 
+def _is_own_email(email_id: str, user: UserInformationModel) -> bool:
+    # Stored emails are lower-case (UserRepository.get_by_email compares that way).
+    return email_id.lower().strip() == (user.email_id or "").lower()
+
+
 @router.get("/user/{email_id}", response_model=UserResponse, summary="Get user profile by email")
-async def get_user(email_id: str, db: AsyncSession = Depends(get_db)):
+async def get_user(
+    email_id: str,
+    current_user: UserInformationModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Fetch the profile of any registered user by their email address.
+    Fetch a user's profile by email address.
+
+    **Requires:** Bearer JWT. Users may read only their own profile; admins may read any.
 
     **Path parameter:** `email_id` — the user's registered email address (URL-encoded if it contains `+` or special characters).
 
-    Returns `404` if no account with that email exists.
+    Returns `403` for another user's email (checked before the lookup, so it does not reveal
+    whether that account exists); `404` if an admin asks for an email with no account.
     """
+    if _is_own_email(email_id, current_user):
+        return await _user_response(current_user, db)
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed to read this profile")
     user = await UserRepository(db).get_by_email(email_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -184,22 +200,29 @@ async def get_user(email_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/user/{email_id}", response_model=UserResponse, summary="Update user profile")
-async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession = Depends(get_db)):
+async def update_user(
+    email_id: str,
+    body: UserUpdateRequest,
+    current_user: UserInformationModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Update the name, country, and/or preferred language of a registered user.
+    Update the name, country, and/or preferred language of the calling user.
 
-    **Path parameter:** `email_id` — the user's email address.
+    **Requires:** Bearer JWT. Users may change only their own profile (admins included).
+
+    **Path parameter:** `email_id` — the caller's own email address.
 
     **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries`),
     `preferred_language` (BCP 47 code from `GET /v1/auth/countries`).
     Omit a field to leave it unchanged.
 
-    Returns `404` if the user is not found; `400` if `country_id` or `preferred_language` is invalid.
+    Returns `403` for another user's email; `400` if `country_id` or `preferred_language` is invalid.
     """
+    if not _is_own_email(email_id, current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed to change this profile")
     repo = UserRepository(db)
-    user = await repo.get_by_email(email_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user = current_user
 
     if body.country_id is not None and not await repo.get_country_by_id(body.country_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid country selected")
