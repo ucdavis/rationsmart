@@ -19,6 +19,7 @@ import { useT, fillText } from "@/lib/i18n-ui";
 import ActivateCountrySheet from "./ActivateCountrySheet";
 import AssociateLanguageSheet from "./AssociateLanguageSheet";
 import RegisterLanguageSheet from "./RegisterLanguageSheet";
+import LanguageSearchBox from "./LanguageSearchBox";
 import { listFrom } from "@/lib/api-client/normalize";
 
 export function CountriesLanguagesTab({
@@ -275,6 +276,20 @@ export function CountriesLanguagesTab({
 
   const activeLangCount = allLanguages.filter((l) => l.is_active).length;
 
+  // Registered Languages search — filters the loaded list in the browser
+  // (no API call). Matches the English name, the code and the native label,
+  // any part of the text, ignoring case. The active count above still
+  // counts every language, not just the shown ones.
+  const [langQuery, setLangQuery] = useState("");
+  const needle = langQuery.trim().toLocaleLowerCase();
+  const shownLanguages = needle
+    ? allLanguages.filter((l) =>
+        [l.name, l.code, labelForLanguage(l.code)].some((s) =>
+          s.toLocaleLowerCase().includes(needle)
+        )
+      )
+    : allLanguages;
+
   return (
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
       {/* Enabled Countries / Languages */}
@@ -448,7 +463,13 @@ export function CountriesLanguagesTab({
             ＋
           </button>
         </div>
-        {allLanguages.map((l) => {
+        <LanguageSearchBox query={langQuery} setQuery={setLangQuery} t={t} />
+        {shownLanguages.length === 0 && (
+          <p className="px-4 py-3 text-sm" style={{ color: COLORS.darkSilver }}>
+            {fillText(t("No languages match “${query}”"), { query: langQuery.trim() })}
+          </p>
+        )}
+        {shownLanguages.map((l) => {
           const isEnglish = l.code === "en";
           const key = `lang:${l.code}`;
           const isPending = pendingKey.has(key);

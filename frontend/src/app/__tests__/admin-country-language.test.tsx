@@ -214,6 +214,71 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     await waitFor(() => expect(patchLanguage).toHaveBeenCalledWith("hi", { is_active: false }));
   });
 
+  describe("Registered Languages search", () => {
+    const searchLanguages = [
+      ...languages,
+      { code: "am", name: "Amharic", is_active: false },
+      { code: "om", name: "Oromo", is_active: true },
+    ];
+    const search = () => screen.getByRole("textbox", { name: "Search languages" });
+    // Each non-English row has a toggle labelled "<Activate|Deactivate> <name>".
+    const shown = (name: string) => screen.queryByLabelText(new RegExp(`activate ${name}$`, "i"));
+
+    beforeEach(() => seedLoad({ languages: searchLanguages }));
+
+    it("filters by any part of the English name, ignoring case", async () => {
+      render(<AdminCountryLanguagePage />);
+      await screen.findByText("Registered Languages");
+      fireEvent.change(search(), { target: { value: "ROM" } });
+      expect(shown("Oromo")).toBeInTheDocument();
+      expect(shown("Hindi")).toBeNull();
+      expect(shown("Amharic")).toBeNull();
+    });
+
+    it("filters by code and by native label", async () => {
+      render(<AdminCountryLanguagePage />);
+      await screen.findByText("Registered Languages");
+      fireEvent.change(search(), { target: { value: "tl" } });
+      expect(shown("Tagalog")).toBeInTheDocument();
+      expect(shown("Hindi")).toBeNull();
+
+      fireEvent.change(search(), { target: { value: "አማ" } });
+      expect(shown("Amharic")).toBeInTheDocument();
+      expect(shown("Tagalog")).toBeNull();
+    });
+
+    it("keeps counting every active language while filtered", async () => {
+      render(<AdminCountryLanguagePage />);
+      expect(await screen.findByText("4 active")).toBeInTheDocument();
+      fireEvent.change(search(), { target: { value: "amharic" } });
+      expect(screen.getByText("4 active")).toBeInTheDocument();
+    });
+
+    it("shows a no-match line, and ✕ clears the search", async () => {
+      render(<AdminCountryLanguagePage />);
+      await screen.findByText("Registered Languages");
+      fireEvent.change(search(), { target: { value: "zzz" } });
+      expect(screen.getByText("No languages match “zzz”")).toBeInTheDocument();
+      expect(shown("Hindi")).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: "Clear search" }));
+      expect(search()).toHaveValue("");
+      expect(shown("Hindi")).toBeInTheDocument();
+      expect(screen.queryByText(/No languages match/)).toBeNull();
+    });
+
+    it("toggles a language while filtered and keeps the search text", async () => {
+      patchLanguage.mockResolvedValue({ data: { code: "am", name: "Amharic", is_active: true } });
+      render(<AdminCountryLanguagePage />);
+      await screen.findByText("Registered Languages");
+      fireEvent.change(search(), { target: { value: "amh" } });
+      fireEvent.click(screen.getByLabelText("Activate Amharic"));
+      await waitFor(() => expect(patchLanguage).toHaveBeenCalledWith("am", { is_active: true }));
+      expect(search()).toHaveValue("amh");
+      expect(shown("Amharic")).toBeInTheDocument();
+    });
+  });
+
   it("does not redirect a non-admin user and shows nothing", () => {
     useStore.setState({ user: seedUser({ is_admin: false }) } as never);
     const { container } = render(<AdminCountryLanguagePage />);
