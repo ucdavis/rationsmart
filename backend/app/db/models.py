@@ -46,7 +46,7 @@ class CountryModel(Base):
 class UserInformationModel(Base):
     __tablename__ = "user_information"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("uuid_generate_v4()"), default=uuid.uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, server_default=text("gen_random_uuid()"), default=uuid.uuid4)
     name = Column(String(100), nullable=False)
     email_id = Column(String(255), nullable=False, unique=True)
     pin_hash = Column(String(255), nullable=False)
