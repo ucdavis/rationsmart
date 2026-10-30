@@ -7,12 +7,11 @@
 -- Session SET lines, the search_path reset and the extension comment are removed;
 -- every name is schema-qualified. Never edit this file to change the schema:
 -- write a new migration.
-
 --
--- Name: uuid-ossp; Type: EXTENSION; Schema: -; Owner: -
---
-
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA public;
+-- Exception: the uuid-ossp extension is not created and user_information.id uses the
+-- built-in gen_random_uuid() (as every other table does), because managed Postgres
+-- (Azure) does not allow-list uuid-ossp. Existing databases get the same default from
+-- d1e2f3a4b5c6.
 
 --
 -- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: -
@@ -587,7 +586,7 @@ COMMENT ON COLUMN public.user_feedback.updated_at IS 'Timestamp when feedback wa
 --
 
 CREATE TABLE public.user_information (
-    id uuid DEFAULT public.uuid_generate_v4() NOT NULL,
+    id uuid DEFAULT gen_random_uuid() NOT NULL,
     name character varying(100) NOT NULL,
     email_id character varying(255) NOT NULL,
     pin_hash character varying(255) NOT NULL,

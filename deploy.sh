@@ -116,6 +116,11 @@ backup_db() {
 migrate() {
   log "running alembic migrations"
   dc backend run --rm --no-deps -T api alembic upgrade head
+  # Fail loudly if the database is not at the head of the revisions baked into THIS image
+  # (a stale registry image would otherwise "succeed" while missing newer migrations).
+  dc backend run --rm --no-deps -T api alembic current --check-heads \
+    || die "migrations not at head after upgrade (stale image? re-run with FORCE_BUILD=1)"
+  log "migrations at head"
 }
 
 smoke_test() {
@@ -170,7 +175,14 @@ do_deploy() {
 
 do_rollback() {
   ensure_network
-  local stack ok=1
+  local stack ok=1 ref
+  for stack in "${APP_STACKS[@]}"; do
+    while read -r ref; do
+      [[ -n "$ref" ]] || continue
+      docker image inspect "${ref%:*}:rollback" >/dev/null 2>&1 \
+        || die "no :rollback image for ${ref%:*} (first deploy?): nothing to roll back to; the deploy failure is logged above"
+    done < <(dc "$stack" config --images 2>/dev/null | grep -E 'rationsmart-(api|pwa)' | sort -u || true)
+  done
   for stack in "${APP_STACKS[@]}"; do
     log "[$stack] rolling back to :rollback images"
     # IMAGE_TAG=rollback selects the tags snapshot_for_rollback created; --no-build keeps compose
