@@ -28,6 +28,7 @@ async def _user_from_jwt(token: str, db: AsyncSession) -> UserInformationModel:
     """Decode JWT and return the active user. Raises HTTPException on any failure."""
     from services.auth_service import decode_token
     from repositories.user_repository import UserRepository
+    from app.token_revocation import is_token_revoked
 
     try:
         payload = decode_token(token)
@@ -37,7 +38,10 @@ async def _user_from_jwt(token: str, db: AsyncSession) -> UserInformationModel:
     except Exception:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
 
-    user = await UserRepository(db).get_by_id(user_id)
+    if await is_token_revoked(token):
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revoked")
+
+    user =await UserRepository(db).get_by_id(user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
     return user

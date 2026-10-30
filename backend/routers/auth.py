@@ -1,9 +1,11 @@
 import logging
 from collections import defaultdict
-from typing import List
+from typing import List, Optional
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,7 @@ from app.schemas.auth import (
     ForgotPinRequest,
     ForgotPinResponse,
     LoginResponse,
+    LogoutResponse,
     ResendVerificationRequest,
     SetNewPinRequest,
     TokenResponse,
@@ -28,12 +31,14 @@ from app.schemas.auth import (
     VerifyEmailRequest,
 )
 from app.limiter import limiter
+from app.token_revocation import revoke_token
 from repositories.user_repository import UserRepository
 from services import auth_service
 from services.email_service import email_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Authentication"])
+_bearer = HTTPBearer(auto_error=False)
 
 
 def _country_schema(country, supported_languages: list = None) -> Country:
@@ -146,6 +151,36 @@ async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(ge
         user=await _user_response(user, db),
         token=TokenResponse(**token_info),
     )
+
+
+@router.post("/logout", response_model=LogoutResponse, summary="Revoke the current JWT")
+async def logout(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)):
+    """
+    Revoke the Bearer token sent with this request, so it can no longer be used.
+
+    **Requires:** Bearer JWT in `Authorization` header (the token to revoke).
+
+    Repeating the call is harmless. An expired token needs no revoking and also returns `200`.
+
+    - `401` — no token, or a token that is not a valid RationSmart JWT.
+    - `503` — the revocation could not be recorded (Redis unavailable); the token stays valid.
+    """
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated. Provide a Bearer token.")
+    token = credentials.credentials
+    try:
+        payload = auth_service.decode_token(token)
+    except jwt.ExpiredSignatureError:
+        return LogoutResponse(success=True, message="Token already expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    if not await revoke_token(token, payload["exp"]):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Logout could not be recorded; please try again.",
+        )
+    return LogoutResponse(success=True, message="Logged out")
 
 
 @router.get("/countries", response_model=List[Country], summary="List all supported countries")
