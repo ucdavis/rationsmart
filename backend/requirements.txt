@@ -100,7 +100,7 @@ pycparser==3.0
 appdirs==1.4.4
 # pymoo requires alive-progress, which pins about-time exactly; Dependabot ignores
 # all three so a group bump can't break the install (see PR #89).
-grapheme==0.6.0
+graphemeu==0.7.2
 alive-progress==3.3.0
 about-time==4.2.1
 
