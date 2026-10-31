@@ -6,9 +6,8 @@ from pydantic import BaseModel, Field
 
 class FeedTranslationUpsertRequest(BaseModel):
     feed_id: str = Field(..., description="UUID of the standard feed")
-    language: str = Field(..., max_length=10, description="BCP 47 language code, e.g. 'hi'")
+    language: str = Field(..., max_length=10, description="Registered language code, e.g. 'hi' (any case); 404 if not registered")
     name: str = Field(..., min_length=1, max_length=500, description="Translated name")
-
 
 class FeedTranslationRecord(BaseModel):
     feed_id: str

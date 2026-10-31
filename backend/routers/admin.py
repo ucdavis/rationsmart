@@ -908,8 +908,14 @@ async def upsert_feed_translation(
 
     Returns the persisted translation record with `action` set to `'inserted'` or `'updated'`.
     """
+    language = await LanguageRepository(db).get_by_code(body.language)
+    if language is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Language '{body.language}' not found — register it first via POST /v1/admin/languages",
+        )
     result = await translation_service.upsert_feed_translation(
-        db, body.feed_id, body.language, body.name
+        db, body.feed_id, language.code, body.name
     )
     await db.commit()
     return FeedTranslationRecord(**result)
@@ -932,6 +938,7 @@ async def translation_coverage(
 
     **Requires:** Bearer JWT with admin privileges.
     """
+    lang = await _stored_language_code(db, lang)
     counts = await translation_service.get_translation_coverage(db, country_id, lang)
     return TranslationCoverageResponse(
         success=True,
@@ -985,6 +992,7 @@ async def delete_feed_translation(
 
     Returns `404` if no translation exists for this feed+language pair.
     """
+    language = await _stored_language_code(db, language)
     deleted = await translation_service.delete_feed_translation(db, feed_id, language)
     if not deleted:
         raise HTTPException(
@@ -996,6 +1004,14 @@ async def delete_feed_translation(
 
 
 # ── Language management (i18n Phase 5) ───────────────────────────────────────
+
+async def _stored_language_code(db: AsyncSession, raw: str) -> str:
+    """The stored languages.code that `raw` names ('BN' -> 'bn', 'ben' -> 'bn',
+    an old 'tl' row -> 'tl'); the trimmed input when no language matches, so the
+    caller's usual 404 applies."""
+    language = await LanguageRepository(db).get_by_code(raw)
+    return language.code if language is not None else (raw or "").strip()
+
 
 @router.post(
     "/languages",
@@ -1244,11 +1260,13 @@ async def assign_language_to_country(
     (FK errors surface as `400` from the DB).
     """
     repo = LanguageRepository(db)
-    if not await repo.get_by_code(code):
+    language = await repo.get_by_code(code)
+    if language is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Language '{code}' not found — register it first via POST /v1/admin/languages",
         )
+    code = language.code
     inserted = await repo.assign(country_id, code)
     if not inserted:
         raise HTTPException(
@@ -1279,6 +1297,7 @@ async def unassign_language_from_country(
     `'en'` cannot be unassigned from any country (it is the universal baseline per I3).
     Returns `400` if `code == 'en'`, `404` if the assignment does not exist.
     """
+    code = await _stored_language_code(db, code)
     if code.lower() == "en":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

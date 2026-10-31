@@ -1,9 +1,11 @@
 import logging
 from collections import defaultdict
-from typing import List
+from typing import List, Optional
 
+import jwt
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +19,7 @@ from app.schemas.auth import (
     ForgotPinRequest,
     ForgotPinResponse,
     LoginResponse,
+    LogoutResponse,
     ResendVerificationRequest,
     SetNewPinRequest,
     TokenResponse,
@@ -28,12 +31,14 @@ from app.schemas.auth import (
     VerifyEmailRequest,
 )
 from app.limiter import limiter
+from app.token_revocation import revoke_token
 from repositories.user_repository import UserRepository
 from services import auth_service
 from services.email_service import email_service
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Authentication"])
+_bearer = HTTPBearer(auto_error=False)
 
 
 def _country_schema(country, supported_languages: list = None) -> Country:
@@ -148,6 +153,36 @@ async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(ge
     )
 
 
+@router.post("/logout", response_model=LogoutResponse, summary="Revoke the current JWT")
+async def logout(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_bearer)):
+    """
+    Revoke the Bearer token sent with this request, so it can no longer be used.
+
+    **Requires:** Bearer JWT in `Authorization` header (the token to revoke).
+
+    Repeating the call is harmless. An expired token needs no revoking and also returns `200`.
+
+    - `401` — no token, or a token that is not a valid RationSmart JWT.
+    - `503` — the revocation could not be recorded (Redis unavailable); the token stays valid.
+    """
+    if not credentials or not credentials.credentials:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated. Provide a Bearer token.")
+    token = credentials.credentials
+    try:
+        payload = auth_service.decode_token(token)
+    except jwt.ExpiredSignatureError:
+        return LogoutResponse(success=True, message="Token already expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+
+    if not await revoke_token(token, payload["exp"]):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Logout could not be recorded; please try again.",
+        )
+    return LogoutResponse(success=True, message="Logged out")
+
+
 @router.get("/countries", response_model=List[Country], summary="List all supported countries")
 async def get_countries(db: AsyncSession = Depends(get_db)):
     """
@@ -168,15 +203,31 @@ async def get_countries(db: AsyncSession = Depends(get_db)):
     return [_country_schema(c, lang_map.get(str(c.id), [])) for c in countries]
 
 
+def _is_own_email(email_id: str, user: UserInformationModel) -> bool:
+    # Stored emails are lower-case (UserRepository.get_by_email compares that way).
+    return email_id.lower().strip() == (user.email_id or "").lower()
+
+
 @router.get("/user/{email_id}", response_model=UserResponse, summary="Get user profile by email")
-async def get_user(email_id: str, db: AsyncSession = Depends(get_db)):
+async def get_user(
+    email_id: str,
+    current_user: UserInformationModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Fetch the profile of any registered user by their email address.
+    Fetch a user's profile by email address.
+
+    **Requires:** Bearer JWT. Users may read only their own profile; admins may read any.
 
     **Path parameter:** `email_id` — the user's registered email address (URL-encoded if it contains `+` or special characters).
 
-    Returns `404` if no account with that email exists.
+    Returns `403` for another user's email (checked before the lookup, so it does not reveal
+    whether that account exists); `404` if an admin asks for an email with no account.
     """
+    if _is_own_email(email_id, current_user):
+        return await _user_response(current_user, db)
+    if not current_user.is_admin:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed to read this profile")
     user = await UserRepository(db).get_by_email(email_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -184,37 +235,48 @@ async def get_user(email_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @router.put("/user/{email_id}", response_model=UserResponse, summary="Update user profile")
-async def update_user(email_id: str, body: UserUpdateRequest, db: AsyncSession = Depends(get_db)):
+async def update_user(
+    email_id: str,
+    body: UserUpdateRequest,
+    current_user: UserInformationModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Update the name, country, and/or preferred language of a registered user.
+    Update the name, country, and/or preferred language of the calling user.
 
-    **Path parameter:** `email_id` — the user's email address.
+    **Requires:** Bearer JWT. Users may change only their own profile (admins included).
+
+    **Path parameter:** `email_id` — the caller's own email address.
 
     **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries`),
     `preferred_language` (BCP 47 code from `GET /v1/auth/countries`).
     Omit a field to leave it unchanged.
 
-    Returns `404` if the user is not found; `400` if `country_id` or `preferred_language` is invalid.
+    Returns `403` for another user's email; `400` if `country_id` or `preferred_language` is invalid.
     """
+    if not _is_own_email(email_id, current_user):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not allowed to change this profile")
     repo = UserRepository(db)
-    user = await repo.get_by_email(email_id)
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+    user = current_user
 
     if body.country_id is not None and not await repo.get_country_by_id(body.country_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid country selected")
 
-    if body.preferred_language is not None:
+    preferred_language = body.preferred_language
+    if preferred_language is not None:
         from app.lang import get_active_languages
+        from app.language_tags import match_language_code
         active = await get_active_languages(db)
-        if body.preferred_language not in active:
+        # Case-insensitive ('HI' -> 'hi'); the stored spelling is saved.
+        preferred_language = match_language_code(preferred_language, active)
+        if preferred_language is None:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=f"Language '{body.preferred_language}' is not available",
             )
 
     await repo.update_profile(
-        user, name=body.name, country_id=body.country_id, preferred_language=body.preferred_language
+        user, name=body.name, country_id=body.country_id, preferred_language=preferred_language
     )
     await db.commit()
     return await _user_response(user, db)

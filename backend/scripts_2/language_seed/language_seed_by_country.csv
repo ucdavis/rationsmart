@@ -1,0 +1,406 @@
+country,country_code,rank,language_code,language_name,percent_speakers,already_in_db
+Afghanistan,AFG,1,fa,Persian,50.0,no
+Afghanistan,AFG,2,ps,Pashto,43.0,no
+Afghanistan,AFG,3,haz,Hazaragi,5.9,no
+Albania,ALB,1,sq,Albanian,100.0,no
+Algeria,DZA,1,arq,Algerian Arabic,83.0,no
+Algeria,DZA,2,ar,Arabic,74.0,no
+Algeria,DZA,3,fr,French,33.0,no
+Andorra,AND,1,ca,Catalan,51.0,no
+Andorra,AND,2,es,Spanish,43.0,no
+Andorra,AND,3,fr,French,6.8,no
+Angola,AGO,1,pt,Portuguese,67.0,no
+Angola,AGO,2,umb,Umbundu,29.0,no
+Angola,AGO,3,kmb,Kimbundu,25.0,no
+Argentina,ARG,1,es,Spanish,100.0,no
+Armenia,ARM,1,hy,Armenian,98.0,no
+Australia,AUS,,,(English only),,
+Austria,AUT,1,de,German,97.0,no
+Austria,AUT,2,bar,Bavarian,95.0,no
+Austria,AUT,3,fr,French,13.0,no
+Azerbaijan,AZE,1,az,Azerbaijani,89.0,no
+Azerbaijan,AZE,2,tly,Talysh,9.8,no
+Bahamas,BHS,,,(English only),,
+Bahrain,BHR,1,ar,Arabic,87.0,no
+Bangladesh,BGD,1,bn,Bangla,98.0,no
+Bangladesh,BGD,2,rkt,Rangpuri,6.5,no
+Bangladesh,BGD,3,syl,Sylheti,5.0,no
+Barbados,BRB,,,(English only),,
+Belarus,BLR,1,be,Belarusian,100.0,no
+Belarus,BLR,2,ru,Russian,12.0,no
+Belgium,BEL,1,nl,Dutch,55.0,no
+Belgium,BEL,2,fr,French,38.0,no
+Belgium,BEL,3,de,German,22.0,no
+Belize,BLZ,1,es,Spanish,28.0,no
+Benin,BEN,1,fr,French,34.0,no
+Benin,BEN,2,fon,Fon,25.0,no
+Benin,BEN,3,yo,Yoruba,6.7,no
+Bhutan,BTN,1,dz,Dzongkha,47.0,no
+Bhutan,BTN,2,ne,Nepali,17.0,no
+Bhutan,BTN,3,tsj,Tshangla,15.0,no
+Bolivia,BOL,1,es,Spanish,61.0,no
+Bolivia,BOL,2,qu,Quechua,32.0,no
+Bolivia,BOL,3,ay,Aymara,20.0,no
+Bosnia and Herzegovina,BIH,1,bs,Bosnian,99.0,no
+Bosnia and Herzegovina,BIH,2,hr,Croatian,12.0,no
+Bosnia and Herzegovina,BIH,3,sr,Serbian,10.0,no
+Botswana,BWA,1,tn,Tswana,62.0,no
+Brazil,BRA,1,pt,Portuguese,91.0,no
+Brunei,BRN,1,ms,Malay,93.0,no
+Brunei,BRN,2,zh,Chinese,11.0,no
+Bulgaria,BGR,1,bg,Bulgarian,100.0,no
+Bulgaria,BGR,2,ru,Russian,23.0,no
+Bulgaria,BGR,3,tr,Turkish,11.0,no
+Burkina Faso,BFA,1,mos,Mossi,40.0,no
+Burkina Faso,BFA,2,dyu,Dyula,32.0,no
+Burkina Faso,BFA,3,fr,French,25.0,no
+Burundi,BDI,1,rn,Rundi,63.0,no
+Burundi,BDI,2,fr,French,59.0,no
+Cambodia,KHM,1,km,Khmer,89.0,no
+Cameroon,CMR,1,fr,French,68.0,no
+Canada,CAN,1,fr,French,29.0,no
+Cape Verde,CPV,1,kea,Kabuverdianu,91.0,no
+Cape Verde,CPV,2,pt,Portuguese,76.0,no
+Central African Republic,CAF,1,sg,Sango,49.0,no
+Central African Republic,CAF,2,fr,French,29.0,no
+Chad,TCD,1,ar,Arabic,17.0,no
+Chad,TCD,2,fr,French,13.0,no
+Chile,CHL,1,es,Spanish,98.0,no
+China,CHN,1,zh,Chinese,90.0,no
+China,CHN,2,wuu,Wu Chinese,6.0,no
+China,CHN,3,yue,Cantonese,5.2,no
+Colombia,COL,1,es,Spanish,93.0,no
+Comoros,COM,1,ar,Arabic,66.0,no
+Comoros,COM,2,zdj,Ngazidja Comorian,37.0,no
+Comoros,COM,3,wni,Ndzwani Comorian,34.0,no
+Congo,COG,1,fr,French,61.0,no
+Costa Rica,CRI,1,es,Spanish,95.0,no
+Croatia,HRV,1,hr,Croatian,99.0,no
+Cuba,CUB,1,es,Spanish,100.0,no
+Cyprus,CYP,1,el,Greek,95.0,no
+Cyprus,CYP,2,tr,Turkish,23.0,no
+Cyprus,CYP,3,fr,French,6.6,no
+Czech Republic,CZE,1,cs,Czech,98.0,no
+Czech Republic,CZE,2,sk,Slovak,16.0,no
+Czech Republic,CZE,3,de,German,15.0,no
+Democratic Republic of the Congo,COD,1,fr,French,51.0,no
+Democratic Republic of the Congo,COD,2,sw,Swahili,50.0,yes
+Democratic Republic of the Congo,COD,3,lua,Luba-Lulua,9.6,no
+Denmark,DNK,1,da,Danish,93.0,no
+Denmark,DNK,2,de,German,47.0,no
+Denmark,DNK,3,sv,Swedish,13.0,no
+Djibouti,DJI,1,fr,French,50.0,no
+Djibouti,DJI,2,aa,Afar,42.0,no
+Djibouti,DJI,3,so,Somali,41.0,no
+Dominica,DMA,,,(English only),,
+Dominican Republic,DOM,1,es,Spanish,78.0,no
+Ecuador,ECU,1,es,Spanish,96.0,no
+Ecuador,ECU,2,qu,Quechua,17.0,no
+Ecuador,ECU,3,qug,Chimborazo Highland Quichua,5.7,no
+Egypt,EGY,1,ar,Arabic,94.0,no
+Egypt,EGY,2,arz,Egyptian Arabic,64.0,no
+Egypt,EGY,3,cop,Coptic,6.0,no
+El Salvador,SLV,1,es,Spanish,89.0,no
+Equatorial Guinea,GNQ,1,es,Spanish,87.0,no
+Equatorial Guinea,GNQ,2,fan,Fang,51.0,no
+Equatorial Guinea,GNQ,3,fr,French,29.0,no
+Eritrea,ERI,1,ti,Tigrinya,60.0,no
+Eritrea,ERI,2,tig,Tigre,18.0,no
+Estonia,EST,1,et,Estonian,71.0,no
+Estonia,EST,2,ru,Russian,56.0,no
+Estonia,EST,3,fi,Finnish,21.0,no
+Eswatini,SWZ,1,ss,Swati,58.0,no
+Eswatini,SWZ,2,zu,Zulu,6.8,no
+Ethiopia,ETH,1,am,Amharic,33.0,yes
+Ethiopia,ETH,2,om,Oromo,32.0,no
+Ethiopia,ETH,3,ti,Tigrinya,6.0,no
+Fiji,FJI,1,hi,Hindi,44.0,yes
+Fiji,FJI,2,hif,Fiji Hindi,41.0,no
+Fiji,FJI,3,fj,Fijian,39.0,no
+Finland,FIN,1,fi,Finnish,94.0,no
+Finland,FIN,2,sv,Swedish,44.0,no
+Finland,FIN,3,de,German,18.0,no
+France,FRA,1,fr,French,97.0,no
+France,FRA,2,es,Spanish,13.0,no
+France,FRA,3,de,German,5.0,no
+Gabon,GAB,1,fr,French,63.0,no
+Gabon,GAB,2,puu,Punu,9.0,no
+Gambia,GMB,1,man,Mandingo,29.0,no
+Georgia,GEO,1,ka,Georgian,86.0,no
+Georgia,GEO,2,xmf,Mingrelian,11.0,no
+Georgia,GEO,3,ru,Russian,9.0,no
+Germany,DEU,1,de,German,91.0,no
+Germany,DEU,2,fr,French,18.0,no
+Germany,DEU,3,bar,Bavarian,17.0,no
+Ghana,GHA,1,ak,Akan,39.0,no
+Ghana,GHA,2,ee,Ewe,11.0,no
+Ghana,GHA,3,abr,Abron,5.0,no
+Greece,GRC,1,el,Greek,99.0,no
+Greece,GRC,2,fr,French,7.3,no
+Greece,GRC,3,de,German,5.0,no
+Grenada,GRD,,,(English only),,
+Guatemala,GTM,1,es,Spanish,93.0,no
+Guatemala,GTM,2,quc,Kʼicheʼ,7.0,no
+Guinea,GIN,1,fr,French,27.0,no
+Guinea,GIN,2,ff,Fula,26.0,no
+Guinea,GIN,3,man,Mandingo,23.0,no
+Guinea-Bissau,GNB,1,pt,Portuguese,100.0,no
+Guinea-Bissau,GNB,2,fr,French,15.0,no
+Guyana,GUY,,,(English only),,
+Haiti,HTI,1,ht,Haitian Creole,81.0,no
+Haiti,HTI,2,fr,French,42.0,no
+Honduras,HND,1,es,Spanish,78.0,no
+Hungary,HUN,1,hu,Hungarian,100.0,no
+Hungary,HUN,2,de,German,18.0,no
+Iceland,ISL,1,is,Icelandic,100.0,no
+India,IND,1,hi,Hindi,41.0,yes
+India,IND,2,bn,Bangla,8.1,no
+India,IND,3,te,Telugu,7.2,no
+Indonesia,IDN,1,id,Indonesian,64.0,yes
+Indonesia,IDN,2,jv,Javanese,34.0,no
+Indonesia,IDN,3,su,Sundanese,12.0,no
+Iran,IRN,1,fa,Persian,75.0,no
+Iran,IRN,2,az,Azerbaijani,24.0,no
+Iran,IRN,3,mzn,Mazanderani,5.0,no
+Iraq,IRQ,1,ar,Arabic,68.0,no
+Iraq,IRQ,2,ckb,Central Kurdish,20.0,no
+Ireland,IRL,1,ga,Irish,22.0,no
+Ireland,IRL,2,fr,French,13.0,no
+Israel,ISR,1,he,Hebrew,100.0,no
+Israel,ISR,2,ar,Arabic,20.0,no
+Israel,ISR,3,apc,North Levantine Arabic,17.0,no
+Italy,ITA,1,it,Italian,95.0,no
+Italy,ITA,2,fr,French,20.0,no
+Italy,ITA,3,lmo,Lombard,5.7,no
+Ivory Coast,CIV,1,fr,French,34.0,no
+Ivory Coast,CIV,2,bci,Baoulé,11.0,no
+Jamaica,JAM,1,jam,Jamaican Creole English,95.0,no
+Japan,JPN,1,ja,Japanese,95.0,no
+Jordan,JOR,1,ar,Arabic,100.0,no
+Jordan,JOR,2,apc,North Levantine Arabic,66.0,no
+Kazakhstan,KAZ,1,ru,Russian,72.0,no
+Kazakhstan,KAZ,2,kk,Kazakh,64.0,no
+Kazakhstan,KAZ,3,de,German,6.4,no
+Kenya,KEN,1,sw,Swahili,66.0,yes
+Kenya,KEN,2,ki,Kikuyu,17.0,no
+Kenya,KEN,3,luy,Luyia,11.0,no
+Kiribati,KIR,1,gil,Gilbertese,60.0,no
+Kuwait,KWT,1,ar,Arabic,100.0,no
+Kyrgyzstan,KGZ,1,ky,Kyrgyz,48.0,no
+Kyrgyzstan,KGZ,2,ru,Russian,36.0,no
+Laos,LAO,1,lo,Lao,69.0,no
+Laos,LAO,2,kjg,Khmu,5.8,no
+Latvia,LVA,1,lv,Latvian,61.0,no
+Latvia,LVA,2,ru,Russian,38.0,no
+Latvia,LVA,3,ltg,Latgalian,8.9,no
+Lebanon,LBN,1,apc,North Levantine Arabic,100.0,no
+Lebanon,LBN,2,ar,Arabic,86.0,no
+Lebanon,LBN,3,fr,French,38.0,no
+Lesotho,LSO,1,st,Southern Sotho,98.0,no
+Lesotho,LSO,2,zu,Zulu,14.0,no
+Liberia,LBR,1,kpe,Kpelle,14.0,no
+Libya,LBY,1,ar,Arabic,74.0,no
+Liechtenstein,LIE,1,de,German,100.0,no
+Liechtenstein,LIE,2,gsw,Swiss German,85.0,no
+Lithuania,LTU,1,lt,Lithuanian,86.0,no
+Lithuania,LTU,2,ru,Russian,80.0,no
+Lithuania,LTU,3,de,German,14.0,no
+Luxembourg,LUX,1,fr,French,92.0,no
+Luxembourg,LUX,2,lb,Luxembourgish,67.0,no
+Luxembourg,LUX,3,de,German,63.0,no
+Madagascar,MDG,1,mg,Malagasy,90.0,no
+Madagascar,MDG,2,fr,French,27.0,no
+Malawi,MWI,1,ny,Nyanja,63.0,no
+Malawi,MWI,2,tum,Tumbuka,8.4,no
+Malaysia,MYS,1,ms,Malay,75.0,no
+Malaysia,MYS,2,zh,Chinese,17.0,no
+Maldives,MDV,1,dv,Divehi,98.0,no
+Mali,MLI,1,bm,Bambara,46.0,no
+Mali,MLI,2,fr,French,17.0,no
+Mali,MLI,3,ffm,Maasina Fulfulde,7.7,no
+Malta,MLT,1,mt,Maltese,100.0,no
+Malta,MLT,2,it,Italian,56.0,no
+Malta,MLT,3,fr,French,13.0,no
+Marshall Islands,MHL,1,mh,Marshallese,73.0,no
+Mauritania,MRT,1,ar,Arabic,85.0,no
+Mauritania,MRT,2,fr,French,13.0,no
+Mauritania,MRT,3,ff,Fula,5.7,no
+Mauritius,MUS,1,mfe,Morisyen,90.0,no
+Mauritius,MUS,2,fr,French,73.0,no
+Mauritius,MUS,3,bho,Bhojpuri,8.6,no
+Mexico,MEX,1,es,Spanish,83.0,no
+Micronesia,FSM,1,chk,Chuukese,30.0,no
+Micronesia,FSM,2,pon,Pohnpeian,23.0,no
+Micronesia,FSM,3,kos,Kosraean,8.0,no
+Moldova,MDA,1,ro,Romanian,63.0,no
+Moldova,MDA,2,uk,Ukrainian,14.0,no
+Moldova,MDA,3,bg,Bulgarian,9.4,no
+Monaco,MCO,1,fr,French,97.0,no
+Mongolia,MNG,1,mn,Mongolian,93.0,no
+Mongolia,MNG,2,kk,Kazakh,7.2,no
+Montenegro,MNE,1,sr,Serbian,100.0,no
+Montenegro,MNE,2,sq,Albanian,7.9,no
+Morocco,MAR,1,ary,Moroccan Arabic,87.0,no
+Morocco,MAR,2,ar,Arabic,62.0,no
+Morocco,MAR,3,fr,French,36.0,no
+Mozambique,MOZ,1,pt,Portuguese,27.0,no
+Mozambique,MOZ,2,vmw,Makhuwa,13.0,no
+Mozambique,MOZ,3,ndc,Ndau,9.9,no
+Myanmar,MMR,1,my,Burmese,64.0,no
+Myanmar,MMR,2,shn,Shan,6.4,no
+Namibia,NAM,1,af,Afrikaans,75.0,no
+Namibia,NAM,2,kj,Kuanyama,35.0,no
+Namibia,NAM,3,ng,Ndonga,21.0,no
+Nauru,NRU,1,na,Nauru,70.0,no
+Nepal,NPL,1,ne,Nepali,44.0,no
+Nepal,NPL,2,mai,Maithili,11.0,no
+Nepal,NPL,3,bho,Bhojpuri,6.8,no
+Netherlands,NLD,1,nl,Dutch,100.0,no
+Netherlands,NLD,2,de,German,71.0,no
+Netherlands,NLD,3,fr,French,19.0,no
+New Zealand,NZL,,,(English only),,
+Nicaragua,NIC,1,es,Spanish,78.0,no
+Niger,NER,1,ha,Hausa,41.0,no
+Niger,NER,2,dje,Zarma,17.0,no
+Niger,NER,3,fr,French,13.0,no
+Nigeria,NGA,1,pcm,Nigerian Pidgin,21.0,no
+Nigeria,NGA,2,yo,Yoruba,13.0,no
+Nigeria,NGA,3,ig,Igbo,13.0,no
+North Korea,PRK,1,ko,Korean,88.0,no
+North Macedonia,MKD,1,mk,Macedonian,67.0,no
+North Macedonia,MKD,2,sq,Albanian,25.0,no
+Norway,NOR,1,no,Norwegian,100.0,no
+Norway,NOR,2,nb,Norwegian Bokmål,100.0,no
+Norway,NOR,3,nn,Norwegian Nynorsk,25.0,no
+Oman,OMN,1,ar,Arabic,81.0,no
+Pakistan,PAK,1,ur,Urdu,95.0,no
+Pakistan,PAK,2,pa,Punjabi,70.0,no
+Pakistan,PAK,3,lah,Western Panjabi,40.0,no
+Palau,PLW,1,pau,Palauan,74.0,no
+Panama,PAN,1,es,Spanish,69.0,no
+Papua New Guinea,PNG,1,tpi,Tok Pisin,71.0,no
+Paraguay,PRY,1,gn,Guarani,80.0,no
+Peru,PER,1,es,Spanish,73.0,no
+Peru,PER,2,qu,Quechua,15.0,no
+Philippines,PHL,1,fil,Filipino,60.0,no
+Philippines,PHL,2,es,Spanish,31.0,no
+Philippines,PHL,3,ceb,Cebuano,24.0,no
+Poland,POL,1,pl,Polish,96.0,no
+Poland,POL,2,de,German,19.0,no
+Poland,POL,3,ru,Russian,18.0,no
+Portugal,PRT,1,pt,Portuguese,96.0,no
+Portugal,PRT,2,fr,French,15.0,no
+Portugal,PRT,3,es,Spanish,10.0,no
+Qatar,QAT,1,ar,Arabic,89.0,no
+Qatar,QAT,2,fa,Persian,11.0,no
+Romania,ROU,1,ro,Romanian,90.0,no
+Romania,ROU,2,fr,French,12.0,no
+Romania,ROU,3,es,Spanish,10.0,no
+Russia,RUS,1,ru,Russian,94.0,no
+Rwanda,RWA,1,rw,Kinyarwanda,77.0,no
+Rwanda,RWA,2,fr,French,5.8,no
+Saint Kitts and Nevis,KNA,,,(English only),,
+Saint Lucia,LCA,,,(English only),,
+Saint Vincent and the Grenadines,VCT,,,(English only),,
+Samoa,WSM,1,sm,Samoan,100.0,no
+San Marino,SMR,1,it,Italian,89.0,no
+Sao Tome and Principe,STP,1,pt,Portuguese,85.0,no
+Sao Tome and Principe,STP,2,fr,French,20.0,no
+Saudi Arabia,SAU,1,ar,Arabic,100.0,no
+Senegal,SEN,1,wo,Wolof,70.0,no
+Senegal,SEN,2,fr,French,26.0,no
+Senegal,SEN,3,ff,Fula,21.0,no
+Serbia,SRB,1,sr,Serbian,99.0,no
+Serbia,SRB,2,sq,Albanian,19.0,no
+Seychelles,SYC,1,crs,Seselwa Creole French,98.0,no
+Seychelles,SYC,2,fr,French,53.0,no
+Sierra Leone,SLE,1,kri,Krio,95.0,no
+Sierra Leone,SLE,2,men,Mende,27.0,no
+Sierra Leone,SLE,3,tem,Timne,26.0,no
+Singapore,SGP,1,zh,Chinese,77.0,no
+Singapore,SGP,2,ms,Malay,14.0,no
+Slovakia,SVK,1,sk,Slovak,90.0,no
+Slovakia,SVK,2,cs,Czech,47.0,no
+Slovakia,SVK,3,de,German,22.0,no
+Slovenia,SVN,1,sl,Slovenian,87.0,no
+Slovenia,SVN,2,hr,Croatian,61.0,no
+Slovenia,SVN,3,de,German,42.0,no
+Solomon Islands,SLB,1,pis,Pijin,82.0,no
+Somalia,SOM,1,so,Somali,78.0,no
+Somalia,SOM,2,ar,Arabic,34.0,no
+South Africa,ZAF,1,zu,Zulu,24.0,no
+South Africa,ZAF,2,xh,Xhosa,18.0,no
+South Africa,ZAF,3,af,Afrikaans,13.0,no
+South Korea,KOR,1,ko,Korean,100.0,no
+South Sudan,SSD,1,ar,Arabic,27.0,no
+South Sudan,SSD,2,nus,Nuer,5.6,no
+Spain,ESP,1,es,Spanish,99.0,no
+Spain,ESP,2,ca,Catalan,17.0,no
+Spain,ESP,3,gl,Galician,7.0,no
+Sri Lanka,LKA,1,si,Sinhala,68.0,no
+Sri Lanka,LKA,2,ta,Tamil,15.0,no
+Sudan,SDN,1,ar,Arabic,61.0,no
+Sudan,SDN,2,apd,Sudanese Arabic,61.0,no
+Sudan,SDN,3,bej,Beja,5.4,no
+Suriname,SUR,1,nl,Dutch,90.0,no
+Suriname,SUR,2,srn,Sranan Tongo,68.0,no
+Sweden,SWE,1,sv,Swedish,95.0,no
+Switzerland,CHE,1,de,German,76.0,no
+Switzerland,CHE,2,gsw,Swiss German,66.0,no
+Switzerland,CHE,3,fr,French,39.0,no
+Syria,SYR,1,apc,North Levantine Arabic,85.0,no
+Syria,SYR,2,ar,Arabic,80.0,no
+Syria,SYR,3,ku,Kurdish,8.0,no
+Taiwan,TWN,1,zh,Chinese,95.0,no
+Taiwan,TWN,2,nan,Min Nan Chinese,57.0,no
+Taiwan,TWN,3,hak,Hakka Chinese,11.0,no
+Tajikistan,TJK,1,tg,Tajik,100.0,no
+Tajikistan,TJK,2,ru,Russian,12.0,no
+Tanzania,TZA,1,sw,Swahili,90.0,yes
+Tanzania,TZA,2,suk,Sukuma,8.7,no
+Thailand,THA,1,th,Thai,80.0,yes
+Thailand,THA,2,tts,Northeastern Thai,24.0,no
+Thailand,THA,3,nod,Northern Thai,9.6,no
+Timor-Leste,TLS,1,tet,Tetum,59.0,no
+Timor-Leste,TLS,2,pt,Portuguese,59.0,no
+Togo,TGO,1,fr,French,41.0,no
+Togo,TGO,2,ee,Ewe,17.0,no
+Tonga,TON,1,to,Tongan,95.0,no
+Trinidad and Tobago,TTO,,,(English only),,
+Tunisia,TUN,1,ar,Arabic,90.0,no
+Tunisia,TUN,2,aeb,Tunisian Arabic,90.0,no
+Tunisia,TUN,3,fr,French,53.0,no
+Turkey,TUR,1,tr,Turkish,93.0,no
+Turkey,TUR,2,ku,Kurdish,5.5,no
+Turkey,TUR,3,apc,North Levantine Arabic,5.2,no
+Turkmenistan,TKM,1,tk,Turkmen,70.0,no
+Turkmenistan,TKM,2,ru,Russian,12.0,no
+Turkmenistan,TKM,3,uz,Uzbek,9.0,no
+Tuvalu,TUV,1,tvl,Tuvalu,85.0,no
+Uganda,UGA,1,sw,Swahili,75.0,yes
+Uganda,UGA,2,lg,Ganda,13.0,no
+Uganda,UGA,3,nyn,Nyankole,6.3,no
+Ukraine,UKR,1,uk,Ukrainian,65.0,no
+Ukraine,UKR,2,ru,Russian,46.0,no
+United Arab Emirates,ARE,1,ar,Arabic,78.0,no
+United Arab Emirates,ARE,2,ml,Malayalam,7.0,no
+United Kingdom,GBR,1,fr,French,17.0,no
+United Kingdom,GBR,2,de,German,9.0,no
+United Kingdom,GBR,3,es,Spanish,8.0,no
+United States,USA,1,es,Spanish,9.6,no
+Uruguay,URY,1,es,Spanish,88.0,no
+Uzbekistan,UZB,1,uz,Uzbek,85.0,no
+Uzbekistan,UZB,2,ru,Russian,14.0,no
+Vanuatu,VUT,1,bi,Bislama,90.0,no
+Vanuatu,VUT,2,fr,French,31.0,no
+Vatican City,VAT,1,la,Latin,82.0,no
+Vatican City,VAT,2,it,Italian,82.0,no
+Venezuela,VEN,1,es,Spanish,82.0,no
+Vietnam,VNM,1,vi,Vietnamese,86.0,yes
+Yemen,YEM,1,ar,Arabic,74.0,no
+Zambia,ZMB,1,bem,Bemba,34.0,no
+Zambia,ZMB,2,ny,Nyanja,19.0,no
+Zambia,ZMB,3,toi,Tonga (Zambia),11.0,no
+Zimbabwe,ZWE,1,sn,Shona,81.0,no
+Zimbabwe,ZWE,2,nd,North Ndebele,12.0,no
+Zimbabwe,ZWE,3,mxc,Manyika,6.5,no

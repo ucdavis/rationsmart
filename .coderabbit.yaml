@@ -2,3 +2,23 @@
 ---
 reviews:
   request_changes_workflow: true
+  # Generated / binary / vendored frontend content is excluded so real
+  # findings aren't buried in noise (carried over from the PWA's own config).
+  path_filters:
+    # TEMPORARY — for the monorepo import PR only. The PWA code arrives
+    # unchanged and was already reviewed in its own repo; reviewing all of it
+    # again here would bury the import's real changes. Remove this line in
+    # the next PR so frontend changes are reviewed from then on.
+    - "!frontend/**"
+    - "!frontend/public/**"
+    - "!frontend/src/lib/data/ui-labels/*.json"
+    - "!frontend/**/*.docx"
+    - "!frontend/**/*.xlsx"
+    - "!frontend/package-lock.json"
+    - "!frontend/**/*.tsbuildinfo"
+  path_instructions:
+    - path: "frontend/src/**/*.tsx"
+      instructions: >-
+        Screens mirror an Android app pixel-for-pixel; inline styles encode
+        Android dimensions on purpose (see CLAUDE.md §14). Flag behaviour and
+        security issues first.

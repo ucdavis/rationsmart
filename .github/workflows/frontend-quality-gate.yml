@@ -1,0 +1,96 @@
+# Frontend (PWA) CI quality gate — CHECKS ONLY. This workflow never deploys.
+#
+# Moved here from the PWA's own repo when it joined this monorepo: GitHub only
+# runs workflows from the root .github/, so the job runs inside frontend/ and
+# only when frontend files (or this file) change. It is deliberately not a
+# required check on main — a path-filtered required check would leave
+# backend-only PRs waiting forever on "Expected".
+#
+# There is deliberately no deploy workflow (CLAUDE.md §10.16 — deploys are
+# manual on purpose; the old deploy-testing.yml was deleted). This gate only
+# runs lint / typecheck / format / tests / audit so a regression is caught
+# in CI without touching the manual `vercel deploy` release flow.
+#
+# Blocking steps (fail the run): install (npm ci = lockfile integrity
+# check, the `uv lock --check` equivalent), lint, typecheck, format, tests.
+# Non-blocking: npm audit — it is informational because the residual
+# advisories are dev/build-time (vitest UI, next-pwa→workbox chain) or
+# have no in-range fix (Next.js CVEs with only a v15 patch). Making it
+# blocking would keep the gate permanently red on issues we've triaged
+# and deliberately deferred. Revisit if `npm audit --audit-level=high`
+# ever exits 0.
+
+name: Frontend quality gate
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-quality-gate.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend-quality-gate.yml"
+  workflow_dispatch:
+
+# Read-only token: this job only checks code, it never writes to the repo.
+permissions:
+  contents: read
+
+# Cancel a stale run when new commits land on the same ref.
+concurrency:
+  group: frontend-quality-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontend-quality-gate:
+    runs-on: ubuntu-latest
+    # Every npm step runs in the PWA folder.
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        # Checks only: no later step needs git auth, so don't leave the token
+        # in .git/config where npm install scripts could read it.
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        # `defaults.run` does not apply to `uses:` steps, so both paths are spelled out.
+        with:
+          node-version-file: frontend/.nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      # `npm ci` fails if package.json and package-lock.json disagree —
+      # this is our lockfile-integrity gate.
+      - name: Install (locked)
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unhandled-promise lint
+        run: npm run lint:promises
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Format check
+        run: npm run format:check
+
+      # Every label in the code exists in all 9 UI-label dictionaries, with
+      # its ${placeholders} intact, and no visible text bypasses t().
+      - name: UI-label translations
+        run: npm run i18n:check
+
+      - name: Tests (with coverage floors)
+        run: npm run test:coverage
+
+      # Informational only — see header note. Does not fail the gate.
+      - name: Security audit (informational)
+        continue-on-error: true
+        run: npm audit --audit-level=high

@@ -1,0 +1,356 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { endServerSession, useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n-ui";
+import PoweredBy from "./PoweredBy";
+import {
+  IcClose,
+  IcUser,
+  IcReportNav,
+  IcFeedbackNav,
+  IcProfileNav,
+  IcHelpSupport,
+  IcTerms,
+  IcAdminNav,
+  IcLogoutNav,
+  IcArrowRight,
+} from "@/components/Icons";
+import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
+import { useEscapeKey } from "@/lib/use-escape";
+import { COLORS } from "@/lib/colors";
+
+interface NavDrawerProps {
+  open: boolean;
+  onClose: () => void;
+}
+
+// User options order matches Android NavigationDrawerItem.userOptions exactly.
+// `badge: "Ongoing"` shows a light-green pill next to the label (matches Android
+// where Help & Support and Terms & Conditions display an "Ongoing" status chip).
+type MenuItem = {
+  label: string;
+  href: string;
+  icon: React.ReactNode;
+  badge?: string;
+};
+
+const userMenuItems: MenuItem[] = [
+  {
+    label: "Profile",
+    href: "/profile",
+    icon: <IcProfileNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    label: "Feed Reports",
+    href: "/reports",
+    icon: <IcReportNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    label: "Help & Support",
+    href: "/help",
+    icon: <IcHelpSupport size={20} color={COLORS.darkAquamarineGreen} />,
+    badge: "Ongoing",
+  },
+  {
+    label: "Feedback",
+    href: "/feedback",
+    icon: <IcFeedbackNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
+  {
+    label: "Terms & Conditions",
+    href: "/terms",
+    icon: <IcTerms size={20} color={COLORS.darkAquamarineGreen} />,
+    badge: "Ongoing",
+  },
+];
+
+// Admin options: Admin first, then same as userOptions
+const adminMenuItems: MenuItem[] = [
+  {
+    label: "Admin",
+    href: "/admin",
+    icon: <IcAdminNav size={20} color={COLORS.darkAquamarineGreen} />,
+  },
+  ...userMenuItems,
+];
+
+export default function NavDrawer({ open, onClose }: NavDrawerProps) {
+  const router = useRouter();
+  const user = useStore((s) => s.user);
+  const logout = useStore((s) => s.logout);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const t = useT();
+  // Escape closes the top-most layer: the logout confirm first, then the drawer.
+  useEscapeKey(showLogoutConfirm, () => setShowLogoutConfirm(false));
+  useEscapeKey(open && !showLogoutConfirm, onClose);
+
+  const handleNavigate = (href: string) => {
+    onClose();
+    router.push(href);
+  };
+
+  const handleLogout = () => {
+    setShowLogoutConfirm(false);
+    onClose();
+    logout();
+    endServerSession();
+    router.replace("/welcome");
+  };
+
+  // The app's centered container is capped at 480px via min(100vw, 480px)
+  // in layout.tsx. Both the overlay and drawer must align with that column,
+  // not the full viewport — otherwise on desktop the drawer slides out from
+  // the far left of the browser window while the content sits in a centered
+  // 480px column, creating a big visual disconnect.
+  const containerLeft = COLUMN_LEFT;
+  const containerWidth = COLUMN_WIDTH;
+  // When closed, the drawer must move left by 100% of its own width PLUS
+  // the centered-column offset, otherwise on desktop translateX(-100%)
+  // only shifts it 340px and it's still visible to the left of the content.
+  const hiddenTransform = `translateX(calc(-100% - ${containerLeft}))`;
+
+  return (
+    <>
+      {/* Overlay — confined to the centered content column */}
+      {open && (
+        <div
+          className="fixed top-0 h-full z-40"
+          style={{
+            left: containerLeft,
+            width: containerWidth,
+            backgroundColor: "rgba(0,0,0,0.45)",
+          }}
+          onClick={onClose}
+        />
+      )}
+
+      {/* Drawer — slides from the left edge of the centered content column */}
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("Menu")}
+        aria-hidden={!open}
+        className="fixed top-0 h-full z-50 flex flex-col bg-white"
+        style={{
+          left: containerLeft,
+          width: "min(82vw, 340px)",
+          transform: open ? "translateX(0)" : hiddenTransform,
+          // visibility:hidden takes the closed drawer out of the tab order and
+          // the accessibility tree (audit B-33). It flips only after the
+          // slide-out finishes, so the close animation still shows.
+          visibility: open ? "visible" : "hidden",
+          transition: open
+            ? "transform 0.28s cubic-bezier(0.22,1,0.36,1)"
+            : "transform 0.28s cubic-bezier(0.22,1,0.36,1), visibility 0s linear 0.28s",
+          boxShadow: open ? "4px 0 24px rgba(0,0,0,0.15)" : "none",
+        }}
+      >
+        {/* Close button — top-right corner of the drawer (matches Android
+            cv_close which is layout_gravity="end" at the top of the
+            NavigationView, NOT inline with the profile row). */}
+        <div className="flex justify-end pt-8 pb-2 px-4">
+          <button
+            onClick={onClose}
+            className="flex items-center justify-center rounded-full flex-shrink-0"
+            style={{ width: 36, height: 36, backgroundColor: COLORS.honeydew }}
+            aria-label={t("Close drawer")}
+          >
+            <IcClose size={18} color={COLORS.darkAquamarineGreen} />
+          </button>
+        </div>
+
+        {/* Profile section — avatar + name + email on its own row.
+            No divider after — Android nav drawer has no separator between
+            the profile section and the menu items. */}
+        <div className="flex items-center gap-3 px-4 pb-4">
+          <div
+            className="flex items-center justify-center flex-shrink-0"
+            style={{ width: 52, height: 52, backgroundColor: COLORS.honeydew, borderRadius: 20 }}
+          >
+            <IcUser size={30} color={COLORS.darkAquamarineGreen} />
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold truncate" style={{ color: COLORS.raisinBlack, fontSize: 18 }}>
+              {user?.name || t("User")}
+            </p>
+            <p className="text-sm truncate" style={{ color: COLORS.raisinBlack }}>
+              {user?.email || ""}
+            </p>
+          </div>
+        </div>
+
+        {/* Menu items — order matches Android NavigationDrawerItem exactly */}
+        <div className="flex-1 overflow-y-auto">
+          {(user?.is_admin ? adminMenuItems : userMenuItems).map((item) => (
+            <button
+              key={item.href}
+              onClick={() => handleNavigate(item.href)}
+              className="w-full flex items-center justify-between px-4 py-4"
+              style={{
+                background: "none",
+                border: "none",
+                outline: "none",
+                cursor: "pointer",
+                WebkitTapHighlightColor: "transparent",
+              }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div style={{ width: 20, flexShrink: 0 }}>{item.icon}</div>
+                <span className="text-base truncate" style={{ color: COLORS.raisinBlack }}>
+                  {t(item.label)}
+                </span>
+                {item.badge && (
+                  // Matches Android tv_item_status: nunito_regular (not bold),
+                  // font_12, dark_aquamarine_green text, bg_nav_menu_status pill
+                  <span
+                    style={{
+                      backgroundColor: COLORS.brightGrayNew,
+                      color: COLORS.darkAquamarineGreen,
+                      fontSize: 12,
+                      fontWeight: 400,
+                      padding: "2px 10px",
+                      borderRadius: 60,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {t(item.badge)}
+                  </span>
+                )}
+              </div>
+              <IcArrowRight size={16} color={COLORS.darkAquamarineGreen} />
+            </button>
+          ))}
+
+          {/* Logout — red, no arrow. No divider above (Android nav drawer
+              has no separator lines between items per layout_item_nav_drawer_menu). */}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-full flex items-center gap-3 px-4 py-4"
+            style={{ background: "none", border: "none", cursor: "pointer" }}
+          >
+            <IcLogoutNav size={20} color={COLORS.carminePink} />
+            <span className="text-base" style={{ color: COLORS.carminePink }}>
+              {t("Logout")}
+            </span>
+          </button>
+        </div>
+
+        {/* Footer */}
+        <PoweredBy />
+      </div>
+
+      {/* Logout confirmation modal — confined to centered column.
+          Tapping the scrim closes the dialog (matches Android
+          AlertDialog default behaviour where setCanceledOnTouchOutside
+          is true). */}
+      {showLogoutConfirm && (
+        <div
+          className="fixed top-0 h-full z-[100] flex items-center justify-center px-6"
+          style={{
+            left: COLUMN_LEFT,
+            width: COLUMN_WIDTH,
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowLogoutConfirm(false);
+          }}
+        >
+          <div
+            role="alertdialog"
+            aria-modal="true"
+            className="bg-white rounded-2xl w-full max-w-xs pt-7 pb-5 px-4"
+            style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.18)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Icon */}
+            <div className="flex justify-center mb-4">
+              <div
+                className="flex items-center justify-center"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  backgroundColor: COLORS.goGreen15,
+                }}
+              >
+                <div
+                  className="flex items-center justify-center"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: "50%",
+                    backgroundColor: COLORS.white,
+                  }}
+                >
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+                      stroke={COLORS.darkAquamarineGreen}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <polyline
+                      points="16 17 21 12 16 7"
+                      stroke={COLORS.darkAquamarineGreen}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <line
+                      x1="21"
+                      y1="12"
+                      x2="9"
+                      y2="12"
+                      stroke={COLORS.darkAquamarineGreen}
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+              </div>
+            </div>
+            <h3
+              className="text-center font-bold mb-2 mx-4"
+              style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
+            >
+              {t("Are you sure you want to logout?")}
+            </h3>
+            <p className="text-center text-sm mb-5 mx-4" style={{ color: COLORS.darkSilver }}>
+              {t("You can always log back in to access you feed simulations.")}
+            </p>
+            <div className="flex flex-col gap-2.5">
+              <button
+                onClick={handleLogout}
+                className="w-full py-3 rounded-full font-bold"
+                style={{
+                  backgroundColor: COLORS.darkAquamarineGreen,
+                  color: COLORS.white,
+                  border: "none",
+                  cursor: "pointer",
+                }}
+              >
+                {t("Yes, Logout")}
+              </button>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="w-full py-3 rounded-full font-bold"
+                style={{
+                  border: `2px solid ${COLORS.darkAquamarineGreen}`,
+                  color: COLORS.darkAquamarineGreen,
+                  background: COLORS.white,
+                  cursor: "pointer",
+                }}
+              >
+                {t("No")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

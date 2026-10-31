@@ -1445,9 +1445,11 @@ def rsm_generate_report_v2(
             "PRICE/KG": "Price<br/>(Per Kg)",
             "Cost": "Price<br/>(Per day)",
         }, inplace=True)
-        if "Ingredient Name" in dt_results.columns and "Price/kg" in dt_results.columns:
-            dt_results["Price/kg"] = dt_results["Price/kg"].astype(str)
-            dt_results.loc[dt_results["Ingredient Name"].str.upper().str.contains("TOTAL"), "Price/kg"] = ""
+        # The TOTAL row's price per kg is a sum of per-kg prices: meaningless, so blank it.
+        price_col = "Price<br/>(Per Kg)"
+        if "Ingredient Name" in dt_results.columns and price_col in dt_results.columns:
+            dt_results[price_col] = dt_results[price_col].astype(str)
+            dt_results.loc[dt_results["Ingredient Name"].str.upper().str.contains("TOTAL"), price_col] = ""
 
     from .animal_requirements import rsm_create_animal_requirements_dataframe
     diet_supply_results = post_results.get('diet_supply_results', {})

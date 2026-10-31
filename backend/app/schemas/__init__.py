@@ -70,10 +70,6 @@ from app.schemas.animal import (
     FeedBreakdownItem,
     DietEvaluationSummary,
     DietEvaluationResponse,
-    FeedAnalyticsBase,
-    FeedAnalyticsCreate,
-    FeedAnalyticsUpdate,
-    FeedAnalyticsResponse,
 )
 from app.schemas.report import (
     PDFReportMetadata,
@@ -130,7 +126,6 @@ __all__ = [
     "FeedEvaluationItem", "DietEvaluationRequest",
     "MilkProductionAnalysis", "IntakeEvaluation", "CostAnalysis", "MethaneAnalysis",
     "NutrientBalance", "FeedBreakdownItem", "DietEvaluationSummary", "DietEvaluationResponse",
-    "FeedAnalyticsBase", "FeedAnalyticsCreate", "FeedAnalyticsUpdate", "FeedAnalyticsResponse",
     # report
     "PDFReportMetadata", "PDFReportList", "PDFReportResponse",
     "ReportBase", "ReportCreate", "ReportResponse",
