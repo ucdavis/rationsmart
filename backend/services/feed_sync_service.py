@@ -43,7 +43,7 @@ from services.feed_service import (
     resolve_taxonomy,
     stable_feed_uuid,
 )
-from services.text_cleaning import clean_text
+from services.text_cleaning import clean_local_name, clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -586,7 +586,7 @@ async def _run_import_pipeline(
                     inserted += 1
 
                 # Local-name translation branch (D13/D14/D15/D17)
-                local_name = _cell_str(row, "fd_name_local_language", keep_joiners=True)
+                local_name = clean_local_name(_cell_raw(row, "fd_name_local_language"))
                 if not local_name:
                     continue  # English-only row — nothing to translate
 
@@ -618,6 +618,21 @@ async def _run_import_pipeline(
                     skipped_translations.append({
                         "fd_code": fd_code, "language": code,
                         "reason": f"'{code}' not assigned to {country.name}",
+                    })
+                    continue
+                # Unique per language within the country: drop only the local
+                # name; the feed itself is already imported (docs/dev_docs/
+                # local_name_uniqueness, D4).
+                owner = await translation_service.local_name_conflict(
+                    translation_repo, feed.id, country.id, code, local_name
+                )
+                if owner is not None:
+                    skipped_translations.append({
+                        "fd_code": fd_code, "language": code,
+                        "reason": (
+                            f"local name '{local_name}' ({code}) is already used by "
+                            f"feed {owner.fd_code} in {country.name}"
+                        ),
                     })
                     continue
 

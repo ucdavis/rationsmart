@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import delete, func, select
+from sqlalchemy import Text, delete, func, literal, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
@@ -13,6 +13,7 @@ from app.db.models import (
     FeedTranslation,
     FeedType,
     VocabularyTranslation,
+    feed_name_key,
 )
 
 
@@ -172,6 +173,38 @@ class TranslationRepository:
         )
         await self.db.execute(stmt)
         return "updated" if was_existing else "inserted"
+
+    async def get_feed_translation_name(self, feed_id, language: str) -> Optional[str]:
+        """The feed's stored name in `language`, or None."""
+        result = await self.db.execute(
+            select(FeedTranslation.name).where(
+                FeedTranslation.feed_id == feed_id,
+                FeedTranslation.language == language,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def find_local_name_owner(
+        self, country_id, language: str, name: str, exclude_feed_id
+    ) -> Optional[Feed]:
+        """Another feed of `country_id` whose `language` name equals `name`, or None.
+
+        Same comparison key as English names (feed_name_key on both sides:
+        case, outer spaces and space runs ignored). No index backs it — local
+        names are unique by code only (docs/dev_docs/local_name_uniqueness, D1).
+        """
+        result = await self.db.execute(
+            select(Feed)
+            .join(FeedTranslation, FeedTranslation.feed_id == Feed.id)
+            .where(
+                Feed.fd_country_id == country_id,
+                Feed.id != exclude_feed_id,
+                FeedTranslation.language == language,
+                feed_name_key(FeedTranslation.name) == feed_name_key(literal(name, Text)),
+            )
+            .limit(1)
+        )
+        return result.scalars().first()
 
     async def get_feed_translations(self, feed_id: str) -> list[FeedTranslation]:
         result = await self.db.execute(

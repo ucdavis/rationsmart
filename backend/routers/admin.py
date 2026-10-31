@@ -905,8 +905,12 @@ async def upsert_feed_translation(
     **Requires:** Bearer JWT with admin privileges.
 
     **Body:** `feed_id` (UUID), `language` (BCP 47 code), `name` (translated string).
+    Invisible characters are removed from `name` and it is stored in Unicode NFC form.
 
     Returns the persisted translation record with `action` set to `'inserted'` or `'updated'`.
+
+    **404** if the language or the feed doesn't exist. **400** if the name is empty once
+    cleaned, or another feed of the same country already uses it in this language.
     """
     language = await LanguageRepository(db).get_by_code(body.language)
     if language is None:
@@ -914,9 +918,14 @@ async def upsert_feed_translation(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Language '{body.language}' not found — register it first via POST /v1/admin/languages",
         )
-    result = await translation_service.upsert_feed_translation(
-        db, body.feed_id, language.code, body.name
-    )
+    try:
+        result = await translation_service.save_feed_translation(
+            db, body.feed_id, language.code, body.name
+        )
+    except translation_service.FeedNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc))
+    except translation_service.LocalNameError as exc:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc))
     await db.commit()
     return FeedTranslationRecord(**result)
 
