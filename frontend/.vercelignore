@@ -1,0 +1,18 @@
+# Files the Vercel CLI must never upload with a deployment. Mirrors the
+# local-only entries in .gitignore (a .vercelignore takes precedence).
+node_modules
+.next
+out
+.vercel
+.claude
+.env
+.env.*
+!.env.example
+CLAUDE.local.md
+docs/*.local.md
+docs/backend-security-brief.html
+docs/SESSION_HANDOFF.md
+Code_Audit_Report*.md
+*.tsbuildinfo
+public/sw.js
+public/workbox-*.js

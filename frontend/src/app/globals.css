@@ -1,0 +1,239 @@
+@font-face {
+  font-family: "Nunito";
+  src: url("/fonts/nunito_regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Nunito";
+  src: url("/fonts/nunito_bold.ttf") format("truetype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --authentic-white: #f8faf9;
+  --american-diamond: #f1f5f9;
+  --primary-dark: #064e3b;
+  --primary: #1ca069;
+  --honeydew: #e8f5f0;
+  --raisin-black: #231f20;
+  --dark-silver: #6d6d6d;
+  --spanish-gray: #999999;
+  --light-gray-new: #d3d3d3;
+  --go-green: #05bc6d;
+  --carmine-pink: #e44a4a;
+  --sparkling-silver: #c9cbcc;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  font-family: var(--font-nunito), "Nunito", sans-serif;
+  background-color: #f8faf9;
+  color: #231f20;
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+/* Tailwind's min-h-screen defaults to min-height: 100vh, which on Android
+   PWAs in standalone mode excludes the gesture / nav area at the bottom.
+   Override to 100dvh (dynamic viewport height) so page backgrounds —
+   including the admin sage→mint gradient — extend all the way to the
+   bottom edge without exposing a white strip below the home indicator.
+   The @supports fallback keeps older browsers on 100vh. */
+@supports (height: 100dvh) {
+  .min-h-screen {
+    min-height: 100dvh;
+  }
+}
+
+/* The centred 480-px column gives every browser-tab visitor a mobile-
+   preview frame on desktop. But once a user installs the PWA we want
+   it to feel like a native app, so the column should fill the viewport
+   — otherwise tablets / foldables / large phones land on a 480-px slab
+   with body-grey gutters on both sides. display-mode: standalone fires
+   only for the installed PWA (Android home-screen launch, iOS Add to
+   Home Screen, desktop PWA window), so browser tabs are unaffected. */
+@media (display-mode: standalone) {
+  .app-column {
+    max-width: 100% !important;
+  }
+}
+
+input,
+select,
+textarea {
+  font-family: var(--font-nunito), "Nunito", sans-serif;
+  outline: none;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* Native <option> rendering. Android's Material Spinner highlights
+   the currently-selected row in the open menu with a soft mint tint
+   (bright_gray_new = #E4F7EF) on dark_aquamarine_green text; other
+   rows are white on raisin_black. Match that, and use accent-color
+   so the focus ring on the closed select picks up our brand green
+   instead of the OS accent (which on most Macs is plain green and
+   was producing an inconsistent tint).
+
+   Note: native <select> dropdown styling is intentionally limited
+   by browsers — Chrome respects these `option` rules, Safari mostly
+   does, Firefox partially. The selected-row tint is the bit that
+   most often shows up and was the visible delta the user noted. */
+select {
+  accent-color: #064e3b;
+}
+select option {
+  background-color: #ffffff;
+  color: #231f20;
+}
+select option:checked {
+  /* Currently-selected option in the open menu — light mint pill
+     matching Android Spinner's selected-row highlight. */
+  background: linear-gradient(0deg, #e4f7ef 0%, #e4f7ef 100%);
+  color: #064e3b;
+}
+
+::-webkit-scrollbar {
+  width: 3px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c9cbcc;
+  border-radius: 4px;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(120%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(120%);
+    opacity: 0;
+  }
+}
+
+.snackbar-enter {
+  animation: slideUp 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.snackbar-exit {
+  animation: slideDown 0.22s ease-in forwards;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e4e9f0 50%, #f1f5f9 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+}
+
+/* Toggle switch */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  inset: 0;
+  background: #c9cbcc;
+  border-radius: 28px;
+  transition: background 0.25s;
+}
+
+.toggle-slider::before {
+  content: "";
+  position: absolute;
+  height: 22px;
+  width: 22px;
+  left: 3px;
+  bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.25s;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background: #1ca069;
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(22px);
+}
+
+/* Loading state for a toggle switch — same exact markup/dimensions as
+   the real switch (see cattle-info's grazing toggle), just shimmering
+   in place instead of showing its real on/off state. Declared after
+   .toggle-slider so it wins the background at equal specificity. */
+.toggle-slider.shimmer {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e4e9f0 50%, #f1f5f9 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+}
+.toggle-slider.shimmer::before {
+  opacity: 0;
+}
+
+/* iOS Safari zooms the page into any focused input whose text is under
+   16 px. Pinch-zoom is enabled for accessibility (audit B-35), so give
+   inputs 16 px text on iOS only (-webkit-touch-callout is iOS-specific).
+   !important beats the inline 14 px Android sizes. */
+@supports (-webkit-touch-callout: none) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}

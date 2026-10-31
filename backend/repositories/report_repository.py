@@ -7,7 +7,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import (
     CountryModel,
-    FeedAnalytics,
     Report,
     UserFeedback,
     UserInformationModel,
@@ -115,13 +114,6 @@ class ReportRepository:
         total = count_result.scalar_one()
         rows_result = await self.db.execute(q.offset(skip).limit(limit))
         return rows_result.all(), total
-
-    # ── Feed analytics ────────────────────────────────────────────────────────
-
-    async def save_feed_analytics(self, record: FeedAnalytics) -> FeedAnalytics:
-        self.db.add(record)
-        await self.db.flush()
-        return record
 
     # ── User feedback ─────────────────────────────────────────────────────────
 

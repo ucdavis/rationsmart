@@ -8,9 +8,11 @@ import io
 import pandas as pd
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.language_tags import match_language_code
+from repositories.feed_repository import FeedRepository, normalize_feed_name
 from repositories.translation_repository import TranslationRepository
 from repositories.user_repository import UserRepository
-from services.text_cleaning import clean_text
+from services.text_cleaning import clean_local_name, clean_text
 
 # Sheet names — must stay stable for round-trip import
 _SHEET_FEEDS = "Feeds"
@@ -27,6 +29,54 @@ _COL_CAT_SRC = "english_value"
 
 _FEEDS_META = {_COL_FEED_ID, _COL_FD_CODE, _COL_COUNTRY_NAME, _COL_EN_NAME}
 _VOCAB_META = {_COL_TYPE_SRC, _COL_COUNTRY_NAME}
+
+
+def _language_columns(columns, lang_codes, sheet: str, errors: list) -> list[tuple[str, str]]:
+    """[(header, stored code)] for headers naming one of the country's languages,
+    compared case-insensitively ('PT-br' finds 'pt-BR').
+
+    Two headers naming the same language ('hi' and 'HI') would overwrite each
+    other, so both are skipped and reported in `errors`.
+    """
+    by_code: dict[str, list] = {}
+    for header in columns:
+        code = match_language_code(str(header), lang_codes)
+        if code is not None:
+            by_code.setdefault(code, []).append(header)
+    pairs = []
+    for code, headers in by_code.items():
+        if len(headers) > 1:
+            names = ", ".join(f"'{h}'" for h in headers)
+            errors.append(f"{sheet} sheet: columns {names} are all language '{code}' — skipped")
+        else:
+            pairs.append((headers[0], code))
+    return pairs
+
+
+# ── Local-name uniqueness (docs/dev_docs/local_name_uniqueness) ───────────────
+# A local name is unique per language within a country (D2), checked in code
+# only (D1, no index) before every write: feed sync, Translation Workbook and
+# the single-row admin save.
+
+class FeedNotFoundError(LookupError):
+    """The feed of a single-row save does not exist."""
+
+
+class LocalNameError(ValueError):
+    """A single-row save's name is refused; the message is admin-facing."""
+
+
+async def local_name_conflict(repo: TranslationRepository, feed_id, country_id, language: str, name: str):
+    """Another feed of `country_id` already named `name` in `language`, or None.
+
+    `name` must already be clean (clean_local_name). The feed's own current
+    name is never a conflict (D5): re-sending it changes nothing, and an
+    existing duplicate stays until an admin renames one of the pair.
+    """
+    current = await repo.get_feed_translation_name(feed_id, language)
+    if current is not None and normalize_feed_name(clean_local_name(current)) == normalize_feed_name(name):
+        return None
+    return await repo.find_local_name_owner(country_id, language, name, feed_id)
 
 
 # ── Export ────────────────────────────────────────────────────────────────────
@@ -127,8 +177,11 @@ async def import_translation_workbook(
     # ── Feeds sheet ────────────────────────────────────────────────────────────
     if _SHEET_FEEDS in sheets:
         df = sheets[_SHEET_FEEDS].fillna("")
-        lang_cols = [c for c in df.columns if c in active_lang_codes]
-        unknown = [c for c in df.columns if c not in _FEEDS_META and c not in active_lang_codes]
+        lang_cols = _language_columns(df.columns, active_lang_codes, _SHEET_FEEDS, summary["errors"])
+        unknown = [
+            c for c in df.columns
+            if c not in _FEEDS_META and match_language_code(str(c), active_lang_codes) is None
+        ]
         for c in unknown:
             summary["errors"].append(f"Feeds sheet: unknown column '{c}' — skipped")
 
@@ -140,10 +193,18 @@ async def import_translation_workbook(
                         f"Feeds sheet: feed_id '{feed_id}' not found in country — skipped"
                     )
                 continue
-            for lc in lang_cols:
-                val = clean_text(str(row.get(lc, "")), keep_joiners=True)
+            for header, lc in lang_cols:
+                val = clean_local_name(str(row.get(header, "")))
                 if not val:
                     summary["feeds_skipped"] += 1
+                    continue
+                # Not counted in feeds_skipped: the PWA shows that as "unchanged" (D9).
+                owner = await local_name_conflict(repo, feed_id, country_id, lc, val)
+                if owner is not None:
+                    summary["errors"].append(
+                        f"Feeds sheet: feed_id '{feed_id}', {lc}: name '{val}' is already used "
+                        f"by feed {owner.fd_code} ('{owner.fd_name}') — skipped"
+                    )
                     continue
                 action = await repo.upsert_feed_translation(feed_id, lc, val)
                 summary[f"feeds_{action}"] += 1
@@ -151,14 +212,14 @@ async def import_translation_workbook(
     # ── Feed Types sheet ──────────────────────────────────────────────────────
     if _SHEET_TYPES in sheets:
         df = sheets[_SHEET_TYPES].fillna("")
-        lang_cols = [c for c in df.columns if c in active_lang_codes]
+        lang_cols = _language_columns(df.columns, active_lang_codes, _SHEET_TYPES, summary["errors"])
         if _COL_TYPE_SRC in df.columns:
             for _, row in df.iterrows():
                 src = str(row.get(_COL_TYPE_SRC, "")).strip()  # exported key: must match as stored
                 if not src:
                     continue
-                for lc in lang_cols:
-                    val = clean_text(str(row.get(lc, "")), keep_joiners=True)
+                for header, lc in lang_cols:
+                    val = clean_text(str(row.get(header, "")), keep_joiners=True)
                     if not val:
                         summary["types_skipped"] += 1
                         continue
@@ -170,14 +231,14 @@ async def import_translation_workbook(
     # ── Feed Categories sheet ─────────────────────────────────────────────────
     if _SHEET_CATS in sheets:
         df = sheets[_SHEET_CATS].fillna("")
-        lang_cols = [c for c in df.columns if c in active_lang_codes]
+        lang_cols = _language_columns(df.columns, active_lang_codes, _SHEET_CATS, summary["errors"])
         if _COL_CAT_SRC in df.columns:
             for _, row in df.iterrows():
                 src = str(row.get(_COL_CAT_SRC, "")).strip()  # exported key: must match as stored
                 if not src:
                     continue
-                for lc in lang_cols:
-                    val = clean_text(str(row.get(lc, "")), keep_joiners=True)
+                for header, lc in lang_cols:
+                    val = clean_text(str(row.get(header, "")), keep_joiners=True)
                     if not val:
                         summary["categories_skipped"] += 1
                         continue
@@ -218,6 +279,32 @@ async def upsert_feed_translation(
                 "updated_at": t.updated_at,
             }
     return {"feed_id": feed_id, "language": language, "name": name, "action": action}
+
+
+async def save_feed_translation(
+    db: AsyncSession, feed_id: str, language: str, name: str
+) -> dict:
+    """Single-row admin save: clean the name, check it, then upsert.
+
+    Raises FeedNotFoundError for an unknown feed, LocalNameError for a name
+    that is empty once cleaned or already used by another feed of the same
+    country in the same language.
+    """
+    feed = await FeedRepository(db).get_by_id(feed_id)
+    if feed is None:
+        raise FeedNotFoundError(f"Feed '{feed_id}' not found")
+    clean_name = clean_local_name(name)
+    if not clean_name:
+        raise LocalNameError("The name is empty once invisible characters are removed.")
+    owner = await local_name_conflict(
+        TranslationRepository(db), feed.id, feed.fd_country_id, language, clean_name
+    )
+    if owner is not None:
+        raise LocalNameError(
+            f"The {language} name '{clean_name}' is already used by feed '{owner.fd_name}' "
+            f"({owner.fd_code}) in {owner.fd_country_name}. Choose a different name."
+        )
+    return await upsert_feed_translation(db, str(feed.id), language, clean_name)
 
 
 async def get_feed_translations(db: AsyncSession, feed_id: str) -> list[dict]:

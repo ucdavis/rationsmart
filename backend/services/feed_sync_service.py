@@ -26,6 +26,7 @@ import httpx
 from sqlalchemy.exc import DBAPIError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.language_tags import match_language_code, try_canonical_language_tag
 from repositories.feed_repository import (
     FeedRepository,
     is_feed_name_conflict,
@@ -42,7 +43,7 @@ from services.feed_service import (
     resolve_taxonomy,
     stable_feed_uuid,
 )
-from services.text_cleaning import clean_text
+from services.text_cleaning import clean_local_name, clean_text
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +59,6 @@ MANDATORY_COLUMNS = {
     "fd_code", "fd_name", "fd_country_name", "fd_language_cd",
     "fd_type", "fd_category",
 }
-
-# D17: ISO 639-1 two-letter codes only (post trim/lowercase).
-_LANG_CODE_RE = re.compile(r"^[a-z]{2}$")
 
 # D24: decimal-comma numerics ("88,8") are a locale artifact, not junk.
 _DECIMAL_COMMA_RE = re.compile(r"^\d+,\d+$")
@@ -588,13 +586,17 @@ async def _run_import_pipeline(
                     inserted += 1
 
                 # Local-name translation branch (D13/D14/D15/D17)
-                local_name = _cell_str(row, "fd_name_local_language", keep_joiners=True)
+                local_name = clean_local_name(_cell_raw(row, "fd_name_local_language"))
                 if not local_name:
                     continue  # English-only row — nothing to translate
 
+                # D17 (revised 2026-10-24): any BCP 47 code; was 2-letter ISO 639-1
+                # only. A registered code matches as stored (any case, also a
+                # pre-BCP 47 row like 'tl'), else its standard form ('BEN' -> 'bn').
                 raw_code = _cell_str(row, "fd_language_cd")
-                code = raw_code.lower()
-                if not code or not _LANG_CODE_RE.match(code):
+                code = (match_language_code(raw_code, active_languages)
+                        or try_canonical_language_tag(raw_code))
+                if not code:
                     skipped_translations.append({
                         "fd_code": fd_code, "language": raw_code or None,
                         "reason": "blank/invalid fd_language_cd",
@@ -616,6 +618,21 @@ async def _run_import_pipeline(
                     skipped_translations.append({
                         "fd_code": fd_code, "language": code,
                         "reason": f"'{code}' not assigned to {country.name}",
+                    })
+                    continue
+                # Unique per language within the country: drop only the local
+                # name; the feed itself is already imported (docs/dev_docs/
+                # local_name_uniqueness, D4).
+                owner = await translation_service.local_name_conflict(
+                    translation_repo, feed.id, country.id, code, local_name
+                )
+                if owner is not None:
+                    skipped_translations.append({
+                        "fd_code": fd_code, "language": code,
+                        "reason": (
+                            f"local name '{local_name}' ({code}) is already used by "
+                            f"feed {owner.fd_code} in {country.name}"
+                        ),
                     })
                     continue
 

@@ -121,6 +121,11 @@ class LoginResponse(BaseModel):
     token: Optional[TokenResponse] = None
 
 
+class LogoutResponse(BaseModel):
+    success: bool
+    message: str
+
+
 # ── Forgot / Change PIN ──────────────────────────────────────────────────────
 
 class ForgotPinRequest(BaseModel):

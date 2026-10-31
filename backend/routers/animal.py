@@ -1,20 +1,18 @@
 import logging
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.limiter import limiter
 
 from app.dependencies import get_current_user, get_db, get_language_authenticated
-from app.db.models import FeedAnalytics, UserInformationModel
+from app.db.models import UserInformationModel
 from app.schemas.animal import (
     CattleInfoFieldsResponse,
     DietEvaluationRequest,
     DietRecommendationRequest,
     DietThresholdsResponse,
-    FeedAnalyticsCreate,
-    FeedAnalyticsResponse,
     normalise_physiological_state,
 )
 from app.schemas.animal_field_spec import field_spec_for_state
@@ -183,12 +181,14 @@ async def list_feeds(
     country_id: str = None,
     feed_type_id: str = None,
     feed_category_id: str = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
     current_user: UserInformationModel = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
     lang: str = Depends(get_language_authenticated),
 ):
     """
-    Return a summary list of all standard feeds, with optional country filter.
+    Return a paginated summary list of standard feeds, with optional country filter.
 
     **Requires:** Bearer JWT.
 
@@ -196,12 +196,15 @@ async def list_feeds(
     - `country_id` — UUID to scope feeds to a specific country.
     - `feed_type_id` — filter by feed type UUID.
     - `feed_category_id` — filter by feed category UUID.
+    - `page` (default 1), `page_size` (default 20, max 100) — pagination. `total` counts every
+      matching feed, so keep paging until `page * page_size >= total`.
 
     Response fields per item: `id`, `fd_name`, `fd_type`, `fd_category`, plus localized
     `display_name`, `display_type`, `display_category`.
     For full nutritional data, call `GET /v1/animal/feed-details/{feed_id}`.
     """
     rows, total = await FeedRepository(db).get_all_localized(
+        skip=(page - 1) * page_size, limit=page_size,
         country_id=country_id, lang=lang,
         feed_type_id=feed_type_id, feed_category_id=feed_category_id,
     )
@@ -219,6 +222,8 @@ async def list_feeds(
             for row in rows
         ],
         "total": total,
+        "page": page,
+        "page_size": page_size,
     }
 
 
@@ -450,30 +455,6 @@ async def evaluate_diet(
     return result
 
 
-# ── Feed analytics ────────────────────────────────────────────────────────────
-
-@router.post("/feed-analytics", response_model=FeedAnalyticsResponse,
-             summary="Record feed usage analytics")
-async def save_feed_analytics(
-    body: FeedAnalyticsCreate,
-    current_user: UserInformationModel = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """
-    Save a feed analytics event (e.g. which feeds the user interacted with during a session).
-
-    **Requires:** Bearer JWT.
-
-    **Mandatory body fields:** `feed_id` (UUID), `event_type` (string describing the action).
-
-    Used for usage tracking and improving feed recommendations.
-    """
-    record = await diet_service.save_feed_analytics(db, body.dict())
-    await db.commit()
-    await db.refresh(record)
-    return FeedAnalyticsResponse.from_orm(record)
-
-
 # ── Custom feed CRUD ──────────────────────────────────────────────────────────
 
 @router.post("/custom-feeds/check", summary="Check whether a custom feed exists (insert or update)")
@@ -653,7 +634,7 @@ async def fetch_simulation_details(
     return FetchSimulationDetailsResponse(success=True, **details)
 
 
-# ── PDF reports (diet_reports table) ─────────────────────────────────────────
+# ── PDF reports (reports table) ──────────────────────────────────────────────
 
 @router.post("/reports/pdf", response_model=SaveReportResponse,
              summary="Get (or generate on demand) the PDF for a saved report")

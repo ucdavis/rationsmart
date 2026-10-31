@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 from app.schemas.animal import CattleInfo
 
 
-# ── PDF report (diet_reports table) ──────────────────────────────────────────
+# ── PDF report (reports table) ───────────────────────────────────────────────
 
 class PDFReportMetadata(BaseModel):
     model_config = ConfigDict(from_attributes=True)

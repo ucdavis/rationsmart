@@ -11,6 +11,7 @@ next to a space or a comma, so removing is right; turning it into a space
 would put a space before the comma.
 """
 import re
+import unicodedata
 
 # Always removed: zero-width space, word joiner, BOM / zero-width no-break
 # space, soft hyphen, LRM/RLM, bidi embeddings and overrides, bidi isolates.
@@ -31,3 +32,14 @@ def clean_text(value: str, keep_joiners: bool = False) -> str:
     """
     pattern = _ALWAYS_RE if keep_joiners else _WITH_JOINERS_RE
     return pattern.sub("", value).replace("\u00a0", " ").strip()
+
+
+def clean_local_name(value: str) -> str:
+    """clean_text for a local-language feed name, then Unicode NFC.
+
+    One rule for every path that stores a local name (sync, Translation
+    Workbook, single-row admin save). NFC makes a decomposed name (e.g.
+    Vietnamese typed as base letter + combining marks) equal to its composed
+    look-alike, so the duplicate check sees them as one name.
+    """
+    return unicodedata.normalize("NFC", clean_text(value, keep_joiners=True))

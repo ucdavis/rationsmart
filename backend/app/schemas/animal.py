@@ -1,5 +1,4 @@
 import uuid
-from datetime import date, datetime
 from typing import Annotated, Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -702,57 +701,3 @@ class DietEvaluationResponse(BaseModel):
     nutrient_balance: NutrientBalance
     feed_breakdown: List[FeedBreakdownItem]
     animal_information: Optional[Dict[str, Any]] = None
-
-
-# ── Feed analytics ───────────────────────────────────────────────────────────
-
-class FeedAnalyticsBase(BaseModel):
-    da_name: str = Field(..., max_length=100)
-    da_phone_num: str = Field(..., max_length=100)
-    country_cd: str = Field(..., max_length=3)
-    country_name: str = Field(..., max_length=100)
-    animal_info: str
-    sys_rcmd: str
-    cust_rcmd: str
-    farmer_name: str
-    farmer_phone_num: str = Field(..., max_length=100)
-    rcmd_dt: date
-    farmer_adopted: Optional[bool] = None
-
-
-class FeedAnalyticsCreate(FeedAnalyticsBase):
-    pass
-
-
-class FeedAnalyticsUpdate(BaseModel):
-    da_name: Optional[str] = Field(None, max_length=100)
-    da_phone_num: Optional[str] = Field(None, max_length=100)
-    country_cd: Optional[str] = Field(None, max_length=3)
-    country_name: Optional[str] = Field(None, max_length=100)
-    animal_info: Optional[str] = None
-    sys_rcmd: Optional[str] = None
-    cust_rcmd: Optional[str] = None
-    farmer_name: Optional[str] = None
-    farmer_phone_num: Optional[str] = Field(None, max_length=100)
-    rcmd_dt: Optional[date] = None
-    farmer_adopted: Optional[bool] = None
-
-
-class FeedAnalyticsResponse(FeedAnalyticsBase):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: str
-    created_on: datetime
-    updated_on: datetime
-
-    @field_validator('id', mode='before')
-    @classmethod
-    def convert_uuid_to_str(cls, v):
-        return str(v) if v else v
-
-    @field_validator('rcmd_dt', mode='before')
-    @classmethod
-    def convert_date(cls, v):
-        if isinstance(v, date):
-            return v.isoformat()
-        return v
