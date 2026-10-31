@@ -90,7 +90,7 @@ tzdata==2026.4
 PyYAML==6.0.3
 regex==2026.9.10
 packaging==26.3
-certifi==2026.7.22
+certifi==2026.10.18
 idna==3.20
 six==1.17.0
 wrapt==2.4.1
