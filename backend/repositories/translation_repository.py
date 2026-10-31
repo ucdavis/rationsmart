@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional
 
-from sqlalchemy import Text, delete, func, literal, select
+from sqlalchemy import Text, delete, func, literal, select, text
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import InstrumentedAttribute
@@ -190,9 +190,14 @@ class TranslationRepository:
         """Another feed of `country_id` whose `language` name equals `name`, or None.
 
         Same comparison key as English names (feed_name_key on both sides:
-        case, outer spaces and space runs ignored). No index backs it — local
-        names are unique by code only (docs/dev_docs/local_name_uniqueness, D1).
+        case, outer spaces and space runs ignored), applied to the NFC form of
+        each side so a row stored before names were NFC still matches. No index
+        backs it — local names are unique by code only
+        (docs/dev_docs/local_name_uniqueness, D1).
         """
+        def key(expr):
+            return feed_name_key(func.normalize(expr, text("NFC")))
+
         result = await self.db.execute(
             select(Feed)
             .join(FeedTranslation, FeedTranslation.feed_id == Feed.id)
@@ -200,7 +205,7 @@ class TranslationRepository:
                 Feed.fd_country_id == country_id,
                 Feed.id != exclude_feed_id,
                 FeedTranslation.language == language,
-                feed_name_key(FeedTranslation.name) == feed_name_key(literal(name, Text)),
+                key(FeedTranslation.name) == key(literal(name, Text)),
             )
             .limit(1)
         )
