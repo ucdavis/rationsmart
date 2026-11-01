@@ -295,19 +295,25 @@ async def update_user(
     return await _user_response(user, db)
 
 
+FORGOT_PIN_SENT_MESSAGE = "If an account exists for this email, a new PIN has been sent to it."
+
+
 @router.post("/forgot-pin", response_model=ForgotPinResponse, summary="Request a PIN reset via email")
-async def forgot_pin(body: ForgotPinRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("5/minute")
+async def forgot_pin(request: Request, body: ForgotPinRequest, db: AsyncSession = Depends(get_db)):
     """
     Generate a new temporary PIN and send it to the user's registered email address.
 
     **Mandatory field:** `email_id`.
 
-    Returns `404` if no account is found for that email.
+    Always answers `200` with the same message, whether or not an account exists, so the
+    endpoint can't be used to find out which emails are registered. The new PIN travels
+    only in the email, never in this response.
     After receiving the temporary PIN, the user should call `POST /v1/auth/change-pin` to set a permanent one.
     """
-    success, message, new_pin = await auth_service.forgot_pin(db, body.email_id)
+    success, _message, new_pin = await auth_service.forgot_pin(db, body.email_id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+        return ForgotPinResponse(success=True, message=FORGOT_PIN_SENT_MESSAGE)
 
     user = await UserRepository(db).get_by_email(body.email_id)
     sent, err = await email_service.send_pin_reset_email(
@@ -319,7 +325,7 @@ async def forgot_pin(body: ForgotPinRequest, db: AsyncSession = Depends(get_db))
             detail=f"Failed to send email: {err}",
         )
     await db.commit()
-    return ForgotPinResponse(success=True, message=f"New PIN sent to {user.email_id}.", new_pin=new_pin)
+    return ForgotPinResponse(success=True, message=FORGOT_PIN_SENT_MESSAGE)
 
 
 @router.post("/change-pin", response_model=ChangePinResponse, summary="Change the current PIN")
