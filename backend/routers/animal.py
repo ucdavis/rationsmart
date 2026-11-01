@@ -49,7 +49,8 @@ async def unique_feed_types(
 ):
     """
     Return the distinct feed types (e.g. Roughage, Concentrate) that have feeds available for the given country,
-    including the authenticated user's own custom feeds.
+    plus the types of the authenticated user's own custom feeds (from any country: a custom feed belongs to
+    its user, not a country).
 
     **Requires:** Bearer JWT.
 
@@ -67,7 +68,8 @@ async def unique_feed_categories(
     lang: str = Depends(get_language_authenticated),
 ):
     """
-    Return the distinct feed categories available for the given country (standard + user's custom feeds).
+    Return the distinct feed categories available for the given country, plus the categories of the
+    authenticated user's own custom feeds (from any country).
 
     **Requires:** Bearer JWT.
 
@@ -88,7 +90,8 @@ async def search_feeds(
 ):
     """
     Search feeds by name (case-insensitive substring) for the given country.
-    Returns standard feeds available in the country plus the authenticated user's custom feeds.
+    Returns standard feeds available in the country plus the authenticated user's custom feeds
+    (from any country: a custom feed belongs to its user, not a country).
 
     **Requires:** Bearer JWT.
 
@@ -143,7 +146,8 @@ async def feed_names(
     - `feed_type_id` — filter by feed type UUID (preferred; wins over `feed_type`).
     - `feed_category_id` — filter by feed category UUID (preferred; wins over `category`).
 
-    Response contains two lists: `standard_feeds` (global) and `custom_feeds` (user-created).
+    Response contains two lists: `standard_feeds` (this country's library feeds) and `custom_feeds`
+    (the user's own feeds, from any country — `country_id` does not limit them).
     Each feed includes `display_name`/`display_type`/`display_category` with localized values.
     """
     std_feeds, cust_feeds = await diet_service.get_feed_names(

@@ -181,7 +181,7 @@ async def search_feeds(
     limit: int = 20,
     lang: str = "en",
 ) -> Tuple[List[Dict[str, Any]], int]:
-    """Typeahead feed search scoped to country + user's custom feeds.
+    """Typeahead feed search: the country's standard feeds + the user's custom feeds (any country).
 
     Returns (feed_list, total_count).
     Short queries (< 2 chars) return ([], 0) with no DB hit.
@@ -253,7 +253,7 @@ async def _build_feed_data_list(
     ids = [item.feed_id for item in feed_selection]
 
     std_map = {str(f.id): f for f in await feed_repo.get_by_ids(ids)}
-    cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids)}
+    cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids, user_id)}
     user_repo = UserRepository(db)
 
     feed_data_list = []
@@ -741,7 +741,7 @@ async def run_diet_evaluation(
     user_repo = UserRepository(db)
     ids = [item.feed_id for item in request.feed_evaluation]
     std_map = {str(f.id): f for f in await feed_repo.get_by_ids(ids)}
-    cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids)}
+    cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids, user_id)}
 
     feed_data_list = []
     for item in request.feed_evaluation:

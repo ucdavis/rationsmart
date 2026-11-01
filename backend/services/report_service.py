@@ -68,7 +68,10 @@ async def fetch_simulation_details(
     feed_ids = [f.get("feed_id") for f in feed_selection_raw if f.get("feed_id")]
 
     std_feeds = {str(f.id): f for f in await feed_repo.get_by_ids(feed_ids)}
-    cust_feeds = {str(f.id): f for f in await feed_repo.get_custom_by_ids(feed_ids)}
+    # Custom feeds are private: only the report owner's own resolve.
+    cust_feeds = {
+        str(f.id): f for f in await feed_repo.get_custom_by_ids(feed_ids, str(report.user_id))
+    }
 
     enriched_feeds = []
     for item in feed_selection_raw:

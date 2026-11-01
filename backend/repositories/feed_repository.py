@@ -214,10 +214,18 @@ class FeedRepository:
         )
         return result.scalars().first()
 
-    async def get_custom_by_ids(self, ids: List[str]) -> List[CustomFeed]:
+    async def get_custom_by_ids(self, ids: List[str], user_id: str) -> List[CustomFeed]:
+        """The given custom feeds, but only those owned by `user_id` (F16).
+
+        A custom feed is private to its owner, so another user's id is treated as not
+        found instead of letting its nutrients into someone else's diet or report.
+        """
         uids = [uuid.UUID(str(i)) for i in ids]
         result = await self.db.execute(
-            select(CustomFeed).where(CustomFeed.id.in_(uids))
+            select(CustomFeed).where(
+                CustomFeed.id.in_(uids),
+                CustomFeed.user_id == uuid.UUID(str(user_id)),
+            )
         )
         return result.scalars().all()
 
@@ -243,14 +251,13 @@ class FeedRepository:
     async def get_unique_types(
         self, country_id: str, user_id: str, lang: str = "en"
     ) -> List[str]:
-        """UNION of feed types (standard + custom) for a country, with optional vocabulary translation."""
+        """UNION of the country's standard feed types and the user's custom feed types (any
+        country: a custom feed belongs to its user, not a country — F16), with optional
+        vocabulary translation."""
         std = select(Feed.fd_type).where(Feed.fd_country_id == country_id).distinct()
         cust = (
             select(CustomFeed.fd_type)
-            .where(
-                CustomFeed.fd_country_id == country_id,
-                CustomFeed.user_id == uuid.UUID(str(user_id)),
-            )
+            .where(CustomFeed.user_id == uuid.UUID(str(user_id)))
             .distinct()
         )
         result = await self.db.execute(std.union(cust))
@@ -274,14 +281,12 @@ class FeedRepository:
     async def get_unique_categories(
         self, country_id: str, user_id: str, lang: str = "en"
     ) -> List[str]:
-        """UNION of feed categories (standard + custom) for a country, with optional vocabulary translation."""
+        """UNION of the country's standard feed categories and the user's custom feed categories
+        (any country — F16), with optional vocabulary translation."""
         std = select(Feed.fd_category).where(Feed.fd_country_id == country_id).distinct()
         cust = (
             select(CustomFeed.fd_category)
-            .where(
-                CustomFeed.fd_country_id == country_id,
-                CustomFeed.user_id == uuid.UUID(str(user_id)),
-            )
+            .where(CustomFeed.user_id == uuid.UUID(str(user_id)))
             .distinct()
         )
         result = await self.db.execute(std.union(cust))
@@ -337,7 +342,8 @@ class FeedRepository:
         limit: int = 20,
         lang: str = "en",
     ) -> Tuple[List, List, int]:
-        """Typeahead search on fd_name (and translated name) scoped to country + user.
+        """Typeahead search on fd_name (and translated name): the country's standard feeds plus
+        the user's custom feeds from any country (F16).
 
         Returns (std_rows, custom_feeds, total_count).
         std_rows: Row(Feed, display_name, display_type, display_category)
@@ -387,7 +393,6 @@ class FeedRepository:
         # matches first, then alphabetically, mirroring diet_service.search_feeds._rank.
         prefix_first = case((_name_matches(f"{escaped}%"), 0), else_=1)
         cq = select(CustomFeed).where(
-            CustomFeed.fd_country_id == country_id,
             CustomFeed.user_id == uuid.UUID(str(user_id)),
             CustomFeed.fd_name.ilike(pattern, escape=_LIKE_ESCAPE),
         )
@@ -468,10 +473,13 @@ class FeedRepository:
         Taxonomy filter: a FK id (feed_type_id/feed_category_id) wins over the
         legacy string param (T4). Standard AND custom feeds both filter by FK on an
         identical code path (Ticket B — the Phase-1 id→name bridge is gone).
+
+        Standard feeds are limited to `country_id`; custom feeds only to `user_id`. A
+        custom feed belongs to its user, not a country (F16) — and its fd_country_id is
+        never set on insert, so a country filter here hid every custom feed.
         """
         sq = self._localized_feed_select(lang).where(Feed.fd_country_id == country_id)
         cq = select(CustomFeed).where(
-            CustomFeed.fd_country_id == country_id,
             CustomFeed.user_id == uuid.UUID(str(user_id)),
         )
 
