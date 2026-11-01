@@ -589,7 +589,9 @@ async def get_user_reports(
 
     **Requires:** Bearer JWT.
 
-    Only reports marked as saved (via `POST /v1/animal/save-report`) are returned.
+    Only reports marked as saved (via `POST /v1/animal/save-report`) are returned — every one of
+    them, newest first. `bucket_url` is `null` while the report's PDF isn't ready yet (or its
+    background upload failed); `POST /v1/animal/reports/pdf` returns or generates it.
     For all simulation history, use `GET /v1/animal/simulations`.
     """
     success, message, reports = await report_service.get_user_reports(db, str(current_user.id))
@@ -694,6 +696,7 @@ async def list_pdf_reports(
 ):
     """
     Return all saved reports for the authenticated user (same dataset as `GET /v1/animal/user-reports`).
+    `bucket_url` is `null` while a report's PDF isn't ready yet.
 
     **Requires:** Bearer JWT.
 
