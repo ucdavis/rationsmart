@@ -297,6 +297,21 @@ async def _build_feed_data_list(
     return feed_data_list, missing
 
 
+def _missing_feeds_error(feed_ids: List[str]) -> ValueError:
+    """The 400 both diet modes give when selected feed ids don't resolve (F41).
+
+    A deleted feed, an id from before a library re-upload, or another user's custom
+    feed (owner-only since F16). Dropping them used to give a diet or evaluation of
+    the remaining feeds with no warning, so refuse the whole request instead. A
+    missing feed has no name to show, so the ids go to the log only.
+    """
+    logger.warning("Selected feed ids not found or not accessible: %s", feed_ids)
+    return ValueError(
+        f"{len(feed_ids)} of the selected feeds are no longer available. Remove them "
+        "from the selection and choose the feeds again."
+    )
+
+
 def _no_dry_matter_error(feed_names: List[str]) -> ValueError:
     """The 400 both diet modes give for feeds without a usable dry-matter value."""
     return ValueError(
@@ -564,10 +579,10 @@ async def run_diet_recommendation(
 
     # 1 — Resolve feeds
     feed_data_list, missing = await _build_feed_data_list(db, request.feed_selection, user_id)
+    if missing:
+        raise _missing_feeds_error(missing)
     if not feed_data_list:
         raise ValueError("No valid feeds found for the provided feed IDs.")
-    if missing:
-        logger.warning("Missing feed IDs (skipped): %s", missing)
 
     # 2 — Build animal inputs for the optimizer
     animal_inputs = {
@@ -748,10 +763,12 @@ async def run_diet_evaluation(
 
     feed_data_list = []
     unusable = []
+    missing = []
     for item in request.feed_evaluation:
         fid = item.feed_id
         feed = std_map.get(fid) or cust_map.get(fid)
         if feed is None:
+            missing.append(fid)
             continue
         # Same rule as Recommendation (F37): with no dry matter the as-fed amount
         # converts to 0 kg DM (the feed adds nothing) and its cost to 0 / 0 = NaN, so
@@ -764,6 +781,8 @@ async def run_diet_evaluation(
         )
         feed_data_list.append(dataclasses.asdict(rec))
 
+    if missing:
+        raise _missing_feeds_error(missing)
     if unusable:
         raise _no_dry_matter_error(unusable)
 

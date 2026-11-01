@@ -415,7 +415,8 @@ async def diet_recommendation(
     constrain.
 
     Returns ranked Pareto-front diet solutions with cost, nutrient balance, and feed breakdown.
-    Returns `400` for invalid inputs (e.g. no feasible feed combination).
+    Returns `400` for invalid inputs (e.g. no feasible feed combination), a selected feed that
+    no longer exists or isn't the caller's, or a selected feed with no dry-matter value.
     """
     pool = request.app.state.optimization_pool
     try:
@@ -449,8 +450,9 @@ async def evaluate_diet(
     `evaluation_summary.limiting_factor`, `milk_production_analysis.limiting_nutrient` and the three
     `milk_supported_*` / `actual_milk_supported_*` values, `cost_analysis.feed_cost_per_kg_milk` and
     `cost_analysis.margin_summary`.
-    Returns `400` for invalid or missing feed data, including a selected feed with no dry-matter
-    value (the message names each such feed — same rule as `diet-recommendation`).
+    Returns `400` for invalid or missing feed data: a selected feed that no longer exists or
+    isn't the caller's, or one with no dry-matter value (the message names each such feed) —
+    same rules as `diet-recommendation`.
     """
     try:
         result = await diet_service.run_diet_evaluation(db, body, str(current_user.id), lang=lang)
