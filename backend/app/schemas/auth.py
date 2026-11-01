@@ -281,6 +281,10 @@ class AdminUserListItem(BaseModel):
     is_active: bool
     is_admin: bool
     created_at: Optional[datetime] = None
+    deactivated_by: Optional[str] = Field(
+        None, description="Why the account is inactive: 'self' (user deleted it) or 'admin'; null when active"
+    )
+    deactivated_at: Optional[datetime] = None
 
 
 class AdminUserListResponse(BaseModel):

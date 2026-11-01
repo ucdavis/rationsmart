@@ -97,6 +97,9 @@ class UserRepository:
     async def mark_email_verified(self, user: UserInformationModel) -> None:
         user.is_email_verified = True
         user.is_active = True
+        # A returning self-deleted user (F60) is active again: clear the history.
+        user.deactivated_by = None
+        user.deactivated_at = None
         user.email_verify_token = None
         user.email_verify_token_exp = None
         user.updated_at = datetime.utcnow()
@@ -127,12 +130,37 @@ class UserRepository:
         return user
 
     async def deactivate(self, user: UserInformationModel) -> None:
+        """The user deleted their own account (F60: they may come back)."""
+        now = datetime.utcnow()
         user.is_active = False
-        user.updated_at = datetime.utcnow()
+        user.deactivated_by = "self"
+        user.deactivated_at = now
+        user.updated_at = now
         await self.db.flush()
 
     async def toggle_status(self, user: UserInformationModel, active: bool) -> None:
+        """Admin enable / disable. Disabling records 'admin', which keeps the user out."""
+        now = datetime.utcnow()
         user.is_active = active
+        user.deactivated_by = None if active else "admin"
+        user.deactivated_at = None if active else now
+        user.updated_at = now
+        await self.db.flush()
+
+    async def reregister_self_deleted(
+        self, user: UserInformationModel, name: str, pin_hash: str, country_id: str
+    ) -> None:
+        """Reuse a self-deleted account for a new registration (F60).
+
+        Takes the new name / PIN / country and needs the email verified again;
+        the account stays inactive (deactivated_by 'self') until the link is used,
+        so only the owner of the address can bring it back.
+        """
+        user.name = name.strip()
+        user.pin_hash = pin_hash
+        user.country_id = country_id
+        user.is_email_verified = False
+        user.requires_pin_reset = False
         user.updated_at = datetime.utcnow()
         await self.db.flush()
 
