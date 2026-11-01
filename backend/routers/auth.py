@@ -83,6 +83,10 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
 
     The account remains inactive until the user clicks the verification link sent to their email.
     Login returns `403` until email is confirmed.
+
+    An email whose account was deleted by its own user can register again: that account is reused
+    (new name, PIN and country; saved reports and custom feeds kept) and becomes active once the
+    new link is clicked. Any other existing account → `400` "Email address already registered".
     """
     user, error, verify_token = await auth_service.register(
         db, name=body.name, email=body.email_id, pin=body.pin, country_id=body.country_id
@@ -462,7 +466,8 @@ async def delete_account(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Soft-delete the currently authenticated user's account. The account is deactivated, not permanently erased.
+    Soft-delete the currently authenticated user's account. The account is deactivated, not permanently erased
+    (`deactivated_by = "self"`): the user can come back by registering again with the same email address.
 
     **Requires:** Bearer JWT in `Authorization` header.
 
