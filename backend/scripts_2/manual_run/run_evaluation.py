@@ -40,6 +40,7 @@ if str(ROOT) not in sys.path:
 from core.z_optimization.evaluation import evaluate_diet, report_diet_eval  # noqa: E402
 from core.z_optimization.pdf_service import REPORT_ASSETS_DIR  # noqa: E402
 from core.z_optimization.report_generation import rsm_generate_report_v2  # noqa: E402
+from core.z_optimization.utilities import has_dry_matter  # noqa: E402
 from scripts_2.animal_inputs_loader import (  # noqa: E402
     BABY_CALF_STATE,
     inject_asset_base,
@@ -54,6 +55,19 @@ logger = logging.getLogger("run_evaluation")
 DEFAULT_FILE = ROOT / "scripts_2" / "manual_run" / "RFT_FD_Lib_Y2test.xlsx"
 DEFAULT_OUTPUT_DIR = ROOT / "scripts_2" / "manual_run" / "results"
 FEED_SHEET = "Fd_selected"
+
+
+def feeds_without_dry_matter(feed_list) -> list:
+    """Names of the feeds whose fd_dm is empty, zero or not a number.
+
+    Same rule the API applies (services/diet_service.py, F37): such a feed adds no
+    nutrients and turns the diet cost into NaN, even at 0 kg, so the run is refused.
+    """
+    return [
+        str(f.get("fd_name") or f"row {i + 2}")
+        for i, f in enumerate(feed_list)
+        if not has_dry_matter(f.get("fd_dm"))
+    ]
 
 
 def _run_for_animal(record, feed_list, output_dir: Path, ts: str) -> None:
@@ -124,6 +138,15 @@ def main() -> None:
     feed_list = feed_df.to_dict("records")
     n_feeds = len(feed_list)
     logger.info("Loaded %d feed(s) from '%s' [%s]", n_feeds, xlsx.name, FEED_SHEET)
+
+    no_dm = feeds_without_dry_matter(feed_list)
+    if no_dm:
+        logger.error(
+            "Stopped: these feeds in '%s' have no dry-matter value (fd_dm), so the "
+            "evaluation would be wrong: %s. Fill in fd_dm or remove them from the sheet.",
+            FEED_SHEET, ", ".join(no_dm),
+        )
+        sys.exit(1)
 
     if args.mode == "single":
         records = [load_single_animal(str(xlsx), sheet="Animal", n_feeds=n_feeds)]

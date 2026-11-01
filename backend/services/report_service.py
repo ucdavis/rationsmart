@@ -68,7 +68,10 @@ async def fetch_simulation_details(
     feed_ids = [f.get("feed_id") for f in feed_selection_raw if f.get("feed_id")]
 
     std_feeds = {str(f.id): f for f in await feed_repo.get_by_ids(feed_ids)}
-    cust_feeds = {str(f.id): f for f in await feed_repo.get_custom_by_ids(feed_ids)}
+    # Custom feeds are private: only the report owner's own resolve.
+    cust_feeds = {
+        str(f.id): f for f in await feed_repo.get_custom_by_ids(feed_ids, str(report.user_id))
+    }
 
     enriched_feeds = []
     for item in feed_selection_raw:
@@ -171,13 +174,17 @@ async def delete_report(
     return True, "Report deleted successfully"
 
 
-# ── User report list (saved to S3) ────────────────────────────────────────────
+# ── User report list (saved; PDF may be pending) ────────────────────────────────────────────
 
 async def get_user_reports(
     db: AsyncSession, user_id: str
 ) -> Tuple[bool, str, List[Dict[str, Any]]]:
     """
-    Return saved reports for a user that have a bucket_url (uploaded to S3).
+    Return every saved report of a user, newest first.
+
+    `bucket_url` is the PDF link, or None while the PDF isn't ready — the background
+    job hasn't finished, or it failed (F50). Such a report used to be skipped, so a
+    failed upload made a saved report vanish; the PWA shows "PDF Pending" for None.
     """
     repo = ReportRepository(db)
     user_repo = UserRepository(db)
@@ -188,11 +195,9 @@ async def get_user_reports(
     reports = await repo.get_saved_by_user(user_id)
     items = []
     for r in reports:
-        if not r.bucket_url:
-            continue
         items.append(
             {
-                "bucket_url": r.bucket_url,
+                "bucket_url": r.bucket_url or None,
                 "user_name": user_name,
                 "report_id": r.report_id,
                 "report_type": (

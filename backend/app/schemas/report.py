@@ -79,7 +79,9 @@ class SaveReportResponse(BaseModel):
 # ── User reports list ────────────────────────────────────────────────────────
 
 class UserReportItem(BaseModel):
-    bucket_url: str
+    bucket_url: Optional[str] = Field(
+        None, description="PDF link; null while the PDF is not ready yet (or its upload failed)"
+    )
     user_name: str
     report_id: str
     report_type: str = Field(..., description="'Diet Recommendation' or 'Diet Evaluation'")

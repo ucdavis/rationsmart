@@ -49,7 +49,8 @@ async def unique_feed_types(
 ):
     """
     Return the distinct feed types (e.g. Roughage, Concentrate) that have feeds available for the given country,
-    including the authenticated user's own custom feeds.
+    plus the types of the authenticated user's own custom feeds (from any country: a custom feed belongs to
+    its user, not a country).
 
     **Requires:** Bearer JWT.
 
@@ -67,7 +68,8 @@ async def unique_feed_categories(
     lang: str = Depends(get_language_authenticated),
 ):
     """
-    Return the distinct feed categories available for the given country (standard + user's custom feeds).
+    Return the distinct feed categories available for the given country, plus the categories of the
+    authenticated user's own custom feeds (from any country).
 
     **Requires:** Bearer JWT.
 
@@ -88,7 +90,8 @@ async def search_feeds(
 ):
     """
     Search feeds by name (case-insensitive substring) for the given country.
-    Returns standard feeds available in the country plus the authenticated user's custom feeds.
+    Returns standard feeds available in the country plus the authenticated user's custom feeds
+    (from any country: a custom feed belongs to its user, not a country).
 
     **Requires:** Bearer JWT.
 
@@ -143,7 +146,8 @@ async def feed_names(
     - `feed_type_id` — filter by feed type UUID (preferred; wins over `feed_type`).
     - `feed_category_id` — filter by feed category UUID (preferred; wins over `category`).
 
-    Response contains two lists: `standard_feeds` (global) and `custom_feeds` (user-created).
+    Response contains two lists: `standard_feeds` (this country's library feeds) and `custom_feeds`
+    (the user's own feeds, from any country — `country_id` does not limit them).
     Each feed includes `display_name`/`display_type`/`display_category` with localized values.
     """
     std_feeds, cust_feeds = await diet_service.get_feed_names(
@@ -411,7 +415,8 @@ async def diet_recommendation(
     constrain.
 
     Returns ranked Pareto-front diet solutions with cost, nutrient balance, and feed breakdown.
-    Returns `400` for invalid inputs (e.g. no feasible feed combination).
+    Returns `400` for invalid inputs (e.g. no feasible feed combination), a selected feed that
+    no longer exists or isn't the caller's, or a selected feed with no dry-matter value.
     """
     pool = request.app.state.optimization_pool
     try:
@@ -445,7 +450,9 @@ async def evaluate_diet(
     `evaluation_summary.limiting_factor`, `milk_production_analysis.limiting_nutrient` and the three
     `milk_supported_*` / `actual_milk_supported_*` values, `cost_analysis.feed_cost_per_kg_milk` and
     `cost_analysis.margin_summary`.
-    Returns `400` for invalid or missing feed data.
+    Returns `400` for invalid or missing feed data: a selected feed that no longer exists or
+    isn't the caller's, or one with no dry-matter value (the message names each such feed) —
+    same rules as `diet-recommendation`.
     """
     try:
         result = await diet_service.run_diet_evaluation(db, body, str(current_user.id), lang=lang)
@@ -584,7 +591,9 @@ async def get_user_reports(
 
     **Requires:** Bearer JWT.
 
-    Only reports marked as saved (via `POST /v1/animal/save-report`) are returned.
+    Only reports marked as saved (via `POST /v1/animal/save-report`) are returned — every one of
+    them, newest first. `bucket_url` is `null` while the report's PDF isn't ready yet (or its
+    background upload failed); `POST /v1/animal/reports/pdf` returns or generates it.
     For all simulation history, use `GET /v1/animal/simulations`.
     """
     success, message, reports = await report_service.get_user_reports(db, str(current_user.id))
@@ -689,6 +698,7 @@ async def list_pdf_reports(
 ):
     """
     Return all saved reports for the authenticated user (same dataset as `GET /v1/animal/user-reports`).
+    `bucket_url` is `null` while a report's PDF isn't ready yet.
 
     **Requires:** Bearer JWT.
 
