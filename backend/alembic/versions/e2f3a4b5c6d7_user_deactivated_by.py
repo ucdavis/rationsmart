@@ -17,6 +17,8 @@ account is active again (re-registration or admin enable):
 
 Existing inactive accounts whose email is verified are back-filled as 'admin':
 their history is unknown, and 'admin' keeps them blocked until an admin decides.
+Their sessions_valid_after is set to the migration time, so re-enabling one
+can't revive a login token from before.
 Never-verified registrations are pending, not deactivated, and stay NULL.
 Plan: docs/defects/branches/v1_F27_F60_Account_Deactivation_Plan.md.
 
@@ -58,7 +60,7 @@ def upgrade() -> None:
         "deactivated_by IS NULL OR deactivated_by IN ('self', 'admin')",
     )
     op.execute(
-        "UPDATE public.user_information SET deactivated_by = 'admin' "
+        "UPDATE public.user_information SET deactivated_by = 'admin', sessions_valid_after = timezone('utc', now()) "
         "WHERE is_active = false AND is_email_verified = true"
     )
 

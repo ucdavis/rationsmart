@@ -148,6 +148,10 @@ async def login(
     if not verify_pin(pin, user.pin_hash):
         return None, "PIN is incorrect. Please try again.", False
 
+    # An admin block wins over "verify your email": its link is refused anyway.
+    if user.deactivated_by == "admin":
+        return None, "ACCOUNT_DISABLED", False
+
     if not user.is_email_verified:
         return None, "EMAIL_NOT_VERIFIED", False
 

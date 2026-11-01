@@ -23,14 +23,16 @@ class UserRepository:
         )
         return result.scalars().first()
 
-    async def get_by_id(self, user_id: str) -> Optional[UserInformationModel]:
+    async def get_by_id(self, user_id: str, for_update: bool = False) -> Optional[UserInformationModel]:
+        """for_update: lock the row until commit and re-read it (account state changes)."""
         try:
             uid = uuid.UUID(str(user_id))
         except ValueError:
             return None
-        result = await self.db.execute(
-            select(UserInformationModel).where(UserInformationModel.id == uid)
-        )
+        q = select(UserInformationModel).where(UserInformationModel.id == uid)
+        if for_update:
+            q = q.with_for_update().execution_options(populate_existing=True)
+        result = await self.db.execute(q)
         return result.scalars().first()
 
     async def get_admin_by_id(self, user_id: str) -> Optional[UserInformationModel]:
@@ -77,10 +79,14 @@ class UserRepository:
     # ── Email verification ────────────────────────────────────────────────────
 
     async def get_by_email_verify_token(self, token: str) -> Optional[UserInformationModel]:
+        """Locks the row until commit: verifying activates the account, and an admin
+        disable running at the same moment must not be overwritten (or overwrite it)
+        from a stale read. The admin toggle locks the same row."""
         result = await self.db.execute(
-            select(UserInformationModel).where(
-                UserInformationModel.email_verify_token == token
-            )
+            select(UserInformationModel)
+            .where(UserInformationModel.email_verify_token == token)
+            .with_for_update()
+            .execution_options(populate_existing=True)
         )
         return result.scalars().first()
 

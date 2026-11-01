@@ -174,7 +174,8 @@ async def toggle_user_status(
     if user_id == str(admin_user.id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot change your own status")
     repo = UserRepository(db)
-    user = await repo.get_by_id(user_id)
+    # Locked: a verification link used at the same moment must see this result.
+    user = await repo.get_by_id(user_id, for_update=True)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     active = body.action == "enable"
