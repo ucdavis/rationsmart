@@ -459,13 +459,17 @@ async def delete_account(
 
     **Mandatory body field:** `pin` — the user's current 6-digit PIN (confirms intent to delete).
 
-    Returns `401` if the PIN is wrong. Returns the deactivated user's details on success.
+    Returns `400` if the PIN is wrong (the caller is signed in; only the typed PIN is bad —
+    same as `POST /v1/auth/change-pin`). `401` is only for a missing or invalid token.
+    Returns the deactivated user's details on success.
     """
     from datetime import datetime
 
     success, message = await auth_service.deactivate_account(db, str(current_user.id), body.pin)
     if not success:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=message)
+        # Not 401: clients read 401 as "session expired" and sign the user out, so a
+        # mistyped PIN used to log them out and wipe their in-app work (F25).
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
     await db.commit()
     return UserDeleteAccountResponse(
         success=True,
