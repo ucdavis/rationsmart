@@ -219,9 +219,10 @@ class FeedWithPrice(BaseModel):
     @field_validator('feed_id', mode='before')
     @classmethod
     def validate_feed_id(cls, v):
+        # Return the canonical form (lowercase, hyphenated): feeds are looked up by
+        # str(feed.id), so "3F2A…" would miss an existing feed and be refused (F41).
         try:
-            uuid.UUID(v)
-            return v
+            return str(uuid.UUID(v))
         except ValueError:
             raise ValueError('feed_id must be a valid UUID')
 
@@ -568,9 +569,10 @@ class FeedEvaluationItem(BaseModel):
     @field_validator('feed_id', mode='before')
     @classmethod
     def validate_feed_id(cls, v):
+        # Return the canonical form (lowercase, hyphenated): feeds are looked up by
+        # str(feed.id), so "3F2A…" would miss an existing feed and be refused (F41).
         try:
-            uuid.UUID(v)
-            return v
+            return str(uuid.UUID(v))
         except ValueError:
             raise ValueError('feed_id must be a valid UUID')
 
