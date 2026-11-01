@@ -133,11 +133,13 @@ async def login(
     if not user.is_email_verified:
         return None, "EMAIL_NOT_VERIFIED", False
 
-    if not user.is_active:
-        return None, "Account is disabled. Please contact the administrator.", False
-
+    # PIN before account state (F27): only someone who knows the PIN learns that
+    # the account was deleted or disabled; a wrong PIN looks the same for all.
     if not verify_pin(pin, user.pin_hash):
         return None, "PIN is incorrect. Please try again.", False
+
+    if not user.is_active:
+        return None, ("ACCOUNT_DELETED" if user.deactivated_by == "self" else "ACCOUNT_DISABLED"), False
 
     needs_reset = is_legacy_hash(user.pin_hash)
     return user, None, needs_reset

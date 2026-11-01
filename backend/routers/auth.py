@@ -108,6 +108,14 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
     )
 
 
+# Login outcomes for a correct PIN that still can't sign in (auth_service.login).
+_LOGIN_FORBIDDEN = {
+    "EMAIL_NOT_VERIFIED": "Please verify your email address before logging in. Check your inbox for a verification link.",
+    "ACCOUNT_DELETED": "This account was deleted. To use RationSmart again, register again with this email address.",
+    "ACCOUNT_DISABLED": "This account is disabled. Please contact the administrator.",
+}
+
+
 @router.post("/login", response_model=LoginResponse, summary="Authenticate and receive a JWT token")
 @limiter.limit("10/minute")
 async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(get_db)):
@@ -120,15 +128,16 @@ async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(ge
 
     - `401` — wrong credentials.
     - `403` — email address not yet verified; call `POST /v1/auth/resend-verification` to get a fresh link.
+    - `403` — correct PIN, but the account was deleted by its user (they may register again with
+      the same email) or disabled by an admin. A wrong PIN is always `401`, whatever the account state.
     - If `requires_pin_reset: true` is returned, call `POST /v1/auth/set-new-pin` before continuing (legacy 4-digit PIN upgrade).
     """
     user, error, needs_reset = await auth_service.login(db, body.email_id, body.pin)
     if not user:
-        if error == "EMAIL_NOT_VERIFIED":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please verify your email address before logging in. Check your inbox for a verification link.",
-            )
+        if error in _LOGIN_FORBIDDEN:
+            # 403, not 401: the PWA shows a 403's detail as-is, while it turns every
+            # login 401 into the generic "Email or PIN is incorrect" (F27).
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_LOGIN_FORBIDDEN[error])
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=error)
 
     if needs_reset:
