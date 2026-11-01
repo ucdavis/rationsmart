@@ -213,8 +213,11 @@ python -m scripts_2.manual_run.run_evaluation --file /path/to/your.xlsx --output
 - **"Stopped: these feeds in 'Fd_selected' have no dry-matter value"** — Diet
   Evaluation found a feed whose `fd_dm` is empty or 0. Every nutrient is per kg
   of dry matter, so without it the feed would count as nothing and the cost
-  would be wrong. Fill in `fd_dm` for the feeds it names, or remove them from
-  `Fd_selected`, then run again. (The app refuses such feeds the same way.)
+  would be wrong. Fill in `fd_dm` for the feeds it names, then run again. (The
+  app refuses such feeds the same way.) If you remove a feed from `Fd_selected`
+  instead, also delete **that feed's** "Ingredient (kg AF)" row in `Animal` and
+  `BulkAnimals`: amounts are matched to feeds by position, so a leftover row
+  would shift every later amount onto the wrong feed without any error.
 - **A bulk run says one animal "failed" but keeps going** — by design: bulk
   mode logs the error for that one column and continues with the rest,
   rather than stopping the whole batch.
