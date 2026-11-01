@@ -143,13 +143,13 @@ async def login(
     if not user or not user.pin_hash:
         return None, "User not found. Please check the email address entered.", False
 
-    if not user.is_email_verified:
-        return None, "EMAIL_NOT_VERIFIED", False
-
     # PIN before account state (F27): only someone who knows the PIN learns that
-    # the account was deleted or disabled; a wrong PIN looks the same for all.
+    # the account is unverified, deleted or disabled; a wrong PIN looks the same for all.
     if not verify_pin(pin, user.pin_hash):
         return None, "PIN is incorrect. Please try again.", False
+
+    if not user.is_email_verified:
+        return None, "EMAIL_NOT_VERIFIED", False
 
     if not user.is_active:
         return None, ("ACCOUNT_DELETED" if user.deactivated_by == "self" else "ACCOUNT_DISABLED"), False
@@ -275,6 +275,11 @@ async def verify_email_token(
 
     if not user:
         return None, "Verification link is invalid or has already been used."
+
+    # Admin disable cancels pending links; this also guards a link issued
+    # around that moment. Verifying must never undo an admin's block.
+    if user.deactivated_by == "admin":
+        return None, "This account is disabled. Please contact the administrator."
 
     expiry = user.email_verify_token_exp
     if expiry is None or datetime.now(timezone.utc) > expiry:

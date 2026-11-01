@@ -9,6 +9,12 @@ columns record it:
   deactivated_by  'self' (Delete account) | 'admin' (admin disable) | NULL
   deactivated_at  when; NULL while active
 
+A third column ends every login made before a deactivation, so a token from
+before Delete account / an admin disable never works again, even once the
+account is active again (re-registration or admin enable):
+
+  sessions_valid_after  tokens issued (JWT iat) before this time are refused
+
 Existing inactive accounts whose email is verified are back-filled as 'admin':
 their history is unknown, and 'admin' keeps them blocked until an admin decides.
 Never-verified registrations are pending, not deactivated, and stay NULL.
@@ -43,6 +49,10 @@ def upgrade() -> None:
         'deactivated_at', sa.DateTime(), nullable=True,
         comment='When the account was deactivated; NULL while active',
     ))
+    op.add_column('user_information', sa.Column(
+        'sessions_valid_after', sa.DateTime(), nullable=True,
+        comment='Login tokens issued before this time are refused (set on Delete account / admin disable)',
+    ))
     op.create_check_constraint(
         'ck_user_deactivated_by', 'user_information',
         "deactivated_by IS NULL OR deactivated_by IN ('self', 'admin')",
@@ -56,5 +66,6 @@ def upgrade() -> None:
 def downgrade() -> None:
     op.execute(LOCK_TIMEOUT_SQL)
     op.drop_constraint('ck_user_deactivated_by', 'user_information', type_='check')
+    op.drop_column('user_information', 'sessions_valid_after')
     op.drop_column('user_information', 'deactivated_at')
     op.drop_column('user_information', 'deactivated_by')

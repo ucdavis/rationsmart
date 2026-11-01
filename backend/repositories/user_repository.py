@@ -135,6 +135,8 @@ class UserRepository:
         user.is_active = False
         user.deactivated_by = "self"
         user.deactivated_at = now
+        # Every login made so far stays dead, even after the user comes back.
+        user.sessions_valid_after = now
         user.updated_at = now
         await self.db.flush()
 
@@ -144,6 +146,12 @@ class UserRepository:
         user.is_active = active
         user.deactivated_by = None if active else "admin"
         user.deactivated_at = None if active else now
+        if not active:
+            # End all logins, and cancel a pending verification link: using it
+            # would otherwise re-activate the account behind the admin's back.
+            user.sessions_valid_after = now
+            user.email_verify_token = None
+            user.email_verify_token_exp = None
         user.updated_at = now
         await self.db.flush()
 

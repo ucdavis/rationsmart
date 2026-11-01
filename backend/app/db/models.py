@@ -66,6 +66,7 @@ class UserInformationModel(Base):
     # 'self' lets the user come back by registering again; 'admin' keeps them out.
     deactivated_by = Column(String(10), nullable=True, comment="Who deactivated the account: 'self' (Delete account) or 'admin'; NULL while active")
     deactivated_at = Column(DateTime, nullable=True, comment="When the account was deactivated; NULL while active")
+    sessions_valid_after = Column(DateTime, nullable=True, comment="Login tokens issued before this time are refused (set on Delete account / admin disable)")
     # ── i18n Phase 1: user language preference ─────────────────────────────────
     # FK to languages.code; defaults to 'en' (the universal baseline, I3). The
     # migration seeds the 'en' language row before adding this column so the

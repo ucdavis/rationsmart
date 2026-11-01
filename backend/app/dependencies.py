@@ -1,4 +1,5 @@
 import logging
+from datetime import timezone
 from typing import AsyncGenerator, Optional
 
 import jwt as _jwt
@@ -44,6 +45,12 @@ async def _user_from_jwt(token: str, db: AsyncSession) -> UserInformationModel:
     user =await UserRepository(db).get_by_id(user_id)
     if not user or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+    # A login from before Delete account / an admin disable never comes back to
+    # life, even once the account is active again. iat is whole seconds, so a
+    # token from the same second as the cut-off is refused too (log in again).
+    valid_after = user.sessions_valid_after
+    if valid_after is not None and payload.get("iat", 0) < valid_after.replace(tzinfo=timezone.utc).timestamp():
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token revoked")
     return user
 
 
