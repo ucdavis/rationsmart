@@ -86,26 +86,39 @@ async def register(
     """
     repo = UserRepository(db)
 
-    if await repo.get_by_email(email):
+    existing = await repo.get_by_email(email)
+    # A user who deleted their own account may come back by registering again
+    # (F60). Any other existing account - active, pending verification, or
+    # disabled by an admin - still blocks the address.
+    if existing and existing.deactivated_by != "self":
         return None, "Email address already registered", None
 
     if not await repo.get_country_by_id(country_id):
         return None, "Invalid country selected", None
 
-    user = await repo.create(
-        name=name,
-        email=email,
-        pin_hash=hash_pin(pin),
-        country_id=country_id,
-        is_active=False,
-        is_email_verified=False,
-    )
+    if existing:
+        # Same account, so the user's saved reports and custom feeds come back.
+        # It stays inactive until the new verification link is used.
+        user = existing
+        await repo.reregister_self_deleted(user, name=name, pin_hash=hash_pin(pin), country_id=country_id)
+    else:
+        user = await repo.create(
+            name=name,
+            email=email,
+            pin_hash=hash_pin(pin),
+            country_id=country_id,
+            is_active=False,
+            is_email_verified=False,
+        )
 
     verify_token = secrets.token_urlsafe(48)
     expiry = datetime.now(timezone.utc) + timedelta(hours=_EMAIL_VERIFY_TOKEN_HOURS)
     await repo.set_email_verification_token(user, verify_token, expiry)
 
-    logger.info("User registered (unverified): %s (id=%s)", email, user.id)
+    logger.info(
+        "User %s (unverified): %s (id=%s)",
+        "re-registered" if existing else "registered", email, user.id,
+    )
     return user, None, verify_token
 
 
@@ -130,14 +143,20 @@ async def login(
     if not user or not user.pin_hash:
         return None, "User not found. Please check the email address entered.", False
 
+    # PIN before account state (F27): only someone who knows the PIN learns that
+    # the account is unverified, deleted or disabled; a wrong PIN looks the same for all.
+    if not verify_pin(pin, user.pin_hash):
+        return None, "PIN is incorrect. Please try again.", False
+
+    # An admin block wins over "verify your email": its link is refused anyway.
+    if user.deactivated_by == "admin":
+        return None, "ACCOUNT_DISABLED", False
+
     if not user.is_email_verified:
         return None, "EMAIL_NOT_VERIFIED", False
 
     if not user.is_active:
-        return None, "Account is disabled. Please contact the administrator.", False
-
-    if not verify_pin(pin, user.pin_hash):
-        return None, "PIN is incorrect. Please try again.", False
+        return None, ("ACCOUNT_DELETED" if user.deactivated_by == "self" else "ACCOUNT_DISABLED"), False
 
     needs_reset = is_legacy_hash(user.pin_hash)
     return user, None, needs_reset
@@ -260,6 +279,11 @@ async def verify_email_token(
 
     if not user:
         return None, "Verification link is invalid or has already been used."
+
+    # Admin disable cancels pending links; this also guards a link issued
+    # around that moment. Verifying must never undo an admin's block.
+    if user.deactivated_by == "admin":
+        return None, "This account is disabled. Please contact the administrator."
 
     expiry = user.email_verify_token_exp
     if expiry is None or datetime.now(timezone.utc) > expiry:

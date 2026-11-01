@@ -83,6 +83,10 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
 
     The account remains inactive until the user clicks the verification link sent to their email.
     Login returns `403` until email is confirmed.
+
+    An email whose account was deleted by its own user can register again: that account is reused
+    (new name, PIN and country; saved reports and custom feeds kept) and becomes active once the
+    new link is clicked. Any other existing account → `400` "Email address already registered".
     """
     user, error, verify_token = await auth_service.register(
         db, name=body.name, email=body.email_id, pin=body.pin, country_id=body.country_id
@@ -108,6 +112,14 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
     )
 
 
+# Login outcomes for a correct PIN that still can't sign in (auth_service.login).
+_LOGIN_FORBIDDEN = {
+    "EMAIL_NOT_VERIFIED": "Please verify your email address before logging in. Check your inbox for a verification link.",
+    "ACCOUNT_DELETED": "This account was deleted. To use RationSmart again, register again with this email address.",
+    "ACCOUNT_DISABLED": "This account is disabled. Please contact the administrator.",
+}
+
+
 @router.post("/login", response_model=LoginResponse, summary="Authenticate and receive a JWT token")
 @limiter.limit("10/minute")
 async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(get_db)):
@@ -120,15 +132,16 @@ async def login(request: Request, body: UserLogin, db: AsyncSession = Depends(ge
 
     - `401` — wrong credentials.
     - `403` — email address not yet verified; call `POST /v1/auth/resend-verification` to get a fresh link.
+    - `403` — correct PIN, but the account was deleted by its user (they may register again with
+      the same email) or disabled by an admin. A wrong PIN is always `401`, whatever the account state.
     - If `requires_pin_reset: true` is returned, call `POST /v1/auth/set-new-pin` before continuing (legacy 4-digit PIN upgrade).
     """
     user, error, needs_reset = await auth_service.login(db, body.email_id, body.pin)
     if not user:
-        if error == "EMAIL_NOT_VERIFIED":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please verify your email address before logging in. Check your inbox for a verification link.",
-            )
+        if error in _LOGIN_FORBIDDEN:
+            # 403, not 401: the PWA shows a 403's detail as-is, while it turns every
+            # login 401 into the generic "Email or PIN is incorrect" (F27).
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=_LOGIN_FORBIDDEN[error])
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=error)
 
     if needs_reset:
@@ -453,7 +466,8 @@ async def delete_account(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Soft-delete the currently authenticated user's account. The account is deactivated, not permanently erased.
+    Soft-delete the currently authenticated user's account. The account is deactivated, not permanently erased
+    (`deactivated_by = "self"`): the user can come back by registering again with the same email address.
 
     **Requires:** Bearer JWT in `Authorization` header.
 

@@ -139,6 +139,8 @@ async def list_users(
             is_active=user.is_active,
             is_admin=user.is_admin,
             created_at=user.created_at,
+            deactivated_by=user.deactivated_by,
+            deactivated_at=user.deactivated_at,
         ))
     total_pages = math.ceil(total / page_size) if total else 1
     return AdminUserListResponse(
@@ -165,11 +167,15 @@ async def toggle_user_status(
     **Mandatory body field:** `action` — `"enable"` to activate, `"disable"` to deactivate.
 
     An admin cannot toggle their own account. Returns `400` if attempting self-modification, `404` if the user is not found.
+
+    Disabling records `deactivated_by = "admin"`: such a user is told at login to contact the administrator
+    and can't come back by registering again. Enabling clears it (also for a user who deleted their own account).
     """
     if user_id == str(admin_user.id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot change your own status")
     repo = UserRepository(db)
-    user = await repo.get_by_id(user_id)
+    # Locked: a verification link used at the same moment must see this result.
+    user = await repo.get_by_id(user_id, for_update=True)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     active = body.action == "enable"

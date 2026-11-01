@@ -62,6 +62,11 @@ class UserInformationModel(Base):
     email_verify_token = Column(String(64), nullable=True, index=True)
     email_verify_token_exp = Column(DateTime(timezone=True), nullable=True)
     requires_pin_reset = Column(Boolean, nullable=False, server_default=text("false"), default=False)
+    # ── Who deactivated the account (F27 / F60) ───────────────────────────────
+    # 'self' lets the user come back by registering again; 'admin' keeps them out.
+    deactivated_by = Column(String(10), nullable=True, comment="Who deactivated the account: 'self' (Delete account) or 'admin'; NULL while active")
+    deactivated_at = Column(DateTime, nullable=True, comment="When the account was deactivated; NULL while active")
+    sessions_valid_after = Column(DateTime, nullable=True, comment="Login tokens issued before this time are refused (set on Delete account / admin disable)")
     # ── i18n Phase 1: user language preference ─────────────────────────────────
     # FK to languages.code; defaults to 'en' (the universal baseline, I3). The
     # migration seeds the 'en' language row before adding this column so the
@@ -82,6 +87,10 @@ class UserInformationModel(Base):
         CheckConstraint(
             "user_role IS NULL OR user_role IN ('farmer', 'extension_worker', 'nutritionist', 'researcher', 'feed_supplier', 'other')",
             name="ck_user_role",
+        ),
+        CheckConstraint(
+            "deactivated_by IS NULL OR deactivated_by IN ('self', 'admin')",
+            name="ck_user_deactivated_by",
         ),
         Index("idx_user_admin_level", admin_level, postgresql_where=text("admin_level IS NOT NULL")),
         Index("idx_user_admin_verification", id, is_admin, postgresql_where=text("is_admin = true")),
