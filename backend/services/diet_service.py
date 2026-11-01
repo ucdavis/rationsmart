@@ -249,6 +249,8 @@ async def _build_feed_data_list(
     Resolve feed UUIDs to nutrient dicts for the optimizer.
     Returns (feed_data_list, missing_ids).
     """
+    from core.z_optimization.utilities import has_dry_matter
+
     feed_repo = FeedRepository(db)
     ids = [item.feed_id for item in feed_selection]
 
@@ -269,15 +271,10 @@ async def _build_feed_data_list(
         # A feed with no dry matter cannot be formulated against: every nutrient is
         # expressed per kg of DM, the as-fed conversion divides by it, and the
         # per-ingredient inclusion bounds are scaled by it -- so a zero-DM feed silently
-        # loses the min/max the user entered and reports `inf` kg. Roughly half the feed
-        # library still has fd_dm NULL (a CLIMDES import carries name + taxonomy but not
-        # always nutrients) and nothing upstream rejects those rows, so refuse them here
-        # by name instead of returning a ration built on zeros.
-        try:
-            dm = float(feed.fd_dm) if feed.fd_dm is not None else 0.0
-        except (TypeError, ValueError):
-            dm = 0.0
-        if dm <= 0:
+        # loses the min/max the user entered and reports `inf` kg. Nothing upstream
+        # rejects such rows (a CLIMDES import needs name + taxonomy, not nutrients --
+        # F58), so refuse them here by name instead of returning a ration built on zeros.
+        if not has_dry_matter(feed.fd_dm):
             unusable.append(feed.fd_name or fid)
             continue
 
@@ -295,13 +292,18 @@ async def _build_feed_data_list(
         feed_data_list.append(dataclasses.asdict(rec))
 
     if unusable:
-        raise ValueError(
-            "These feeds have no dry-matter value recorded and cannot be used in a "
-            f"ration: {', '.join(unusable)}. Remove them from the selection, or ask an "
-            "administrator to complete their nutrient data."
-        )
+        raise _no_dry_matter_error(unusable)
 
     return feed_data_list, missing
+
+
+def _no_dry_matter_error(feed_names: List[str]) -> ValueError:
+    """The 400 both diet modes give for feeds without a usable dry-matter value."""
+    return ValueError(
+        "These feeds have no dry-matter value recorded and cannot be used in a "
+        f"ration: {', '.join(feed_names)}. Remove them from the selection, or ask an "
+        "administrator to complete their nutrient data."
+    )
 
 
 # ── Animal-input helpers ──────────────────────────────────────────────────────
@@ -727,6 +729,7 @@ async def run_diet_evaluation(
     """
     from core.z_optimization.evaluation import evaluate_diet
     from core.z_optimization.reporting import build_evaluation_response
+    from core.z_optimization.utilities import has_dry_matter
 
     # A baby calf has no solid ration to evaluate — reject before running the cow/heifer
     # pipeline (which would otherwise return a misleading report: milk-supported computed
@@ -744,15 +747,25 @@ async def run_diet_evaluation(
     cust_map = {str(f.id): f for f in await feed_repo.get_custom_by_ids(ids, user_id)}
 
     feed_data_list = []
+    unusable = []
     for item in request.feed_evaluation:
         fid = item.feed_id
         feed = std_map.get(fid) or cust_map.get(fid)
         if feed is None:
             continue
+        # Same rule as Recommendation (F37): with no dry matter the as-fed amount
+        # converts to 0 kg DM (the feed adds nothing) and its cost to 0 / 0 = NaN, so
+        # the report would look normal with wrong numbers. Refuse by name instead.
+        if not has_dry_matter(feed.fd_dm):
+            unusable.append(feed.fd_name or fid)
+            continue
         rec = FeedRecord.from_orm(
             feed, fid, price_per_kg=item.price_per_kg, quantity_as_fed=item.quantity_as_fed
         )
         feed_data_list.append(dataclasses.asdict(rec))
+
+    if unusable:
+        raise _no_dry_matter_error(unusable)
 
     cattle = request.cattle_info
     animal_inputs = {

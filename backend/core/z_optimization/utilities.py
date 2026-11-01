@@ -185,6 +185,17 @@ def calculate_MEact(Fd_DEact, Fd_EE, Fd_isFat, Fd_isMi):     # As NRC ... NASEM 
         return float(res[0])
     return res
 
+# Purpose: Decide whether a feed's dry-matter % can be used at all.
+# Notes: Every nutrient is per kg DM and as-fed <-> DM conversions multiply or divide by it,
+# so a feed without a positive DM silently adds no nutrients (x 0) and turns its cost into
+# NaN (0 / 0). Empty (None / NaN), zero, negative and non-numeric values all count as
+# missing. Shared by the API (services/diet_service.py) and scripts_2/manual_run (F37).
+def has_dry_matter(fd_dm) -> bool:
+    try:
+        return float(fd_dm) > 0  # NaN > 0 is False
+    except (TypeError, ValueError):
+        return False
+
 # Purpose: Convert as-fed ingredient vector to dry matter and augment feed dict with intakes.
 # Notes: Validates vector length against feed names and returns DM vector plus augmented dict.
 def convert_af_to_dm(ingredient_amounts_af: np.ndarray, f_nd: dict):

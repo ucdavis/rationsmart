@@ -449,7 +449,8 @@ async def evaluate_diet(
     `evaluation_summary.limiting_factor`, `milk_production_analysis.limiting_nutrient` and the three
     `milk_supported_*` / `actual_milk_supported_*` values, `cost_analysis.feed_cost_per_kg_milk` and
     `cost_analysis.margin_summary`.
-    Returns `400` for invalid or missing feed data.
+    Returns `400` for invalid or missing feed data, including a selected feed with no dry-matter
+    value (the message names each such feed — same rule as `diet-recommendation`).
     """
     try:
         result = await diet_service.run_diet_evaluation(db, body, str(current_user.id), lang=lang)
