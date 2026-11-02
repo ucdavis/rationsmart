@@ -380,6 +380,16 @@ def format_value_with_unit(value, unit):
     return f"{value:.2f} {unit}"
 
 
+# Baby Calf/Heifer milk plan, shown on the app screen (calf_milk_feeding_plan) and in the
+# report. Moved here from the PWA (W13) so the nutrition content lives in one place; the
+# litres come from the engine (animal_requirements: 10% of body weight, 2 feedings).
+CALF_FEEDINGS_PER_DAY = 2
+CALF_WEANING_AGE_DAYS = 56
+CALF_CARE_NOTES = (
+    "Use clean, warm milk at 38–40°C; never cold from the fridge.",
+    "Replace whole milk with a quality milk replacer if cost is a concern.",
+)
+
 MILK_MARGIN_ABOVE = "Milk revenue exceeds feed costs by {amount} per liter"
 MILK_MARGIN_BELOW = "Feed costs exceed milk revenue by {amount} per liter"
 MILK_MARGIN_EQUAL = "Milk revenue equals feed costs per liter"
