@@ -436,10 +436,7 @@ RESEND_VERIFICATION_SENT_MESSAGE = (
 
 
 @router.post("/resend-verification", summary="Resend the email verification link")
-@limiter.limit("30/minute")
-async def resend_verification(
-    request: Request, body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)
-):
+async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
     """
     Issue a new one-time verification token and resend the activation email.
 
@@ -450,8 +447,9 @@ async def resend_verification(
     that is already verified, during the cooldown, and when the email can't be sent — so
     the endpoint can't be used to find out which emails are registered. The new link
     replaces the old one only once its email has gone out.
-    One email per address per minute (`pin_reset_cooldown`, scope `verify_resend`); the
-    per-IP limit is only a flood guard, since PWA traffic arrives from the proxy's address.
+    One email per address per minute (`pin_reset_cooldown`, scope `verify_resend`). There
+    is deliberately no per-IP limit: PWA traffic arrives from the proxy's one address, so
+    one caller could use it up and block resends for every PWA user.
     """
     neutral = {"success": True, "message": RESEND_VERIFICATION_SENT_MESSAGE}
     if not email_service.is_configured:
