@@ -1232,10 +1232,11 @@ async def toggle_country_status(
 
     **Mandatory body field:** `action` — `"enable"` to activate, `"disable"` to deactivate.
 
-    A deactivated country is hidden from `GET /v1/auth/countries` (registration and
-    profile screens) and from the admin country list. Existing users, feeds, and
-    reports referencing the country are unaffected. Returns `404` if the country
-    is not found.
+    A deactivated country is hidden from `GET /v1/auth/countries` (the Cattle Info
+    country list) and from the admin country list; it stays in
+    `GET /v1/auth/countries?scope=all` (registration and profile screens). Existing
+    users, feeds, and reports referencing the country are unaffected. Returns `404`
+    if the country is not found.
     """
     repo = UserRepository(db)
     country = await repo.get_country_by_id(country_id)

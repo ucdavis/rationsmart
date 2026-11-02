@@ -812,6 +812,10 @@ async def run_diet_evaluation(
 
     country = await user_repo.get_country_by_id(request.country_id)
     country_name = country.name if country else ""
+    # The simulation country's currency, as Recommendation does; the request's own value
+    # (sent by the PWA from its stored profile currency, often stale or empty) is only a
+    # fallback for a country without one.
+    currency = getattr(country, "currency", None) or getattr(request, "currency", None) or "$"
 
     ingredient_amounts_af = [f["quantity_as_fed"] or 0.0 for f in feed_data_list]
     eval_result = evaluate_diet(animal_inputs, ingredient_amounts_af, feed_data_list=feed_data_list)
@@ -830,7 +834,7 @@ async def run_diet_evaluation(
         cattle_info=request.cattle_info,
         simulation_id=request.simulation_id,
         report_id=report_id,
-        currency=request.currency,
+        currency=currency,
         country_name=country_name,
         feed_evaluation=request.feed_evaluation,
         feeds=feed_data_list,
@@ -843,7 +847,7 @@ async def run_diet_evaluation(
     report_html = _render_report_html(
         eval_result.get("post_results", {}), eval_result.get("animal_requirements", {}),
         simulation_id=request.simulation_id, report_id=report_id,
-        evaluation_mode=True, currency=request.currency,
+        evaluation_mode=True, currency=currency,
         user_name=user_name, country_name=country_name,
         lang=lang, name_map=name_map, type_map=type_map,
     )
