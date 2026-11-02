@@ -1575,6 +1575,9 @@ async def run_feed_sync_from_file(
     fetch to decouple from, so the finished result is returned directly,
     same shape as `GET /feed-sync/logs/{log_id}`.
 
+    A run that failed as a whole (e.g. a mandatory column is missing) still answers
+    `200`, with `status: "failed"`, `success: false` and the reason in `error_message`.
+
     Errors: `400` bad file extension · `409` a sync run is already in progress.
     """
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -1595,8 +1598,10 @@ async def run_feed_sync_from_file(
         )
 
     log = await FeedSyncRepository(db).get_log(result["log_id"])
+    # `success` reports the import, not the request: a failed run used to come back as
+    # success=true, and the PWA showed it as a green "Processed 0 rows" (W6).
     return FeedSyncLogDetailResponse(
-        success=True,
+        success=log.status != "failed",
         **_sync_log_item(log).model_dump(),
         error_message=log.error_message,
         failed_rows=log.failed_rows,

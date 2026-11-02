@@ -2,6 +2,7 @@
 Email service for RationSmart v4.0.
 Reads SMTP config from settings (not os.getenv) so it respects the .env file.
 """
+import asyncio
 import html
 import logging
 import smtplib
@@ -169,7 +170,9 @@ class EmailService:
             f"{verify_url}\n\n"
             f"This link expires in 24 hours.\n\n-- RationSmart"
         )
-        return self._send(
+        # smtplib blocks; in a worker thread a slow mail server doesn't stall every other request.
+        return await asyncio.to_thread(
+            self._send,
             to_email,
             subject="Verify your RationSmart email",
             text=text,
