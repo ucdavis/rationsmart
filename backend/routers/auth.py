@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import List, Optional
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
@@ -436,7 +436,7 @@ RESEND_VERIFICATION_SENT_MESSAGE = (
 
 
 @router.post("/resend-verification", summary="Resend the email verification link")
-async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
+async def resend_verification(body: ResendVerificationRequest, background_tasks: BackgroundTasks):
     """
     Issue a new one-time verification token and resend the activation email.
 
@@ -445,8 +445,9 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
     Use when the original verification email expired or was not received.
     Always answers `200` with the same message — for an unknown address, an account
     that is already verified, during the cooldown, and when the email can't be sent — so
-    the endpoint can't be used to find out which emails are registered. The new link
-    replaces the old one only once its email has gone out.
+    the endpoint can't be used to find out which emails are registered. The account
+    lookup and the email run after the reply has gone out, so the response time doesn't
+    tell them apart either. The new link replaces the old one only once its email has gone out.
     One email per address per minute (`pin_reset_cooldown`, scope `verify_resend`). There
     is deliberately no per-IP limit: PWA traffic arrives from the proxy's one address, so
     one caller could use it up and block resends for every PWA user.
@@ -456,23 +457,37 @@ async def resend_verification(body: ResendVerificationRequest, db: AsyncSession 
         # Email would only be simulated: a new token now would silently void the old link.
         logger.warning("Resend verification: SMTP is not configured; link left unchanged")
         return neutral
-    if not await pin_reset_cooldown.claim(body.email_id, scope=pin_reset_cooldown.VERIFY_RESEND):
-        return neutral
-
-    new_token, _error = await auth_service.resend_verification(db, body.email_id)
-    if not new_token:
-        return neutral
-
-    user = await UserRepository(db).get_by_email(body.email_id)
-    sent, send_err = await email_service.send_verification_email(
-        to_email=user.email_id, user_name=user.name, token=new_token
-    )
-    if not sent:
-        logger.error("Resend verification: email failed (%s); new link undone", send_err)
-        await db.rollback()
-        return neutral
-    await db.commit()
+    if await pin_reset_cooldown.claim(body.email_id, scope=pin_reset_cooldown.VERIFY_RESEND):
+        background_tasks.add_task(send_verification_resend, body.email_id)
     return neutral
+
+
+async def send_verification_resend(email_id: str) -> None:
+    """Background part of POST /resend-verification, after the reply has been sent.
+
+    Uses its own session: the request's session is closed by now (same pattern as
+    report_service.generate_and_upload_pdf). Unknown or verified address: nothing happens.
+    The new token is committed only after its email went out; on a failed send it is
+    rolled back, so the previous link keeps working.
+    """
+    from app.db.session import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as db:
+            new_token, _error = await auth_service.resend_verification(db, email_id)
+            if not new_token:
+                return
+            user = await UserRepository(db).get_by_email(email_id)
+            sent, send_err = await email_service.send_verification_email(
+                to_email=user.email_id, user_name=user.name, token=new_token
+            )
+            if not sent:
+                logger.error("Resend verification: email failed (%s); new link undone", send_err)
+                await db.rollback()
+                return
+            await db.commit()
+    except Exception:
+        logger.exception("Resend verification: background job failed")
 
 
 @router.get("/email-config", summary="Check email service configuration (diagnostic)")
