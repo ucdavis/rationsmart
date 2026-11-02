@@ -223,11 +223,23 @@ do_prepare() {
   backup_db
 }
 
+# A deploy builds the schema but loads no data. Say so when the database is still empty, so the next step is not missed.
+remind_if_empty() {
+  local n
+  n="$(dc backend exec -T api python -c "import psycopg2; from app.config import settings; c = psycopg2.connect(settings.database_url); cur = c.cursor(); cur.execute('select count(*) from country'); print(cur.fetchone()[0])" 2>/dev/null | tail -1 || true)"
+  if [[ "$n" == "0" ]]; then
+    log "NOTE: the database has no data yet (a deploy only creates the structure)."
+    log "NOTE: next, load the reference data:  ./deploy.sh seed --dry-run   then   ./deploy.sh seed"
+    log "NOTE: then create the first admin:    ./deploy.sh create-admin --email <email> --name <name> --country-code ETH"
+  fi
+}
+
 do_apply() {
   migrate
   start_all
   smoke_test
   log "deploy OK"
+  remind_if_empty
 }
 
 do_rollback() {

@@ -148,9 +148,12 @@ The first run builds the app and takes **5 to 10 minutes**. It prints its progre
 ```
 [deploy] smoke test passed
 [deploy] deploy OK
+[deploy] NOTE: the database has no data yet (a deploy only creates the structure).
+[deploy] NOTE: next, load the reference data:  ./deploy.sh seed --dry-run   then   ./deploy.sh seed
 ```
 
-It also saves a backup of the database in `backups/` before changing anything. If anything fails it tells you why, and your
+**A deploy only creates the empty structure. It does not load any data**: the tables stay empty until you do Step 6. (The `NOTE`
+lines appear while the database is still empty.) It also saves a backup of the database in `backups/` before changing anything. If anything fails it tells you why, and your
 existing setup is left as it was (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
 
 **Check that everything is running:**
