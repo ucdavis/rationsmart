@@ -8,7 +8,10 @@ from pathlib import Path
 
 import logging
 
-from .utilities import format_value_with_unit, safe_float, ensure_json_safe, milk_margin_message
+from .utilities import (
+    CALF_CARE_NOTES, CALF_FEEDINGS_PER_DAY, CALF_WEANING_AGE_DAYS,
+    format_value_with_unit, safe_float, ensure_json_safe, milk_margin_message,
+)
 from .report_text import translate_message, translator
 from .diet_tables import (
     forage_concentrate_ratio_from_proportions,
@@ -399,7 +402,12 @@ def build_calf_recommendation_response(
     omitted: it is only computed in the post-optimization diet step, which a calf never
     runs (see the animal-category plan). `solution_status="MILK_FEEDING_ONLY"` signals
     to the frontend that this is a milk schedule, not a solved ration.
+
+    `calf_milk_feeding_plan` is the block the PWA's Calf Milk Feeding card reads (W13):
+    the daily target before rounding, the feedings, the rounded amounts actually fed,
+    the weaning age and the care notes (translated).
     """
+    t = translate or translator(None)
     milk_total = float(animal_requirements.get("milk_total", 0) or 0)
     milk_morning = float(animal_requirements.get("milk_morning", 0) or 0)
     milk_evening = float(animal_requirements.get("milk_evening", 0) or 0)
@@ -427,11 +435,19 @@ def build_calf_recommendation_response(
                 {"feeding_time": "Total per Day", "milk_liters": round(milk_total, 1)},
             ],
         },
+        "calf_milk_feeding_plan": {
+            "daily_milk_volume_l": round(dmi, 2),
+            "feedings_per_day": CALF_FEEDINGS_PER_DAY,
+            "per_feeding_l": round(milk_morning, 1),
+            "daily_milk_fed_l": round(milk_total, 1),
+            "estimated_weaning_age_days": CALF_WEANING_AGE_DAYS,
+            "notes": [t(note) for note in CALF_CARE_NOTES],
+        },
         "animal_requirements": {
             "dry_matter_intake": format_value_with_unit(round(dmi, 2), "kg/day"),
             "intake_pct_bw": format_value_with_unit(intake_pct_bw, "%BW"),
         },
-        "recommendations": [(translate or translator(None))(CALF_RECOMMENDATION)],
+        "recommendations": [t(CALF_RECOMMENDATION)],
         "warnings": [],
     }
     return ensure_json_safe(response_data)
