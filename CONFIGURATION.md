@@ -88,7 +88,7 @@ Put these **before** the command: `FORCE_BUILD=1 ./deploy.sh`.
 | `FORCE_BUILD=1` | build the images on the server instead of downloading them. Use it on ARM servers |
 | `SKIP_GIT_PULL=1` | do not run `git pull` first (it is skipped automatically when the branch has nothing to pull from) |
 | `SKIP_BACKUP=1` | do not back up the database first. Not recommended |
-| `IMAGE_TAG=<tag>`, `IMAGE_REGISTRY=<name>` | choose which downloadable images to use, see [Registry images](#registry-images) |
+| `IMAGE_TAG`, `IMAGE_REGISTRY` | choose which downloadable images to use (in `backend/.env` or on the command line), see [Registry images](#registry-images) |
 
 All commands: `./deploy.sh` (deploy), `rollback`, `status`, `logs [service]`, `down`, `seed`, `create-admin`.
 
@@ -135,10 +135,16 @@ To set CLIMDES, sign in as the admin and call the admin API through the app (the
 ## Registry images
 
 By default `./deploy.sh` tries to download ready-made images from `ghcr.io/your-org` (a placeholder name) and, because nothing is
-published there, **builds them on the server**. You normally do not need to do anything. If you publish your own images, set
-`IMAGE_REGISTRY=ghcr.io/<your organisation>` (and `IMAGE_TAG=<tag>`) when you deploy, for example
-`IMAGE_REGISTRY=ghcr.io/acme ./deploy.sh`. For private images run `docker login ghcr.io` first. The images are named
-`rationsmart-api` and `rationsmart-pwa`.
+published there, **builds them on the server**. You normally do not need to do anything. If you publish your own images, set these
+two lines in `backend/.env` (they are already in the template):
+
+```
+IMAGE_REGISTRY=ghcr.io/<your organisation>
+IMAGE_TAG=latest
+```
+
+A value given on the command line wins, for example `IMAGE_REGISTRY=ghcr.io/acme ./deploy.sh`. For private images run
+`docker login ghcr.io` first. The images are named `rationsmart-api` and `rationsmart-pwa`.
 
 ## Frontend options
 

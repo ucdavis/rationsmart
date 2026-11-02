@@ -17,6 +17,7 @@
 #   EXPECT_DB=<name>       refuse to run unless backend/.env points at this database
 #   IMAGE_TAG=<tag>        registry tag to pull (default: latest)
 #   IMAGE_REGISTRY=<repo>  registry namespace (default: ghcr.io/your-org, a placeholder: set your own to pull images)
+#                          IMAGE_REGISTRY and IMAGE_TAG can also be set in backend/.env
 #   FORCE_BUILD=1          skip the registry pull and build from source
 #   SKIP_GIT_PULL=1        do not `git pull --ff-only` first
 #   SKIP_BACKUP=1          skip the pre-deploy pg_dump (not recommended)
@@ -31,6 +32,16 @@ STACKS=(backend frontend gateway)           # start order
 APP_STACKS=(backend frontend)               # stacks whose images we build/roll back
 GATEWAY_PORT="${GATEWAY_PORT:-80}"
 LOG_FILE="$ROOT/deploy.log"
+
+# IMAGE_REGISTRY / IMAGE_TAG may be set in backend/.env (a variable given on the command line wins).
+# Exported so the backend and the frontend stack both use the same registry.
+for _k in IMAGE_REGISTRY IMAGE_TAG; do
+  if [[ -z "${!_k:-}" && -f "$ROOT/backend/.env" ]]; then
+    _v="$(grep -E "^${_k}=" "$ROOT/backend/.env" | tail -1 | cut -d= -f2- | tr -d "'\"" || true)"
+    [[ -n "$_v" ]] && export "$_k=$_v"
+  fi
+done
+unset _k _v
 
 log()  { printf '%s [deploy] %s\n' "$(date -u +%FT%TZ)" "$*"; }
 warn() { log "WARN: $*"; }
