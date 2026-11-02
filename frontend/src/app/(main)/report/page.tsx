@@ -20,6 +20,7 @@ import {
   MilkCostMarginCard,
 } from "@/components/report/Y3Cards";
 import { useSaveReport } from "@/components/report/useSaveReport";
+import GetPdfButton from "@/components/report/GetPdfButton";
 import {
   IcSave,
   IcNewCase,
@@ -41,15 +42,23 @@ import { sumMoney } from "@/lib/money";
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, cattleInfo, reportData, feedSelections, showSnackbar, setFeedSelectionType } =
-    useStore((s) => ({
+  const { user, reportData, reportInputs, showSnackbar, setFeedSelectionType, ...live } = useStore(
+    (s) => ({
       feedSelections: s.feedSelections,
       user: s.user,
       cattleInfo: s.cattleInfo,
       reportData: s.reportData,
+      reportInputs: s.reportInputs,
       showSnackbar: s.showSnackbar,
       setFeedSelectionType: s.setFeedSelectionType,
-    }));
+    })
+  );
+  // F47 — render from the inputs this run was sent with, not the live form:
+  // after New Case / restore / a country change the form no longer matches
+  // the results. Only a report persisted by an older build (no copy) falls
+  // back to the form.
+  const cattleInfo = reportInputs?.cattleInfo ?? live.cattleInfo;
+  const feedSelections = reportInputs?.feedSelections ?? live.feedSelections;
 
   // UI-label i18n — this screen (cattle-info → feed-selection → report)
   // is driven by the per-simulation language, not the profile-wide
@@ -58,7 +67,7 @@ export default function ReportPage() {
   // doc comment on useT() in src/lib/i18n-ui.ts for why this screen
   // passes an explicit langOverride instead of calling useT() bare.
   const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
-  const { isSaving, pdfUrl, save: saveReportPdf } = useSaveReport(t);
+  const { isSaving, pdfUrl, setPdfUrl, savedReportId, save: saveReportPdf } = useSaveReport(t);
 
   // i18n V2 — fallback lookup so the report body shows translated feed
   // names even if the backend diet endpoints aren't yet returning
@@ -448,6 +457,9 @@ export default function ReportPage() {
           >
             {t("Generate Diet Recommendation")}
           </button>
+        )}
+        {!pdfUrl && savedReportId && (
+          <GetPdfButton reportId={savedReportId} onReady={setPdfUrl} t={t} />
         )}
         {pdfUrl && (
           <div className="flex gap-3 mb-3">

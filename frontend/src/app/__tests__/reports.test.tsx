@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const { replace, back, push, getSavedReports } = vi.hoisted(() => ({
+const { replace, back, push, getSavedReports, requestReportPdf } = vi.hoisted(() => ({
   replace: vi.fn(),
   back: vi.fn(),
   push: vi.fn(),
   getSavedReports: vi.fn(),
+  requestReportPdf: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -14,7 +15,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, getSavedReports };
+  return { ...actual, getSavedReports, requestReportPdf };
 });
 
 import ReportsPage from "@/app/(main)/reports/page";
@@ -60,6 +61,7 @@ beforeEach(() => {
   back.mockClear();
   push.mockClear();
   getSavedReports.mockReset();
+  requestReportPdf.mockReset();
   useStore.setState({ user: seedUser(), snackbar: null } as never);
 });
 
@@ -75,7 +77,7 @@ describe("Reports — loading", () => {
 });
 
 describe("Reports — populated list", () => {
-  it("renders a card per report with simulation ID + View Report / PDF Pending", async () => {
+  it("renders a card per report with simulation ID + View Report / Get PDF", async () => {
     getSavedReports.mockResolvedValueOnce({ data: { reports: [report1, report2] } });
     render(<ReportsPage />);
 
@@ -84,8 +86,49 @@ describe("Reports — populated list", () => {
 
     // report1 has a bucket_url -> View Report button
     expect(screen.getByRole("button", { name: /View Report/ })).toBeInTheDocument();
-    // report2 has bucket_url: null -> PDF Pending badge, no button for it
-    expect(screen.getByText("PDF Pending")).toBeInTheDocument();
+    // report2 has bucket_url: null -> Get PDF, which asks the backend for it (W5)
+    expect(screen.getByRole("button", { name: "Get PDF" })).toBeInTheDocument();
+    expect(screen.queryByText("PDF Pending")).toBeNull();
+  });
+
+  it("Get PDF calls POST /reports/pdf, opens the file and turns into View Report", async () => {
+    getSavedReports.mockResolvedValueOnce({ data: { reports: [report2] } });
+    requestReportPdf.mockResolvedValueOnce({
+      data: { success: true, bucket_url: "https://example.com/report2.pdf" },
+    });
+    const open = vi.spyOn(window, "open").mockReturnValue(null);
+    render(<ReportsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Get PDF" }));
+
+    await waitFor(() => expect(requestReportPdf).toHaveBeenCalledWith("R-2", "u-1"));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: /View Report/ })).toBeInTheDocument()
+    );
+    expect(open).toHaveBeenCalledWith(
+      "https://example.com/report2.pdf",
+      "_blank",
+      expect.anything()
+    );
+    open.mockRestore();
+  });
+
+  it("a 502 from /reports/pdf turns the button into Try again", async () => {
+    getSavedReports.mockResolvedValueOnce({ data: { reports: [report2] } });
+    requestReportPdf.mockRejectedValueOnce(
+      Object.assign(new Error("PDF generation failed"), { status: 502 })
+    );
+    render(<ReportsPage />);
+    fireEvent.click(await screen.findByRole("button", { name: "Get PDF" }));
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument()
+    );
+    expect(useStore.getState().snackbar).toEqual(
+      expect.objectContaining({
+        type: "error",
+        message: "Could not create the PDF. Please try again.",
+      })
+    );
   });
 
   it("calls getSavedReports with the current user's id", async () => {

@@ -18,6 +18,15 @@ import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
 
+// /verify-email in its "from Login" mode, pre-filled with the typed address
+// when it's a valid one (F26).
+function resendVerificationHref(typedEmail: string): string {
+  const query = new URLSearchParams({ from: "login" });
+  const typed = typedEmail.trim();
+  if (isEmailAddressValid(typed)) query.set("email", typed);
+  return `/verify-email?${query.toString()}`;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const { setUser, logout } = useStore((s) => ({ setUser: s.setUser, logout: s.logout }));
@@ -279,7 +288,7 @@ export default function LoginPage() {
         </div>
 
         {/* Forgot PIN */}
-        <div className="flex justify-center mt-2.5 mb-6">
+        <div className="flex justify-center mt-2.5">
           <button
             onClick={() => setShowResetSheet(true)}
             className="text-base"
@@ -294,6 +303,30 @@ export default function LoginPage() {
             <span style={{ color: COLORS.raisinBlack }}>{t("Forgot PIN? ")}</span>
             <span style={{ color: COLORS.darkAquamarineGreen, fontWeight: 700 }}>
               {t("Tap here")}
+            </span>
+          </button>
+        </div>
+
+        {/* Resend verification (F26). Always shown — not tied to a 403, which
+            deleted and disabled accounts get too. resend-verification answers
+            the same for any address, so this reveals nothing about accounts. */}
+        <div className="flex justify-center mt-2.5 mb-6">
+          <button
+            onClick={() => router.push(resendVerificationHref(email))}
+            className="text-base text-center"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "12px",
+              lineHeight: 1.3,
+            }}
+          >
+            <span style={{ color: COLORS.raisinBlack }}>
+              {t("Didn't get the verification email? ")}
+            </span>
+            <span style={{ color: COLORS.darkAquamarineGreen, fontWeight: 700 }}>
+              {t("Resend it")}
             </span>
           </button>
         </div>

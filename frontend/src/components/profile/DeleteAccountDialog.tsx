@@ -66,12 +66,16 @@ export default function DeleteAccountDialog({
           {t("Are you sure you want\nto delete your account?")}
         </h3>
 
-        {/* Description — Android string @delete_account_message */}
+        {/* Description. Since 1 Nov deleting only deactivates the account and
+            registering again with the same email restores it (F28), so the
+            Android "permanent" wording no longer applies. */}
         <p
           className="text-center text-sm mb-5 mx-3"
           style={{ color: COLORS.darkSilver, whiteSpace: "pre-line" }}
         >
-          {t("This action is permanent. Your account\nand data will be deleted\npermanently.")}
+          {t(
+            "Your account will be deactivated and you will be signed out. You can come back any time by registering again with the same email address."
+          )}
         </p>
 
         <div className="flex gap-3">

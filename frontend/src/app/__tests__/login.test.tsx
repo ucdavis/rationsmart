@@ -2,8 +2,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-const { replace, back, login, getUserProfile, getCountries, resetPin } = vi.hoisted(() => ({
+const { replace, back, push, login, getUserProfile, getCountries, resetPin } = vi.hoisted(() => ({
   replace: vi.fn(),
+  push: vi.fn(),
   back: vi.fn(),
   login: vi.fn(),
   getUserProfile: vi.fn(),
@@ -12,7 +13,7 @@ const { replace, back, login, getUserProfile, getCountries, resetPin } = vi.hois
 }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ replace, back, push: vi.fn() }),
+  useRouter: () => ({ replace, back, push }),
 }));
 
 vi.mock("@/lib/api", async () => {
@@ -25,6 +26,7 @@ import { useStore } from "@/lib/store";
 
 beforeEach(() => {
   replace.mockClear();
+  push.mockClear();
   login.mockReset();
   getUserProfile.mockReset();
   getCountries.mockReset();
@@ -308,5 +310,21 @@ describe("Login — no account enumeration (audit A-19)", () => {
         })
       )
     );
+  });
+});
+
+describe("Login — resend verification link (F26 / W2)", () => {
+  it("is always shown and opens /verify-email with the typed address", async () => {
+    render(<LoginPage />);
+    const user = userEvent.setup();
+    await user.type(screen.getAllByRole("textbox")[0], "aiyappa@dg.org");
+    fireEvent.click(screen.getByRole("button", { name: /Didn't get the verification email\?/ }));
+    expect(push).toHaveBeenCalledWith("/verify-email?from=login&email=aiyappa%40dg.org");
+  });
+
+  it("leaves the email out when none (or an invalid one) is typed", () => {
+    render(<LoginPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Resend it/ }));
+    expect(push).toHaveBeenCalledWith("/verify-email?from=login");
   });
 });

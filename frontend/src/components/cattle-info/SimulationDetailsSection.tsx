@@ -183,9 +183,10 @@ export default function SimulationDetailsSection({
         <SelectInput
           value={form.animal_category}
           onChange={(v) => onStateChange(v as AnimalCategory)}
+          // value stays the English API string; only the label is translated (F8).
           options={ANIMAL_CATEGORIES.map((c) => ({
             value: c,
-            label: ANIMAL_CATEGORY_LABELS[c],
+            label: t(ANIMAL_CATEGORY_LABELS[c]),
           }))}
           placeholder={t("Select category")}
           loading={loadingCountries}

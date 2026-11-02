@@ -42,6 +42,7 @@ interface MockAdminUser {
   country?: string;
   is_active: boolean;
   is_admin?: boolean;
+  deactivated_by?: "self" | "admin" | null;
 }
 
 const mkUser = (over: Partial<MockAdminUser> = {}): MockAdminUser => ({
@@ -194,15 +195,36 @@ describe("Admin Users — activate/deactivate toggle", () => {
     fireEvent.click(screen.getByRole("button", { name: "Deactivate" }));
 
     await waitFor(() => expect(toggleUserStatus).toHaveBeenCalledWith("u-1", "admin-1", false));
-    // Optimistic local flip on success — no refetch, the row updates in place.
+    // Optimistic local flip on success — no refetch, the row updates in place,
+    // and it now says why it's off (W12).
     await waitFor(() =>
-      expect(screen.getByRole("button", { name: "INACTIVE" })).toBeInTheDocument()
+      expect(screen.getByRole("button", { name: "DISABLED BY ADMIN" })).toBeInTheDocument()
     );
     expect(getAdminUsers).toHaveBeenCalledTimes(1);
 
     expect(useStore.getState().snackbar).toEqual(
       expect.objectContaining({ type: "success", message: "User deactivated" })
     );
+  });
+
+  it("says why an inactive account is off: deleted by user / disabled by admin (W12)", async () => {
+    getAdminUsers.mockResolvedValueOnce({
+      data: {
+        users: [
+          mkUser({ id: "u-3", name: "Sam Self", is_active: false, deactivated_by: "self" }),
+          mkUser({ id: "u-4", name: "Ann Admin", is_active: false, deactivated_by: "admin" }),
+          mkUser({ id: "u-5", name: "Old Off", is_active: false }),
+        ],
+        total_count: 3,
+        total_pages: 1,
+      },
+    });
+    render(<AdminUsersPage />);
+    await waitFor(() => expect(screen.getByText("Sam Self")).toBeInTheDocument());
+    expect(screen.getByRole("button", { name: "DELETED BY USER" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "DISABLED BY ADMIN" })).toBeInTheDocument();
+    // No reason from the backend → plain INACTIVE, as before.
+    expect(screen.getByRole("button", { name: "INACTIVE" })).toBeInTheDocument();
   });
 
   it("tapping an inactive user's badge activates them", async () => {

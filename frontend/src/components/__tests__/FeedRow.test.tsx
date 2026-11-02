@@ -1057,3 +1057,32 @@ describe("stable taxonomy ids (audit B-24)", () => {
     expect(taxonomyId("Forage")).toBeGreaterThan(0);
   });
 });
+
+describe("free feed — price 0 (F36 / W1)", () => {
+  // No country → the cascade stays idle, so only the price decides whether
+  // Quantity is open.
+  const renderEval = (price_per_kg: number | null) => {
+    useStore.setState({ user: seedUser({ country_id: "" }) } as never);
+    render(
+      <FeedRow
+        item={makeItem({ feed_uuid: "f-1", price_per_kg, quantity_kg: 4 })}
+        index={0}
+        showQuantity
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+  };
+
+  it("a price of 0 unlocks Quantity and costs 0", async () => {
+    renderEval(0);
+    await waitFor(() => expect(screen.getByLabelText("Quantity")).not.toBeDisabled());
+    // No currency prop here, so the row shows its default "$" suffix.
+    expect(screen.getByLabelText("Cost")).toHaveValue("0 $");
+  });
+
+  it("no price keeps Quantity locked", async () => {
+    renderEval(null);
+    await waitFor(() => expect(screen.getByLabelText("Quantity")).toBeDisabled());
+  });
+});

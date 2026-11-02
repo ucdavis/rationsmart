@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within, act } from "@testing-library/react";
 
 const { push, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields } =
   vi.hoisted(() => ({
@@ -1355,5 +1355,61 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     );
     expect(inputAfterLabel("Body Weight (BW; kg)").disabled).toBe(true);
     expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
+  });
+});
+
+describe("Cattle Info — dropdown options in the screen language (F8)", () => {
+  it("shows Physiological State and Breed options translated; numbers and values stay as they are", async () => {
+    // Load the form in English (formReady looks for English text), then
+    // switch the screen language.
+    useStore.setState({ user: seedUser() });
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    act(() => {
+      useStore.setState({ user: seedUser({ preferred_language: "vi" }) });
+    });
+
+    const state = await openDropdown("Trạng thái sinh lý");
+    expect(
+      await within(state).findByRole("option", { name: "Bò đang cho sữa" })
+    ).toBeInTheDocument();
+    expect(within(state).getByRole("option", { name: "Bò cạn sữa" })).toBeInTheDocument();
+    fireEvent.click(within(state).getAllByRole("button")[0]!); // close
+
+    const breed = await openDropdown("Chọn giống");
+    expect(await within(breed).findByRole("option", { name: "Giống lai" })).toBeInTheDocument();
+    expect(within(breed).getByRole("option", { name: "Giống địa phương" })).toBeInTheDocument();
+    // Picking a translated option still stores the English API value.
+    fireEvent.click(within(breed).getByRole("option", { name: "Giống lai" }));
+    expect(within(breed).getAllByRole("button")[0]).toHaveTextContent("Giống lai");
+    fireEvent.click(within(breed).getAllByRole("button")[0]!); // close
+
+    const protein = await openDropdown("Protein sữa (%)");
+    expect(await within(protein).findByRole("option", { name: "3.0" })).toBeInTheDocument();
+  });
+});
+
+describe("Cattle Info — forward arrow to the last report (F47 / W3)", () => {
+  const report = { mode: "recommendation" } as never;
+
+  it("shows when the report carries the inputs it was run with", async () => {
+    useStore.setState({
+      user: seedUser(),
+      reportData: report,
+      reportInputs: { cattleInfo: {} as never, feedSelections: [] },
+    });
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    expect(screen.getByRole("button", { name: "Forward" })).toBeInTheDocument();
+  });
+
+  it("is hidden for a report saved by an older build (no inputs copy)", async () => {
+    useStore.setState({ user: seedUser(), reportData: report, reportInputs: null });
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    expect(screen.queryByRole("button", { name: "Forward" })).toBeNull();
   });
 });

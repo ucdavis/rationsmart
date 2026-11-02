@@ -13,7 +13,7 @@ import {
 import { formatTotalUsers } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
-import type { AdminUser } from "@/components/admin/users/types";
+import { statusBadgeLabel, type AdminUser } from "@/components/admin/users/types";
 import UserDetailSheet from "@/components/admin/users/UserDetailSheet";
 import DeactivateUserDialog from "@/components/admin/users/DeactivateUserDialog";
 import AdminRoleDialog from "@/components/admin/users/AdminRoleDialog";
@@ -143,7 +143,13 @@ export default function AdminUsersPage() {
     setTogglingId(u.id);
     try {
       await toggleUserStatus(u.id, user.id, !u.is_active);
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
+      setUsers((prev) =>
+        prev.map((x) =>
+          x.id === u.id
+            ? { ...x, is_active: !u.is_active, deactivated_by: u.is_active ? "admin" : null }
+            : x
+        )
+      );
       showSnackbar(u.is_active ? t("User deactivated") : t("User activated"), "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("Toggle failed");
@@ -429,7 +435,7 @@ export default function AdminUsersPage() {
                     opacity: togglingId === u.id ? 0.7 : 1,
                   }}
                 >
-                  {togglingId === u.id ? "..." : u.is_active ? t("ACTIVE") : t("INACTIVE")}
+                  {togglingId === u.id ? "..." : statusBadgeLabel(u, t)}
                 </button>
               </div>
               {/* Name — starts after the 44px avatar pill (12 card pad + 44 avatar + 12 gap = 68) */}

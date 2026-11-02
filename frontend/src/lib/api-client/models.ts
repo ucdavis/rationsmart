@@ -518,7 +518,8 @@ export interface Country {
 export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
   en: "English",
   hi: "हिन्दी",
-  tl: "Tagalog", // Filipino
+  // The backend stores Filipino as BCP 47 "fil" (was "tl", W7).
+  fil: "Filipino",
   id: "Bahasa Indonesia",
   th: "ไทย",
   vi: "Tiếng Việt",
@@ -527,6 +528,8 @@ export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
   am: "አማርኛ",
   om: "Afaan Oromoo",
   sw: "Kiswahili",
+  ta: "தமிழ்",
+  te: "తెలుగు",
 };
 export const labelForLanguage = (code: string): string =>
   LANGUAGE_NATIVE_LABELS[code] ?? code.toUpperCase();

@@ -54,7 +54,13 @@ describe("useT — lazy per-language loading", () => {
     await waitFor(() => expect(result.current("Continue")).toBe("Tiếp tục"));
   });
 
-  it("loads Filipino (tl) too, so its dictionary is warm for the getUiLabel tests below", async () => {
+  it("loads Filipino (fil) too, so its dictionary is warm for the getUiLabel tests below", async () => {
+    useStore.setState({ user: seedUser({ preferred_language: "fil" }) });
+    const { result } = renderHook(() => useT());
+    await waitFor(() => expect(result.current("Proceed")).toBe("Magpatuloy"));
+  });
+
+  it("reads a profile still saved as the old Filipino code 'tl' as 'fil' (W7)", async () => {
     useStore.setState({ user: seedUser({ preferred_language: "tl" }) });
     const { result } = renderHook(() => useT());
     await waitFor(() => expect(result.current("Proceed")).toBe("Magpatuloy"));
@@ -83,11 +89,12 @@ describe("getUiLabel — pure lookup against the in-memory cache", () => {
     );
   });
 
-  it("falls back to the English source when the key exists but that language's cell was the same word (tl)", () => {
-    // The sheet has "Email Address" -> tl: "Email Address" verbatim —
+  it("falls back to the English source when the key exists but that language's cell was the same word (fil)", () => {
+    // The sheet has "Email Address" -> fil: "Email Address" verbatim —
     // exercises a real dictionary hit, distinct from the not-loaded
-    // fallback below (tl was warmed by the useT block above).
-    expect(getUiLabel("Email Address", "tl")).toBe("Email Address");
+    // fallback below (fil was warmed by the useT block above).
+    expect(getUiLabel("Email Address", "fil")).toBe("Email Address");
+    expect(getUiLabel("Proceed", "tl")).toBe("Magpatuloy");
   });
 
   it("returns an empty string unchanged (no crash on falsy input)", () => {

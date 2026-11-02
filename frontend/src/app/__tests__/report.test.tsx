@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const { push, back, saveReport } = vi.hoisted(() => ({
+const { push, back, saveReport, requestReportPdf } = vi.hoisted(() => ({
   push: vi.fn(),
   back: vi.fn(),
   saveReport: vi.fn(),
+  requestReportPdf: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -13,7 +14,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, saveReport };
+  return { ...actual, saveReport, requestReportPdf };
 });
 
 import ReportPage from "@/app/(main)/report/page";
@@ -200,7 +201,9 @@ beforeEach(() => {
   push.mockClear();
   back.mockClear();
   saveReport.mockReset();
+  requestReportPdf.mockReset();
   useStore.setState({
+    reportInputs: null,
     user: seedUser(),
     cattleInfo: baseCattleInfo(),
     feedSelectionType: "recommendation",
@@ -536,17 +539,16 @@ describe('Report — "Save Report" + "View PDF"', () => {
 
   // Regression coverage: per the v1 swagger, SaveReportResponse's
   // `success` and `error_message` fields are independent — a save can
-  // succeed (report persisted) while error_message separately explains
-  // that PDF generation (POST /v1/animal/reports/pdf) isn't implemented
-  // yet. The old code treated ANY error_message as a hard failure
-  // (regardless of `success`) and bailed out with an error toast before
-  // ever confirming the report was actually saved.
+  // succeed (report persisted) while error_message separately says the PDF
+  // isn't ready yet (it's rendered in the background). The old code treated
+  // ANY error_message as a hard failure (regardless of `success`) and bailed
+  // out with an error toast before ever confirming the report was saved.
   it("success:true + error_message (PDF-pending) shows an info toast, not an error — and does NOT early-return", async () => {
     saveReport.mockResolvedValueOnce({
       data: {
         success: true,
         message: "Report saved",
-        error_message: "PDF generation not yet implemented",
+        error_message: "PDF is being generated",
         bucket_url: null,
       },
     });
@@ -560,11 +562,39 @@ describe('Report — "Save Report" + "View PDF"', () => {
     await waitFor(() => {
       const snap = useStore.getState().snackbar;
       expect(snap?.type).toBe("info");
-      expect(snap?.message).toContain("PDF generation not yet implemented");
+      expect(snap?.message).toContain("PDF is being generated");
     });
-    // No PDF link should appear since bucket_url is null, but this must
-    // NOT be treated the same as a save failure.
+    // No PDF link yet since bucket_url is null, but this must NOT be treated
+    // the same as a save failure — Get PDF asks for it (W5).
     expect(screen.queryByRole("button", { name: /View PDF/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Get PDF" })).toBeInTheDocument();
+  });
+
+  it("Get PDF after a save calls POST /reports/pdf and switches to View PDF (W5)", async () => {
+    saveReport.mockResolvedValueOnce({ data: { success: true, bucket_url: null } });
+    requestReportPdf.mockResolvedValueOnce({
+      data: { success: true, bucket_url: "https://x/rendered.pdf" },
+    });
+    vi.spyOn(window, "open").mockImplementation(() => null);
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL", report_id: "R-REC-5" }),
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /Save Report/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Get PDF" }));
+    await waitFor(() => expect(requestReportPdf).toHaveBeenCalledWith("R-REC-5", "u-1"));
+    expect(await screen.findByRole("button", { name: /View PDF/ })).toBeInTheDocument();
+  });
+
+  it("renders the inputs the run was sent with, not the edited form (F47 / W3)", async () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ body_weight: 600 }), // edited after the run
+      reportInputs: { cattleInfo: baseCattleInfo({ body_weight: 450 }), feedSelections: [] },
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    expect(await screen.findByText("450 Kg")).toBeInTheDocument();
+    expect(screen.queryByText("600 Kg")).toBeNull();
   });
 
   it("success:false still shows a hard error toast", async () => {

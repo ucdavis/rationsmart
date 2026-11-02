@@ -155,7 +155,9 @@ export default function AnimalSections({
   };
 
   // Options are the spec's own (breed) or generated from min..max (milk
-  // protein / fat at 0.1, parity at 1).
+  // protein / fat at 0.1, parity at 1). Only "enum" options (Breed) are words
+  // to translate (F8); numbers stay as they are. value stays the English API
+  // string either way.
   const specDropdown = (key: CattleInfoFieldKey, placeholder: string) => {
     const fk = FORM_KEY[key];
     return (
@@ -163,7 +165,10 @@ export default function AnimalSections({
         <SelectInput
           value={String(form[fk] ?? "")}
           onChange={set(fk)}
-          options={optionsFor(specs?.[key]).map((v) => ({ value: v, label: v }))}
+          options={optionsFor(specs?.[key]).map((v) => ({
+            value: v,
+            label: specs?.[key]?.type === "enum" ? t(v) : v,
+          }))}
           placeholder={placeholder}
           loading={fieldsLoading}
           highlight={adjusted[fk] !== undefined}

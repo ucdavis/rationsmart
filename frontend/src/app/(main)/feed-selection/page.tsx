@@ -295,7 +295,7 @@ export default function FeedSelectionPage() {
         const res = await evaluateDiet(
           buildEvaluationRequest({ ...user, currency }, cattleInfo, items)
         );
-        setReportData({ ...res.data, mode: "evaluation" });
+        setReportData({ ...res.data, mode: "evaluation" }, { cattleInfo, feedSelections: items });
       } else {
         const res = await recommendDiet(
           buildRecommendationRequest(user, cattleInfo, items, checkedLimits(limits, limitSpecs))
@@ -306,7 +306,10 @@ export default function FeedSelectionPage() {
             "info"
           );
         }
-        setReportData({ ...res.data, mode: "recommendation" });
+        setReportData(
+          { ...res.data, mode: "recommendation" },
+          { cattleInfo, feedSelections: items }
+        );
       }
       setDietLimits(limits);
       router.push("/report");

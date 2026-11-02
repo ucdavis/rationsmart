@@ -204,6 +204,25 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     );
   });
 
+  it("sends the code as typed and shows the code the API saved (W10)", async () => {
+    // The backend stores the standard BCP 47 form: typed "BEN" → saved "bn".
+    createLanguage.mockResolvedValue({ data: { code: "bn", name: "Bengali", is_active: true } });
+    render(<AdminCountryLanguagePage />);
+    await screen.findByText("Registered Languages");
+    fireEvent.click(screen.getByLabelText("Register a new language"));
+    fireEvent.change(screen.getByPlaceholderText("e.g. Swahili"), { target: { value: "Bengali" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. sw"), { target: { value: "BEN" } });
+    fireEvent.click(screen.getByText("Register language"));
+    await waitFor(() =>
+      expect(createLanguage).toHaveBeenCalledWith({ code: "BEN", name: "Bengali" })
+    );
+    const showSnackbar = useStore.getState().showSnackbar as ReturnType<typeof vi.fn>;
+    await waitFor(() =>
+      expect(showSnackbar).toHaveBeenCalledWith("Bengali registered as bn", "success")
+    );
+    expect(screen.getByLabelText("Deactivate Bengali")).toBeInTheDocument();
+  });
+
   it("asks for confirmation before deactivating a language globally", async () => {
     patchLanguage.mockResolvedValue({ data: { code: "hi", name: "Hindi", is_active: false } });
     render(<AdminCountryLanguagePage />);
@@ -242,9 +261,29 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
       expect(shown("Tagalog")).toBeInTheDocument();
       expect(shown("Hindi")).toBeNull();
 
+      fireEvent.click(screen.getByRole("button", { name: "All" }));
       fireEvent.change(search(), { target: { value: "አማ" } });
       expect(shown("Amharic")).toBeInTheDocument();
       expect(shown("Tagalog")).toBeNull();
+    });
+
+    it("shows only active languages by default; Inactive and All switch the list (W8)", async () => {
+      render(<AdminCountryLanguagePage />);
+      await screen.findByText("Registered Languages");
+      expect(screen.getByRole("button", { name: "Active" })).toHaveAttribute(
+        "aria-pressed",
+        "true"
+      );
+      expect(shown("Hindi")).toBeInTheDocument();
+      expect(shown("Amharic")).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: "Inactive" }));
+      expect(shown("Amharic")).toBeInTheDocument();
+      expect(shown("Hindi")).toBeNull();
+
+      fireEvent.click(screen.getByRole("button", { name: "All" }));
+      expect(shown("Amharic")).toBeInTheDocument();
+      expect(shown("Hindi")).toBeInTheDocument();
     });
 
     it("keeps counting every active language while filtered", async () => {
@@ -271,11 +310,16 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
       patchLanguage.mockResolvedValue({ data: { code: "am", name: "Amharic", is_active: true } });
       render(<AdminCountryLanguagePage />);
       await screen.findByText("Registered Languages");
+      fireEvent.click(screen.getByRole("button", { name: "Inactive" }));
       fireEvent.change(search(), { target: { value: "amh" } });
       fireEvent.click(screen.getByLabelText("Activate Amharic"));
       await waitFor(() => expect(patchLanguage).toHaveBeenCalledWith("am", { is_active: true }));
       expect(search()).toHaveValue("amh");
+      // Now active, so it leaves the Inactive list and shows under Active.
+      await waitFor(() => expect(shown("Amharic")).toBeNull());
+      fireEvent.click(screen.getByRole("button", { name: "Active" }));
       expect(shown("Amharic")).toBeInTheDocument();
+      expect(screen.getByText("5 active")).toBeInTheDocument();
     });
   });
 

@@ -19,8 +19,8 @@ import { useT, fillText } from "@/lib/i18n-ui";
 import ActivateCountrySheet from "./ActivateCountrySheet";
 import AssociateLanguageSheet from "./AssociateLanguageSheet";
 import RegisterLanguageSheet from "./RegisterLanguageSheet";
-import LanguageSearchBox from "./LanguageSearchBox";
-import { listFrom } from "@/lib/api-client/normalize";
+import LanguageSearchBox, { filterLanguages, type LanguageStatusFilter } from "./LanguageSearchBox";
+import { asRecord, listFrom, stringField } from "@/lib/api-client/normalize";
 
 export function CountriesLanguagesTab({
   countries,
@@ -249,7 +249,7 @@ export function CountriesLanguagesTab({
   };
 
   const handleRegister = async () => {
-    const code = regCode.trim().toLowerCase();
+    const code = regCode.trim();
     if (!regName.trim() || !code) {
       showSnackbar(t("Name and code are required"), "error");
       return;
@@ -257,14 +257,32 @@ export function CountriesLanguagesTab({
     setIsRegistering(true);
     const name = regName.trim();
     try {
-      await createLanguage({ code, name });
-      showSnackbar(t("${language} registered").replace("${language}", name), "success");
+      const res = await createLanguage({ code, name });
+      // The backend stores the standard BCP 47 form ("BEN" → "bn",
+      // "tl" → "fil"), so show and keep the code it saved, not the typed one
+      // (W10). Codes are compared exactly as returned — never lowercased.
+      const saved = asRecord(res.data);
+      const savedCode = stringField(saved, "code") ?? code;
+      const savedName = stringField(saved, "name") ?? name;
+      showSnackbar(
+        fillText(t("${language} registered as ${code}"), { language: savedName, code: savedCode }),
+        "success"
+      );
       setShowRegister(false);
       setRegName("");
       setRegCode("");
       // Optimistic: add the new language to the catalog immediately.
       setAllLanguages((prev) =>
-        prev.some((x) => x.code === code) ? prev : [...prev, { code, name, is_active: true }]
+        prev.some((x) => x.code === savedCode)
+          ? prev
+          : [
+              ...prev,
+              {
+                code: savedCode,
+                name: savedName,
+                is_active: saved?.is_active === false ? false : true,
+              },
+            ]
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not register language";
@@ -276,19 +294,12 @@ export function CountriesLanguagesTab({
 
   const activeLangCount = allLanguages.filter((l) => l.is_active).length;
 
-  // Registered Languages search — filters the loaded list in the browser
-  // (no API call). Matches the English name, the code and the native label,
-  // any part of the text, ignoring case. The active count above still
+  // Registered Languages search + status filter (W8) — in the browser, no API
+  // call. Defaults to Active (8 of ~206 today). The active count above still
   // counts every language, not just the shown ones.
   const [langQuery, setLangQuery] = useState("");
-  const needle = langQuery.trim().toLocaleLowerCase();
-  const shownLanguages = needle
-    ? allLanguages.filter((l) =>
-        [l.name, l.code, labelForLanguage(l.code)].some((s) =>
-          s.toLocaleLowerCase().includes(needle)
-        )
-      )
-    : allLanguages;
+  const [langStatus, setLangStatus] = useState<LanguageStatusFilter>("active");
+  const shownLanguages = filterLanguages(allLanguages, langQuery, langStatus);
 
   return (
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
@@ -463,10 +474,18 @@ export function CountriesLanguagesTab({
             ＋
           </button>
         </div>
-        <LanguageSearchBox query={langQuery} setQuery={setLangQuery} t={t} />
+        <LanguageSearchBox
+          query={langQuery}
+          setQuery={setLangQuery}
+          status={langStatus}
+          setStatus={setLangStatus}
+          t={t}
+        />
         {shownLanguages.length === 0 && (
           <p className="px-4 py-3 text-sm" style={{ color: COLORS.darkSilver }}>
-            {fillText(t("No languages match “${query}”"), { query: langQuery.trim() })}
+            {langQuery.trim()
+              ? fillText(t("No languages match “${query}”"), { query: langQuery.trim() })
+              : t("No languages to show")}
           </p>
         )}
         {shownLanguages.map((l) => {

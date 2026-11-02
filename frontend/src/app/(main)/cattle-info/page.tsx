@@ -57,6 +57,7 @@ export default function CattleInfoPage() {
     setUser,
     showSnackbar,
     reportData,
+    reportInputs,
     setReportData,
     setFeedSelections,
     setFeedSelectionType,
@@ -71,6 +72,7 @@ export default function CattleInfoPage() {
     setUser: s.setUser,
     showSnackbar: s.showSnackbar,
     reportData: s.reportData,
+    reportInputs: s.reportInputs,
     setReportData: s.setReportData,
   }));
 
@@ -460,7 +462,7 @@ export default function CattleInfoPage() {
         type="home"
         title={t("Cattle Info")}
         onMenuOpen={openDrawer}
-        showForward={!!reportData}
+        showForward={!!reportData && !!reportInputs}
         onForward={() => router.push("/report")}
       />
 

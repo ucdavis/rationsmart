@@ -22,6 +22,9 @@ interface SaveReportResponse {
 export function useSaveReport(translate: (s: string) => string) {
   const [isSaving, setIsSaving] = useState(false);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  // The report this screen saved; while its PDF is still being made the
+  // screen offers Get PDF (W5).
+  const [savedReportId, setSavedReportId] = useState<string | null>(null);
 
   const save = async (reportId: string) => {
     const { user, showSnackbar } = useStore.getState();
@@ -48,6 +51,7 @@ export function useSaveReport(translate: (s: string) => string) {
         safeExternalUrl(body?.bucket_url ?? body?.report?.bucket_url ?? body?.pdf_url)?.href ??
         null;
       setPdfUrl(url);
+      setSavedReportId(reportId);
       if (!url) {
         // Surface exactly what the backend said about the missing PDF rather
         // than guessing a reason.
@@ -63,5 +67,5 @@ export function useSaveReport(translate: (s: string) => string) {
     }
   };
 
-  return { isSaving, pdfUrl, save };
+  return { isSaving, pdfUrl, setPdfUrl, savedReportId, save };
 }
