@@ -581,7 +581,11 @@ class DietEvaluationRequest(BaseModel):
     user_id: str
     country_id: str
     simulation_id: str
-    currency: str = Field(..., max_length=3, description="e.g. INR, USD")
+    currency: Optional[str] = Field(
+        None, max_length=3,
+        description="Ignored when the country has a currency (the simulation country's currency is used). "
+                    "Optional; kept for older clients.",
+    )
     cattle_info: CattleInfo
     feed_evaluation: Annotated[List[FeedEvaluationItem], Field(min_length=1)]
 
@@ -607,6 +611,8 @@ class DietEvaluationRequest(BaseModel):
     @classmethod
     def validate_currency(cls, v):
         import re
+        if v is None or (isinstance(v, str) and not v.strip()):
+            return None                 # older clients send "" when they don't know it
         if not re.match(r'^[A-Z]{3}$', v):
             raise ValueError('currency must be a 3-letter code (e.g. INR, USD)')
         return v
