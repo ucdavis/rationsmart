@@ -430,31 +430,51 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     }
 
 
+RESEND_VERIFICATION_SENT_MESSAGE = (
+    "If this email is registered and not yet verified, a new verification link has been sent to it."
+)
+
+
 @router.post("/resend-verification", summary="Resend the email verification link")
-async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")
+async def resend_verification(
+    request: Request, body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)
+):
     """
     Issue a new one-time verification token and resend the activation email.
 
     **Mandatory field:** `email_id`.
 
     Use when the original verification email expired or was not received.
-    Returns `400` if the account does not exist or is already verified.
+    Always answers `200` with the same message — for an unknown address, an account
+    that is already verified, during the cooldown, and when the email can't be sent — so
+    the endpoint can't be used to find out which emails are registered. The new link
+    replaces the old one only once its email has gone out.
+    One email per address per minute (`pin_reset_cooldown`, scope `verify_resend`); the
+    per-IP limit is only a flood guard, since PWA traffic arrives from the proxy's address.
     """
-    new_token, error = await auth_service.resend_verification(db, body.email_id)
+    neutral = {"success": True, "message": RESEND_VERIFICATION_SENT_MESSAGE}
+    if not email_service.is_configured:
+        # Email would only be simulated: a new token now would silently void the old link.
+        logger.warning("Resend verification: SMTP is not configured; link left unchanged")
+        return neutral
+    if not await pin_reset_cooldown.claim(body.email_id, scope=pin_reset_cooldown.VERIFY_RESEND):
+        return neutral
+
+    new_token, _error = await auth_service.resend_verification(db, body.email_id)
     if not new_token:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+        return neutral
 
     user = await UserRepository(db).get_by_email(body.email_id)
     sent, send_err = await email_service.send_verification_email(
         to_email=user.email_id, user_name=user.name, token=new_token
     )
     if not sent:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not send verification email: {send_err}",
-        )
+        logger.error("Resend verification: email failed (%s); new link undone", send_err)
+        await db.rollback()
+        return neutral
     await db.commit()
-    return {"success": True, "message": "Verification email resent. Please check your inbox."}
+    return neutral
 
 
 @router.get("/email-config", summary="Check email service configuration (diagnostic)")
