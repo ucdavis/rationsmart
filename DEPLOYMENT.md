@@ -1,149 +1,249 @@
-# Deployment runbook (single Ubuntu 24.04 VM + managed PostgreSQL)
+# RationSmart: deploy it on one server
+
+This guide takes you from an empty Ubuntu server to a running RationSmart, one step at a time.
+Allow about **30 minutes** (most of it is the first build).
 
 ```
-Internet :80 -> nginx (gateway/)            only published port
-                 ├─ /                       -> frontend:3000   (Next.js, proxies /api/proxy/* to the API)
-                 ├─ = /v1/auth/verify-email-link -> api:8000   (link in verification emails)
-                 └─ other /v1, /docs, /redoc, /openapi.json  -> 404
-Docker network "rationsmart_edge": nginx, frontend, api
-Backend default network:           api, worker, beat, redis (password-protected, unpublished)
-api/worker -> managed Postgres (TLS)      redis: bundled, or a managed one via EXTERNAL_REDIS_URL
+  people ──> nginx (port 80) ──> web app ──> API ──> your PostgreSQL database
+                                              └── background workers + Redis
 ```
 
-Works on any Ubuntu 24.04 VM (Azure, AWS, GCP, ...): nothing in the compose files or scripts is cloud-specific.
+Everything runs in Docker on **one Ubuntu 24.04 server**. Only port 80 is open to the world.
+Two other pages cover the details: **[CONFIGURATION.md](CONFIGURATION.md)** (every setting) and
+**[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** (when something goes wrong).
 
-## Prerequisites on the VM
-- Docker Engine **with the Compose plugin >= 2.20**. Ubuntu's own `docker.io` package has no Compose plugin;
-  install `docker-ce` + `docker-compose-plugin` from Docker's apt repo. The deploy user must be in the `docker` group.
-- `curl` and `flock` (present on standard Ubuntu cloud images).
-- Inbound TCP 80 open in the provider's firewall; the VM allowed to reach Postgres (firewall rule or private networking).
-- Port 80 free on the host (stop any preinstalled Apache/nginx), or set `GATEWAY_PORT` (then include it in `API_BASE_URL`).
-- ARM VMs: use `FORCE_BUILD=1` unless the registry images are multi-arch.
+## Before you start: collect these
 
-## First-time setup (on the VM)
+| You need | Where to get it | Used in |
+| --- | --- | --- |
+| An Ubuntu 24.04 server (2+ CPUs, 4+ GB memory, 20+ GB disk) and SSH access | your cloud provider | Step 1 |
+| A PostgreSQL database server (version 15 or older) | your cloud provider ("managed PostgreSQL") | Step 2 |
+| The server's **public IP address** (or DNS name) | your cloud provider's VM page | Step 4 |
+| An email account that can send mail (Gmail with an app password works) | your mail provider | Step 4 |
+| The git address of this repository | your team | Step 3 |
 
-1. Clone the repo to `~/rationsmart` and `cd` into it.
-2. Create `backend/.env` from `backend/.env.example` and set at least:
-   ```
-   POSTGRES_HOST=<server>.postgres.database.azure.com
-   POSTGRES_PORT=5432
-   POSTGRES_USER=...  POSTGRES_PASSWORD=...  POSTGRES_DB=...
-   PGSSLMODE=require              # managed Postgres needs TLS; psycopg2 (alembic, pg_dump) and asyncpg both read it
-   REDIS_PASSWORD=<openssl rand -hex 24>   # bundled Redis; hex avoids URL-escaping problems
-   #   ...or, for a managed Redis, set EXTERNAL_REDIS_URL=rediss://... instead (REDIS_PASSWORD not needed)
-   JWT_SECRET_KEY=...  API_BASE_URL=http://<VM_PUBLIC_IP>
-   ALLOWED_ORIGINS=http://<VM_PUBLIC_IP>
-   SMTP_USERNAME=... SMTP_PASSWORD=... FROM_EMAIL=...
-   ```
-   **`REDIS_PASSWORD` must be URL-safe** (letters, digits, `-_.~`; `openssl rand -hex 24` is ideal): it is spliced
-   unescaped into `redis://:PASSWORD@redis:6379/0`, so a password with `@ / ? # : %` makes the API's Redis login fail
-   (`/health` then reports `cache: disconnected`).
-   `chmod 600 backend/.env`. `API_BASE_URL` must be the public gateway URL: verification emails link to
-   `{API_BASE_URL}/v1/auth/verify-email-link`.
-3. **Quote values containing `$`.** Compose expands `$NAME` in `.env` values and replaces unknown names with an
-   empty string, so `KEY=abc$XyZ` silently becomes `abc`. Write `KEY='abc$XyZ'` (single quotes) or `KEY=abc$$XyZ`.
-   `deploy.sh` warns with the affected key names (never the values).
-   **A `POSTGRES_PASSWORD` containing `@ / ? # : %` must be written percent-encoded** (`@` -> `%40`, ...): the app
-   builds `postgresql://user:PASSWORD@host/db` without escaping it. `deploy.sh` decodes it for `pg_dump`. Or simply
-   use a URL-safe password (letters, digits, `-_.~`).
-4. The frontend needs no `.env`: `BACKEND_HOST` defaults to `api` on the shared network.
-5. Optional: `docker login ghcr.io` if registry images are private. Without registry images the script builds locally.
+---
 
-## Deploy
+## Step 1: Prepare the server
+
+**1a. Open port 80.** In your cloud provider's firewall for the server (Azure "Network security group", AWS "Security group",
+GCP "Firewall rule") allow **inbound TCP 80** from anywhere. Keep SSH (port 22) limited to your own IP address.
+
+**1b. Log in** to the server with SSH.
+
+**1c. Install Docker.** Copy and paste this whole block:
 
 ```bash
-./deploy.sh            # or: ./deploy.sh up
+sudo apt-get update && sudo apt-get install -y ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | sudo tee /etc/apt/sources.list.d/docker.list
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker "$USER"
 ```
 
-Phase 1 (`_prepare`, leaves the running stack untouched): preflight checks, `git pull --ff-only` (skipped with a
-warning if the branch has no upstream), tag the running images `:rollback`, pull images (local build if the pull
-fails), `pg_dump` to `backups/`. A failure here aborts with nothing changed.
-Phase 2 (`_apply`): `alembic upgrade head`, start backend, frontend, gateway (waiting for healthchecks), reload
-nginx, smoke-test through the gateway. A failure here rolls back to the previous images automatically.
-Output is also appended to `deploy.log`.
-
-Variants: `IMAGE_TAG=<git-sha> ./deploy.sh`, `FORCE_BUILD=1 ./deploy.sh`, `SKIP_GIT_PULL=1 ./deploy.sh`,
-`SKIP_BACKUP=1 ./deploy.sh` (not recommended).
-
-## First-time data (new database)
-
-After `./deploy.sh` the schema exists but the database has no countries, feed types/categories, feeds or users, so
-nobody can register or sign in. Load the reference data pack, then create the first admin:
+**1d. Log out and log in again** (so your user may run Docker), then check:
 
 ```bash
-./deploy.sh seed --dry-run     # report what would be inserted, write nothing, no backup needed
-./deploy.sh seed               # backs up (pg_dump), loads the newest pack in data/packs/master/, clears the Redis caches
-./deploy.sh create-admin --email admin@example.org --name "Admin Name" --country-code ETH   # prompts for a 6-digit PIN
+docker compose version
 ```
 
-- **What a pack is:** `data/packs/master/<version>/` holds JSONL files plus `manifest.json` (schema revisions it
-  supports, row counts, SHA-256 per file). It carries reference data only (countries, languages, feed types and
-  categories, vocabulary, feeds, feed translations): no users, no secrets, no CLIMDES settings. Rows are addressed by
-  natural keys (country code, feed code, ...), so a pack loads into any database at a supported schema revision.
-- **Safe to repeat.** `seed` only inserts what is missing and never changes an existing row, so running it again is a
-  no-op. The exception is language activation on a fresh database (migrations seed every language inactive).
-  `./deploy.sh seed --mode update` also refreshes the pack-owned columns (names, nutrient values, translations) of
-  existing rows, and activates languages; it never deactivates or deletes anything. Review `--dry-run --mode update` first.
-- **Things it will not do:** overwrite a client's `is_active` toggles, re-add languages a client removed from an existing
-  country, touch `feed_sync_config` (set the CLIMDES endpoint/token in the admin panel), or delete rows missing from the pack.
-  Rows that cannot load (a feed name already used under another code, an unknown country/type/category) are listed as
-  `skipped` and do not stop the load.
-- **It refuses** to run on a schema revision the pack does not list (run `./deploy.sh` first), when a pack file was
-  modified (checksum), or while the CLIMDES feed sync is running. It is one transaction: any error loads nothing.
-- **Rollback:** a load has no downgrade; restore the pre-load dump from `backups/` (see "Restore a dump" below).
-  `--pack /packs/master/<version>` selects a specific pack (the folder is mounted read-only into the api container).
-- **create-admin:** the PIN is asked for twice (or `--pin-stdin` reads it from stdin) and is never stored in a file.
-  It needs the country to exist, refuses if an active super admin already exists (`--force` overrides) and refuses an
-  email that is already registered (`--promote` upgrades that account instead, keeping its PIN).
-- **Making a new pack** (maintainers): `python -m scripts_2.build_data_pack --from-db --version 2026.12.01 --out /packs/master`
-  (read-only against a golden database; run inside the api container with a writable mount), or `--from-dump` to convert a
-  `scripts_2.export_master_data` SQL file. Packs are immutable: a changed dataset gets a new version folder.
-- **What a pack does NOT contain (set these up separately):**
-  - **Users and their custom feeds** (`user_information`, `custom_feeds`) are personal data and are never part of a pack.
-    Create the first admin with `./deploy.sh create-admin`; everyone else registers in the app.
-  - **CLIMDES feed-sync settings** (`feed_sync_config`) hold an endpoint, an auth type and a token. A new database has only the
-    migration's default endpoint, with auth `none` and the scheduler off, so the sync does not work until an admin sets it
-    (sign in as the admin, then call these through the app's proxy, e.g. `/api/proxy/v1/admin/feed-sync/config`; the gateway does not
-    expose `/v1/*` directly):
-    - `PUT /v1/admin/feed-sync/config` with any of `endpoint_url`, `auth_type` (`none` | `api_key` | `bearer`), `auth_header_name`,
-      `auth_token`, `sync_day_of_week`. The endpoint your source environment used has a query string; get it from whoever runs CLIMDES.
-    - `PUT /v1/admin/feed-sync/scheduler/toggle` with `{"action": "enable"}` to turn the schedule on, `POST /v1/admin/feed-sync/run` to run it now.
-  - Records users create later (reports, feedback) and feeds a client adds are never touched by `seed`.
-- **Limits worth knowing:** `seed` does not stop `worker`/`beat`; it takes the same lock the CLIMDES sync uses, so a running sync makes it
-  refuse (retry afterwards), and a sync that starts mid-load cannot start. Reviewing `seed --dry-run --mode update` before the real
-  `--mode update` is advised, not enforced.
-- **Checking the tools** (maintainers): `python -m scripts_2.data_pack_selftest --url postgresql://.../scratch_db [--dump export.sql]`
-  builds an empty scratch database with `alembic upgrade head` and runs the full set of checks: idempotency, client edits and
-  update mode on all eight tables, name clashes, guards, admin rules, the pack to database to pack round trip (byte-identical) and,
-  with `--dump`, a value-for-value comparison with the original SQL export. CI runs it (`.github/workflows/data-pack-check.yml`).
+You should see `Docker Compose version v2.20` or higher. ✅
 
-## Operate
+> Port 80 must be free on the server. If something else already uses it (for example Apache), stop that first, or pick another
+> port later (see [CONFIGURATION.md](CONFIGURATION.md#changing-the-port)).
 
-| Task | Command |
+---
+
+## Step 2: Prepare the database
+
+**2a. Make a password** for the app's database user and write it down. Run this on the server and copy the output:
+
+```bash
+openssl rand -hex 16
+```
+
+**2b. Create the user and the empty database.** Connect to your PostgreSQL as its admin user (the provider's console or `psql`)
+and run (replace the password with the one from 2a):
+
+```sql
+CREATE USER rs_app WITH PASSWORD 'PASTE_THE_PASSWORD_HERE';
+CREATE DATABASE rationsmart OWNER rs_app;
+```
+
+**2c. Let the server connect.** In the database's firewall (or private network settings) allow the **server's IP address**.
+
+Write down: the **database server name** (for example `myserver.postgres.database.azure.com`), the **user** (`rs_app`),
+the **password** and the **database name** (`rationsmart`). You need them in Step 4. ✅
+
+> If your PostgreSQL is version 16 or newer, see [TROUBLESHOOTING.md](TROUBLESHOOTING.md#backup-fails-with-a-version-mismatch) first.
+
+---
+
+## Step 3: Download the code
+
+```bash
+git clone <the repository address> ~/rationsmart
+cd ~/rationsmart
+```
+
+All later commands are run from this folder (`~/rationsmart`).
+
+---
+
+## Step 4: Configure
+
+**4a. Create your settings file** from the ready-made template:
+
+```bash
+cp backend/env.template backend/.env
+chmod 600 backend/.env
+```
+
+**4b. Generate the two secrets automatically** (copy and paste both lines):
+
+```bash
+sed -i "s/^REDIS_PASSWORD=.*/REDIS_PASSWORD=$(openssl rand -hex 24)/" backend/.env
+sed -i "s/^JWT_SECRET_KEY=.*/JWT_SECRET_KEY=$(openssl rand -hex 32)/" backend/.env
+```
+
+**4c. Fill in the rest** with a text editor:
+
+```bash
+nano backend/.env
+```
+
+Replace the placeholders (`CHANGE_ME...` and the placeholder address `127.0.0.1`). Here is what to put on each:
+
+| Setting | What to put |
 | --- | --- |
-| Status | `./deploy.sh status` |
-| Logs | `./deploy.sh logs` or `./deploy.sh logs api` |
-| Roll back to the previous images | `./deploy.sh rollback` |
-| Stop everything | `./deploy.sh down` (volumes kept) |
-| Restore a dump | `pg_restore --clean --no-owner -h <host> -U <user> -d <db> backups/<file>.dump` |
-| Rotate the Redis password | edit `backend/.env`, then `./deploy.sh` |
-| Change the nginx config | edit `gateway/nginx/conf.d/*.conf`, then `./deploy.sh` (it runs `nginx -t` + reload) |
+| `POSTGRES_HOST` | the database server name from Step 2 |
+| `POSTGRES_USER`, `POSTGRES_DB` | `rs_app` and `rationsmart`: already set, change only if you used other names in Step 2 |
+| `POSTGRES_PASSWORD` | the password from Step 2a |
+| `API_BASE_URL` and `ALLOWED_ORIGINS` | `http://` followed by your **server's public IP or DNS name** (both lines the same, no trailing `/`). The template has `http://127.0.0.1` as a placeholder: that address means "this machine only", so it must be replaced for other people to use the app |
+| `SMTP_USERNAME`, `SMTP_PASSWORD`, `FROM_EMAIL` | your email account, its password, and the sender address users will see |
 
-## Things to know
+Save and exit (in nano: `Ctrl+O`, `Enter`, `Ctrl+X`).
 
-- **Rollback reverts images only.** It does not revert database migrations (restore `backups/*.dump` if needed) and it
-  does not revert `.env` changes. If a deploy failed because of a bad `.env`, fix the file first; rolling back
-  with the bad file in place just fails again.
-- **Rollback needs a previous run.** The `:rollback` images are created from the containers that were running when the
-  deploy started, so the first deploy on a fresh VM has nothing to roll back to (the script says so and changes nothing).
-- Without a domain/TLS the app is served over plain HTTP. The Next.js app sets the session cookie `Secure` only on
-  HTTPS and sends HSTS, which browsers ignore on HTTP. Login works, but cookies are not `Secure` until TLS is added.
-- Nginx overwrites `X-Forwarded-For` with the real client address, because the API trusts that header from any peer.
-- `pg_dump` runs from the api image (`postgresql-client-15`). If the managed server runs a newer major version, bump
-  the client in `backend/Dockerfile`, or the pre-deploy backup fails.
-- `PGSSLMODE=require` encrypts but does not verify the server certificate. For verification use `verify-full` with
-  `PGSSLROOTCERT` pointing at a mounted CA bundle.
-- Only nginx publishes a port. Docker-published ports bypass UFW, so keep it that way.
-- Image names default to `ghcr.io/ucdavis/rationsmart-{api,pwa}`; override with `IMAGE_REGISTRY`.
-- Known, outside the deployment scope: the Next.js proxy drops `X-Forwarded-For`, so the API sees the frontend
-  container's address for proxied requests; any per-IP rate limit in the API is shared by all users on that path.
+**4d. Check the file** has no leftover placeholders. This command must print nothing:
+
+```bash
+grep -v '^#' backend/.env | grep -n "CHANGE_ME\|127.0.0.1"
+```
+
+If it prints lines, those values still need to be changed. ✅
+
+---
+
+## Step 5: Deploy
+
+```bash
+./deploy.sh
+```
+
+The first run builds the app and takes **5 to 10 minutes**. It prints its progress, and a successful run ends with:
+
+```
+[deploy] smoke test passed
+[deploy] deploy OK
+```
+
+It also saves a backup of the database in `backups/` before changing anything. If anything fails it tells you why, and your
+existing setup is left as it was (see [TROUBLESHOOTING.md](TROUBLESHOOTING.md)).
+
+**Check that everything is running:**
+
+```bash
+./deploy.sh status
+```
+
+Every line should say `Up` (and `healthy` where shown) for: `api`, `worker`, `beat`, `redis`, `frontend` and `nginx`. ✅
+
+---
+
+## Step 6: Add the data and the first admin
+
+A new database is empty: it has no countries, feeds or users. Load the reference data that ships with this repository:
+
+```bash
+./deploy.sh seed --dry-run
+```
+
+This only **shows** what would be added and changes nothing. You should see a table like this:
+
+```
+DRY RUN (rolled back): pack 2026.11.01, mode insert-missing
+table                      in pack  inserted  updated  skipped
+country                        194       194        0        0
+feeds                          235       235        0        0
+...
+```
+
+Now load it for real (it backs up first):
+
+```bash
+./deploy.sh seed
+```
+
+Then create the first administrator (pick a 3-letter country code from `ETH`, `IDN`, `PHL`, `THA`, `VNM`):
+
+```bash
+./deploy.sh create-admin --email you@example.org --name "Your Name" --country-code ETH
+```
+
+It asks for a **6-digit PIN** twice, and prints `super admin you@example.org created`. ✅
+
+> Loading is safe to repeat: it only adds what is missing and never deletes anything.
+> More about it in [CONFIGURATION.md](CONFIGURATION.md#loading-data).
+
+---
+
+## Step 7: Check that it works
+
+Run these on the server. The answers shown are what you should get:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/       # 200  (the web app)
+curl -s -o /dev/null -w '%{http_code}\n' http://localhost/docs   # 404  (the API docs are private)
+cd backend && docker compose exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"; cd ..
+```
+
+The last command should print:
+
+```
+{"status":"healthy","database":"connected","cache":"connected","version":"4.0.0"}
+```
+
+Finally, open `http://<your server's IP>/` in a browser and **sign in** with the admin email and PIN from Step 6. 🎉
+
+---
+
+## Day-to-day commands
+
+Run these in `~/rationsmart`.
+
+| I want to... | Command |
+| --- | --- |
+| see if everything is running | `./deploy.sh status` |
+| read the logs | `./deploy.sh logs` (all) or `./deploy.sh logs api` |
+| install a new version | `git pull` then `./deploy.sh` |
+| go back to the previous version | `./deploy.sh rollback` |
+| change a setting | edit `backend/.env`, then `./deploy.sh` |
+| stop everything (data is kept) | `./deploy.sh down` |
+| restore a database backup | `pg_restore --clean --no-owner -h <host> -U rs_app -d rationsmart backups/<file>.dump` |
+
+Backups are written to `backups/` on the server. Copy them somewhere safe now and then, and delete old ones.
+
+## Good to know
+
+- **Web address:** the app is served over plain `http`. For `https`, put the server behind your cloud provider's load balancer or add
+  certificates later; the app works without it.
+- **Rolling back** returns to the previous program version only. It does not undo database changes or `.env` edits; use a backup for that.
+
+## More
+
+- **[CONFIGURATION.md](CONFIGURATION.md)**: every setting, the password rules, other ports, using a managed Redis, loading data options.
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**: error messages and how to fix them.
+- **[data/packs/README.md](data/packs/README.md)**: how the reference-data packs are made (for maintainers).
