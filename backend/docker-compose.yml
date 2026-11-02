@@ -8,6 +8,11 @@
 # For an isolated second copy on the same machine, override it: docker compose -p <name> ...
 name: rationsmart
 
+# Redis: the bundled redis service below by default. To use a managed Redis
+# (e.g. Azure), set EXTERNAL_REDIS_URL in .env; it replaces REDIS_URL for api,
+# worker and beat. A plain REDIS_URL in .env is overridden here on purpose:
+# .env.example's localhost value is not Redis from inside a container.
+
 services:
   api:
     build: .
@@ -15,7 +20,7 @@ services:
       - "8000:8000"
     env_file: .env
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=${EXTERNAL_REDIS_URL:-redis://redis:6379/0}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     # scripts_2/db_reset.py writes its pre-reset pg_dump here: the repo root's
@@ -36,7 +41,7 @@ services:
     build: .
     env_file: .env
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=${EXTERNAL_REDIS_URL:-redis://redis:6379/0}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -52,7 +57,7 @@ services:
     build: .
     env_file: .env
     environment:
-      - REDIS_URL=redis://redis:6379/0
+      - REDIS_URL=${EXTERNAL_REDIS_URL:-redis://redis:6379/0}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
