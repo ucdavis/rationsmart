@@ -140,7 +140,6 @@ class ForgotPinRequest(BaseModel):
 class ForgotPinResponse(BaseModel):
     success: bool
     message: str
-    new_pin: Optional[str] = Field(None, description="New 6-digit PIN — only returned in dev mode")
 
 
 class ChangePinRequest(BaseModel):
