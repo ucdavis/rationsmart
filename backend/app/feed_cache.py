@@ -8,6 +8,7 @@ shares the same Redis connection pool.
 import json
 import logging
 from typing import Optional
+from urllib.parse import urlsplit
 
 import redis.asyncio as aioredis
 
@@ -16,10 +17,20 @@ logger = logging.getLogger(__name__)
 _redis: Optional[aioredis.Redis] = None
 
 
+def redis_url_for_log(url: str) -> str:
+    """scheme://host:port/db only: a managed Redis URL carries its access key."""
+    try:
+        parts = urlsplit(url)
+        port = f":{parts.port}" if parts.port else ""
+        return f"{parts.scheme}://{parts.hostname}{port}{parts.path}"
+    except ValueError:
+        return "<unparseable Redis URL>"
+
+
 async def init_redis(url: str) -> aioredis.Redis:
     global _redis
     _redis = aioredis.from_url(url, decode_responses=True)
-    logger.info("Redis feed cache connected: %s", url)
+    logger.info("Redis feed cache connected: %s", redis_url_for_log(url))
     return _redis
 
 
