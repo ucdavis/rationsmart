@@ -249,20 +249,20 @@ export function CountriesLanguagesTab({
   };
 
   const handleRegister = async () => {
-    const code = regCode.trim();
-    if (!regName.trim() || !code) {
+    const typedCode = regCode.trim();
+    if (!regName.trim() || !typedCode) {
       showSnackbar(t("Name and code are required"), "error");
       return;
     }
     setIsRegistering(true);
     const name = regName.trim();
     try {
-      const res = await createLanguage({ code, name });
+      const res = await createLanguage({ code: typedCode, name });
       // The backend stores the standard BCP 47 form ("BEN" → "bn",
       // "tl" → "fil"), so show and keep the code it saved, not the typed one
       // (W10). Codes are compared exactly as returned — never lowercased.
       const saved = asRecord(res.data);
-      const savedCode = stringField(saved, "code") ?? code;
+      const savedCode = stringField(saved, "code") ?? typedCode;
       const savedName = stringField(saved, "name") ?? name;
       showSnackbar(
         fillText(t("${language} registered as ${code}"), { language: savedName, code: savedCode }),

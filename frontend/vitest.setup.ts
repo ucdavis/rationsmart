@@ -1,6 +1,15 @@
 import "@testing-library/jest-dom/vitest";
 import { afterEach, beforeEach, vi } from "vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
+
+// findBy* / waitFor give up after 1 s by default. The first non-English
+// render in a test file loads that language's labels from the sheet (see the
+// fetch stub below), and on the 2-core CI runner — whole suite in parallel,
+// under coverage — that has taken longer than 1 s, failing the Hindi tests
+// on feed-selection / report while they pass locally. A longer ceiling only
+// slows a test that would otherwise fail; passing ones finish as soon as the
+// element appears.
+configure({ asyncUtilTimeout: 4000 }); // under vitest's 5 s per-test limit
 
 // jsdom 23 in vitest ships a `localStorage` stub that lacks setItem /
 // getItem / removeItem / clear on its prototype (only "length" and the
