@@ -7,8 +7,14 @@
 #   ./deploy.sh status     show container status for all three stacks
 #   ./deploy.sh logs [svc] follow logs (all stacks, or one compose service)
 #   ./deploy.sh down       stop all three stacks (data volumes are kept)
+#   ./deploy.sh seed [--dry-run] [--mode update] [--pack /packs/master/<version>]
+#                          load the reference data pack (countries, feed types/categories, feeds,
+#                          translations) into the database; backs up first unless --dry-run
+#   ./deploy.sh create-admin --email E --name N --country-code ETH [--pin-stdin] [--promote] [--force]
+#                          create the first super admin (the PIN is asked for, never stored in a file)
 #
 # Environment knobs:
+#   EXPECT_DB=<name>       refuse to run unless backend/.env points at this database
 #   IMAGE_TAG=<tag>        registry tag to pull (default: latest)
 #   IMAGE_REGISTRY=<repo>  registry namespace (default: ghcr.io/ucdavis)
 #   FORCE_BUILD=1          skip the registry pull and build from source
@@ -245,6 +251,27 @@ do_rollback() {
   fi
 }
 
+# Load the data pack. A load has no downgrade, so the pre-change pg_dump (backup_db) is the way back; a
+# dry run writes nothing and skips it. Arguments go to scripts_2.load_data_pack.
+do_seed() {
+  preflight
+  ensure_network
+  local a dry=0
+  for a in "$@"; do [[ "$a" == "--dry-run" ]] && dry=1; done
+  [[ "$dry" == 1 ]] || backup_db
+  if [[ "$dry" == 1 ]]; then log "loading the data pack (dry run: nothing is written)"; else log "loading the data pack"; fi
+  dc backend run --rm --no-deps -T api python -m scripts_2.load_data_pack "$@"
+}
+
+# First admin. Interactive (the PIN prompt needs a terminal) unless --pin-stdin is given.
+do_create_admin() {
+  preflight
+  ensure_network
+  local a tty=()
+  for a in "$@"; do [[ "$a" == "--pin-stdin" ]] && tty=(-T); done
+  dc backend run --rm --no-deps ${tty[@]+"${tty[@]}"} api python -m scripts_2.create_admin "$@"
+}
+
 main() {
   local cmd="${1:-up}"
   [[ $# -gt 0 ]] && shift
@@ -264,16 +291,19 @@ main() {
       for s in "${STACKS[@]}"; do dc "$s" logs --tail=50; done; return ;;
     down)
       for ((i=${#STACKS[@]}-1; i>=0; i--)); do dc "${STACKS[i]}" down; done; return ;;
-    up|rollback) ;;
-    *) sed -n '2,19p' "${BASH_SOURCE[0]}"; exit 2 ;;
+    up|rollback|seed|create-admin) ;;
+    *) sed -n '2,26p' "${BASH_SOURCE[0]}"; exit 2 ;;
   esac
 
   # Mutating commands: one at a time, and everything is also written to deploy.log.
   command -v flock >/dev/null || die "flock not found"
   exec 9>"$ROOT/.deploy.lock"
   flock -n 9 || die "another deploy is already running"
+  # create-admin prompts for the PIN on the terminal, so it keeps its own stdout (and is not logged).
+  if [[ "$cmd" == "create-admin" ]]; then do_create_admin "$@"; return; fi
   exec > >(tee -a "$LOG_FILE") 2>&1
 
+  if [[ "$cmd" == "seed" ]]; then do_seed "$@"; return; fi
   if [[ "$cmd" == "rollback" ]]; then do_rollback; return; fi
 
   if ! "${BASH_SOURCE[0]}" _prepare; then

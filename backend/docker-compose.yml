@@ -38,8 +38,10 @@ services:
       - edge
     # scripts_2/db_reset.py writes its pre-reset pg_dump here: the repo root's
     # backups/ (~/rationsmart/backups on the server, beside the deploy's dumps).
+    # ../data/packs holds the reference-data packs loaded by `./deploy.sh seed` (read-only).
     volumes:
       - ../backups:/backups
+      - ../data/packs:/packs:ro
     depends_on:
       redis:
         condition: service_healthy

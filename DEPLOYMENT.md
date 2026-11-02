@@ -65,6 +65,58 @@ Output is also appended to `deploy.log`.
 Variants: `IMAGE_TAG=<git-sha> ./deploy.sh`, `FORCE_BUILD=1 ./deploy.sh`, `SKIP_GIT_PULL=1 ./deploy.sh`,
 `SKIP_BACKUP=1 ./deploy.sh` (not recommended).
 
+## First-time data (new database)
+
+After `./deploy.sh` the schema exists but the database has no countries, feed types/categories, feeds or users, so
+nobody can register or sign in. Load the reference data pack, then create the first admin:
+
+```bash
+./deploy.sh seed --dry-run     # report what would be inserted, write nothing, no backup needed
+./deploy.sh seed               # backs up (pg_dump), loads the newest pack in data/packs/master/, clears the Redis caches
+./deploy.sh create-admin --email admin@example.org --name "Admin Name" --country-code ETH   # prompts for a 6-digit PIN
+```
+
+- **What a pack is:** `data/packs/master/<version>/` holds JSONL files plus `manifest.json` (schema revisions it
+  supports, row counts, SHA-256 per file). It carries reference data only (countries, languages, feed types and
+  categories, vocabulary, feeds, feed translations): no users, no secrets, no CLIMDES settings. Rows are addressed by
+  natural keys (country code, feed code, ...), so a pack loads into any database at a supported schema revision.
+- **Safe to repeat.** `seed` only inserts what is missing and never changes an existing row, so running it again is a
+  no-op. The exception is language activation on a fresh database (migrations seed every language inactive).
+  `./deploy.sh seed --mode update` also refreshes the pack-owned columns (names, nutrient values, translations) of
+  existing rows, and activates languages; it never deactivates or deletes anything. Review `--dry-run --mode update` first.
+- **Things it will not do:** overwrite a client's `is_active` toggles, re-add languages a client removed from an existing
+  country, touch `feed_sync_config` (set the CLIMDES endpoint/token in the admin panel), or delete rows missing from the pack.
+  Rows that cannot load (a feed name already used under another code, an unknown country/type/category) are listed as
+  `skipped` and do not stop the load.
+- **It refuses** to run on a schema revision the pack does not list (run `./deploy.sh` first), when a pack file was
+  modified (checksum), or while the CLIMDES feed sync is running. It is one transaction: any error loads nothing.
+- **Rollback:** a load has no downgrade; restore the pre-load dump from `backups/` (see "Restore a dump" below).
+  `--pack /packs/master/<version>` selects a specific pack (the folder is mounted read-only into the api container).
+- **create-admin:** the PIN is asked for twice (or `--pin-stdin` reads it from stdin) and is never stored in a file.
+  It needs the country to exist, refuses if an active super admin already exists (`--force` overrides) and refuses an
+  email that is already registered (`--promote` upgrades that account instead, keeping its PIN).
+- **Making a new pack** (maintainers): `python -m scripts_2.build_data_pack --from-db --version 2026.12.01 --out /packs/master`
+  (read-only against a golden database; run inside the api container with a writable mount), or `--from-dump` to convert a
+  `scripts_2.export_master_data` SQL file. Packs are immutable: a changed dataset gets a new version folder.
+- **What a pack does NOT contain (set these up separately):**
+  - **Users and their custom feeds** (`user_information`, `custom_feeds`) are personal data and are never part of a pack.
+    Create the first admin with `./deploy.sh create-admin`; everyone else registers in the app.
+  - **CLIMDES feed-sync settings** (`feed_sync_config`) hold an endpoint, an auth type and a token. A new database has only the
+    migration's default endpoint, with auth `none` and the scheduler off, so the sync does not work until an admin sets it
+    (sign in as the admin, then call these through the app's proxy, e.g. `/api/proxy/v1/admin/feed-sync/config`; the gateway does not
+    expose `/v1/*` directly):
+    - `PUT /v1/admin/feed-sync/config` with any of `endpoint_url`, `auth_type` (`none` | `api_key` | `bearer`), `auth_header_name`,
+      `auth_token`, `sync_day_of_week`. The endpoint your source environment used has a query string; get it from whoever runs CLIMDES.
+    - `PUT /v1/admin/feed-sync/scheduler/toggle` with `{"action": "enable"}` to turn the schedule on, `POST /v1/admin/feed-sync/run` to run it now.
+  - Records users create later (reports, feedback) and feeds a client adds are never touched by `seed`.
+- **Limits worth knowing:** `seed` does not stop `worker`/`beat`; it takes the same lock the CLIMDES sync uses, so a running sync makes it
+  refuse (retry afterwards), and a sync that starts mid-load cannot start. Reviewing `seed --dry-run --mode update` before the real
+  `--mode update` is advised, not enforced.
+- **Checking the tools** (maintainers): `python -m scripts_2.data_pack_selftest --url postgresql://.../scratch_db [--dump export.sql]`
+  builds an empty scratch database with `alembic upgrade head` and runs the full set of checks: idempotency, client edits and
+  update mode on all eight tables, name clashes, guards, admin rules, the pack to database to pack round trip (byte-identical) and,
+  with `--dump`, a value-for-value comparison with the original SQL export. CI runs it (`.github/workflows/data-pack-check.yml`).
+
 ## Operate
 
 | Task | Command |

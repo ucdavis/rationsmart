@@ -1,0 +1,87 @@
+# Data-pack CI check — CHECKS ONLY. This workflow never deploys and never touches a real database.
+#
+# Builds the backend image (the same image deploy.sh runs), starts a throwaway Postgres, builds the schema
+# with `alembic upgrade head`, verifies models == migrations (schema_drift_check --fresh), and runs the
+# data-pack self-test: load the committed pack, reload (no-op), pack -> database -> pack round trip,
+# client-edit and name-clash rules, the revision / checksum / sync-lock guards and the create_admin rules.
+#
+# Like the frontend gate this is deliberately not a required check on main: it is path-filtered, and a
+# required path-filtered check would leave unrelated PRs waiting forever on "Expected".
+#
+# Running inside the project's own image avoids installing the backend's native dependencies
+# (WeasyPrint's Cairo/Pango, libpq) on the runner, and tests what is actually shipped.
+# No step below interpolates event data (titles, branch names, commit messages) into a command.
+
+name: Data pack check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "data/packs/**"
+      - ".github/workflows/data-pack-check.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "data/packs/**"
+      - ".github/workflows/data-pack-check.yml"
+  workflow_dispatch:
+
+# Read-only token: this job only checks code, it never writes to the repo.
+permissions:
+  contents: read
+
+# Cancel a stale run when new commits land on the same ref.
+concurrency:
+  group: data-pack-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  data-pack-check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: rs
+          POSTGRES_PASSWORD: rspass
+          POSTGRES_DB: drift
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rs"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        # Checks only: no later step needs git auth.
+        with:
+          persist-credentials: false
+
+      - name: Build the backend image
+        run: docker build -t rationsmart-api-ci backend
+
+      # The app's settings must exist for the scripts to import; they deliberately point somewhere other than
+      # the scratch databases below (the self-test refuses to run against the configured database).
+      - name: Schema drift (models vs fresh migrations)
+        run: |
+          docker run --rm --network host \
+            -e POSTGRES_USER=rs -e POSTGRES_PASSWORD=unused -e POSTGRES_DB=configured_unused -e POSTGRES_HOST=configured.invalid \
+            -e SMTP_USERNAME=x -e SMTP_PASSWORD=x -e FROM_EMAIL=ci@example.com \
+            -e JWT_SECRET_KEY=ci-secret-ci-secret-ci-secret-ci-secret -e API_BASE_URL=http://localhost \
+            rationsmart-api-ci \
+            python -m scripts_2.schema_drift_check --fresh --url postgresql://rs:rspass@localhost:5432/drift
+
+      - name: Data pack self-test (fresh scratch database)
+        run: |
+          docker run --rm --network host -v "$PWD/data/packs:/packs:ro" \
+            -e POSTGRES_USER=rs -e POSTGRES_PASSWORD=unused -e POSTGRES_DB=configured_unused -e POSTGRES_HOST=configured.invalid \
+            -e SMTP_USERNAME=x -e SMTP_PASSWORD=x -e FROM_EMAIL=ci@example.com \
+            -e JWT_SECRET_KEY=ci-secret-ci-secret-ci-secret-ci-secret -e API_BASE_URL=http://localhost \
+            rationsmart-api-ci \
+            sh -c 'PGPASSWORD=rspass psql -h localhost -U rs -d postgres -qc "CREATE DATABASE selftest" \
+                   && python -m scripts_2.data_pack_selftest --url postgresql://rs:rspass@localhost:5432/selftest'

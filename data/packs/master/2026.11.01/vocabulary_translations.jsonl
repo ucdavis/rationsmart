@@ -1,0 +1,164 @@
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"এডিটিভস","source_value":"Additive"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"এডিটিভস","source_value":"Additives"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"প্রাণিজ প্রোটিন","source_value":"Animal Protein"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"উপজাত/অন্যান্য","source_value":"By-Product/Other"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"উপজাত/অন্যান্য আঁশযুক্ত পশুখাদ্য","source_value":"By-Product/Other-Forage"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"পরিপূর্ণ খাদ্য","source_value":"Complete diet"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"দানাদার খাদ্যের মিশ্রণ","source_value":"Concentrate Mixtures"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"শক্তির উৎস","source_value":"Energy Source"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"পশুখাদ্য হিসেবে ব্যবহৃত গাছ/গুল্ম","source_value":"Forage tree/shrub"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"শস্য জাতীয় ঘাস","source_value":"Grain Crop Forage"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"ঘাস/ডালজাতীয় ঘাস/ নাইট্রোজেন সমৃদ্ধ ঘাস/লিগিউম ঘাস","source_value":"Grass/Legume Forage"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"খনিজ পদার্থ","source_value":"Minerals"}
+{"country_code":"BGD","kind":"feed_category","language":"bn","name":"উদ্ভিজ্জ প্রোটিন","source_value":"Plant Protein"}
+{"country_code":"BGD","kind":"feed_type","language":"bn","name":"পরিপূর্ণ খাদ্য","source_value":"Complete diet"}
+{"country_code":"BGD","kind":"feed_type","language":"bn","name":"দানাদার খাদ্য","source_value":"Concentrate"}
+{"country_code":"BGD","kind":"feed_type","language":"bn","name":"ঘাস/আঁশযুক্ত পশুখাদ্য","source_value":"Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"የመኖ ተጨማሪ ንጥረ ነገሮች","source_value":"Additives"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Wantoota/si'eessituuwan nyaata beeyladaa irratti dabalaman","source_value":"Additives"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ተወሰኽቲ ንጥረ ነገራት","source_value":"Additives"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ከእንስሳት የሚገኝ ፕሮቲን","source_value":"Animal Protein"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Pirootiinii bineensotaa/ beeyladootaa irraa argamu","source_value":"Animal Protein"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ካብ እንስሳት ዝርከብ ፕሮቲን","source_value":"Animal Protein"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ተረፈ ምርቶች/ሌሎች","source_value":"By-Product/Other"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Haftee oomishaa/ kan biroo","source_value":"By-Product/Other"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ተረፍ ፍርያት/ካልእ","source_value":"By-Product/Other"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ተረፈ ምርቶች/ሌሎች - አሳራማ መኖዎች","source_value":"By-Product/Other-Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Haftee oomishaa/ foorajii kan biroo - Nyaata beeyladaa qaaccaa uf keesaa qabu","source_value":"By-Product/Other-Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ናይ ምህርቲ ተረፍ-መረፍ/ካልእ- ናይ ተኽሊ ምግቢ እንስሳ","source_value":"By-Product/Other-Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"የተሟላ መኖ","source_value":"Complete diet"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Nyaata guutuu","source_value":"Complete diet"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"እተማለአ ምግቢ እንስሳ","source_value":"Complete diet"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"የተመጣጠነ የአሰር አልባ መኖ ድብልቅ","source_value":"Concentrate Mixtures"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Makaa nyaata qindaayaa","source_value":"Concentrate Mixtures"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ሕዋስ እተመጣጠነ ምግቢ እንስሳ","source_value":"Concentrate Mixtures"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"የኃይል ምንጭ/ኃይል ሰጪ","source_value":"Energy Source"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Madda anniisaa","source_value":"Energy Source"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ምንጪ ሓይሊ","source_value":"Energy Source"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"የመኖ ዛፎች/ቁጥቋጦዎች","source_value":"Forage tree/shrub"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Mukkeen/mukkeen xixiqqoo nyaata beeyladaa ta'an","source_value":"Forage tree/shrub"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ንእንስሳ ምግቢ ዝከውን ኦም/ቁጥቋጥ","source_value":"Forage tree/shrub"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ከእህል ሰብሎች የሚገኝ መኖ","source_value":"Grain Crop Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Fooreejii callaa midhaanii irraa argamu","source_value":"Grain Crop Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ካብ እኽሊ ዝርከብ ናይ ተኽሊ ምግቢ እንስሳ","source_value":"Grain Crop Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ከሳር/ከአባዝር ዕጽዋት የሚገኝ መኖ","source_value":"Grass/Legume Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Marga/biqiltoota maatii ataraa/ baalaa nyaata beeyladaa ta'an; Fakkeenyaaf waan akka Marga Arbaa/Alfalfaa","source_value":"Grass/Legume Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ሳዕሪ/ቆፅላመፅሊ ምግቢ እንስሳ","source_value":"Grass/Legume Forage"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ማዕድናት","source_value":"Minerals"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Albuudota","source_value":"Minerals"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ማዕድናት","source_value":"Minerals"}
+{"country_code":"ETH","kind":"feed_category","language":"am","name":"ከእፅዋት የሚገኝ ፕሮቲን","source_value":"Plant Protein"}
+{"country_code":"ETH","kind":"feed_category","language":"om","name":"Pirootiinii biqilootaa irraa argamu","source_value":"Plant Protein"}
+{"country_code":"ETH","kind":"feed_category","language":"ti","name":"ካብ ተኽሊ ዝርከብ ፕሮቲን","source_value":"Plant Protein"}
+{"country_code":"ETH","kind":"feed_type","language":"am","name":"የተሟላ መኖ","source_value":"Complete diet"}
+{"country_code":"ETH","kind":"feed_type","language":"om","name":"Nyaata guutuu","source_value":"Complete diet"}
+{"country_code":"ETH","kind":"feed_type","language":"ti","name":"እተማለአ ምግቢ እንስሳ","source_value":"Complete diet"}
+{"country_code":"ETH","kind":"feed_type","language":"am","name":"አሰር አልባ መኖ","source_value":"Concentrate"}
+{"country_code":"ETH","kind":"feed_type","language":"om","name":"Nyaata qindaayaa","source_value":"Concentrate"}
+{"country_code":"ETH","kind":"feed_type","language":"ti","name":"እተመጣጠነ ምግቢ እንስሳ","source_value":"Concentrate"}
+{"country_code":"ETH","kind":"feed_type","language":"am","name":"አሳራማ መኖ","source_value":"Forage"}
+{"country_code":"ETH","kind":"feed_type","language":"om","name":"Foorajii/ Nyaata beeyladaa qaaccaa uf keesaa qabu","source_value":"Forage"}
+{"country_code":"ETH","kind":"feed_type","language":"ti","name":"ናይ ተኽሊ ምግቢ እንስሳ","source_value":"Forage"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Pakan aditif","source_value":"Additives"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Protein hewani","source_value":"Animal Protein"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Hasil samping/lainnya","source_value":"By-Product/Other"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Hasil samping/lainnya (hijauan)","source_value":"By-Product/Other-Forage"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Pakan lengkap","source_value":"Complete diet"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Pakan campuran konsentrat","source_value":"Concentrate Mixtures"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Sumber energi","source_value":"Energy Source"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Hijauan pohon/semak","source_value":"Forage tree/shrub"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Tanaman biji-bijian/Serealia","source_value":"Grain Crop Forage"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Hijauan rumput/legum","source_value":"Grass/Legume Forage"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Mineral","source_value":"Minerals"}
+{"country_code":"IDN","kind":"feed_category","language":"id","name":"Protein nabati","source_value":"Plant Protein"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"आहार योज्य (एडिटिव)","source_value":"Additive"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"आहार योजक","source_value":"Additives"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"पशु-जनित प्रोटीन","source_value":"Animal Protein"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"उप-उत्पाद/अन्य","source_value":"By-Product/Other"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"उप-उत्पाद/अन्य चारा","source_value":"By-Product/Other-Forage"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"संपूर्ण आहार","source_value":"Complete diet"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"सांद्र आहार मिश्रण ( पशुदाना/पशु खुराक )","source_value":"Concentrate Mixtures"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"ऊर्जा स्रोत","source_value":"Energy Source"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"चारा देने वाले पेड़/झाड़ियाँ","source_value":"Forage tree/shrub"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"अनाज फसलों का चारा","source_value":"Grain Crop Forage"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"घास/ दलहनी द्विबीज चारा","source_value":"Grass/Legume Forage"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"खनिज","source_value":"Minerals"}
+{"country_code":"IND","kind":"feed_category","language":"hi","name":"वनस्पति-जनित प्रोटीन","source_value":"Plant Protein"}
+{"country_code":"IND","kind":"feed_type","language":"hi","name":"संपूर्ण आहार","source_value":"Complete diet"}
+{"country_code":"IND","kind":"feed_type","language":"hi","name":"सांद्र आहार ( पशुदाना/पशु खुराक के घटक )","source_value":"Concentrate"}
+{"country_code":"IND","kind":"feed_type","language":"hi","name":"चारा","source_value":"Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"إضافات علفية","source_value":"Additives"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Additifs alimentaires","source_value":"Additives"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"بروتين من أصل حيواني","source_value":"Animal Protein"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Protéines d'origine animale","source_value":"Animal Protein"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"منتجات ثانوية/أخرى","source_value":"By-Product/Other"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Sous-produits/autres","source_value":"By-Product/Other"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"المنتجات الثانوية/أعلاف خشنة أخرى","source_value":"By-Product/Other-Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Sous-produits/autres fourrages","source_value":"By-Product/Other-Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"عليقة كاملة/وجبة علفية كاملة","source_value":"Complete diet"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Ration complète","source_value":"Complete diet"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"خليط الأعلاف المركزة","source_value":"Concentrate Mixtures"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Mélanges de concentrés","source_value":"Concentrate Mixtures"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"مصادر طاقية","source_value":"Energy Source"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Sources d'énergie","source_value":"Energy Source"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"أشجار/شجيرات علفية","source_value":"Forage tree/shrub"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Arbres/arbustes fourragers","source_value":"Forage tree/shrub"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"أعلاف محاصيل الحبوب","source_value":"Grain Crop Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Fourrages céréaliers","source_value":"Grain Crop Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"أعلاف الأعشاب/البقوليات","source_value":"Grass/Legume Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Graminées /légumineuses fourragères","source_value":"Grass/Legume Forage"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"معادن","source_value":"Minerals"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Minéraux","source_value":"Minerals"}
+{"country_code":"MAR","kind":"feed_category","language":"ar","name":"بروتين من أصل نباتي","source_value":"Plant Protein"}
+{"country_code":"MAR","kind":"feed_category","language":"fr","name":"Protéines d'origine végétale","source_value":"Plant Protein"}
+{"country_code":"MAR","kind":"feed_type","language":"ar","name":"عليقة كاملة/وجبة علفية كاملة","source_value":"Complete diet"}
+{"country_code":"MAR","kind":"feed_type","language":"fr","name":"Ration complète","source_value":"Complete diet"}
+{"country_code":"MAR","kind":"feed_type","language":"ar","name":"أعلاف مركزة","source_value":"Concentrate"}
+{"country_code":"MAR","kind":"feed_type","language":"fr","name":"Concentrés","source_value":"Concentrate"}
+{"country_code":"MAR","kind":"feed_type","language":"ar","name":"أعلاف خشنة","source_value":"Forage"}
+{"country_code":"MAR","kind":"feed_type","language":"fr","name":"Fourrages","source_value":"Forage"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"आहारमा थपिने पोषक पदार्थ","source_value":"Additives"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"पशुजन्य प्रोटिन","source_value":"Animal Protein"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"उपउत्पादन/अन्य","source_value":"By-Product/Other"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"उपउत्पादन/अन्य घाँसपातजन्य आहार","source_value":"By-Product/Other-Forage"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"पूर्ण आहार","source_value":"Complete diet"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"मिश्रीत आहार (दाना)","source_value":"Concentrate Mixtures"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"ऊर्जाको स्रोत","source_value":"Energy Source"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"घाँसजन्य रूख/झाडी","source_value":"Forage tree/shrub"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"अन्नबालीको घाँसपात","source_value":"Grain Crop Forage"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"घाँस/कोसेबालीको घाँस","source_value":"Grass/Legume Forage"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"खनिज पदार्थ","source_value":"Minerals"}
+{"country_code":"NPL","kind":"feed_category","language":"ne","name":"वनस्पतिजन्य प्रोटिन","source_value":"Plant Protein"}
+{"country_code":"NPL","kind":"feed_type","language":"ne","name":"पूर्ण आहार","source_value":"Complete diet"}
+{"country_code":"NPL","kind":"feed_type","language":"ne","name":"सघन दाना","source_value":"Concentrate"}
+{"country_code":"NPL","kind":"feed_type","language":"ne","name":"घाँसपातजन्य आहार","source_value":"Forage"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"สารเสริม","source_value":"Additives"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"โปรตีนจากสัตว์","source_value":"Animal Protein"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"ผลพลอยได้/อื่น ๆ","source_value":"By-Product/Other"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"ผลพลอยได้/อาหารหยาบอื่น ๆ","source_value":"By-Product/Other-Forage"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"อาหารผสมครบส่วน","source_value":"Complete diet"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"อาหารข้น","source_value":"Concentrate Mixtures"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"แหล่งพลังงาน","source_value":"Energy Source"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"ไม้ยืนต้น/ไม้พุ่ม","source_value":"Forage tree/shrub"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"พืชธัญพืช","source_value":"Grain Crop Forage"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"หญ้า/พืชตระกูลถั่ว","source_value":"Grass/Legume Forage"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"แร่ธาตุ","source_value":"Minerals"}
+{"country_code":"THA","kind":"feed_category","language":"th","name":"โปรตีนจากพืช","source_value":"Plant Protein"}
+{"country_code":"THA","kind":"feed_type","language":"th","name":"อาหารผสมครบส่วน","source_value":"Complete diet"}
+{"country_code":"THA","kind":"feed_type","language":"th","name":"อาหารข้น","source_value":"Concentrate"}
+{"country_code":"THA","kind":"feed_type","language":"th","name":"อาหารหยาบ","source_value":"Forage"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Phụ gia thức ăn chăn nuôi","source_value":"Additives"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Protein có nguồn gốc động vật","source_value":"Animal Protein"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Phụ phẩm/Nguyên liệu khác","source_value":"By-Product/Other"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Phụ phẩm/thức ăn thô khác","source_value":"By-Product/Other-Forage"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Khẩu phần hoàn chỉnh","source_value":"Complete diet"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Hỗn hợp thức ăn tinh","source_value":"Concentrate Mixtures"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Nguyên liệu cung năng lượng","source_value":"Energy Source"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Cây thân gỗ/cây bụi làm thức ăn thô","source_value":"Forage tree/shrub"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Thức ăn thô từ cây ngũ cốc","source_value":"Grain Crop Forage"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Cỏ/cây họ đậu làm thức ăn thô","source_value":"Grass/Legume Forage"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Chất khoáng","source_value":"Minerals"}
+{"country_code":"VNM","kind":"feed_category","language":"vi","name":"Protein có nguồn gốc thực vật","source_value":"Plant Protein"}
+{"country_code":"VNM","kind":"feed_type","language":"vi","name":"Khẩu phần hoàn chỉnh","source_value":"Complete diet"}
+{"country_code":"VNM","kind":"feed_type","language":"vi","name":"Thức ăn tinh","source_value":"Concentrate"}
+{"country_code":"VNM","kind":"feed_type","language":"vi","name":"Thức ăn thô","source_value":"Forage"}

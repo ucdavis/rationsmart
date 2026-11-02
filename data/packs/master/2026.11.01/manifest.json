@@ -1,0 +1,43 @@
+{
+  "pack_version": "2026.11.01",
+  "created": "2026-11-02T09:17:46Z",
+  "source": "dump:rationsmart_master_data_20261101_171656.sql",
+  "source_commit": "35cde154dac5d293e648b272c562acda031efb9f",
+  "schema_revisions": [
+    "e2f3a4b5c6d7"
+  ],
+  "files": {
+    "country.jsonl": {
+      "rows": 194,
+      "sha256": "c484df969cd18bbd78d421b89344b276fa30fe7b985141719e989dd1241d6692"
+    },
+    "languages.jsonl": {
+      "rows": 206,
+      "sha256": "f5e03730ed8834397535c63d1703aaab9dd130bdde83dce33ec65171ea316125"
+    },
+    "country_languages.jsonl": {
+      "rows": 209,
+      "sha256": "b0410a0914f2e9e5d089cdedcbc3d7bdd95a8cfb563fd1e7d2eff749de995d0a"
+    },
+    "feed_types.jsonl": {
+      "rows": 3,
+      "sha256": "e3b5673425972c5a495277f6795b16039a5ab99c3477a91432f67717744eb338"
+    },
+    "feed_categories.jsonl": {
+      "rows": 12,
+      "sha256": "590c49293bc36d42825ec98d71a5ab586c6bf31ade35245083fb443e6e3ad436"
+    },
+    "vocabulary_translations.jsonl": {
+      "rows": 164,
+      "sha256": "062190be9d60696c20b82b24245325a491a3ce619f3e2d43f7a87d109482de6a"
+    },
+    "feeds.jsonl": {
+      "rows": 235,
+      "sha256": "3109175438e38c3436706775ac738c34634f9a7fd02fb7e02ef8a6fc4036bc05"
+    },
+    "feed_translations.jsonl": {
+      "rows": 196,
+      "sha256": "6646e0452b0ec1b41a5f05e0254c8c062fbcc291b02a52250c5f4f0166e35cef"
+    }
+  }
+}
