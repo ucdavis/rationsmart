@@ -88,6 +88,9 @@ const securityHeaders = [
 ];
 
 module.exports = withPWA({
+  // Self-contained server bundle (.next/standalone) so the Docker image
+  // only ships what `node server.js` needs.
+  output: "standalone",
   reactStrictMode: true,
   images: {
     unoptimized: true,

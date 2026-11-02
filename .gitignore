@@ -76,3 +76,7 @@ climdes_product_export_digitalgreen*.xlsx
 # Claude files — personal; anchored to the root so a future frontend/.claude/ is not hidden
 CLAUDE.local.md
 /.claude/
+
+# deploy.sh runtime files (pg_dump backups contain data)
+/backups/
+.deploy.lock
