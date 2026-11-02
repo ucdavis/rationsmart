@@ -30,6 +30,7 @@ from app.schemas.auth import (
     UserUpdateRequest,
     VerifyEmailRequest,
 )
+from app import pin_reset_cooldown
 from app.limiter import limiter
 from app.token_revocation import revoke_token
 from repositories.user_repository import UserRepository
@@ -299,33 +300,43 @@ FORGOT_PIN_SENT_MESSAGE = "If an account exists for this email, a new PIN has be
 
 
 @router.post("/forgot-pin", response_model=ForgotPinResponse, summary="Request a PIN reset via email")
-@limiter.limit("5/minute")
+@limiter.limit("30/minute")
 async def forgot_pin(request: Request, body: ForgotPinRequest, db: AsyncSession = Depends(get_db)):
     """
     Generate a new temporary PIN and send it to the user's registered email address.
 
     **Mandatory field:** `email_id`.
 
-    Always answers `200` with the same message, whether or not an account exists, so the
-    endpoint can't be used to find out which emails are registered. The new PIN travels
-    only in the email, never in this response.
+    Always answers `200` with the same message, whether or not an account exists, and
+    also when the reset is refused or the email can't be sent, so the endpoint can't be
+    used to find out which emails are registered. The new PIN travels only in the email,
+    never in this response, and is saved only once that email has gone out.
+    One reset per email address per minute (`pin_reset_cooldown`); the per-IP limit is
+    only a flood guard, since PWA traffic arrives from the proxy's address.
     After receiving the temporary PIN, the user should call `POST /v1/auth/change-pin` to set a permanent one.
     """
+    neutral = ForgotPinResponse(success=True, message=FORGOT_PIN_SENT_MESSAGE)
+    if not email_service.is_configured:
+        # Email would only be simulated: changing the PIN now would lock the user out.
+        logger.warning("Forgot PIN: SMTP is not configured; PIN left unchanged")
+        return neutral
+    if not await pin_reset_cooldown.claim(body.email_id):
+        return neutral
+
     success, _message, new_pin = await auth_service.forgot_pin(db, body.email_id)
     if not success:
-        return ForgotPinResponse(success=True, message=FORGOT_PIN_SENT_MESSAGE)
+        return neutral
 
     user = await UserRepository(db).get_by_email(body.email_id)
     sent, err = await email_service.send_pin_reset_email(
         to_email=user.email_id, user_name=user.name, new_pin=new_pin
     )
     if not sent:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to send email: {err}",
-        )
+        logger.error("Forgot PIN: reset email failed (%s); PIN change undone", err)
+        await db.rollback()
+        return neutral
     await db.commit()
-    return ForgotPinResponse(success=True, message=FORGOT_PIN_SENT_MESSAGE)
+    return neutral
 
 
 @router.post("/change-pin", response_model=ChangePinResponse, summary="Change the current PIN")
