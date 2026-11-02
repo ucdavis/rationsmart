@@ -385,6 +385,7 @@ def format_value_with_unit(value, unit):
 # litres come from the engine (animal_requirements: 10% of body weight, 2 feedings).
 CALF_FEEDINGS_PER_DAY = 2
 CALF_WEANING_AGE_DAYS = 56
+CALF_WEANING_TEXT = "Wean by {days} days of age."
 CALF_CARE_NOTES = (
     "Use clean, warm milk at 38–40°C; never cold from the fridge.",
     "Replace whole milk with a quality milk replacer if cost is a concern.",
