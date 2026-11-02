@@ -394,6 +394,8 @@ export interface MilkCostMargin {
 export interface CalfMilkFeedingPlan {
   daily_milk_volume_l?: number;
   feedings_per_day?: number;
+  per_feeding_l?: number;
+  daily_milk_fed_l?: number;
   estimated_weaning_age_days?: number;
   notes?: string[];
 }

@@ -31,6 +31,8 @@ import { useEscapeKey } from "@/lib/use-escape";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import GeneratingReportDialog from "@/components/GeneratingReportDialog";
+import { useCalfRun } from "@/components/cattle-info/useCalfRun";
 import {
   Adjustments,
   Country,
@@ -179,6 +181,7 @@ export default function CattleInfoPage() {
   // the profile language isn't valid for the selected country. See the
   // doc comment on useT() in src/lib/i18n-ui.ts.
   const t = useT(effectiveSimulationLanguage);
+  const calfRun = useCalfRun(t);
   const tRef = useLatestRef(t);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   useEscapeKey(!!showHistoryModal, () => setShowHistoryModal(false));
@@ -351,7 +354,7 @@ export default function CattleInfoPage() {
     form.simulation_name.trim() !== "" && form.country_id !== "" && specFieldsValid(form, specs, t);
 
   const handleContinue = () => {
-    if (!requiredFilled) return;
+    if (!requiredFilled || calfRun.isRunning) return;
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
     // Sync the user's active currency / country code with the country
     // they just picked. Without this, feed-selection / report would
@@ -375,7 +378,7 @@ export default function CattleInfoPage() {
     // FE-1 / D4: hidden fields go out as the spec default, never whatever
     // an earlier state left in the form.
     const submitForm = specs ? withHiddenDefaults(form, specs) : form;
-    setCattleInfo({
+    const nextInfo = {
       ...formToCattleInfo(submitForm, null),
       country: selectedCountry?.name ?? form.country_name,
       // i18n V2 — per-simulation language override. An explicit pick
@@ -400,9 +403,12 @@ export default function CattleInfoPage() {
               : effectiveSimulationLanguage;
         return resolved;
       })(),
-    });
-    // A calf only needs its milk amount — skip feed selection (QA row 8).
-    router.push(form.animal_category === "Baby Calf/Heifer" ? "/calf-plan" : "/feed-selection");
+    };
+    setCattleInfo(nextInfo);
+    // A calf only needs its milk amount — skip feed selection (QA row 8);
+    // the backend works out the plan straight away (W13).
+    if (form.animal_category === "Baby Calf/Heifer") void calfRun.run(nextInfo);
+    else router.push("/feed-selection");
   };
 
   // The reset itself finishes in microseconds; the user was reporting
@@ -463,7 +469,7 @@ export default function CattleInfoPage() {
         title={t("Cattle Info")}
         onMenuOpen={openDrawer}
         showForward={!!reportData && !!reportInputs}
-        onForward={() => router.push("/report")}
+        onForward={() => router.push(reportData?.calf_milk_feeding_plan ? "/calf-plan" : "/report")}
       />
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
@@ -565,6 +571,8 @@ export default function CattleInfoPage() {
           {form.animal_category === "Baby Calf/Heifer" ? t("Continue") : t("Continue to Feed")}
         </button>
       </div>
+
+      {calfRun.isRunning && <GeneratingReportDialog />}
 
       {/* Simulation History Bottom-Sheet Modal */}
       {showHistoryModal && (

@@ -2,8 +2,10 @@
 
 // Report — the three Y3 cards: Milk Cost Margin (§2.1), Calf Milk Feeding
 // (§2.3) and the Forage : Concentrate ratio (§2.2). Each prefers the
-// backend-computed block when the response carries it and falls back to a
-// client-side estimate. Split out of report/page.tsx (audit B-17).
+// backend-computed block when the response carries it; Milk Cost Margin and
+// Forage : Concentrate fall back to a client-side estimate, the calf card has
+// no fallback (W13: the calf rule lives in the backend only). Split out of
+// report/page.tsx (audit B-17).
 
 import type {
   CattleInfo,
@@ -15,7 +17,6 @@ import type {
 import { fillTemplate } from "@/lib/i18n-ui";
 import { formatMoney, roundMoney } from "@/lib/money";
 import { COLORS } from "@/lib/colors";
-import { calfMilkPlan } from "@/lib/calf-milk";
 import { IcCalfMilk } from "@/components/Icons";
 import { SCard, type ReportContext } from "./parts";
 
@@ -211,24 +212,16 @@ export function CalfMilkFeedingCard({
 }) {
   if (!reportCtx.showCalfMilkFeedingSection || !cattleInfo) return null;
 
-  const bw = Number(cattleInfo.body_weight ?? 0);
-  // Backend-supplied plan (when present) wins; else Maria's rule
-  // (src/lib/calf-milk.ts): 10% of body weight, each feeding rounded up.
-  const serverPlan = reportData?.calf_milk_feeding_plan;
-  const plan = calfMilkPlan(
-    bw,
-    serverPlan?.feedings_per_day ?? undefined,
-    serverPlan?.daily_milk_volume_l ?? undefined
-  );
-  if (!plan) return null;
-  const dailyVolume = plan.dailyTargetL;
-  const feedings = plan.feedingsPerDay;
-  const weaningDays = serverPlan?.estimated_weaning_age_days ?? 56;
-  const perFeedingL = plan.perFeedingL;
-  const notes = serverPlan?.notes ?? [
-    t("Use clean, warm milk at 38–40°C; never cold from the fridge."),
-    t("Replace whole milk with a quality milk replacer if cost is a concern."),
-  ];
+  // W13: the backend owns the calf rule — it answers a calf run with the
+  // whole plan, its amounts already rounded and its care notes already in
+  // the simulation's language (plain text, no t()).
+  const plan = reportData?.calf_milk_feeding_plan;
+  const dailyVolume = Number(plan?.daily_milk_volume_l);
+  const perFeedingL = Number(plan?.per_feeding_l);
+  if (!(dailyVolume > 0) || !(perFeedingL > 0)) return null;
+  const feedings = plan?.feedings_per_day ?? 2;
+  const weaningDays = plan?.estimated_weaning_age_days;
+  const notes = plan?.notes ?? [];
   return (
     <SCard title={t("Calf Milk Feeding")} icon={<IcCalfMilk />}>
       {/* Three tiles: daily volume, per-feeding split, weaning age */}
@@ -302,7 +295,7 @@ export function CalfMilkFeedingCard({
           </p>
           <div className="flex items-baseline gap-1">
             <p className="font-bold" style={{ color: COLORS.darkAquamarineGreen, fontSize: 18 }}>
-              {weaningDays}
+              {weaningDays ?? "—"}
             </p>
             <p style={{ color: COLORS.darkSilver, fontSize: 11 }}>{t("days")}</p>
           </div>
@@ -337,18 +330,16 @@ export function CalfMilkFeedingCard({
           ))}
         </div>
       )}
-      {serverPlan && (
-        <p
-          className="mt-2 ml-1"
-          style={{
-            color: COLORS.darkSilver,
-            fontSize: 11,
-            fontStyle: "italic",
-          }}
-        >
-          {t("Plan from server. Adjust with vet guidance.")}
-        </p>
-      )}
+      <p
+        className="mt-2 ml-1"
+        style={{
+          color: COLORS.darkSilver,
+          fontSize: 11,
+          fontStyle: "italic",
+        }}
+      >
+        {t("Plan from server. Adjust with vet guidance.")}
+      </p>
     </SCard>
   );
 }

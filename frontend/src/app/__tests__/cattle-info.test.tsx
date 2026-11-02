@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within, act } from "@testing-library/react";
 
-const { push, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields } =
-  vi.hoisted(() => ({
-    push: vi.fn(),
-    getCountries: vi.fn(),
-    getUserReports: vi.fn(),
-    getSimulationDetails: vi.fn(),
-    getCattleInfoFields: vi.fn(),
-  }));
+const {
+  push,
+  getCountries,
+  getUserReports,
+  getSimulationDetails,
+  getCattleInfoFields,
+  recommendDiet,
+} = vi.hoisted(() => ({
+  push: vi.fn(),
+  getCountries: vi.fn(),
+  getUserReports: vi.fn(),
+  getSimulationDetails: vi.fn(),
+  getCattleInfoFields: vi.fn(),
+  recommendDiet: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, back: vi.fn(), replace: vi.fn() }),
@@ -16,7 +23,14 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields };
+  return {
+    ...actual,
+    getCountries,
+    getUserReports,
+    getSimulationDetails,
+    getCattleInfoFields,
+    recommendDiet,
+  };
 });
 
 import CattleInfoPage from "@/app/(main)/cattle-info/page";
@@ -200,6 +214,7 @@ const countries = [
 
 beforeEach(() => {
   push.mockClear();
+  recommendDiet.mockReset();
   getCountries.mockReset();
   getUserReports.mockReset();
   getSimulationDetails.mockReset();
@@ -1224,13 +1239,24 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     const continueBtn = screen.getByRole("button", { name: "Continue" });
     expect(continueBtn).toBeDisabled();
 
-    // …in range, it submits BW plus the spec defaults for everything hidden
-    // and goes straight to the milk plan (QA row 8).
+    // …in range, it submits BW plus the spec defaults for everything hidden,
+    // asks the backend for the milk plan (W13) and goes straight to it (QA
+    // row 8).
+    const answer = { report_id: "rec-1", calf_milk_feeding_plan: { daily_milk_volume_l: 5.5 } };
+    recommendDiet.mockResolvedValueOnce({ data: answer });
     fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "55" } });
     expect(continueBtn).not.toBeDisabled();
     fireEvent.click(continueBtn);
-    expect(push).toHaveBeenCalledWith("/calf-plan");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/calf-plan"));
     expect(push).not.toHaveBeenCalledWith("/feed-selection");
+    // Same endpoint as a cow's run, with no feeds and no diet limits.
+    expect(recommendDiet).toHaveBeenCalledTimes(1);
+    const body = recommendDiet.mock.calls[0]![0];
+    expect(body.feed_selection).toEqual([]);
+    expect(body).not.toHaveProperty("base_thresholds");
+    expect(body.cattle_info).toMatchObject({ physiological_state: "Baby Calf/Heifer" });
+    expect(useStore.getState().reportData).toMatchObject({ ...answer, mode: "recommendation" });
+    expect(useStore.getState().reportInputs?.feedSelections).toEqual([]);
     const ci = useStore.getState().cattleInfo!;
     expect(ci).toMatchObject({
       animal_category: "Baby Calf/Heifer",
@@ -1244,6 +1270,30 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
       parity: 0,
       milk_price: null,
     });
+  });
+
+  it("a calf run that fails stays on Cattle Info and says why (W13)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    recommendDiet.mockRejectedValueOnce(
+      Object.assign(new Error("Too many requests"), { status: 429 })
+    );
+    render(<CattleInfoPage />);
+    await formReady();
+    fillSimulationName();
+    await selectCountry("India");
+    await pickCategory("Baby calves/heifers");
+    await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("40"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Too many requests",
+        type: "error",
+      })
+    );
+    expect(push).not.toHaveBeenCalledWith("/calf-plan");
+    expect(screen.queryByText("Generating your report")).toBeNull();
   });
 
   it("hidden fields go out as their default, not what the previous state left in the form", async () => {
