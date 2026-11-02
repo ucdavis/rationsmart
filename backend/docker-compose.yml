@@ -24,7 +24,7 @@ name: rationsmart
 # overridden here on purpose: .env.example's localhost value is not Redis from inside a container.
 
 x-backend-image: &backend-image
-  image: ${IMAGE_REGISTRY:-ghcr.io/ucdavis}/rationsmart-api:${IMAGE_TAG:-latest}
+  image: ${IMAGE_REGISTRY:-ghcr.io/your-org}/rationsmart-api:${IMAGE_TAG:-latest}
   build: .
 
 services:

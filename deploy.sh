@@ -16,7 +16,7 @@
 # Environment knobs:
 #   EXPECT_DB=<name>       refuse to run unless backend/.env points at this database
 #   IMAGE_TAG=<tag>        registry tag to pull (default: latest)
-#   IMAGE_REGISTRY=<repo>  registry namespace (default: ghcr.io/ucdavis)
+#   IMAGE_REGISTRY=<repo>  registry namespace (default: ghcr.io/your-org, a placeholder: set your own to pull images)
 #   FORCE_BUILD=1          skip the registry pull and build from source
 #   SKIP_GIT_PULL=1        do not `git pull --ff-only` first
 #   SKIP_BACKUP=1          skip the pre-deploy pg_dump (not recommended)

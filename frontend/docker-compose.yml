@@ -14,7 +14,7 @@ services:
       context: .
       args:
         DISABLE_PWA: ${DISABLE_PWA:-}
-    image: ${IMAGE_REGISTRY:-ghcr.io/ucdavis}/rationsmart-pwa:${IMAGE_TAG:-latest}
+    image: ${IMAGE_REGISTRY:-ghcr.io/your-org}/rationsmart-pwa:${IMAGE_TAG:-latest}
     restart: unless-stopped
     networks:
       - edge
