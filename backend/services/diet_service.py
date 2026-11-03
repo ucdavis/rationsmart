@@ -713,8 +713,16 @@ async def run_diet_recommendation(
         user_id=_uuid_mod.UUID(user_id),
         country_id=_uuid_mod.UUID(country_id) if country_id else None,
         animal_inputs=animal_inputs,
+        # The inclusion limits go with each feed, as typed (kg/day as fed; null = none),
+        # so a reloaded simulation re-runs the same diet. Rows from before this change
+        # have no limit keys: their limits were never stored.
         feed_selection=[
-            {"feed_id": f["feed_id"], "price_per_kg": f["price_per_kg"]}
+            {
+                "feed_id": f["feed_id"],
+                "price_per_kg": f["price_per_kg"],
+                "min_kg_asfed": f.get("fd_min"),
+                "max_kg_asfed": f.get("fd_max"),
+            }
             for f in feed_data_list
         ],
         custom_constraints=persisted_thresholds,
