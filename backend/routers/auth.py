@@ -1,9 +1,9 @@
 import logging
 from collections import defaultdict
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 import jwt
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
@@ -80,7 +80,7 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
     """
     Create a new RationSmart user account and send an email verification link.
 
-    **Mandatory fields:** `name`, `email_id`, `pin` (6-digit), `country_id` (UUID — get valid IDs from `GET /v1/auth/countries`).
+    **Mandatory fields:** `name`, `email_id`, `pin` (6-digit), `country_id` (UUID — any country from `GET /v1/auth/countries?scope=all`; it need not be enabled).
 
     The account remains inactive until the user clicks the verification link sent to their email.
     Login returns `403` until email is confirmed.
@@ -197,16 +197,36 @@ async def logout(credentials: Optional[HTTPAuthorizationCredentials] = Depends(_
     return LogoutResponse(success=True, message="Logged out")
 
 
-@router.get("/countries", response_model=List[Country], summary="List all supported countries")
-async def get_countries(db: AsyncSession = Depends(get_db)):
+def _countries_limit_exempt(request: Request) -> bool:
+    # Only the full list is limited: the enabled list is fetched on every Cattle Info,
+    # login and Feed Selection visit, and all PWA traffic reaches us from the proxy's
+    # one IP, so a limit on it would throttle every user together.
+    return request.query_params.get("scope") != "all"
+
+
+@router.get("/countries", response_model=List[Country], summary="List countries (enabled, or all)")
+@limiter.limit("30/minute", exempt_when=_countries_limit_exempt)
+async def get_countries(
+    request: Request,
+    scope: Literal["enabled", "all"] = Query(
+        "enabled",
+        description="`enabled` (default): countries open for simulations (Cattle Info). "
+                    "`all`: every country, for registration and the profile.",
+    ),
+    db: AsyncSession = Depends(get_db),
+):
     """
-    Return the full list of countries supported by RationSmart.
+    List countries. By default only the **enabled** ones (`is_active`), which are the
+    countries a simulation can run for. `scope=all` lists every country, so a user from
+    a country that isn't enabled (e.g. a researcher) can register with it.
 
     Use the returned `id` (UUID) as `country_id` when registering a user or filtering feeds.
-    Each country includes `supported_languages` — the language codes available in that country.
-    No authentication required.
+    Each country includes `supported_languages` — the language codes available in that country
+    (usually empty for a country that isn't enabled, which leaves English).
+    No authentication required. `scope=all` is limited to 30 requests per minute per IP (429 above).
     """
-    countries = await UserRepository(db).get_all_countries()
+    repo = UserRepository(db)
+    countries = await (repo.get_all_countries_unfiltered() if scope == "all" else repo.get_all_countries())
 
     # Batch-load country↔language assignments to avoid N+1 queries
     cl_rows = (await db.execute(select(CountryLanguage))).scalars().all()
@@ -262,7 +282,7 @@ async def update_user(
 
     **Path parameter:** `email_id` — the caller's own email address.
 
-    **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries`),
+    **Optional body fields:** `name` (string), `country_id` (UUID from `GET /v1/auth/countries?scope=all`; any country),
     `preferred_language` (BCP 47 code from `GET /v1/auth/countries`).
     Omit a field to leave it unchanged.
 
@@ -430,31 +450,64 @@ async def verify_email(body: VerifyEmailRequest, db: AsyncSession = Depends(get_
     }
 
 
+RESEND_VERIFICATION_SENT_MESSAGE = (
+    "If this email is registered and not yet verified, a new verification link has been sent to it."
+)
+
+
 @router.post("/resend-verification", summary="Resend the email verification link")
-async def resend_verification(body: ResendVerificationRequest, db: AsyncSession = Depends(get_db)):
+async def resend_verification(body: ResendVerificationRequest, background_tasks: BackgroundTasks):
     """
     Issue a new one-time verification token and resend the activation email.
 
     **Mandatory field:** `email_id`.
 
     Use when the original verification email expired or was not received.
-    Returns `400` if the account does not exist or is already verified.
+    Always answers `200` with the same message — for an unknown address, an account
+    that is already verified, during the cooldown, and when the email can't be sent — so
+    the endpoint can't be used to find out which emails are registered. The account
+    lookup and the email run after the reply has gone out, so the response time doesn't
+    tell them apart either. The new link replaces the old one only once its email has gone out.
+    One email per address per minute (`pin_reset_cooldown`, scope `verify_resend`). There
+    is deliberately no per-IP limit: PWA traffic arrives from the proxy's one address, so
+    one caller could use it up and block resends for every PWA user.
     """
-    new_token, error = await auth_service.resend_verification(db, body.email_id)
-    if not new_token:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
+    neutral = {"success": True, "message": RESEND_VERIFICATION_SENT_MESSAGE}
+    if not email_service.is_configured:
+        # Email would only be simulated: a new token now would silently void the old link.
+        logger.warning("Resend verification: SMTP is not configured; link left unchanged")
+        return neutral
+    if await pin_reset_cooldown.claim(body.email_id, scope=pin_reset_cooldown.VERIFY_RESEND):
+        background_tasks.add_task(send_verification_resend, body.email_id)
+    return neutral
 
-    user = await UserRepository(db).get_by_email(body.email_id)
-    sent, send_err = await email_service.send_verification_email(
-        to_email=user.email_id, user_name=user.name, token=new_token
-    )
-    if not sent:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Could not send verification email: {send_err}",
-        )
-    await db.commit()
-    return {"success": True, "message": "Verification email resent. Please check your inbox."}
+
+async def send_verification_resend(email_id: str) -> None:
+    """Background part of POST /resend-verification, after the reply has been sent.
+
+    Uses its own session: the request's session is closed by now (same pattern as
+    report_service.generate_and_upload_pdf). Unknown or verified address: nothing happens.
+    The new token is committed only after its email went out; on a failed send it is
+    rolled back, so the previous link keeps working.
+    """
+    from app.db.session import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as db:
+            new_token, _error = await auth_service.resend_verification(db, email_id)
+            if not new_token:
+                return
+            user = await UserRepository(db).get_by_email(email_id)
+            sent, send_err = await email_service.send_verification_email(
+                to_email=user.email_id, user_name=user.name, token=new_token
+            )
+            if not sent:
+                logger.error("Resend verification: email failed (%s); new link undone", send_err)
+                await db.rollback()
+                return
+            await db.commit()
+    except Exception:
+        logger.exception("Resend verification: background job failed")
 
 
 @router.get("/email-config", summary="Check email service configuration (diagnostic)")

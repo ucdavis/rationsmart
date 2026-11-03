@@ -1232,10 +1232,11 @@ async def toggle_country_status(
 
     **Mandatory body field:** `action` — `"enable"` to activate, `"disable"` to deactivate.
 
-    A deactivated country is hidden from `GET /v1/auth/countries` (registration and
-    profile screens) and from the admin country list. Existing users, feeds, and
-    reports referencing the country are unaffected. Returns `404` if the country
-    is not found.
+    A deactivated country is hidden from `GET /v1/auth/countries` (the Cattle Info
+    country list) and from the admin country list; it stays in
+    `GET /v1/auth/countries?scope=all` (registration and profile screens). Existing
+    users, feeds, and reports referencing the country are unaffected. Returns `404`
+    if the country is not found.
     """
     repo = UserRepository(db)
     country = await repo.get_country_by_id(country_id)
@@ -1575,6 +1576,9 @@ async def run_feed_sync_from_file(
     fetch to decouple from, so the finished result is returned directly,
     same shape as `GET /feed-sync/logs/{log_id}`.
 
+    A run that failed as a whole (e.g. a mandatory column is missing) still answers
+    `200`, with `status: "failed"`, `success: false` and the reason in `error_message`.
+
     Errors: `400` bad file extension · `409` a sync run is already in progress.
     """
     if not file.filename or not file.filename.endswith((".xlsx", ".xls")):
@@ -1595,8 +1599,10 @@ async def run_feed_sync_from_file(
         )
 
     log = await FeedSyncRepository(db).get_log(result["log_id"])
+    # `success` reports the import, not the request: a failed run used to come back as
+    # success=true, and the PWA showed it as a green "Processed 0 rows" (W6).
     return FeedSyncLogDetailResponse(
-        success=True,
+        success=log.status != "failed",
         **_sync_log_item(log).model_dump(),
         error_message=log.error_message,
         failed_rows=log.failed_rows,

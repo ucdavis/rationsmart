@@ -26,7 +26,7 @@ from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_
 
 # Import from utilities
 from .report_text import NOTE_SECTION_LABELS, text_direction, translate_message, translator
-from .utilities import milk_margin_message
+from .utilities import CALF_CARE_NOTES, CALF_WEANING_AGE_DAYS, CALF_WEANING_TEXT, milk_margin_message
 from .diet_tables import forage_concentrate_ratio_from_proportions
 
 # Purpose: Compute weighted mineral absorption coefficients from forage/concentrate totals.
@@ -1818,6 +1818,8 @@ def rsm_generate_report_v2(
             f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Milk Feeding Schedule')}</h2>",
             calf_table_html,
             f"<p class='footnote'>{h('Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a baby calf.')}</p>",
+            f"<p class='footnote'>{h(CALF_WEANING_TEXT, days=CALF_WEANING_AGE_DAYS)}</p>",
+            *(f"<p class='footnote'>{h(note)}</p>" for note in CALF_CARE_NOTES),
             "</div>",
             f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>{h('Animal Information')}</h2>",
             "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",

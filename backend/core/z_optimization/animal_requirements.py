@@ -204,8 +204,10 @@ def rsm_calculate_an_requirements(animal_inputs):
     # Feed recomendation end here and report can be displayed as following:
 
     if An_StatePhys == "Baby Calf/Heifer":
-        # Round each feeding up to 0.1 L so the calf is never fed below target.
-        milk_morning = float(np.ceil(Trg_Dt_DMIn / 2 * 10) / 10)
+        # Round each feeding up to 0.1 L so the calf is never fed below target. Round to
+        # 6 places first: 0.10 * 46 is 4.6000000000000005 in floating point, and a bare
+        # ceil turned that 2.3 L feeding into 2.4 L (same guard as the PWA's calf-milk.ts).
+        milk_morning = float(np.ceil(round(Trg_Dt_DMIn / 2 * 10, 6)) / 10)
         milk_evening = milk_morning
         milk_total = round(milk_morning + milk_evening, 1)
     else:
