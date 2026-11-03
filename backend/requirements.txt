@@ -44,7 +44,7 @@ langcodes==3.5.1
 slowapi>=0.1.10
 
 # ── AWS ───────────────────────────────────────────────────────────────────────
-boto3==1.43.118
+boto3==1.43.120
 
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
 weasyprint==63.1
@@ -106,7 +106,7 @@ about-time==4.2.1
 
 # ── Testing ───────────────────────────────────────────────────────────────────
 pytest>=9.1.1
-pytest-asyncio>=1.4.0
+pytest-asyncio>=1.4.1
 iniconfig==2.3.1
 pluggy==1.7.0
 
