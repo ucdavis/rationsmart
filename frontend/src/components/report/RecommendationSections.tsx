@@ -13,6 +13,7 @@ import {
 } from "@/components/Icons";
 import { COLORS } from "@/lib/colors";
 import EnvironmentalImpactSection from "./EnvironmentalImpactSection";
+import UserLimitsCard from "./UserLimitsCard";
 import type { CostEffectiveDiet } from "@/lib/api";
 
 import type { RecommendationResponse } from "@/lib/api-client/models";
@@ -310,6 +311,10 @@ export default function RecommendationSections({
             ))}
           </SCard>
         )}
+
+      {/* Limits You Set (N3) — shown even when the diet is hidden, so the
+                user can see which limits may have made it impossible. */}
+      <UserLimitsCard userLimits={recReport.user_limits} t={t} />
 
       {/* Environmental Impact — also hidden when diet rating is ERROR_*. */}
       {showSolutionSections && (
