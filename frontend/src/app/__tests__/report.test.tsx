@@ -434,6 +434,17 @@ describe("Report — currency rendering (raw suffix, real priority order)", () =
     expect(screen.getByText("120.50 PHP")).toBeInTheDocument();
   });
 
+  it("a recommendation is shown in the simulation country's currency, not the profile's (CAT-01-C)", () => {
+    useStore.setState({
+      user: seedUser({ currency: "INR" }),
+      reportData: makeRecResponse(),
+      reportInputs: { cattleInfo: baseCattleInfo({ currency: "ETB" }), feedSelections: [] },
+    });
+    render(<ReportPage />);
+    expect(screen.getAllByText(/ETB/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/INR/)).toBeNull();
+  });
+
   it("renders as a raw code suffix — never an Intl.NumberFormat currency glyph", () => {
     useStore.setState({
       user: seedUser({ currency: "VND" }),

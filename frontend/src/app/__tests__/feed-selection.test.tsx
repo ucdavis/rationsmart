@@ -798,7 +798,6 @@ describe("feed-selection — generateReport payloads", () => {
     expect(evaluateDiet).toHaveBeenCalledWith({
       user_id: "u-1",
       country_id: cattleInfo.country_id,
-      currency: "INR",
       simulation_id: `${cattleInfo.simulation_name} (Evaluation)`,
       cattle_info: toCattleInfoPayload(cattleInfo),
       feed_evaluation: [{ feed_id: "uuid-forage-1", quantity_as_fed: 3, price_per_kg: 10 }],
@@ -825,27 +824,8 @@ describe("feed-selection — generateReport payloads", () => {
     expect(evaluateDiet).not.toHaveBeenCalled();
   });
 
-  it("derives a missing currency from the simulation's country (audit D-03)", async () => {
+  it("evaluates without a currency even when the profile has none (F8)", async () => {
     evaluateDiet.mockResolvedValueOnce({ data: { report_id: "EVAL-2" } });
-    const cattleInfo = mkCattleInfo();
-    getCountries.mockResolvedValueOnce({
-      data: [{ id: cattleInfo.country_id, name: "X", currency: "KES" }],
-    });
-    useStore.setState({
-      feedSelectionType: "evaluation",
-      cattleInfo,
-      feedSelections: [mkValidForageRow({ quantity_kg: 3 })],
-      user: seedUser({ currency: "" }),
-    });
-    await renderReady();
-    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
-    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
-    expect(evaluateDiet.mock.calls[0][0].currency).toBe("KES");
-    expect(useStore.getState().user?.currency).toBe("KES");
-  });
-
-  it("refuses to price the diet when no currency can be found — never silently USD", async () => {
-    getCountries.mockResolvedValueOnce({ data: [] });
     useStore.setState({
       feedSelectionType: "evaluation",
       cattleInfo: mkCattleInfo(),
@@ -854,8 +834,21 @@ describe("feed-selection — generateReport payloads", () => {
     });
     await renderReady();
     fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
-    await waitFor(() => expect(useStore.getState().snackbar?.type).toBe("error"));
-    expect(evaluateDiet).not.toHaveBeenCalled();
+    // The backend prices it in the currency of country_id.
+    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
+    expect(evaluateDiet.mock.calls[0][0]).not.toHaveProperty("currency");
+    expect(getCountries).not.toHaveBeenCalled();
+  });
+
+  it("prices feeds in the simulation country's currency, not the profile's (CAT-01-C)", async () => {
+    useStore.setState({
+      cattleInfo: { ...mkCattleInfo(), currency: "VND" },
+      feedSelections: [mkValidForageRow()],
+      user: seedUser({ currency: "INR" }),
+    });
+    await renderReady();
+    expect(screen.getAllByText("Price VND/KG").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Price INR/KG")).toBeNull();
   });
 
   // CONTRACT CHANGE 2026-09-21: we no longer merge a hardcoded copy of

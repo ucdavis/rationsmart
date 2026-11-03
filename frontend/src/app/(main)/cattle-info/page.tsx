@@ -56,7 +56,6 @@ export default function CattleInfoPage() {
     cattleInfo,
     setCattleInfo,
     user,
-    setUser,
     showSnackbar,
     reportData,
     reportInputs,
@@ -71,7 +70,6 @@ export default function CattleInfoPage() {
     cattleInfo: s.cattleInfo,
     setCattleInfo: s.setCattleInfo,
     user: s.user,
-    setUser: s.setUser,
     showSnackbar: s.showSnackbar,
     reportData: s.reportData,
     reportInputs: s.reportInputs,
@@ -196,8 +194,18 @@ export default function CattleInfoPage() {
     const { t } = effectInputs1.current;
     getCountries()
       .then((res) => {
-        const data = res.data;
-        setCountries(Array.isArray(data) ? data : []);
+        const list = Array.isArray(res.data) ? res.data : [];
+        setCountries(list);
+        // Only enabled countries can be simulated. The form is pre-filled
+        // with the profile country, which may not be one (Register offers
+        // every country) — then it starts empty.
+        if (list.length > 0) {
+          setForm((prev) =>
+            !prev.country_id || list.some((c) => String(c.id) === prev.country_id)
+              ? prev
+              : { ...prev, country_id: "", country_name: "" }
+          );
+        }
       })
       .catch(() => showSnackbar(t("Could not load countries"), "error"))
       .finally(() => setLoadingCountries(false));
@@ -325,6 +333,7 @@ export default function CattleInfoPage() {
         simulation_name: "",
         country: matchedCountry?.name ?? details.country_name ?? "",
         country_id: matchedCountry ? String(matchedCountry.id) : "",
+        currency: matchedCountry?.currency ?? null,
       });
 
       showSnackbar(t("Simulation loaded successfully"), "success");
@@ -356,31 +365,15 @@ export default function CattleInfoPage() {
   const handleContinue = () => {
     if (!requiredFilled || calfRun.isRunning) return;
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
-    // Sync the user's active currency / country code with the country
-    // they just picked. Without this, feed-selection / report would
-    // keep showing the currency that was set at login (e.g. user logs
-    // in as Vietnam → switches to India here → feed-selection still
-    // reads user.currency = "VND" → labels stay "Price VND/KG").
-    if (
-      user &&
-      selectedCountry &&
-      (selectedCountry.currency !== user.currency ||
-        String(selectedCountry.id) !== String(user.country_id))
-    ) {
-      setUser({
-        ...user,
-        country_id: String(selectedCountry.id),
-        country: selectedCountry.name,
-        country_code: selectedCountry.country_code ?? selectedCountry.code ?? user.country_code,
-        currency: selectedCountry.currency ?? user.currency,
-      });
-    }
     // FE-1 / D4: hidden fields go out as the spec default, never whatever
     // an earlier state left in the form.
     const submitForm = specs ? withHiddenDefaults(form, specs) : form;
     const nextInfo = {
       ...formToCattleInfo(submitForm, null),
       country: selectedCountry?.name ?? form.country_name,
+      // The simulation's currency goes with the simulation; the profile
+      // (`user`) keeps the user's own country (O4).
+      currency: selectedCountry?.currency ?? null,
       // i18n V2 — per-simulation language override. An explicit pick
       // (form.simulation_language set) is always valid for this country
       // since the dropdown only ever offers valid options — save it
@@ -424,10 +417,11 @@ export default function CattleInfoPage() {
     // instantly (form fields go back to defaults, selection lists
     // empty). The spinner just holds visible for a moment so the user
     // gets clear feedback that Reset ran.
+    const profileEnabled = countries.some((c) => String(c.id) === String(user?.country_id));
     const resetForm: FormState = {
       ...EMPTY_FORM,
-      country_id: String(user?.country_id ?? ""),
-      country_name: user?.country ?? "",
+      country_id: profileEnabled ? String(user?.country_id ?? "") : "",
+      country_name: profileEnabled ? (user?.country ?? "") : "",
       // EMPTY_FORM.simulation_language is already null; being explicit
       // here so a future edit of EMPTY_FORM can't silently break Reset.
       simulation_language: null,
@@ -494,7 +488,7 @@ export default function CattleInfoPage() {
           adjusted={adjusted}
           setAdjusted={setAdjusted}
           fieldsLoading={fieldsLoading}
-          currency={user?.currency}
+          currency={selectedCountryForLang?.currency ?? undefined}
           t={t}
         />
       </div>

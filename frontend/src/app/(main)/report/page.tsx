@@ -31,7 +31,7 @@ import type {
   FeedBreakdown,
   CostEffectiveDiet,
 } from "@/lib/api";
-import { sumMoney } from "@/lib/money";
+import { simulationCurrency, sumMoney } from "@/lib/money";
 
 export default function ReportPage() {
   const router = useRouter();
@@ -100,7 +100,7 @@ export default function ReportPage() {
       }
     : buildReportContext(cattleInfo?.animal_category);
 
-  // Use the user's / report's currency CODE (PHP / INR / VND / …)
+  // Use the report's / simulation's currency CODE (PHP / INR / VND / …)
   // directly. Android renders totals as e.g. "108,199.8 VND" — value
   // with the code as a suffix — rather than swapping in a glyph.
   const currencySymbol = (() => {
@@ -109,9 +109,9 @@ export default function ReportPage() {
       (reportData as EvaluationResponse)?.currency ??
       null;
     // The report's own currency wins: a restored report was priced in the
-    // currency it was generated with, which may differ from the profile's
-    // current one (audit B-05, and CLAUDE.md §5 order).
-    return reportCurrency || user?.currency || "";
+    // currency it was generated with (audit B-05, and CLAUDE.md §5 order).
+    // Then the currency of the country this run was for (CAT-01-C).
+    return reportCurrency || simulationCurrency(cattleInfo, user);
   })();
   const currencySuffix = currencySymbol ? ` ${currencySymbol}` : "";
 
@@ -411,7 +411,6 @@ export default function ReportPage() {
             showSolutionSections={showSolutionSections}
             softLimitNotes={softLimitNotes}
             t={t}
-            user={user}
           />
         )}
       </div>

@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const { back, getAdminUsers, toggleUserStatus } = vi.hoisted(() => ({
+const { back, getAdminUsers, toggleUserStatus, listAllCountries } = vi.hoisted(() => ({
   back: vi.fn(),
   getAdminUsers: vi.fn(),
   toggleUserStatus: vi.fn(),
+  listAllCountries: vi.fn(),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -13,7 +14,7 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, getAdminUsers, toggleUserStatus };
+  return { ...actual, getAdminUsers, toggleUserStatus, listAllCountries };
 });
 
 import AdminUsersPage from "@/app/(main)/admin/users/page";
@@ -59,6 +60,15 @@ beforeEach(() => {
   back.mockClear();
   getAdminUsers.mockReset();
   toggleUserStatus.mockReset();
+  // Every country, enabled or not (India isn't enabled on Test).
+  listAllCountries.mockReset().mockResolvedValue({
+    data: {
+      countries: [
+        { id: "2", name: "Vietnam", is_active: true },
+        { id: "1", name: "India", is_active: false },
+      ],
+    },
+  });
   useStore.setState({
     user: seedAdmin(),
     cattleInfo: null,
@@ -67,6 +77,29 @@ beforeEach(() => {
     reportData: null,
     dietLimits: {},
     snackbar: null,
+  });
+});
+
+describe("Admin Users — country filter (K8)", () => {
+  it("opens on the admin's own country, even one that isn't enabled, and says so", async () => {
+    getAdminUsers.mockResolvedValue({ data: { users: [mkUser()], total_count: 1 } });
+    render(<AdminUsersPage />);
+    await waitFor(() => expect(listAllCountries).toHaveBeenCalled());
+    // The dropdown shows the scope the list was fetched with.
+    expect(await screen.findByRole("button", { name: /India/ })).toBeInTheDocument();
+    await waitFor(() =>
+      expect(getAdminUsers).toHaveBeenLastCalledWith("admin-1", 1, 100, "India", "", "")
+    );
+  });
+
+  it("falls back to All Countries when the country list can't load", async () => {
+    listAllCountries.mockReset().mockRejectedValue(new Error("Network Error"));
+    getAdminUsers.mockResolvedValue({ data: { users: [], total_count: 0 } });
+    render(<AdminUsersPage />);
+    await waitFor(() =>
+      expect(getAdminUsers).toHaveBeenLastCalledWith("admin-1", 1, 100, "", "", "")
+    );
+    expect(screen.getByRole("button", { name: /All Countries/ })).toBeInTheDocument();
   });
 });
 

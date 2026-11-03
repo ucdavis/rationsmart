@@ -121,6 +121,12 @@ describe("getCountries", () => {
     expect(mockApi.get).toHaveBeenCalledWith("/v1/auth/countries");
     expect(res.data).toEqual(countries);
   });
+
+  it('asks for every country with scope "all" (Register, Profile)', async () => {
+    mockApi.get.mockResolvedValueOnce({ data: [] });
+    await getCountries("all");
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/auth/countries", { params: { scope: "all" } });
+  });
 });
 
 describe("getUserProfile", () => {

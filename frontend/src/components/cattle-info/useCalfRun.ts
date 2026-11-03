@@ -18,8 +18,6 @@ export function useCalfRun(translate: (s: string) => string) {
   const [isRunning, setIsRunning] = useState(false);
 
   const run = async (cattleInfo: CattleInfo) => {
-    // Read the user at call time: Continue may have just switched the
-    // user's country to the one picked on the form.
     const { user, setReportData, showSnackbar } = useStore.getState();
     if (!user) return;
     setIsRunning(true);

@@ -24,3 +24,15 @@ export function roundMoney(v: unknown): number {
 export function formatMoney(v: unknown): string {
   return roundMoney(v).toFixed(2);
 }
+
+/**
+ * The currency code every price on Feed Selection and the report is shown in:
+ * the simulation country's (CAT-01-C), set on Cattle Info → Continue. A form
+ * persisted by an older build has none, so it falls back to the profile's.
+ */
+export function simulationCurrency(
+  cattleInfo: { currency?: string | null } | null | undefined,
+  user: { currency?: string | null } | null | undefined
+): string {
+  return cattleInfo?.currency || user?.currency || "";
+}

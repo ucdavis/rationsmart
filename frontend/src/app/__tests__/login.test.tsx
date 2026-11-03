@@ -181,28 +181,29 @@ describe("Login — successful path", () => {
     expect(useStore.getState().user?.token).toBe("jwt-xyz");
   });
 
-  it("resolves country_id + currency from getCountries lookup", async () => {
+  it("takes the currency from the login response's country, even one that isn't enabled (F6)", async () => {
     login.mockResolvedValueOnce({
       data: {
-        user: { id: "u", email_id: "x@x.com", country_id: "5" },
+        user: {
+          id: "u",
+          email_id: "x@x.com",
+          country_id: "5",
+          country: { id: "5", name: "India", currency: "INR" },
+        },
         token: { access_token: "t" },
       },
     });
     getUserProfile.mockResolvedValueOnce({ data: {} });
-    getCountries.mockResolvedValueOnce({
-      data: [
-        { id: "1", currency: "INR" },
-        { id: "5", currency: "VND" },
-      ],
-    });
 
     render(<LoginPage />);
     await fillForm();
     fireEvent.click(screen.getByRole("button", { name: /Proceed/ }));
     await waitFor(() => expect(replace).toHaveBeenCalled());
 
-    expect(useStore.getState().user?.currency).toBe("VND");
+    expect(useStore.getState().user?.currency).toBe("INR");
     expect(useStore.getState().user?.country_id).toBe("5");
+    // The enabled-country list isn't searched any more.
+    expect(getCountries).not.toHaveBeenCalled();
   });
 });
 

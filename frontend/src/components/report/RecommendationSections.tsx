@@ -17,7 +17,6 @@ import type { CostEffectiveDiet } from "@/lib/api";
 
 import type { RecommendationResponse } from "@/lib/api-client/models";
 import type { ReportContext } from "@/components/report/parts";
-import type { User } from "@/lib/store";
 
 import type { BannerTheme } from "@/components/report/parts";
 import { formatMoney } from "@/lib/money";
@@ -43,7 +42,6 @@ export interface RecommendationSectionsProps {
   showSolutionSections: boolean;
   softLimitNotes: string[];
   t: (source: string) => string;
-  user: User | null;
 }
 
 export default function RecommendationSections({
@@ -63,7 +61,6 @@ export default function RecommendationSections({
   showSolutionSections,
   softLimitNotes,
   t,
-  user,
 }: RecommendationSectionsProps) {
   return (
     <>
@@ -232,7 +229,7 @@ export default function RecommendationSections({
                   {t("Total Diet Cost")}
                 </span>
                 <span className="font-bold" style={{ color: COLORS.crayolaGreen, fontSize: 16 }}>
-                  {fmt(recTotalCost)} {user?.currency || ""}
+                  {fmt(recTotalCost)} {currencySymbol}
                 </span>
               </div>
             }

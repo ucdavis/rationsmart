@@ -506,34 +506,8 @@ describe("Cattle Info — requiredFilled gate (Continue to Feed)", () => {
   });
 });
 
-describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
-  it("calls setUser with the newly-selected country's currency/country_code BEFORE navigating to /feed-selection", async () => {
-    getCountries.mockResolvedValueOnce({ data: countries });
-    useStore.setState({
-      user: seedUser({ country_id: "1", country: "India", country_code: "IN", currency: "INR" }),
-    });
-    render(<CattleInfoPage />);
-    // The whole form now renders behind a loading skeleton until
-    // getCountries resolves (see CattleInfoSkeleton) — wait for a
-    // real-form-only marker (absent from the skeleton) before
-    // interacting with any field.
-    await formReady();
-
-    await fillBaselineRequired("Vietnam");
-
-    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
-    await waitFor(() => expect(continueBtn).not.toBeDisabled());
-    fireEvent.click(continueBtn);
-
-    expect(push).toHaveBeenCalledWith("/feed-selection");
-    const u = useStore.getState().user!;
-    expect(u.country_id).toBe("2");
-    expect(u.country).toBe("Vietnam");
-    expect(u.country_code).toBe("VN");
-    expect(u.currency).toBe("VND");
-  });
-
-  it("does NOT touch the user object when the country is left unchanged", async () => {
+describe("Cattle Info — simulation country and currency (O4, CAT-01-C, F4)", () => {
+  it("keeps the profile as it is and puts the simulation's currency on cattleInfo (O4)", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     const originalUser = seedUser({
       country_id: "1",
@@ -543,19 +517,48 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
     });
     useStore.setState({ user: originalUser });
     render(<CattleInfoPage />);
-    // The whole form now renders behind a loading skeleton until
-    // getCountries resolves (see CattleInfoSkeleton) — wait for a
-    // real-form-only marker (absent from the skeleton) before
-    // interacting with any field.
     await formReady();
 
-    await fillBaselineRequired("India");
+    await fillBaselineRequired("Vietnam");
     const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
     await waitFor(() => expect(continueBtn).not.toBeDisabled());
     fireEvent.click(continueBtn);
 
     expect(push).toHaveBeenCalledWith("/feed-selection");
     expect(useStore.getState().user).toEqual(originalUser);
+    expect(useStore.getState().cattleInfo).toMatchObject({
+      country_id: "2",
+      country: "Vietnam",
+      currency: "VND",
+    });
+  });
+
+  it("the Milk Price label follows the country picked, at once (CAT-01-C)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "1", country: "India", currency: "INR" }) });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    expect(await screen.findByText("Milk Price (INR/L)")).toBeInTheDocument();
+    await selectCountry("Vietnam");
+    expect(await screen.findByText("Milk Price (VND/L)")).toBeInTheDocument();
+    expect(screen.queryByText(/CURRENCY|\(currency\/L\)/)).toBeNull();
+  });
+
+  it("starts with no country when the profile's isn't enabled (F4)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({
+      user: seedUser({ country_id: "99", country: "Kenya", currency: "KES" }),
+    });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    // No country → no currency on the label, and Continue waits for a pick.
+    expect(await screen.findByText("Milk Price")).toBeInTheDocument();
+    expect(screen.queryByText("Milk Price (KES/L)")).toBeNull();
+    fillSimulationName();
+    await selectMilkFields("3.0", "4.0");
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
   });
 });
 

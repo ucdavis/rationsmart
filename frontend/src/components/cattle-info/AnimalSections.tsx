@@ -347,7 +347,9 @@ export default function AnimalSections({
             )}
 
             {/* Y3 §1.3 — Milk Price input. Optional. Currency suffix comes
-                from the user's selected country. Used by §2.1 margin card.
+                from the simulation country picked above (CAT-01-C); with no
+                country picked yet the label has no currency. Used by §2.1
+                margin card.
                 Translated as a composed string — the dictionary stores the
                 key with a literal "${user.currency}" placeholder (same
                 pattern as the "${N} star" / "${count} TOTAL" keys used
@@ -356,10 +358,9 @@ export default function AnimalSections({
             {isVisible("milk_price") && (
               <>
                 <FieldLabel>
-                  {t("Milk Price (${user.currency}/L)").replace(
-                    "${user.currency}",
-                    currency || "currency"
-                  )}
+                  {currency
+                    ? t("Milk Price (${user.currency}/L)").replace("${user.currency}", currency)
+                    : t("Milk Price")}
                 </FieldLabel>
                 <input
                   aria-label={t("Milk Price")}
