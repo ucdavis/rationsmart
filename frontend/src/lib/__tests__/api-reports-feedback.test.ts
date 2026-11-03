@@ -183,8 +183,11 @@ describe("insertCustomFeed", () => {
         fd_dm: 90,
       },
     };
-    mockApi.post.mockResolvedValueOnce({ data: {} });
-    await insertCustomFeed(body);
+    // The real reply is flat (N2).
+    const reply = { success: true, feed_id: "f-new", fd_name: "My Feed" };
+    mockApi.post.mockResolvedValueOnce({ data: reply });
+    const res = await insertCustomFeed(body);
+    expect(res.data).toEqual(reply);
     expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/custom-feeds", {
       fd_type: "Forage",
       fd_category: "Grass/Legume Forage",

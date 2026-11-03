@@ -88,7 +88,10 @@ beforeEach(() => {
   getFeedSubCategories.mockResolvedValue({ data: { standard_feeds: [], custom_feeds: [] } });
   checkInsertOrUpdate.mockResolvedValue({ data: { action: "update", feed_id: "u1" } });
   getFeedDetails.mockResolvedValue({ data: {} });
-  insertCustomFeed.mockResolvedValue({ data: { feed_details: {} } });
+  // The real reply: the new feed flat at the top level (N2).
+  insertCustomFeed.mockResolvedValue({
+    data: { success: true, feed_id: "copy-uuid", fd_name: "Aiyappa-Copy" },
+  });
   updateCustomFeed.mockResolvedValue({ data: {} });
 
   useStore.setState({
@@ -323,11 +326,13 @@ describe("edit dialog — insert path (§10.8 regression guard)", () => {
       data: { insert_feed: true, feed_details: { feed_name: "Old Feed" } },
     });
     insertCustomFeed.mockResolvedValueOnce({
-      data: { feed_details: { feed_name: "Aiyappa-NewCustomFeed", feed_id: "brand-new-uuid" } },
+      data: { success: true, feed_id: "brand-new-uuid", fd_name: "Aiyappa-NewCustomFeed" },
     });
 
+    let latest = initialItem;
     function Wrapper() {
       const [item, setItem] = useState(initialItem);
+      latest = item;
       return (
         <FeedRow
           item={item}
@@ -363,6 +368,63 @@ describe("edit dialog — insert path (§10.8 regression guard)", () => {
       expect(screen.getByRole("button", { name: "Aiyappa-NewCustomFeed" })).toBeInTheDocument();
     });
     expect(screen.queryByText("Select feed")).not.toBeInTheDocument();
+    // N2: the card is bound to the copy, so the next run uses the edited values.
+    expect(latest.feed_uuid).toBe("brand-new-uuid");
+    expect(useStore.getState().snackbar).toMatchObject({
+      message: "Custom feed saved",
+      type: "success",
+    });
+  });
+
+  it("says so when the save returns no feed id, and keeps the original feed (N2)", async () => {
+    const initialItem = makeItem({
+      feed_type_name: "Concentrate",
+      category_id: 1,
+      category_name: "Grain",
+      feed_uuid: "old-uuid",
+      sub_category_id: 1,
+      sub_category_name: "Old Feed",
+    });
+    getFeedTypes.mockResolvedValueOnce({
+      data: [{ type_name: "Concentrate", display_type: "Concentrate" }],
+    });
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Grain", display_category: "Grain" }],
+    });
+    getFeedSubCategories.mockResolvedValueOnce({
+      data: { standard_feeds: [{ feed_id: "old-uuid", fd_name: "Old Feed" }], custom_feeds: [] },
+    });
+    checkInsertOrUpdate.mockResolvedValueOnce({
+      data: { insert_feed: true, feed_details: { feed_name: "Old Feed" } },
+    });
+    insertCustomFeed.mockResolvedValueOnce({ data: { success: true } });
+    const onUpdate = vi.fn();
+    const { container } = render(
+      <FeedRow
+        item={initialItem}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={() => {}}
+      />
+    );
+    await screen.findByRole("button", { name: "Old Feed" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
+    await screen.findByText("Add Custom Feed");
+    const nameInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "NewCustomFeed" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Saved, but the copy could not be selected. Pick it from the feed list.",
+        type: "error",
+      })
+    );
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      initialItem.id,
+      expect.objectContaining({ feed_uuid: expect.anything() })
+    );
   });
 });
 

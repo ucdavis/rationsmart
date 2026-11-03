@@ -447,12 +447,21 @@ const toCustomFeedWire = (feed_details: Record<string, unknown>) => {
   };
 };
 
+// POST /v1/animal/custom-feeds replies with the new feed flat at the top
+// level — not under `feed_details` (N2).
+export interface CustomFeedSaveResponse {
+  success?: boolean;
+  feed_id?: string;
+  fd_name?: string;
+}
+
 export const insertCustomFeed = (body: {
   country_id: string;
   user_id: string;
   feed_insert: boolean;
   feed_details: Record<string, unknown>;
-}) => api.post("/v1/animal/custom-feeds", toCustomFeedWire(body.feed_details));
+}) =>
+  api.post<CustomFeedSaveResponse>("/v1/animal/custom-feeds", toCustomFeedWire(body.feed_details));
 
 export const updateCustomFeed = (body: {
   country_id: string;

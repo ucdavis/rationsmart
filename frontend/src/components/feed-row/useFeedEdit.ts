@@ -203,15 +203,20 @@ export function useFeedEdit({
           feed_insert: true,
           feed_details,
         });
-        const newName =
-          (res.data?.feed_details?.feed_name as string) ??
-          `${editNamePrefix}${editFeedName.trim()}`;
-        const newId = res.data?.feed_details?.feed_id as string | undefined;
+        // The reply is flat: { success, feed_id, fd_name } (N2). Reading the
+        // old `feed_details` envelope left the card on the shared feed, so
+        // the run used the unedited values.
+        const newName = res.data?.fd_name || `${editNamePrefix}${editFeedName.trim()}`;
+        const newId = res.data?.feed_id;
         if (!newId) {
           // Saved, but the response didn't say which feed_id it got. Don't
           // fall back to the ORIGINAL feed's uuid — the row would show the
-          // new name while still being bound to the old feed (audit B-04).
-          showSnackbar(t("Custom feed saved"), "success");
+          // new name while still being bound to the old feed (audit B-04) —
+          // and don't call it a success: the card still holds the original.
+          showSnackbar(
+            t("Saved, but the copy could not be selected. Pick it from the feed list."),
+            "error"
+          );
           setShowEditModal(false);
           return;
         }
