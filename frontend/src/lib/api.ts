@@ -103,6 +103,7 @@ export {
   getSimulationDetails,
   getUserReports,
   saveReport,
+  requestReportPdf,
   submitFeedback,
 } from "./api-client/reports";
 export type { FeedReport, FeedReportListResponse } from "./api-client/reports";

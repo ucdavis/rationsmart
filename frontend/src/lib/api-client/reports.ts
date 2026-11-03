@@ -6,16 +6,11 @@ import { listFrom } from "./normalize";
 
 // ─── Reports (JWT-protected) ────────────────────────────────────────────────
 
-// Saved PDF reports (Feed Reports screen). v1 exposes TWO endpoints
-// that look related:
-//   GET /v1/animal/reports      → "List saved reports for the authenticated user" (no schema declared)
-//   GET /v1/animal/user-reports → "List ALL saved reports for the authenticated user" (GetUserReportsResponse)
-// User reports the Feed Reports screen is missing the latest entry
-// while the simulation-history modal (which hits /v1/animal/simulations)
-// shows it. Try `/v1/animal/reports` first; if it 404s or returns the
-// wrong shape, fall back to `/v1/animal/user-reports`. The two responses
-// are merged into the same UserReportItem-shaped array so the page
-// code is agnostic.
+// Saved PDF reports (Feed Reports screen): GET /v1/animal/user-reports
+// (GetUserReportsResponse). /v1/animal/reports runs the same backend function
+// (routers/animal.py) and used to be called too and merged; one call is
+// enough (W11). bucket_url is null while the PDF isn't ready —
+// requestReportPdf() below returns or generates it.
 export interface FeedReport {
   report_id: string | null;
   report_type: string | null;
@@ -35,55 +30,26 @@ function extractReportsList(data: unknown): FeedReport[] {
   return listFrom<FeedReport>(data, "reports", "items");
 }
 
-async function fetchReportsFrom(path: string): Promise<{ ok: boolean; list: FeedReport[] }> {
-  try {
-    const res = await api.get(path);
-    return { ok: true, list: extractReportsList(res.data) };
-  } catch {
-    // The axios error interceptor already logged status + URL. Don't log
-    // `err` itself: its config carries the Authorization header (the JWT).
-    return { ok: false, list: [] };
-  }
-}
-
-// Both endpoints have independently been observed in production to be
-// missing entries the other one has — /v1/animal/reports has shown up
-// success:true but without the just-saved report, while
-// /v1/animal/user-reports had it (and vice versa on other accounts).
-// The original single-endpoint-with-catch-fallback here only helped when
-// the primary call actually threw (404/5xx) — a same-shape response that
-// merely omits the newest report never triggered it. Always fetch both
-// and merge, deduped by report_id (falling back to simulation_id for
-// rows the backend returns without an id), so neither endpoint's gaps
-// can hide a saved report from the Feed Reports screen.
 export const getSavedReports = async (_user_id?: string) => {
-  const [primary, fallback] = await Promise.all([
-    fetchReportsFrom("/v1/animal/reports"),
-    fetchReportsFrom("/v1/animal/user-reports"),
-  ]);
-
-  // Only a genuine both-endpoints-failed state is an error worth showing the
-  // user. If either responded (even with an empty list) that's a valid "no
-  // reports yet" — a toast then would be a false alarm. Throwing here lets the
-  // reports page's .catch surface the "Could not load reports" snackbar
-  // (REPORTS-006: previously both-fail resolved success:true → dead catch).
-  if (!primary.ok && !fallback.ok) {
-    throw new Error("Could not load reports");
-  }
-
-  const merged = new Map<string, FeedReport>();
-  [...primary.list, ...fallback.list].forEach((r, i) => {
-    merged.set(r.report_id ?? r.simulation_id ?? `__idx_${i}`, r);
-  });
-
+  const res = await api.get("/v1/animal/user-reports");
   return {
     data: {
-      reports: Array.from(merged.values()),
+      reports: extractReportsList(res.data),
       success: true,
       message: null,
     } as FeedReportListResponse,
   };
 };
+
+// POST /v1/animal/reports/pdf — { report_id, user_id }. Returns the saved
+// report's PDF, rendering it now if the background job hasn't finished or
+// failed. 200 → { bucket_url }; 409 not saved / no content; 404 not found or
+// not this user's; 502 render/upload failed (safe to retry).
+export const requestReportPdf = (report_id: string, user_id: string) =>
+  api.post<{ success?: boolean; message?: string | null; bucket_url?: string | null }>(
+    "/v1/animal/reports/pdf",
+    { report_id, user_id }
+  );
 
 // GET /v1/animal/simulations — simulation history (was POST /fetch-all-simulations)
 export const getUserReports = (_user_id?: string) => api.get("/v1/animal/simulations");

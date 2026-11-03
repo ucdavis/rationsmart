@@ -8,7 +8,10 @@
 // in normally to obtain a Bearer token. This screen guides them.
 //
 // Query params:
-//   ?email=<email>   pre-fills the resend address
+//   ?email=<email>   pre-fills the resend address (the user can type one too)
+//   ?from=login      opened from Login's "Didn't get the verification email?"
+//                    link (F26): Back returns to Login and the copy asks for
+//                    the address instead of saying an email was just sent
 //
 // Actions:
 //   - "Resend verification email" → POST /v1/auth/resend-verification
@@ -38,6 +41,7 @@ function VerifyEmailInner() {
   const t = useT();
 
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
+  const fromLogin = searchParams.get("from") === "login";
   const [isResending, setIsResending] = useState(false);
 
   const isResendReady = isEmailAddressValid(email.trim());
@@ -88,7 +92,7 @@ function VerifyEmailInner() {
         style={{ backgroundColor: "transparent", position: "sticky", top: 0, zIndex: 40 }}
       >
         <button
-          onClick={() => router.replace("/register")}
+          onClick={() => router.replace(fromLogin ? "/login" : "/register")}
           className="flex items-center justify-center rounded-xl bg-white"
           style={{
             width: 40,
@@ -147,9 +151,13 @@ function VerifyEmailInner() {
           className="text-center text-sm mt-2 px-4"
           style={{ color: COLORS.darkSilver, lineHeight: 1.6 }}
         >
-          {t(
-            "We've sent a verification link to your email address. Tap the link to activate your\n          account, then sign in."
-          )}
+          {fromLogin
+            ? t(
+                "Enter the email address you registered with and we'll send you a new verification link."
+              )
+            : t(
+                "We've sent a verification link to your email address. Tap the link to activate your\n          account, then sign in."
+              )}
         </p>
 
         {/* Email field — pre-filled, editable so user can correct typos */}

@@ -69,8 +69,10 @@ export default function RegisterPage() {
     if (!languageOptions.includes(language)) setLanguage("en");
   }, [countryId, language, languageOptions]);
 
+  // Every country, not only the enabled ones: a user (e.g. a researcher)
+  // can be from anywhere (F1).
   useEffect(() => {
-    getCountries()
+    getCountries("all")
       .then((res) => {
         const data = res.data;
         const list: Country[] = Array.isArray(data) ? data : [];

@@ -14,7 +14,6 @@ import {
 
 interface Requester {
   id: string;
-  currency?: string | null;
 }
 
 /** Rows that can be sent: a feed is picked and it has a price. */
@@ -53,10 +52,9 @@ export function buildEvaluationRequest(
 ): EvaluationRequest {
   return {
     user_id: user.id,
+    // No currency: the backend prices the evaluation in the currency of
+    // country_id, the simulation's country.
     country_id: cattleInfo.country_id,
-    // The caller resolves the currency (profile, else the selected country)
-    // and refuses to send without one — no silent "USD" (audit D-03).
-    currency: user.currency ?? "",
     simulation_id: buildDietSimulationId(cattleInfo.simulation_name, true),
     cattle_info: toCattleInfoPayload(cattleInfo),
     feed_evaluation: sendableFeeds(items).map((item) => ({

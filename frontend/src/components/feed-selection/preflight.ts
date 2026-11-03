@@ -4,6 +4,7 @@
 
 import { ANIMAL_CATEGORY_LABELS, DIET_LIMIT_LABELS } from "@/lib/api";
 import type { AnimalCategory, DietLimits, DietThresholdSpec, FeedItem } from "@/lib/api";
+import { taxonomyLabel } from "@/lib/api-client/feeds";
 import { isCompleteDietType, isForageType } from "@/lib/feed-type-aliases";
 import { inclusionBoundIsInvalid, inclusionBoundsCrossed } from "@/lib/validators";
 
@@ -68,7 +69,7 @@ export function generatePreflight({
       // — carries English but the row's Feed dropdown labels come from a
       // different endpoint that translates in place) then to "Feed N".
       const localizedType = item.feed_type_name
-        ? (taxonomyTypes[item.feed_type_name] ?? item.feed_type_name)
+        ? (taxonomyLabel(taxonomyTypes, item.feed_type_name) ?? item.feed_type_name)
         : "";
       return (
         localizedType ||

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { login, getUserProfile, getCountries } from "@/lib/api";
+import { login, getUserProfile } from "@/lib/api";
 import { isEmailAddressValid, PIN_LENGTH, LEGACY_PIN_LENGTH } from "@/lib/validators";
 import AppBranding from "@/components/AppBranding";
 import PinInput from "@/components/ui/PinInput";
@@ -17,6 +17,15 @@ import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
+
+// /verify-email in its "from Login" mode, pre-filled with the typed address
+// when it's a valid one (F26).
+function resendVerificationHref(typedEmail: string): string {
+  const query = new URLSearchParams({ from: "login" });
+  const typed = typedEmail.trim();
+  if (isEmailAddressValid(typed)) query.set("email", typed);
+  return `/verify-email?${query.toString()}`;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,33 +100,20 @@ export default function LoginPage() {
       // lookup is only a fallback for older backends that omit them.
       const loginHasRole = typeof u.is_admin === "boolean";
       let is_admin = u.is_admin ?? false;
-      let currency = "";
       // i18n V2 — read whatever the backend has as the user's current
       // language. Profile-side changes persist to the backend, so this
       // is the user's LATEST chosen language, not a registration-time
       // baseline. Falls back to registered_language (for backends that
       // still expose it) then "en" for older API versions.
       let preferred_language = u.preferred_language ?? "en";
-      try {
-        const country = u.country;
-        const countryId = String(
-          u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""
-        );
-        const [profileRes, countriesRes] = await Promise.allSettled([
-          loginHasRole ? Promise.resolve(null) : getUserProfile(emailId),
-          getCountries(),
-        ]);
-        if (profileRes.status === "fulfilled" && profileRes.value) {
-          const d = profileRes.value.data;
+      if (!loginHasRole) {
+        try {
+          const d = (await getUserProfile(emailId)).data;
           is_admin = d?.is_admin ?? false;
           preferred_language = d?.preferred_language ?? d?.registered_language ?? "en";
+        } catch {
+          // non-critical
         }
-        if (countriesRes.status === "fulfilled") {
-          const found = countriesRes.value.data.find((c) => String(c.id) === countryId);
-          currency = found?.currency ?? "";
-        }
-      } catch {
-        // non-critical
       }
 
       // Wipe any persisted simulation data from a previous session before setting the new user
@@ -131,7 +127,10 @@ export default function LoginPage() {
         country_id: String(u.country_id ?? (typeof country === "object" ? country?.id : "") ?? ""),
         country_code:
           (typeof country === "object" ? country?.country_code : undefined) ?? u.country_code ?? "",
-        currency,
+        // The login response carries the profile country's currency — even
+        // for a country that isn't enabled, which the enabled-country list
+        // would miss (F6).
+        currency: (typeof country === "object" ? country?.currency : undefined) ?? "",
         // SECURITY: never persist the account PIN. The store is written to
         // localStorage (partialized `user`), so storing the real PIN here
         // would leave the user's credential in cleartext. Nothing in the app
@@ -279,7 +278,7 @@ export default function LoginPage() {
         </div>
 
         {/* Forgot PIN */}
-        <div className="flex justify-center mt-2.5 mb-6">
+        <div className="flex justify-center mt-2.5">
           <button
             onClick={() => setShowResetSheet(true)}
             className="text-base"
@@ -294,6 +293,30 @@ export default function LoginPage() {
             <span style={{ color: COLORS.raisinBlack }}>{t("Forgot PIN? ")}</span>
             <span style={{ color: COLORS.darkAquamarineGreen, fontWeight: 700 }}>
               {t("Tap here")}
+            </span>
+          </button>
+        </div>
+
+        {/* Resend verification (F26). Always shown — not tied to a 403, which
+            deleted and disabled accounts get too. resend-verification answers
+            the same for any address, so this reveals nothing about accounts. */}
+        <div className="flex justify-center mt-2.5 mb-6">
+          <button
+            onClick={() => router.push(resendVerificationHref(email))}
+            className="text-base text-center"
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              padding: "12px",
+              lineHeight: 1.3,
+            }}
+          >
+            <span style={{ color: COLORS.raisinBlack }}>
+              {t("Didn't get the verification email? ")}
+            </span>
+            <span style={{ color: COLORS.darkAquamarineGreen, fontWeight: 700 }}>
+              {t("Resend it")}
             </span>
           </button>
         </div>

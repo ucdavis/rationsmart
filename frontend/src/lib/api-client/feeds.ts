@@ -271,15 +271,26 @@ export const getFeedSubCategories = (
 export const getFeedDetails = (feed_id: string) => api.get(`/v1/animal/feed-details/${feed_id}`);
 
 // i18n V2 — client-side translation dictionary for Feed Type + Category
-// labels. Backend `/v1/animal/unique-feed-type` and unique-feed-category
-// only return the identity string, so we can't localize their labels
-// directly. But `/v1/animal/feed-name?country_id=X&lang=hi` (no
-// feed_type/category filter) returns EVERY feed in the country, and
-// each item carries both English (`fd_type`, `fd_category`) and localized
-// (`display_type`, `display_category`) fields. One call gives us a full
-// translation map for both dimensions, PLUS a per-feed id → display_name
-// map (`feeds`) that getFeedSubCategories' now-English-only fetch overlays
-// onto its (always-complete) identity list. Cached per (country_id, lang).
+// labels, plus a per-feed id → display_name map (`feeds`) that
+// getFeedSubCategories' English-only fetch overlays onto its (always
+// complete) identity list. Keys stay the English identity names — they are
+// what filtering and every API request use; only the shown text changes.
+//
+// F11: the type/category labels come from the feed-classification endpoints,
+// which read the translations table directly:
+//   GET /v1/feed-classification/get-feed-types?country_id&lang
+//   GET /v1/feed-classification/get-categories/{type_id}?country_id&lang
+// Before, they were taken from the country's feeds (display_type /
+// display_category on /v1/animal/feed-name), so a type or category no feed
+// used stayed English — every one of them in a country with no feeds, and
+// the catalogue types getFeedTypes merges in ("Complete diet"). Translations
+// are stored per country, so country_id is required alongside lang.
+//
+// feed-name still supplies the feed names, and its display_type /
+// display_category stay as a fallback layer underneath. Each source fails on
+// its own: a failed category call drops only that type's categories, and a
+// failed feed-name call keeps the classification labels. display_name falls
+// back to the English name server-side, so nothing comes back blank.
 export type FeedTaxonomyLabels = {
   types: Record<string, string>; // English identity → localized label
   categories: Record<string, string>; // English identity → localized label
@@ -297,26 +308,81 @@ interface FeedNameRow {
   display_name?: string;
 }
 
+// One row of get-feed-types / get-categories, as read here.
+interface ClassificationRow {
+  id?: string;
+  type_name?: string;
+  category_name?: string;
+  display_name?: string;
+}
+
+/** The shown label for an English type/category name: exact key first,
+ *  then ignoring case and outer spaces — the country lists and the
+ *  catalogue don't always agree on capitalisation. undefined → caller
+ *  shows the English name. */
+export function taxonomyLabel(
+  labels: Record<string, string> | undefined,
+  name: string
+): string | undefined {
+  if (!labels) return undefined;
+  if (labels[name]) return labels[name];
+  const key = normalizeTaxonomyName(name);
+  return Object.entries(labels).find(([k]) => normalizeTaxonomyName(k) === key)?.[1];
+}
+
 export async function fetchFeedTaxonomyLabels(country_id: string): Promise<FeedTaxonomyLabels> {
-  const res = await api.get("/v1/animal/feed-name", {
-    params: { country_id, ...langParam() },
-  });
-  // Rows are only read for their optional string fields, so a missing
-  // or reshaped envelope just yields empty label maps.
-  const envelope = asRecord(res.data);
-  const merged = [
-    ...listFrom<FeedNameRow>(envelope?.standard_feeds),
-    ...listFrom<FeedNameRow>(envelope?.custom_feeds),
-  ];
+  const params = { country_id, ...langParam() };
+  const [typesRes, feedsRes] = await Promise.allSettled([
+    api.get("/v1/feed-classification/get-feed-types", { params }),
+    api.get("/v1/animal/feed-name", { params }),
+  ]);
+  if (typesRes.status === "rejected" && feedsRes.status === "rejected") throw feedsRes.reason;
+
   const types: Record<string, string> = {};
   const categories: Record<string, string> = {};
   const feedNames: Record<string, string> = {};
-  for (const f of merged) {
-    if (f.fd_type && f.display_type) types[f.fd_type] = f.display_type;
-    if (f.fd_category && f.display_category) categories[f.fd_category] = f.display_category;
-    const uuid = f.id ?? f.feed_id;
-    if (uuid && f.display_name) feedNames[uuid] = f.display_name;
+
+  // Fallback layer: labels carried by the country's feeds.
+  if (feedsRes.status === "fulfilled") {
+    // Rows are only read for their optional string fields, so a missing
+    // or reshaped envelope just yields empty label maps.
+    const envelope = asRecord(feedsRes.value.data);
+    for (const f of [
+      ...listFrom<FeedNameRow>(envelope?.standard_feeds),
+      ...listFrom<FeedNameRow>(envelope?.custom_feeds),
+    ]) {
+      if (f.fd_type && f.display_type) types[f.fd_type] = f.display_type;
+      if (f.fd_category && f.display_category) categories[f.fd_category] = f.display_category;
+      const uuid = f.id ?? f.feed_id;
+      if (uuid && f.display_name) feedNames[uuid] = f.display_name;
+    }
   }
+
+  // Authoritative layer: the translations table, for every catalogue type
+  // and category whether or not a feed uses it.
+  if (typesRes.status === "fulfilled") {
+    const typeRows = listFrom<ClassificationRow>(typesRes.value.data);
+    for (const t of typeRows) {
+      if (t.type_name && t.display_name) types[t.type_name] = t.display_name;
+    }
+    const categoryLists = await Promise.all(
+      typeRows
+        .filter((t) => t.id)
+        .map((t) =>
+          api
+            .get(`/v1/feed-classification/get-categories/${encodeURIComponent(t.id!)}`, {
+              params,
+            })
+            .then((r) => listFrom<ClassificationRow>(r.data))
+            // One failed type must not drop the others' categories.
+            .catch((): ClassificationRow[] => [])
+        )
+    );
+    for (const c of categoryLists.flat()) {
+      if (c.category_name && c.display_name) categories[c.category_name] = c.display_name;
+    }
+  }
+
   return { types, categories, feeds: feedNames };
 }
 

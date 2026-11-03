@@ -31,6 +31,8 @@ import { useEscapeKey } from "@/lib/use-escape";
 import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import GeneratingReportDialog from "@/components/GeneratingReportDialog";
+import { useCalfRun } from "@/components/cattle-info/useCalfRun";
 import {
   Adjustments,
   Country,
@@ -54,9 +56,9 @@ export default function CattleInfoPage() {
     cattleInfo,
     setCattleInfo,
     user,
-    setUser,
     showSnackbar,
     reportData,
+    reportInputs,
     setReportData,
     setFeedSelections,
     setFeedSelectionType,
@@ -68,9 +70,9 @@ export default function CattleInfoPage() {
     cattleInfo: s.cattleInfo,
     setCattleInfo: s.setCattleInfo,
     user: s.user,
-    setUser: s.setUser,
     showSnackbar: s.showSnackbar,
     reportData: s.reportData,
+    reportInputs: s.reportInputs,
     setReportData: s.setReportData,
   }));
 
@@ -177,6 +179,7 @@ export default function CattleInfoPage() {
   // the profile language isn't valid for the selected country. See the
   // doc comment on useT() in src/lib/i18n-ui.ts.
   const t = useT(effectiveSimulationLanguage);
+  const calfRun = useCalfRun(t);
   const tRef = useLatestRef(t);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   useEscapeKey(!!showHistoryModal, () => setShowHistoryModal(false));
@@ -191,8 +194,18 @@ export default function CattleInfoPage() {
     const { t } = effectInputs1.current;
     getCountries()
       .then((res) => {
-        const data = res.data;
-        setCountries(Array.isArray(data) ? data : []);
+        const list = Array.isArray(res.data) ? res.data : [];
+        setCountries(list);
+        // Only enabled countries can be simulated. The form is pre-filled
+        // with the profile country, which may not be one (Register offers
+        // every country) — then it starts empty.
+        if (list.length > 0) {
+          setForm((prev) =>
+            !prev.country_id || list.some((c) => String(c.id) === prev.country_id)
+              ? prev
+              : { ...prev, country_id: "", country_name: "" }
+          );
+        }
       })
       .catch(() => showSnackbar(t("Could not load countries"), "error"))
       .finally(() => setLoadingCountries(false));
@@ -320,6 +333,7 @@ export default function CattleInfoPage() {
         simulation_name: "",
         country: matchedCountry?.name ?? details.country_name ?? "",
         country_id: matchedCountry ? String(matchedCountry.id) : "",
+        currency: matchedCountry?.currency ?? null,
       });
 
       showSnackbar(t("Simulation loaded successfully"), "success");
@@ -349,33 +363,17 @@ export default function CattleInfoPage() {
     form.simulation_name.trim() !== "" && form.country_id !== "" && specFieldsValid(form, specs, t);
 
   const handleContinue = () => {
-    if (!requiredFilled) return;
+    if (!requiredFilled || calfRun.isRunning) return;
     const selectedCountry = countries.find((c) => String(c.id) === String(form.country_id));
-    // Sync the user's active currency / country code with the country
-    // they just picked. Without this, feed-selection / report would
-    // keep showing the currency that was set at login (e.g. user logs
-    // in as Vietnam → switches to India here → feed-selection still
-    // reads user.currency = "VND" → labels stay "Price VND/KG").
-    if (
-      user &&
-      selectedCountry &&
-      (selectedCountry.currency !== user.currency ||
-        String(selectedCountry.id) !== String(user.country_id))
-    ) {
-      setUser({
-        ...user,
-        country_id: String(selectedCountry.id),
-        country: selectedCountry.name,
-        country_code: selectedCountry.country_code ?? selectedCountry.code ?? user.country_code,
-        currency: selectedCountry.currency ?? user.currency,
-      });
-    }
     // FE-1 / D4: hidden fields go out as the spec default, never whatever
     // an earlier state left in the form.
     const submitForm = specs ? withHiddenDefaults(form, specs) : form;
-    setCattleInfo({
+    const nextInfo = {
       ...formToCattleInfo(submitForm, null),
       country: selectedCountry?.name ?? form.country_name,
+      // The simulation's currency goes with the simulation; the profile
+      // (`user`) keeps the user's own country (O4).
+      currency: selectedCountry?.currency ?? null,
       // i18n V2 — per-simulation language override. An explicit pick
       // (form.simulation_language set) is always valid for this country
       // since the dropdown only ever offers valid options — save it
@@ -398,9 +396,12 @@ export default function CattleInfoPage() {
               : effectiveSimulationLanguage;
         return resolved;
       })(),
-    });
-    // A calf only needs its milk amount — skip feed selection (QA row 8).
-    router.push(form.animal_category === "Baby Calf/Heifer" ? "/calf-plan" : "/feed-selection");
+    };
+    setCattleInfo(nextInfo);
+    // A calf only needs its milk amount — skip feed selection (QA row 8);
+    // the backend works out the plan straight away (W13).
+    if (form.animal_category === "Baby Calf/Heifer") void calfRun.run(nextInfo);
+    else router.push("/feed-selection");
   };
 
   // The reset itself finishes in microseconds; the user was reporting
@@ -416,10 +417,11 @@ export default function CattleInfoPage() {
     // instantly (form fields go back to defaults, selection lists
     // empty). The spinner just holds visible for a moment so the user
     // gets clear feedback that Reset ran.
+    const profileEnabled = countries.some((c) => String(c.id) === String(user?.country_id));
     const resetForm: FormState = {
       ...EMPTY_FORM,
-      country_id: String(user?.country_id ?? ""),
-      country_name: user?.country ?? "",
+      country_id: profileEnabled ? String(user?.country_id ?? "") : "",
+      country_name: profileEnabled ? (user?.country ?? "") : "",
       // EMPTY_FORM.simulation_language is already null; being explicit
       // here so a future edit of EMPTY_FORM can't silently break Reset.
       simulation_language: null,
@@ -460,8 +462,8 @@ export default function CattleInfoPage() {
         type="home"
         title={t("Cattle Info")}
         onMenuOpen={openDrawer}
-        showForward={!!reportData}
-        onForward={() => router.push("/report")}
+        showForward={!!reportData && !!reportInputs}
+        onForward={() => router.push(reportData?.calf_milk_feeding_plan ? "/calf-plan" : "/report")}
       />
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
@@ -486,7 +488,7 @@ export default function CattleInfoPage() {
           adjusted={adjusted}
           setAdjusted={setAdjusted}
           fieldsLoading={fieldsLoading}
-          currency={user?.currency}
+          currency={selectedCountryForLang?.currency ?? undefined}
           t={t}
         />
       </div>
@@ -563,6 +565,8 @@ export default function CattleInfoPage() {
           {form.animal_category === "Baby Calf/Heifer" ? t("Continue") : t("Continue to Feed")}
         </button>
       </div>
+
+      {calfRun.isRunning && <GeneratingReportDialog />}
 
       {/* Simulation History Bottom-Sheet Modal */}
       {showHistoryModal && (

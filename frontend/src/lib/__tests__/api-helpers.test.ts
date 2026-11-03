@@ -40,7 +40,8 @@ describe("labelForLanguage / LANGUAGE_NATIVE_LABELS", () => {
   });
 
   it("covers every rollout locale in the labels map", () => {
-    const rollout = ["en", "hi", "tl", "id", "th", "vi", "bn", "ne", "am", "om"];
+    // Filipino is BCP 47 "fil" now (W7); ta/te added for W10.
+    const rollout = ["en", "hi", "fil", "id", "th", "vi", "bn", "ne", "am", "om", "ta", "te"];
     for (const c of rollout) {
       expect(LANGUAGE_NATIVE_LABELS[c]).toBeTruthy();
     }

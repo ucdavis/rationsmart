@@ -92,9 +92,12 @@ beforeEach(() => {
   });
 });
 
-function selectCsvFile(name = "feeds.csv") {
+// The endpoint takes Excel only (W6), so the picker does too.
+function selectCsvFile(name = "feeds.xlsx") {
   const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
-  const file = new File(["a,b,c"], name, { type: "text/csv" });
+  const file = new File(["a,b,c"], name, {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
   fireEvent.change(fileInput, { target: { files: [file] } });
   return file;
 }
@@ -200,6 +203,40 @@ describe("Bulk Upload — Upload Feed CSV", () => {
     expect(screen.getByText("Missing column fd_code")).toBeInTheDocument();
     // File stays selected so the admin can retry after fixing it
     expect(screen.getByText(file.name)).toBeInTheDocument();
+  });
+
+  it("shows Upload Failed when the run comes back success: true but status: failed (W6)", async () => {
+    // A file rejected outright (e.g. a missing required column): today's
+    // backend still says success: true. Must not read "Processed 0 rows".
+    bulkUploadFeeds.mockResolvedValueOnce({
+      data: {
+        success: true,
+        status: "failed",
+        total_rows: 0,
+        inserted: 0,
+        updated: 0,
+        skipped: 0,
+        error_message: "Missing required column fd_name",
+      },
+    });
+    render(<BulkUploadPage />);
+    selectCsvFile();
+    fireEvent.click(screen.getByRole("button", { name: "Confirm upload" }));
+
+    await waitFor(() => expect(screen.getByText("Upload Failed")).toBeInTheDocument());
+    expect(screen.getByText("Missing required column fd_name")).toBeInTheDocument();
+    expect(screen.queryByText(/Processed 0 rows/)).toBeNull();
+  });
+
+  it("refuses a .csv file before uploading (the endpoint answers 400)", async () => {
+    render(<BulkUploadPage />);
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    expect(fileInput.accept).toBe(".xlsx,.xls");
+    fireEvent.change(fileInput, {
+      target: { files: [new File(["a,b"], "feeds.csv", { type: "text/csv" })] },
+    });
+    expect(screen.queryByRole("button", { name: "Confirm upload" })).toBeNull();
+    expect(bulkUploadFeeds).not.toHaveBeenCalled();
   });
 
   it("shows an Upload Failed banner with the error message on rejection", async () => {
@@ -334,7 +371,7 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
     render(<BulkUploadPage />);
 
     await screen.findByText("पशु आहार अपलोड करें"); // UPLOAD FEEDS
-    expect(screen.getByText("CSV या Excel ब्राउज़ करने के लिए टैप करें")).toBeInTheDocument(); // Tap to browse CSV or Excel
+    expect(screen.getByText("Excel फ़ाइल चुनने के लिए टैप करें (.xlsx, .xls)")).toBeInTheDocument(); // Tap to browse an Excel file (.xlsx, .xls)
     expect(
       screen.getByText("* केवल आपके डिवाइस में संग्रहीत फाइलें ही समर्थित हैं।")
     ).toBeInTheDocument();

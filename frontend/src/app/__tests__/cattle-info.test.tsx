@@ -1,14 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within, act } from "@testing-library/react";
 
-const { push, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields } =
-  vi.hoisted(() => ({
-    push: vi.fn(),
-    getCountries: vi.fn(),
-    getUserReports: vi.fn(),
-    getSimulationDetails: vi.fn(),
-    getCattleInfoFields: vi.fn(),
-  }));
+const {
+  push,
+  getCountries,
+  getUserReports,
+  getSimulationDetails,
+  getCattleInfoFields,
+  recommendDiet,
+} = vi.hoisted(() => ({
+  push: vi.fn(),
+  getCountries: vi.fn(),
+  getUserReports: vi.fn(),
+  getSimulationDetails: vi.fn(),
+  getCattleInfoFields: vi.fn(),
+  recommendDiet: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, back: vi.fn(), replace: vi.fn() }),
@@ -16,7 +23,14 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, getCountries, getUserReports, getSimulationDetails, getCattleInfoFields };
+  return {
+    ...actual,
+    getCountries,
+    getUserReports,
+    getSimulationDetails,
+    getCattleInfoFields,
+    recommendDiet,
+  };
 });
 
 import CattleInfoPage from "@/app/(main)/cattle-info/page";
@@ -200,6 +214,7 @@ const countries = [
 
 beforeEach(() => {
   push.mockClear();
+  recommendDiet.mockReset();
   getCountries.mockReset();
   getUserReports.mockReset();
   getSimulationDetails.mockReset();
@@ -491,34 +506,8 @@ describe("Cattle Info — requiredFilled gate (Continue to Feed)", () => {
   });
 });
 
-describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
-  it("calls setUser with the newly-selected country's currency/country_code BEFORE navigating to /feed-selection", async () => {
-    getCountries.mockResolvedValueOnce({ data: countries });
-    useStore.setState({
-      user: seedUser({ country_id: "1", country: "India", country_code: "IN", currency: "INR" }),
-    });
-    render(<CattleInfoPage />);
-    // The whole form now renders behind a loading skeleton until
-    // getCountries resolves (see CattleInfoSkeleton) — wait for a
-    // real-form-only marker (absent from the skeleton) before
-    // interacting with any field.
-    await formReady();
-
-    await fillBaselineRequired("Vietnam");
-
-    const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
-    await waitFor(() => expect(continueBtn).not.toBeDisabled());
-    fireEvent.click(continueBtn);
-
-    expect(push).toHaveBeenCalledWith("/feed-selection");
-    const u = useStore.getState().user!;
-    expect(u.country_id).toBe("2");
-    expect(u.country).toBe("Vietnam");
-    expect(u.country_code).toBe("VN");
-    expect(u.currency).toBe("VND");
-  });
-
-  it("does NOT touch the user object when the country is left unchanged", async () => {
+describe("Cattle Info — simulation country and currency (O4, CAT-01-C, F4)", () => {
+  it("keeps the profile as it is and puts the simulation's currency on cattleInfo (O4)", async () => {
     getCountries.mockResolvedValueOnce({ data: countries });
     const originalUser = seedUser({
       country_id: "1",
@@ -528,19 +517,48 @@ describe("Cattle Info — handleContinue currency propagation (§10.9)", () => {
     });
     useStore.setState({ user: originalUser });
     render(<CattleInfoPage />);
-    // The whole form now renders behind a loading skeleton until
-    // getCountries resolves (see CattleInfoSkeleton) — wait for a
-    // real-form-only marker (absent from the skeleton) before
-    // interacting with any field.
     await formReady();
 
-    await fillBaselineRequired("India");
+    await fillBaselineRequired("Vietnam");
     const continueBtn = screen.getByRole("button", { name: "Continue to Feed" });
     await waitFor(() => expect(continueBtn).not.toBeDisabled());
     fireEvent.click(continueBtn);
 
     expect(push).toHaveBeenCalledWith("/feed-selection");
     expect(useStore.getState().user).toEqual(originalUser);
+    expect(useStore.getState().cattleInfo).toMatchObject({
+      country_id: "2",
+      country: "Vietnam",
+      currency: "VND",
+    });
+  });
+
+  it("the Milk Price label follows the country picked, at once (CAT-01-C)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser({ country_id: "1", country: "India", currency: "INR" }) });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    expect(await screen.findByText("Milk Price (INR/L)")).toBeInTheDocument();
+    await selectCountry("Vietnam");
+    expect(await screen.findByText("Milk Price (VND/L)")).toBeInTheDocument();
+    expect(screen.queryByText(/CURRENCY|\(currency\/L\)/)).toBeNull();
+  });
+
+  it("starts with no country when the profile's isn't enabled (F4)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({
+      user: seedUser({ country_id: "99", country: "Kenya", currency: "KES" }),
+    });
+    render(<CattleInfoPage />);
+    await formReady();
+
+    // No country → no currency on the label, and Continue waits for a pick.
+    expect(await screen.findByText("Milk Price")).toBeInTheDocument();
+    expect(screen.queryByText("Milk Price (KES/L)")).toBeNull();
+    fillSimulationName();
+    await selectMilkFields("3.0", "4.0");
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
   });
 });
 
@@ -1224,13 +1242,24 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     const continueBtn = screen.getByRole("button", { name: "Continue" });
     expect(continueBtn).toBeDisabled();
 
-    // …in range, it submits BW plus the spec defaults for everything hidden
-    // and goes straight to the milk plan (QA row 8).
+    // …in range, it submits BW plus the spec defaults for everything hidden,
+    // asks the backend for the milk plan (W13) and goes straight to it (QA
+    // row 8).
+    const answer = { report_id: "rec-1", calf_milk_feeding_plan: { daily_milk_volume_l: 5.5 } };
+    recommendDiet.mockResolvedValueOnce({ data: answer });
     fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "55" } });
     expect(continueBtn).not.toBeDisabled();
     fireEvent.click(continueBtn);
-    expect(push).toHaveBeenCalledWith("/calf-plan");
+    await waitFor(() => expect(push).toHaveBeenCalledWith("/calf-plan"));
     expect(push).not.toHaveBeenCalledWith("/feed-selection");
+    // Same endpoint as a cow's run, with no feeds and no diet limits.
+    expect(recommendDiet).toHaveBeenCalledTimes(1);
+    const body = recommendDiet.mock.calls[0]![0];
+    expect(body.feed_selection).toEqual([]);
+    expect(body).not.toHaveProperty("base_thresholds");
+    expect(body.cattle_info).toMatchObject({ physiological_state: "Baby Calf/Heifer" });
+    expect(useStore.getState().reportData).toMatchObject({ ...answer, mode: "recommendation" });
+    expect(useStore.getState().reportInputs?.feedSelections).toEqual([]);
     const ci = useStore.getState().cattleInfo!;
     expect(ci).toMatchObject({
       animal_category: "Baby Calf/Heifer",
@@ -1244,6 +1273,30 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
       parity: 0,
       milk_price: null,
     });
+  });
+
+  it("a calf run that fails stays on Cattle Info and says why (W13)", async () => {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    useStore.setState({ user: seedUser() });
+    recommendDiet.mockRejectedValueOnce(
+      Object.assign(new Error("Too many requests"), { status: 429 })
+    );
+    render(<CattleInfoPage />);
+    await formReady();
+    fillSimulationName();
+    await selectCountry("India");
+    await pickCategory("Baby calves/heifers");
+    await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("40"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Too many requests",
+        type: "error",
+      })
+    );
+    expect(push).not.toHaveBeenCalledWith("/calf-plan");
+    expect(screen.queryByText("Generating your report")).toBeNull();
   });
 
   it("hidden fields go out as their default, not what the previous state left in the form", async () => {
@@ -1355,5 +1408,61 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     );
     expect(inputAfterLabel("Body Weight (BW; kg)").disabled).toBe(true);
     expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeDisabled();
+  });
+});
+
+describe("Cattle Info — dropdown options in the screen language (F8)", () => {
+  it("shows Physiological State and Breed options translated; numbers and values stay as they are", async () => {
+    // Load the form in English (formReady looks for English text), then
+    // switch the screen language.
+    useStore.setState({ user: seedUser() });
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    act(() => {
+      useStore.setState({ user: seedUser({ preferred_language: "vi" }) });
+    });
+
+    const state = await openDropdown("Trạng thái sinh lý");
+    expect(
+      await within(state).findByRole("option", { name: "Bò đang cho sữa" })
+    ).toBeInTheDocument();
+    expect(within(state).getByRole("option", { name: "Bò cạn sữa" })).toBeInTheDocument();
+    fireEvent.click(within(state).getAllByRole("button")[0]!); // close
+
+    const breed = await openDropdown("Chọn giống");
+    expect(await within(breed).findByRole("option", { name: "Giống lai" })).toBeInTheDocument();
+    expect(within(breed).getByRole("option", { name: "Giống địa phương" })).toBeInTheDocument();
+    // Picking a translated option still stores the English API value.
+    fireEvent.click(within(breed).getByRole("option", { name: "Giống lai" }));
+    expect(within(breed).getAllByRole("button")[0]).toHaveTextContent("Giống lai");
+    fireEvent.click(within(breed).getAllByRole("button")[0]!); // close
+
+    const protein = await openDropdown("Protein sữa (%)");
+    expect(await within(protein).findByRole("option", { name: "3.0" })).toBeInTheDocument();
+  });
+});
+
+describe("Cattle Info — forward arrow to the last report (F47 / W3)", () => {
+  const report = { mode: "recommendation" } as never;
+
+  it("shows when the report carries the inputs it was run with", async () => {
+    useStore.setState({
+      user: seedUser(),
+      reportData: report,
+      reportInputs: { cattleInfo: {} as never, feedSelections: [] },
+    });
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    expect(screen.getByRole("button", { name: "Forward" })).toBeInTheDocument();
+  });
+
+  it("is hidden for a report saved by an older build (no inputs copy)", async () => {
+    useStore.setState({ user: seedUser(), reportData: report, reportInputs: null });
+    getCountries.mockResolvedValueOnce({ data: [] });
+    render(<CattleInfoPage />);
+    await formReady();
+    expect(screen.queryByRole("button", { name: "Forward" })).toBeNull();
   });
 });

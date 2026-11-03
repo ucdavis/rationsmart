@@ -94,7 +94,7 @@ export function useBulkUpload(user: User | null, showSnackbar: Snackbar, t: (s: 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
-    const problem = uploadFileProblem(file, [".csv", ".xlsx", ".xls"], t);
+    const problem = uploadFileProblem(file, [".xlsx", ".xls"], t);
     if (problem) {
       e.target.value = "";
       setUploadStatus("failed");
@@ -125,10 +125,12 @@ export function useBulkUpload(user: User | null, showSnackbar: Snackbar, t: (s: 
       const res = await bulkUploadFeeds(user.id, selectedFile, (pct) => setUploadProgress(pct));
       setUploadProgress(100);
       // The feed-sync run-from-file endpoint answers 200 with the finished
-      // run log even when the run itself failed (success: false +
-      // error_message), so the status comes from the body, not the HTTP code.
+      // run log even when the run itself failed, so the status comes from the
+      // body, not the HTTP code. A file rejected outright (e.g. a missing
+      // required column) still comes back success: true with
+      // status: "failed" — that's a failure too, not "Processed 0 rows" (W6).
       const run = asRecord(res.data);
-      if (run?.success === false) {
+      if (run?.success === false || stringField(run, "status") === "failed") {
         setUploadStatus("failed");
         setUploadMessage(stringField(run, "error_message") ?? t("Could not upload feeds."));
         return;

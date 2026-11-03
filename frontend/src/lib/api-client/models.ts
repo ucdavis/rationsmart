@@ -35,8 +35,8 @@ export interface CattleInfo {
   grazing: boolean;
   distance: number; // km walked while grazing; 0 when grazing=false
   topography: string; // "Flat" or "Hilly"; always "Flat" when grazing=false
-  // Y3 §1.3 — milk price for §2.1 cost-per-liter comparison. Currency is
-  // user's selected country currency (rendered as suffix by report page).
+  // Y3 §1.3 — milk price for §2.1 cost-per-liter comparison, in the
+  // simulation country's currency (`currency` below).
   // Optional: null means user did not provide a price; backend should skip
   // the margin card in that case.
   milk_price: number | null;
@@ -57,6 +57,11 @@ export interface CattleInfo {
   // this simulation. Cleared on New Simulation + Reset; hydrated on
   // load-from-history when the backend eventually returns it.
   simulation_language: string | null;
+  // The simulation country's currency code (VND, ETB…), taken from the
+  // enabled-country list on Continue. Store-only, never sent: every price
+  // label on Feed Selection and the report uses it, not the profile's
+  // currency. Absent on a form persisted by an older build.
+  currency?: string | null;
 }
 
 export type AnimalCategory = "Lactating Cow" | "Dry Cow" | "Heifer" | "Baby Calf/Heifer";
@@ -248,7 +253,9 @@ export function toCattleInfoPayload(ci: CattleInfo): CattleInfoPayload {
 export interface EvaluationRequest {
   user_id: string;
   country_id: string;
-  currency: string;
+  // Optional and ignored: the backend prices an evaluation in the currency
+  // of `country_id`.
+  currency?: string;
   simulation_id: string;
   cattle_info: CattleInfoPayload;
   feed_evaluation: Array<{
@@ -394,6 +401,8 @@ export interface MilkCostMargin {
 export interface CalfMilkFeedingPlan {
   daily_milk_volume_l?: number;
   feedings_per_day?: number;
+  per_feeding_l?: number;
+  daily_milk_fed_l?: number;
   estimated_weaning_age_days?: number;
   notes?: string[];
 }
@@ -518,7 +527,8 @@ export interface Country {
 export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
   en: "English",
   hi: "हिन्दी",
-  tl: "Tagalog", // Filipino
+  // The backend stores Filipino as BCP 47 "fil" (was "tl", W7).
+  fil: "Filipino",
   id: "Bahasa Indonesia",
   th: "ไทย",
   vi: "Tiếng Việt",
@@ -527,6 +537,8 @@ export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
   am: "አማርኛ",
   om: "Afaan Oromoo",
   sw: "Kiswahili",
+  ta: "தமிழ்",
+  te: "తెలుగు",
 };
 export const labelForLanguage = (code: string): string =>
   LANGUAGE_NATIVE_LABELS[code] ?? code.toUpperCase();

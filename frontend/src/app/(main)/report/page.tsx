@@ -20,16 +20,10 @@ import {
   MilkCostMarginCard,
 } from "@/components/report/Y3Cards";
 import { useSaveReport } from "@/components/report/useSaveReport";
-import {
-  IcSave,
-  IcNewCase,
-  IcSimulationDetails,
-  IcDietReport,
-  IcViewPdf,
-  IcShareReport,
-} from "@/components/Icons";
-import { COLUMN_WIDTH } from "@/lib/column";
-import Spinner from "@/components/ui/Spinner";
+import GetPdfButton from "@/components/report/GetPdfButton";
+import PdfActions from "@/components/report/PdfActions";
+import ReportActionBar from "@/components/report/ReportActionBar";
+import { IcSimulationDetails, IcDietReport } from "@/components/Icons";
 import { COLORS } from "@/lib/colors";
 import type {
   EvaluationResponse,
@@ -37,19 +31,24 @@ import type {
   FeedBreakdown,
   CostEffectiveDiet,
 } from "@/lib/api";
-import { sumMoney } from "@/lib/money";
+import { simulationCurrency, sumMoney } from "@/lib/money";
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, cattleInfo, reportData, feedSelections, showSnackbar, setFeedSelectionType } =
-    useStore((s) => ({
-      feedSelections: s.feedSelections,
-      user: s.user,
-      cattleInfo: s.cattleInfo,
-      reportData: s.reportData,
-      showSnackbar: s.showSnackbar,
-      setFeedSelectionType: s.setFeedSelectionType,
-    }));
+  const { user, reportData, reportInputs, setFeedSelectionType, ...live } = useStore((s) => ({
+    feedSelections: s.feedSelections,
+    user: s.user,
+    cattleInfo: s.cattleInfo,
+    reportData: s.reportData,
+    reportInputs: s.reportInputs,
+    setFeedSelectionType: s.setFeedSelectionType,
+  }));
+  // F47 — render from the inputs this run was sent with, not the live form:
+  // after New Case / restore / a country change the form no longer matches
+  // the results. Only a report persisted by an older build (no copy) falls
+  // back to the form.
+  const cattleInfo = reportInputs?.cattleInfo ?? live.cattleInfo;
+  const feedSelections = reportInputs?.feedSelections ?? live.feedSelections;
 
   // UI-label i18n — this screen (cattle-info → feed-selection → report)
   // is driven by the per-simulation language, not the profile-wide
@@ -58,7 +57,7 @@ export default function ReportPage() {
   // doc comment on useT() in src/lib/i18n-ui.ts for why this screen
   // passes an explicit langOverride instead of calling useT() bare.
   const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
-  const { isSaving, pdfUrl, save: saveReportPdf } = useSaveReport(t);
+  const { isSaving, pdfUrl, setPdfUrl, savedReportId, save: saveReportPdf } = useSaveReport(t);
 
   // i18n V2 — fallback lookup so the report body shows translated feed
   // names even if the backend diet endpoints aren't yet returning
@@ -101,7 +100,7 @@ export default function ReportPage() {
       }
     : buildReportContext(cattleInfo?.animal_category);
 
-  // Use the user's / report's currency CODE (PHP / INR / VND / …)
+  // Use the report's / simulation's currency CODE (PHP / INR / VND / …)
   // directly. Android renders totals as e.g. "108,199.8 VND" — value
   // with the code as a suffix — rather than swapping in a glyph.
   const currencySymbol = (() => {
@@ -110,9 +109,9 @@ export default function ReportPage() {
       (reportData as EvaluationResponse)?.currency ??
       null;
     // The report's own currency wins: a restored report was priced in the
-    // currency it was generated with, which may differ from the profile's
-    // current one (audit B-05, and CLAUDE.md §5 order).
-    return reportCurrency || user?.currency || "";
+    // currency it was generated with (audit B-05, and CLAUDE.md §5 order).
+    // Then the currency of the country this run was for (CAT-01-C).
+    return reportCurrency || simulationCurrency(cattleInfo, user);
   })();
   const currencySuffix = currencySymbol ? ` ${currencySymbol}` : "";
 
@@ -412,25 +411,17 @@ export default function ReportPage() {
             showSolutionSections={showSolutionSections}
             softLimitNotes={softLimitNotes}
             t={t}
-            user={user}
           />
         )}
       </div>
 
       {/* Fixed bottom buttons */}
-      <div
-        className="px-4 py-4"
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: "100%",
-          maxWidth: COLUMN_WIDTH,
-          backgroundColor: COLORS.white,
-          borderTop: `1px solid ${COLORS.webDivider}`,
-          zIndex: 30,
-        }}
+      <ReportActionBar
+        canSave={!!reportIdForSave}
+        isSaving={isSaving}
+        onSave={handleSave}
+        onNewCase={() => router.push("/cattle-info")}
+        t={t}
       >
         {isEval && (
           <button
@@ -449,121 +440,22 @@ export default function ReportPage() {
             {t("Generate Diet Recommendation")}
           </button>
         )}
-        {pdfUrl && (
-          <div className="flex gap-3 mb-3">
-            <button
-              onClick={() => window.open(pdfUrl, "_blank", "noopener,noreferrer")}
-              className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: COLORS.honeydew,
-                color: COLORS.darkAquamarineGreen,
-                border: `1px solid ${COLORS.darkAquamarineGreen}`,
-                cursor: "pointer",
-              }}
-            >
-              <IcViewPdf />
-              {t("View PDF")}
-            </button>
-            {/* Share report — Web Share API on mobile pops the native
-                sheet (WhatsApp / Telegram / etc.), matching the Android
-                "Share the report" function in the test matrix. Falls back
-                to copy-to-clipboard on desktop browsers without
-                navigator.share. */}
-            <button
-              onClick={async () => {
-                if (!pdfUrl) return;
-                const shareData = {
-                  title: t("RationSmart Diet Report"),
-                  text: fillText(
-                    isEval
-                      ? t("Evaluation report for simulation ${id}")
-                      : t("Recommendation report for simulation ${id}"),
-                    { id: simulationId }
-                  ),
-                  url: pdfUrl,
-                };
-                try {
-                  if (typeof navigator !== "undefined" && navigator.share) {
-                    await navigator.share(shareData);
-                  } else if (typeof navigator !== "undefined" && navigator.clipboard) {
-                    await navigator.clipboard.writeText(pdfUrl);
-                    showSnackbar(t("PDF link copied to clipboard"), "success");
-                  } else {
-                    window.open(pdfUrl, "_blank", "noopener,noreferrer");
-                  }
-                } catch (err) {
-                  // navigator.share rejects with AbortError if the user
-                  // dismisses the sheet — that's not a real failure.
-                  if (err instanceof Error && err.name !== "AbortError") {
-                    showSnackbar(t("Could not share the report"), "error");
-                  }
-                }
-              }}
-              className="flex-1 py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2"
-              style={{
-                backgroundColor: COLORS.darkAquamarineGreen,
-                color: COLORS.white,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <IcShareReport />
-              {t("Share Report")}
-            </button>
-          </div>
+        {!pdfUrl && savedReportId && (
+          <GetPdfButton reportId={savedReportId} onReady={setPdfUrl} t={t} />
         )}
-        <div className="flex gap-3">
-          <button
-            onClick={() => {
-              // New Case = "make a small tweak and run again" rather
-              // than "start from scratch". Everything the user typed
-              // stays populated: cattle info + feed selections + the
-              // recommendation/evaluation toggle + the per-simulation
-              // language override. Only the just-generated report goes
-              // (it will be overwritten anyway when the user re-runs).
-              //
-              // Users who want a truly clean slate use the Reset button
-              // on Cattle Info instead — that wipes the form + feeds
-              // back to defaults.
-              router.push("/cattle-info");
-            }}
-            className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
-            style={{
-              border: `2px solid ${COLORS.darkAquamarineGreen}`,
-              color: COLORS.darkAquamarineGreen,
-              background: COLORS.white,
-              cursor: "pointer",
-            }}
-          >
-            <IcNewCase size={18} color={COLORS.darkAquamarineGreen} />
-            {t("New Case")}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={isSaving || !reportIdForSave}
-            className="flex-1 py-3.5 rounded-xl font-bold text-base flex items-center justify-center gap-1.5"
-            style={{
-              backgroundColor:
-                isSaving || !reportIdForSave ? COLORS.lightGrayNew : COLORS.darkAquamarineGreen,
-              color: isSaving || !reportIdForSave ? COLORS.spanishGray : COLORS.white,
-              border: "none",
-              cursor: isSaving || !reportIdForSave ? "not-allowed" : "pointer",
-            }}
-          >
-            {isSaving ? (
-              <>
-                <Spinner size={16} />
-                {t("Saving...")}
-              </>
-            ) : (
-              <>
-                <IcSave size={18} color={!reportIdForSave ? COLORS.spanishGray : COLORS.white} />
-                {t("Save Report")}
-              </>
+        {pdfUrl && (
+          <PdfActions
+            pdfUrl={pdfUrl}
+            shareText={fillText(
+              isEval
+                ? t("Evaluation report for simulation ${id}")
+                : t("Recommendation report for simulation ${id}"),
+              { id: simulationId }
             )}
-          </button>
-        </div>
-      </div>
+            t={t}
+          />
+        )}
+      </ReportActionBar>
     </div>
   );
 }
