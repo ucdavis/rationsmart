@@ -690,12 +690,15 @@ async def run_diet_recommendation(
         feed_data_list, persisted_thresholds, cattle.physiological_state, post_results.get("diet_table")
     )
 
+    # Report header names: the JSON's Owner Name (REC-02-C) and the report HTML.
+    user_name, country_name = await _report_header_names(db, user_id, request.country_id)
+
     response = build_diet_response(
         optimization_results=result_dict,
         cattle_info=request.cattle_info,
         simulation_id=request.simulation_id,
         report_id=report_id,
-        user_name="",
+        user_name=user_name or "",
         currency=currency,
         name_map=name_map,
         translate=translator(lang),
@@ -703,7 +706,6 @@ async def run_diet_recommendation(
     )
 
     # 5 — Render report HTML (PDF generation happens later, at save time)
-    user_name, country_name = await _report_header_names(db, user_id, request.country_id)
     report_html = _render_report_html(
         post_results, result.animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id, currency=currency,
