@@ -357,6 +357,7 @@ def _render_report_html(
     name_map: Optional[Dict[str, str]] = None,
     type_map: Optional[Dict[str, str]] = None,
     user_limits: Optional[Dict[str, Any]] = None,
+    time_zone: str = "UTC",
 ) -> Optional[str]:
     """Render report HTML for Report.report_html at compute time.
 
@@ -371,6 +372,8 @@ def _render_report_html(
     missing value leaves the renderer's default in place. lang / name_map / type_map
     put the feed names and types in the user's language (the rest stays English).
     user_limits (reporting.build_user_limits) adds the "Limits You Set" section.
+    time_zone: the simulation country's IANA zone for the "Generated" time
+    (_report_header_names); "UTC" when unknown, which the report marks as UTC.
     """
     try:
         from core.z_optimization.report_generation import rsm_generate_report_v2
@@ -392,6 +395,7 @@ def _render_report_html(
             name_map=name_map,
             type_map=type_map,
             user_limits=user_limits,
+            time_zone=time_zone,
             **names,
         )
     except Exception:
@@ -439,8 +443,8 @@ async def _feed_translation_maps(
 
 async def _report_header_names(
     db: AsyncSession, user_id: str, country_id: Optional[str]
-) -> Tuple[Optional[str], Optional[str]]:
-    """(user name, country name) for the report header.
+) -> Tuple[Optional[str], Optional[str], str]:
+    """(user name, country name, time zone) for the report header.
 
     The user is the one who ran the simulation (the authenticated caller); the country
     is the simulation's country from the request, which may differ from the user's
@@ -449,7 +453,12 @@ async def _report_header_names(
     is logged and falls back to the renderer's defaults. The lookups run in a savepoint:
     a database error inside it rolls back only the savepoint, so the caller's
     transaction (which still has to save the report) stays usable.
+
+    The time zone is the country's (country_time_zones), so the report's "Generated"
+    time is the simulation country's local time; "UTC" when it cannot be resolved.
     """
+    from core.z_optimization.country_time_zones import country_time_zone
+
     try:
         cid = str(_uuid_mod.UUID(str(country_id))) if country_id else None
     except ValueError:
@@ -459,10 +468,11 @@ async def _report_header_names(
             user_repo = UserRepository(db)
             user = await user_repo.get_by_id(user_id)
             country = await user_repo.get_country_by_id(cid) if cid else None
-        return (user.name if user else None), (country.name if country else None)
+        zone = country_time_zone(country.country_code if country else None) or "UTC"
+        return (user.name if user else None), (country.name if country else None), zone
     except Exception:
         logger.warning("Report header: could not resolve user/country names (user=%s)", user_id, exc_info=True)
-        return None, None
+        return None, None, "UTC"
 
 
 async def _run_baby_calf_recommendation(
@@ -519,11 +529,11 @@ async def _run_baby_calf_recommendation(
     # already handles that gracefully for the "Baby Calf/Heifer" profile (only
     # the animal-inputs + calf-feeding-schedule tables get rendered for it).
     post_results = {"animal_inputs": rsm_create_animal_inputs_dataframe(animal_requirements)}
-    user_name, country_name = await _report_header_names(db, user_id, request.country_id)
+    user_name, country_name, time_zone = await _report_header_names(db, user_id, request.country_id)
     report_html = _render_report_html(
         post_results, animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id,
-        user_name=user_name, country_name=country_name, lang=lang,
+        user_name=user_name, country_name=country_name, lang=lang, time_zone=time_zone,
     )
 
     report_repo = ReportRepository(db)
@@ -691,7 +701,7 @@ async def run_diet_recommendation(
     )
 
     # Report header names: the JSON's Owner Name (REC-02-C) and the report HTML.
-    user_name, country_name = await _report_header_names(db, user_id, request.country_id)
+    user_name, country_name, time_zone = await _report_header_names(db, user_id, request.country_id)
 
     response = build_diet_response(
         optimization_results=result_dict,
@@ -711,6 +721,7 @@ async def run_diet_recommendation(
         simulation_id=request.simulation_id, report_id=report_id, currency=currency,
         user_name=user_name, country_name=country_name,
         lang=lang, name_map=name_map, type_map=type_map, user_limits=user_limits,
+        time_zone=time_zone,
     )
 
     # 6 — Persist report record
@@ -762,6 +773,7 @@ async def run_diet_evaluation(
     Persists a Report record (type='eval') and returns the response dict.
     Caller must commit.
     """
+    from core.z_optimization.country_time_zones import country_time_zone
     from core.z_optimization.evaluation import evaluate_diet
     from core.z_optimization.reporting import build_evaluation_response
     from core.z_optimization.utilities import has_dry_matter
@@ -863,13 +875,14 @@ async def run_diet_evaluation(
     )
 
     # Country is already resolved above (the request's country); only the user is needed.
-    user_name, _ = await _report_header_names(db, user_id, None)
+    user_name, _, _ = await _report_header_names(db, user_id, None)
     report_html = _render_report_html(
         eval_result.get("post_results", {}), eval_result.get("animal_requirements", {}),
         simulation_id=request.simulation_id, report_id=report_id,
         evaluation_mode=True, currency=currency,
         user_name=user_name, country_name=country_name,
         lang=lang, name_map=name_map, type_map=type_map,
+        time_zone=country_time_zone(getattr(country, "country_code", None)) or "UTC",
     )
 
     report_repo = ReportRepository(db)
