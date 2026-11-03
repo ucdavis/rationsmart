@@ -126,15 +126,24 @@ def build_user_limits(
     feed_data_list: the resolved feeds (FeedRecord dicts); fd_min / fd_max are the
     inclusion limits as typed, in kg/day as fed. diet_limits: the custom diet limits in
     WIRE units ({"ee_max": 3.0}, as stored in reports.custom_constraints). diet_table:
-    post_results["diet_table"], for the amount each limited feed got in the diet.
+    post_results["diet_table"], for the amount each limited feed got in the diet;
+    result_kg_asfed is None when there is no diet (a FAILED / ERROR run has no table).
 
     Returns None when the user set no limit, so callers add nothing and a report
     without limits stays exactly as before. English only; callers localize.
     """
-    in_diet: Dict[str, float] = {}
-    if hasattr(diet_table, "to_dict"):
-        for row in diet_table.to_dict("records"):
-            in_diet[str(row.get("Ingredient") or "")] = float(row.get("Inclusion_AF_kg") or 0.0)
+    # Amount in the diet per feed. The engine's table has one row per selected feed in
+    # the same order, so match by position: names are not unique (a custom feed may
+    # share a library feed's name, and the same feed can be picked twice). By name only
+    # if the row counts differ, which the API never produces.
+    amounts: List[Optional[float]] = [None] * len(feed_data_list)
+    if hasattr(diet_table, "to_dict") and len(diet_table):
+        rows = diet_table.to_dict("records")
+        if len(rows) == len(feed_data_list):
+            amounts = [float(r.get("Inclusion_AF_kg") or 0.0) for r in rows]
+        else:
+            by_name = {str(r.get("Ingredient") or ""): float(r.get("Inclusion_AF_kg") or 0.0) for r in rows}
+            amounts = [by_name.get(f.get("fd_name") or "", 0.0) for f in feed_data_list]
 
     inclusion_limits = [
         {
@@ -142,9 +151,9 @@ def build_user_limits(
             "feed_name": f.get("fd_name") or "",
             "min_kg_asfed": f.get("fd_min"),
             "max_kg_asfed": f.get("fd_max"),
-            "result_kg_asfed": round(in_diet.get(f.get("fd_name") or "", 0.0), 2),
+            "result_kg_asfed": round(amount, 2) if amount is not None else None,
         }
-        for f in feed_data_list
+        for f, amount in zip(feed_data_list, amounts)
         if f.get("fd_min") is not None or f.get("fd_max") is not None
     ]
 

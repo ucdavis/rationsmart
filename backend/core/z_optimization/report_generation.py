@@ -1667,7 +1667,7 @@ def rsm_generate_report_v2(
             rows = "".join(
                 f"<tr><td>{_escape_html((name_map or {}).get(f['feed_name'], f['feed_name']))}</td>"
                 f"<td>{_num(f['min_kg_asfed'])}</td><td>{_num(f['max_kg_asfed'])}</td>"
-                f"<td>{f['result_kg_asfed']:.2f}</td></tr>"
+                f"<td>{'—' if f['result_kg_asfed'] is None else format(f['result_kg_asfed'], '.2f')}</td></tr>"
                 for f in feeds
             )
             tables.append(
