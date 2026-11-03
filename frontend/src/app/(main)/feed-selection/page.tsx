@@ -8,6 +8,7 @@ import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import { evaluateDiet, recommendDiet } from "@/lib/api";
 import { simulationCurrency } from "@/lib/money";
+import { useSimulationUser } from "@/lib/simulation-country";
 import type { DietLimits, FeedSearchResult } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
@@ -82,6 +83,9 @@ export default function FeedSelectionPage() {
   // The simulation country's currency CODE (PHP / INR / VND / …) so the
   // Price field label reads e.g. "Price PHP/KG", matching Android.
   const currencySymbol = simulationCurrency(cattleInfo, user);
+  // Feed lists, local names, search and custom feeds use the SIMULATION
+  // country from Cattle Info, not the profile's (N5).
+  const simUser = useSimulationUser();
 
   // UI-label i18n — this screen (and FeedRow) resolve language from the
   // PER-SIMULATION override (cattleInfo.simulation_language), not the
@@ -93,7 +97,7 @@ export default function FeedSelectionPage() {
   const { items, setItems, loadingRows, handleCascadeLoading, addFeed, updateItem, deleteItem } =
     useFeedItems(feedSelections, setFeedSelections, showSnackbar, t);
   const taxonomyLabels = useFeedTaxonomyLabels(
-    user?.country_id,
+    simUser?.country_id,
     cattleInfo?.simulation_language ?? null,
     user?.preferred_language ?? null
   );
@@ -101,7 +105,7 @@ export default function FeedSelectionPage() {
     showCustomFeedModal,
     openCustomFeedModal,
     sheetProps: customFeedSheetProps,
-  } = useCustomFeed(user, t, showSnackbar);
+  } = useCustomFeed(simUser, t, showSnackbar);
   const [isLoading, setIsLoading] = useState(false);
   const [showLimitsModal, setShowLimitsModal] = useState(false);
   useEscapeKey(!!showLimitsModal, () => setShowLimitsModal(false));
@@ -119,7 +123,7 @@ export default function FeedSelectionPage() {
   // query + tapping a result then populates that card. If no card is
   // explicitly active when the user picks a result, fall back to the
   // first row without a feed_uuid (or row 1 if all are populated).
-  const search = useFeedSearch(user);
+  const search = useFeedSearch(simUser);
   const { setSearchQuery, setSearchOpen, jumpToSearch: handleJumpToSearch } = search;
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
 
@@ -487,7 +491,7 @@ export default function FeedSelectionPage() {
 
       {/* Custom Feed Modal — confined to the 480px centered column so the
           bottom sheet does not span the entire desktop viewport. */}
-      {showCustomFeedModal && <CustomFeedSheet {...customFeedSheetProps} t={t} user={user} />}
+      {showCustomFeedModal && <CustomFeedSheet {...customFeedSheetProps} t={t} user={simUser} />}
 
       {/* Incomplete Feeds Dialog — confined to centered column */}
       {showIncompleteFeedsDialog && (

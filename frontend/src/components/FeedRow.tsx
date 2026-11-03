@@ -4,6 +4,7 @@ import type { CSSProperties } from "react";
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
 import { taxonomyLabel } from "@/lib/api-client/feeds";
 import { useStore } from "@/lib/store";
+import { useSimulationUser } from "@/lib/simulation-country";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
@@ -85,6 +86,8 @@ export default function FeedRow({
 }: FeedRowProps) {
   const user = useStore((s) => s.user);
   const cattleInfo = useStore((s) => s.cattleInfo);
+  // Feed lists and edits use the simulation country, not the profile's (N5).
+  const simUser = useSimulationUser();
   const showSnackbar = useStore((s) => s.showSnackbar);
 
   // UI-label i18n — same per-simulation resolution as feed-selection/page.tsx
@@ -100,11 +103,11 @@ export default function FeedRow({
     loadingTypes,
     loadingCats,
     loadingSubs,
-  } = useFeedCascade({ item, user, onUpdate, showSnackbar, t, taxonomyLabels });
+  } = useFeedCascade({ item, user: simUser, onUpdate, showSnackbar, t, taxonomyLabels });
 
   const { canEdit, showEditModal, openEditModal, dialogProps } = useFeedEdit({
     item,
-    user,
+    user: simUser,
     onUpdate,
     setSubCategories,
     showSnackbar,
