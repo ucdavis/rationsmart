@@ -356,6 +356,7 @@ def _render_report_html(
     lang: str = "en",
     name_map: Optional[Dict[str, str]] = None,
     type_map: Optional[Dict[str, str]] = None,
+    user_limits: Optional[Dict[str, Any]] = None,
 ) -> Optional[str]:
     """Render report HTML for Report.report_html at compute time.
 
@@ -369,6 +370,7 @@ def _render_report_html(
     user_name / country_name fill the report header (see _report_header_names); a
     missing value leaves the renderer's default in place. lang / name_map / type_map
     put the feed names and types in the user's language (the rest stays English).
+    user_limits (reporting.build_user_limits) adds the "Limits You Set" section.
     """
     try:
         from core.z_optimization.report_generation import rsm_generate_report_v2
@@ -389,6 +391,7 @@ def _render_report_html(
             lang=lang,
             name_map=name_map,
             type_map=type_map,
+            user_limits=user_limits,
             **names,
         )
     except Exception:
@@ -566,7 +569,7 @@ async def run_diet_recommendation(
 
     from core.z_optimization.constraints_config import to_wire_units
     from core.z_optimization.nsga3_runner import z_optimization_main
-    from core.z_optimization.reporting import build_diet_response
+    from core.z_optimization.reporting import build_diet_response, build_user_limits
     from core.z_optimization.report_text import translator
 
     cattle = request.cattle_info
@@ -681,6 +684,12 @@ async def run_diet_recommendation(
     # has no DB session). Feed types are used by the report only.
     name_map, type_map = await _feed_translation_maps(db, feed_data_list, request.country_id, lang)
 
+    # The limits the user set (inclusion + custom diet limits), shown in the report and
+    # the JSON so the diet can be read in context. None when there are none.
+    user_limits = build_user_limits(
+        feed_data_list, persisted_thresholds, cattle.physiological_state, post_results.get("diet_table")
+    )
+
     response = build_diet_response(
         optimization_results=result_dict,
         cattle_info=request.cattle_info,
@@ -690,6 +699,7 @@ async def run_diet_recommendation(
         currency=currency,
         name_map=name_map,
         translate=translator(lang),
+        user_limits=user_limits,
     )
 
     # 5 — Render report HTML (PDF generation happens later, at save time)
@@ -698,7 +708,7 @@ async def run_diet_recommendation(
         post_results, result.animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id, currency=currency,
         user_name=user_name, country_name=country_name,
-        lang=lang, name_map=name_map, type_map=type_map,
+        lang=lang, name_map=name_map, type_map=type_map, user_limits=user_limits,
     )
 
     # 6 — Persist report record
@@ -713,8 +723,16 @@ async def run_diet_recommendation(
         user_id=_uuid_mod.UUID(user_id),
         country_id=_uuid_mod.UUID(country_id) if country_id else None,
         animal_inputs=animal_inputs,
+        # The inclusion limits go with each feed, as typed (kg/day as fed; null = none),
+        # so a reloaded simulation re-runs the same diet. Rows from before this change
+        # have no limit keys: their limits were never stored.
         feed_selection=[
-            {"feed_id": f["feed_id"], "price_per_kg": f["price_per_kg"]}
+            {
+                "feed_id": f["feed_id"],
+                "price_per_kg": f["price_per_kg"],
+                "min_kg_asfed": f.get("fd_min"),
+                "max_kg_asfed": f.get("fd_max"),
+            }
             for f in feed_data_list
         ],
         custom_constraints=persisted_thresholds,

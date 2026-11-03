@@ -625,7 +625,7 @@ async def fetch_simulation_details(
     db: AsyncSession = Depends(get_db),
 ):
     """
-    Fetch the stored **inputs** of a single simulation so they can be reloaded into the UI: the animal details, the feeds and prices it was run with, and any custom diet limits (`custom_constraints`).
+    Fetch the stored **inputs** of a single simulation so they can be reloaded into the UI: the animal details, the feeds and prices it was run with (with each feed's inclusion limits, `min_kg_asfed` / `max_kg_asfed`; `null` = no limit, or a report saved before the limits were stored), and any custom diet limits (`custom_constraints`).
 
     This does **not** return the diet solution, nutrient breakdown or cost analysis — those come from the original recommendation response and the saved report.
 
