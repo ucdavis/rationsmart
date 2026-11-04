@@ -23,7 +23,7 @@ import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useDrawer } from "@/lib/DrawerContext";
 import { getCountries, getUserReports, getSimulationDetails, getCattleInfoFields } from "@/lib/api";
-import type { AnimalCategory } from "@/lib/api";
+import type { AnimalCategory, CattleInfo } from "@/lib/api";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
 import { COLUMN_WIDTH } from "@/lib/column";
@@ -32,6 +32,7 @@ import { ACTION_FEEDBACK_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
+import { useCountryChange } from "@/components/cattle-info/useCountryChange";
 import { useCalfRun } from "@/components/cattle-info/useCalfRun";
 import {
   Adjustments,
@@ -397,12 +398,18 @@ export default function CattleInfoPage() {
         return resolved;
       })(),
     };
+    // N8: a new country with filled feed cards asks before clearing them.
+    countryChange.continueWith(nextInfo);
+  };
+
+  function proceed(nextInfo: CattleInfo) {
     setCattleInfo(nextInfo);
     // A calf only needs its milk amount — skip feed selection (QA row 8);
     // the backend works out the plan straight away (W13).
-    if (form.animal_category === "Baby Calf/Heifer") void calfRun.run(nextInfo);
+    if (nextInfo.animal_category === "Baby Calf/Heifer") void calfRun.run(nextInfo);
     else router.push("/feed-selection");
-  };
+  }
+  const countryChange = useCountryChange(proceed, t);
 
   // The reset itself finishes in microseconds; the user was reporting
   // they couldn't tell whether the button had done anything. This state
@@ -567,6 +574,8 @@ export default function CattleInfoPage() {
       </div>
 
       {calfRun.isRunning && <GeneratingReportDialog />}
+
+      {countryChange.dialog}
 
       {/* Simulation History Bottom-Sheet Modal */}
       {showHistoryModal && (

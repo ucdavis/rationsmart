@@ -3,6 +3,7 @@
 // Delete-feed confirmation (Admin > Feed Management); split out of admin/feeds/page.tsx (audit B-17).
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { COLORS } from "@/lib/colors";
+import { fillText } from "@/lib/i18n-ui";
 
 import type { AdminFeed } from "@/components/admin/feeds/shared";
 import type React from "react";
@@ -60,9 +61,18 @@ export default function DeleteFeedDialog({
           {t("Are you sure you want to delete feed?")}
         </h3>
         <p className="text-center text-sm mb-5 px-3" style={{ color: COLORS.darkSilver }}>
-          {t('"${fd_name}" will be permanently deleted. This action cannot be undone.').replace(
-            "${fd_name}",
-            confirmDeleteFeed.fd_name ?? ""
+          {/* N7: name the country too — the same feed name can exist in
+              another country, and deleting removes it for that country. */}
+          {fillText(
+            confirmDeleteFeed.fd_country_name
+              ? t(
+                  '"${fd_name}" (${country}) will be permanently deleted. This action cannot be undone.'
+                )
+              : t('"${fd_name}" will be permanently deleted. This action cannot be undone.'),
+            {
+              fd_name: confirmDeleteFeed.fd_name ?? "",
+              country: confirmDeleteFeed.fd_country_name ?? "",
+            }
           )}
         </p>
         <div className="flex gap-2 px-3">

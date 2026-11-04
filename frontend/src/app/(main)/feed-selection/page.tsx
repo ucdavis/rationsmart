@@ -9,6 +9,7 @@ import GeneratingReportDialog from "@/components/GeneratingReportDialog";
 import { evaluateDiet, recommendDiet } from "@/lib/api";
 import { simulationCurrency } from "@/lib/money";
 import { useSimulationUser } from "@/lib/simulation-country";
+import { isFeedOnOtherCard } from "@/lib/feed-selection-rules";
 import type { DietLimits, FeedSearchResult } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
@@ -142,6 +143,11 @@ export default function FeedSelectionPage() {
     if (idx === -1) idx = 0;
     const landedIdx = idx;
     const landedRowId = items[idx]?.id ?? null;
+    // One feed per card: picking a feed another card holds changes nothing.
+    if (isFeedOnOtherCard(items, result.feed_uuid, landedRowId)) {
+      showSnackbar(t("Already this feed is selected"), "error");
+      return;
+    }
 
     setItems((prev) => {
       const next = prev.map((row) =>
@@ -411,6 +417,7 @@ export default function FeedSelectionPage() {
                 onUpdate={updateItem}
                 onDelete={deleteItem}
                 taxonomyLabels={taxonomyLabels}
+                isFeedTaken={(feedUuid, rowId) => isFeedOnOtherCard(items, feedUuid, rowId)}
               />
             </div>
           ))}
