@@ -340,9 +340,13 @@ async def add_feed(
 
     **Requires:** Bearer JWT with admin privileges.
 
-    **Mandatory body fields:** `fd_name`, `fd_type`, `fd_category`, `fd_country_name`, `fd_country_cd`, and nutritional values (`fd_dm`, `fd_cp`, `fd_ndf`, `fd_adf`, `fd_ee`, `fd_ash`, `fd_ca`, `fd_p`).
+    **Mandatory body fields:** `fd_name`, `fd_type`, `fd_category`, `fd_country_name`, and nutritional values (`fd_dm`, `fd_cp`, `fd_ndf`, `fd_adf`, `fd_ee`, `fd_ash`, `fd_ca`, `fd_p`).
 
-    Returns `400` if required fields are missing or a duplicate feed is detected.
+    The English name must be unique **within the feed's country**; the same name may be
+    used in other countries.
+
+    Returns `400` if required fields are missing (including a blank country), the country
+    is unknown, or another feed in that country already has the name.
     """
     success, message, feed = await feed_service.create_feed(db, body.dict())
     if not success:
@@ -373,7 +377,10 @@ async def update_feed(
 
     **Body:** Any subset of feed fields (partial update supported; `null` fields are ignored).
 
-    Returns `404` if not found, `400` for validation errors.
+    A new name must be unique within the feed's country (the feed keeps its country).
+
+    Returns `404` if not found, `400` for validation errors or a name already used in the
+    feed's country.
     """
     success, message, feed = await feed_service.update_feed(db, feed_id, body.dict(exclude_none=True))
     if not success:

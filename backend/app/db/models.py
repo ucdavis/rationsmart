@@ -143,14 +143,16 @@ class FeedCategory(Base):
     )
 
 
-# Feed names are unique across the library on a normalized key: lowercase,
+# Feed names are unique within a country on a normalized key: lowercase,
 # trimmed, runs of whitespace (no-break space included) collapsed to one space
-# (unique-names plan U1/U4, docs/dev_docs/climdes/unique_feed_names_IMPLEMENTATION_PLAN.md).
-# One definition serves the unique index below and FeedRepository.get_by_name;
-# migration e6f7a8b9c0d1 holds a literal copy (a test compares them). Postgres
-# uses the index only when the lookup's expression matches it exactly, so the
-# pattern is inlined as a constant, never a bind parameter.
-FEED_NAME_INDEX = "uq_feeds_fd_name_norm"
+# (unique-names plan U4, docs/dev_docs/climdes/unique_feed_names_IMPLEMENTATION_PLAN.md;
+# per country since docs/dev_docs/feed_name_per_country/). The same name may be
+# used in different countries. One definition serves the unique index below and
+# FeedRepository.get_by_name; migrations e6f7a8b9c0d1 and f3a4b5c6d7e8 hold a
+# literal copy (a test compares them). Postgres uses the index only when the
+# lookup's expression matches it exactly, so the pattern is inlined as a
+# constant, never a bind parameter.
+FEED_NAME_INDEX = "uq_feeds_country_fd_name_norm"
 _FEED_NAME_WHITESPACE = r"'[\s\u00a0]+'"  # Postgres regex; it decodes the \u escape
 
 
@@ -213,7 +215,11 @@ class Feed(Base):
     )
 
 
-Index(FEED_NAME_INDEX, feed_name_key(Feed.fd_name), unique=True)
+# NULLS NOT DISTINCT: two feeds without a country can't share a name either.
+Index(
+    FEED_NAME_INDEX, Feed.fd_country_id, feed_name_key(Feed.fd_name),
+    unique=True, postgresql_nulls_not_distinct=True,
+)
 
 
 class CustomFeed(Base):

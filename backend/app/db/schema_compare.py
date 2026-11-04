@@ -10,19 +10,21 @@ from sqlalchemy import text
 # alembic_version is Alembic-internal; never part of a generated migration.
 EXCLUDED_TABLES = {"alembic_version"}
 
-# uq_feeds_fd_name_norm is an expression index (app.db.models.feed_name_key).
-# Postgres returns the expression in its own spelling (TRIM(BOTH FROM ...),
-# ::text casts), so Alembic always reports it as "remove + add" although the two
-# are the same index. Migration e6f7a8b9c0d1 owns it; a unit test pins its SQL.
-# Excluded from Alembic's comparison, it is checked by check_expression_indexes().
-EXCLUDED_INDEXES = {"uq_feeds_fd_name_norm"}
+# uq_feeds_country_fd_name_norm is an expression index (fd_country_id +
+# app.db.models.feed_name_key). Postgres returns the expression in its own
+# spelling (TRIM(BOTH FROM ...), ::text casts), so Alembic always reports it as
+# "remove + add" although the two are the same index. Migration f3a4b5c6d7e8
+# owns it; a unit test pins its SQL. Excluded from Alembic's comparison, it is
+# checked by check_expression_indexes().
+EXCLUDED_INDEXES = {"uq_feeds_country_fd_name_norm"}
 
 # The definition Postgres prints for each excluded index (pg_get_indexdef on
-# Test, 2026-10-27). The regex holds a backslash escape, not a no-break space.
+# PostgreSQL 15). The regex holds a backslash escape, not a no-break space.
 EXPRESSION_INDEX_DEFS = {
-    "uq_feeds_fd_name_norm": (
-        r"CREATE UNIQUE INDEX uq_feeds_fd_name_norm ON public.feeds USING btree "
-        r"(lower(TRIM(BOTH FROM regexp_replace(fd_name, '[\s\u00a0]+'::text, ' '::text, 'g'::text))))"
+    "uq_feeds_country_fd_name_norm": (
+        r"CREATE UNIQUE INDEX uq_feeds_country_fd_name_norm ON public.feeds USING btree "
+        r"(fd_country_id, lower(TRIM(BOTH FROM regexp_replace(fd_name, '[\s\u00a0]+'::text, ' '::text, 'g'::text))))"
+        r" NULLS NOT DISTINCT"
     ),
 }
 
