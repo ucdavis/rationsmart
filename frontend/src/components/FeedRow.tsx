@@ -2,7 +2,9 @@
 
 import type { CSSProperties } from "react";
 import type { FeedItem, FeedTaxonomyLabels } from "@/lib/api";
+import { taxonomyLabel } from "@/lib/api-client/feeds";
 import { useStore } from "@/lib/store";
+import { useSimulationUser } from "@/lib/simulation-country";
 import { calculateCost } from "@/lib/validators";
 import { IcDelete } from "@/components/Icons";
 import CustomSelect, { type CustomSelectOption } from "@/components/CustomSelect";
@@ -58,6 +60,8 @@ interface FeedRowProps {
    *  without each row re-hitting the API. `display` falls back to the
    *  English identity when a mapping is missing. */
   taxonomyLabels?: FeedTaxonomyLabels;
+  /** True when another card already holds this feed (one feed per card). */
+  isFeedTaken?: (feedUuid: string, rowId: string) => boolean;
 }
 
 // Feed Type radios: one row, a column per type (at most 3, then wrap).
@@ -81,9 +85,12 @@ export default function FeedRow({
   onUpdate,
   onDelete,
   taxonomyLabels,
+  isFeedTaken,
 }: FeedRowProps) {
   const user = useStore((s) => s.user);
   const cattleInfo = useStore((s) => s.cattleInfo);
+  // Feed lists and edits use the simulation country, not the profile's (N5).
+  const simUser = useSimulationUser();
   const showSnackbar = useStore((s) => s.showSnackbar);
 
   // UI-label i18n — same per-simulation resolution as feed-selection/page.tsx
@@ -99,11 +106,11 @@ export default function FeedRow({
     loadingTypes,
     loadingCats,
     loadingSubs,
-  } = useFeedCascade({ item, user, onUpdate, showSnackbar, t, taxonomyLabels });
+  } = useFeedCascade({ item, user: simUser, onUpdate, showSnackbar, t, taxonomyLabels });
 
   const { canEdit, showEditModal, openEditModal, dialogProps } = useFeedEdit({
     item,
-    user,
+    user: simUser,
     onUpdate,
     setSubCategories,
     showSnackbar,
@@ -124,6 +131,8 @@ export default function FeedRow({
   // pushes the populated values into this row via onUpdate, then the
   // cascade effects above refresh the dropdown options.
 
+  // A price of 0 is a real price (free feed), only null means "not entered".
+  const hasPrice = item.price_per_kg != null;
   const cost =
     showQuantity && item.price_per_kg !== null && item.quantity_kg !== null
       ? calculateCost(String(item.price_per_kg ?? ""), String(item.quantity_kg ?? ""))
@@ -367,7 +376,7 @@ export default function FeedRow({
                       textAlign: "left",
                     }}
                   >
-                    {taxonomyLabels?.types?.[ft.name] ?? ft.display}
+                    {taxonomyLabel(taxonomyLabels?.types, ft.name) ?? ft.display}
                   </span>
                 </button>
               );
@@ -415,7 +424,7 @@ export default function FeedRow({
             emptyLabel={t("No categories found for this feed type")}
             options={categories.map<CustomSelectOption>((c) => ({
               value: String(c.id),
-              label: taxonomyLabels?.categories?.[c.name] ?? c.display,
+              label: taxonomyLabel(taxonomyLabels?.categories, c.name) ?? c.display,
             }))}
           />
         </FieldBox>
@@ -430,6 +439,10 @@ export default function FeedRow({
             value={item.feed_uuid ?? ""}
             onChange={(v) => {
               const selected = subCategories.find((s) => s.feed_uuid === v);
+              if (selected && isFeedTaken?.(selected.feed_uuid, item.id)) {
+                showSnackbar(t("Already this feed is selected"), "error");
+                return;
+              }
               onUpdate(item.id, {
                 sub_category_id: selected ? 1 : null,
                 sub_category_name: selected?.feed_name ?? "",
@@ -468,7 +481,7 @@ export default function FeedRow({
       <div style={{ padding: "0 10px", paddingBottom: showQuantity ? 10 : 16 }}>
         <FieldBox
           label={t("Price ${currencySymbol}/KG").replace("${currencySymbol}", currencySymbol)}
-          hasValue={item.price_per_kg != null && item.price_per_kg !== 0}
+          hasValue={item.price_per_kg != null}
           disabled={!item.feed_uuid}
           loading={rowLoading}
         >
@@ -491,13 +504,14 @@ export default function FeedRow({
         </FieldBox>
       </div>
 
-      {/* Row 7 — Quantity + Cost (eval mode only, 50/50) */}
+      {/* Row 7 — Quantity + Cost (eval mode only, 50/50). Quantity unlocks
+          once a price is entered — 0 counts (own-farm fodder, F36). */}
       {showQuantity && (
         <div style={{ ...colGap, padding: "0 10px 16px" }}>
           <FieldBox
             label={t("Quantity")}
             hasValue={item.quantity_kg != null && item.quantity_kg !== 0}
-            disabled={!item.price_per_kg}
+            disabled={!hasPrice}
             loading={rowLoading}
           >
             <input
@@ -506,14 +520,14 @@ export default function FeedRow({
               inputMode="decimal"
               min={0}
               step={0.1}
-              disabled={!item.price_per_kg || rowLoading}
+              disabled={!hasPrice || rowLoading}
               value={item.quantity_kg ?? ""}
               onChange={(e) =>
                 onUpdate(item.id, { quantity_kg: e.target.value ? Number(e.target.value) : null })
               }
               {...cascadeLoadingProps(rowLoading, {
                 ...innerInputStyle,
-                cursor: !item.price_per_kg ? "not-allowed" : "text",
+                cursor: !hasPrice ? "not-allowed" : "text",
               })}
             />
           </FieldBox>

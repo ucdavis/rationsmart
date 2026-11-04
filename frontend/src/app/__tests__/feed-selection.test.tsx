@@ -798,7 +798,6 @@ describe("feed-selection — generateReport payloads", () => {
     expect(evaluateDiet).toHaveBeenCalledWith({
       user_id: "u-1",
       country_id: cattleInfo.country_id,
-      currency: "INR",
       simulation_id: `${cattleInfo.simulation_name} (Evaluation)`,
       cattle_info: toCattleInfoPayload(cattleInfo),
       feed_evaluation: [{ feed_id: "uuid-forage-1", quantity_as_fed: 3, price_per_kg: 10 }],
@@ -825,27 +824,8 @@ describe("feed-selection — generateReport payloads", () => {
     expect(evaluateDiet).not.toHaveBeenCalled();
   });
 
-  it("derives a missing currency from the simulation's country (audit D-03)", async () => {
+  it("evaluates without a currency even when the profile has none (F8)", async () => {
     evaluateDiet.mockResolvedValueOnce({ data: { report_id: "EVAL-2" } });
-    const cattleInfo = mkCattleInfo();
-    getCountries.mockResolvedValueOnce({
-      data: [{ id: cattleInfo.country_id, name: "X", currency: "KES" }],
-    });
-    useStore.setState({
-      feedSelectionType: "evaluation",
-      cattleInfo,
-      feedSelections: [mkValidForageRow({ quantity_kg: 3 })],
-      user: seedUser({ currency: "" }),
-    });
-    await renderReady();
-    fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
-    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
-    expect(evaluateDiet.mock.calls[0][0].currency).toBe("KES");
-    expect(useStore.getState().user?.currency).toBe("KES");
-  });
-
-  it("refuses to price the diet when no currency can be found — never silently USD", async () => {
-    getCountries.mockResolvedValueOnce({ data: [] });
     useStore.setState({
       feedSelectionType: "evaluation",
       cattleInfo: mkCattleInfo(),
@@ -854,8 +834,21 @@ describe("feed-selection — generateReport payloads", () => {
     });
     await renderReady();
     fireEvent.click(screen.getByRole("button", { name: "Get Evaluation" }));
-    await waitFor(() => expect(useStore.getState().snackbar?.type).toBe("error"));
-    expect(evaluateDiet).not.toHaveBeenCalled();
+    // The backend prices it in the currency of country_id.
+    await waitFor(() => expect(evaluateDiet).toHaveBeenCalledTimes(1));
+    expect(evaluateDiet.mock.calls[0][0]).not.toHaveProperty("currency");
+    expect(getCountries).not.toHaveBeenCalled();
+  });
+
+  it("prices feeds in the simulation country's currency, not the profile's (CAT-01-C)", async () => {
+    useStore.setState({
+      cattleInfo: { ...mkCattleInfo(), currency: "VND" },
+      feedSelections: [mkValidForageRow()],
+      user: seedUser({ currency: "INR" }),
+    });
+    await renderReady();
+    expect(screen.getAllByText("Price VND/KG").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Price INR/KG")).toBeNull();
   });
 
   // CONTRACT CHANGE 2026-09-21: we no longer merge a hardcoded copy of
@@ -1006,5 +999,100 @@ describe("feed-selection — UI-label i18n (simulation_language override)", () =
 
     await screen.findByText("आहार सिफारिश"); // "Diet Recommendation"
     expect(screen.getByText("आहार मूल्यांकन")).toBeInTheDocument(); // "Diet Evaluation"
+  });
+});
+
+// ─── N5: feeds follow the SIMULATION country, not the profile's ─────────────
+// Since F3 Continue no longer copies the Cattle Info country onto `user`, so
+// with profile = India (1) and simulation = Ethiopia (9) every feed list,
+// the search and the Custom Feed lists must ask for Ethiopia.
+describe("feed-selection — simulation country (N5)", () => {
+  beforeEach(() => {
+    useStore.setState({
+      user: seedUser(),
+      cattleInfo: mkCattleInfo({ country: "Ethiopia", country_id: "9", currency: "ETB" }),
+    });
+  });
+
+  it("loads feed types, local names and search results for the simulation country", async () => {
+    await renderReady();
+    expect(getFeedTypes).toHaveBeenCalled();
+    for (const call of getFeedTypes.mock.calls) expect(call).toEqual(["9", "u-1"]);
+    expect(fetchFeedTaxonomyLabels.mock.calls[0][0]).toBe("9");
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds/i), { target: { value: "teff" } });
+    await waitFor(() => expect(searchFeeds).toHaveBeenCalledWith("teff", "9", "u-1"));
+  });
+
+  it("loads the Custom Feed lists for the simulation country and leaves the profile alone", async () => {
+    await renderReady();
+    getFeedTypes.mockClear();
+    fireEvent.click(screen.getByText("Custom Feed"));
+    await waitFor(() => expect(getFeedTypes).toHaveBeenCalledWith("9", "u-1"));
+    expect(useStore.getState().user?.country_id).toBe("1");
+  });
+});
+
+describe("feed-selection — one feed per card (search)", () => {
+  it("a search result already on another card is refused with a message", async () => {
+    const napier = {
+      feed_uuid: "napier",
+      feed_name: "Napier",
+      feed_type: "Forage",
+      feed_category: "Grass",
+      display_name: "Napier",
+      display_type: "Forage",
+      display_category: "Grass",
+    };
+    const filled = {
+      id: "r1",
+      feed_type_id: null,
+      feed_type_name: "Forage",
+      category_id: null,
+      category_name: "Grass",
+      sub_category_id: 1,
+      sub_category_name: "Napier",
+      feed_uuid: "napier",
+      price_per_kg: null,
+      quantity_kg: null,
+      inclusion_limits_enabled: false,
+      min_kg_per_day: null,
+      max_kg_per_day: null,
+    };
+    useStore.setState({
+      feedSelections: [
+        filled,
+        { ...filled, id: "r2", sub_category_name: "", feed_uuid: null, sub_category_id: null },
+      ],
+    });
+    searchFeeds.mockReset().mockResolvedValue({ data: [napier] });
+    // The filled card's own lists, so it settles like a real one.
+    getFeedCategories.mockReset().mockResolvedValue({ data: ["Grass"] });
+    getFeedSubCategories.mockReset().mockResolvedValue({
+      data: { standard_feeds: [{ feed_id: "napier", fd_name: "Napier" }], custom_feeds: [] },
+    });
+    await renderReady();
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds/i), { target: { value: "nap" } });
+    await waitFor(() => expect(searchFeeds).toHaveBeenCalled());
+    // The result row (it also shows the category), not the card's dropdown.
+    const result = await waitFor(() => {
+      const row = screen
+        .getAllByRole("button", { name: /Napier/ })
+        .find((b) => b.textContent?.includes("Grass"));
+      expect(row).toBeTruthy();
+      return row as HTMLElement;
+    });
+    fireEvent.click(result);
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Already this feed is selected",
+        type: "error",
+      })
+    );
+    expect(useStore.getState().feedSelections.filter((f) => f.feed_uuid === "napier")).toHaveLength(
+      1
+    );
   });
 });

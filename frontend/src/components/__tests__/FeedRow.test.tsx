@@ -88,7 +88,10 @@ beforeEach(() => {
   getFeedSubCategories.mockResolvedValue({ data: { standard_feeds: [], custom_feeds: [] } });
   checkInsertOrUpdate.mockResolvedValue({ data: { action: "update", feed_id: "u1" } });
   getFeedDetails.mockResolvedValue({ data: {} });
-  insertCustomFeed.mockResolvedValue({ data: { feed_details: {} } });
+  // The real reply: the new feed flat at the top level (N2).
+  insertCustomFeed.mockResolvedValue({
+    data: { success: true, feed_id: "copy-uuid", fd_name: "Aiyappa-Copy" },
+  });
   updateCustomFeed.mockResolvedValue({ data: {} });
 
   useStore.setState({
@@ -323,11 +326,13 @@ describe("edit dialog — insert path (§10.8 regression guard)", () => {
       data: { insert_feed: true, feed_details: { feed_name: "Old Feed" } },
     });
     insertCustomFeed.mockResolvedValueOnce({
-      data: { feed_details: { feed_name: "Aiyappa-NewCustomFeed", feed_id: "brand-new-uuid" } },
+      data: { success: true, feed_id: "brand-new-uuid", fd_name: "Aiyappa-NewCustomFeed" },
     });
 
+    let latest = initialItem;
     function Wrapper() {
       const [item, setItem] = useState(initialItem);
+      latest = item;
       return (
         <FeedRow
           item={item}
@@ -363,6 +368,63 @@ describe("edit dialog — insert path (§10.8 regression guard)", () => {
       expect(screen.getByRole("button", { name: "Aiyappa-NewCustomFeed" })).toBeInTheDocument();
     });
     expect(screen.queryByText("Select feed")).not.toBeInTheDocument();
+    // N2: the card is bound to the copy, so the next run uses the edited values.
+    expect(latest.feed_uuid).toBe("brand-new-uuid");
+    expect(useStore.getState().snackbar).toMatchObject({
+      message: "Custom feed saved",
+      type: "success",
+    });
+  });
+
+  it("says so when the save returns no feed id, and keeps the original feed (N2)", async () => {
+    const initialItem = makeItem({
+      feed_type_name: "Concentrate",
+      category_id: 1,
+      category_name: "Grain",
+      feed_uuid: "old-uuid",
+      sub_category_id: 1,
+      sub_category_name: "Old Feed",
+    });
+    getFeedTypes.mockResolvedValueOnce({
+      data: [{ type_name: "Concentrate", display_type: "Concentrate" }],
+    });
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Grain", display_category: "Grain" }],
+    });
+    getFeedSubCategories.mockResolvedValueOnce({
+      data: { standard_feeds: [{ feed_id: "old-uuid", fd_name: "Old Feed" }], custom_feeds: [] },
+    });
+    checkInsertOrUpdate.mockResolvedValueOnce({
+      data: { insert_feed: true, feed_details: { feed_name: "Old Feed" } },
+    });
+    insertCustomFeed.mockResolvedValueOnce({ data: { success: true } });
+    const onUpdate = vi.fn();
+    const { container } = render(
+      <FeedRow
+        item={initialItem}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={() => {}}
+      />
+    );
+    await screen.findByRole("button", { name: "Old Feed" });
+    fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
+    await screen.findByText("Add Custom Feed");
+    const nameInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    fireEvent.change(nameInput, { target: { value: "NewCustomFeed" } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Saved, but the copy could not be selected. Pick it from the feed list.",
+        type: "error",
+      })
+    );
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      initialItem.id,
+      expect.objectContaining({ feed_uuid: expect.anything() })
+    );
   });
 });
 
@@ -1055,5 +1117,111 @@ describe("stable taxonomy ids (audit B-24)", () => {
     expect(taxonomyId("Forage")).toBe(taxonomyId("Forage"));
     expect(taxonomyId("Forage")).not.toBe(taxonomyId("Concentrate"));
     expect(taxonomyId("Forage")).toBeGreaterThan(0);
+  });
+});
+
+describe("free feed — price 0 (F36 / W1)", () => {
+  // No country → the cascade stays idle, so only the price decides whether
+  // Quantity is open.
+  const renderEval = (price_per_kg: number | null) => {
+    useStore.setState({ user: seedUser({ country_id: "" }) } as never);
+    render(
+      <FeedRow
+        item={makeItem({ feed_uuid: "f-1", price_per_kg, quantity_kg: 4 })}
+        index={0}
+        showQuantity
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+  };
+
+  it("a price of 0 unlocks Quantity and costs 0", async () => {
+    renderEval(0);
+    await waitFor(() => expect(screen.getByLabelText("Quantity")).not.toBeDisabled());
+    // No currency prop here, so the row shows its default "$" suffix.
+    expect(screen.getByLabelText("Cost")).toHaveValue("0 $");
+  });
+
+  it("no price keeps Quantity locked", async () => {
+    renderEval(null);
+    await waitFor(() => expect(screen.getByLabelText("Quantity")).toBeDisabled());
+  });
+});
+
+describe("simulation country (N5)", () => {
+  it("fetches the cascade for the Cattle Info country, not the profile's", async () => {
+    useStore.setState({ cattleInfo: { country: "Ethiopia", country_id: "9" } } as never);
+    getFeedCategories.mockResolvedValueOnce({ data: ["Cat1"] });
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_name: "Forage", category_name: "Cat1" })}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    await waitFor(() => expect(getFeedTypes).toHaveBeenCalledWith("9", "u-1"));
+    await waitFor(() => expect(getFeedCategories).toHaveBeenCalledWith("Forage", "9", "u-1"));
+    await waitFor(() =>
+      expect(getFeedSubCategories).toHaveBeenCalledWith("Forage", "Cat1", "9", "u-1")
+    );
+  });
+});
+
+describe("one feed per card", () => {
+  async function renderPicker(isFeedTaken: (feedUuid: string, rowId: string) => boolean) {
+    getFeedTypes.mockResolvedValueOnce({ data: [{ type_name: "Forage", display_type: "Forage" }] });
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Grass", display_category: "Grass" }],
+    });
+    getFeedSubCategories.mockResolvedValueOnce({
+      data: {
+        standard_feeds: [
+          { feed_id: "napier", fd_name: "Napier" },
+          { feed_id: "maize", fd_name: "Maize" },
+        ],
+        custom_feeds: [],
+      },
+    });
+    const onUpdate = vi.fn();
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_name: "Forage", category_name: "Grass" })}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+        isFeedTaken={isFeedTaken}
+      />
+    );
+    await waitFor(() => expect(getFeedSubCategories).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole("button", { name: "Select feed" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Napier" }));
+    return onUpdate;
+  }
+
+  it("refuses a feed another card already holds and says so", async () => {
+    const isFeedTaken = vi.fn((uuid: string) => uuid === "napier");
+    const onUpdate = await renderPicker(isFeedTaken);
+    expect(isFeedTaken).toHaveBeenCalledWith("napier", "row-1");
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ feed_uuid: "napier" })
+    );
+    expect(useStore.getState().snackbar).toMatchObject({
+      message: "Already this feed is selected",
+      type: "error",
+    });
+  });
+
+  it("takes a feed no other card holds", async () => {
+    const onUpdate = await renderPicker(() => false);
+    expect(onUpdate).toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ feed_uuid: "napier" })
+    );
+    expect(useStore.getState().snackbar).toBeNull();
   });
 });

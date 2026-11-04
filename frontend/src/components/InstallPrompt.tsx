@@ -37,12 +37,38 @@ function detectIOS(): boolean {
 }
 
 // iOS standalone uses a non-standard `navigator.standalone` flag, not the
-// `display-mode: standalone` media query that Chromium PWAs use.
+// `display-mode` media query that Chromium PWAs use. The manifest's
+// display_override lets Chromium fall back to minimal-ui, so any non-browser
+// display mode means we're running as the installed app.
 function isStandaloneAnyPlatform(): boolean {
   if (typeof window === "undefined") return false;
-  if (window.matchMedia("(display-mode: standalone)").matches) return true;
+  const modes = ["standalone", "minimal-ui", "fullscreen", "window-controls-overlay"];
+  if (modes.some((m) => window.matchMedia(`(display-mode: ${m})`).matches)) return true;
   const nav = navigator as Navigator & { standalone?: boolean };
   return nav.standalone === true;
+}
+
+// Remembers that this browser installed the app, so opening the site in a
+// regular tab afterwards doesn't nag again. Kept outside rationsmart-storage
+// because resetForFreshInstall() wipes that key. If the user later
+// uninstalls, Chromium fires beforeinstallprompt again and we clear the flag.
+const INSTALLED_KEY = "rationsmart-installed";
+
+function readInstalledFlag(): boolean {
+  try {
+    return window.localStorage.getItem(INSTALLED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writeInstalledFlag(installed: boolean) {
+  try {
+    if (installed) window.localStorage.setItem(INSTALLED_KEY, "1");
+    else window.localStorage.removeItem(INSTALLED_KEY);
+  } catch {
+    // Storage unavailable (private mode etc.) — banner just falls back to showing.
+  }
 }
 
 export default function InstallPrompt() {
@@ -51,6 +77,7 @@ export default function InstallPrompt() {
   const [visible, setVisible] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [installed, setInstalled] = useState(false);
   const t = useT();
 
   // Always capture the install event — Chrome fires it early at load time,
@@ -61,19 +88,38 @@ export default function InstallPrompt() {
     if (isStandaloneAnyPlatform()) return;
 
     setIsIOS(detectIOS());
+    setInstalled(readInstalledFlag());
 
+    // Chromium only fires this when the app is NOT installed, so it also
+    // overrides a stale installed flag left behind by an uninstall.
+    const capture = (e: BeforeInstallPromptEvent) => {
+      setInstallEvent(e);
+      writeInstalledFlag(false);
+      setInstalled(false);
+    };
     const handler = (e: Event) => {
       e.preventDefault();
-      setInstallEvent(e as BeforeInstallPromptEvent);
+      capture(e as BeforeInstallPromptEvent);
     };
     window.addEventListener("beforeinstallprompt", handler);
+
+    // The event usually fires before hydration; the beforeInteractive
+    // script in layout.tsx stashes it for us.
+    const early = (window as Window & { __rsInstallEvent?: BeforeInstallPromptEvent })
+      .__rsInstallEvent;
+    if (early) capture(early);
 
     // Android only removes the home-screen shortcut when the user "uninstalls"
     // the PWA — it does NOT clear localStorage. So stale auth data from a
     // previous session survives a reinstall and sends the user straight to the
     // home screen instead of login. Clearing storage on every install/reinstall
     // guarantees a fresh start. (iOS does not fire appinstalled.)
-    const onInstalled = () => resetForFreshInstall();
+    const onInstalled = () => {
+      resetForFreshInstall();
+      writeInstalledFlag(true);
+      setInstalled(true);
+      setVisible(false);
+    };
     window.addEventListener("appinstalled", onInstalled);
 
     return () => {
@@ -104,13 +150,20 @@ export default function InstallPrompt() {
     const { outcome } = await installEvent.userChoice;
     if (outcome === "accepted") {
       resetForFreshInstall();
+      writeInstalledFlag(true);
+      setInstalled(true);
       setVisible(false);
     }
   };
 
   useEscapeKey(visible && showSteps, () => setShowSteps(false));
 
-  if (!visible) return null;
+  if (!visible || installed) return null;
+  // Off iOS, only offer install once Chromium has fired beforeinstallprompt.
+  // No event means the app is already installed (or not installable), and
+  // falling back to the manual "Add to Home screen" steps would create a
+  // second, Chrome-badged shortcut next to the installed app.
+  if (!isIOS && !installEvent) return null;
 
   if (showSteps) {
     return (

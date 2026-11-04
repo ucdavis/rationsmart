@@ -128,6 +128,15 @@ export default function UserDetailSheet({
             {selectedUser.is_active ? t("ACTIVE ACCOUNT") : t("INACTIVE ACCOUNT")}
           </span>
         </div>
+        {/* W12 — why it's off: a self-deleted user can come back by
+            registering again; an admin-disabled one can't. */}
+        {!selectedUser.is_active && selectedUser.deactivated_by && (
+          <p className="text-center text-xs mt-1" style={{ color: COLORS.darkSilver }}>
+            {selectedUser.deactivated_by === "self"
+              ? t("Deleted by user — they can come back by registering again.")
+              : t("Disabled by admin.")}
+          </p>
+        )}
 
         {/* Email + Country card (Android cv_user_details: white card,
             30dp corner, with american_diamond icon boxes + dark_silver

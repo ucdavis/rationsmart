@@ -1315,6 +1315,23 @@ def display_simulation_name(simulation_id) -> str:
     return name
 
 
+def _report_date(time_zone=None):
+    """The report's "Generated" time (FTC REC-02-D).
+
+    time_zone: an IANA zone name (the API passes the simulation country's, see
+    country_time_zones) -> that zone's local time; "UTC" -> the UTC time marked
+    "UTC"; None -> this machine's local time (the manual runners).
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from zoneinfo import ZoneInfo
+
+    if time_zone is None:
+        return _dt.now().strftime("%Y-%m-%d %H:%M")
+    if time_zone == "UTC":
+        return _dt.now(_tz.utc).strftime("%Y-%m-%d %H:%M UTC")
+    return _dt.now(ZoneInfo(time_zone)).strftime("%Y-%m-%d %H:%M")
+
+
 def rsm_generate_report_v2(
     post_results,
     animal_requirements,
@@ -1327,6 +1344,8 @@ def rsm_generate_report_v2(
     lang="en",
     name_map=None,
     type_map=None,
+    user_limits=None,
+    time_zone=None,
 ):
     """
     Enhanced HTML report generation with PDF-parity features (icon-based layout,
@@ -1339,6 +1358,11 @@ def rsm_generate_report_v2(
     lang sets <html lang>. name_map / type_map ({english: translated}, from
     feed_translations / vocabulary_translations) localize the feed names and types
     shown in the tables; the engine data and every other label stay English.
+
+    user_limits (reporting.build_user_limits) adds a "Limits You Set" section after
+    the diet table; None (the default) leaves the report exactly as before.
+
+    time_zone sets the zone of the "Generated" time (see _report_date).
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     icon_header_path = os.path.join(current_dir, "assets", "report_header.png")
@@ -1557,9 +1581,8 @@ def rsm_generate_report_v2(
         calf_feeding_table = _translate_table(calf_feeding_table, t, cell_columns=("Feeding Time",))
 
     currency_display = currency + " " if len(currency) > 1 else currency
-    from datetime import datetime as _dt
     # Numeric, so no English month name appears in a localized report.
-    report_date = _dt.now().strftime("%Y-%m-%d %H:%M")
+    report_date = _report_date(time_zone)
 
     # Milk price & profit margin banner (optional). Uses the same yield denominator
     # (milk_den) and daily_cost already computed for the Cost / Liter card.
@@ -1645,6 +1668,52 @@ def rsm_generate_report_v2(
         </div>
     </div>
     """
+
+    # Limits You Set: the inclusion and diet limits the user entered, so the diet above
+    # can be read in context. Only when there are any. Feed names are free text (custom
+    # feeds), so every cell is escaped.
+    limits_html = ""
+    if user_limits and not evaluation_mode:
+        def _num(v):
+            return "—" if v is None else f"{v:g}"
+
+        # nowrap: with the server's DejaVu Sans the narrow number columns broke the unit
+        # into "(Kg/ day)"; the feed-name column takes the extra lines instead.
+        kg = f"<span style='white-space: nowrap;'>{h('(Kg/day)')}</span>"
+        tables = []
+        feeds = user_limits.get("inclusion_limits") or []
+        if feeds:
+            rows = "".join(
+                f"<tr><td>{_escape_html((name_map or {}).get(f['feed_name'], f['feed_name']))}</td>"
+                f"<td>{_num(f['min_kg_asfed'])}</td><td>{_num(f['max_kg_asfed'])}</td>"
+                f"<td>{'—' if f['result_kg_asfed'] is None else format(f['result_kg_asfed'], '.2f')}</td></tr>"
+                for f in feeds
+            )
+            tables.append(
+                "<div class='table-container'><table class='diet-table'><thead><tr>"
+                f"<th>{h('Ingredient Name')}</th><th>{h('Min')}<br/>{kg}</th>"
+                f"<th>{h('Max')}<br/>{kg}</th><th>{h('In diet')}<br/>{kg}</th>"
+                f"</tr></thead><tbody>{rows}</tbody></table></div>"
+            )
+        diet_limits = user_limits.get("diet_limits") or []
+        if diet_limits:
+            sign = {"max": "≤", "min": "≥"}
+            rows = "".join(
+                f"<tr><td>{h(d['label'])}</td><td>{sign[d['direction']]} {_num(d['value'])}</td>"
+                f"<td>{sign[d['direction']] + ' ' + _num(d['default']) if d['default'] is not None else '—'}</td>"
+                f"<td>{_escape_html(d['unit'])}</td></tr>"
+                for d in diet_limits
+            )
+            tables.append(
+                "<div class='table-container'><table class='diet-table'><thead><tr>"
+                f"<th>{h('Parameter')}</th><th>{h('Your limit')}</th><th>{h('Default')}</th><th>{h('Unit')}</th>"
+                f"</tr></thead><tbody>{rows}</tbody></table></div>"
+            )
+        limits_html = (
+            f"<div class='section'><h2><img src='{icon_prop}' class='section-icon'>{h('Limits You Set')}</h2>"
+            + "".join(tables)
+            + f"<p class='footnote'>{h('These limits were set by the user and shape the diet above.')}</p></div>"
+        )
 
     style = """
     <style>
@@ -1842,6 +1911,7 @@ def rsm_generate_report_v2(
             f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Diet') if evaluation_mode else h('Least Cost Diet')}</h2>",
             "<div class='table-container'>" + _cells_escaped(dt_results).to_html(index=False, classes='diet-table', escape=False) + "</div>",
             messages_html, "</div>",
+            *([limits_html] if limits_html else []),
             env_impact_html,
             f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>{h('Animal Information')}</h2>",
             "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",

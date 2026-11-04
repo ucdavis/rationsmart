@@ -2,7 +2,7 @@ import os
 import logging
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 from pathlib import Path
 
@@ -16,6 +16,10 @@ from .report_text import translate_message, translator
 from .diet_tables import (
     forage_concentrate_ratio_from_proportions,
     compute_forage_concentrate_ratio,
+)
+from .constraints_config import (
+    CONSTRAINT_INFO_BASE, CONSTRAINT_PROFILES, UI_THRESHOLD_SPEC,
+    get_constraint_profile, to_wire_units,
 )
 
 logger = logging.getLogger(__name__)
@@ -107,6 +111,76 @@ def _build_margin_summary(milk_price, cost_per_liter, daily_cost, milk_qty, curr
     }
 
 
+# Short unit shown next to a custom diet limit (the API's own unit keys).
+_DIET_LIMIT_UNITS = {"pct_dm": "% DM", "mcal_day": "Mcal/day", "kg_day": "kg/day"}
+
+
+def build_user_limits(
+    feed_data_list: List[Dict[str, Any]],
+    diet_limits: Optional[Dict[str, float]],
+    physiological_state: str,
+    diet_table: Any = None,
+) -> Optional[Dict[str, List[Dict[str, Any]]]]:
+    """The limits the user set for a recommendation, for the report and the JSON.
+
+    feed_data_list: the resolved feeds (FeedRecord dicts); fd_min / fd_max are the
+    inclusion limits as typed, in kg/day as fed. diet_limits: the custom diet limits in
+    WIRE units ({"ee_max": 3.0}, as stored in reports.custom_constraints). diet_table:
+    post_results["diet_table"], for the amount each limited feed got in the diet;
+    result_kg_asfed is None when there is no diet (a FAILED / ERROR run has no table).
+
+    Returns None when the user set no limit, so callers add nothing and a report
+    without limits stays exactly as before. English only; callers localize.
+    """
+    # Amount in the diet per feed. The engine's table has one row per selected feed in
+    # the same order, so match by position: names are not unique (a custom feed may
+    # share a library feed's name, and the same feed can be picked twice). By name only
+    # if the row counts differ, which the API never produces.
+    amounts: List[Optional[float]] = [None] * len(feed_data_list)
+    if hasattr(diet_table, "to_dict") and len(diet_table):
+        rows = diet_table.to_dict("records")
+        if len(rows) == len(feed_data_list):
+            amounts = [float(r.get("Inclusion_AF_kg") or 0.0) for r in rows]
+        else:
+            by_name = {str(r.get("Ingredient") or ""): float(r.get("Inclusion_AF_kg") or 0.0) for r in rows}
+            amounts = [by_name.get(f.get("fd_name") or "", 0.0) for f in feed_data_list]
+
+    inclusion_limits = [
+        {
+            "feed_id": f.get("feed_id"),
+            "feed_name": f.get("fd_name") or "",
+            "min_kg_asfed": f.get("fd_min"),
+            "max_kg_asfed": f.get("fd_max"),
+            "result_kg_asfed": round(amount, 2) if amount is not None else None,
+        }
+        for f, amount in zip(feed_data_list, amounts)
+        if f.get("fd_min") is not None or f.get("fd_max") is not None
+    ]
+
+    try:
+        defaults = get_constraint_profile(physiological_state, profiles=CONSTRAINT_PROFILES)["thresholds"]
+    except KeyError:
+        defaults = {}
+    diet = diet_limits or {}
+    # UI_THRESHOLD_SPEC order: the same keys, in the same order, the API accepts.
+    diet_limit_rows = [
+        {
+            "key": key,
+            "label": CONSTRAINT_INFO_BASE[key]["display_name"],
+            "direction": spec["direction"],
+            "value": diet[key],
+            "default": to_wire_units(key, defaults[key]) if key in defaults else None,
+            "unit": _DIET_LIMIT_UNITS[spec["unit"]],
+        }
+        for key, spec in UI_THRESHOLD_SPEC.items()
+        if diet.get(key) is not None
+    ]
+
+    if not inclusion_limits and not diet_limit_rows:
+        return None
+    return {"inclusion_limits": inclusion_limits, "diet_limits": diet_limit_rows}
+
+
 def build_diet_response(
     optimization_results: Dict[str, Any],
     cattle_info: Any,
@@ -116,6 +190,7 @@ def build_diet_response(
     currency: str = "$",
     name_map: Optional[Dict[str, str]] = None,
     translate: Optional[Callable[..., str]] = None,
+    user_limits: Optional[Dict[str, List[Dict[str, Any]]]] = None,
 ) -> Dict[str, Any]:
     """
     SINGLE SOURCE OF TRUTH: Builds the formatted JSON response for both
@@ -131,6 +206,10 @@ def build_diet_response(
     `warnings`) in the user's language; English for anything without a translation.
     Status fields the app branches on (diet_status, diet_rating, worst_constraints)
     stay English.
+
+    user_limits: optional build_user_limits() result. When given, the response gains
+    `user_limits` with a localized `display_name` per feed and `display_label` per diet
+    limit (English `feed_name` / `label` / `key` kept). Absent when the user set none.
     """
     name_map = name_map or {}
     t = translate or translator(None)
@@ -343,7 +422,8 @@ def build_diet_response(
             'simulation_id': simulation_id,
             'report_id': report_id,
             'user_name': user_name,
-            'generated_date': datetime.now().isoformat(),
+            # With its UTC offset, so the app shows the reader's local time (REC-02-D).
+            'generated_date': datetime.now(timezone.utc).isoformat(),
             'diet_rating': diet_rating
         },
         'solution_summary': {
@@ -384,6 +464,20 @@ def build_diet_response(
             for m in list(post_results.get('bound_warnings') or []) + advisory_warnings
         ],
     }
+
+    # The limits the user set, so the app can show what shaped this diet. Only when
+    # there are any: a diet without limits keeps exactly the response it had.
+    if user_limits:
+        response_data['user_limits'] = {
+            'inclusion_limits': [
+                {**f, 'display_name': name_map.get(f['feed_name'], f['feed_name'])}
+                for f in user_limits.get('inclusion_limits', [])
+            ],
+            'diet_limits': [
+                {**d, 'display_label': t(d['label'])}
+                for d in user_limits.get('diet_limits', [])
+            ],
+        }
 
     return ensure_json_safe(response_data)
 

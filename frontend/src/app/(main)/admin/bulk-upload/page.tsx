@@ -110,7 +110,7 @@ export default function BulkUploadPage() {
             <p className="font-bold mt-4" style={{ color: COLORS.ultramarine, fontSize: 16 }}>
               {t("UPLOAD FEEDS")}
             </p>
-            {/* "Tap to browse CSV or Excel" (mirror_blue, regular, font_12) */}
+            {/* Excel only — the endpoint refuses .csv with a 400 (W6). mirror_blue, regular, font_12 */}
             <p
               style={{
                 color: COLORS.mirrorBlue,
@@ -118,14 +118,14 @@ export default function BulkUploadPage() {
                 marginTop: 10,
               }}
             >
-              {t("Tap to browse CSV or Excel")}
+              {t("Tap to browse an Excel file (.xlsx, .xls)")}
             </p>
           </button>
           <input
             ref={fileRef}
-            aria-label={t("Feed file (CSV or Excel)")}
+            aria-label={t("Feed file (Excel)")}
             type="file"
-            accept=".csv,.xlsx,.xls"
+            accept=".xlsx,.xls"
             onChange={handleFileChange}
             style={{ display: "none" }}
           />

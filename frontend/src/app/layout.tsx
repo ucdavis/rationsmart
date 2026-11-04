@@ -83,6 +83,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             {`if(typeof navigator!=="undefined"&&navigator.serviceWorker){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(typeof caches!=="undefined"){caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}).catch(function(){});}}`}
           </Script>
         )}
+        {/* Chromium can fire beforeinstallprompt before React hydrates, so
+            InstallPrompt's own listener would miss it and the banner would
+            never show. Capture it here, before any page JS; InstallPrompt
+            picks it up from window.__rsInstallEvent on mount. */}
+        <Script id="install-capture" strategy="beforeInteractive">
+          {`window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window.__rsInstallEvent=e;});`}
+        </Script>
         {/* SplashOverlay handles its own lifecycle: visible on SSR + first
             client render (no hydration mismatch), unmounts itself via
             useEffect once React has hydrated, and never re-renders on

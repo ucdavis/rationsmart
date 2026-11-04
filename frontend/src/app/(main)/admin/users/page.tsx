@@ -3,17 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import {
-  getAdminUsers,
-  toggleUserStatus,
-  toggleUserAdmin,
-  getCountries,
-  type Country,
-} from "@/lib/api";
+import { getAdminUsers, toggleUserStatus, toggleUserAdmin, listAllCountries } from "@/lib/api";
 import { formatTotalUsers } from "@/lib/validators";
 import { useT } from "@/lib/i18n-ui";
 import Toolbar from "@/components/Toolbar";
-import type { AdminUser } from "@/components/admin/users/types";
+import { statusBadgeLabel, type AdminUser } from "@/components/admin/users/types";
 import UserDetailSheet from "@/components/admin/users/UserDetailSheet";
 import DeactivateUserDialog from "@/components/admin/users/DeactivateUserDialog";
 import AdminRoleDialog from "@/components/admin/users/AdminRoleDialog";
@@ -22,6 +16,7 @@ import { useEscapeKey } from "@/lib/use-escape";
 import { ADMIN_PAGE_SIZE } from "@/lib/pagination";
 import { COLORS, ADMIN_BACKGROUND } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import { listFrom } from "@/lib/api-client/normalize";
 
 function SkeletonCard() {
   return (
@@ -57,7 +52,7 @@ export default function AdminUsersPage() {
   const [countryFilter, setCountryFilter] = useState<string>(
     () => useStore.getState().user?.country ?? ""
   );
-  const [countries, setCountries] = useState<Country[]>([]);
+  const [countries, setCountries] = useState<string[]>([]);
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   // Admin-toggle confirmation — holds the user awaiting a grant/revoke confirm.
   const [confirmAdmin, setConfirmAdmin] = useState<AdminUser | null>(null);
@@ -106,17 +101,31 @@ export default function AdminUsersPage() {
     }
   };
 
-  // Country list for the filter dropdown. Mount-only fetch: `t` is read
-  // through a ref because useT() returns a new function every render.
+  // Country list for the filter dropdown: EVERY country, since users can be
+  // from one that isn't enabled — the admin included. With only the enabled
+  // list, an admin from such a country saw "All Countries" on the dropdown
+  // while the list showed just their country (K8). Mount-only fetch: `t` is
+  // read through a ref because useT() returns a new function every render.
   const tRef = useRef(t);
   tRef.current = t;
   useEffect(() => {
-    getCountries()
-      .then((res) => setCountries(Array.isArray(res.data) ? res.data : []))
-      // The list still loads; only the Country filter dropdown is affected.
-      .catch(() =>
-        useStore.getState().showSnackbar(tRef.current("Could not load countries"), "error")
-      );
+    listAllCountries()
+      .then((res) => {
+        const names = listFrom<{ name?: string }>(res.data, "countries")
+          .map((c) => c.name ?? "")
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b));
+        setCountries(names);
+        // The admin's own country should always be on the list; if it isn't,
+        // open on All Countries so the dropdown matches what's listed.
+        setCountryFilter((prev) => (prev && !names.includes(prev) ? "" : prev));
+      })
+      .catch(() => {
+        // The users still load; the filter falls back to All Countries so
+        // its label never claims a scope the list doesn't have.
+        setCountryFilter("");
+        useStore.getState().showSnackbar(tRef.current("Could not load countries"), "error");
+      });
   }, []);
 
   // Re-query the server whenever a filter changes. Debounced so typing in the
@@ -143,7 +152,13 @@ export default function AdminUsersPage() {
     setTogglingId(u.id);
     try {
       await toggleUserStatus(u.id, user.id, !u.is_active);
-      setUsers((prev) => prev.map((x) => (x.id === u.id ? { ...x, is_active: !u.is_active } : x)));
+      setUsers((prev) =>
+        prev.map((x) =>
+          x.id === u.id
+            ? { ...x, is_active: !u.is_active, deactivated_by: u.is_active ? "admin" : null }
+            : x
+        )
+      );
       showSnackbar(u.is_active ? t("User deactivated") : t("User activated"), "success");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : t("Toggle failed");
@@ -250,7 +265,7 @@ export default function AdminUsersPage() {
             onChange={setCountryFilter}
             options={[
               { value: "", label: t("All Countries") },
-              ...countries.map((c) => ({ value: c.name, label: c.name })),
+              ...countries.map((name) => ({ value: name, label: name })),
             ]}
             placeholder={t("All Countries")}
           />
@@ -429,7 +444,7 @@ export default function AdminUsersPage() {
                     opacity: togglingId === u.id ? 0.7 : 1,
                   }}
                 >
-                  {togglingId === u.id ? "..." : u.is_active ? t("ACTIVE") : t("INACTIVE")}
+                  {togglingId === u.id ? "..." : statusBadgeLabel(u, t)}
                 </button>
               </div>
               {/* Name — starts after the 44px avatar pill (12 card pad + 44 avatar + 12 gap = 68) */}

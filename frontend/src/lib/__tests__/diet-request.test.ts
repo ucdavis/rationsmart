@@ -35,9 +35,10 @@ describe("diet-request (audit B-17 extraction)", () => {
   });
 
   it("builds the evaluation body with the mode-suffixed simulation id", () => {
-    const body = buildEvaluationRequest({ id: "u1", currency: "INR" }, cattle, [row({})]);
+    const body = buildEvaluationRequest({ id: "u1" }, cattle, [row({})]);
     expect(body.simulation_id).toBe("Sim 1 (Evaluation)");
-    expect(body.currency).toBe("INR");
+    // The backend prices it in the currency of country_id (F8).
+    expect(body).not.toHaveProperty("currency");
     expect(body.feed_evaluation).toEqual([{ feed_id: "f1", quantity_as_fed: 2, price_per_kg: 10 }]);
   });
 

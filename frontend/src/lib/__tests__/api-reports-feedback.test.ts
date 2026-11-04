@@ -17,6 +17,7 @@ import {
   getSavedReports,
   getUserReports,
   saveReport,
+  requestReportPdf,
   getSimulationDetails,
   submitFeedback,
   getMyFeedback,
@@ -36,93 +37,44 @@ beforeEach(() => {
 // ─── Reports ────────────────────────────────────────────────────────────────
 
 describe("getSavedReports", () => {
-  // getSavedReports always queries BOTH /v1/animal/reports and
-  // /v1/animal/user-reports (via Promise.all) and merges the results,
-  // deduped by report_id — because either endpoint has independently
-  // been seen in production to omit entries (most notably the
-  // just-saved report) that the other one has. Every test therefore
-  // mocks two sequential mockApi.get calls: the first is always
-  // /v1/animal/reports, the second /v1/animal/user-reports.
+  // One call to /v1/animal/user-reports (W11): /v1/animal/reports runs the
+  // same backend function, so querying both and merging only added load.
 
-  it("normalizes a bare array response from /v1/animal/reports", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: [{ report_id: "r1" }] });
-    mockApi.get.mockResolvedValueOnce({ data: [] });
-    const res = await getSavedReports("u1");
-    expect(mockApi.get).toHaveBeenNthCalledWith(1, "/v1/animal/reports");
-    expect(mockApi.get).toHaveBeenNthCalledWith(2, "/v1/animal/user-reports");
-    expect(res.data).toEqual({ reports: [{ report_id: "r1" }], success: true, message: null });
-  });
-
-  it("normalizes a {reports: [...]} wrapper", async () => {
+  it("GETs only /v1/animal/user-reports and normalizes a {reports: [...]} wrapper", async () => {
     mockApi.get.mockResolvedValueOnce({ data: { reports: [{ report_id: "r2" }] } });
-    mockApi.get.mockResolvedValueOnce({ data: [] });
     const res = await getSavedReports("u1");
-    expect(res.data.reports).toEqual([{ report_id: "r2" }]);
+    expect(mockApi.get).toHaveBeenCalledTimes(1);
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/user-reports");
+    expect(res.data).toEqual({ reports: [{ report_id: "r2" }], success: true, message: null });
   });
 
-  it("normalizes a {items: [...]} wrapper", async () => {
+  it("normalizes a bare array and an {items: [...]} wrapper", async () => {
+    mockApi.get.mockResolvedValueOnce({ data: [{ report_id: "r1" }] });
+    expect((await getSavedReports("u1")).data.reports).toEqual([{ report_id: "r1" }]);
     mockApi.get.mockResolvedValueOnce({ data: { items: [{ report_id: "r3" }] } });
-    mockApi.get.mockResolvedValueOnce({ data: [] });
-    const res = await getSavedReports("u1");
-    expect(res.data.reports).toEqual([{ report_id: "r3" }]);
+    expect((await getSavedReports("u1")).data.reports).toEqual([{ report_id: "r3" }]);
   });
 
   it("normalizes an unrecognized shape to an empty reports array", async () => {
     mockApi.get.mockResolvedValueOnce({ data: { nonsense: true } });
-    mockApi.get.mockResolvedValueOnce({ data: [] });
-    const res = await getSavedReports("u1");
-    expect(res.data.reports).toEqual([]);
+    expect((await getSavedReports("u1")).data.reports).toEqual([]);
   });
 
-  it("falls back to /v1/animal/user-reports's reports when /v1/animal/reports throws", async () => {
-    mockApi.get.mockRejectedValueOnce(new Error("404"));
-    mockApi.get.mockResolvedValueOnce({ data: { reports: [{ report_id: "legacy" }] } });
-
-    const res = await getSavedReports("u1");
-
-    expect(mockApi.get).toHaveBeenNthCalledWith(1, "/v1/animal/reports");
-    expect(mockApi.get).toHaveBeenNthCalledWith(2, "/v1/animal/user-reports");
-    expect(res.data.reports).toEqual([{ report_id: "legacy" }]);
+  it("throws when the call fails so the page can show an error (REPORTS-006)", async () => {
+    mockApi.get.mockRejectedValueOnce(new Error("boom"));
+    await expect(getSavedReports("u1")).rejects.toThrow("boom");
   });
+});
 
-  it("merges reports from both endpoints, deduped by report_id — covers the 'missing latest entry' regression", async () => {
-    // /v1/animal/reports is missing the newest report (r2)...
-    mockApi.get.mockResolvedValueOnce({ data: [{ report_id: "r1", simulation_id: "s1" }] });
-    // ...but /v1/animal/user-reports has both.
-    mockApi.get.mockResolvedValueOnce({
-      data: {
-        reports: [
-          { report_id: "r1", simulation_id: "s1" },
-          { report_id: "r2", simulation_id: "s2" },
-        ],
-      },
+describe("requestReportPdf", () => {
+  it("POSTs { report_id, user_id } to /v1/animal/reports/pdf (W5)", async () => {
+    mockApi.post.mockResolvedValueOnce({ data: { success: true, bucket_url: "https://x/r.pdf" } });
+    const res = await requestReportPdf("R-1", "u1");
+    expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/reports/pdf", {
+      report_id: "R-1",
+      user_id: "u1",
     });
-
-    const res = await getSavedReports("u1");
-
-    expect(res.data.reports).toHaveLength(2);
-    expect(res.data.reports.map((r) => r.report_id).sort()).toEqual(["r1", "r2"]);
-  });
-
-  it("dedupes by simulation_id when report_id is null on both copies of the same row", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: [{ report_id: null, simulation_id: "s1" }] });
-    mockApi.get.mockResolvedValueOnce({ data: [{ report_id: null, simulation_id: "s1" }] });
-
-    const res = await getSavedReports("u1");
-
-    expect(res.data.reports).toHaveLength(1);
-  });
-
-  it("throws when BOTH endpoints fail so the page can show an error (REPORTS-006)", async () => {
-    // Previously this resolved success:true with an empty list, making the
-    // reports page's .catch dead code — a total load failure looked identical
-    // to "no reports yet". Now a genuine both-fail rejects so the page surfaces
-    // the "Could not load reports" snackbar. A single-endpoint failure still
-    // resolves (covered by the fallback test above).
-    mockApi.get.mockRejectedValueOnce(new Error("down"));
-    mockApi.get.mockRejectedValueOnce(new Error("also down"));
-
-    await expect(getSavedReports("u1")).rejects.toThrow("Could not load reports");
+    expect(res.data.bucket_url).toBe("https://x/r.pdf");
   });
 });
 
@@ -231,8 +183,11 @@ describe("insertCustomFeed", () => {
         fd_dm: 90,
       },
     };
-    mockApi.post.mockResolvedValueOnce({ data: {} });
-    await insertCustomFeed(body);
+    // The real reply is flat (N2).
+    const reply = { success: true, feed_id: "f-new", fd_name: "My Feed" };
+    mockApi.post.mockResolvedValueOnce({ data: reply });
+    const res = await insertCustomFeed(body);
+    expect(res.data).toEqual(reply);
     expect(mockApi.post).toHaveBeenCalledWith("/v1/animal/custom-feeds", {
       fd_type: "Forage",
       fd_category: "Grass/Legume Forage",

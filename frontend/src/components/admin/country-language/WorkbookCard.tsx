@@ -9,6 +9,7 @@ import { uploadFileProblem } from "@/lib/download";
 import { COLORS } from "@/lib/colors";
 import { CountryRow, UploadSummary, cardStyle } from "./shared";
 import { fillText } from "@/lib/i18n-ui";
+import { messageOf } from "@/lib/api-client/normalize";
 
 export interface WorkbookCardProps {
   handleDownload: () => void | Promise<void>;
@@ -139,9 +140,44 @@ export function WorkbookCard({
                 )}
               </p>
             </div>
+            <WorkbookWarnings errors={uploadSummary.errors} t={t} />
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// W9 — each entry the import skipped, with its reason (e.g. a name another
+// feed already uses in this language). Entries contain admin-typed feed
+// names, so they render as plain text: no t(), no HTML. Amber, not red —
+// the rest of the workbook imported. Scrolls after about eight lines.
+function WorkbookWarnings({ errors, t }: { errors: unknown; t: (source: string) => string }) {
+  const lines = (Array.isArray(errors) ? errors : [])
+    .map((e) => (typeof e === "string" ? e : (messageOf(e) ?? JSON.stringify(e))))
+    .filter((e) => e.trim() !== "");
+  if (lines.length === 0) return null;
+  return (
+    <div
+      className="mt-3 rounded-lg px-3 py-2"
+      style={{
+        backgroundColor: COLORS.vividGamboge15,
+        border: `1px solid ${COLORS.vividGamboge}`,
+      }}
+    >
+      <p className="font-bold text-xs mb-1" style={{ color: COLORS.vividGamboge }}>
+        {fillText(t("Warnings (${count})"), { count: lines.length })}
+      </p>
+      <ul
+        className="text-xs space-y-0.5"
+        style={{ color: COLORS.raisinBlack, maxHeight: 8 * 18, overflowY: "auto" }}
+      >
+        {lines.map((line, i) => (
+          <li key={i} style={{ lineHeight: "18px", wordBreak: "break-word" }}>
+            {line}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

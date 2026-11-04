@@ -45,7 +45,8 @@ export interface UploadSummary {
   categories_inserted?: number;
   categories_updated?: number;
   categories_skipped?: number;
-  errors?: string[];
+  /** Entries the import skipped, with the reason (W9). */
+  errors?: unknown[];
 }
 export type Tab = "countries" | "feeds";
 export type ConfirmState = {

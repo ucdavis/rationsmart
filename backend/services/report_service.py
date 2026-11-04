@@ -85,6 +85,8 @@ async def fetch_simulation_details(
                 "feed_type": feed.fd_type if feed else "",
                 "price_per_kg": item.get("price_per_kg", 0.0),
                 "quantity_as_fed": item.get("quantity_as_fed"),
+                "min_kg_asfed": item.get("min_kg_asfed"),
+                "max_kg_asfed": item.get("max_kg_asfed"),
             }
         )
 

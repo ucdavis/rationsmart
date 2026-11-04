@@ -116,3 +116,21 @@ describe("Verify Email — Continue to Login", () => {
     expect(replace).toHaveBeenCalledWith("/login");
   });
 });
+
+describe("Verify Email — opened from Login (F26 / W2)", () => {
+  it("asks for the address, lets the user type one, and Back returns to Login", async () => {
+    searchParamsState.value = "from=login";
+    resendVerification.mockResolvedValueOnce({ data: { message: "Sent" } });
+    render(<VerifyEmailPage />);
+    expect(screen.getByText(/Enter the email address you registered with/)).toBeInTheDocument();
+
+    const input = screen.getByLabelText("Email Address");
+    expect(input).toHaveValue("");
+    fireEvent.change(input, { target: { value: "new@dg.org" } });
+    fireEvent.click(screen.getByRole("button", { name: /Resend Verification Email/ }));
+    await waitFor(() => expect(resendVerification).toHaveBeenCalledWith("new@dg.org"));
+
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(replace).toHaveBeenCalledWith("/login");
+  });
+});

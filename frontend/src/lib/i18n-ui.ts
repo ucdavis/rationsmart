@@ -30,6 +30,12 @@ type LangDict = Record<string, string>;
 // Same shape the route serves; anything else is never requested.
 const isLabelLangCode = (lang: string) => /^[a-z]{2,3}$/.test(lang);
 
+// Codes the backend has since replaced (W7: Filipino "tl" → BCP 47 "fil").
+// A profile or simulation saved before the change still says "tl"; read it
+// as the sheet column it now lives under instead of falling back to English.
+const RENAMED_LABEL_LANGS: Record<string, string> = { tl: "fil" };
+const labelLang = (lang: string) => RENAMED_LABEL_LANGS[lang] ?? lang;
+
 function fetchDict(lang: string): Promise<LangDict> {
   return fetch(`/api/ui-labels/${lang}`, { credentials: "same-origin" }).then((res) => {
     // No column for this language in the sheet: English, and don't ask again.
@@ -76,7 +82,8 @@ function loadDict(lang: string): Promise<LangDict> {
  * unknown, or not-yet-loaded string never renders blank. Components
  * should use `useT()` instead, which also triggers the load.
  */
-export function getUiLabel(source: string, lang: string): string {
+export function getUiLabel(source: string, rawLang: string): string {
+  const lang = labelLang(rawLang);
   if (!source || lang === "en" || !isLabelLangCode(lang)) return source;
   const dict = dictCache.get(lang);
   if (!dict) return source;
@@ -120,7 +127,7 @@ export function useT(langOverride?: string): (source: string) => string {
   const userLang = useStore((s) =>
     s.user ? s.user.preferred_language || "en" : (s.lastUiLanguage ?? "en")
   );
-  const lang = langOverride ?? userLang;
+  const lang = labelLang(langOverride ?? userLang);
   const [, setLoadedTick] = useState(0);
 
   useEffect(() => {

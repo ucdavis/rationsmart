@@ -141,8 +141,17 @@ export default function AdminFeedsPage() {
     loadAll();
   }, [loadAll]);
 
+  // N7: a feed name is unique per country, not library-wide, so the list
+  // can be narrowed to one country on screen ("" = all).
+  const [countryFilter, setCountryFilter] = useState("");
+  const countryNames = Array.from(new Set(countries.map((c) => c.name).filter(Boolean))).sort(
+    (a, b) => a.localeCompare(b)
+  );
+
   // Match Android FragmentFeed search: filter by feed name only.
   const filteredFeeds = feeds.filter((f) => {
+    if (countryFilter && (f.fd_country_name ?? "").toLowerCase() !== countryFilter.toLowerCase())
+      return false;
     if (!searchQuery) return true;
     return f.fd_name?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false;
   });
@@ -386,10 +395,13 @@ export default function AdminFeedsPage() {
         {t("Management")}
       </p>
 
-      {/* ── FEEDS TAB ── (matches Android fragment_feed.xml: search-by-name only,
-          no filter dropdowns; FAB for add) */}
+      {/* ── FEEDS TAB ── (Android fragment_feed.xml: search by name; FAB for
+          add) plus a country filter (N7) */}
       {tab === "feeds" && (
         <FeedsTab
+          countryFilter={countryFilter}
+          countryNames={countryNames}
+          setCountryFilter={setCountryFilter}
           deletingFeedId={deletingFeedId}
           filteredFeeds={filteredFeeds}
           isLoading={isLoading}

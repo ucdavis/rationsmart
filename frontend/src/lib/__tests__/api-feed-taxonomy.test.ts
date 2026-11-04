@@ -29,6 +29,7 @@ import {
   type EvaluationRequest,
   type RecommendationRequest,
 } from "@/lib/api";
+import { taxonomyLabel } from "@/lib/api-client/feeds";
 
 beforeEach(() => {
   mockApi.get.mockReset();
@@ -206,18 +207,59 @@ describe("getFeedSubCategories", () => {
 });
 
 describe("fetchFeedTaxonomyLabels", () => {
-  it("GETs /v1/animal/feed-name?country_id=&lang= (no type/category filter)", async () => {
-    setLangProvider(() => "hi");
-    mockApi.get.mockResolvedValueOnce({ data: { standard_feeds: [], custom_feeds: [] } });
+  // Routes the three calls by URL: classification types, categories per
+  // type id, and the country's feeds. A value of Error rejects that call.
+  function route(opts: { types?: unknown; categories?: Record<string, unknown>; feeds?: unknown }) {
+    mockApi.get.mockImplementation((url: string) => {
+      const pick = (v: unknown) =>
+        v instanceof Error ? Promise.reject(v) : Promise.resolve({ data: v });
+      if (url === "/v1/feed-classification/get-feed-types") return pick(opts.types ?? []);
+      const cat = /^\/v1\/feed-classification\/get-categories\/(.+)$/.exec(url);
+      if (cat) return pick(opts.categories?.[cat[1]!] ?? []);
+      if (url === "/v1/animal/feed-name") return pick(opts.feeds ?? { standard_feeds: [] });
+      return Promise.reject(new Error(`unexpected ${url}`));
+    });
+  }
+
+  it("asks the classification endpoints and feed-name with country_id + lang (F11)", async () => {
+    setLangProvider(() => "vi");
+    route({ types: [{ id: "t1", type_name: "Forage", display_name: "Thức ăn thô" }] });
     await fetchFeedTaxonomyLabels("7");
-    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/feed-name", {
-      params: { country_id: "7", lang: "hi" },
+    const params = { params: { country_id: "7", lang: "vi" } };
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/feed-classification/get-feed-types", params);
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/feed-classification/get-categories/t1", params);
+    expect(mockApi.get).toHaveBeenCalledWith("/v1/animal/feed-name", params);
+  });
+
+  it("labels catalogue types and categories that no feed in the country uses", async () => {
+    // Vietnam on Test: "Complete diet" and most categories have no feed, so
+    // the old feed-name-only maps left them English.
+    route({
+      types: [
+        { id: "t1", type_name: "Forage", display_name: "Thức ăn thô" },
+        { id: "t3", type_name: "Complete diet", display_name: "Khẩu phần hoàn chỉnh" },
+      ],
+      categories: {
+        t1: [{ category_name: "Grain Crop Forage", display_name: "Thức ăn thô từ cây ngũ cốc" }],
+        t3: [{ category_name: "TMR", display_name: "Khẩu phần trộn" }],
+      },
+      feeds: { standard_feeds: [] },
+    });
+    const labels = await fetchFeedTaxonomyLabels("7");
+    expect(labels.types).toEqual({
+      Forage: "Thức ăn thô",
+      "Complete diet": "Khẩu phần hoàn chỉnh",
+    });
+    expect(labels.categories).toEqual({
+      "Grain Crop Forage": "Thức ăn thô từ cây ngũ cốc",
+      TMR: "Khẩu phần trộn",
     });
   });
 
-  it("builds English→localized maps from both standard_feeds and custom_feeds", async () => {
-    mockApi.get.mockResolvedValueOnce({
-      data: {
+  it("prefers the translations table over a feed's display_type, keeping feed-only entries", async () => {
+    route({
+      types: [{ id: "t1", type_name: "Forage", display_name: "चारा (तालिका)" }],
+      feeds: {
         standard_feeds: [
           {
             fd_type: "Forage",
@@ -226,54 +268,91 @@ describe("fetchFeedTaxonomyLabels", () => {
             display_category: "घास",
           },
         ],
-        custom_feeds: [
-          {
-            fd_type: "Concentrate",
-            display_type: "सांद्रण",
-            fd_category: "Grain",
-            display_category: "अनाज",
-          },
-        ],
+        custom_feeds: [{ fd_type: "Local mix", display_type: "स्थानीय मिश्रण" }],
       },
     });
     const labels = await fetchFeedTaxonomyLabels("7");
-    expect(labels.types).toEqual({ Forage: "चारा", Concentrate: "सांद्रण" });
-    expect(labels.categories).toEqual({ Grass: "घास", Grain: "अनाज" });
-  });
-
-  it("skips entries missing either the English source or the display field", async () => {
-    mockApi.get.mockResolvedValueOnce({
-      data: {
-        standard_feeds: [
-          {
-            fd_type: "Forage" /* no display_type */,
-            fd_category: "Grass",
-            display_category: "घास",
-          },
-          { display_type: "सांद्रण" /* no fd_type */ },
-        ],
-      },
-    });
-    const labels = await fetchFeedTaxonomyLabels("7");
-    expect(labels.types).toEqual({});
+    expect(labels.types).toEqual({ Forage: "चारा (तालिका)", "Local mix": "स्थानीय मिश्रण" });
     expect(labels.categories).toEqual({ Grass: "घास" });
   });
 
-  it("tolerates a missing/empty response body", async () => {
-    mockApi.get.mockResolvedValueOnce({ data: null });
+  it("one failed category call drops only that type's categories", async () => {
+    route({
+      types: [
+        { id: "t1", type_name: "Forage", display_name: "F" },
+        { id: "t2", type_name: "Concentrate", display_name: "C" },
+      ],
+      categories: {
+        t1: new Error("boom"),
+        t2: [{ category_name: "Energy Source", display_name: "E" }],
+      },
+    });
     const labels = await fetchFeedTaxonomyLabels("7");
-    expect(labels).toEqual({ types: {}, categories: {}, feeds: {} });
+    expect(labels.categories).toEqual({ "Energy Source": "E" });
+    expect(labels.types).toEqual({ Forage: "F", Concentrate: "C" });
+  });
+
+  it("keeps the classification labels when feed-name fails, and vice versa", async () => {
+    route({
+      types: [{ id: "t1", type_name: "Forage", display_name: "F" }],
+      feeds: new Error("down"),
+    });
+    expect((await fetchFeedTaxonomyLabels("7")).types).toEqual({ Forage: "F" });
+
+    route({
+      types: new Error("down"),
+      feeds: {
+        standard_feeds: [
+          { id: "f1", fd_type: "Forage", display_type: "चारा", display_name: "मक्का" },
+        ],
+      },
+    });
+    const labels = await fetchFeedTaxonomyLabels("7");
+    expect(labels.types).toEqual({ Forage: "चारा" });
+    expect(labels.feeds).toEqual({ f1: "मक्का" });
+  });
+
+  it("rejects only when both sources fail", async () => {
+    route({ types: new Error("a"), feeds: new Error("b") });
+    await expect(fetchFeedTaxonomyLabels("7")).rejects.toThrow();
+  });
+
+  it("skips rows missing either the English name or the display field", async () => {
+    route({
+      types: [
+        { id: "t1", type_name: "Forage" },
+        { id: "t2", display_name: "X" },
+      ],
+      feeds: { standard_feeds: [{ fd_type: "Forage" }, { display_type: "सांद्रण" }] },
+    });
+    const labels = await fetchFeedTaxonomyLabels("7");
+    expect(labels.types).toEqual({});
+  });
+
+  it("tolerates missing/empty response bodies", async () => {
+    route({ types: null, feeds: null });
+    expect(await fetchFeedTaxonomyLabels("7")).toEqual({ types: {}, categories: {}, feeds: {} });
   });
 
   it("builds a feed id → display_name map from both standard_feeds and custom_feeds", async () => {
-    mockApi.get.mockResolvedValueOnce({
-      data: {
+    route({
+      feeds: {
         standard_feeds: [{ id: "f1", fd_name: "Maize", display_name: "मक्का" }],
         custom_feeds: [{ id: "f2", fd_name: "Wheat bran", display_name: "गेहूं की भूसी" }],
       },
     });
     const labels = await fetchFeedTaxonomyLabels("7");
     expect(labels.feeds).toEqual({ f1: "मक्का", f2: "गेहूं की भूसी" });
+  });
+});
+
+describe("taxonomyLabel", () => {
+  it("matches the exact name, then ignores case and outer spaces", () => {
+    const map = { "Complete diet": "Khẩu phần hoàn chỉnh" };
+    expect(taxonomyLabel(map, "Complete diet")).toBe("Khẩu phần hoàn chỉnh");
+    expect(taxonomyLabel(map, " Complete Diet ")).toBe("Khẩu phần hoàn chỉnh");
+    expect(taxonomyLabel(map, "Forage")).toBeUndefined();
+    expect(taxonomyLabel(undefined, "Forage")).toBeUndefined();
   });
 });
 

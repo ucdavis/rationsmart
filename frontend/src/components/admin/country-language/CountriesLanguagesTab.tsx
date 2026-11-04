@@ -19,7 +19,8 @@ import { useT, fillText } from "@/lib/i18n-ui";
 import ActivateCountrySheet from "./ActivateCountrySheet";
 import AssociateLanguageSheet from "./AssociateLanguageSheet";
 import RegisterLanguageSheet from "./RegisterLanguageSheet";
-import { listFrom } from "@/lib/api-client/normalize";
+import LanguageSearchBox, { filterLanguages, type LanguageStatusFilter } from "./LanguageSearchBox";
+import { asRecord, listFrom, stringField } from "@/lib/api-client/normalize";
 
 export function CountriesLanguagesTab({
   countries,
@@ -248,22 +249,40 @@ export function CountriesLanguagesTab({
   };
 
   const handleRegister = async () => {
-    const code = regCode.trim().toLowerCase();
-    if (!regName.trim() || !code) {
+    const typedCode = regCode.trim();
+    if (!regName.trim() || !typedCode) {
       showSnackbar(t("Name and code are required"), "error");
       return;
     }
     setIsRegistering(true);
     const name = regName.trim();
     try {
-      await createLanguage({ code, name });
-      showSnackbar(t("${language} registered").replace("${language}", name), "success");
+      const res = await createLanguage({ code: typedCode, name });
+      // The backend stores the standard BCP 47 form ("BEN" → "bn",
+      // "tl" → "fil"), so show and keep the code it saved, not the typed one
+      // (W10). Codes are compared exactly as returned — never lowercased.
+      const saved = asRecord(res.data);
+      const savedCode = stringField(saved, "code") ?? typedCode;
+      const savedName = stringField(saved, "name") ?? name;
+      showSnackbar(
+        fillText(t("${language} registered as ${code}"), { language: savedName, code: savedCode }),
+        "success"
+      );
       setShowRegister(false);
       setRegName("");
       setRegCode("");
       // Optimistic: add the new language to the catalog immediately.
       setAllLanguages((prev) =>
-        prev.some((x) => x.code === code) ? prev : [...prev, { code, name, is_active: true }]
+        prev.some((x) => x.code === savedCode)
+          ? prev
+          : [
+              ...prev,
+              {
+                code: savedCode,
+                name: savedName,
+                is_active: saved?.is_active === false ? false : true,
+              },
+            ]
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Could not register language";
@@ -274,6 +293,13 @@ export function CountriesLanguagesTab({
   };
 
   const activeLangCount = allLanguages.filter((l) => l.is_active).length;
+
+  // Registered Languages search + status filter (W8) — in the browser, no API
+  // call. Defaults to Active (8 of ~206 today). The active count above still
+  // counts every language, not just the shown ones.
+  const [langQuery, setLangQuery] = useState("");
+  const [langStatus, setLangStatus] = useState<LanguageStatusFilter>("active");
+  const shownLanguages = filterLanguages(allLanguages, langQuery, langStatus);
 
   return (
     <div className="flex-1 overflow-y-auto px-3 pt-3 pb-8 space-y-3">
@@ -448,7 +474,21 @@ export function CountriesLanguagesTab({
             ＋
           </button>
         </div>
-        {allLanguages.map((l) => {
+        <LanguageSearchBox
+          query={langQuery}
+          setQuery={setLangQuery}
+          status={langStatus}
+          setStatus={setLangStatus}
+          t={t}
+        />
+        {shownLanguages.length === 0 && (
+          <p className="px-4 py-3 text-sm" style={{ color: COLORS.darkSilver }}>
+            {langQuery.trim()
+              ? fillText(t("No languages match “${query}”"), { query: langQuery.trim() })
+              : t("No languages to show")}
+          </p>
+        )}
+        {shownLanguages.map((l) => {
           const isEnglish = l.code === "en";
           const key = `lang:${l.code}`;
           const isPending = pendingKey.has(key);

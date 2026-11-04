@@ -56,6 +56,11 @@ interface SnackbarState {
   visible: boolean;
 }
 
+export interface ReportInputs {
+  cattleInfo: CattleInfo;
+  feedSelections: FeedItem[];
+}
+
 interface AppState {
   user: User | null;
   cattleInfo: CattleInfo | null;
@@ -64,6 +69,11 @@ interface AppState {
   reportData: EvaluationResponse | RecommendationResponse | null;
   /** Who generated `reportData` and when — bounds its persistence (audit A-24). */
   reportMeta: { userId: string; savedAt: number } | null;
+  /** The cattle info + feeds the run was generated from (F47). The report
+   *  renders from this copy, so a later New Case / restore / country change
+   *  on the form can't mix new inputs into old results. null for reports
+   *  persisted by an older build — Cattle Info hides its forward arrow then. */
+  reportInputs: ReportInputs | null;
   dietLimits: Partial<DietLimits>;
   snackbar: SnackbarState | null;
   // UI-label i18n — mirrors the most recent user.preferred_language so
@@ -89,8 +99,12 @@ interface AppState {
   setCattleInfo: (info: CattleInfo | null) => void;
   setFeedSelectionType: (type: "recommendation" | "evaluation") => void;
   setFeedSelections: (items: FeedItem[]) => void;
-  // null clears the report (Reset on Cattle Info).
-  setReportData: (data: EvaluationResponse | RecommendationResponse | null) => void;
+  // null clears the report (Reset on Cattle Info). `inputs` is the copy of
+  // the form the run was sent with.
+  setReportData: (
+    data: EvaluationResponse | RecommendationResponse | null,
+    inputs?: ReportInputs | null
+  ) => void;
   setDietLimits: (limits: Partial<DietLimits>) => void;
   showSnackbar: (message: string, type?: "success" | "error" | "info") => void;
   hideSnackbar: () => void;
@@ -112,6 +126,7 @@ export const useStore = create<AppState>()(
       feedSelections: [],
       reportData: null,
       reportMeta: null,
+      reportInputs: null,
       dietLimits: {},
       snackbar: null,
       lastUiLanguage: "en",
@@ -141,6 +156,7 @@ export const useStore = create<AppState>()(
           feedSelections: [],
           reportData: null,
           reportMeta: null,
+          reportInputs: null,
           feedSelectionType: "recommendation",
           dietLimits: {},
         });
@@ -152,10 +168,11 @@ export const useStore = create<AppState>()(
 
       setFeedSelections: (items) => set({ feedSelections: items }),
 
-      setReportData: (data) =>
+      setReportData: (data, inputs = null) =>
         set((state) => ({
           reportData: data,
           reportMeta: data && state.user ? { userId: state.user.id, savedAt: Date.now() } : null,
+          reportInputs: data ? inputs : null,
         })),
 
       setDietLimits: (limits) => set({ dietLimits: limits }),
@@ -198,6 +215,7 @@ export const useStore = create<AppState>()(
         // a report tied to a since-abandoned simulation.
         reportData: state.reportData,
         reportMeta: state.reportMeta,
+        reportInputs: state.reportInputs,
       }),
       // A persisted report is only restored for the user who generated it and
       // for REPORT_TTL_MS (audit A-24): enough to survive the OS reclaiming a
@@ -216,6 +234,7 @@ export const useStore = create<AppState>()(
           ...p,
           reportData: fresh ? (p.reportData ?? null) : null,
           reportMeta: fresh ? meta : null,
+          reportInputs: fresh ? (p.reportInputs ?? null) : null,
         };
       },
       // NOTE: skipHydration was enabled here in an earlier commit to

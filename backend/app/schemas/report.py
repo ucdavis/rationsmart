@@ -126,6 +126,10 @@ class SimulationFeedDetail(BaseModel):
     feed_type: str
     price_per_kg: float
     quantity_as_fed: Optional[float] = None
+    # Inclusion limits the recommendation ran with (kg/day as fed); null = no limit,
+    # or a report from before the limits were stored.
+    min_kg_asfed: Optional[float] = None
+    max_kg_asfed: Optional[float] = None
 
 
 class FetchSimulationDetailsResponse(BaseModel):

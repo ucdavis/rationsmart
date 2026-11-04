@@ -88,7 +88,9 @@ export default function RegisterLanguageSheet({
           aria-label={t("ISO code")}
           type="text"
           value={regCode}
-          onChange={(e) => setRegCode(e.target.value.toLowerCase())}
+          // Sent as typed: codes are BCP 47 ("pt-BR"), case matters, and the
+          // backend stores the standard form itself (W10).
+          onChange={(e) => setRegCode(e.target.value)}
           placeholder={t("e.g. sw")}
           maxLength={10}
           className="w-full rounded-xl px-4 py-3 text-base border-none focus:outline-none mb-5"

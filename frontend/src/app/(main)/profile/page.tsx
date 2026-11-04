@@ -123,8 +123,10 @@ export default function ProfilePage() {
 
   const tRef = useRef(t);
   tRef.current = t;
+  // Every country, as at Register, so a country that isn't enabled still
+  // shows and stays saved (F2).
   useEffect(() => {
-    getCountries()
+    getCountries("all")
       .then((res) => {
         const list = res.data ?? [];
         setCountries(
@@ -181,9 +183,9 @@ export default function ProfilePage() {
         preferred_language: selectedLang,
       });
       const sel = countries.find((c) => String(c.id) === String(selectedCountryId));
-      // Carry the selected country's currency through to the user too,
-      // otherwise feed-selection / report keep showing the previous
-      // country's code after a profile-side country change.
+      // The profile's currency follows its country. Price labels use the
+      // simulation country's currency instead; this is only their fallback
+      // for a form saved by an older build.
       setUser({
         ...user,
         name: name.trim(),

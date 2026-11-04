@@ -17,7 +17,8 @@ export interface LoginUser {
   id?: string;
   name?: string;
   email_id?: string;
-  country?: string | { name?: string; id?: string; country_code?: string } | null;
+  country?:
+    string | { name?: string; id?: string; country_code?: string; currency?: string } | null;
   country_id?: string;
   country_code?: string;
   is_admin?: boolean;
@@ -72,7 +73,12 @@ export const verifyEmail = (token: string) => api.post("/v1/auth/verify-email", 
 export const resendVerification = (email_id: string) =>
   api.post("/v1/auth/resend-verification", { email_id });
 
-export const getCountries = () => api.get<Country[]>("/v1/auth/countries");
+// No scope = the enabled countries (Cattle Info, admin feed form). "all" =
+// every country (Register, Profile) — 30 calls/min per IP, 429 above.
+export const getCountries = (scope?: "all") =>
+  scope
+    ? api.get<Country[]>("/v1/auth/countries", { params: { scope } })
+    : api.get<Country[]>("/v1/auth/countries");
 
 // GET /v1/auth/user/{email_id} — public — returns UserProfileInfoResponse
 export const getUserProfile = (email_id: string) =>

@@ -13,11 +13,11 @@ import {
 } from "@/components/Icons";
 import { COLORS } from "@/lib/colors";
 import EnvironmentalImpactSection from "./EnvironmentalImpactSection";
+import UserLimitsCard from "./UserLimitsCard";
 import type { CostEffectiveDiet } from "@/lib/api";
 
 import type { RecommendationResponse } from "@/lib/api-client/models";
 import type { ReportContext } from "@/components/report/parts";
-import type { User } from "@/lib/store";
 
 import type { BannerTheme } from "@/components/report/parts";
 import { formatMoney } from "@/lib/money";
@@ -43,7 +43,6 @@ export interface RecommendationSectionsProps {
   showSolutionSections: boolean;
   softLimitNotes: string[];
   t: (source: string) => string;
-  user: User | null;
 }
 
 export default function RecommendationSections({
@@ -63,7 +62,6 @@ export default function RecommendationSections({
   showSolutionSections,
   softLimitNotes,
   t,
-  user,
 }: RecommendationSectionsProps) {
   return (
     <>
@@ -232,7 +230,7 @@ export default function RecommendationSections({
                   {t("Total Diet Cost")}
                 </span>
                 <span className="font-bold" style={{ color: COLORS.crayolaGreen, fontSize: 16 }}>
-                  {fmt(recTotalCost)} {user?.currency || ""}
+                  {fmt(recTotalCost)} {currencySymbol}
                 </span>
               </div>
             }
@@ -313,6 +311,10 @@ export default function RecommendationSections({
             ))}
           </SCard>
         )}
+
+      {/* Limits You Set (N3) — shown even when the diet is hidden, so the
+                user can see which limits may have made it impossible. */}
+      <UserLimitsCard userLimits={recReport.user_limits} t={t} />
 
       {/* Environmental Impact — also hidden when diet rating is ERROR_*. */}
       {showSolutionSections && (

@@ -6,7 +6,10 @@ import { useStore } from "@/lib/store";
 import FeedRow from "@/components/FeedRow";
 import Toolbar from "@/components/Toolbar";
 import GeneratingReportDialog from "@/components/GeneratingReportDialog";
-import { evaluateDiet, recommendDiet, getCountries } from "@/lib/api";
+import { evaluateDiet, recommendDiet } from "@/lib/api";
+import { simulationCurrency } from "@/lib/money";
+import { useSimulationUser } from "@/lib/simulation-country";
+import { isFeedOnOtherCard } from "@/lib/feed-selection-rules";
 import type { DietLimits, FeedSearchResult } from "@/lib/api";
 import { IcAddFeed } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
@@ -65,7 +68,6 @@ export default function FeedSelectionPage() {
     dietLimits,
     setDietLimits,
     showSnackbar,
-    setUser,
   } = useStore((s) => ({
     user: s.user,
     cattleInfo: s.cattleInfo,
@@ -76,13 +78,15 @@ export default function FeedSelectionPage() {
     setReportData: s.setReportData,
     dietLimits: s.dietLimits,
     setDietLimits: s.setDietLimits,
-    setUser: s.setUser,
     showSnackbar: s.showSnackbar,
   }));
 
-  // Use the user's currency CODE directly (PHP / INR / VND / …) so the
+  // The simulation country's currency CODE (PHP / INR / VND / …) so the
   // Price field label reads e.g. "Price PHP/KG", matching Android.
-  const currencySymbol = user?.currency ?? "";
+  const currencySymbol = simulationCurrency(cattleInfo, user);
+  // Feed lists, local names, search and custom feeds use the SIMULATION
+  // country from Cattle Info, not the profile's (N5).
+  const simUser = useSimulationUser();
 
   // UI-label i18n — this screen (and FeedRow) resolve language from the
   // PER-SIMULATION override (cattleInfo.simulation_language), not the
@@ -94,7 +98,7 @@ export default function FeedSelectionPage() {
   const { items, setItems, loadingRows, handleCascadeLoading, addFeed, updateItem, deleteItem } =
     useFeedItems(feedSelections, setFeedSelections, showSnackbar, t);
   const taxonomyLabels = useFeedTaxonomyLabels(
-    user?.country_id,
+    simUser?.country_id,
     cattleInfo?.simulation_language ?? null,
     user?.preferred_language ?? null
   );
@@ -102,7 +106,7 @@ export default function FeedSelectionPage() {
     showCustomFeedModal,
     openCustomFeedModal,
     sheetProps: customFeedSheetProps,
-  } = useCustomFeed(user, t, showSnackbar);
+  } = useCustomFeed(simUser, t, showSnackbar);
   const [isLoading, setIsLoading] = useState(false);
   const [showLimitsModal, setShowLimitsModal] = useState(false);
   useEscapeKey(!!showLimitsModal, () => setShowLimitsModal(false));
@@ -120,7 +124,7 @@ export default function FeedSelectionPage() {
   // query + tapping a result then populates that card. If no card is
   // explicitly active when the user picks a result, fall back to the
   // first row without a feed_uuid (or row 1 if all are populated).
-  const search = useFeedSearch(user);
+  const search = useFeedSearch(simUser);
   const { setSearchQuery, setSearchOpen, jumpToSearch: handleJumpToSearch } = search;
   const [activeRowId, setActiveRowId] = useState<string | null>(null);
 
@@ -139,6 +143,11 @@ export default function FeedSelectionPage() {
     if (idx === -1) idx = 0;
     const landedIdx = idx;
     const landedRowId = items[idx]?.id ?? null;
+    // One feed per card: picking a feed another card holds changes nothing.
+    if (isFeedOnOtherCard(items, result.feed_uuid, landedRowId)) {
+      showSnackbar(t("Already this feed is selected"), "error");
+      return;
+    }
 
     setItems((prev) => {
       const next = prev.map((row) =>
@@ -269,33 +278,10 @@ export default function FeedSelectionPage() {
         limitsApplyToAnimal && !!limitSpecsError && Object.keys(limits).length > 0;
 
       if (isEvaluation) {
-        // Evaluation prices the diet, so it needs a currency. Accounts
-        // persisted before currency was stored have none: derive it from
-        // the simulation's country (and remember it), or stop and say so
-        // rather than silently pricing in USD (audit D-03).
-        let currency = user.currency;
-        if (!currency) {
-          try {
-            const res = await getCountries();
-            currency =
-              (res.data ?? []).find((c) => String(c.id) === String(cattleInfo.country_id))
-                ?.currency ?? "";
-            if (currency) setUser({ ...user, currency });
-          } catch {
-            currency = "";
-          }
-        }
-        if (!currency) {
-          showSnackbar(
-            t("Your country's currency is unknown — pick your country in Profile, then try again."),
-            "error"
-          );
-          return;
-        }
-        const res = await evaluateDiet(
-          buildEvaluationRequest({ ...user, currency }, cattleInfo, items)
-        );
-        setReportData({ ...res.data, mode: "evaluation" });
+        // The backend prices the evaluation in the simulation country's
+        // currency (from country_id), so none is sent (F8).
+        const res = await evaluateDiet(buildEvaluationRequest(user, cattleInfo, items));
+        setReportData({ ...res.data, mode: "evaluation" }, { cattleInfo, feedSelections: items });
       } else {
         const res = await recommendDiet(
           buildRecommendationRequest(user, cattleInfo, items, checkedLimits(limits, limitSpecs))
@@ -306,7 +292,10 @@ export default function FeedSelectionPage() {
             "info"
           );
         }
-        setReportData({ ...res.data, mode: "recommendation" });
+        setReportData(
+          { ...res.data, mode: "recommendation" },
+          { cattleInfo, feedSelections: items }
+        );
       }
       setDietLimits(limits);
       router.push("/report");
@@ -428,6 +417,7 @@ export default function FeedSelectionPage() {
                 onUpdate={updateItem}
                 onDelete={deleteItem}
                 taxonomyLabels={taxonomyLabels}
+                isFeedTaken={(feedUuid, rowId) => isFeedOnOtherCard(items, feedUuid, rowId)}
               />
             </div>
           ))}
@@ -508,7 +498,7 @@ export default function FeedSelectionPage() {
 
       {/* Custom Feed Modal — confined to the 480px centered column so the
           bottom sheet does not span the entire desktop viewport. */}
-      {showCustomFeedModal && <CustomFeedSheet {...customFeedSheetProps} t={t} user={user} />}
+      {showCustomFeedModal && <CustomFeedSheet {...customFeedSheetProps} t={t} user={simUser} />}
 
       {/* Incomplete Feeds Dialog — confined to centered column */}
       {showIncompleteFeedsDialog && (

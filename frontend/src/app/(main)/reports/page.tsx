@@ -11,6 +11,8 @@ import { openExternalUrl } from "@/lib/safe-url";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
 import { PAGE_SIZES } from "@/lib/pagination";
+import Spinner from "@/components/ui/Spinner";
+import { useReportPdf } from "@/components/report/useReportPdf";
 
 function SkeletonCard() {
   return (
@@ -78,6 +80,18 @@ export default function ReportsPage() {
       })
       .finally(() => setIsLoading(false));
   }, [user, showSnackbar, tRef]);
+
+  const { getPdf, loadingIds, failedIds } = useReportPdf(t);
+  const handleGetPdf = async (reportId: string) => {
+    const url = await getPdf(reportId);
+    // Keep the URL on the card so View Report works even if the new tab
+    // was blocked.
+    if (url) {
+      setReports((prev) =>
+        prev.map((r) => (r.report_id === reportId ? { ...r, bucket_url: url } : r))
+      );
+    }
+  };
 
   const openPdf = (url: string) => {
     if (!openExternalUrl(url)) showSnackbar(t("Report URL not available"), "error");
@@ -207,13 +221,33 @@ export default function ReportsPage() {
                           <path d="M18,10c0,-4.42 -3.58,-8 -8,-8s-8,3.58 -8,8s3.58,8 8,8S18,14.42 18,10zM10,11.79v-1.04H7.75C7.34,10.75 7,10.41 7,10s0.34,-0.75 0.75,-0.75H10V8.21c0,-0.45 0.54,-0.67 0.85,-0.35l1.79,1.79c0.2,0.2 0.2,0.51 0,0.71l-1.79,1.79C10.54,12.46 10,12.24 10,11.79z" />
                         </svg>
                       </button>
+                    ) : report.report_id ? (
+                      // bucket_url is null while save-report's background PDF
+                      // job runs (or after it failed). POST
+                      // /v1/animal/reports/pdf returns it or renders it now (W5).
+                      <button
+                        onClick={() => void handleGetPdf(report.report_id!)}
+                        disabled={loadingIds.has(report.report_id)}
+                        className="flex items-center font-bold"
+                        style={{
+                          borderRadius: 60,
+                          backgroundColor: COLORS.vividGamboge15,
+                          padding: "8px 14px",
+                          gap: 8,
+                          border: "none",
+                          cursor: loadingIds.has(report.report_id) ? "wait" : "pointer",
+                          color: COLORS.vividGamboge,
+                          fontSize: 12,
+                        }}
+                      >
+                        {loadingIds.has(report.report_id) && <Spinner size={14} />}
+                        {loadingIds.has(report.report_id)
+                          ? t("Getting PDF…")
+                          : failedIds.has(report.report_id)
+                            ? t("Try again")
+                            : t("Get PDF")}
+                      </button>
                     ) : (
-                      // v1 quirk: save-report often returns success=true with
-                      // bucket_url=null because the PDF generation endpoint
-                      // (POST /v1/animal/reports/pdf) is marked "not yet
-                      // implemented" in the backend spec. Show the entry but
-                      // indicate the PDF isn't ready yet so the user knows
-                      // it's not a missing button.
                       <span
                         className="font-bold"
                         style={{
