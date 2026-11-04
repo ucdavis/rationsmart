@@ -83,9 +83,18 @@ class FeedRepository:
         result = await self.db.execute(select(Feed).where(Feed.id == fid))
         return result.scalars().first()
 
-    async def get_by_name(self, name: str) -> Optional[Feed]:
+    async def get_by_name(self, name: str, country_id) -> Optional[Feed]:
+        """The feed in `country_id` using this name (same key as the unique
+        index, FEED_NAME_INDEX). `country_id` None matches feeds without a country."""
+        country_match = (
+            Feed.fd_country_id.is_(None) if country_id is None
+            else Feed.fd_country_id == uuid.UUID(str(country_id))
+        )
         result = await self.db.execute(
-            select(Feed).where(feed_name_key(Feed.fd_name) == feed_name_key(literal(name, Text)))
+            select(Feed).where(
+                country_match,
+                feed_name_key(Feed.fd_name) == feed_name_key(literal(name, Text)),
+            )
         )
         return result.scalars().first()
 

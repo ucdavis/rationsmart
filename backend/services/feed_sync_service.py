@@ -353,12 +353,13 @@ async def _run_import_pipeline(
     # earlier row of the same file can say so (unique-names plan §4.2).
     inserted_rows: Dict[Any, int] = {}
 
-    async def _feed_with_name(name: str, raw_name: str):
-        """Stored feed already using this name (U1: library-wide), trying the
-        cleaned value, then the raw one when different (PR #54 pattern)."""
-        existing = await feed_repo.get_by_name(name)
+    async def _feed_with_name(name: str, raw_name: str, country_id):
+        """Stored feed already using this name in this country (names are unique
+        per country), trying the cleaned value, then the raw one when different
+        (PR #54 pattern)."""
+        existing = await feed_repo.get_by_name(name, country_id)
         if existing is None and raw_name and raw_name != name:
-            existing = await feed_repo.get_by_name(raw_name)
+            existing = await feed_repo.get_by_name(raw_name, country_id)
         return existing
 
     def _name_owner(existing) -> str:
@@ -487,9 +488,11 @@ async def _run_import_pipeline(
                 # auto-generate a unique RS-code the same way the single
                 # "Add Feed" screen already does.
                 # Names (docs/dev_docs/climdes/unique_feed_names_IMPLEMENTATION_PLAN.md):
-                # an insert may not reuse a stored name (U1/U2), and an update may
-                # not change the name (U3; a case/spacing-only difference is not a
-                # change, U4). The unique index on the normalized name backs both.
+                # an insert may not reuse a name stored in the same country (U2;
+                # unique per country since docs/dev_docs/feed_name_per_country/),
+                # and an update may not change the name (U3; a case/spacing-only
+                # difference is not a change, U4). The unique index on (country,
+                # normalized name) backs both.
                 raw_fd_name = _cell_raw(row, "fd_name")
                 if fd_code:
                     data["fd_code"] = fd_code
@@ -529,6 +532,20 @@ async def _run_import_pipeline(
                                 ),
                             })
                             continue
+                        # A row may move the feed to another country; its name must
+                        # be free there (names are unique per country).
+                        if feed.fd_country_id != country.id:
+                            taken_by = await _feed_with_name(stored_name, raw_fd_name, country.id)
+                            if taken_by is not None and taken_by.id != feed.id:
+                                failed_rows.append({
+                                    "row": row_num, "fd_code": fd_code,
+                                    "reason": (
+                                        f"can't move feed {fd_code} to {country.name}: its name "
+                                        f"'{stored_name}' is already used there by "
+                                        f"{_name_owner(taken_by)}"
+                                    ),
+                                })
+                                continue
                         # U4: a case/spacing-only difference is not a rename; keep
                         # the stored spelling (minus invisible characters).
                         data["fd_name"] = stored_name
@@ -542,15 +559,16 @@ async def _run_import_pipeline(
                         feed.fd_country_id = country.id  # update() whitelist omits the FK
                         updated += 1
                     else:
-                        # U2: a new code may not reuse a name already in the library.
-                        existing_by_name = await _feed_with_name(fd_name, raw_fd_name)
+                        # U2: a new code may not reuse a name already used in its country.
+                        existing_by_name = await _feed_with_name(fd_name, raw_fd_name, country.id)
                         if existing_by_name is not None:
                             failed_rows.append({
                                 "row": row_num, "fd_code": fd_code,
                                 "reason": (
-                                    f"fd_name '{fd_name}' is already used by "
+                                    f"fd_name '{fd_name}' is already used in {country.name} by "
                                     f"{_name_owner(existing_by_name)}; not imported. Make the "
-                                    "name unique in CLIMDES (or the uploaded file)."
+                                    "name unique within the country in CLIMDES (or the "
+                                    "uploaded file)."
                                 ),
                             })
                             continue
@@ -567,12 +585,13 @@ async def _run_import_pipeline(
                     })
                     continue
                 else:
-                    existing_by_name = await _feed_with_name(fd_name, raw_fd_name)
+                    existing_by_name = await _feed_with_name(fd_name, raw_fd_name, country.id)
                     if existing_by_name is not None:
                         failed_rows.append({
                             "row": row_num, "fd_code": None,
                             "reason": (
-                                f"fd_code is missing and fd_name '{fd_name}' is already used by "
+                                f"fd_code is missing and fd_name '{fd_name}' is already used in "
+                                f"{country.name} by "
                                 f"{_name_owner(existing_by_name)} — supply that feed's fd_code "
                                 "to update it"
                             ),
@@ -652,7 +671,7 @@ async def _run_import_pipeline(
             if is_feed_name_conflict(exc):
                 reason = (
                     f"fd_name '{_cell_str(row, 'fd_name')}' is already used by another feed "
-                    "(rejected by the database); not imported"
+                    "in the same country (rejected by the database); not imported"
                 )
             elif isinstance(exc, DBAPIError) and exc.orig is not None:
                 # The driver's first line, not str(exc): that carries the SQL
