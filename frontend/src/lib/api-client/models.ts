@@ -506,6 +506,39 @@ export interface RecommendationResponse extends ReportExtras {
   report_info: ReportInfo | null;
   solution_summary: SolutionSummary | null;
   total_diet_cost: number | null;
+  // N3: the limits the user set for this run (feed-card Min / Max and custom
+  // diet limits), as in the PDF's "Limits You Set". Absent when none was set,
+  // and on reports computed before backend PR #115.
+  user_limits?: UserLimits | null;
+}
+
+export interface UserInclusionLimit {
+  feed_id: string;
+  feed_name: string;
+  // Already in the report's language.
+  display_name?: string | null;
+  // kg/day as fed; null = no limit on that side.
+  min_kg_asfed: number | null;
+  max_kg_asfed: number | null;
+  // Amount in the diet; null when no diet was found.
+  result_kg_asfed: number | null;
+}
+
+export interface UserDietLimit {
+  key: string;
+  label: string;
+  // Already in the report's language.
+  display_label?: string | null;
+  // "max" → ≤, "min" → ≥ (only ndf_for_min is a min).
+  direction: "max" | "min";
+  value: number | null;
+  default: number | null;
+  unit: string;
+}
+
+export interface UserLimits {
+  inclusion_limits?: UserInclusionLimit[] | null;
+  diet_limits?: UserDietLimit[] | null;
 }
 
 export interface Country {
