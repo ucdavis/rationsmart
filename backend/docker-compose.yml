@@ -30,11 +30,15 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+    # --timeout-keep-alive: keep idle connections open longer than the PWA proxy's
+    # Node agent (5 s). With both at 5 s the proxy reused a connection as uvicorn
+    # closed it: "socket hang up" -> 502 (FTC FED-03-C / FED-04-C).
     command: >
       uvicorn app.main:app
         --host 0.0.0.0
         --port 8000
         --workers ${WORKERS:-3}
+        --timeout-keep-alive 75
     restart: unless-stopped
 
   worker:

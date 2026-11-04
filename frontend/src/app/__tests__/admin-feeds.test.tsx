@@ -341,6 +341,68 @@ describe("Admin Feeds — Feed CRUD modal", () => {
     expect(addAdminFeed).not.toHaveBeenCalled();
   });
 
+  // N4: an admin can rename a shared feed; country / type / category stay locked.
+  const openEdit = async () => {
+    render(<AdminFeedsPage />);
+    await waitForLoaded();
+    fireEvent.click(screen.getByRole("button", { name: "Feed" }));
+    await waitFor(() => expect(screen.getByText("Maize Silage")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Edit feed" }));
+    return document.querySelector(".rounded-t-2xl") as HTMLElement;
+  };
+
+  it("edit mode lets the admin rename the feed and sends the trimmed new fd_name", async () => {
+    resolveLoadAll({ feeds: [sampleFeed] });
+    updateAdminFeed.mockResolvedValueOnce({ data: {} });
+    const modal = await openEdit();
+
+    const name = within(modal).getByRole("textbox", { name: "Feed Name" }) as HTMLInputElement;
+    expect(name).toBeEnabled();
+    expect(name.value).toBe("Maize Silage");
+    fireEvent.change(name, { target: { value: "  Maize Silage (Kharif)  " } });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() => expect(updateAdminFeed).toHaveBeenCalledOnce());
+    expect(updateAdminFeed.mock.calls[0][2]).toMatchObject({ fd_name: "Maize Silage (Kharif)" });
+    await waitFor(() =>
+      expect(useStore.getState().snackbar?.message).toBe("Feed updated successfully")
+    );
+  });
+
+  it("a duplicate-name rejection shows the backend message and keeps the sheet open", async () => {
+    resolveLoadAll({ feeds: [sampleFeed] });
+    const detail = "Another feed named 'Napier Grass' already exists.";
+    updateAdminFeed.mockRejectedValueOnce(new Error(detail));
+    const modal = await openEdit();
+
+    fireEvent.change(within(modal).getByRole("textbox", { name: "Feed Name" }), {
+      target: { value: "napier  grass" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Submit" }));
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({ message: detail, type: "error" })
+    );
+    expect(screen.getByRole("heading", { name: "Edit Feed" })).toBeInTheDocument();
+  });
+
+  it("edit mode keeps country, type and category read-only and disables Submit for an empty name", async () => {
+    resolveLoadAll({ feeds: [sampleFeed] });
+    const modal = await openEdit();
+
+    // The only text box among the base fields is the name: country, type and
+    // category render as plain text, not inputs or selects.
+    expect(within(modal).getByText("India").closest("input, select, button")).toBeNull();
+    expect(within(modal).getByText("Forage").closest("input, select, button")).toBeNull();
+    expect(within(modal).getByText("Roughage").closest("input, select, button")).toBeNull();
+    expect(within(modal).queryByRole("combobox")).toBeNull();
+
+    fireEvent.change(within(modal).getByRole("textbox", { name: "Feed Name" }), {
+      target: { value: "   " },
+    });
+    expect(screen.getByRole("button", { name: "Submit" })).toBeDisabled();
+  });
+
   it("openAddFeed builds a brand-new feed and Save calls addAdminFeed (not update) with the country/type/category cascade + coerced numerics", async () => {
     const feedTypes = [{ id: "t1", type_name: "Forage" }];
     const feedCategories = [{ id: "c1", category_name: "Roughage", feed_type: "Forage" }];

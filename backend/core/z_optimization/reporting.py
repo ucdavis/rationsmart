@@ -2,7 +2,7 @@ import os
 import logging
 import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Callable, Dict, List, Optional
 from pathlib import Path
 
@@ -422,7 +422,8 @@ def build_diet_response(
             'simulation_id': simulation_id,
             'report_id': report_id,
             'user_name': user_name,
-            'generated_date': datetime.now().isoformat(),
+            # With its UTC offset, so the app shows the reader's local time (REC-02-D).
+            'generated_date': datetime.now(timezone.utc).isoformat(),
             'diet_rating': diet_rating
         },
         'solution_summary': {

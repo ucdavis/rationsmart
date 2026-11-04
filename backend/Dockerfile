@@ -54,4 +54,5 @@ COPY . /app
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WORKERS:-4}"]
+# Idle connections outlive the PWA proxy's 5 s keep-alive (see docker-compose.yml).
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers ${WORKERS:-4} --timeout-keep-alive 75"]
