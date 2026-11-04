@@ -1148,3 +1148,24 @@ describe("free feed — price 0 (F36 / W1)", () => {
     await waitFor(() => expect(screen.getByLabelText("Quantity")).toBeDisabled());
   });
 });
+
+describe("simulation country (N5)", () => {
+  it("fetches the cascade for the Cattle Info country, not the profile's", async () => {
+    useStore.setState({ cattleInfo: { country: "Ethiopia", country_id: "9" } } as never);
+    getFeedCategories.mockResolvedValueOnce({ data: ["Cat1"] });
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_name: "Forage", category_name: "Cat1" })}
+        index={1}
+        showQuantity={false}
+        onUpdate={vi.fn()}
+        onDelete={vi.fn()}
+      />
+    );
+    await waitFor(() => expect(getFeedTypes).toHaveBeenCalledWith("9", "u-1"));
+    await waitFor(() => expect(getFeedCategories).toHaveBeenCalledWith("Forage", "9", "u-1"));
+    await waitFor(() =>
+      expect(getFeedSubCategories).toHaveBeenCalledWith("Forage", "Cat1", "9", "u-1")
+    );
+  });
+});
