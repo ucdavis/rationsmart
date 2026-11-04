@@ -1315,6 +1315,23 @@ def display_simulation_name(simulation_id) -> str:
     return name
 
 
+def _report_date(time_zone=None):
+    """The report's "Generated" time (FTC REC-02-D).
+
+    time_zone: an IANA zone name (the API passes the simulation country's, see
+    country_time_zones) -> that zone's local time; "UTC" -> the UTC time marked
+    "UTC"; None -> this machine's local time (the manual runners).
+    """
+    from datetime import datetime as _dt, timezone as _tz
+    from zoneinfo import ZoneInfo
+
+    if time_zone is None:
+        return _dt.now().strftime("%Y-%m-%d %H:%M")
+    if time_zone == "UTC":
+        return _dt.now(_tz.utc).strftime("%Y-%m-%d %H:%M UTC")
+    return _dt.now(ZoneInfo(time_zone)).strftime("%Y-%m-%d %H:%M")
+
+
 def rsm_generate_report_v2(
     post_results,
     animal_requirements,
@@ -1328,6 +1345,7 @@ def rsm_generate_report_v2(
     name_map=None,
     type_map=None,
     user_limits=None,
+    time_zone=None,
 ):
     """
     Enhanced HTML report generation with PDF-parity features (icon-based layout,
@@ -1343,6 +1361,8 @@ def rsm_generate_report_v2(
 
     user_limits (reporting.build_user_limits) adds a "Limits You Set" section after
     the diet table; None (the default) leaves the report exactly as before.
+
+    time_zone sets the zone of the "Generated" time (see _report_date).
     """
     current_dir = os.path.dirname(os.path.abspath(__file__))
     icon_header_path = os.path.join(current_dir, "assets", "report_header.png")
@@ -1561,9 +1581,8 @@ def rsm_generate_report_v2(
         calf_feeding_table = _translate_table(calf_feeding_table, t, cell_columns=("Feeding Time",))
 
     currency_display = currency + " " if len(currency) > 1 else currency
-    from datetime import datetime as _dt
     # Numeric, so no English month name appears in a localized report.
-    report_date = _dt.now().strftime("%Y-%m-%d %H:%M")
+    report_date = _report_date(time_zone)
 
     # Milk price & profit margin banner (optional). Uses the same yield denominator
     # (milk_den) and daily_cost already computed for the Cost / Liter card.
