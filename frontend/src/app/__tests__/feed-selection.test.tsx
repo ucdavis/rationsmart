@@ -1001,3 +1001,34 @@ describe("feed-selection — UI-label i18n (simulation_language override)", () =
     expect(screen.getByText("आहार मूल्यांकन")).toBeInTheDocument(); // "Diet Evaluation"
   });
 });
+
+// ─── N5: feeds follow the SIMULATION country, not the profile's ─────────────
+// Since F3 Continue no longer copies the Cattle Info country onto `user`, so
+// with profile = India (1) and simulation = Ethiopia (9) every feed list,
+// the search and the Custom Feed lists must ask for Ethiopia.
+describe("feed-selection — simulation country (N5)", () => {
+  beforeEach(() => {
+    useStore.setState({
+      user: seedUser(),
+      cattleInfo: mkCattleInfo({ country: "Ethiopia", country_id: "9", currency: "ETB" }),
+    });
+  });
+
+  it("loads feed types, local names and search results for the simulation country", async () => {
+    await renderReady();
+    expect(getFeedTypes).toHaveBeenCalled();
+    for (const call of getFeedTypes.mock.calls) expect(call).toEqual(["9", "u-1"]);
+    expect(fetchFeedTaxonomyLabels.mock.calls[0][0]).toBe("9");
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds/i), { target: { value: "teff" } });
+    await waitFor(() => expect(searchFeeds).toHaveBeenCalledWith("teff", "9", "u-1"));
+  });
+
+  it("loads the Custom Feed lists for the simulation country and leaves the profile alone", async () => {
+    await renderReady();
+    getFeedTypes.mockClear();
+    fireEvent.click(screen.getByText("Custom Feed"));
+    await waitFor(() => expect(getFeedTypes).toHaveBeenCalledWith("9", "u-1"));
+    expect(useStore.getState().user?.country_id).toBe("1");
+  });
+});
