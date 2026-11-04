@@ -616,3 +616,56 @@ describe("Admin Feeds — UI-label translation (preferred_language: hi)", () => 
     expect(screen.getByRole("button", { name: "Feed Type" })).toBeInTheDocument();
   });
 });
+
+// ─── N7: the same feed name in two countries ─────────────────────────────────
+
+describe("Admin Feeds — feed country (N7)", () => {
+  const kenyaX = { ...sampleFeed, feed_id: "x-ke", fd_name: "X", fd_country_name: "Kenya" };
+  const indiaX = { ...sampleFeed, feed_id: "x-in", fd_name: "X", fd_country_name: "India" };
+  const twoCountries = [
+    ...countries,
+    { id: "2", name: "Kenya", country_code: "KE", currency: "KES" },
+  ];
+
+  async function openFeeds() {
+    resolveLoadAll({ feeds: [kenyaX, indiaX], countriesData: twoCountries });
+    render(<AdminFeedsPage />);
+    await waitForLoaded();
+    fireEvent.click(screen.getByRole("button", { name: "Feed" }));
+    await waitFor(() => expect(screen.getAllByText("X")).toHaveLength(2));
+  }
+  const cardOf = (country: string) =>
+    screen
+      .getAllByText("X")
+      .map((n) => n.closest(".mx-3") as HTMLElement)
+      .find((c) => within(c).queryByText(country)) as HTMLElement;
+
+  it("each card shows its feed's country", async () => {
+    await openFeeds();
+    expect(cardOf("Kenya")).toBeTruthy();
+    expect(cardOf("India")).toBeTruthy();
+    expect(cardOf("Kenya")).not.toBe(cardOf("India"));
+  });
+
+  it("the country filter lists only that country's feeds", async () => {
+    await openFeeds();
+    fireEvent.click(screen.getByRole("button", { name: /All Countries/ }));
+    fireEvent.click(await screen.findByRole("option", { name: "India" }));
+
+    await waitFor(() => expect(screen.getAllByText("X")).toHaveLength(1));
+    expect(cardOf("India")).toBeTruthy();
+    expect(screen.queryByText("Kenya")).toBeNull();
+  });
+
+  it("the delete dialog names the feed's country", async () => {
+    await openFeeds();
+    fireEvent.click(within(cardOf("India")).getByRole("button", { name: "Delete feed" }));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText(
+        '"X" (India) will be permanently deleted. This action cannot be undone.'
+      )
+    ).toBeInTheDocument();
+  });
+});

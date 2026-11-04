@@ -6,9 +6,13 @@
 
 import type { Dispatch, SetStateAction } from "react";
 import { COLORS } from "@/lib/colors";
+import CustomSelect from "@/components/CustomSelect";
 import { SkeletonCard, type AdminFeed } from "./shared";
 
 export interface FeedsTabProps {
+  countryFilter: string;
+  countryNames: string[];
+  setCountryFilter: (country: string) => void;
   deletingFeedId: string | null;
   filteredFeeds: AdminFeed[];
   isLoading: boolean;
@@ -21,6 +25,9 @@ export interface FeedsTabProps {
 }
 
 export default function FeedsTab({
+  countryFilter,
+  countryNames,
+  setCountryFilter,
   deletingFeedId,
   filteredFeeds,
   isLoading,
@@ -33,8 +40,29 @@ export default function FeedsTab({
 }: FeedsTabProps) {
   return (
     <>
-      {/* Search by feed name — matches Android til_search_feed */}
+      {/* Country filter (N7) — same chrome as Admin › Users' country filter.
+          The same feed name can exist in two countries, so the list can be
+          narrowed to one before editing or deleting. */}
       <div className="px-3 pt-3">
+        <div
+          className="bg-white rounded-2xl px-4 py-3"
+          style={{ boxShadow: "0 2px 8px rgba(0,0,0,0.07)" }}
+        >
+          <CustomSelect
+            transparentTrigger
+            value={countryFilter}
+            onChange={setCountryFilter}
+            options={[
+              { value: "", label: t("All Countries") },
+              ...countryNames.map((name) => ({ value: name, label: name })),
+            ]}
+            placeholder={t("All Countries")}
+          />
+        </div>
+      </div>
+
+      {/* Search by feed name — matches Android til_search_feed */}
+      <div className="px-3 pt-2">
         <div
           className="flex items-center"
           style={{
@@ -70,7 +98,7 @@ export default function FeedsTab({
         ) : filteredFeeds.length === 0 ? (
           <div className="flex items-center justify-center py-16">
             <p className="text-base" style={{ color: COLORS.spanishGray }}>
-              {searchQuery ? t("No feeds match your search") : t("No feeds found")}
+              {searchQuery || countryFilter ? t("No feeds match your search") : t("No feeds found")}
             </p>
           </div>
         ) : (
@@ -106,6 +134,14 @@ export default function FeedsTab({
                     }}
                   >
                     {f.fd_type || t("N/A")}
+                  </p>
+                  {/* N7: which country's feed this is — two countries can
+                      have a feed with the same name. */}
+                  <p
+                    className="font-bold"
+                    style={{ color: COLORS.darkAquamarineGreen, fontSize: 14, marginTop: 10 }}
+                  >
+                    {f.fd_country_name || t("N/A")}
                   </p>
                 </div>
                 <div className="flex gap-2 flex-shrink-0">

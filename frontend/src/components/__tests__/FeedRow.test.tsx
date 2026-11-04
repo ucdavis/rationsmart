@@ -1169,3 +1169,59 @@ describe("simulation country (N5)", () => {
     );
   });
 });
+
+describe("one feed per card", () => {
+  async function renderPicker(isFeedTaken: (feedUuid: string, rowId: string) => boolean) {
+    getFeedTypes.mockResolvedValueOnce({ data: [{ type_name: "Forage", display_type: "Forage" }] });
+    getFeedCategories.mockResolvedValueOnce({
+      data: [{ category_name: "Grass", display_category: "Grass" }],
+    });
+    getFeedSubCategories.mockResolvedValueOnce({
+      data: {
+        standard_feeds: [
+          { feed_id: "napier", fd_name: "Napier" },
+          { feed_id: "maize", fd_name: "Maize" },
+        ],
+        custom_feeds: [],
+      },
+    });
+    const onUpdate = vi.fn();
+    render(
+      <FeedRow
+        item={makeItem({ feed_type_name: "Forage", category_name: "Grass" })}
+        index={1}
+        showQuantity={false}
+        onUpdate={onUpdate}
+        onDelete={vi.fn()}
+        isFeedTaken={isFeedTaken}
+      />
+    );
+    await waitFor(() => expect(getFeedSubCategories).toHaveBeenCalled());
+    fireEvent.click(await screen.findByRole("button", { name: "Select feed" }));
+    fireEvent.click(await screen.findByRole("option", { name: "Napier" }));
+    return onUpdate;
+  }
+
+  it("refuses a feed another card already holds and says so", async () => {
+    const isFeedTaken = vi.fn((uuid: string) => uuid === "napier");
+    const onUpdate = await renderPicker(isFeedTaken);
+    expect(isFeedTaken).toHaveBeenCalledWith("napier", "row-1");
+    expect(onUpdate).not.toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ feed_uuid: "napier" })
+    );
+    expect(useStore.getState().snackbar).toMatchObject({
+      message: "Already this feed is selected",
+      type: "error",
+    });
+  });
+
+  it("takes a feed no other card holds", async () => {
+    const onUpdate = await renderPicker(() => false);
+    expect(onUpdate).toHaveBeenCalledWith(
+      "row-1",
+      expect.objectContaining({ feed_uuid: "napier" })
+    );
+    expect(useStore.getState().snackbar).toBeNull();
+  });
+});

@@ -60,6 +60,8 @@ interface FeedRowProps {
    *  without each row re-hitting the API. `display` falls back to the
    *  English identity when a mapping is missing. */
   taxonomyLabels?: FeedTaxonomyLabels;
+  /** True when another card already holds this feed (one feed per card). */
+  isFeedTaken?: (feedUuid: string, rowId: string) => boolean;
 }
 
 // Feed Type radios: one row, a column per type (at most 3, then wrap).
@@ -83,6 +85,7 @@ export default function FeedRow({
   onUpdate,
   onDelete,
   taxonomyLabels,
+  isFeedTaken,
 }: FeedRowProps) {
   const user = useStore((s) => s.user);
   const cattleInfo = useStore((s) => s.cattleInfo);
@@ -436,6 +439,10 @@ export default function FeedRow({
             value={item.feed_uuid ?? ""}
             onChange={(v) => {
               const selected = subCategories.find((s) => s.feed_uuid === v);
+              if (selected && isFeedTaken?.(selected.feed_uuid, item.id)) {
+                showSnackbar(t("Already this feed is selected"), "error");
+                return;
+              }
               onUpdate(item.id, {
                 sub_category_id: selected ? 1 : null,
                 sub_category_name: selected?.feed_name ?? "",

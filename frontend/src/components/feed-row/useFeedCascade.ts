@@ -458,11 +458,11 @@ export function useFeedCascade({
                 : null;
             })
             .filter((s): s is FeedSubCategoryItem => s !== null);
-          const match = list.find(
-            (s) =>
-              (item.feed_uuid && s.feed_uuid === item.feed_uuid) ||
-              s.feed_name === item.sub_category_name
-          );
+          // By id when the card has one; by name only for a card that has
+          // none (names are unique per country, not across the library).
+          const match = item.feed_uuid
+            ? list.find((s) => s.feed_uuid === item.feed_uuid)
+            : list.find((s) => s.feed_name === item.sub_category_name);
           // If the row has a picked feed_uuid but it's not in the new
           // list (e.g. missing Hindi translation on backend), inject a
           // synthetic entry using the stored data so the dropdown can

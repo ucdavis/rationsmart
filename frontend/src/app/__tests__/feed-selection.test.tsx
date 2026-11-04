@@ -1032,3 +1032,67 @@ describe("feed-selection — simulation country (N5)", () => {
     expect(useStore.getState().user?.country_id).toBe("1");
   });
 });
+
+describe("feed-selection — one feed per card (search)", () => {
+  it("a search result already on another card is refused with a message", async () => {
+    const napier = {
+      feed_uuid: "napier",
+      feed_name: "Napier",
+      feed_type: "Forage",
+      feed_category: "Grass",
+      display_name: "Napier",
+      display_type: "Forage",
+      display_category: "Grass",
+    };
+    const filled = {
+      id: "r1",
+      feed_type_id: null,
+      feed_type_name: "Forage",
+      category_id: null,
+      category_name: "Grass",
+      sub_category_id: 1,
+      sub_category_name: "Napier",
+      feed_uuid: "napier",
+      price_per_kg: null,
+      quantity_kg: null,
+      inclusion_limits_enabled: false,
+      min_kg_per_day: null,
+      max_kg_per_day: null,
+    };
+    useStore.setState({
+      feedSelections: [
+        filled,
+        { ...filled, id: "r2", sub_category_name: "", feed_uuid: null, sub_category_id: null },
+      ],
+    });
+    searchFeeds.mockReset().mockResolvedValue({ data: [napier] });
+    // The filled card's own lists, so it settles like a real one.
+    getFeedCategories.mockReset().mockResolvedValue({ data: ["Grass"] });
+    getFeedSubCategories.mockReset().mockResolvedValue({
+      data: { standard_feeds: [{ feed_id: "napier", fd_name: "Napier" }], custom_feeds: [] },
+    });
+    await renderReady();
+
+    fireEvent.change(screen.getByPlaceholderText(/Search feeds/i), { target: { value: "nap" } });
+    await waitFor(() => expect(searchFeeds).toHaveBeenCalled());
+    // The result row (it also shows the category), not the card's dropdown.
+    const result = await waitFor(() => {
+      const row = screen
+        .getAllByRole("button", { name: /Napier/ })
+        .find((b) => b.textContent?.includes("Grass"));
+      expect(row).toBeTruthy();
+      return row as HTMLElement;
+    });
+    fireEvent.click(result);
+
+    await waitFor(() =>
+      expect(useStore.getState().snackbar).toMatchObject({
+        message: "Already this feed is selected",
+        type: "error",
+      })
+    );
+    expect(useStore.getState().feedSelections.filter((f) => f.feed_uuid === "napier")).toHaveLength(
+      1
+    );
+  });
+});

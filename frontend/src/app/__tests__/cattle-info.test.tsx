@@ -1466,3 +1466,148 @@ describe("Cattle Info — forward arrow to the last report (F47 / W3)", () => {
     expect(screen.queryByRole("button", { name: "Forward" })).toBeNull();
   });
 });
+
+// ─── N8: changing the country clears the feed cards, after asking ──────────
+describe("Cattle Info — country change clears the feed cards (N8)", () => {
+  const card = (id: string, feed: string | null): FeedItem =>
+    ({
+      id,
+      feed_type_id: null,
+      feed_type_name: "Forage",
+      category_id: null,
+      category_name: "Grass",
+      sub_category_id: feed ? 1 : null,
+      sub_category_name: feed ?? "",
+      feed_uuid: feed ? `uuid-${feed}` : null,
+      price_per_kg: 5,
+      quantity_kg: null,
+      inclusion_limits_enabled: true,
+      min_kg_per_day: 1,
+      max_kg_per_day: 3,
+    }) as FeedItem;
+  const savedIndia: CattleInfo = {
+    simulation_name: "Old",
+    country: "India",
+    country_id: "1",
+    currency: "INR",
+    animal_category: "Lactating Cow",
+    breed: "Local",
+    body_weight: 450,
+    body_weight_gain: 0.5,
+    body_condition_score: 3,
+    parity: 2,
+    days_in_milk: 100,
+    days_of_pregnancy: 0,
+    milk_production: 10,
+    milk_protein_percent: 3,
+    milk_fat_percent: 4,
+    average_temperature: 28,
+    grazing: false,
+    distance: 0,
+    topography: "Flat",
+    milk_price: null,
+    simulation_language: null,
+  };
+  const twoCards = [card("a", "Napier"), card("b", "Maize")];
+
+  async function continueWith(country: string) {
+    getCountries.mockResolvedValueOnce({ data: countries });
+    render(<CattleInfoPage />);
+    await formReady();
+    await fillBaselineRequired(country);
+    const btn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+  }
+
+  it("asks first; Continue clears every card and saves the new country", async () => {
+    useStore.setState({ user: seedUser(), cattleInfo: savedIndia, feedSelections: twoCards });
+    await continueWith("Vietnam");
+
+    const dialog = await screen.findByRole("dialog");
+    expect(
+      within(dialog).getByText("Changing the country clears the 2 selected feeds. Continue?")
+    ).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
+    expect(useStore.getState().cattleInfo?.country_id).toBe("1");
+
+    fireEvent.click(within(dialog).getByRole("button", { name: "Continue" }));
+    expect(useStore.getState().feedSelections).toEqual([]);
+    expect(useStore.getState().cattleInfo).toMatchObject({ country_id: "2", currency: "VND" });
+    expect(push).toHaveBeenCalledWith("/feed-selection");
+  });
+
+  it("Cancel changes nothing and saves nothing", async () => {
+    useStore.setState({ user: seedUser(), cattleInfo: savedIndia, feedSelections: twoCards });
+    await continueWith("Vietnam");
+
+    fireEvent.click(
+      within(await screen.findByRole("dialog")).getByRole("button", { name: "Cancel" })
+    );
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useStore.getState().feedSelections).toEqual(twoCards);
+    expect(useStore.getState().cattleInfo).toBe(savedIndia);
+    expect(push).not.toHaveBeenCalled();
+  });
+
+  it("does not ask when the country ends up the same (India → Vietnam → India)", async () => {
+    useStore.setState({ user: seedUser(), cattleInfo: savedIndia, feedSelections: twoCards });
+    getCountries.mockResolvedValueOnce({ data: countries });
+    render(<CattleInfoPage />);
+    await formReady();
+    await selectCountry("Vietnam");
+    await fillBaselineRequired("India");
+    fireEvent.click(screen.getByRole("button", { name: "Continue to Feed" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useStore.getState().feedSelections).toEqual(twoCards);
+    expect(push).toHaveBeenCalledWith("/feed-selection");
+  });
+
+  it("does not ask when no card has a feed", async () => {
+    const empty = [card("a", null)];
+    useStore.setState({ user: seedUser(), cattleInfo: savedIndia, feedSelections: empty });
+    await continueWith("Vietnam");
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useStore.getState().feedSelections).toEqual(empty);
+    expect(useStore.getState().cattleInfo?.country_id).toBe("2");
+  });
+
+  it("a restored simulation keeps its feeds and Continue does not ask", async () => {
+    useStore.setState({
+      user: seedUser(),
+      cattleInfo: { ...savedIndia, country: "Vietnam", country_id: "2" },
+      feedSelections: twoCards,
+    });
+    getCountries.mockResolvedValueOnce({ data: countries });
+    getUserReports.mockResolvedValueOnce({
+      data: { simulations: [{ report_id: "R-1", simulation_id: "SIM-1", country_name: "India" }] },
+    });
+    getSimulationDetails.mockResolvedValueOnce({
+      data: {
+        simulation_id: "SIM-1",
+        country_name: "India",
+        cattle_info: { tp_milk: 3.0, fat_milk: 4.0, grazing: false },
+        feed_selection: [
+          { feed_type: "Forage", feed_category: "Grass", feed_name: "Napier", feed_id: "uuid-1" },
+        ],
+      },
+    });
+    render(<CattleInfoPage />);
+    await formReady();
+    fireEvent.click(screen.getByRole("button", { name: "Simulation history" }));
+    fireEvent.click(await screen.findByText("SIM-1"));
+    await waitFor(() => expect(useStore.getState().cattleInfo?.country_id).toBe("1"));
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    fillSimulationName();
+    const btn = screen.getByRole("button", { name: "Continue to Feed" });
+    await waitFor(() => expect(btn).not.toBeDisabled());
+    fireEvent.click(btn);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(useStore.getState().feedSelections.map((f) => f.feed_uuid)).toEqual(["uuid-1"]);
+    expect(push).toHaveBeenCalledWith("/feed-selection");
+  });
+});
