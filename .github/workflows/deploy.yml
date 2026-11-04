@@ -1,0 +1,109 @@
+# Release: builds the two images, pushes them to the Azure Container Registry, then runs deploy/vm-deploy.sh on the
+# VM (through an Azure run-command), which calls ./deploy.sh: backup, migrations, restart, smoke test, automatic rollback.
+# Signs in to Azure with OIDC; a person must approve the "stage" environment first. See INFRASTRUCTURE.md.
+#
+# Not run for pull requests: only commits that reached main (or a manual run) are released.
+# No step below interpolates event data (titles, branch names, commit messages) into a command: every value
+# reaches a script through env:.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "gateway/**"
+      - "deploy.sh"
+      - "deploy/**"
+      - "data/packs/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "up deploys this commit; rollback returns the VM to the previous images"
+        type: choice
+        options: [up, rollback]
+        default: up
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-stage
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: stage
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that azure/login exchanges
+      contents: read
+    env:
+      DEPLOY_ACTION: ${{ inputs.action || 'up' }}
+      RELEASE_SHA: ${{ github.sha }}
+      RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+      VM_NAME: ${{ vars.VM_NAME }}
+      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
+      KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME }}
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+      SMTP_SERVER: ${{ vars.SMTP_SERVER }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
+      SMTP_USERNAME: ${{ vars.SMTP_USERNAME }}
+      FROM_EMAIL: ${{ vars.FROM_EMAIL }}
+      API_BASE_URL: ${{ vars.API_BASE_URL }}
+      ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # TODO: pin to a full commit SHA like the other actions in this repository (check the current release first).
+      - name: Sign in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Built on the runner and pushed with the AcrPush role (az acr build would need a broader role).
+      - name: Build and push the images
+        if: env.DEPLOY_ACTION == 'up'
+        run: |
+          az acr login --name "${ACR_LOGIN_SERVER%%.*}"
+          docker build -t "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA" -t "$ACR_LOGIN_SERVER/rationsmart-api:latest" backend
+          docker build -t "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA" -t "$ACR_LOGIN_SERVER/rationsmart-pwa:latest" frontend
+          docker push --all-tags "$ACR_LOGIN_SERVER/rationsmart-api"
+          docker push --all-tags "$ACR_LOGIN_SERVER/rationsmart-pwa"
+
+      # The script is sent as text: the workflow's own copy of deploy/vm-deploy.sh runs, preceded by the (non-secret)
+      # variables it needs. Secrets are never sent: the VM reads them from Key Vault with its own identity.
+      - name: Release on the VM
+        run: |
+          set -euo pipefail
+          script="$(mktemp)"
+          for v in DEPLOY_ACTION RELEASE_SHA ACR_LOGIN_SERVER KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
+                   SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
+            printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
+          done
+          cat deploy/vm-deploy.sh >> "$script"
+
+          # Sent base64-encoded and run with bash on the VM: the run-command's own shell is not guaranteed to be bash.
+          payload="$(base64 -w0 "$script")"
+          outer="set -eu; f=\$(mktemp); echo '$payload' | base64 -d > \"\$f\"; set +e; bash \"\$f\"; rc=\$?; rm -f \"\$f\"; exit \$rc"
+
+          name="release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          az vm run-command create \
+            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" \
+            --script "$outer" --async-execution false --timeout-in-seconds 3300 --output none || true
+
+          # The command's own result decides success: the create call can finish "successfully" for a failed script.
+          result="$(az vm run-command show --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --instance-view --output json)"
+          jq -r '.instanceView.output // ""' <<<"$result"
+          jq -r '.instanceView.error // ""' <<<"$result" >&2
+          code="$(jq -r '.instanceView.exitCode // 1' <<<"$result")"
+          az vm run-command delete --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --yes --output none || true
+          echo "exit code on the VM: $code"
+          exit "$code"

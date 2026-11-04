@@ -249,4 +249,5 @@ Backups are written to `backups/` on the server. Copy them somewhere safe now an
 
 - **[CONFIGURATION.md](CONFIGURATION.md)**: every setting, the password rules, other ports, using a managed Redis, loading data options.
 - **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)**: error messages and how to fix them.
+- **[INFRASTRUCTURE.md](INFRASTRUCTURE.md)**: on Azure, create the server, database and registry from templates and release from GitHub Actions.
 - **[data/packs/README.md](data/packs/README.md)**: how the reference-data packs are made (for maintainers).

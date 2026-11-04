@@ -1,0 +1,38 @@
+#cloud-config
+# First-boot setup of the RationSmart VM (Ubuntu 24.04): Docker Engine + Compose plugin, git, Azure CLI,
+# and a clone of the repository in /opt/rationsmart. The tokens __REPO_URL__ and __REPO_BRANCH__ are filled in
+# by modules/vm.bicep. The log is /var/log/cloud-init-output.log; /var/lib/rationsmart-bootstrap.done marks success.
+write_files:
+  - path: /usr/local/sbin/rationsmart-bootstrap.sh
+    permissions: "0700"
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+      export DEBIAN_FRONTEND=noninteractive
+      apt-get update
+      apt-get install -y ca-certificates curl git gnupg lsb-release
+
+      install -m 0755 -d /etc/apt/keyrings
+
+      # Docker Engine and the Compose plugin (the same packages DEPLOYMENT.md installs by hand)
+      curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+      chmod a+r /etc/apt/keyrings/docker.asc
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" > /etc/apt/sources.list.d/docker.list
+
+      # Azure CLI (used by the release script with the VM's own identity)
+      curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg
+      echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/azure-cli.list
+
+      apt-get update
+      apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin azure-cli
+      systemctl enable --now docker
+      usermod -aG docker ubuntu || true
+
+      # The release script runs as root in a directory cloned as root; git needs no ownership exception.
+      if [ ! -d /opt/rationsmart/.git ]; then
+        git clone --branch "__REPO_BRANCH__" "__REPO_URL__" /opt/rationsmart
+      fi
+
+      touch /var/lib/rationsmart-bootstrap.done
+runcmd:
+  - [bash, /usr/local/sbin/rationsmart-bootstrap.sh]

@@ -1,0 +1,114 @@
+# Infrastructure: checks the Bicep templates on every pull request, and (after a person approves the
+# "stage-infra" environment) previews and applies them to Azure. Signs in to Azure with OIDC: there is no
+# Azure password or client secret anywhere in GitHub. See INFRASTRUCTURE.md.
+#
+# Deployments run in incremental mode only: nothing the template does not mention is ever deleted.
+# Secrets are read by infra/params/*.bicepparam from environment variables; they are used once as Bicep inputs.
+# No step below interpolates event data (titles, branch names, commit messages) into a command: every value
+# reaches a script through env:.
+
+name: Infrastructure
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra.yml"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "whatif shows the changes only; apply also deploys them"
+        type: choice
+        options: [whatif, apply]
+        default: whatif
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-stage
+  cancel-in-progress: false
+
+jobs:
+  # No Azure access: compiles the templates and the parameter files.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Compile the templates
+        env:
+          # Placeholder values: the parameter files only need the variables to exist to compile.
+          ADMIN_SSH_PUBLIC_KEY: placeholder
+          APP_IDENTITY_PRINCIPAL_ID: placeholder
+          RUN_COMMAND_ROLE_ID: placeholder
+          POSTGRES_ADMIN_PASSWORD: placeholder
+          JWT_SECRET_KEY: placeholder
+          REDIS_PASSWORD: placeholder
+          SMTP_PASSWORD: placeholder
+        run: |
+          az bicep build --file infra/main.bicep --stdout > /dev/null
+          az bicep build --file infra/bootstrap/oidc.bicep --stdout > /dev/null
+          for f in infra/params/*.bicepparam; do az bicep build-params --file "$f" --stdout > /dev/null; done
+
+  # Needs a person's approval (environment protection rules). Pull requests never reach this job.
+  deploy:
+    needs: validate
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    environment: stage-infra
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that azure/login exchanges
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+      # Read by infra/params/stage.bicepparam
+      ADMIN_SSH_PUBLIC_KEY: ${{ vars.ADMIN_SSH_PUBLIC_KEY }}
+      APP_IDENTITY_PRINCIPAL_ID: ${{ vars.APP_IDENTITY_PRINCIPAL_ID }}
+      RUN_COMMAND_ROLE_ID: ${{ vars.RUN_COMMAND_ROLE_ID }}
+      POSTGRES_ADMIN_PASSWORD: ${{ secrets.POSTGRES_ADMIN_PASSWORD }}
+      JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+      REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+      MODE: ${{ github.event_name == 'push' && 'apply' || inputs.mode }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # TODO: pin to a full commit SHA like the other actions in this repository (check the current release first).
+      - name: Sign in to Azure (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: What would change
+        run: |
+          {
+            echo '### What-if'
+            echo '```'
+            az deployment group what-if \
+              --resource-group "$RESOURCE_GROUP" \
+              --template-file infra/main.bicep \
+              --parameters infra/params/stage.bicepparam \
+              --no-pretty-print --result-format ResourceIdOnly \
+              --query 'changes[].[changeType, resourceId]' --output tsv
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy (incremental)
+        if: env.MODE == 'apply'
+        run: |
+          az deployment group create \
+            --resource-group "$RESOURCE_GROUP" \
+            --name "infra-${GITHUB_RUN_ID}" \
+            --template-file infra/main.bicep \
+            --parameters infra/params/stage.bicepparam \
+            --mode Incremental \
+            --query 'properties.outputs.{vm:vmName.value, publicIp:vmPublicIp.value, registry:registryLoginServer.value, keyVault:keyVaultName.value, postgres:postgresHost.value}' \
+            --output yaml | tee -a "$GITHUB_STEP_SUMMARY"
