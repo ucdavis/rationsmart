@@ -126,11 +126,14 @@ export default function FeedFormSheet({
           </div>
         )}
 
-        {/* Base fields — in EDIT mode all four are read-only (bright_gray
-                bg, no border). In ADD mode they cascade: country → type →
+        {/* Base fields — in EDIT mode country, type and category are
+                read-only (bright_gray bg, no border); the name stays editable
+                so an admin can rename a shared feed (N4; the backend rejects a
+                duplicate name). In ADD mode they cascade: country → type →
                 category → name (each disabled until the previous is picked). */}
         {(() => {
           const isEdit = !!editingFeed;
+          const nameLocked = !isEdit && !feedForm.fd_category;
           const inputStyle = (disabled: boolean) =>
             ({
               backgroundColor: disabled ? COLORS.brightGray : COLORS.americanDiamond,
@@ -317,22 +320,16 @@ export default function FeedFormSheet({
                   {t("Feed Name")}
                   <span style={{ color: COLORS.redRyb }}> *</span>
                 </p>
-                {isEdit ? (
-                  <div style={inputStyle(true)}>{feedForm.fd_name || t("N/A")}</div>
-                ) : (
-                  <input
-                    aria-label={t("Feed Name")}
-                    type="text"
-                    value={feedForm.fd_name}
-                    disabled={!feedForm.fd_category}
-                    onChange={(e) => setFeedForm((p) => ({ ...p, fd_name: e.target.value }))}
-                    placeholder={
-                      !feedForm.fd_category ? t("Select category first") : t("e.g. Maize Silage")
-                    }
-                    className="focus:outline-none"
-                    style={inputStyle(!feedForm.fd_category)}
-                  />
-                )}
+                <input
+                  aria-label={t("Feed Name")}
+                  type="text"
+                  value={feedForm.fd_name}
+                  disabled={nameLocked}
+                  onChange={(e) => setFeedForm((p) => ({ ...p, fd_name: e.target.value }))}
+                  placeholder={nameLocked ? t("Select category first") : t("e.g. Maize Silage")}
+                  className="focus:outline-none"
+                  style={inputStyle(nameLocked)}
+                />
               </div>
             </div>
           );
