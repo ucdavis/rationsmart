@@ -189,8 +189,18 @@ async def create_feed(
     repo = FeedRepository(db)
     user_repo = UserRepository(db)
 
-    if await repo.get_by_name(data["fd_name"]):
-        return False, f"Feed '{data['fd_name']}' already exists", None
+    # A library feed needs a country: users see only their simulation country's
+    # feeds, and names are unique per country.
+    country_name = (data.get("fd_country_name") or "").strip()
+    if not country_name:
+        return False, "Country is required", None
+    country = await user_repo.get_country_by_name(country_name)
+    if not country:
+        return False, f"Country '{country_name}' not found", None
+    country_id = str(country.id)
+
+    if await repo.get_by_name(data["fd_name"], country_id):
+        return False, f"Feed '{data['fd_name']}' already exists in {country.name}", None
 
     # Taxonomy validation + canonicalization (same rules as bulk upload).
     type_by_name, cat_by_type_and_name = await repo.get_active_taxonomy_maps()
@@ -206,28 +216,21 @@ async def create_feed(
     data["fd_type_id"] = type_id
     data["fd_category_id"] = cat_id
 
-    country_id = None
-    if data.get("fd_country_name"):
-        country = await user_repo.get_country_by_name(data["fd_country_name"])
-        if not country:
-            return False, f"Country '{data['fd_country_name']}' not found", None
-        country_id = str(country.id)
-
     # fd_code is generated inside RationSmart (admin never supplies it); id derives from it.
     fd_code = await make_unique_feed_code(repo, data["fd_name"])
     data["fd_code"] = fd_code
     data["id"] = stable_feed_uuid(fd_code)
 
     # The name check above can race another writer; the unique name index
-    # (uq_feeds_fd_name_norm) is the backstop. A savepoint keeps the session
-    # usable so the caller can answer 400 instead of 500.
+    # (FEED_NAME_INDEX, per country) is the backstop. A savepoint keeps the
+    # session usable so the caller can answer 400 instead of 500.
     try:
         async with db.begin_nested():
             feed = await repo.create(data, country_id=country_id)
     except IntegrityError as exc:
         if not is_feed_name_conflict(exc):
             raise
-        return False, f"Feed '{data['fd_name']}' already exists", None
+        return False, f"Feed '{data['fd_name']}' already exists in {country.name}", None
     return True, "Feed created successfully", feed
 
 
@@ -245,10 +248,12 @@ async def update_feed(
     if not feed:
         return False, "Feed not found", None
 
+    # Names are unique per country. The feed's own fd_country_id decides (an
+    # update never changes it; the fd_country_name text is display only).
     if "fd_name" in data:
-        dup = await repo.get_by_name(data["fd_name"])
+        dup = await repo.get_by_name(data["fd_name"], feed.fd_country_id)
         if dup and str(dup.id) != feed_id:
-            return False, f"Another feed named '{data['fd_name']}' already exists", None
+            return False, f"Another feed named '{data['fd_name']}' already exists in this country", None
 
     # Re-validate taxonomy only when type or category is being changed. Fill the missing side
     # from the existing row so the (type, category) membership check is always evaluated.
@@ -275,7 +280,7 @@ async def update_feed(
     except IntegrityError as exc:
         if not is_feed_name_conflict(exc):
             raise
-        return False, f"Another feed named '{new_name}' already exists", None
+        return False, f"Another feed named '{new_name}' already exists in this country", None
     return True, "Feed updated successfully", updated
 
 
