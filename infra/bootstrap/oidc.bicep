@@ -29,7 +29,7 @@ var contributorId = subscriptionResourceId('Microsoft.Authorization/roleDefiniti
 var rbacAdministratorId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'f58310d9-a9f6-439a-9e8d-f62e7b41a168')
 var acrPullGuid = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 var acrPushGuid = '8311e382-0749-4cb8-b61a-304f252e45ec'
-var keyVaultSecretsUserGuid = '4633458b-17de-40c2-a5b2-1ac8fb4b3b41'
+var keyVaultSecretsUserGuid = '4633458b-17de-408a-b874-0445c86b69e6'
 
 resource infraIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: '${namePrefix}-infra-gh'

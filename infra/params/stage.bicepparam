@@ -5,6 +5,10 @@ using '../main.bicep'
 param namePrefix = 'rationsmart-stage'
 param databaseName = 'rationsmart_stage'
 
+// Region of every resource. The resource group itself is in eastus, but PostgreSQL Flexible Server is not
+// available there for this subscription (list-skus returns nothing), so the resources go to eastus2.
+param location = 'eastus2'
+
 // Same sizes as the dev environment
 param vmSize = 'Standard_D4as_v6'
 param zone = '1'

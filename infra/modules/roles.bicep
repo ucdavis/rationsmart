@@ -15,7 +15,7 @@ param runCommandRoleId string
 
 var acrPullId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
 var acrPushId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '8311e382-0749-4cb8-b61a-304f252e45ec')
-var keyVaultSecretsUserId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-40c2-a5b2-1ac8fb4b3b41')
+var keyVaultSecretsUserId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '4633458b-17de-408a-b874-0445c86b69e6')
 
 resource registry 'Microsoft.ContainerRegistry/registries@2025-04-01' existing = {
   name: registryName
