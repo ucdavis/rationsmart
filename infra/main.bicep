@@ -58,7 +58,9 @@ param runCommandRoleId string
 var compactPrefix = replace(namePrefix, '-', '')
 var vmName = '${namePrefix}-vm'
 var registryName = take('${compactPrefix}${nameSuffix}', 50)
-var keyVaultName = 'kv-${take(compactPrefix, 8)}-${take(nameSuffix, 10)}'
+// A deleted vault keeps its name for 90 days (soft delete) and blocks it with VaultAlreadyExists. The 10-character
+// form of this name was used by an earlier test deployment that was deleted, so the suffix is 9 characters here.
+var keyVaultName = 'kv-${take(compactPrefix, 8)}-${take(nameSuffix, 9)}'
 var postgresName = toLower('${namePrefix}-pg-${take(nameSuffix, 8)}')
 
 module network 'modules/network.bicep' = {
