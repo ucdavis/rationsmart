@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 SUCCESS_RECOMMENDATION = "Continue monitoring animal performance and adjust as needed."
 CALF_RECOMMENDATION = (
     "Feed milk only, split between morning and evening. Solid-feed ration "
-    "formulation does not apply to a baby calf (milk intake only, up to ~8 weeks of age)."
+    "formulation does not apply to a calf (milk intake only, up to ~8 weeks of age)."
 )
 
 def _build_animal_information(cattle_info, env_grazing):
