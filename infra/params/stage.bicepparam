@@ -9,11 +9,13 @@ param databaseName = 'rationsmart_stage'
 // available there for this subscription (list-skus returns nothing), so the resources go to eastus2.
 param location = 'eastus2'
 
-// Same sizes as the dev environment
+// VM size as in the dev environment. The database is GeneralPurpose, not the dev environment's Burstable B2s: in this
+// subscription the Burstable tier fails with SkuNotAvailable in eastus and eastus2 (tested in every zone), while
+// Standard_D2ds_v5 in eastus2 was created successfully. Go back to 'Burstable' / 'Standard_B2s' where it is allowed.
 param vmSize = 'Standard_D4as_v6'
 param zone = '1'
-param postgresSkuName = 'Standard_B2s'
-param postgresSkuTier = 'Burstable'
+param postgresSkuName = 'Standard_D2ds_v5'
+param postgresSkuTier = 'GeneralPurpose'
 param postgresVersion = '15'
 param postgresStorageGb = 64
 
