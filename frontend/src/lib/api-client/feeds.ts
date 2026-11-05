@@ -167,6 +167,15 @@ async function catalogCategoryNamesForType(feed_type: string): Promise<string[] 
   }
 }
 
+/**
+ * Every active category of a feed type, from the master list, in catalogue
+ * order — whether or not the country has feeds in it yet. For creating a
+ * feed (Custom Feed, N6); Feed Selection keeps getFeedCategories, which
+ * offers only categories with feeds. null when the lookup fails.
+ */
+export const getCatalogCategoriesForType = (feed_type: string): Promise<string[] | null> =>
+  catalogCategoryNamesForType(feed_type);
+
 async function allowedCategoryNamesForType(feed_type: string): Promise<Set<string> | null> {
   const names = await catalogCategoryNamesForType(feed_type);
   return names ? new Set(names.map(normalizeTaxonomyName)) : null;

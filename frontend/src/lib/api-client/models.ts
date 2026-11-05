@@ -77,7 +77,7 @@ export const ANIMAL_CATEGORY_LABELS: Record<AnimalCategory, string> = {
   "Lactating Cow": "Lactating cows",
   "Dry Cow": "Dry cows",
   Heifer: "Heifers",
-  "Baby Calf/Heifer": "Baby calves/heifers",
+  "Baby Calf/Heifer": "Calves",
 };
 export const isLactating = (cat: AnimalCategory): boolean => cat === "Lactating Cow";
 

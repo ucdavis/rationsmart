@@ -82,7 +82,7 @@ describe("animal category helpers", () => {
     expect(ANIMAL_CATEGORY_LABELS["Lactating Cow"]).toBe("Lactating cows");
     expect(ANIMAL_CATEGORY_LABELS["Dry Cow"]).toBe("Dry cows");
     expect(ANIMAL_CATEGORY_LABELS["Heifer"]).toBe("Heifers");
-    expect(ANIMAL_CATEGORY_LABELS["Baby Calf/Heifer"]).toBe("Baby calves/heifers");
+    expect(ANIMAL_CATEGORY_LABELS["Baby Calf/Heifer"]).toBe("Calves");
   });
 
   it("isLactating is true only for Lactating Cow", () => {
