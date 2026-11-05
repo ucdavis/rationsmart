@@ -4,16 +4,12 @@
 param name string
 param location string
 
-@description('Allow pulling without signing in. Applies to every repository in the registry.')
-param anonymousPull bool = false
-
 resource registry 'Microsoft.ContainerRegistry/registries@2025-04-01' = {
   name: name
   location: location
   sku: { name: 'Standard' }
   properties: {
     adminUserEnabled: false
-    anonymousPullEnabled: anonymousPull
     publicNetworkAccess: 'Enabled'
   }
 }

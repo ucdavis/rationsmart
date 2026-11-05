@@ -16,6 +16,9 @@ param postgresStorageGb = 64
 // SSH stays closed; sign in with Entra ID (az ssh vm). Set an address range here to open port 22 for it.
 param sshAllowedCidr = ''
 
+// The repository the VM clones: the Infrastructure workflow sets REPO_URL to the repository it runs in.
+param repoUrl = readEnvironmentVariable('REPO_URL', 'https://github.com/ucdavis/rationsmart.git')
+
 param adminSshPublicKey = readEnvironmentVariable('ADMIN_SSH_PUBLIC_KEY')
 
 // Output of infra/bootstrap/oidc.bicep

@@ -1,6 +1,6 @@
 #cloud-config
 # First-boot setup of the RationSmart VM (Ubuntu 24.04): Docker Engine + Compose plugin, git, Azure CLI,
-# and a clone of the repository in /opt/rationsmart. The tokens __REPO_URL__ and __REPO_BRANCH__ are filled in
+# and a clone of the repository in /opt/rationsmart. The token __REPO_URL__ is filled in
 # by modules/vm.bicep. The log is /var/log/cloud-init-output.log; /var/lib/rationsmart-bootstrap.done marks success.
 write_files:
   - path: /usr/local/sbin/rationsmart-bootstrap.sh
@@ -30,7 +30,7 @@ write_files:
 
       # The release script runs as root in a directory cloned as root; git needs no ownership exception.
       if [ ! -d /opt/rationsmart/.git ]; then
-        git clone --branch "__REPO_BRANCH__" "__REPO_URL__" /opt/rationsmart
+        git clone "__REPO_URL__" /opt/rationsmart
       fi
 
       touch /var/lib/rationsmart-bootstrap.done

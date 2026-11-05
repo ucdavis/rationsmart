@@ -27,10 +27,8 @@ param adminUsername string = 'ubuntu'
 param adminSshPublicKey string
 @description('Address range allowed to reach SSH. Empty keeps port 22 closed (use Entra ID SSH).')
 param sshAllowedCidr string = ''
-param allowHttps bool = false
-@description('Repository the VM clones on first boot. A private repository needs a deploy key, see INFRASTRUCTURE.md.')
+@description('Repository the VM clones on first boot (its default branch; releases then check out the commit being deployed). A private repository needs a deploy key, see INFRASTRUCTURE.md.')
 param repoUrl string = 'https://github.com/ucdavis/rationsmart.git'
-param repoBranch string = 'main'
 
 // ── PostgreSQL ──
 param postgresSkuName string = 'Standard_B2s'
@@ -56,8 +54,6 @@ param appIdentityPrincipalId string
 @description('Resource ID of the run-command role (output of the bootstrap).')
 param runCommandRoleId string
 
-param anonymousRegistryPull bool = false
-param deployStorage bool = false
 
 var compactPrefix = replace(namePrefix, '-', '')
 var vmName = '${namePrefix}-vm'
@@ -72,7 +68,6 @@ module network 'modules/network.bicep' = {
     prefix: namePrefix
     zone: zone
     sshAllowedCidr: sshAllowedCidr
-    allowHttps: allowHttps
   }
 }
 
@@ -81,7 +76,6 @@ module registry 'modules/registry.bicep' = {
   params: {
     name: registryName
     location: location
-    anonymousPull: anonymousRegistryPull
   }
 }
 
@@ -108,7 +102,6 @@ module vm 'modules/vm.bicep' = {
     adminSshPublicKey: adminSshPublicKey
     nicId: network.outputs.nicId
     repoUrl: repoUrl
-    repoBranch: repoBranch
   }
 }
 
@@ -138,14 +131,6 @@ module roles 'modules/roles.bicep' = {
     keyVaultName: keyVault.outputs.name
     vmName: vm.outputs.name
     runCommandRoleId: runCommandRoleId
-  }
-}
-
-module storage 'modules/storage.bicep' = if (deployStorage) {
-  name: 'storage'
-  params: {
-    name: take('${compactPrefix}${nameSuffix}', 24)
-    location: location
   }
 }
 

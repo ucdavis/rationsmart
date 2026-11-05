@@ -9,9 +9,8 @@ param adminUsername string = 'ubuntu'
 param adminSshPublicKey string
 param nicId string
 param repoUrl string
-param repoBranch string
 
-var cloudInit = replace(replace(loadTextContent('../cloud-init.yaml'), '__REPO_URL__', repoUrl), '__REPO_BRANCH__', repoBranch)
+var cloudInit = replace(loadTextContent('../cloud-init.yaml'), '__REPO_URL__', repoUrl)
 
 resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' = {
   name: name

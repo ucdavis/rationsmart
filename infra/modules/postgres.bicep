@@ -31,11 +31,6 @@ resource server 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
     backup: { backupRetentionDays: backupRetentionDays, geoRedundantBackup: 'Disabled' }
     highAvailability: { mode: 'Disabled' }
     network: { publicNetworkAccess: 'Enabled' }
-    authConfig: {
-      activeDirectoryAuth: 'Enabled'
-      passwordAuth: 'Enabled'
-      tenantId: tenant().tenantId
-    }
   }
 }
 

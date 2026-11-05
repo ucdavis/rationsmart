@@ -35,7 +35,7 @@ The outputs are not secret:
 | `appClientId` | GitHub variable `AZURE_CLIENT_ID` in the environment `<env>` |
 | `appPrincipalId` | GitHub variable `APP_IDENTITY_PRINCIPAL_ID` in `<env>-infra` |
 | `runCommandRoleId` | GitHub variable `RUN_COMMAND_ROLE_ID` in `<env>-infra` |
-| `tenantId` | GitHub variable `AZURE_TENANT_ID` in both |
+| `tenantId` | GitHub variable `AZURE_TENANT_ID` in both environments |
 
 For example, with the GitHub CLI: `gh variable set AZURE_CLIENT_ID --env stage-infra --body <infraClientId>`.
 

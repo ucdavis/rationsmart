@@ -30,8 +30,9 @@ on:
 permissions:
   contents: read
 
+# One group with the Infrastructure workflow: a release never runs while infrastructure is being changed.
 concurrency:
-  group: deploy-stage
+  group: stage
   cancel-in-progress: false
 
 jobs:
@@ -60,9 +61,9 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      # TODO: pin to a full commit SHA like the other actions in this repository (check the current release first).
       - name: Sign in to Azure (OIDC)
-        uses: azure/login@v2
+        # v2.3.1. Dependabot (github-actions) proposes updates to the pinned SHA.
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
@@ -73,10 +74,10 @@ jobs:
         if: env.DEPLOY_ACTION == 'up'
         run: |
           az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-          docker build -t "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA" -t "$ACR_LOGIN_SERVER/rationsmart-api:latest" backend
-          docker build -t "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA" -t "$ACR_LOGIN_SERVER/rationsmart-pwa:latest" frontend
-          docker push --all-tags "$ACR_LOGIN_SERVER/rationsmart-api"
-          docker push --all-tags "$ACR_LOGIN_SERVER/rationsmart-pwa"
+          docker build -t "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA" backend
+          docker build -t "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA" frontend
+          docker push "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA"
+          docker push "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA"
 
       # The script is sent as text: the workflow's own copy of deploy/vm-deploy.sh runs, preceded by the (non-secret)
       # variables it needs. Secrets are never sent: the VM reads them from Key Vault with its own identity.
@@ -95,15 +96,23 @@ jobs:
           outer="set -eu; f=\$(mktemp); echo '$payload' | base64 -d > \"\$f\"; set +e; bash \"\$f\"; rc=\$?; rm -f \"\$f\"; exit \$rc"
 
           name="release-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-          az vm run-command create \
-            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" \
-            --script "$outer" --async-execution false --timeout-in-seconds 3300 --output none || true
+          # Removes the run command (it holds the script text) however this step ends.
+          trap 'az vm run-command delete --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --yes --output none >/dev/null 2>&1 || true' EXIT
 
-          # The command's own result decides success: the create call can finish "successfully" for a failed script.
-          result="$(az vm run-command show --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --instance-view --output json)"
+          # The create call can fail for a script that ran and failed, so its status alone does not decide the result.
+          if ! az vm run-command create \
+            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" \
+            --script "$outer" --async-execution false --timeout-in-seconds 3300 --output none; then
+            echo "::warning::az vm run-command create returned an error (shown above); reading the command's own result"
+          fi
+
+          # The command's own result decides success.
+          if ! result="$(az vm run-command show --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --instance-view --output json)"; then
+            echo "::error::the run command was not created: check the 'app' identity's run-command role on $VM_NAME, and that the VM is running"
+            exit 1
+          fi
           jq -r '.instanceView.output // ""' <<<"$result"
           jq -r '.instanceView.error // ""' <<<"$result" >&2
           code="$(jq -r '.instanceView.exitCode // 1' <<<"$result")"
-          az vm run-command delete --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --yes --output none || true
           echo "exit code on the VM: $code"
           exit "$code"

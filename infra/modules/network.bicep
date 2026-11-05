@@ -8,9 +8,6 @@ param zone string
 @description('Address range allowed to reach SSH (port 22), for example <your-address>/32. Empty keeps SSH closed.')
 param sshAllowedCidr string = ''
 
-@description('Open port 443. The app serves plain HTTP only, so nothing listens there yet.')
-param allowHttps bool = false
-
 var httpRule = [
   {
     name: 'HTTP-port'
@@ -23,22 +20,6 @@ var httpRule = [
       sourcePortRange: '*'
       destinationAddressPrefix: '*'
       destinationPortRange: '80'
-    }
-  }
-]
-
-var httpsRule = [
-  {
-    name: 'HTTPS-port'
-    properties: {
-      priority: 320
-      direction: 'Inbound'
-      access: 'Allow'
-      protocol: 'Tcp'
-      sourceAddressPrefix: 'Internet'
-      sourcePortRange: '*'
-      destinationAddressPrefix: '*'
-      destinationPortRange: '443'
     }
   }
 ]
@@ -73,7 +54,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = {
   name: '${prefix}-nsg'
   location: location
   properties: {
-    securityRules: concat(httpRule, allowHttps ? httpsRule : [], empty(sshAllowedCidr) ? [] : sshRule)
+    securityRules: concat(httpRule, empty(sshAllowedCidr) ? [] : sshRule)
   }
 }
 
