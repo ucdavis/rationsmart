@@ -1087,6 +1087,9 @@ def build_report_context(
         },
         "Baby Calf/Heifer": {
             "animal_input_rows": ["Breed", "Animal Type", "Animal Weight"],
+            # Shown in the Animal Type row instead of the state value (the PWA's
+            # "Calves" option, N9); the state string itself is an API contract.
+            "animal_type_label": "Calf",
             # Water Intake intentionally omitted for the calf (never computed — the calf
             # skips the post-optimization diet step; see the animal-category plan).
             "requirements_rows": [CALF_INTAKE_LABEL, "Intake (%Body Weight)"],
@@ -1127,6 +1130,11 @@ def build_report_context(
         return filtered
 
     animal_inputs_display = filter_display_df(animal_inputs_df, profile.get("animal_input_rows"))
+    animal_type_label = profile.get("animal_type_label")
+    if (animal_type_label and animal_inputs_display is not None
+            and not animal_inputs_display.empty and "Parameter" in animal_inputs_display.columns):
+        animal_inputs_display = animal_inputs_display.copy()
+        animal_inputs_display.loc[animal_inputs_display["Parameter"] == "Animal Type", "Value"] = animal_type_label
     requirements_display = filter_display_df(requirements_df, profile.get("requirements_rows"))
 
     calf_feeding_table = None
@@ -1886,7 +1894,7 @@ def rsm_generate_report_v2(
             "</div></div>",
             f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Milk Feeding Schedule')}</h2>",
             calf_table_html,
-            f"<p class='footnote'>{h('Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a baby calf.')}</p>",
+            f"<p class='footnote'>{h('Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a calf.')}</p>",
             f"<p class='footnote'>{h(CALF_WEANING_TEXT, days=CALF_WEANING_AGE_DAYS)}</p>",
             *(f"<p class='footnote'>{h(note)}</p>" for note in CALF_CARE_NOTES),
             "</div>",
