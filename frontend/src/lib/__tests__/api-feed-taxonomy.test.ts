@@ -18,6 +18,7 @@ import {
   getFeedTypesLocalized,
   getFeedCategories,
   getFeedCategoriesLocalized,
+  getCatalogCategoriesForType,
   getFeedSubCategories,
   fetchFeedTaxonomyLabels,
   evaluateDiet,
@@ -192,6 +193,20 @@ describe("getFeedCategories", () => {
     });
     const res = await getFeedCategories("Complete diet", "7");
     expect(res.data).toEqual({ feed_categories: ["Complete diet"] });
+  });
+
+  // N6: Custom Feed creates a feed, so it offers EVERY master category of
+  // the type in catalogue order; Feed Selection above keeps the overlap.
+  it("getCatalogCategoriesForType gives every master category, not the country overlap", async () => {
+    const all = ["By-Product/Other", "Plant Protein", "Energy Source", "Minerals", "Additive"];
+    routeGet(["Energy Source"], { "type-conc": all.map((category_name) => ({ category_name })) });
+    expect(await getCatalogCategoriesForType("Concentrate")).toEqual(all);
+    expect((await getFeedCategories("Concentrate", "7")).data).toEqual(["Energy Source"]);
+  });
+
+  it("getCatalogCategoriesForType returns null when the master list can't be read", async () => {
+    routeGet(["Energy Source"], {}, { typesFail: true });
+    expect(await getCatalogCategoriesForType("Concentrate")).toBeNull();
   });
 });
 

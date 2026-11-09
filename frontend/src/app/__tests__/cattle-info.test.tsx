@@ -1218,7 +1218,7 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     fillSimulationName();
     await selectCountry("India");
 
-    await pickCategory("Baby calves/heifers");
+    await pickCategory("Calves");
     await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("40"));
     for (const hidden of [
       "Breed Selection",
@@ -1285,7 +1285,7 @@ describe("Cattle Info — state-driven fields (GET /v1/animal/cattle-info-fields
     await formReady();
     fillSimulationName();
     await selectCountry("India");
-    await pickCategory("Baby calves/heifers");
+    await pickCategory("Calves");
     await waitFor(() => expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("40"));
 
     fireEvent.click(screen.getByRole("button", { name: "Continue" }));

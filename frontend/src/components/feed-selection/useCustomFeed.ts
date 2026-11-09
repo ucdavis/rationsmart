@@ -6,6 +6,7 @@
 import { useState } from "react";
 import {
   checkInsertOrUpdate,
+  getCatalogCategoriesForType,
   getFeedCategories,
   getFeedTypes,
   insertCustomFeed,
@@ -62,9 +63,16 @@ export function useCustomFeed(user: User | null, t: (s: string) => string, showS
     if (!feedType || !user?.country_id || !user?.id) return;
     setLoadingCustomCats(true);
     try {
-      const res = await getFeedCategories(feedType, user.country_id, user.id);
-      const names = parseFeedCategoryOptions(res.data).map((o) => o.name);
-      setCustomFeedCategories(names);
+      // N6: a new feed may go in ANY category of its type, not only the ones
+      // this country already has feeds in — so the master list, in its own
+      // order. If that lookup fails, the country's list keeps it usable.
+      const catalog = await getCatalogCategoriesForType(feedType);
+      if (catalog) {
+        setCustomFeedCategories(catalog);
+      } else {
+        const res = await getFeedCategories(feedType, user.country_id, user.id);
+        setCustomFeedCategories(parseFeedCategoryOptions(res.data).map((o) => o.name));
+      }
     } catch {
       showSnackbar(t("Could not load categories"), "error");
     } finally {

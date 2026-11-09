@@ -67,6 +67,7 @@ export {
   checkInsertOrUpdate,
   fetchFeedTaxonomyLabels,
   getFeedCategories,
+  getCatalogCategoriesForType,
   getFeedCategoriesLocalized,
   getFeedClassification,
   getFeedDetails,
