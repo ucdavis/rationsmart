@@ -61,6 +61,13 @@ to `main` that changes `infra/` is applied as soon as that environment approves.
 
 > **Testing from a branch or fork:** run the workflow by hand (**Run workflow**) and, in the fork only, let the environments
 > deploy from `main` plus `test/*`. A fork also needs its own bootstrap run with `githubRepo=<fork owner>/<fork name>`.
+>
+> **No personal Azure login:** if someone else gives you a managed identity with Owner on the subscription (trusted for
+> branches such as `main` or `test/azure-pipeline`), skip the `az` commands in step 2. Put that identity's IDs in
+> repository-level variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID`, and run the **Bootstrap**
+> workflow from a trusted branch with a resource group name (the job has no environment). Then set the `stage-infra` and
+> `stage` variables from the run summary and delete the repository-level ones. The `Infrastructure` and `Deploy`
+> workflows still need those environments to allow the branch you run from.
 
 **Environment `stage-infra`** (used by the Infrastructure workflow)
 
