@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: stage-infra
     permissions:
-      id-token: write   # lets the job ask GitHub for the OIDC token that azure/login exchanges
+      id-token: write   # lets the job ask GitHub for the OIDC token that the sign-in step exchanges
       contents: read
     env:
       RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
@@ -76,13 +76,23 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # Not azure/login: this repository only allows GitHub-owned actions. This does the same OIDC exchange with
+      # the Azure CLI: GitHub issues the job's token (ACTIONS_ID_TOKEN_REQUEST_* exist because of id-token: write)
+      # and Azure checks it against the identity's federated credential for this environment.
       - name: Sign in to Azure (OIDC)
-        # v2.3.1. Dependabot (github-actions) proposes updates to the pinned SHA.
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          token="$(curl -sS --fail -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions --output none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          az account show --query '{subscription:name, tenant:tenantId}' --output yaml
 
       - name: What would change
         env:
