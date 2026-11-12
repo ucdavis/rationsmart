@@ -89,9 +89,13 @@ jobs:
           # Removes the run command (it holds the script text) however this step ends.
           trap 'az vm run-command delete --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --yes --output none >/dev/null 2>&1 || true' EXIT
 
+          # Without --location the CLI reads the resource group to find its region, and the "app" identity may not read
+          # the group (its run-command role covers only the VM). The VM's own location is readable with that role.
+          location="$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query location --output tsv)"
+
           # The create call can fail for a script that ran and failed, so its status alone does not decide the result.
           if ! az vm run-command create \
-            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" \
+            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --location "$location" \
             --script "$outer" --async-execution false --timeout-in-seconds 3300 --output none; then
             echo "::warning::az vm run-command create returned an error (shown above); reading the command's own result"
           fi
