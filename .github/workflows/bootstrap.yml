@@ -1,0 +1,61 @@
+name: Bootstrap
+
+# One-time setup: creates the resource group and the two pipeline identities (infra/bootstrap/oidc.bicep).
+# It must run as an identity that is Owner on the subscription. The job has no environment, so it reads
+# repository-level variables AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID (the Owner identity).
+# Run it from a branch the identity trusts. Afterwards, set the environment variables to the `infra` and `app`
+# identities printed in the run summary, and delete the repository-level variables.
+on:
+  workflow_dispatch:
+    inputs:
+      resource_group:
+        description: Resource group to create (or reuse)
+        required: true
+      location:
+        description: Azure region for the resource group
+        default: eastus2
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage
+  cancel-in-progress: false
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    # No `environment:` on purpose: the Owner identity is trusted for the branches main and test/azure-pipeline
+    # (subject ref:refs/heads/<branch>), which GitHub issues only to jobs without an environment.
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that azure/login exchanges
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Sign in to Azure (OIDC)
+        # v2.3.1. Dependabot (github-actions) proposes updates to the pinned SHA.
+        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Create the resource group
+        env:
+          RESOURCE_GROUP: ${{ inputs.resource_group }}
+          LOCATION: ${{ inputs.location }}
+        run: az group create --name "$RESOURCE_GROUP" --location "$LOCATION" --output none
+
+      - name: Create the pipeline identities
+        env:
+          RESOURCE_GROUP: ${{ inputs.resource_group }}
+          GITHUB_REPO: ${{ github.repository }}
+        run: |
+          az deployment group create \
+            --resource-group "$RESOURCE_GROUP" \
+            --name oidc \
+            --template-file infra/bootstrap/oidc.bicep \
+            --parameters githubRepo="$GITHUB_REPO" environmentName=stage \
+            --query 'properties.outputs.{infraClientId:infraClientId.value, appClientId:appClientId.value, appPrincipalId:appPrincipalId.value, runCommandRoleId:runCommandRoleId.value, tenantId:tenantId.value}' \
+            --output yaml | { echo '### Bootstrap outputs (not secret)'; echo '```yaml'; cat; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"

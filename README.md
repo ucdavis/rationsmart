@@ -25,6 +25,22 @@ npm install
 npm run dev        # http://localhost:3000
 ```
 
+## Deploying on a server
+
+Run the whole app (web app, API, background workers, Redis and an nginx gateway) on one Ubuntu 24.04 server with a managed
+PostgreSQL. Start with the deployment guide; the other two files are the settings reference and the one command that does the work.
+
+| File | What it is |
+|---|---|
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | **Start here.** Step-by-step guide from an empty server to a running app: install Docker, prepare the database, configure, deploy, load the reference data and create the first admin |
+| [`CONFIGURATION.md`](CONFIGURATION.md) | Every setting in `backend/.env` (required and optional), using a managed Redis, changing the port, deploy options and data-loading options |
+| [`deploy.sh`](deploy.sh) | The single command that deploys: builds (or pulls) the images, backs up the database, applies migrations, starts everything and tests it, rolling back if it fails. Also `rollback`, `status`, `logs`, `down`, `seed` (load reference data) and `create-admin` |
+
+| [`INFRASTRUCTURE.md`](INFRASTRUCTURE.md) | Azure only: create the whole environment (VM, PostgreSQL, registry, Key Vault) from Bicep templates in [`infra/`](infra/) and release from GitHub Actions with OIDC sign-in, using `deploy.sh` on the VM |
+
+Quick start: `cp backend/env.template backend/.env`, fill it in (see `CONFIGURATION.md`), then run `./deploy.sh`.
+Something went wrong? See [`TROUBLESHOOTING.md`](TROUBLESHOOTING.md).
+
 ## Contributing
 
 - `main` is protected: work on a branch and open a pull request.
