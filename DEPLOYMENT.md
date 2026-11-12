@@ -210,7 +210,7 @@ Run these on the server. The answers shown are what you should get:
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost/       # 200  (the web app)
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost/docs   # 404  (the API docs are private)
-cd backend && docker compose exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"; cd ..
+cd backend && docker compose -f docker-compose-azure.yml exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"; cd ..
 ```
 
 The last command should print:

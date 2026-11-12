@@ -48,7 +48,13 @@ warn() { log "WARN: $*"; }
 die()  { log "ERROR: $*"; exit 1; }
 
 # dc <stack> <compose args...>: run docker compose inside a stack's directory.
-dc() { local stack="$1"; shift; (cd "$ROOT/$stack" && docker compose "$@"); }
+dc() {
+  local stack="$1"; shift
+  # The backend uses docker-compose-azure.yml: backend/docker-compose.yml is the existing host-database setup.
+  local files=()
+  [[ "$stack" == backend ]] && files=(-f docker-compose-azure.yml)
+  (cd "$ROOT/$stack" && docker compose ${files[@]+"${files[@]}"} "$@")
+}
 
 preflight() {
   command -v docker >/dev/null || die "docker not found"

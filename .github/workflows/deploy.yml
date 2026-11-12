@@ -2,23 +2,14 @@
 # VM (through an Azure run-command), which calls ./deploy.sh: backup, migrations, restart, smoke test, automatic rollback.
 # Signs in to Azure with OIDC; a person must approve the "stage" environment first. See INFRASTRUCTURE.md.
 #
-# Not run for pull requests: only commits that reached main (or a manual run) are released.
+# Started by hand only (Run workflow): there are deliberately no push or pull_request triggers, so nothing is
+# released when this reaches main. To release on every merge later, add a push trigger back in a pull request to main.
 # No step below interpolates event data (titles, branch names, commit messages) into a command: every value
 # reaches a script through env:.
 
 name: Deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "frontend/**"
-      - "gateway/**"
-      - "deploy.sh"
-      - "deploy/**"
-      - "data/packs/**"
-      - ".github/workflows/deploy.yml"
   workflow_dispatch:
     inputs:
       action:

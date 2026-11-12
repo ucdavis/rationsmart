@@ -1,6 +1,6 @@
 name: rationsmart-frontend
 
-# The backend runs from its own compose project (backend/docker-compose.yml). Both
+# The backend runs from its own compose project (backend/docker-compose-azure.yml). Both
 # join the shared "rationsmart_edge" network, where the API is reachable as
 # http://api:8000, so start the backend first. The frontend publishes no host port;
 # the gateway (../gateway) proxies to it as frontend:3000. For local use without the

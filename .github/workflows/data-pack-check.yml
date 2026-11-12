@@ -5,28 +5,15 @@
 # data-pack self-test: load the committed pack, reload (no-op), pack -> database -> pack round trip,
 # client-edit and name-clash rules, the revision / checksum / sync-lock guards and the create_admin rules.
 #
-# Like the frontend gate this is deliberately not a required check on main: it is path-filtered, and a
-# required path-filtered check would leave unrelated PRs waiting forever on "Expected".
-#
 # Running inside the project's own image avoids installing the backend's native dependencies
 # (WeasyPrint's Cairo/Pango, libpq) on the runner, and tests what is actually shipped.
 # No step below interpolates event data (titles, branch names, commit messages) into a command.
 
 name: Data pack check
 
+# Started by hand only (Run workflow): there are deliberately no push or pull_request triggers, so nothing runs
+# when this reaches main. To run on backend / data-pack changes later, add them back in a pull request to main.
 on:
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "data/packs/**"
-      - ".github/workflows/data-pack-check.yml"
-  pull_request:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "data/packs/**"
-      - ".github/workflows/data-pack-check.yml"
   workflow_dispatch:
 
 # Read-only token: this job only checks code, it never writes to the repo.

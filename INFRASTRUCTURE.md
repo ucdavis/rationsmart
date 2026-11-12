@@ -5,7 +5,7 @@ Azure password (OIDC sign-in). The release itself is still done by [`deploy.sh`]
 **[DEPLOYMENT.md](DEPLOYMENT.md)**. Use DEPLOYMENT.md instead if you deploy by hand on a server you set up yourself.
 
 ```
-  merge to main ──> GitHub Actions ──(OIDC, no password)──> Azure
+  Run workflow ──> GitHub Actions ──(OIDC, no password)──> Azure
                         │                                    ├─ Container Registry  <── images pushed by the workflow
                         │                                    ├─ VM  ── runs deploy.sh ──> PostgreSQL Flexible Server
                         └─ run-command on the VM ───────────┘   └─ reads its secrets from Key Vault
@@ -56,8 +56,10 @@ repository and to one GitHub environment each, so a run from a fork or an unappr
 ## Step 3: Set up GitHub
 
 In the repository, Settings, Environments: create **`stage-infra`** and **`stage`**. On both, add **required reviewers**, turn on
-**prevent self-review**, and set **deployment branches** to `main` only. The reviewers on `stage-infra` are not optional: a merge
-to `main` that changes `infra/` is applied as soon as that environment approves. Then add:
+**prevent self-review**, and set **deployment branches** to `main` only. The reviewers on `stage-infra` are not optional: they
+are the only gate before a run changes Azure. The Bootstrap, Infrastructure and Deploy workflows run **only when you start them
+by hand** (Actions, Run workflow); none has a push or pull-request trigger. To add one later, edit its `on:` block in a pull
+request to `main`, and make sure the reviewers are set first. Then add:
 
 > **Testing from a branch or fork:** run the workflow by hand (**Run workflow**) and, in the fork only, let the environments
 > deploy from `main` plus `test/*`. A fork also needs its own bootstrap run with `githubRepo=<fork owner>/<fork name>`.
@@ -86,8 +88,7 @@ The secrets are used once, as inputs to the infrastructure run; they are stored 
 
 ## Step 4: Create the environment
 
-Run the **first** deployment from your computer, because the workflows only run from `main` (merge them first if you prefer
-the workflow). The parameter file reads its secrets and identity values from environment variables, so set them in your shell
+Run the **first** deployment from your computer (or run the **Infrastructure** workflow by hand once its variables are set). The parameter file reads its secrets and identity values from environment variables, so set them in your shell
 first (the values are the ones from steps 2 and 3, and are not stored anywhere):
 
 ```bash
@@ -126,7 +127,7 @@ The outputs give the names you need next (`az deployment group show -g <group> -
 
 ## Step 6: First release
 
-Actions, **Deploy**, Run workflow (or merge a change to `main`), and approve it. The workflow:
+Actions, **Deploy**, Run workflow, and approve it. The workflow:
 
 1. builds the two images on the runner and pushes them to your registry, tagged with the commit;
 2. tells the VM to release that commit: it waits for first-boot setup to finish, signs in with its own identity, writes
@@ -160,9 +161,9 @@ Remove `sshAllowedCidr` and apply again afterwards. (Signing in with Entra ID ne
 
 | I want to... | Do this |
 |---|---|
-| release a change | merge to `main` and approve the **Deploy** run |
+| release a change | merge to `main`, then **Deploy**, Run workflow, and approve it |
 | go back to the previous version | **Deploy**, Run workflow, action `rollback` (code only; the database is not undone) |
-| change the infrastructure | edit `infra/`, open a PR (the Bicep diff is the review), merge, approve the **Infrastructure** run |
+| change the infrastructure | edit `infra/`, open a PR (the Bicep diff is the review), merge, then run **Infrastructure** by hand and approve it |
 | only preview a change | **Infrastructure**, Run workflow, mode `whatif` (approve the environment; nothing is applied) |
 | rotate a secret | change it in the **`stage-infra`** GitHub secrets, run **Infrastructure** (apply), then **Deploy**. Editing it only in Key Vault would be overwritten by the next infrastructure run |
 | read logs | `az ssh vm ...` then `sudo ./deploy.sh logs api`, or the output of the Deploy run |

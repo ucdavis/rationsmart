@@ -1,0 +1,124 @@
+# Compose file for the Azure / single-VM deployment (deploy.sh passes it with -f). It sits beside
+# docker-compose.yml, which is the original host-database setup and is left unchanged. By hand:
+#   docker compose -f docker-compose-azure.yml <command>
+#
+# PostgreSQL is an external server (Azure Database for PostgreSQL Flexible Server) —
+# no db service here. Set POSTGRES_HOST / POSTGRES_PORT in .env, and PGSSLMODE=require
+# (libpq-style; honoured by both psycopg2/alembic and asyncpg) so connections use TLS.
+#
+# Only the gateway (../gateway) is published on the host. The api joins the shared
+# "rationsmart_edge" network so nginx and the frontend can reach it as http://api:8000.
+# deploy.sh (repo root) creates that network; to do it by hand:
+#   docker network create rationsmart_edge
+#
+# Images: each service names a registry image AND a build context. deploy.sh runs
+# `docker compose pull` and falls back to `docker compose build` when the pull fails,
+# so a missing registry image never blocks a deploy.
+
+# Pinned project name: compose would otherwise name the project after this folder
+# ("backend"), and on the server that starts a second set of containers beside the
+# running rationsmart-* ones instead of replacing them, plus a new empty Redis volume.
+# For an isolated second copy on the same machine, override it: docker compose -p <name> ...
+name: rationsmart
+
+# Redis: the bundled redis service below by default, protected by REDIS_PASSWORD (set it in
+# .env; use hex, e.g. `openssl rand -hex 24`, so it needs no URL-escaping). To use a managed
+# Redis (e.g. Azure), set EXTERNAL_REDIS_URL in .env instead; it replaces REDIS_URL for api,
+# worker and beat, and REDIS_PASSWORD is then not needed. A plain REDIS_URL in .env is
+# overridden here on purpose: .env.example's localhost value is not Redis from inside a container.
+
+x-backend-image: &backend-image
+  image: ${IMAGE_REGISTRY:-ghcr.io/your-org}/rationsmart-api:${IMAGE_TAG:-latest}
+  build: .
+
+services:
+  api:
+    <<: *backend-image
+    env_file: .env
+    environment:
+      - REDIS_URL=${EXTERNAL_REDIS_URL:-redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD (or EXTERNAL_REDIS_URL) in backend/.env}@redis:6379/0}
+    networks:
+      - default
+      - edge
+    # scripts_2/db_reset.py writes its pre-reset pg_dump here: the repo root's
+    # backups/ (~/rationsmart/backups on the server, beside the deploy's dumps).
+    # ../data/packs holds the reference-data packs loaded by `./deploy.sh seed` (read-only).
+    volumes:
+      - ../backups:/backups
+      - ../data/packs:/packs:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    # --proxy-headers: take the client IP from X-Forwarded-For so rate limiting and
+    # logs see the real caller. Trusting any peer is safe here because the api is not
+    # published; only nginx on the private edge network can reach it.
+    command: >
+      uvicorn app.main:app
+        --host 0.0.0.0
+        --port 8000
+        --workers ${WORKERS:-3}
+        --proxy-headers
+        --forwarded-allow-ips=*
+    healthcheck:
+      # /health returns 503 when the database or Redis is down, which urlopen raises on.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+      interval: 15s
+      timeout: 6s
+      start_period: 40s
+      retries: 3
+    restart: unless-stopped
+
+  worker:
+    <<: *backend-image
+    env_file: .env
+    environment:
+      - REDIS_URL=${EXTERNAL_REDIS_URL:-redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD (or EXTERNAL_REDIS_URL) in backend/.env}@redis:6379/0}
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.celery_app worker
+        --loglevel=info
+        --concurrency=4
+    restart: unless-stopped
+
+  beat:
+    <<: *backend-image
+    env_file: .env
+    environment:
+      - REDIS_URL=${EXTERNAL_REDIS_URL:-redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD (or EXTERNAL_REDIS_URL) in backend/.env}@redis:6379/0}
+    depends_on:
+      redis:
+        condition: service_healthy
+    command: >
+      celery -A app.celery_app beat
+        --loglevel=info
+        --schedule /tmp/celerybeat-schedule
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    # Not published: the services above reach Redis over the compose network
+    # (redis://redis:6379) with a password. For ad-hoc debugging use
+    # `docker compose exec redis sh -c 'redis-cli -a "$REDIS_PASSWORD"'`.
+    # With EXTERNAL_REDIS_URL this container is idle; an unset REDIS_PASSWORD then just
+    # means "no password" (requirepass "").
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-}"]
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "if [ -n \"$$REDIS_PASSWORD\" ]; then redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping; else redis-cli ping; fi | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+networks:
+  edge:
+    name: rationsmart_edge
+    external: true
+
+volumes:
+  redis_data:
