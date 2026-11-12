@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Release script that runs ON the VM, as root, through an Azure run-command started by
 # .github/workflows/deploy.yml. The workflow puts the lines "export NAME=value" in front of this file.
-# It builds backend/.env from Key Vault and those values, then hands over to ./deploy.sh.
+# It builds backend/.env from Key Vault and those values, then hands over to ./deploy.sh, which builds the images
+# on this VM from the commit that was checked out (there is no container registry).
 #
 # Needed variables (set by the workflow, none of them secret):
 #   DEPLOY_ACTION      up | rollback
 #   RELEASE_SHA        git commit to deploy (up only)
-#   ACR_LOGIN_SERVER   registry address, for example myregistry.azurecr.io
 #   KEY_VAULT_NAME     vault that holds postgres-password, jwt-secret-key, redis-password, smtp-password
 #   POSTGRES_HOST  POSTGRES_USER  POSTGRES_DB
 #   SMTP_SERVER  SMTP_PORT  SMTP_USERNAME  FROM_EMAIL
@@ -18,7 +18,7 @@ APP_DIR=/opt/rationsmart
 : "${DEPLOY_ACTION:=up}"
 
 need() { local n; for n in "$@"; do [[ -n "${!n:-}" ]] || { echo "missing variable: $n" >&2; exit 2; }; done; }
-need ACR_LOGIN_SERVER KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL
+need KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL
 [[ "$DEPLOY_ACTION" != "up" ]] || need RELEASE_SHA
 
 # First boot installs Docker, git and the Azure CLI (infra/cloud-init.yaml); wait for it instead of failing the first release.
@@ -26,7 +26,6 @@ cloud-init status --wait >/dev/null 2>&1 || true
 [[ -f /var/lib/rationsmart-bootstrap.done ]] || { echo "first-boot setup has not finished; see /var/log/cloud-init-output.log" >&2; exit 1; }
 
 az login --identity --output none
-az acr login --name "${ACR_LOGIN_SERVER%%.*}"
 
 secret() { az keyvault secret show --vault-name "$KEY_VAULT_NAME" --name "$1" --query value --output tsv; }
 
@@ -66,7 +65,7 @@ trap 'rm -f "$env_tmp"' EXIT
   echo "SMTP_USERNAME=$(q "$SMTP_USERNAME" SMTP_USERNAME)"
   echo "SMTP_PASSWORD=$(q "$(secret smtp-password)" smtp-password)"
   echo "FROM_EMAIL=$(q "$FROM_EMAIL" FROM_EMAIL)"
-  echo "IMAGE_REGISTRY=$ACR_LOGIN_SERVER"
+  echo "IMAGE_REGISTRY=rationsmart"   # only a local tag name: the images are built on this VM, there is no registry
   [[ "$DEPLOY_ACTION" != "up" ]] || echo "IMAGE_TAG=$RELEASE_SHA"
 } > "$env_tmp"
 chmod 600 "$env_tmp"
@@ -74,7 +73,7 @@ mv -f "$env_tmp" backend/.env
 trap - EXIT
 
 # deploy.sh refuses to run when backend/.env points at another database.
-export EXPECT_DB="$POSTGRES_DB" SKIP_GIT_PULL=1
+export EXPECT_DB="$POSTGRES_DB" SKIP_GIT_PULL=1 FORCE_BUILD=1   # FORCE_BUILD: build from the checked-out commit
 if [[ "$DEPLOY_ACTION" == "rollback" ]]; then
   ./deploy.sh rollback
 else

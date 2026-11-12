@@ -1,5 +1,5 @@
-// RationSmart environment: one VM (runs the three docker compose stacks), PostgreSQL Flexible Server,
-// container registry and Key Vault, in an existing, empty resource group.
+// RationSmart environment: one VM (runs the three docker compose stacks; it builds its own images), a private
+// PostgreSQL Flexible Server and a Key Vault, in an existing, empty resource group.
 //
 //   az deployment group create --resource-group <group> --template-file infra/main.bicep --parameters infra/params/<env>.bicepparam
 //
@@ -16,11 +16,12 @@ param location string = resourceGroup().location
 @maxLength(30)
 param namePrefix string
 
-@description('Makes the globally unique names (registry, vault, database server) unique to this resource group.')
+@description('Makes the globally unique names (vault, database server) unique to this resource group.')
 param nameSuffix string = uniqueString(resourceGroup().id)
 
 // ── VM ──
 param vmSize string = 'Standard_D4as_v6'
+@description('Availability zone of the VM and its public IP. Pick a zone where the VM size is not restricted for the subscription.')
 param zone string = '1'
 param adminUsername string = 'ubuntu'
 @description('Public key of the VM administrator (the .pub file). Not a secret.')
@@ -57,7 +58,6 @@ param runCommandRoleId string
 
 var compactPrefix = replace(namePrefix, '-', '')
 var vmName = '${namePrefix}-vm'
-var registryName = take('${compactPrefix}${nameSuffix}', 50)
 // A deleted vault keeps its name for 90 days (soft delete) and blocks it with VaultAlreadyExists. The 10-character
 // form of this name was used by an earlier test deployment that was deleted, so the suffix is 9 characters here.
 var keyVaultName = 'kv-${take(compactPrefix, 8)}-${take(nameSuffix, 9)}'
@@ -70,14 +70,6 @@ module network 'modules/network.bicep' = {
     prefix: namePrefix
     zone: zone
     sshAllowedCidr: sshAllowedCidr
-  }
-}
-
-module registry 'modules/registry.bicep' = {
-  name: 'registry'
-  params: {
-    name: registryName
-    location: location
   }
 }
 
@@ -112,7 +104,6 @@ module postgres 'modules/postgres.bicep' = {
   params: {
     name: postgresName
     location: location
-    zone: zone
     skuName: postgresSkuName
     skuTier: postgresSkuTier
     version: postgresVersion
@@ -120,7 +111,8 @@ module postgres 'modules/postgres.bicep' = {
     adminLogin: postgresAdminUser
     adminPassword: postgresAdminPassword
     databaseName: databaseName
-    vmPublicIp: network.outputs.publicIpAddress
+    delegatedSubnetId: network.outputs.postgresSubnetId
+    vnetId: network.outputs.vnetId
   }
 }
 
@@ -129,7 +121,6 @@ module roles 'modules/roles.bicep' = {
   params: {
     vmPrincipalId: vm.outputs.principalId
     appPrincipalId: appIdentityPrincipalId
-    registryName: registry.outputs.name
     keyVaultName: keyVault.outputs.name
     vmName: vm.outputs.name
     runCommandRoleId: runCommandRoleId
@@ -138,8 +129,6 @@ module roles 'modules/roles.bicep' = {
 
 output vmName string = vm.outputs.name
 output vmPublicIp string = network.outputs.publicIpAddress
-output registryName string = registry.outputs.name
-output registryLoginServer string = registry.outputs.loginServer
 output keyVaultName string = keyVault.outputs.name
 output postgresHost string = postgres.outputs.host
 output databaseName string = postgres.outputs.databaseName

@@ -1,5 +1,5 @@
-# Release: builds the two images, pushes them to the Azure Container Registry, then runs deploy/vm-deploy.sh on the
-# VM (through an Azure run-command), which calls ./deploy.sh: backup, migrations, restart, smoke test, automatic rollback.
+# Release: runs deploy/vm-deploy.sh on the VM (through an Azure run-command), which checks out this commit, builds the
+# images on the VM and calls ./deploy.sh: backup, migrations, restart, smoke test, automatic rollback.
 # Signs in to Azure with OIDC; a person must approve the "stage" environment first. See INFRASTRUCTURE.md.
 #
 # Started by hand only (Run workflow): there are deliberately no push or pull_request triggers, so nothing is
@@ -38,7 +38,6 @@ jobs:
       RELEASE_SHA: ${{ github.sha }}
       RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
       VM_NAME: ${{ vars.VM_NAME }}
-      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
       KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME }}
       POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
       POSTGRES_USER: ${{ vars.POSTGRES_USER }}
@@ -70,23 +69,13 @@ jobs:
           az account set --subscription "$AZURE_SUBSCRIPTION_ID"
           az account show --query '{subscription:name, tenant:tenantId}' --output yaml
 
-      # Built on the runner and pushed with the AcrPush role (az acr build would need a broader role).
-      - name: Build and push the images
-        if: env.DEPLOY_ACTION == 'up'
-        run: |
-          az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-          docker build -t "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA" backend
-          docker build -t "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA" frontend
-          docker push "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA"
-          docker push "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA"
-
       # The script is sent as text: the workflow's own copy of deploy/vm-deploy.sh runs, preceded by the (non-secret)
       # variables it needs. Secrets are never sent: the VM reads them from Key Vault with its own identity.
       - name: Release on the VM
         run: |
           set -euo pipefail
           script="$(mktemp)"
-          for v in DEPLOY_ACTION RELEASE_SHA ACR_LOGIN_SERVER KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
+          for v in DEPLOY_ACTION RELEASE_SHA KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
                    SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
             printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
           done

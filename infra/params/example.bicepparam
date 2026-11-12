@@ -8,7 +8,7 @@ param databaseName = 'CHANGE_ME_env'
 
 // Check the size exists in your region and subscription quota: az vm list-skus --location <region> --size Standard_D4as_v6
 param vmSize = 'Standard_D4as_v6'
-param zone = '1'
+param zone = '1'   // a zone where your VM size is not restricted (see the Preflight report)
 param postgresSkuName = 'Standard_B2s'
 param postgresSkuTier = 'Burstable'
 param postgresVersion = '15'

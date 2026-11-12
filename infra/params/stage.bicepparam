@@ -13,7 +13,9 @@ param location = 'eastus2'
 // subscription the Burstable tier fails with SkuNotAvailable in eastus and eastus2 (tested in every zone), while
 // Standard_D2ds_v5 in eastus2 was created successfully. Go back to 'Burstable' / 'Standard_B2s' where it is allowed.
 param vmSize = 'Standard_D4as_v6'
-param zone = '1'
+// Zone 1 is restricted for Standard_D4as_v6 in this subscription (the Bootstrap workflow, mode preflight, lists the usable
+// zones: 2, 3 and 4). The database has no zone: Standard_D2ds_v5 offers none to choose from here.
+param zone = '2'
 param postgresSkuName = 'Standard_D2ds_v5'
 param postgresSkuTier = 'GeneralPurpose'
 param postgresVersion = '15'

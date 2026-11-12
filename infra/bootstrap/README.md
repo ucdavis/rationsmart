@@ -6,10 +6,10 @@ It needs no Entra ID (directory) role: it creates managed identities, not app re
 It creates:
 
 - the **`infra` identity**, trusted by the GitHub environment `<env>-infra`. It gets Contributor on the group, and Role Based
-  Access Control Administrator **limited by a condition** to four roles: AcrPull, AcrPush, Key Vault Secrets User and the
+  Access Control Administrator **limited by a condition** to four roles: AcrPull, AcrPush (no longer used: there is no registry), Key Vault Secrets User and the
   run-command role below;
-- the **`app` identity**, trusted by the GitHub environment `<env>`. It gets no role here: `infra/main.bicep` gives it AcrPush
-  on the registry and the run-command role on the VM, because those resources do not exist yet;
+- the **`app` identity**, trusted by the GitHub environment `<env>`. It gets no role here: `infra/main.bicep` gives it the run-command
+  role on the VM, because that resource does not exist yet;
 - the **run-command role**: read the VM, and create, read and delete run commands on it. Nothing else.
 
 ## Run it
