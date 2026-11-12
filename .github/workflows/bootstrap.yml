@@ -123,8 +123,9 @@ jobs:
           {
             echo "### vCPU quota in $LOCATION (the VM needs 4 in the Dasv6 family)"
             echo '```'
+            # Only the lines with a non-zero limit: a family at 0 cannot be used until the quota is raised.
             az vm list-usage --location "$LOCATION" --query "[].{name:name.localizedValue, used:currentValue, limit:limit}" --output tsv 2>&1 \
-              | grep -iE "dasv6|total regional" || echo "(no Dasv6 or regional line found, or the command failed)"
+              | awk -F'\t' '$3 > 0' | grep -iE "regional vCPUs|D[a-z]*s? ?v[3-6]|B[a-z]* Family|E[a-z]*s? ?v[3-6]" || echo "(no matching line with a non-zero limit, or the command failed)"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -137,6 +138,12 @@ jobs:
             az vm list-skus --location "$LOCATION" --size Standard_D4as_v6 --resource-type virtualMachines \
               --query "[].{name:name, zones:locationInfo[0].zones, restrictions:restrictions[].reasonCode}" --output yaml 2>&1 || echo "(failed)"
             echo '```'
+            echo "### 4 to 8 vCPU D, E and B sizes in $LOCATION that this subscription can use (no restriction): name, vCPUs, GB RAM, zones"
+            echo '```'
+            az vm list-skus --location "$LOCATION" --resource-type virtualMachines --output json 2>/dev/null \
+              | jq -r '.[] | select((.restrictions | length) == 0) | select(.name | test("^Standard_(D|E|B)[0-9]+[a-z]*_v[3-6]$|^Standard_B[0-9]+m?s$")) | [.name, (.capabilities[] | select(.name == "vCPUs").value), (.capabilities[] | select(.name == "MemoryGB").value), (.locationInfo[0].zones | join(","))] | @tsv' \
+              | awk -F'\t' '$2 >= 4 && $2 <= 8 && $3 >= 16' | sort -u | head -40 || echo "(failed)"
+            echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: PostgreSQL size availability
@@ -145,8 +152,8 @@ jobs:
           {
             echo "### PostgreSQL Flexible Server Standard_D2ds_v5 in $LOCATION"
             echo '```'
-            az postgres flexible-server list-skus --location "$LOCATION" --output json 2>&1 \
-              | jq '[.. | objects | select(.name? == "Standard_D2ds_v5")] | .[0:2]' 2>&1 || echo "(failed)"
+            az postgres flexible-server list-skus --location "$LOCATION" --output json 2>/dev/null \
+              | jq '[.. | objects | select(.name? == "Standard_D2ds_v5")] | .[0:2]' || echo "(failed)"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -159,6 +166,14 @@ jobs:
             echo '### Policy assignments that apply to this subscription'
             echo '```'
             az policy assignment list --query "[].{name:displayName, scope:scope, mode:enforcementMode}" --output table 2>&1 || echo "(failed)"
+            echo '```'
+            echo '### Policy assignments at the UCD management group and the tenant root (if readable)'
+            echo '```'
+            for mg in UCD "$AZURE_TENANT_ID"; do
+              echo "-- $mg"
+              az policy assignment list --scope "/providers/Microsoft.Management/managementGroups/$mg" --disable-scope-strict-match \
+                --query "[].{name:displayName, effect:enforcementMode}" --output table 2>&1 | head -40 || echo "(not readable)"
+            done
             echo '```'
             echo '### Policies inside the initiative that denied the registry (readable only with access to the management group)'
             echo '```'
