@@ -141,7 +141,13 @@ jobs:
             echo "### 4 to 8 vCPU D, E and B sizes in $LOCATION that this subscription can use (no restriction): name, vCPUs, GB RAM, zones"
             echo '```'
             az vm list-skus --location "$LOCATION" --resource-type virtualMachines --output json 2>/dev/null \
-              | jq -r '.[] | select((.restrictions | length) == 0) | select(.name | test("^Standard_(D|E|B)[0-9]+[a-z]*_v[3-6]$|^Standard_B[0-9]+m?s$")) | [.name, (.capabilities[] | select(.name == "vCPUs").value), (.capabilities[] | select(.name == "MemoryGB").value), (.locationInfo[0].zones | join(","))] | @tsv' \
+              | jq -r '.[]
+                  | select(all(.restrictions[]?; .type != "Location"))
+                  | select(.name | test("^Standard_(D|E|B)[0-9]+[a-z]*_v[3-6]$|^Standard_B[0-9]+m?s$"))
+                  | ((.locationInfo[0].zones // []) - [.restrictions[]? | select(.type == "Zone") | .restrictionInfo.zones[]?]) as $z
+                  | select(($z | length) > 0)
+                  | [.name, (.capabilities[] | select(.name == "vCPUs").value), (.capabilities[] | select(.name == "MemoryGB").value), ($z | join(","))]
+                  | @tsv' \
               | awk -F'\t' '$2 >= 4 && $2 <= 8 && $3 >= 16' | sort -u | head -40 || echo "(failed)"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
