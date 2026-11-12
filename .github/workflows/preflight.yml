@@ -1,0 +1,105 @@
+name: Preflight
+
+# Read-only check of the Azure subscription before the Infrastructure workflow: resource provider registration,
+# vCPU quota, VM and PostgreSQL SKU availability in the region, and the policy assignments that apply.
+# It changes nothing in Azure and prints its findings to the run summary.
+#
+# Started by hand only (Run workflow). The job has no environment, so it signs in with the identity the repository-level
+# variables AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID point at (the client's Owner identity, trusted
+# for the branches main and test/azure-pipeline). Delete this workflow when it is no longer needed.
+on:
+  workflow_dispatch:
+    inputs:
+      location:
+        description: Azure region to check
+        default: eastus2
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that the sign-in step exchanges
+      contents: read
+    env:
+      LOCATION: ${{ inputs.location }}
+    steps:
+      # Not azure/login: this repository only allows GitHub-owned actions (same sign-in as the Bootstrap workflow).
+      - name: Sign in to Azure (OIDC)
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          token="$(curl -sS --fail -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions --output none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          az account show --query '{subscription:name, tenant:tenantId}' --output yaml
+
+      # Each check prints to the summary and never fails the job: a read that is not allowed is reported, not fatal.
+      - name: Resource providers
+        run: |
+          set -uo pipefail
+          {
+            echo '### Resource providers (must be Registered)'
+            echo '```'
+            az provider list --query "[?contains('Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization', namespace)].{namespace:namespace, state:registrationState}" --output table 2>&1 || echo "(failed)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: vCPU quota
+        run: |
+          set -uo pipefail
+          {
+            echo "### vCPU quota in $LOCATION (the VM needs 4 in the Dasv6 family)"
+            echo '```'
+            az vm list-usage --location "$LOCATION" --query "[].{name:name.localizedValue, used:currentValue, limit:limit}" --output tsv 2>&1 \
+              | grep -iE "dasv6|total regional" || echo "(no Dasv6 or regional line found, or the command failed)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: VM size availability
+        run: |
+          set -uo pipefail
+          {
+            echo "### Standard_D4as_v6 in $LOCATION (zones, restrictions)"
+            echo '```'
+            az vm list-skus --location "$LOCATION" --size Standard_D4as_v6 --resource-type virtualMachines \
+              --query "[].{name:name, zones:locationInfo[0].zones, restrictions:restrictions[].reasonCode}" --output yaml 2>&1 || echo "(failed)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: PostgreSQL size availability
+        run: |
+          set -uo pipefail
+          {
+            echo "### PostgreSQL Flexible Server Standard_D2ds_v5 in $LOCATION"
+            echo '```'
+            az postgres flexible-server list-skus --location "$LOCATION" --output json 2>&1 \
+              | jq '[.. | objects | select(.name? == "Standard_D2ds_v5")] | .[0:2]' 2>&1 || echo "(failed)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Policy assignments that apply
+        env:
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          set -uo pipefail
+          {
+            echo '### Policy assignments that apply to this subscription'
+            echo '```'
+            az policy assignment list --query "[].{name:displayName, scope:scope, mode:enforcementMode}" --output table 2>&1 || echo "(failed)"
+            echo '```'
+            echo '### Policies inside the initiative that denied the registry (readable only with access to the management group)'
+            echo '```'
+            az policy set-definition show --name 239140fcd1414b3ebb6e9ba7 --management-group "$AZURE_TENANT_ID" \
+              --query "policyDefinitions[].{policy:policyDefinitionReferenceId, effect:parameters.effect.value}" --output table 2>&1 \
+              || echo "(not readable with this identity: ask the UCD policy administrator for the list)"
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
