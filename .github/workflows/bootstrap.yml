@@ -1,21 +1,23 @@
 name: Bootstrap
 
-# Two modes, both started by hand and both run as an identity that is Owner on the subscription. The jobs have no
+# Three modes, all started by hand and all run as an identity that is Owner on the subscription. The jobs have no
 # environment, so they read the repository-level variables AZURE_CLIENT_ID, AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID
 # (the Owner identity). Run from a branch that identity trusts.
 #
 #   bootstrap  one-time setup: creates the resource group and the two pipeline identities (infra/bootstrap/oidc.bicep).
 #              Afterwards, set the environment variables to the `infra` and `app` identities printed in the run summary,
 #              and delete the repository-level variables.
+#   register-providers  registers the resource providers the templates use (the pipeline identity cannot: that is a
+#              subscription-level action). Idempotent; creates no resources.
 #   preflight  read-only check before the Infrastructure workflow: resource provider registration, vCPU quota, VM and
 #              PostgreSQL size availability and the policy assignments that apply. It changes nothing in Azure.
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "bootstrap creates the resource group and identities; preflight only reads and reports"
+        description: "bootstrap creates the resource group and identities; register-providers registers the resource providers; preflight only reads and reports"
         type: choice
-        options: [bootstrap, preflight]
+        options: [bootstrap, register-providers, preflight]
         default: bootstrap
       resource_group:
         description: Resource group to create or reuse (bootstrap)
@@ -80,6 +82,43 @@ jobs:
             --parameters githubRepo="$GITHUB_REPO" environmentName=stage \
             --query 'properties.outputs.{infraClientId:infraClientId.value, appClientId:appClientId.value, appPrincipalId:appPrincipalId.value, runCommandRoleId:runCommandRoleId.value, tenantId:tenantId.value}' \
             --output yaml | { echo '### Bootstrap outputs (not secret)'; echo '```yaml'; cat; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # The pipeline's own identity is Contributor on one resource group, which cannot register a resource provider (that is a
+  # subscription-level action). Run once, as the Owner identity; registering is idempotent and creates no resources.
+  register-providers:
+    if: inputs.mode == 'register-providers'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that the sign-in step exchanges
+      contents: read
+    steps:
+      - name: Sign in to Azure (OIDC)
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          token="$(curl -sS --fail -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions --output none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          az account show --query '{subscription:name, tenant:tenantId}' --output yaml
+
+      - name: Register the resource providers the templates use
+        run: |
+          set -euo pipefail
+          for ns in Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization; do
+            az provider register --namespace "$ns" --wait --output none
+          done
+          {
+            echo '### Resource providers'
+            echo '```'
+            az provider list --query "[?contains('Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization', namespace)].{namespace:namespace, state:registrationState}" --output table
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
 
   # Read-only: nothing below creates, changes or deletes anything in Azure.
   preflight:
