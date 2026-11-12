@@ -98,20 +98,28 @@ jobs:
         env:
           AZURE_CORE_NO_COLOR: "true"   # plain text for the run summary
         run: |
+          set -uo pipefail
+          # The output goes to a file so that the exit code of az decides the step: a failed what-if must be red,
+          # and its error text must still reach the run summary.
+          out="$(mktemp)"
+          rc=0
+          az deployment group what-if \
+            --resource-group "$RESOURCE_GROUP" \
+            --template-file infra/main.bicep \
+            --parameters infra/params/stage.bicepparam \
+            --exclude-change-types NoChange Ignore > "$out" 2>&1 || rc=$?
           {
             echo '### What-if'
             echo '```'
-            az deployment group what-if \
-              --resource-group "$RESOURCE_GROUP" \
-              --template-file infra/main.bicep \
-              --parameters infra/params/stage.bicepparam \
-              --exclude-change-types NoChange Ignore
+            cat "$out"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
+          exit "$rc"
 
       - name: Deploy (incremental)
         if: env.MODE == 'apply'
         run: |
+          set -euo pipefail   # a failed deployment must fail the step, not just the tee after it
           az deployment group create \
             --resource-group "$RESOURCE_GROUP" \
             --name main \

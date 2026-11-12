@@ -62,6 +62,7 @@ jobs:
           RESOURCE_GROUP: ${{ inputs.resource_group }}
           GITHUB_REPO: ${{ github.repository }}
         run: |
+          set -euo pipefail   # a failed deployment must fail the step, not just the tee after it
           az deployment group create \
             --resource-group "$RESOURCE_GROUP" \
             --name oidc \
