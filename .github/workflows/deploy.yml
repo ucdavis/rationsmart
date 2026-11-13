@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "up deploys this commit; rollback returns the VM to the previous images"
+        description: "up deploys this commit; rollback returns the VM to the previous images; seed-dry-run and seed load the data pack (see deploy/vm-data.sh)"
         type: choice
-        options: [up, rollback]
+        options: [up, rollback, seed-dry-run, seed]
         default: up
 
 permissions:
@@ -79,7 +79,11 @@ jobs:
                    SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
             printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
           done
-          cat deploy/vm-deploy.sh >> "$script"
+          # The data actions run vm-data.sh (checkout plus ./deploy.sh seed); up and rollback run vm-deploy.sh.
+          case "$DEPLOY_ACTION" in
+            seed-dry-run|seed) printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"; cat deploy/vm-data.sh >> "$script" ;;
+            *) cat deploy/vm-deploy.sh >> "$script" ;;
+          esac
 
           # Sent base64-encoded and run with bash on the VM: the run-command's own shell is not guaranteed to be bash.
           payload="$(base64 -w0 "$script")"
