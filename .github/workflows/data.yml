@@ -1,0 +1,100 @@
+# Reference data: runs deploy/vm-data.sh on the VM (through an Azure run-command), which checks out this commit and
+# loads the newest data pack under data/packs/master with ./deploy.sh seed. seed-dry-run writes nothing; seed backs
+# the database up first. Signs in to Azure with OIDC; the "stage" environment is the same one Deploy uses.
+#
+# Started by hand only (Run workflow): there are deliberately no push or pull_request triggers.
+# No step below interpolates event data into a command: every value reaches a script through env:.
+
+name: Data
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "seed-dry-run reports what the pack would change; seed loads it"
+        type: choice
+        options: [seed-dry-run, seed]
+        default: seed-dry-run
+
+permissions:
+  contents: read
+
+# One group with the Infrastructure workflow: a data load never runs while infrastructure is being changed or a release is running.
+concurrency:
+  group: stage
+  cancel-in-progress: false
+
+jobs:
+  data:
+    runs-on: ubuntu-latest
+    environment: stage
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that the sign-in step exchanges
+      contents: read
+    env:
+      DATA_ACTION: ${{ inputs.action || 'seed-dry-run' }}
+      RELEASE_SHA: ${{ github.sha }}
+      RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+      VM_NAME: ${{ vars.VM_NAME }}
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Not azure/login: this repository only allows GitHub-owned actions. This does the same OIDC exchange with
+      # the Azure CLI: GitHub issues the job's token (ACTIONS_ID_TOKEN_REQUEST_* exist because of id-token: write)
+      # and Azure checks it against the identity's federated credential for this environment.
+      - name: Sign in to Azure (OIDC)
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          token="$(curl -sS --fail -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions --output none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          az account show --query '{subscription:name, tenant:tenantId}' --output yaml
+
+      # The script is sent as text: the workflow's own copy of deploy/vm-data.sh runs, preceded by the (non-secret)
+      # variables it needs. No secret is sent.
+      - name: Load the data on the VM
+        run: |
+          set -euo pipefail
+          script="$(mktemp)"
+          for v in DATA_ACTION RELEASE_SHA POSTGRES_DB; do
+            printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
+          done
+          cat deploy/vm-data.sh >> "$script"
+
+          # Sent base64-encoded and run with bash on the VM: the run-command's own shell is not guaranteed to be bash.
+          payload="$(base64 -w0 "$script")"
+          outer="set -eu; f=\$(mktemp); echo '$payload' | base64 -d > \"\$f\"; set +e; bash \"\$f\"; rc=\$?; rm -f \"\$f\"; exit \$rc"
+
+          name="data-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          # Removes the run command (it holds the script text) however this step ends.
+          trap 'az vm run-command delete --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --yes --output none >/dev/null 2>&1 || true' EXIT
+
+          # Without --location the CLI reads the resource group to find its region, and the "app" identity may not read
+          # the group (its run-command role covers only the VM). The VM's own location is readable with that role.
+          location="$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query location --output tsv)"
+
+          # The create call can fail for a script that ran and failed, so its status alone does not decide the result.
+          if ! az vm run-command create \
+            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --location "$location" \
+            --script "$outer" --async-execution false --timeout-in-seconds 1800 --output none; then
+            echo "::warning::az vm run-command create returned an error (shown above); reading the command's own result"
+          fi
+
+          # The command's own result decides success.
+          if ! result="$(az vm run-command show --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --instance-view --output json)"; then
+            echo "::error::the run command was not created: check the 'app' identity's run-command role on $VM_NAME, and that the VM is running"
+            exit 1
+          fi
+          jq -r '.instanceView.output // ""' <<<"$result"
+          jq -r '.instanceView.error // ""' <<<"$result" >&2
+          code="$(jq -r '.instanceView.exitCode // 1' <<<"$result")"
+          echo "exit code on the VM: $code"
+          exit "$code"
