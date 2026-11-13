@@ -13,10 +13,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "up deploys this commit; rollback returns the VM to the previous images; seed-dry-run and seed load the data pack (see deploy/vm-data.sh)"
+        description: "up deploys this commit; rollback returns the VM to the previous images; seed-dry-run and seed load the data pack, create-admin makes the first admin (see deploy/vm-data.sh)"
         type: choice
-        options: [up, rollback, seed-dry-run, seed]
+        options: [up, rollback, seed-dry-run, seed, create-admin]
         default: up
+      admin_country_code:
+        description: "create-admin only: 3-letter code of an existing country, e.g. ETH (not secret). The email, name and PIN come from the ADMIN_EMAIL, ADMIN_NAME and ADMIN_PIN secrets of the stage environment, so they are masked."
+        type: string
+        default: ETH
 
 permissions:
   contents: read
@@ -72,8 +76,22 @@ jobs:
       # The script is sent as text: the workflow's own copy of deploy/vm-deploy.sh runs, preceded by the (non-secret)
       # variables it needs. Secrets are never sent: the VM reads them from Key Vault with its own identity.
       - name: Release on the VM
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_PIN: ${{ secrets.ADMIN_PIN }}
+          ADMIN_COUNTRY_CODE: ${{ inputs.admin_country_code }}
         run: |
           set -euo pipefail
+          # create-admin: these come from secrets of the stage environment (not inputs, which are shown in clear on the
+          # run page). They are masked before anything else runs, together with the lowercased email the script prints.
+          if [[ "$DEPLOY_ACTION" == "create-admin" ]]; then
+            for v in ADMIN_EMAIL ADMIN_NAME ADMIN_PIN; do
+              [[ -n "${!v}" ]] || { echo "::error::the $v secret of the stage environment is not set"; exit 1; }
+              echo "::add-mask::${!v}"
+            done
+            echo "::add-mask::${ADMIN_EMAIL,,}"
+          fi
           script="$(mktemp)"
           for v in DEPLOY_ACTION RELEASE_SHA KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
                    SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
@@ -82,6 +100,12 @@ jobs:
           # The data actions run vm-data.sh (checkout plus ./deploy.sh seed); up and rollback run vm-deploy.sh.
           case "$DEPLOY_ACTION" in
             seed-dry-run|seed) printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"; cat deploy/vm-data.sh >> "$script" ;;
+            create-admin)
+              printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"
+              for v in ADMIN_EMAIL ADMIN_NAME ADMIN_PIN ADMIN_COUNTRY_CODE; do
+                printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
+              done
+              cat deploy/vm-data.sh >> "$script" ;;
             *) cat deploy/vm-deploy.sh >> "$script" ;;
           esac
 

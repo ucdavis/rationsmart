@@ -11,10 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "seed-dry-run reports what the pack would change; seed loads it"
+        description: "seed-dry-run reports what the pack would change; seed loads it; create-admin makes the first admin from the ADMIN_* secrets"
         type: choice
-        options: [seed-dry-run, seed]
+        options: [seed-dry-run, seed, create-admin]
         default: seed-dry-run
+      admin_country_code:
+        description: "create-admin only: 3-letter code of an existing country, e.g. ETH (not secret). The email, name and PIN come from the ADMIN_EMAIL, ADMIN_NAME and ADMIN_PIN secrets of the stage environment, so they are masked."
+        type: string
+        default: ETH
 
 permissions:
   contents: read
@@ -61,12 +65,31 @@ jobs:
       # The script is sent as text: the workflow's own copy of deploy/vm-data.sh runs, preceded by the (non-secret)
       # variables it needs. No secret is sent.
       - name: Load the data on the VM
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_PIN: ${{ secrets.ADMIN_PIN }}
+          ADMIN_COUNTRY_CODE: ${{ inputs.admin_country_code }}
         run: |
           set -euo pipefail
+          # create-admin: these come from secrets of the stage environment (not inputs, which are shown in clear on the
+          # run page). They are masked before anything else runs, together with the lowercased email the script prints.
+          if [[ "$DATA_ACTION" == "create-admin" ]]; then
+            for v in ADMIN_EMAIL ADMIN_NAME ADMIN_PIN; do
+              [[ -n "${!v}" ]] || { echo "::error::the $v secret of the stage environment is not set"; exit 1; }
+              echo "::add-mask::${!v}"
+            done
+            echo "::add-mask::${ADMIN_EMAIL,,}"
+          fi
           script="$(mktemp)"
           for v in DATA_ACTION RELEASE_SHA POSTGRES_DB; do
             printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
           done
+          if [[ "$DATA_ACTION" == "create-admin" ]]; then
+            for v in ADMIN_EMAIL ADMIN_NAME ADMIN_PIN ADMIN_COUNTRY_CODE; do
+              printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
+            done
+          fi
           cat deploy/vm-data.sh >> "$script"
 
           # Sent base64-encoded and run with bash on the VM: the run-command's own shell is not guaranteed to be bash.
