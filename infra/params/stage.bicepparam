@@ -21,8 +21,30 @@ param postgresSkuTier = 'GeneralPurpose'
 param postgresVersion = '15'
 param postgresStorageGb = 64
 
-// SSH stays closed; sign in with Entra ID (az ssh vm). Set an address range here to open port 22 for it.
-param sshAllowedCidr = ''
+// Preserve developer SSH access and restrict web traffic to Cloudflare.
+param sshAllowedCidrs = ['106.51.85.143/32', '122.179.11.194/32']
+
+// Cloudflare IPv4 ranges for this IPv4-only origin; checked 2026-11-16.
+// https://www.cloudflare.com/ips/ -- keep the VM's Nginx trusted proxies in sync.
+var cloudflareCidrs = [
+  '173.245.48.0/20'
+  '103.21.244.0/22'
+  '103.22.200.0/22'
+  '103.31.4.0/22'
+  '141.101.64.0/18'
+  '108.162.192.0/18'
+  '190.93.240.0/20'
+  '188.114.96.0/20'
+  '197.234.240.0/22'
+  '198.41.128.0/17'
+  '162.158.0.0/15'
+  '104.16.0.0/13'
+  '104.24.0.0/14'
+  '172.64.0.0/13'
+  '131.0.72.0/22'
+]
+param httpAllowedCidrs = cloudflareCidrs
+param httpsAllowedCidrs = cloudflareCidrs
 
 // The repository the VM clones: the Infrastructure workflow sets REPO_URL to the repository it runs in.
 param repoUrl = readEnvironmentVariable('REPO_URL', 'https://github.com/ucdavis/rationsmart.git')

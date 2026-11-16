@@ -8,6 +8,17 @@ param zone string
 @description('Address range allowed to reach SSH (port 22), for example <your-address>/32. Empty keeps SSH closed.')
 param sshAllowedCidr string = ''
 
+@description('SSH source ranges; takes precedence over sshAllowedCidr when nonempty.')
+param sshAllowedCidrs array = []
+
+@description('HTTP source ranges. Use Cloudflare ranges for a proxied origin.')
+param httpAllowedCidrs array = ['Internet']
+
+@description('HTTPS source ranges. Empty leaves port 443 closed.')
+param httpsAllowedCidrs array = []
+
+var sshSources = !empty(sshAllowedCidrs) ? sshAllowedCidrs : (empty(sshAllowedCidr) ? [] : [sshAllowedCidr])
+
 var httpRule = [
   {
     name: 'HTTP-port'
@@ -16,7 +27,7 @@ var httpRule = [
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
-      sourceAddressPrefix: 'Internet'
+      ...(length(httpAllowedCidrs) == 1 ? { sourceAddressPrefix: httpAllowedCidrs[0] } : { sourceAddressPrefixes: httpAllowedCidrs })
       sourcePortRange: '*'
       destinationAddressPrefix: '*'
       destinationPortRange: '80'
@@ -26,16 +37,32 @@ var httpRule = [
 
 var sshRule = [
   {
-    name: 'SSH'
+    name: 'SSH-developers'
     properties: {
-      priority: 300
+      priority: 320
       direction: 'Inbound'
       access: 'Allow'
       protocol: 'Tcp'
-      sourceAddressPrefix: sshAllowedCidr
+      sourceAddressPrefixes: sshSources
       sourcePortRange: '*'
       destinationAddressPrefix: '*'
       destinationPortRange: '22'
+    }
+  }
+]
+
+var httpsRule = [
+  {
+    name: 'HTTPS-Cloudflare'
+    properties: {
+      priority: 340
+      direction: 'Inbound'
+      access: 'Allow'
+      protocol: 'Tcp'
+      sourceAddressPrefixes: httpsAllowedCidrs
+      sourcePortRange: '*'
+      destinationAddressPrefix: '*'
+      destinationPortRange: '443'
     }
   }
 ]
@@ -54,7 +81,7 @@ resource nsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = {
   name: '${prefix}-nsg'
   location: location
   properties: {
-    securityRules: concat(httpRule, empty(sshAllowedCidr) ? [] : sshRule)
+    securityRules: concat(empty(httpAllowedCidrs) ? [] : httpRule, empty(sshSources) ? [] : sshRule, empty(httpsAllowedCidrs) ? [] : httpsRule)
   }
 }
 

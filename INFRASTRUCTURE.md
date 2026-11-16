@@ -197,3 +197,7 @@ For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applie
 - **Database access:** PostgreSQL has no public address; the Key Vault does (reads need the Azure role).
 - **The first release has no rollback point** (nothing was running before it); later ones do.
 - The app is served over plain `http`; https and a domain name are not part of this setup.
+
+## Staging HTTPS
+
+The staging hostname uses Cloudflare Full (strict), an Origin CA certificate on the VM, and a local gateway Compose override. See [HTTPS installation and recovery](deploy/https/README.md) for the files to restore after VM replacement. The staging Bicep parameters preserve Cloudflare-only web access and the two developer SSH source IPs.
