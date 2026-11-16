@@ -271,7 +271,16 @@ class TranslationRepository:
     # ── Coverage ──────────────────────────────────────────────────────────────
 
     async def get_coverage(self, country_id: str, lang: str) -> dict:
-        """Return feed/type/category coverage counts for a country+language."""
+        """Return feed/type/category coverage counts for a country+language.
+
+        Each "translated" count is a share of its "total": feeds are the country's
+        feeds; types/categories are the distinct values the country's feeds use, and
+        only translations OF those values count (K9). Users see a type/category
+        translation only for a value their feeds carry (exact text, see
+        FeedRepository.get_vocabulary_translation_map), so this is what they see.
+        The Translation Workbook lists more values (PR #69: translate ahead of time);
+        such a translation counts once a feed of the country uses the value.
+        """
         total_feeds = (
             await self.db.execute(
                 select(func.count(Feed.id)).where(Feed.fd_country_id == country_id)
@@ -289,49 +298,12 @@ class TranslationRepository:
             )
         ).scalar_one()
 
-        total_types = (
-            await self.db.execute(
-                select(func.count())
-                .select_from(
-                    select(Feed.fd_type)
-                    .where(Feed.fd_country_id == country_id, Feed.fd_type.isnot(None))
-                    .distinct()
-                    .subquery()
-                )
-            )
-        ).scalar_one()
-
-        translated_types = (
-            await self.db.execute(
-                select(func.count(VocabularyTranslation.id)).where(
-                    VocabularyTranslation.country_id == country_id,
-                    VocabularyTranslation.kind == "feed_type",
-                    VocabularyTranslation.language == lang,
-                )
-            )
-        ).scalar_one()
-
-        total_categories = (
-            await self.db.execute(
-                select(func.count())
-                .select_from(
-                    select(Feed.fd_category)
-                    .where(Feed.fd_country_id == country_id, Feed.fd_category.isnot(None))
-                    .distinct()
-                    .subquery()
-                )
-            )
-        ).scalar_one()
-
-        translated_categories = (
-            await self.db.execute(
-                select(func.count(VocabularyTranslation.id)).where(
-                    VocabularyTranslation.country_id == country_id,
-                    VocabularyTranslation.kind == "feed_category",
-                    VocabularyTranslation.language == lang,
-                )
-            )
-        ).scalar_one()
+        total_types, translated_types = await self._vocabulary_coverage(
+            country_id, lang, "feed_type", Feed.fd_type
+        )
+        total_categories, translated_categories = await self._vocabulary_coverage(
+            country_id, lang, "feed_category", Feed.fd_category
+        )
 
         return {
             "total_feeds": total_feeds,
@@ -342,3 +314,33 @@ class TranslationRepository:
             "total_categories": total_categories,
             "translated_categories": translated_categories,
         }
+
+    async def _vocabulary_coverage(
+        self,
+        country_id: str,
+        lang: str,
+        kind: str,
+        feed_col: InstrumentedAttribute,
+    ) -> tuple[int, int]:
+        """(values the country's feeds use, how many of them have a translation)."""
+        used_values = (
+            select(feed_col)
+            .where(Feed.fd_country_id == country_id, feed_col.isnot(None))
+            .distinct()
+        )
+        total = (
+            await self.db.execute(
+                select(func.count()).select_from(used_values.subquery())
+            )
+        ).scalar_one()
+        translated = (
+            await self.db.execute(
+                select(func.count(VocabularyTranslation.id)).where(
+                    VocabularyTranslation.country_id == country_id,
+                    VocabularyTranslation.kind == kind,
+                    VocabularyTranslation.language == lang,
+                    VocabularyTranslation.source_value.in_(used_values),
+                )
+            )
+        ).scalar_one()
+        return total, translated

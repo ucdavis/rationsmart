@@ -22,6 +22,7 @@ from pymoo.operators.crossover.sbx import SimulatedBinaryCrossover
 from pymoo.operators.mutation.pm import PolynomialMutation
 from pymoo.core.sampling import Sampling
 from pymoo.core.repair import Repair
+from pymoo.core.duplicate import DefaultDuplicateElimination
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
 
@@ -258,6 +259,46 @@ class SimplexPlusDmiRepair(Repair):
             P[i, :] = _project_to_bounded_simplex(P[i, :], self.xl[:n], self.xu[:n])
         Y[:, :n] = P
         return Y
+
+
+class CappedDuplicateElimination(DefaultDuplicateElimination):
+    # Purpose: Remove duplicate offspring like pymoo's default, but stop doing so for the
+    # rest of the run once one generation needs more than `max_tries` tries.
+    # Notes: With few free feeds and a feed limit, the repair puts most children on the
+    # same point, every try is thrown away as a duplicate and pymoo retries up to
+    # Infill.n_max_iterations (100) times per generation: ~9,000 repair calls, 13 s on a
+    # Mac, > 60 s on Test (REC-09-E). Normal runs need at most 9 tries, never reach the
+    # trigger and so take exactly the same path (same diets) as plain
+    # eliminate_duplicates=True. Relies on pymoo 0.6.1.3's InfillCriterion.do calling
+    # do(new, parents, off) once per try with the same `parents` object for every try of a
+    # generation (survival makes a new one each generation); the unit tests pin that.
+    # `off` being empty is not a usable "new generation" signal: when no child survives
+    # it stays empty for every try. One instance per run (state is per run).
+    def __init__(self, max_tries, **kwargs):
+        super().__init__(**kwargs)
+        self.max_tries = int(max_tries)
+        self.tries = 0
+        self.switched_off = False
+        self._parents = None
+
+    def do(self, pop, *args, **kwargs):
+        if self.switched_off:
+            return (pop, list(range(len(pop))), []) if kwargs.get("return_indices") else pop
+        # Mating calls do(new, parents, off); the initial sampling calls do(pop) alone.
+        if len(args) == 2:
+            if args[0] is not self._parents:
+                self._parents = args[0]
+                self.tries = 0
+            self.tries += 1
+            if self.tries > self.max_tries:
+                self.switched_off = True
+                logger.info(
+                    "Duplicate removal switched off after %d tries in one generation "
+                    "(few free feeds); the rest of the run keeps duplicates",
+                    self.max_tries,
+                )
+                return (pop, list(range(len(pop))), []) if kwargs.get("return_indices") else pop
+        return super().do(pop, *args, **kwargs)
 
 
 class SimplexPlusDmiSampling(Sampling):
@@ -787,6 +828,12 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
 
     ref_dirs = np.array([[1.0]])
 
+    # See CappedDuplicateElimination: None keeps pymoo's plain duplicate removal.
+    retry_limit = cfg.get("duplicate_retry_limit")
+    eliminate_duplicates = (
+        CappedDuplicateElimination(retry_limit) if retry_limit is not None else True
+    )
+
     algorithm = NSGA3(
         pop_size=cfg["pop_size"],
         ref_dirs=ref_dirs,
@@ -794,7 +841,7 @@ def nsga3_optimization(animal_requirements, f_nd, config=None, custom_thresholds
         crossover=SimulatedBinaryCrossover(prob=cfg["crossover_prob"], eta=cfg["crossover_eta"]),
         mutation=PolynomialMutation(prob=cfg["mutation_prob"], eta=cfg["mutation_eta"]),
         repair=repair_op,
-        eliminate_duplicates=True,
+        eliminate_duplicates=eliminate_duplicates,
     )
 
     hard_switch_cb = HardBalanceSwitch(problem, hard_switch_gen)

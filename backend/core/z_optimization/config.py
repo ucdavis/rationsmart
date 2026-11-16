@@ -43,5 +43,10 @@ def nsga3_config(config: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         "eps": 1e-6,
         "constraint_history_level": "none",
         "debug_validate_constraints": False,
+        # Duplicate removal gives up for the rest of a run once one generation needs more
+        # than this many offspring tries (pymoo retries up to 100). Normal runs need <= 9;
+        # few free feeds + a feed limit hit 100 almost every generation (REC-09-E, 13 s vs
+        # 0.8 s). None = always remove duplicates (the behaviour before this setting).
+        "duplicate_retry_limit": 20,
     }
     return {**defaults, **(config or {})}
