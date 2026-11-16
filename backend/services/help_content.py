@@ -99,6 +99,16 @@ def _int(value: Any, where: str, problems: _Problems, minimum: int = 0) -> Optio
     return value
 
 
+def _list(value: Any, where: str, problems: _Problems) -> List[Any]:
+    """A YAML list; None means empty. Anything else is a problem (never sliced or iterated)."""
+    if value is None:
+        return []
+    if not isinstance(value, list):
+        problems.add(where, "must be a list")
+        return []
+    return value
+
+
 def _only_keys(data: Any, allowed: set, where: str, problems: _Problems) -> bool:
     if not isinstance(data, dict):
         problems.add(where, "must be a mapping")
@@ -131,7 +141,7 @@ def _video(data: Any, where: str, problems: _Problems) -> Optional[Dict[str, Any
         problems.add(f"{where}.youtube_id", "must be 11 characters of A-Z a-z 0-9 _ -")
     seconds = _int(data.get("seconds"), f"{where}.seconds", problems, minimum=1)
     chapters = []
-    for i, ch in enumerate(data.get("chapters") or []):
+    for i, ch in enumerate(_list(data.get("chapters"), f"{where}.chapters", problems)):
         cw = f"{where}.chapters[{i}]"
         if _only_keys(ch, {"start", "label"}, cw, problems):
             chapters.append({
@@ -170,18 +180,29 @@ def _english_topic(data: Any, where: str, problems: _Problems) -> Optional[Dict[
                 "video_start": None if vs is None else _int(vs, f"{sw}.video_start", problems),
             })
     probs = []
-    for i, pr in enumerate(data.get("problems") or []):
+    for i, pr in enumerate(_list(data.get("problems"), f"{where}.problems", problems)):
         pw = f"{where}.problems[{i}]"
         if _only_keys(pr, {"title", "text"}, pw, problems):
             probs.append({
                 "title": _text(pr.get("title"), f"{pw}.title", problems),
                 "text": _text(pr.get("text"), f"{pw}.text", problems),
             })
+    video = _video(data.get("video"), f"{where}.video", problems)
+    # A step's "watch this step" time must point inside the English video.
+    for i, st in enumerate(steps):
+        start = st["video_start"]
+        if start is None:
+            continue
+        if video is None:
+            problems.add(f"{where}.steps[{i}].video_start", "set, but the topic has no video")
+        elif video["seconds"] is not None and start >= video["seconds"]:
+            problems.add(f"{where}.steps[{i}].video_start",
+                         f"{start} s is past the end of the video ({video['seconds']} s)")
     return {
         "title": _text(data.get("title"), f"{where}.title", problems),
         "summary": _text(data.get("summary"), f"{where}.summary", problems),
         "updated": updated,
-        "video": _video(data.get("video"), f"{where}.video", problems),
+        "video": video,
         "steps": steps,
         "problems": probs,
     }
@@ -199,7 +220,7 @@ def _translated_topic(data: Any, english: Dict[str, Any], where: str,
     out["video"] = _video(data.get("video"), f"{where}.video", problems)
     if out["video"] and out["video"].get("poster"):
         problems.add(f"{where}.video.poster", "set posters in the English file only")
-    steps = data.get("steps") or []
+    steps = _list(data.get("steps"), f"{where}.steps", problems)
     if len(steps) > len(english["steps"]):
         problems.add(f"{where}.steps", f"has {len(steps)} steps; English has {len(english['steps'])}")
     for i, st in enumerate(steps[: len(english["steps"])]):
@@ -208,7 +229,7 @@ def _translated_topic(data: Any, english: Dict[str, Any], where: str,
             _text(st.get("text"), f"{sw}.text", problems, required=False)
             if _only_keys(st, {"text"}, sw, problems) else None
         )
-    probs = data.get("problems") or []
+    probs = _list(data.get("problems"), f"{where}.problems", problems)
     if len(probs) > len(english["problems"]):
         problems.add(f"{where}.problems", f"has {len(probs)}; English has {len(english['problems'])}")
     for i, pr in enumerate(probs[: len(english["problems"])]):
@@ -289,18 +310,30 @@ class HelpContent:
         _, digest = self._media[folder][name]
         return f"{MEDIA_URL_PREFIX}/{folder}/{name}?v={digest}"
 
-    def _video_for(self, lang: str, key: str) -> Optional[Dict[str, Any]]:
-        translated = self._topics.get(lang, {}).get(key, {}) if lang != ENGLISH else {}
-        video = translated.get("video") or self._topics[ENGLISH][key]["video"]
+    def _own_video(self, lang: str, key: str) -> bool:
+        """True when `lang` has its own video for this topic (it replaces the English one)."""
+        if lang == ENGLISH:
+            return False
+        return bool(self._topics.get(lang, {}).get(key, {}).get("video"))
+
+    def _video_for(self, lang: str, key: str,
+                   pick: Optional[_Pick] = None) -> Optional[Dict[str, Any]]:
+        english = self._topics[ENGLISH][key]["video"]
+        own = self._own_video(lang, key)
+        video = self._topics[lang][key]["video"] if own else english
         if not video:
             return None
-        poster = self._topics[ENGLISH][key]["video"]
-        poster_name = poster.get("poster") if poster else None
+        poster_name = english.get("poster") if english else None
+        chapters = []
+        for ch in video["chapters"]:
+            # English chapter names shown to a non-English user count as fallback text.
+            label = ch["label"] if own or pick is None else pick(None, ch["label"])
+            chapters.append({"start": ch["start"], "label": label})
         return {
             "youtube_id": video["youtube_id"],
             "seconds": video["seconds"],
             "poster": self._media_url(lang, poster_name),
-            "chapters": [dict(ch) for ch in video["chapters"]],
+            "chapters": chapters,
         }
 
     def index(self, lang: Optional[str]) -> Dict[str, Any]:
@@ -349,12 +382,15 @@ class HelpContent:
         tr = self._topics.get(served, {}).get(key, {}) if served != ENGLISH else {}
         entry = self._manifest["topic_by_key"][key]
         tr_steps, tr_probs = tr.get("steps", []), tr.get("problems", [])
+        # Step timings belong to the English video; a language's own video has its own
+        # timing, so its steps get no "watch this step" time.
+        own_video = self._own_video(served, key)
         steps = []
         for i, st in enumerate(en["steps"]):
             steps.append({
                 "text": pick(tr_steps[i] if i < len(tr_steps) else None, st["text"]),
                 "image": self._media_url(served, st["image"]),
-                "video_start": st["video_start"],
+                "video_start": None if own_video else st["video_start"],
             })
         probs = []
         for i, pr in enumerate(en["problems"]):
@@ -363,6 +399,7 @@ class HelpContent:
                           "text": pick(t.get("text"), pr["text"])})
         title = pick(tr.get("title"), en["title"])
         summary = pick(tr.get("summary"), en["summary"])
+        video = self._video_for(served, key, pick)  # may mark English chapter names
         return {
             "key": key,
             "number": entry["number"],
@@ -371,7 +408,7 @@ class HelpContent:
             "title": title,
             "summary": summary,
             "screen_label": entry["screen_label"],
-            "video": self._video_for(served, key),
+            "video": video,
             "steps": steps,
             "problems": probs,
             "related": list(entry["related"]),
@@ -399,7 +436,7 @@ def _manifest(data: Any, problems: _Problems) -> Dict[str, Any]:
     out["content_version"] = _text(data.get("content_version"), f"{where}.content_version", problems)
     out["quick_start"] = data.get("quick_start")
     numbers = set()
-    for i, t in enumerate(data.get("topics") or []):
+    for i, t in enumerate(_list(data.get("topics"), f"{where}.topics", problems)):
         tw = f"{where}.topics[{i}]"
         if not _only_keys(t, {"key", "number", "audience", "screen_label", "related", "next"},
                           tw, problems):
@@ -422,7 +459,7 @@ def _manifest(data: Any, problems: _Problems) -> Dict[str, Any]:
             "number": number,
             "audience": t.get("audience"),
             "screen_label": _text(t.get("screen_label"), f"{tw}.screen_label", problems),
-            "related": list(t.get("related") or []),
+            "related": list(_list(t.get("related"), f"{tw}.related", problems)),
             "next": t.get("next"),
         }
         out["topics"].append(entry)
@@ -439,9 +476,10 @@ def _manifest(data: Any, problems: _Problems) -> Dict[str, Any]:
             problems.add(sw, "screen key must match [a-z0-9.-]")
             continue
         if _only_keys(s, {"topic", "related"}, sw, problems):
-            out["screens"][skey] = {"topic": s.get("topic"), "related": list(s.get("related") or [])}
+            out["screens"][skey] = {"topic": s.get("topic"),
+                                    "related": list(_list(s.get("related"), f"{sw}.related", problems))}
     seen_faq = set()
-    for i, f in enumerate(data.get("faqs") or []):
+    for i, f in enumerate(_list(data.get("faqs"), f"{where}.faqs", problems)):
         fw = f"{where}.faqs[{i}]"
         if _only_keys(f, {"key", "topic"}, fw, problems):
             fkey = f.get("key")
@@ -503,7 +541,11 @@ def _load_media(root: Path, english_names: set, problems: _Problems) -> Dict[str
             if p.name not in english_names:
                 problems.add(where, "not named in any English topic")
                 continue
-            data = p.read_bytes()
+            try:
+                data = p.read_bytes()
+            except OSError as exc:
+                problems.add(where, f"cannot be read ({exc.__class__.__name__})")
+                continue
             if len(data) > MAX_MEDIA_BYTES:
                 problems.add(where, f"is {len(data) // 1024} KB; the limit is {MAX_MEDIA_BYTES // 1024} KB")
                 continue
@@ -524,6 +566,19 @@ def help_content_problems(root: Path = HELP_ROOT) -> List[str]:
 
 
 def load_help_content(root: Path = HELP_ROOT) -> HelpContent:
+    """Load and validate the content at `root`. Any failure is a HelpContentError, so
+    /v1/help answers 503 rather than 500 even for a case the checks did not foresee."""
+    try:
+        return _load(root)
+    except HelpContentError:
+        raise
+    except Exception as exc:
+        raise HelpContentError(
+            f"{root}: unexpected error while loading ({exc.__class__.__name__}: {exc})"
+        ) from exc
+
+
+def _load(root: Path) -> HelpContent:
     problems = _Problems()
     manifest_path = root / "manifest.yaml"
     if not manifest_path.is_file():

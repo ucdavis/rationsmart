@@ -3,7 +3,7 @@ forage-required:
   answer: "Every diet needs at least one feed of type Forage. Add one on Feed Selection and generate again."
 no-diet-found:
   question: "The report says no diet was found. What can I do?"
-  answer: "Add more feeds, check the prices and loosen any limits you set. The topic shows each step."
+  answer: "Add more feeds, check the prices and loosen any limits you set."
 pdf-pending:
   question: "My report shows \"PDF Pending\"."
   answer: "The PDF is made in the background after you save. Open Feed Reports again after a minute."
