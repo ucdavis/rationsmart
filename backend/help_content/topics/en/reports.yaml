@@ -1,7 +1,21 @@
-title: "Save, share and reuse reports"
-summary: "Save a report, open its PDF, share it and reuse a past case."
-updated: "2026-11-16"
+title: "Save, share and find your reports"
+summary: "Keep a report, get its PDF, share it and open it again later."
+updated: "2026-11-17"
 video: null
 steps:
-  - text: "Placeholder — text coming soon."
-problems: []
+  - text: "On a report tap 'Save Report'. The app says 'Report saved successfully'. Saving the same report again does not make a second copy."
+  - text: "Tap 'Get PDF' to make the PDF. When it is ready, 'View PDF' opens it and 'Share Report' sends it with your phone's share options (or copies the PDF link)."
+  - text: "Open the menu and tap 'Feed Reports' to see your saved reports, newest first. 'View Report' opens the PDF; tap the bar under a report to see its Report ID, Report Type and Date."
+  - text: "A new report may show 'PDF Pending' for a minute while its PDF is made. Open 'Feed Reports' again a little later."
+  - text: "With more than 20 saved reports, use the next and previous page buttons at the bottom."
+  - text: "To reuse a saved case, open Cattle Info and tap the history icon next to 'Simulation Details'. Only saved reports are listed there."
+  - text: "A report you did not save stays on this phone for 24 hours, then it is gone. Save the ones you need."
+problems:
+  - title: "'No saved reports'"
+    text: "You have not saved a report yet. Tap 'Create Report', make a diet and tap 'Save Report'."
+  - title: "'PDF Pending' does not go away"
+    text: "Close and reopen 'Feed Reports'. If it still shows after a few minutes, open the report from the list and tap 'Get PDF'."
+  - title: "'PDF link copied to clipboard'"
+    text: "Your phone has no share sheet here, so the app copied the link instead. Paste it into a message or email."
+  - title: "My report is not in the history on Cattle Info"
+    text: "The history lists saved reports only. Run the case again and tap 'Save Report'."

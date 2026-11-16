@@ -1,7 +1,18 @@
-title: "Calf milk-feeding plan"
-summary: "Daily milk, feedings and weaning for a calf."
-updated: "2026-11-16"
+title: "Milk-feeding plan for a calf"
+summary: "How much milk to give a calf each day, in how many feedings, and when to wean."
+updated: "2026-11-17"
 video: null
 steps:
-  - text: "Placeholder — text coming soon."
-problems: []
+  - text: "On Cattle Info choose the Physiological State 'Calves'. Type the calf's body weight in kg and tap 'Continue'."
+  - text: "The 'Calf Milk Feeding' plan opens. 'Daily milk' is the litres of milk per day: one tenth of the calf's body weight."
+  - text: "'Per feeding' splits the daily milk into 2 feedings a day. 'Wean by' gives the age in days by which to stop milk feeding (56 days)."
+  - text: "Example: a 40 kg calf gets 4.0 litres a day, given as 2.0 litres twice a day."
+  - text: "Read the care tips under the plan. The plan is a guide: adjust it with your vet."
+  - text: "Tap 'Save Report' to keep the plan, then 'Get PDF' for a copy with the full milk-feeding schedule (topic 10)."
+problems:
+  - title: "The body weight is refused"
+    text: "For calves the body weight must be between 30 and 100 kg. The allowed range shows under the field."
+  - title: "I don't see Feed Selection for my calf"
+    text: "Calves get a milk-feeding plan only; the app does not make a feed diet or an evaluation for them."
+  - title: "My calf is older and eats solid feed"
+    text: "Choose 'Heifers' instead of 'Calves' to get a feed diet for a young growing animal."

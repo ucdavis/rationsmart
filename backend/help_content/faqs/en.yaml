@@ -1,12 +1,39 @@
 forage-required:
-  question: "Why does the app say \"At least one forage is required\"?"
-  answer: "Every diet needs at least one feed of type Forage. Add one on Feed Selection and generate again."
+  question: "Why does the app say 'Forage Required'?"
+  answer: "Every diet needs at least one feed of type Forage. Tap 'OK, Add a Forage', choose a forage on Feed Selection and generate again."
 no-diet-found:
-  question: "The report says no diet was found. What can I do?"
-  answer: "Add more feeds, check the prices and loosen any limits you set."
+  question: "The report says 'No optimized solution found'. What can I do?"
+  answer: "Your feeds cannot meet this animal's needs. Read the Notes: add a feed that supplies what is missing (minerals, protein or energy), loosen any limits you set, or check the milk target. See 'When no diet is found'."
+feed-missing:
+  question: "Why can't I find a feed in the list?"
+  answer: "The lists show the feeds of the Country chosen on Cattle Info, plus your own custom feeds. Check the country, search by part of the name, or add the feed yourself with 'Custom Feed'."
+own-values:
+  question: "Can I use my own feed or my own lab values?"
+  answer: "Yes. 'Custom Feed' adds a new feed; the pencil on a feed card saves your own copy with your values. Only you can see your custom feeds."
+margin-meaning:
+  question: "Is the milk margin on the report my profit?"
+  answer: "No. It is milk price minus feed cost per litre: what the milk earns over the feed cost only. Labour, vet care and other costs are not in it."
+eval-cost-per-litre:
+  question: "In an evaluation, which cost per litre should I use?"
+  answer: "Use 'Cost/Litre Milk' under Cost Analysis. It divides the diet cost by the milk the ration can really support ('Actual Milk'), which may be less than your target."
+calf-milk:
+  question: "How much milk should my calf get?"
+  answer: "Choose 'Calves' on Cattle Info and type the body weight. The plan gives one tenth of the body weight in litres a day, in 2 feedings, and weaning by 56 days. Adjust it with your vet."
+limit-feed:
+  question: "How do I stop the diet using too much of one feed?"
+  answer: "On that feed's card turn on 'Set inclusion limits' and type a Max in kg per day. The report's 'Limits You Set' card shows how much the diet used."
+saved-reports:
+  question: "Where are my saved reports?"
+  answer: "Open the menu and tap 'Feed Reports'. 'View Report' opens the PDF. Reports you did not save are not listed there."
 pdf-pending:
-  question: "My report shows \"PDF Pending\"."
-  answer: "The PDF is made in the background after you save. Open Feed Reports again after a minute."
+  question: "My report shows 'PDF Pending'."
+  answer: "The PDF is made in the background after you save. Open 'Feed Reports' again after a minute."
+forgot-pin:
+  question: "I forgot my PIN. What do I do?"
+  answer: "On the Login screen tap 'Forgot PIN? Tap here' and type your email address. Log in with the PIN in the email, then set your own in Profile, 'Change PIN'."
+change-language:
+  question: "How do I use the app in my language?"
+  answer: "Choose the Language on Cattle Info for this report, or set your default in Profile and tap 'Update Profile'. The languages offered depend on the country."
 contact-team:
   question: "How do I contact the RationSmart team?"
-  answer: "Open the menu, then Help & Support, then Contact Us."
+  answer: "Open the menu, tap 'Help & Support', then 'Contact Us'. It opens your email app."
