@@ -43,6 +43,19 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.error("Report text check failed", exc_info=True)
 
+    # In-App Help content (help_content/): load and validate once. A problem only makes
+    # /v1/help answer 503; it never blocks startup.
+    try:
+        from services.help_content import HelpContentError, get_help_content
+
+        help_content = get_help_content()
+        logger.info("Help content %s loaded (%s)", help_content.content_version,
+                    ", ".join(help_content.languages))
+    except HelpContentError as exc:
+        logger.error("Help content is invalid; /v1/help will answer 503:\n%s", exc)
+    except Exception:
+        logger.error("Help content check failed", exc_info=True)
+
     logger.info(
         "RationSmart API starting up (optimization pool: %d workers)",
         settings.optimization_pool_workers,
@@ -88,12 +101,14 @@ from routers.animal import router as animal_router
 from routers.admin import router as admin_router
 from routers.feed_classification import router as feed_classification_router
 from routers.user_feedback import router as user_feedback_router
+from routers.help import router as help_router
 
 app.include_router(auth_router, prefix="/v1/auth")
 app.include_router(animal_router, prefix="/v1/animal")
 app.include_router(admin_router, prefix="/v1/admin")
 app.include_router(feed_classification_router, prefix="/v1/feed-classification")
 app.include_router(user_feedback_router, prefix="/v1/user-feedback")
+app.include_router(help_router, prefix="/v1/help")
 
 
 @app.get("/health", summary="Service health check")

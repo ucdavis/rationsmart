@@ -1,0 +1,111 @@
+# In-App Help content: order, numbers, screen map and FAQ order.
+# Contract: In-App Help API contract v1 (backend design docs, dev_docs/in_app_help).
+# Texts live in topics/<lang>/<key>.yaml and faqs/<lang>.yaml; English is the master.
+# Change content_version whenever any help content changes.
+content_version: "stub-1"
+quick_start: quick-start
+
+topics:
+  - key: quick-start
+    number: 0
+    audience: all
+    screen_label: "Help & Support"
+    related: []
+    next: install-login
+  - key: install-login
+    number: 1
+    audience: all
+    screen_label: "Login"
+    related: [quick-start, pin-account]
+    next: describe-animal
+  - key: pin-account
+    number: 2
+    audience: all
+    screen_label: "Your Profile"
+    related: [install-login, language-feedback]
+    next: null
+  - key: describe-animal
+    number: 3
+    audience: all
+    screen_label: "Cattle Info"
+    related: [quick-start, calf-plan]
+    next: pick-feeds
+  - key: pick-feeds
+    number: 4
+    audience: all
+    screen_label: "Feed Selection"
+    related: [own-feeds, limits]
+    next: get-diet
+  - key: get-diet
+    number: 5
+    audience: all
+    screen_label: "Recommendation Report"
+    related: [reports, troubleshooting]
+    next: check-diet
+  - key: check-diet
+    number: 6
+    audience: all
+    screen_label: "Evaluation Report"
+    related: [reports]
+    next: reports
+  - key: calf-plan
+    number: 7
+    audience: farmers
+    screen_label: "Calf Milk Feeding"
+    related: [describe-animal]
+    next: null
+  - key: own-feeds
+    number: 8
+    audience: advanced
+    screen_label: "Feed Selection"
+    related: [pick-feeds, limits]
+    next: null
+  - key: limits
+    number: 9
+    audience: nutritionists
+    screen_label: "Feed Selection"
+    related: [pick-feeds, troubleshooting]
+    next: null
+  - key: reports
+    number: 10
+    audience: all
+    screen_label: "Feed Reports"
+    related: [get-diet, check-diet]
+    next: null
+  - key: language-feedback
+    number: 11
+    audience: all
+    screen_label: "Feedback"
+    related: [pin-account]
+    next: null
+  - key: troubleshooting
+    number: 12
+    audience: all
+    screen_label: "Recommendation Report"
+    related: [get-diet, limits]
+    next: null
+
+# Screen key (sent by the app) -> topic its help button opens + 'Also on this screen'.
+screens:
+  welcome: {topic: install-login, related: [quick-start]}
+  login: {topic: install-login, related: [pin-account]}
+  register: {topic: install-login, related: [quick-start]}
+  verify-email: {topic: pin-account, related: [install-login]}
+  forgot-pin: {topic: pin-account, related: []}
+  set-new-pin: {topic: pin-account, related: []}
+  cattle-info: {topic: describe-animal, related: [quick-start]}
+  calf-plan: {topic: calf-plan, related: []}
+  feed-selection: {topic: pick-feeds, related: [own-feeds, limits]}
+  report.recommendation: {topic: get-diet, related: [reports]}
+  report.evaluation: {topic: check-diet, related: [reports]}
+  report.no-diet: {topic: troubleshooting, related: [get-diet, limits]}
+  reports: {topic: reports, related: []}
+  profile: {topic: pin-account, related: [language-feedback]}
+  feedback: {topic: language-feedback, related: []}
+
+# FAQ order; question and answer texts are in faqs/<lang>.yaml.
+faqs:
+  - {key: forage-required, topic: pick-feeds}
+  - {key: no-diet-found, topic: troubleshooting}
+  - {key: pdf-pending, topic: reports}
+  - {key: contact-team, topic: null}
