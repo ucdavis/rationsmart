@@ -1,7 +1,20 @@
-title: "Your own feeds"
-summary: "Create a custom feed or edit the nutrient values of a feed."
-updated: "2026-11-16"
+title: "Your own feeds and feed values"
+summary: "Add a feed that is not in the list, or use your own lab values for a feed."
+updated: "2026-11-17"
 video: null
 steps:
-  - text: "Placeholder — text coming soon."
-problems: []
+  - text: "On Feed Selection tap 'Custom Feed'. In 'Add Custom Feed' choose the Feed Type and Feed Category, type a name for the feed, and fill in its nutrient values in % of dry matter. Tap 'Submit'."
+  - text: "The app says 'Custom feed saved! It will appear in the feed list.' Pick it in any feed card under its type and category, or search for its name."
+  - text: "The fields depend on the category. Minerals ask only for Dry Matter, Ash, Calcium and Phosphorus; Additive also asks for NPN."
+  - text: "To use your own values for a feed from the list: pick it in a card and tap the pencil icon. The form opens with the feed's values; change them and tap 'Submit'. This saves your own copy (its name starts with your first name) and the card uses it. The shared feed does not change."
+  - text: "Tap the pencil on one of your own custom feeds to change it; the app says 'Custom feed updated!'."
+  - text: "Your custom feeds are private: other users never see them. They go with you to every country you choose on Cattle Info."
+problems:
+  - title: "'Feed name and type are required'"
+    text: "Type a name and choose the Feed Type before tapping 'Submit'."
+  - title: "'Nutrient values must be numbers between 0 and 100 %.'"
+    text: "Nutrients are in % of dry matter, so each one must be from 0 to 100. Check for a misplaced decimal point."
+  - title: "I can't find my custom feed"
+    text: "Look under the Feed Type and Feed Category you chose when you saved it, or search for its name."
+  - title: "Where do I get the nutrient values?"
+    text: "Best from a lab analysis of your own feed. If you have none, start from a similar feed in the list and change only what you know."

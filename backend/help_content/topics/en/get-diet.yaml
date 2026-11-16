@@ -1,7 +1,24 @@
 title: "Get a least-cost diet and read the report"
 summary: "Run a recommendation and understand each part of the report."
-updated: "2026-11-16"
+updated: "2026-11-17"
 video: null
 steps:
-  - text: "Placeholder — text coming soon."
-problems: []
+  - text: "On Feed Selection tap 'Generate Recommendation'. 'Generating your report' shows for a few seconds, then the 'Recommendation Report' opens."
+  - text: "'Report Details' at the top shows the Report ID, the Simulation ID, your name and when the report was made. 'Animal Characteristics' repeats the animal details you typed, so you can check them."
+  - text: "'Cost-Effective Diet' is the answer: for each feed, how many kg to give per day as fed (the weight you put in front of the cow), its price per kg and its cost per day. The last line is the Total Diet Cost per day."
+  - text: "'Solution Summary' shows the Daily Cost, the milk the diet is planned for, the Dry Matter Intake (feed without its water, kg per day) and the Forage : Concentrate ratio."
+  - text: "'Milk Cost Margin' shows for lactating cows when you typed a milk price. 'Diet Cost / L' is the feed cost for each litre of milk, 'Milk Price / L' is your milk price, and the difference is what the milk earns over the feed cost only. Labour, vet care and other costs are not in it."
+  - text: "'Limits You Set' appears when you set feed or diet limits: it lists each limit and how much of that feed the diet used (topic 9)."
+  - text: "'Notes' appears only when something needs your attention, for example a nutrient below its target, with advice on what to change. 'Environmental Impact' shows the methane the cow makes on this diet."
+  - text: "Tap 'Save Report' to keep it; then 'Get PDF', 'View PDF' or 'Share Report' (topic 10). 'New Case' starts the next animal with the same inputs. The back arrow returns to Feed Selection, where you can change feeds or prices and generate again."
+problems:
+  - title: "'No optimized solution found'"
+    text: "No mix of your feeds meets this animal's needs. The Notes list what is missing and what to change. See topic 12."
+  - title: "No 'Milk Cost Margin' card"
+    text: "It shows only for lactating cows, and only when a milk price was typed on Cattle Info. Go back, type the milk price and generate again."
+  - title: "'Diet Limit Notes'"
+    text: "The diet could not stay inside a limit you set in 'Custom Diet Limits'. The note shows the result and your limit. Loosen the limit or add other feeds."
+  - title: "A feed shows a very small amount, like 0.01 kg"
+    text: "The cheapest diet hardly needs that feed. You can leave it out and generate again; the cost changes very little."
+  - title: "Some words stay in English"
+    text: "Status words in the app stay in English on purpose. The saved PDF uses the report language for its headings, notes and feed names where a translation exists."

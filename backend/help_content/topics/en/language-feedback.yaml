@@ -1,7 +1,20 @@
 title: "Language, feedback and help"
-summary: "Change the app language, send feedback, find help."
-updated: "2026-11-16"
+summary: "Use the app in your language, tell us what you think and get help."
+updated: "2026-11-17"
 video: null
 steps:
-  - text: "Placeholder — text coming soon."
-problems: []
+  - text: "On Cattle Info choose the Language under 'Simulation Details'. The screens and the report switch to it at once. The list shows the languages set up for the country you chose."
+  - text: "To make a language your default, open the menu, tap 'Profile', choose the Language and tap 'Update Profile'."
+  - text: "The saved PDF uses the report language for its headings, notes and feed names where a translation exists. Numbers do not change. A few status words stay in English on purpose."
+  - text: "To give feedback, open the menu and tap 'Feedback'. Choose 1 to 5 stars under 'Rate The App', pick a 'Feedback Category', write your comment (up to 1000 characters) and tap 'Submit Feedback'."
+  - text: "Your past feedback is listed under 'Your Feedbacks'. Tap one to read it again."
+  - text: "For help, open the menu and tap 'Help & Support': the user manual, frequently asked questions, and 'Contact Us', which opens your email app to write to the RationSmart team. 'Terms & Conditions' is also in the menu."
+problems:
+  - title: "'Submit Feedback' stays grey"
+    text: "Choose a star rating first."
+  - title: "My language is not in the list"
+    text: "Languages are added per country by the RationSmart team. Check the Country on Cattle Info, or ask for your language through 'Contact Us'."
+  - title: "A language shows as a short code"
+    text: "Some languages show a code (for example 'TI') instead of their name. You can still choose it; the screens work the same."
+  - title: "Some screen text is still in English"
+    text: "That text has no translation yet in your language. Tell us through 'Feedback' which words you see."

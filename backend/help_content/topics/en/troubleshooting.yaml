@@ -1,7 +1,21 @@
-title: "No diet found?"
-summary: "What to change when the app can't find a diet."
-updated: "2026-11-16"
+title: "When no diet is found, and other problems"
+summary: "What to do when the report finds no diet, a message appears or the app does not respond."
+updated: "2026-11-17"
 video: null
 steps:
-  - text: "Placeholder — text coming soon."
-problems: []
+  - text: "When the report says 'No optimized solution found', no mix of your feeds meets this animal's needs. There is no diet table; the 'Notes' card explains why."
+  - text: "Read 'Violated Parameters': each line names what the diet could not meet, for example 'Phosphorus Requirement: below minimum' or 'Total Fibre (NDF): above maximum'. 'Recommendations' suggests what to change."
+  - text: "Add a feed that supplies what is missing: a mineral feed for calcium or phosphorus, a protein meal for protein, a grain for energy. A ration of only one or two feeds often cannot meet every need."
+  - text: "If you set limits ('Set inclusion limits' or 'Custom Diet Limits'), loosen or remove them. The 'Limits You Set' card on the report shows which ones you set."
+  - text: "Check the animal: a milk target that is very high for the feeds you have cannot be met. Lower the milk, or add better feeds."
+  - text: "To see which nutrient is short in a ration you choose yourself, use 'Diet Evaluation' (topic 6)."
+  - text: "Then tap the back arrow to Feed Selection, make the change and tap 'Generate Recommendation' again."
+problems:
+  - title: "'Forage Required'"
+    text: "Every diet needs at least one feed of type Forage. Add one and generate again."
+  - title: "'… of the selected feeds are no longer available'"
+    text: "A feed was removed from the library. Remove it from the selection and choose the feeds again."
+  - title: "The report takes very long or does not open"
+    text: "Check your internet connection and try again. If it keeps happening, write to us through 'Contact Us' with the Simulation Name."
+  - title: "The app shows an error or stops responding"
+    text: "Go back one screen and try again; your inputs are kept. If it still fails, log out, log in again, and tell us through 'Feedback' or 'Contact Us'."
