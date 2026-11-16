@@ -27,6 +27,31 @@ describe("/api/session (audit A-04)", () => {
     ).toBe(403);
   });
 
+  it("uses the public Host behind the gateway and rejects other origins", async () => {
+    for (const [origin, expected] of [
+      ["https://rationsmart.ucdavis.edu", 200],
+      ["https://evil.example", 403],
+      ["https://0.0.0.0:3000", 403],
+      ["https://rationsmart.ucdavis.edu:444", 403],
+    ] as const) {
+      const request = new NextRequest("https://0.0.0.0:3000/api/session", {
+        method: "POST",
+        headers: {
+          host: "rationsmart.ucdavis.edu",
+          origin,
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({ token: "a.b.c", expires_in: 1 }),
+      });
+      const response = await POST(request);
+      expect(response.status).toBe(expected);
+      if (expected === 200) {
+        expect(response.headers.get("set-cookie")).toContain("Secure");
+        expect(response.headers.get("set-cookie")).toContain("HttpOnly");
+      }
+    }
+  });
+
   it("DELETE clears the cookie", async () => {
     const res = await DELETE(req("DELETE"));
     expect(res.headers.get("set-cookie") ?? "").toMatch(/rs_session=;.*Max-Age=0/);
