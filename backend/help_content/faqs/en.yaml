@@ -1,0 +1,12 @@
+forage-required:
+  question: "Why does the app say \"At least one forage is required\"?"
+  answer: "Every diet needs at least one feed of type Forage. Add one on Feed Selection and generate again."
+no-diet-found:
+  question: "The report says no diet was found. What can I do?"
+  answer: "Add more feeds, check the prices and loosen any limits you set. The topic shows each step."
+pdf-pending:
+  question: "My report shows \"PDF Pending\"."
+  answer: "The PDF is made in the background after you save. Open Feed Reports again after a minute."
+contact-team:
+  question: "How do I contact the RationSmart team?"
+  answer: "Open the menu, then Help & Support, then Contact Us."
