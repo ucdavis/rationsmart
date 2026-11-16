@@ -1,0 +1,12 @@
+{"category_name":"Additive","description":"Additive category under Concentrate","feed_type_name":"Concentrate","is_active":true,"sort_order":1}
+{"category_name":"Animal Protein","description":"As per the instructions","feed_type_name":"Concentrate","is_active":true,"sort_order":12}
+{"category_name":"By-Product/Other","description":"By-Product/Other category under Concentrate","feed_type_name":"Concentrate","is_active":true,"sort_order":2}
+{"category_name":"By-Product/Other-Forage","description":null,"feed_type_name":"Forage","is_active":true,"sort_order":0}
+{"category_name":"Complete diet","description":"Added as per instructions","feed_type_name":"Complete diet","is_active":true,"sort_order":10}
+{"category_name":"Concentrate Mixtures","description":"As per the instructions","feed_type_name":"Concentrate","is_active":true,"sort_order":13}
+{"category_name":"Energy Source","description":"Energy Source category under Concentrate","feed_type_name":"Concentrate","is_active":true,"sort_order":3}
+{"category_name":"Forage tree/shrub","description":"As per the instructions","feed_type_name":"Forage","is_active":true,"sort_order":11}
+{"category_name":"Grain Crop Forage","description":"Grain Crop Forage category under Forage","feed_type_name":"Forage","is_active":true,"sort_order":1}
+{"category_name":"Grass/Legume Forage","description":"Grass/Legume Forage category under Forage","feed_type_name":"Forage","is_active":true,"sort_order":2}
+{"category_name":"Minerals","description":"Mineral category under Concentrate","feed_type_name":"Concentrate","is_active":true,"sort_order":7}
+{"category_name":"Plant Protein","description":"Plant Protein category under Concentrate","feed_type_name":"Concentrate","is_active":true,"sort_order":5}

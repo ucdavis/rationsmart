@@ -1,0 +1,206 @@
+{"code":"aa","is_active":false,"name":"Afar"}
+{"code":"abr","is_active":false,"name":"Abron"}
+{"code":"aeb","is_active":false,"name":"Tunisian Arabic"}
+{"code":"af","is_active":false,"name":"Afrikaans"}
+{"code":"ak","is_active":false,"name":"Akan"}
+{"code":"am","is_active":true,"name":"Amharic"}
+{"code":"apc","is_active":false,"name":"North Levantine Arabic"}
+{"code":"apd","is_active":false,"name":"Sudanese Arabic"}
+{"code":"ar","is_active":true,"name":"Arabic"}
+{"code":"arq","is_active":false,"name":"Algerian Arabic"}
+{"code":"ary","is_active":false,"name":"Moroccan Arabic"}
+{"code":"arz","is_active":false,"name":"Egyptian Arabic"}
+{"code":"as","is_active":false,"name":"Assamese"}
+{"code":"ay","is_active":false,"name":"Aymara"}
+{"code":"az","is_active":false,"name":"Azerbaijani"}
+{"code":"bar","is_active":false,"name":"Bavarian"}
+{"code":"bci","is_active":false,"name":"Baoulé"}
+{"code":"be","is_active":false,"name":"Belarusian"}
+{"code":"bej","is_active":false,"name":"Beja"}
+{"code":"bem","is_active":false,"name":"Bemba"}
+{"code":"bg","is_active":false,"name":"Bulgarian"}
+{"code":"bgc","is_active":false,"name":"Haryanvi"}
+{"code":"bho","is_active":false,"name":"Bhojpuri"}
+{"code":"bi","is_active":false,"name":"Bislama"}
+{"code":"bm","is_active":false,"name":"Bambara"}
+{"code":"bn","is_active":true,"name":"Bangla"}
+{"code":"bs","is_active":false,"name":"Bosnian"}
+{"code":"ca","is_active":false,"name":"Catalan"}
+{"code":"ceb","is_active":false,"name":"Cebuano"}
+{"code":"chk","is_active":false,"name":"Chuukese"}
+{"code":"ckb","is_active":false,"name":"Central Kurdish"}
+{"code":"cop","is_active":false,"name":"Coptic"}
+{"code":"crs","is_active":false,"name":"Seselwa Creole French"}
+{"code":"cs","is_active":false,"name":"Czech"}
+{"code":"da","is_active":false,"name":"Danish"}
+{"code":"de","is_active":false,"name":"German"}
+{"code":"dje","is_active":false,"name":"Zarma"}
+{"code":"dv","is_active":false,"name":"Divehi"}
+{"code":"dyu","is_active":false,"name":"Dyula"}
+{"code":"dz","is_active":false,"name":"Dzongkha"}
+{"code":"ee","is_active":false,"name":"Ewe"}
+{"code":"el","is_active":false,"name":"Greek"}
+{"code":"en","is_active":true,"name":"English"}
+{"code":"es","is_active":false,"name":"Spanish"}
+{"code":"et","is_active":false,"name":"Estonian"}
+{"code":"fa","is_active":false,"name":"Persian"}
+{"code":"fan","is_active":false,"name":"Fang"}
+{"code":"ff","is_active":false,"name":"Fula"}
+{"code":"ffm","is_active":false,"name":"Maasina Fulfulde"}
+{"code":"fi","is_active":false,"name":"Finnish"}
+{"code":"fil","is_active":false,"name":"Filipino"}
+{"code":"fj","is_active":false,"name":"Fijian"}
+{"code":"fon","is_active":false,"name":"Fon"}
+{"code":"fr","is_active":true,"name":"French"}
+{"code":"ga","is_active":false,"name":"Irish"}
+{"code":"gil","is_active":false,"name":"Gilbertese"}
+{"code":"gl","is_active":false,"name":"Galician"}
+{"code":"gn","is_active":false,"name":"Guarani"}
+{"code":"gsw","is_active":false,"name":"Swiss German"}
+{"code":"gu","is_active":false,"name":"Gujarati"}
+{"code":"ha","is_active":false,"name":"Hausa"}
+{"code":"hak","is_active":false,"name":"Hakka Chinese"}
+{"code":"haz","is_active":false,"name":"Hazaragi"}
+{"code":"he","is_active":false,"name":"Hebrew"}
+{"code":"hi","is_active":true,"name":"Hindi"}
+{"code":"hif","is_active":false,"name":"Fiji Hindi"}
+{"code":"hr","is_active":false,"name":"Croatian"}
+{"code":"ht","is_active":false,"name":"Haitian Creole"}
+{"code":"hu","is_active":false,"name":"Hungarian"}
+{"code":"hy","is_active":false,"name":"Armenian"}
+{"code":"id","is_active":true,"name":"Indonesian"}
+{"code":"ig","is_active":false,"name":"Igbo"}
+{"code":"is","is_active":false,"name":"Icelandic"}
+{"code":"it","is_active":false,"name":"Italian"}
+{"code":"ja","is_active":false,"name":"Japanese"}
+{"code":"jam","is_active":false,"name":"Jamaican Creole English"}
+{"code":"jv","is_active":false,"name":"Javanese"}
+{"code":"ka","is_active":false,"name":"Georgian"}
+{"code":"kea","is_active":false,"name":"Kabuverdianu"}
+{"code":"ki","is_active":false,"name":"Kikuyu"}
+{"code":"kj","is_active":false,"name":"Kuanyama"}
+{"code":"kjg","is_active":false,"name":"Khmu"}
+{"code":"kk","is_active":false,"name":"Kazakh"}
+{"code":"km","is_active":false,"name":"Khmer"}
+{"code":"kmb","is_active":false,"name":"Kimbundu"}
+{"code":"kn","is_active":true,"name":"Kannada"}
+{"code":"ko","is_active":false,"name":"Korean"}
+{"code":"kos","is_active":false,"name":"Kosraean"}
+{"code":"kpe","is_active":false,"name":"Kpelle"}
+{"code":"kri","is_active":false,"name":"Krio"}
+{"code":"ku","is_active":false,"name":"Kurdish"}
+{"code":"ky","is_active":false,"name":"Kyrgyz"}
+{"code":"la","is_active":false,"name":"Latin"}
+{"code":"lah","is_active":false,"name":"Western Panjabi"}
+{"code":"lb","is_active":false,"name":"Luxembourgish"}
+{"code":"lg","is_active":false,"name":"Ganda"}
+{"code":"lmo","is_active":false,"name":"Lombard"}
+{"code":"lo","is_active":false,"name":"Lao"}
+{"code":"lt","is_active":false,"name":"Lithuanian"}
+{"code":"ltg","is_active":false,"name":"Latgalian"}
+{"code":"lua","is_active":false,"name":"Luba-Lulua"}
+{"code":"luy","is_active":false,"name":"Luyia"}
+{"code":"lv","is_active":false,"name":"Latvian"}
+{"code":"mai","is_active":false,"name":"Maithili"}
+{"code":"man","is_active":false,"name":"Mandingo"}
+{"code":"men","is_active":false,"name":"Mende"}
+{"code":"mfe","is_active":false,"name":"Morisyen"}
+{"code":"mg","is_active":false,"name":"Malagasy"}
+{"code":"mh","is_active":false,"name":"Marshallese"}
+{"code":"mk","is_active":false,"name":"Macedonian"}
+{"code":"ml","is_active":false,"name":"Malayalam"}
+{"code":"mn","is_active":false,"name":"Mongolian"}
+{"code":"mos","is_active":false,"name":"Mossi"}
+{"code":"mr","is_active":false,"name":"Marathi"}
+{"code":"ms","is_active":false,"name":"Malay"}
+{"code":"mt","is_active":false,"name":"Maltese"}
+{"code":"mxc","is_active":false,"name":"Manyika"}
+{"code":"my","is_active":false,"name":"Burmese"}
+{"code":"mzn","is_active":false,"name":"Mazanderani"}
+{"code":"na","is_active":false,"name":"Nauru"}
+{"code":"nan","is_active":false,"name":"Min Nan Chinese"}
+{"code":"nb","is_active":false,"name":"Norwegian Bokmål"}
+{"code":"nd","is_active":false,"name":"North Ndebele"}
+{"code":"ndc","is_active":false,"name":"Ndau"}
+{"code":"ne","is_active":true,"name":"Nepali"}
+{"code":"ng","is_active":false,"name":"Ndonga"}
+{"code":"nl","is_active":false,"name":"Dutch"}
+{"code":"nn","is_active":false,"name":"Norwegian Nynorsk"}
+{"code":"no","is_active":false,"name":"Norwegian"}
+{"code":"nod","is_active":false,"name":"Northern Thai"}
+{"code":"nus","is_active":false,"name":"Nuer"}
+{"code":"ny","is_active":false,"name":"Nyanja"}
+{"code":"nyn","is_active":false,"name":"Nyankole"}
+{"code":"om","is_active":true,"name":"Oromo"}
+{"code":"or","is_active":false,"name":"Odia"}
+{"code":"pa","is_active":false,"name":"Punjabi"}
+{"code":"pau","is_active":false,"name":"Palauan"}
+{"code":"pcm","is_active":false,"name":"Nigerian Pidgin"}
+{"code":"pis","is_active":false,"name":"Pijin"}
+{"code":"pl","is_active":false,"name":"Polish"}
+{"code":"pon","is_active":false,"name":"Pohnpeian"}
+{"code":"ps","is_active":false,"name":"Pashto"}
+{"code":"pt","is_active":false,"name":"Portuguese"}
+{"code":"puu","is_active":false,"name":"Punu"}
+{"code":"qu","is_active":false,"name":"Quechua"}
+{"code":"quc","is_active":false,"name":"Kʼicheʼ"}
+{"code":"qug","is_active":false,"name":"Chimborazo Highland Quichua"}
+{"code":"raj","is_active":false,"name":"Rajasthani"}
+{"code":"rkt","is_active":false,"name":"Rangpuri"}
+{"code":"rn","is_active":false,"name":"Rundi"}
+{"code":"ro","is_active":false,"name":"Romanian"}
+{"code":"ru","is_active":false,"name":"Russian"}
+{"code":"rw","is_active":false,"name":"Kinyarwanda"}
+{"code":"sg","is_active":false,"name":"Sango"}
+{"code":"shn","is_active":false,"name":"Shan"}
+{"code":"si","is_active":false,"name":"Sinhala"}
+{"code":"sk","is_active":false,"name":"Slovak"}
+{"code":"sl","is_active":false,"name":"Slovenian"}
+{"code":"sm","is_active":false,"name":"Samoan"}
+{"code":"sn","is_active":false,"name":"Shona"}
+{"code":"so","is_active":false,"name":"Somali"}
+{"code":"sq","is_active":false,"name":"Albanian"}
+{"code":"sr","is_active":false,"name":"Serbian"}
+{"code":"srn","is_active":false,"name":"Sranan Tongo"}
+{"code":"ss","is_active":false,"name":"Swati"}
+{"code":"st","is_active":false,"name":"Southern Sotho"}
+{"code":"su","is_active":false,"name":"Sundanese"}
+{"code":"suk","is_active":false,"name":"Sukuma"}
+{"code":"sv","is_active":false,"name":"Swedish"}
+{"code":"sw","is_active":true,"name":"Swahili"}
+{"code":"syl","is_active":false,"name":"Sylheti"}
+{"code":"ta","is_active":false,"name":"Tamil"}
+{"code":"te","is_active":false,"name":"Telugu"}
+{"code":"tem","is_active":false,"name":"Timne"}
+{"code":"tet","is_active":false,"name":"Tetum"}
+{"code":"tg","is_active":false,"name":"Tajik"}
+{"code":"th","is_active":true,"name":"Thai"}
+{"code":"ti","is_active":true,"name":"Tigrinya"}
+{"code":"tig","is_active":false,"name":"Tigre"}
+{"code":"tk","is_active":false,"name":"Turkmen"}
+{"code":"tly","is_active":false,"name":"Talysh"}
+{"code":"tn","is_active":false,"name":"Tswana"}
+{"code":"to","is_active":false,"name":"Tongan"}
+{"code":"toi","is_active":false,"name":"Tonga (Zambia)"}
+{"code":"tpi","is_active":false,"name":"Tok Pisin"}
+{"code":"tr","is_active":false,"name":"Turkish"}
+{"code":"tsj","is_active":false,"name":"Tshangla"}
+{"code":"tts","is_active":false,"name":"Northeastern Thai"}
+{"code":"tum","is_active":false,"name":"Tumbuka"}
+{"code":"tvl","is_active":false,"name":"Tuvalu"}
+{"code":"uk","is_active":false,"name":"Ukrainian"}
+{"code":"umb","is_active":false,"name":"Umbundu"}
+{"code":"ur","is_active":false,"name":"Urdu"}
+{"code":"uz","is_active":false,"name":"Uzbek"}
+{"code":"vi","is_active":true,"name":"Vietnamese"}
+{"code":"vmw","is_active":false,"name":"Makhuwa"}
+{"code":"wni","is_active":false,"name":"Ndzwani Comorian"}
+{"code":"wo","is_active":false,"name":"Wolof"}
+{"code":"wuu","is_active":false,"name":"Wu Chinese"}
+{"code":"xh","is_active":false,"name":"Xhosa"}
+{"code":"xmf","is_active":false,"name":"Mingrelian"}
+{"code":"yo","is_active":false,"name":"Yoruba"}
+{"code":"yue","is_active":false,"name":"Cantonese"}
+{"code":"zdj","is_active":false,"name":"Ngazidja Comorian"}
+{"code":"zh","is_active":false,"name":"Chinese"}
+{"code":"zu","is_active":false,"name":"Zulu"}

@@ -1,5 +1,5 @@
-# Release: builds the two images, pushes them to the Azure Container Registry, then runs deploy/vm-deploy.sh on the
-# VM (through an Azure run-command), which calls ./deploy.sh: backup, migrations, restart, smoke test, automatic rollback.
+# Release: runs deploy/vm-deploy.sh on the VM (through an Azure run-command), which checks out this commit, builds the
+# images on the VM and calls ./deploy.sh: backup, migrations, restart, smoke test, automatic rollback.
 # Signs in to Azure with OIDC; a person must approve the "stage" environment first. See INFRASTRUCTURE.md.
 #
 # Started by hand only (Run workflow): there are deliberately no push or pull_request triggers, so nothing is
@@ -13,10 +13,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "up deploys this commit; rollback returns the VM to the previous images"
+        description: "up deploys this commit; rollback returns the VM to the previous images; seed-dry-run and seed load the data pack, create-admin makes the first admin (see deploy/vm-data.sh)"
         type: choice
-        options: [up, rollback]
+        options: [up, rollback, seed-dry-run, seed, create-admin]
         default: up
+      admin_country_code:
+        description: "create-admin only: 3-letter code of an existing country, e.g. ETH (not secret). The email, name and PIN come from the ADMIN_EMAIL, ADMIN_NAME and ADMIN_PIN secrets of the stage environment, so they are masked."
+        type: string
+        default: ETH
 
 permissions:
   contents: read
@@ -31,14 +35,13 @@ jobs:
     runs-on: ubuntu-latest
     environment: stage
     permissions:
-      id-token: write   # lets the job ask GitHub for the OIDC token that azure/login exchanges
+      id-token: write   # lets the job ask GitHub for the OIDC token that the sign-in step exchanges
       contents: read
     env:
       DEPLOY_ACTION: ${{ inputs.action || 'up' }}
       RELEASE_SHA: ${{ github.sha }}
       RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
       VM_NAME: ${{ vars.VM_NAME }}
-      ACR_LOGIN_SERVER: ${{ vars.ACR_LOGIN_SERVER }}
       KEY_VAULT_NAME: ${{ vars.KEY_VAULT_NAME }}
       POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
       POSTGRES_USER: ${{ vars.POSTGRES_USER }}
@@ -52,35 +55,59 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      # Not azure/login: this repository only allows GitHub-owned actions. This does the same OIDC exchange with
+      # the Azure CLI: GitHub issues the job's token (ACTIONS_ID_TOKEN_REQUEST_* exist because of id-token: write)
+      # and Azure checks it against the identity's federated credential for this environment.
       - name: Sign in to Azure (OIDC)
-        # v2.3.1. Dependabot (github-actions) proposes updates to the pinned SHA.
-        uses: azure/login@7184910d9eb2b1c5e48f7073824a90609bb9b6d6
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      # Built on the runner and pushed with the AcrPush role (az acr build would need a broader role).
-      - name: Build and push the images
-        if: env.DEPLOY_ACTION == 'up'
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
         run: |
-          az acr login --name "${ACR_LOGIN_SERVER%%.*}"
-          docker build -t "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA" backend
-          docker build -t "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA" frontend
-          docker push "$ACR_LOGIN_SERVER/rationsmart-api:$RELEASE_SHA"
-          docker push "$ACR_LOGIN_SERVER/rationsmart-pwa:$RELEASE_SHA"
+          set -euo pipefail
+          token="$(curl -sS --fail -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions --output none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          az account show --query '{subscription:name, tenant:tenantId}' --output yaml
 
       # The script is sent as text: the workflow's own copy of deploy/vm-deploy.sh runs, preceded by the (non-secret)
       # variables it needs. Secrets are never sent: the VM reads them from Key Vault with its own identity.
       - name: Release on the VM
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+          ADMIN_PIN: ${{ secrets.ADMIN_PIN }}
+          ADMIN_COUNTRY_CODE: ${{ inputs.admin_country_code }}
         run: |
           set -euo pipefail
+          # create-admin: these come from secrets of the stage environment (not inputs, which are shown in clear on the
+          # run page). They are masked before anything else runs, together with the lowercased email the script prints.
+          if [[ "$DEPLOY_ACTION" == "create-admin" ]]; then
+            for v in ADMIN_EMAIL ADMIN_NAME ADMIN_PIN; do
+              [[ -n "${!v}" ]] || { echo "::error::the $v secret of the stage environment is not set"; exit 1; }
+              echo "::add-mask::${!v}"
+            done
+            echo "::add-mask::${ADMIN_EMAIL,,}"
+          fi
           script="$(mktemp)"
-          for v in DEPLOY_ACTION RELEASE_SHA ACR_LOGIN_SERVER KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
+          for v in DEPLOY_ACTION RELEASE_SHA KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
                    SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
             printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
           done
-          cat deploy/vm-deploy.sh >> "$script"
+          # The data actions run vm-data.sh (checkout plus ./deploy.sh seed); up and rollback run vm-deploy.sh.
+          case "$DEPLOY_ACTION" in
+            seed-dry-run|seed) printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"; cat deploy/vm-data.sh >> "$script" ;;
+            create-admin)
+              printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"
+              for v in ADMIN_EMAIL ADMIN_NAME ADMIN_PIN ADMIN_COUNTRY_CODE; do
+                printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
+              done
+              cat deploy/vm-data.sh >> "$script" ;;
+            *) cat deploy/vm-deploy.sh >> "$script" ;;
+          esac
 
           # Sent base64-encoded and run with bash on the VM: the run-command's own shell is not guaranteed to be bash.
           payload="$(base64 -w0 "$script")"
@@ -90,9 +117,13 @@ jobs:
           # Removes the run command (it holds the script text) however this step ends.
           trap 'az vm run-command delete --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --yes --output none >/dev/null 2>&1 || true' EXIT
 
+          # Without --location the CLI reads the resource group to find its region, and the "app" identity may not read
+          # the group (its run-command role covers only the VM). The VM's own location is readable with that role.
+          location="$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query location --output tsv)"
+
           # The create call can fail for a script that ran and failed, so its status alone does not decide the result.
           if ! az vm run-command create \
-            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" \
+            --resource-group "$RESOURCE_GROUP" --vm-name "$VM_NAME" --name "$name" --location "$location" \
             --script "$outer" --async-execution false --timeout-in-seconds 3300 --output none; then
             echo "::warning::az vm run-command create returned an error (shown above); reading the command's own result"
           fi

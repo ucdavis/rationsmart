@@ -6,20 +6,21 @@ Azure password (OIDC sign-in). The release itself is still done by [`deploy.sh`]
 
 ```
   Run workflow ──> GitHub Actions ──(OIDC, no password)──> Azure
-                        │                                    ├─ Container Registry  <── images pushed by the workflow
                         │                                    ├─ VM  ── runs deploy.sh ──> PostgreSQL Flexible Server
                         └─ run-command on the VM ───────────┘   └─ reads its secrets from Key Vault
 ```
 
-What gets created in one resource group: a virtual network and firewall, **one Ubuntu 24.04 VM**, a **PostgreSQL Flexible Server**
-with the app database, a **Container Registry** (private), a **Key Vault**, and the permissions between them.
+What gets created in one resource group: a virtual network (a subnet for the VM, a subnet for the database) and firewall,
+**one Ubuntu 24.04 VM** with a 100 GB disk, a **PostgreSQL Flexible Server** with the app database reachable only from inside the
+virtual network (private access, as the UCD policy requires), a **Key Vault**, and the permissions between them. There is no
+container registry: the VM builds the images itself, from the commit being released.
 
 ## Before you start
 
 | You need | Notes |
 |---|---|
 | An **empty resource group** | for example `rg-rationsmart-stage` |
-| **Owner** on that group (or Contributor plus User Access Administrator) | needed once, to create the pipeline identities and their roles. The resource providers Compute, Network, DBforPostgreSQL, ContainerRegistry, KeyVault and ManagedIdentity must be registered on the subscription |
+| **Owner** on that group (or Contributor plus User Access Administrator) | needed once, to create the pipeline identities and their roles. The resource providers Compute, Network, DBforPostgreSQL, KeyVault and ManagedIdentity must be registered on the subscription (the **Bootstrap** workflow, mode `register-providers`, does it) |
 | **Admin** on the GitHub repository | to create environments, variables and secrets |
 | Azure CLI (`az`) and optionally the GitHub CLI (`gh`) | on your computer |
 | An email account that can send mail | the app's verification emails |
@@ -35,12 +36,12 @@ already has `infra/params/stage.bicepparam`). It holds no secrets. The main sett
 | Setting | Meaning | Default |
 |---|---|---|
 | `namePrefix`, `databaseName` | resource names and the database | `rationsmart-stage`, `rationsmart_stage` |
-| `vmSize`, `zone` | the VM | `Standard_D4as_v6`, zone 1 |
+| `vmSize`, `zone` | the VM | `Standard_D4as_v6`, zone 2 (zone 1 is restricted in this subscription) |
 | `postgresSkuName`, `postgresStorageGb`, `postgresVersion` | the database server | Burstable `Standard_B2s`, 64 GB, version 15 |
 | `sshAllowedCidr` | address range allowed to reach SSH (port 22) | empty: SSH closed, sign in with Entra ID |
 | `repoUrl` | what the VM clones on first boot (its default branch; each release then checks out its own commit). The Infrastructure workflow sets `REPO_URL` to the repository it runs in | this repository |
 
-Names that must be unique across Azure (the registry, vault and database server) get a suffix made from the resource group, so
+Names that must be unique across Azure (the vault and database server) get a suffix made from the resource group, so
 two environments never clash.
 
 ## Step 2: Create the pipeline identities (once, by an Owner)
@@ -50,7 +51,7 @@ repository and to one GitHub environment each, so a run from a fork or an unappr
 
 | Identity | GitHub environment | Can |
 |---|---|---|
-| `infra` | `stage-infra` | change resources in the group, and hand out only four roles (registry pull and push, Key Vault secret read, run-command on a VM) |
+| `infra` | `stage-infra` | change resources in the group, and hand out only the roles the templates assign (Key Vault secret read, run-command on a VM) |
 | `app` | `stage` | push images, and run commands on the one VM (nothing else) |
 
 ## Step 3: Set up GitHub
@@ -105,7 +106,7 @@ az deployment group what-if -g <resource-group> --template-file infra/main.bicep
 az deployment group create  -g <resource-group> --template-file infra/main.bicep --parameters infra/params/stage.bicepparam --mode Incremental
 ```
 
-Read the what-if first: it should list the VM, database server, registry, vault, network and roles, all as **Create**.
+Read the what-if first: it should list the VM, database server, private DNS zone, vault, network and roles, all as **Create**.
 The deployment takes about 10 to 15 minutes. Afterwards, the **Infrastructure** workflow takes over: a change under `infra/`
 shows a what-if in the run summary and, after approval, applies it (incremental only, so it never deletes anything the template
 does not mention).
@@ -120,7 +121,7 @@ The outputs give the names you need next (`az deployment group show -g <group> -
 |---|---|
 | `AZURE_CLIENT_ID` | the `app` client ID from step 2 |
 | `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `RESOURCE_GROUP` | as above |
-| `VM_NAME`, `ACR_LOGIN_SERVER`, `KEY_VAULT_NAME`, `POSTGRES_HOST` | the outputs `vmName`, `registryLoginServer`, `keyVaultName`, `postgresHost` |
+| `VM_NAME`, `KEY_VAULT_NAME`, `POSTGRES_HOST` | the outputs `vmName`, `keyVaultName`, `postgresHost` |
 | `POSTGRES_USER`, `POSTGRES_DB` | `postgres` and the database name from the parameter file |
 | `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `FROM_EMAIL` | your mail settings (for Gmail `smtp.gmail.com` and `587`) |
 | `API_BASE_URL`, `ALLOWED_ORIGINS` | optional: `http://<address>`. Left empty, the VM uses its own public address |
@@ -129,10 +130,10 @@ The outputs give the names you need next (`az deployment group show -g <group> -
 
 Actions, **Deploy**, Run workflow, and approve it. The workflow:
 
-1. builds the two images on the runner and pushes them to your registry, tagged with the commit;
-2. tells the VM to release that commit: it waits for first-boot setup to finish, signs in with its own identity, writes
-   `backend/.env` from Key Vault and the variables above (mode 600), and runs `./deploy.sh`;
-3. fails the run if `deploy.sh` fails. `deploy.sh` backs up the database first and rolls back by itself if the release fails.
+1. tells the VM to release that commit: it waits for first-boot setup to finish, checks out the commit, signs in with its own
+   identity, writes `backend/.env` from Key Vault and the variables above (mode 600), and runs `./deploy.sh`, which builds the
+   two images on the VM (the first build takes several minutes);
+2. fails the run if `deploy.sh` fails. `deploy.sh` backs up the database first and rolls back by itself if the release fails.
 
 A good run ends with:
 
@@ -179,10 +180,11 @@ Remove `sshAllowedCidr` and apply again afterwards. (Signing in with Entra ID ne
 | `AuthorizationFailed` on a role assignment | the `infra` identity may only hand out four roles | add the role to the condition in `infra/bootstrap/oidc.bicep`, or have an Owner create it |
 | `SkuNotAvailable` or a quota error | the VM size is missing in that region or zone | change `vmSize` or `zone`, or request quota |
 | the Deploy run says first-boot setup has not finished | the VM is still installing Docker | wait a few minutes and run it again; see `/var/log/cloud-init-output.log` |
-| image pull "unauthorized" on the VM | the registry pull role is not in place yet | wait a few minutes, run Deploy again |
 | the VM cannot clone the repository | the repository is private | give the VM a read-only deploy key (see below) |
 | `VaultAlreadyExists` or "a vault with the same name is in a deleted state" | the resource group was recreated: the vault name is the same and the old vault is only soft-deleted | `az keyvault recover --name <vault>` to get it back, or `az keyvault purge --name <vault>` to free the name (not possible if purge protection was on: wait out the retention) |
-| database connection times out | the firewall rule holds a different address | the address is static; apply the infrastructure again |
+| database connection times out or the name does not resolve | the database is private: only the VM, inside the virtual network, can reach it (not your computer or the runner) | connect from the VM (`az ssh vm ...`); check the private DNS zone link on the virtual network |
+| `MissingSubscriptionRegistration` | a resource provider is not registered on the subscription | run **Bootstrap** with mode `register-providers` |
+| `RequestDisallowedByPolicy` | an Azure Policy of your organisation denies a setting (for example public network access) | run **Bootstrap** with mode `preflight`, and ask the policy administrator |
 
 For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applies.
 
@@ -190,6 +192,8 @@ For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applie
 
 - **Private repository:** the VM clones over plain HTTPS. For a private repository, create a read-only deploy key, store it in
   Key Vault, and change `infra/cloud-init.yaml` and `deploy/vm-deploy.sh` to use it. Not built yet.
-- **Registry visibility:** the registry is private and has no admin login.
+- **Images are built on the VM:** `deploy.sh` runs with `FORCE_BUILD=1`, so every release rebuilds from the commit and needs
+  free disk (the VM has 100 GB). There is no registry and no image kept outside the VM.
+- **Database access:** PostgreSQL has no public address; the Key Vault does (reads need the Azure role).
 - **The first release has no rollback point** (nothing was running before it); later ones do.
 - The app is served over plain `http`; https and a domain name are not part of this setup.

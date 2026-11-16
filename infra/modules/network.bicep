@@ -1,4 +1,4 @@
-// Network for the VM: virtual network and subnet, a static public IP, the network security group and the
+// Network for the VM: virtual network with a VM subnet and a PostgreSQL subnet, a static public IP, the network security group and the
 // network interface the group is attached to (as in the dev environment: the NSG sits on the NIC, the subnet has none).
 
 param location string
@@ -68,6 +68,19 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
         name: 'snet-vm'
         properties: { addressPrefix: '172.16.0.0/24' }
       }
+      // Only the private PostgreSQL server lives here (VNet integration needs a subnet delegated to the service).
+      {
+        name: 'snet-postgres'
+        properties: {
+          addressPrefix: '172.16.1.0/24'
+          delegations: [
+            {
+              name: 'postgres'
+              properties: { serviceName: 'Microsoft.DBforPostgreSQL/flexibleServers' }
+            }
+          ]
+        }
+      }
     ]
   }
 }
@@ -91,4 +104,6 @@ resource nic 'Microsoft.Network/networkInterfaces@2024-05-01' = {
 }
 
 output nicId string = nic.id
+output vnetId string = vnet.id
+output postgresSubnetId string = vnet.properties.subnets[1].id
 output publicIpAddress string = publicIp.properties.ipAddress

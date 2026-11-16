@@ -1,0 +1,194 @@
+{"country_code":"AFG","currency":"AFN","is_active":false,"name":"Afghanistan"}
+{"country_code":"AGO","currency":"AOA","is_active":false,"name":"Angola"}
+{"country_code":"ALB","currency":"USD","is_active":false,"name":"Albania"}
+{"country_code":"AND","currency":"USD","is_active":false,"name":"Andorra"}
+{"country_code":"ARE","currency":"AED","is_active":false,"name":"United Arab Emirates"}
+{"country_code":"ARG","currency":"ARS","is_active":false,"name":"Argentina"}
+{"country_code":"ARM","currency":"USD","is_active":false,"name":"Armenia"}
+{"country_code":"AUS","currency":"AUD","is_active":false,"name":"Australia"}
+{"country_code":"AUT","currency":"EUR","is_active":false,"name":"Austria"}
+{"country_code":"AZE","currency":"USD","is_active":false,"name":"Azerbaijan"}
+{"country_code":"BDI","currency":"USD","is_active":false,"name":"Burundi"}
+{"country_code":"BEL","currency":"EUR","is_active":false,"name":"Belgium"}
+{"country_code":"BEN","currency":"USD","is_active":false,"name":"Benin"}
+{"country_code":"BFA","currency":"USD","is_active":false,"name":"Burkina Faso"}
+{"country_code":"BGD","currency":"BDT","is_active":false,"name":"Bangladesh"}
+{"country_code":"BGR","currency":"USD","is_active":false,"name":"Bulgaria"}
+{"country_code":"BHR","currency":"USD","is_active":false,"name":"Bahrain"}
+{"country_code":"BHS","currency":"USD","is_active":false,"name":"Bahamas"}
+{"country_code":"BIH","currency":"USD","is_active":false,"name":"Bosnia and Herzegovina"}
+{"country_code":"BLR","currency":"USD","is_active":false,"name":"Belarus"}
+{"country_code":"BLZ","currency":"USD","is_active":false,"name":"Belize"}
+{"country_code":"BOL","currency":"USD","is_active":false,"name":"Bolivia"}
+{"country_code":"BRA","currency":"BRL","is_active":false,"name":"Brazil"}
+{"country_code":"BRB","currency":"USD","is_active":false,"name":"Barbados"}
+{"country_code":"BRN","currency":"USD","is_active":false,"name":"Brunei"}
+{"country_code":"BTN","currency":"USD","is_active":false,"name":"Bhutan"}
+{"country_code":"BWA","currency":"BWP","is_active":false,"name":"Botswana"}
+{"country_code":"CAF","currency":"USD","is_active":false,"name":"Central African Republic"}
+{"country_code":"CAN","currency":"CAD","is_active":false,"name":"Canada"}
+{"country_code":"CHE","currency":"CHF","is_active":false,"name":"Switzerland"}
+{"country_code":"CHL","currency":"USD","is_active":false,"name":"Chile"}
+{"country_code":"CHN","currency":"CNY","is_active":false,"name":"China"}
+{"country_code":"CIV","currency":"USD","is_active":false,"name":"Ivory Coast"}
+{"country_code":"CMR","currency":"USD","is_active":false,"name":"Cameroon"}
+{"country_code":"COD","currency":"USD","is_active":false,"name":"Democratic Republic of the Congo"}
+{"country_code":"COG","currency":"USD","is_active":false,"name":"Congo"}
+{"country_code":"COL","currency":"USD","is_active":false,"name":"Colombia"}
+{"country_code":"COM","currency":"USD","is_active":false,"name":"Comoros"}
+{"country_code":"CPV","currency":"USD","is_active":false,"name":"Cape Verde"}
+{"country_code":"CRI","currency":"USD","is_active":false,"name":"Costa Rica"}
+{"country_code":"CUB","currency":"USD","is_active":false,"name":"Cuba"}
+{"country_code":"CYP","currency":"EUR","is_active":false,"name":"Cyprus"}
+{"country_code":"CZE","currency":"CZK","is_active":false,"name":"Czech Republic"}
+{"country_code":"DEU","currency":"EUR","is_active":false,"name":"Germany"}
+{"country_code":"DJI","currency":"USD","is_active":false,"name":"Djibouti"}
+{"country_code":"DMA","currency":"USD","is_active":false,"name":"Dominica"}
+{"country_code":"DNK","currency":"DKK","is_active":false,"name":"Denmark"}
+{"country_code":"DOM","currency":"USD","is_active":false,"name":"Dominican Republic"}
+{"country_code":"DZA","currency":"DZD","is_active":false,"name":"Algeria"}
+{"country_code":"ECU","currency":"USD","is_active":false,"name":"Ecuador"}
+{"country_code":"EGY","currency":"EGP","is_active":false,"name":"Egypt"}
+{"country_code":"ERI","currency":"USD","is_active":false,"name":"Eritrea"}
+{"country_code":"ESP","currency":"EUR","is_active":false,"name":"Spain"}
+{"country_code":"EST","currency":"EUR","is_active":false,"name":"Estonia"}
+{"country_code":"ETH","currency":"ETB","is_active":true,"name":"Ethiopia"}
+{"country_code":"FIN","currency":"EUR","is_active":false,"name":"Finland"}
+{"country_code":"FJI","currency":"USD","is_active":false,"name":"Fiji"}
+{"country_code":"FRA","currency":"EUR","is_active":false,"name":"France"}
+{"country_code":"FSM","currency":"USD","is_active":false,"name":"Micronesia"}
+{"country_code":"GAB","currency":"USD","is_active":false,"name":"Gabon"}
+{"country_code":"GBR","currency":"GBP","is_active":false,"name":"United Kingdom"}
+{"country_code":"GEO","currency":"USD","is_active":false,"name":"Georgia"}
+{"country_code":"GHA","currency":"GHS","is_active":false,"name":"Ghana"}
+{"country_code":"GIN","currency":"USD","is_active":false,"name":"Guinea"}
+{"country_code":"GMB","currency":"USD","is_active":false,"name":"Gambia"}
+{"country_code":"GNB","currency":"USD","is_active":false,"name":"Guinea-Bissau"}
+{"country_code":"GNQ","currency":"USD","is_active":false,"name":"Equatorial Guinea"}
+{"country_code":"GRC","currency":"EUR","is_active":false,"name":"Greece"}
+{"country_code":"GRD","currency":"USD","is_active":false,"name":"Grenada"}
+{"country_code":"GTM","currency":"USD","is_active":false,"name":"Guatemala"}
+{"country_code":"GUY","currency":"USD","is_active":false,"name":"Guyana"}
+{"country_code":"HND","currency":"USD","is_active":false,"name":"Honduras"}
+{"country_code":"HRV","currency":"USD","is_active":false,"name":"Croatia"}
+{"country_code":"HTI","currency":"USD","is_active":false,"name":"Haiti"}
+{"country_code":"HUN","currency":"HUF","is_active":false,"name":"Hungary"}
+{"country_code":"IDN","currency":"IDR","is_active":true,"name":"Indonesia"}
+{"country_code":"IND","currency":"INR","is_active":false,"name":"India"}
+{"country_code":"IRL","currency":"EUR","is_active":false,"name":"Ireland"}
+{"country_code":"IRN","currency":"IRR","is_active":false,"name":"Iran"}
+{"country_code":"IRQ","currency":"IQD","is_active":false,"name":"Iraq"}
+{"country_code":"ISL","currency":"USD","is_active":false,"name":"Iceland"}
+{"country_code":"ISR","currency":"ILS","is_active":false,"name":"Israel"}
+{"country_code":"ITA","currency":"EUR","is_active":false,"name":"Italy"}
+{"country_code":"JAM","currency":"USD","is_active":false,"name":"Jamaica"}
+{"country_code":"JOR","currency":"JOD","is_active":false,"name":"Jordan"}
+{"country_code":"JPN","currency":"JPY","is_active":false,"name":"Japan"}
+{"country_code":"KAZ","currency":"USD","is_active":false,"name":"Kazakhstan"}
+{"country_code":"KEN","currency":"KES","is_active":false,"name":"Kenya"}
+{"country_code":"KGZ","currency":"USD","is_active":false,"name":"Kyrgyzstan"}
+{"country_code":"KHM","currency":"USD","is_active":false,"name":"Cambodia"}
+{"country_code":"KIR","currency":"USD","is_active":false,"name":"Kiribati"}
+{"country_code":"KNA","currency":"USD","is_active":false,"name":"Saint Kitts and Nevis"}
+{"country_code":"KOR","currency":"KRW","is_active":false,"name":"South Korea"}
+{"country_code":"KWT","currency":"USD","is_active":false,"name":"Kuwait"}
+{"country_code":"LAO","currency":"USD","is_active":false,"name":"Laos"}
+{"country_code":"LBN","currency":"LBP","is_active":false,"name":"Lebanon"}
+{"country_code":"LBR","currency":"USD","is_active":false,"name":"Liberia"}
+{"country_code":"LBY","currency":"USD","is_active":false,"name":"Libya"}
+{"country_code":"LCA","currency":"USD","is_active":false,"name":"Saint Lucia"}
+{"country_code":"LIE","currency":"USD","is_active":false,"name":"Liechtenstein"}
+{"country_code":"LKA","currency":"USD","is_active":false,"name":"Sri Lanka"}
+{"country_code":"LSO","currency":"LSL","is_active":false,"name":"Lesotho"}
+{"country_code":"LTU","currency":"EUR","is_active":false,"name":"Lithuania"}
+{"country_code":"LUX","currency":"EUR","is_active":false,"name":"Luxembourg"}
+{"country_code":"LVA","currency":"EUR","is_active":false,"name":"Latvia"}
+{"country_code":"MAR","currency":"USD","is_active":false,"name":"Morocco"}
+{"country_code":"MCO","currency":"USD","is_active":false,"name":"Monaco"}
+{"country_code":"MDA","currency":"USD","is_active":false,"name":"Moldova"}
+{"country_code":"MDG","currency":"USD","is_active":false,"name":"Madagascar"}
+{"country_code":"MDV","currency":"USD","is_active":false,"name":"Maldives"}
+{"country_code":"MEX","currency":"MXN","is_active":false,"name":"Mexico"}
+{"country_code":"MHL","currency":"USD","is_active":false,"name":"Marshall Islands"}
+{"country_code":"MKD","currency":"USD","is_active":false,"name":"North Macedonia"}
+{"country_code":"MLI","currency":"USD","is_active":false,"name":"Mali"}
+{"country_code":"MLT","currency":"EUR","is_active":false,"name":"Malta"}
+{"country_code":"MMR","currency":"USD","is_active":false,"name":"Myanmar"}
+{"country_code":"MNE","currency":"USD","is_active":false,"name":"Montenegro"}
+{"country_code":"MNG","currency":"USD","is_active":false,"name":"Mongolia"}
+{"country_code":"MOZ","currency":"MZN","is_active":false,"name":"Mozambique"}
+{"country_code":"MRT","currency":"USD","is_active":false,"name":"Mauritania"}
+{"country_code":"MUS","currency":"USD","is_active":false,"name":"Mauritius"}
+{"country_code":"MWI","currency":"MWK","is_active":false,"name":"Malawi"}
+{"country_code":"MYS","currency":"MYR","is_active":false,"name":"Malaysia"}
+{"country_code":"NAM","currency":"NAD","is_active":false,"name":"Namibia"}
+{"country_code":"NER","currency":"USD","is_active":false,"name":"Niger"}
+{"country_code":"NGA","currency":"NGN","is_active":false,"name":"Nigeria"}
+{"country_code":"NIC","currency":"USD","is_active":false,"name":"Nicaragua"}
+{"country_code":"NLD","currency":"EUR","is_active":false,"name":"Netherlands"}
+{"country_code":"NOR","currency":"NOK","is_active":false,"name":"Norway"}
+{"country_code":"NPL","currency":"NPR","is_active":false,"name":"Nepal"}
+{"country_code":"NRU","currency":"USD","is_active":false,"name":"Nauru"}
+{"country_code":"NZL","currency":"USD","is_active":false,"name":"New Zealand"}
+{"country_code":"OMN","currency":"USD","is_active":false,"name":"Oman"}
+{"country_code":"PAK","currency":"PKR","is_active":false,"name":"Pakistan"}
+{"country_code":"PAN","currency":"USD","is_active":false,"name":"Panama"}
+{"country_code":"PER","currency":"USD","is_active":false,"name":"Peru"}
+{"country_code":"PHL","currency":"PHP","is_active":true,"name":"Philippines"}
+{"country_code":"PLW","currency":"USD","is_active":false,"name":"Palau"}
+{"country_code":"PNG","currency":"USD","is_active":false,"name":"Papua New Guinea"}
+{"country_code":"POL","currency":"PLN","is_active":false,"name":"Poland"}
+{"country_code":"PRK","currency":"USD","is_active":false,"name":"North Korea"}
+{"country_code":"PRT","currency":"EUR","is_active":false,"name":"Portugal"}
+{"country_code":"PRY","currency":"USD","is_active":false,"name":"Paraguay"}
+{"country_code":"QAT","currency":"USD","is_active":false,"name":"Qatar"}
+{"country_code":"ROU","currency":"USD","is_active":false,"name":"Romania"}
+{"country_code":"RUS","currency":"RUB","is_active":false,"name":"Russia"}
+{"country_code":"RWA","currency":"RWF","is_active":false,"name":"Rwanda"}
+{"country_code":"SAU","currency":"SAR","is_active":false,"name":"Saudi Arabia"}
+{"country_code":"SDN","currency":"USD","is_active":false,"name":"Sudan"}
+{"country_code":"SEN","currency":"USD","is_active":false,"name":"Senegal"}
+{"country_code":"SGP","currency":"SGD","is_active":false,"name":"Singapore"}
+{"country_code":"SLB","currency":"USD","is_active":false,"name":"Solomon Islands"}
+{"country_code":"SLE","currency":"USD","is_active":false,"name":"Sierra Leone"}
+{"country_code":"SLV","currency":"USD","is_active":false,"name":"El Salvador"}
+{"country_code":"SMR","currency":"USD","is_active":false,"name":"San Marino"}
+{"country_code":"SOM","currency":"USD","is_active":false,"name":"Somalia"}
+{"country_code":"SRB","currency":"USD","is_active":false,"name":"Serbia"}
+{"country_code":"SSD","currency":"USD","is_active":false,"name":"South Sudan"}
+{"country_code":"STP","currency":"USD","is_active":false,"name":"Sao Tome and Principe"}
+{"country_code":"SUR","currency":"USD","is_active":false,"name":"Suriname"}
+{"country_code":"SVK","currency":"EUR","is_active":false,"name":"Slovakia"}
+{"country_code":"SVN","currency":"EUR","is_active":false,"name":"Slovenia"}
+{"country_code":"SWE","currency":"SEK","is_active":false,"name":"Sweden"}
+{"country_code":"SWZ","currency":"SZL","is_active":false,"name":"Eswatini"}
+{"country_code":"SYC","currency":"USD","is_active":false,"name":"Seychelles"}
+{"country_code":"SYR","currency":"SYP","is_active":false,"name":"Syria"}
+{"country_code":"TCD","currency":"USD","is_active":false,"name":"Chad"}
+{"country_code":"TGO","currency":"USD","is_active":false,"name":"Togo"}
+{"country_code":"THA","currency":"THB","is_active":true,"name":"Thailand"}
+{"country_code":"TJK","currency":"USD","is_active":false,"name":"Tajikistan"}
+{"country_code":"TKM","currency":"USD","is_active":false,"name":"Turkmenistan"}
+{"country_code":"TLS","currency":"USD","is_active":false,"name":"Timor-Leste"}
+{"country_code":"TON","currency":"USD","is_active":false,"name":"Tonga"}
+{"country_code":"TTO","currency":"USD","is_active":false,"name":"Trinidad and Tobago"}
+{"country_code":"TUN","currency":"USD","is_active":false,"name":"Tunisia"}
+{"country_code":"TUR","currency":"TRY","is_active":false,"name":"Turkey"}
+{"country_code":"TUV","currency":"USD","is_active":false,"name":"Tuvalu"}
+{"country_code":"TWN","currency":"USD","is_active":false,"name":"Taiwan"}
+{"country_code":"TZA","currency":"TZS","is_active":false,"name":"Tanzania"}
+{"country_code":"UGA","currency":"UGX","is_active":false,"name":"Uganda"}
+{"country_code":"UKR","currency":"USD","is_active":false,"name":"Ukraine"}
+{"country_code":"URY","currency":"USD","is_active":false,"name":"Uruguay"}
+{"country_code":"USA","currency":"USD","is_active":false,"name":"United States"}
+{"country_code":"UZB","currency":"USD","is_active":false,"name":"Uzbekistan"}
+{"country_code":"VAT","currency":"USD","is_active":false,"name":"Vatican City"}
+{"country_code":"VCT","currency":"USD","is_active":false,"name":"Saint Vincent and the Grenadines"}
+{"country_code":"VEN","currency":"USD","is_active":false,"name":"Venezuela"}
+{"country_code":"VNM","currency":"VND","is_active":true,"name":"Vietnam"}
+{"country_code":"VUT","currency":"USD","is_active":false,"name":"Vanuatu"}
+{"country_code":"WSM","currency":"USD","is_active":false,"name":"Samoa"}
+{"country_code":"YEM","currency":"YER","is_active":false,"name":"Yemen"}
+{"country_code":"ZAF","currency":"ZAR","is_active":false,"name":"South Africa"}
+{"country_code":"ZMB","currency":"ZMW","is_active":false,"name":"Zambia"}
+{"country_code":"ZWE","currency":"USD","is_active":false,"name":"Zimbabwe"}

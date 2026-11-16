@@ -28,6 +28,8 @@ resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' = {
       }
       osDisk: {
         createOption: 'FromImage'
+        // The default image disk is 30 GB; the images are built on this VM, so layers and build cache need room.
+        diskSizeGB: 100
         managedDisk: { storageAccountType: 'Premium_LRS' }
       }
     }
