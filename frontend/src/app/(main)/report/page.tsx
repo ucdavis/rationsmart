@@ -339,13 +339,11 @@ export default function ReportPage() {
 
         {/* Y3 §2.1 — Milk Cost Margin card. Shows only when the user
             entered a milk price on the Animal Inputs screen. Compares
-            the diet's cost-per-litre against that price and surfaces a
-            positive (green) or negative (red) margin per litre.
-            Computed client-side from existing response fields until
-            Maria ships a backend MilkCostMargin block on the response */}
+            the diet's feed cost per litre against that price (N12: milk
+            revenue over / under feed costs). Evaluation takes the
+            backend's margin_summary (N13); Recommendation computes it. */}
         <MilkCostMarginCard
           reportCtx={reportCtx}
-          reportData={reportData}
           cattleInfo={cattleInfo}
           isEval={isEval}
           evalReport={evalReport}

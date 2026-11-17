@@ -9,24 +9,29 @@
 //
 // Layout (top to bottom):
 //   • Drag handle (mint pill)
-//   • "Your Rating" title (dark_aquamarine_green, 20sp bold)
+//   • "Your Rating" title (dark_aquamarine_green, 20sp bold) — "Rating" when
+//     an admin opens someone's feedback (N14: `author` set)
 //   • 5-star row (mustard for filled, silver_sand for empty)
+//   • Admin only: "From <name> · <email>" under the stars
 //   • Two info tiles side by side (honeydew bg):
 //     Date tile  — calendar icon + "Date" label above the value
 //     Category tile — category icon + "Category" label above the value
-//   • "Your Feedback" title + honeydew card containing the full text
+//   • "Your Feedback" (admin: "Feedback") title + honeydew card containing
+//     the full text
 
 import { toFeedReportDisplayDate } from "@/lib/validators";
 import { COLUMN_LEFT, COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
 import { COLORS } from "@/lib/colors";
-import { useT } from "@/lib/i18n-ui";
+import { fillText, useT } from "@/lib/i18n-ui";
 
 export interface FeedbackDetails {
   rating: number;
   category: string;
   createdAt: string;
   text: string;
+  /** N14: who wrote it — set by the admin list, absent on the user's own. */
+  author?: { name: string | null; email: string | null };
 }
 
 export default function FeedbackDetailsSheet({
@@ -42,6 +47,10 @@ export default function FeedbackDetailsSheet({
   if (!details) return null;
 
   const rating = Math.max(0, Math.min(5, details.rating || 0));
+  const author = details.author;
+  const authorLine = author
+    ? [author.name, author.email].filter(Boolean).join(" · ") || t("N/A")
+    : null;
 
   return (
     <div
@@ -69,12 +78,12 @@ export default function FeedbackDetailsSheet({
           />
         </div>
 
-        {/* Your Rating heading */}
+        {/* Your Rating heading ("Rating" for someone else's feedback) */}
         <p
           className="text-center font-bold"
           style={{ color: COLORS.darkAquamarineGreen, fontSize: 20 }}
         >
-          {t("Your Rating")}
+          {author ? t("Rating") : t("Your Rating")}
         </p>
 
         {/* 5-star row */}
@@ -92,6 +101,16 @@ export default function FeedbackDetailsSheet({
             </svg>
           ))}
         </div>
+
+        {authorLine && (
+          <p
+            className="text-center mt-2 truncate"
+            style={{ color: COLORS.darkSilver, fontSize: 13 }}
+            title={authorLine}
+          >
+            {fillText(t("From ${name}"), { name: authorLine })}
+          </p>
+        )}
 
         {/* Date + Category info tiles */}
         <div className="flex gap-3 mt-6 px-1">
@@ -173,7 +192,7 @@ export default function FeedbackDetailsSheet({
             marginLeft: 4,
           }}
         >
-          {t("Your Feedback")}
+          {author ? t("Feedback") : t("Your Feedback")}
         </p>
         <div
           className="mt-2 rounded-2xl px-4 py-4"

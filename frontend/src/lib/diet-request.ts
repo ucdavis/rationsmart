@@ -38,10 +38,11 @@ export function checkedLimits(
   ) as Partial<DietLimits>;
 }
 
-// Backend keys Simulation History by `simulation_id`. "New Case" keeps the
-// Simulation Name, so re-running the same case under the other diet mode
-// would reuse the id and collapse two history rows into one; the mode suffix
-// keeps them distinct. buildDietSimulationId strips any suffix already on the
+// Backend keys Simulation History by `simulation_id`. New Case clears the
+// Simulation Name (N1), but the Forward arrow / Back to Feed Selection can
+// still re-run the same case under the other diet mode with the same name,
+// which would reuse the id and collapse two history rows into one; the mode
+// suffix keeps them distinct. buildDietSimulationId strips any suffix already on the
 // name (a restored simulation carries the backend's suffixed id) so it never
 // compounds ("Sim 1 (Recommendation) (Recommendation)").
 

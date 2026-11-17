@@ -241,28 +241,24 @@ export default function AdminFeedbackPage() {
             // (identity/comparison use) — only the rendered badge text
             // below is passed through t() for display.
             const cs = categoryStyle(category);
+            // N14: the pop-up names the author (it's not the admin's own).
+            const details = {
+              rating: fb.overall_rating ?? 0,
+              category,
+              createdAt: fb.created_at,
+              text: fb.text_feedback ?? "",
+              author: { name: fb.user_name ?? null, email: fb.user_email ?? null },
+            };
             return (
               <div
                 key={fb.id}
                 role="button"
                 tabIndex={0}
-                onClick={() =>
-                  setOpenDetails({
-                    rating: fb.overall_rating ?? 0,
-                    category,
-                    createdAt: fb.created_at,
-                    text: fb.text_feedback ?? "",
-                  })
-                }
+                onClick={() => setOpenDetails(details)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" || e.key === " ") {
                     e.preventDefault();
-                    setOpenDetails({
-                      rating: fb.overall_rating ?? 0,
-                      category,
-                      createdAt: fb.created_at,
-                      text: fb.text_feedback ?? "",
-                    });
+                    setOpenDetails(details);
                   }
                 }}
                 className="mx-3 my-2 bg-white"

@@ -293,10 +293,25 @@ export interface RecommendationRequest {
 
 // ─── Evaluation Response Types (matches Android FeedEvaluationResponse) ───────
 
+// N13: milk price vs the diet's feed cost per litre, costed on the milk the
+// diet SUPPORTS. null when no milk price was given, 0 L is supported, or the
+// animal isn't lactating. `comparison` is the backend's stable verdict key.
+export interface MarginSummary {
+  milk_price: number;
+  cost_per_liter: number;
+  margin_per_liter: number;
+  /** Income over feed cost per day: milk price × supported litres − daily cost. */
+  daily_iofc: number;
+  is_positive: boolean;
+  comparison: "profitable" | "loss" | "break_even";
+  message: string;
+}
+
 export interface CostAnalysis {
   currency: string | null;
   feed_cost_per_kg_milk: number | null;
   total_diet_cost_as_fed: number | null;
+  margin_summary?: MarginSummary | null;
   recommendations: string[];
   warnings: string[];
 }
@@ -389,15 +404,6 @@ export interface ReportContextFlags {
   showMethaneIntensity?: boolean;
 }
 
-export interface MilkCostMargin {
-  milk_price_per_litre?: number | null;
-  cost_per_litre?: number | null;
-  margin_per_litre?: number | null;
-  total_diet_cost_as_fed?: number | null;
-  daily_milk_production_l?: number | null;
-  currency?: string | null;
-}
-
 export interface CalfMilkFeedingPlan {
   daily_milk_volume_l?: number;
   feedings_per_day?: number;
@@ -423,7 +429,6 @@ export interface ReportExtras {
   report_id?: string | null;
   generated_at?: string | null;
   report_context?: ReportContextFlags;
-  milk_cost_margin?: MilkCostMargin;
   calf_milk_feeding_plan?: CalfMilkFeedingPlan;
   forage_concentrate_ratio?: ForageConcentrateRatio;
 }

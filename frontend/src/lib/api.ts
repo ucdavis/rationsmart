@@ -31,7 +31,7 @@ export type {
   ForageConcentrateRatio,
   IntakeEvaluation,
   MethaneAnalysis,
-  MilkCostMargin,
+  MarginSummary,
   MilkProductionAnalysis,
   NutrientBalance,
   RecommendationRequest,

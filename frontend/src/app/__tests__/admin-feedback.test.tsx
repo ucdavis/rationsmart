@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 
 const { replace, back, push, getAdminFeedbacks, getAdminFeedbackStats } = vi.hoisted(() => ({
   replace: vi.fn(),
@@ -344,5 +344,61 @@ describe("Admin feedback — i18n (Hindi)", () => {
     expect(screen.getByText("समेकित विश्लेषण")).toBeInTheDocument(); // Aggregated Insights
     expect(screen.getByText("कुल प्रतिक्रियाएं")).toBeInTheDocument(); // Total Feedbacks
     expect(screen.queryByText("Feedback Management")).not.toBeInTheDocument();
+  });
+});
+
+describe("Admin feedback — details pop-up names the author (N14)", () => {
+  it("shows 'Rating' / 'Feedback' and 'From <name> · <email>', never 'Your Rating'", async () => {
+    getAdminFeedbacks.mockResolvedValueOnce({
+      data: {
+        feedbacks: [
+          {
+            id: 7,
+            user_name: "Farmer Joe",
+            user_email: "joe@example.com",
+            text_feedback: "Loved the new report screen.",
+            feedback_type: "General",
+            overall_rating: 4,
+            created_at: "2026-06-04T10:30:00Z",
+          },
+        ],
+      },
+    });
+    getAdminFeedbackStats.mockResolvedValueOnce({ data: {} });
+    render(<AdminFeedbackPage />);
+    fireEvent.click(await screen.findByText("Farmer Joe"));
+
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText("Rating")).toBeInTheDocument();
+    expect(within(dialog).getByText("Feedback")).toBeInTheDocument();
+    expect(within(dialog).getByText("From Farmer Joe · joe@example.com")).toBeInTheDocument();
+    expect(within(dialog).queryByText("Your Rating")).not.toBeInTheDocument();
+    expect(within(dialog).queryByText("Your Feedback")).not.toBeInTheDocument();
+  });
+
+  it("shows whatever part of the author exists, or N/A", async () => {
+    getAdminFeedbacks.mockResolvedValueOnce({
+      data: {
+        feedbacks: [
+          {
+            id: 8,
+            user_email: "x@y.org",
+            feedback_type: "General",
+            overall_rating: 2,
+            created_at: "2026-06-04T10:30:00Z",
+          },
+          {
+            id: 9,
+            feedback_type: "General",
+            overall_rating: 3,
+            created_at: "2026-06-05T10:30:00Z",
+          },
+        ],
+      },
+    });
+    getAdminFeedbackStats.mockResolvedValueOnce({ data: {} });
+    render(<AdminFeedbackPage />);
+    fireEvent.click(await screen.findByText("x@y.org"));
+    expect(within(await screen.findByRole("dialog")).getByText("From x@y.org")).toBeInTheDocument();
   });
 });
