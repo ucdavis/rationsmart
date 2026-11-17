@@ -1611,3 +1611,34 @@ describe("Cattle Info — country change clears the feed cards (N8)", () => {
     expect(push).toHaveBeenCalledWith("/feed-selection");
   });
 });
+
+describe("Cattle Info — ❓ help keeps the unsaved form (N11)", () => {
+  it("opens the screen's help topic, and Back finds the typed values unchanged", async () => {
+    getCountries.mockResolvedValue({ data: countries });
+    const first = render(<CattleInfoPage />);
+    await formReady();
+    await fillBaselineRequired("India");
+    fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "455" } });
+
+    fireEvent.click(screen.getByRole("button", { name: "How to" }));
+    expect(push).toHaveBeenCalledWith("/help/topic?screen=cattle-info&lang=en");
+    first.unmount(); // the route change to help
+    expect(useStore.getState().cattleInfo).toBeNull(); // nothing was saved
+
+    render(<CattleInfoPage />); // Back
+    await formReady();
+    expect(inputAfterLabel("Body Weight (BW; kg)").value).toBe("455");
+    expect(screen.getByRole("button", { name: "Continue to Feed" })).toBeEnabled();
+  });
+
+  it("leaving for any other screen doesn't keep a draft", async () => {
+    getCountries.mockResolvedValue({ data: countries });
+    const first = render(<CattleInfoPage />);
+    await formReady();
+    fireEvent.change(inputAfterLabel("Body Weight (BW; kg)"), { target: { value: "455" } });
+    first.unmount();
+    render(<CattleInfoPage />);
+    await formReady();
+    expect(inputAfterLabel("Body Weight (BW; kg)").value).not.toBe("455");
+  });
+});

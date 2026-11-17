@@ -11,6 +11,7 @@ import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
+import HelpButton from "@/components/help/HelpButton";
 
 interface FeedbackItem {
   id: number;
@@ -172,7 +173,12 @@ export default function FeedbackPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title={t("Feedback")} onBack={() => router.back()} />
+      <Toolbar
+        type="back"
+        title={t("Feedback")}
+        onBack={() => router.back()}
+        help={<HelpButton screen="feedback" />}
+      />
 
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Rating title */}

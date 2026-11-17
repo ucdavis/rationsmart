@@ -13,6 +13,7 @@ import { useLatestRef } from "@/lib/use-latest";
 import { PAGE_SIZES } from "@/lib/pagination";
 import Spinner from "@/components/ui/Spinner";
 import { useReportPdf } from "@/components/report/useReportPdf";
+import HelpButton from "@/components/help/HelpButton";
 
 function SkeletonCard() {
   return (
@@ -105,7 +106,12 @@ export default function ReportsPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title={t("Feed Reports")} onBack={() => router.back()} />
+      <Toolbar
+        type="back"
+        title={t("Feed Reports")}
+        onBack={() => router.back()}
+        help={<HelpButton screen="reports" />}
+      />
 
       <div className="flex-1 overflow-y-auto pt-2 pb-6">
         {isLoading ? (

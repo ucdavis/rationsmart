@@ -1,0 +1,26 @@
+{
+  "key": "calf-plan",
+  "number": 7,
+  "language": "en",
+  "fallback": false,
+  "title": "Calf milk-feeding plan",
+  "summary": "Daily milk, feedings and weaning for a calf.",
+  "screen_label": "Calf plan",
+  "video": null,
+  "steps": [
+    {
+      "text": "On Cattle Info, choose the state Calves and enter the body weight.",
+      "image": "/v1/help/media/en/calf-plan-1.webp?v=c1c2c3",
+      "video_start": null
+    },
+    {
+      "text": "Tap Continue. The plan shows the daily milk, two feedings and the weaning age.",
+      "image": "/v1/help/media/en/calf-plan-2.webp?v=c4c5c6",
+      "video_start": null
+    }
+  ],
+  "problems": [],
+  "related": ["describe-animal"],
+  "next": null,
+  "updated": "2026-11-16"
+}

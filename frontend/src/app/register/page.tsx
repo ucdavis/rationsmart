@@ -16,6 +16,7 @@ import Spinner from "@/components/ui/Spinner";
 import { COLORS } from "@/lib/colors";
 import { useLatestRef } from "@/lib/use-latest";
 import { messageOf } from "@/lib/api-client/normalize";
+import HelpButton from "@/components/help/HelpButton";
 
 interface Country {
   id: string | number;
@@ -153,7 +154,11 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
+    <div
+      className="relative flex flex-col min-h-screen"
+      style={{ backgroundColor: COLORS.authenticWhite }}
+    >
+      <HelpButton screen="register" floating />
       {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
