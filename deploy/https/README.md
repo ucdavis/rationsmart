@@ -47,6 +47,8 @@ Set the GitHub `stage` environment variables `API_BASE_URL` and `ALLOWED_ORIGINS
 
 Apply the staging Bicep network settings before relying on origin access. If the VM public IP changes, update the campus DNS A record through Hostclerk and verify its Cloudflare secondary-zone proxy override. Ensure the hostname-specific Cloudflare SSL configuration rule remains Strict. Do not change the campus-wide encryption mode.
 
+The deployment smoke test detects port 443 in the effective gateway Compose configuration and checks the local HTTPS endpoint with the Origin CA root. It verifies that `/docs` still returns 404 without routing through Cloudflare. Without an HTTPS port, it uses the existing HTTP checks.
+
 Verify the public homepage and login screen, HTTP redirect, backend health, and authenticated login/email links. An Origin CA certificate is trusted by Cloudflare, not ordinary browsers connecting directly to the origin.
 
 ## Rollback

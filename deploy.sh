@@ -23,7 +23,7 @@
 #   SKIP_BACKUP=1          skip the pre-deploy pg_dump (not recommended)
 #   GATEWAY_PORT=80        host port nginx listens on
 #
-# Needs: docker with the compose plugin, curl, flock, and backend/.env (see DEPLOYMENT.md).
+# Needs: docker with the compose plugin, curl, python3, flock, and backend/.env (see DEPLOYMENT.md).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -65,6 +65,7 @@ preflight() {
   cv="$(docker compose version --short 2>/dev/null | tr -d 'v')"
   [[ "$(printf '%s\n2.20.0\n' "$cv" | sort -V | head -1)" == "2.20.0" ]] || die "docker compose $cv is too old; need >= 2.20"
   command -v curl >/dev/null || die "curl not found"
+  command -v python3 >/dev/null || die "python3 not found"
   docker info >/dev/null 2>&1 || die "cannot talk to the docker daemon (is this user in the docker group?)"
 
   local env_file="$ROOT/backend/.env" key
@@ -187,9 +188,22 @@ migrate() {
 
 smoke_test() {
   local base="http://localhost:${GATEWAY_PORT}" i
+  local tls_port
+  local curl_tls=()
+  # Read the effective configuration so removing the HTTPS override also restores HTTP checks.
+  tls_port="$(dc gateway config --format json | python3 -c '
+import json, sys
+ports = json.load(sys.stdin)["services"]["nginx"].get("ports", [])
+print(next((str(p["published"]) for p in ports if str(p["target"]) == "443"), ""))
+')" || return 1
+  if [[ -n "$tls_port" ]]; then
+    base="https://rationsmart.ucdavis.edu:$tls_port"
+    curl_tls=(--resolve "rationsmart.ucdavis.edu:$tls_port:127.0.0.1"
+      --cacert /etc/rationsmart/tls/cloudflare-origin-ca-root.pem)
+  fi
   log "smoke test against $base"
   for i in $(seq 1 30); do
-    if curl -fsS -o /dev/null -L --max-time 5 "$base/healthz" && curl -fsS -o /dev/null -L --max-time 10 "$base/"; then
+    if curl ${curl_tls[@]+"${curl_tls[@]}"} -fsS -o /dev/null -L --max-time 5 "$base/healthz" && curl ${curl_tls[@]+"${curl_tls[@]}"} -fsS -o /dev/null -L --max-time 10 "$base/"; then
       break
     fi
     [[ "$i" == 30 ]] && { log "gateway/frontend did not answer in time"; return 1; }
@@ -197,7 +211,7 @@ smoke_test() {
   done
   # The backend must be hidden from the outside, yet reachable by the app.
   local code
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$base/docs" || true)"
+  code="$(curl ${curl_tls[@]+"${curl_tls[@]}"} -s -o /dev/null -w '%{http_code}' --max-time 5 "$base/docs" || true)"
   [[ "$code" == "404" ]] || { log "expected 404 for /docs through the gateway, got $code"; return 1; }
   dc backend exec -T api python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)" \
     || { log "api /health failed (database or redis down?)"; return 1; }
