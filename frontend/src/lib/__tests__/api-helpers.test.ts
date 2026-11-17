@@ -34,9 +34,22 @@ describe("labelForLanguage / LANGUAGE_NATIVE_LABELS", () => {
     expect(labelForLanguage("am")).toBe("አማርኛ");
   });
 
-  it("falls back to the upper-case code for unknown languages", () => {
+  it("N10: a code missing from the map gets the browser's own name, not the code", () => {
+    expect(labelForLanguage("ti")).toBe("ትግርኛ");
+    expect(labelForLanguage("kn")).toBe("ಕನ್ನಡ");
+    expect(labelForLanguage("ar")).toBe("العربية");
+    expect(labelForLanguage("fr")).toBe("Français");
+    expect(labelForLanguage("so")).toBe("Soomaali");
+    expect(labelForLanguage("pt-BR")).toBe("Português (Brasil)");
+    // The map still wins for the names chosen on purpose.
+    expect(labelForLanguage("om")).toBe("Afaan Oromoo");
+    expect(labelForLanguage("id")).toBe("Bahasa Indonesia");
+  });
+
+  it("falls back to the upper-case code only when the browser has no name", () => {
     expect(labelForLanguage("zz")).toBe("ZZ");
-    expect(labelForLanguage("xh")).toBe("XH");
+    expect(labelForLanguage("xyz")).toBe("XYZ");
+    expect(labelForLanguage("not a code")).toBe("NOT A CODE");
   });
 
   it("covers every rollout locale in the labels map", () => {
