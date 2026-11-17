@@ -17,6 +17,7 @@ import { useEscapeKey } from "@/lib/use-escape";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
+import HelpButton from "@/components/help/HelpButton";
 
 // /verify-email in its "from Login" mode, pre-filled with the typed address
 // when it's a valid one (F26).
@@ -174,7 +175,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
+    <div
+      className="relative flex flex-col min-h-screen"
+      style={{ backgroundColor: COLORS.authenticWhite }}
+    >
+      <HelpButton screen="login" floating />
       {/* Scrollable content */}
       <div className="flex-1 overflow-y-auto pb-6">
         {/* App branding */}

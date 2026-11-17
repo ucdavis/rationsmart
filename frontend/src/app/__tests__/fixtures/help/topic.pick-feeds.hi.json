@@ -1,0 +1,67 @@
+{
+  "key": "pick-feeds",
+  "number": 4,
+  "language": "hi",
+  "fallback": true,
+  "title": "चारा और कीमतें चुनें",
+  "summary": "आपके पास जो चारा है उसे चुनें और हर एक की कीमत डालें।",
+  "screen_label": "Feed Selection",
+  "video": {
+    "youtube_id": "AbCdEfGhIj0",
+    "seconds": 130,
+    "poster": "/v1/help/media/en/pick-feeds-poster.webp?v=9f8e7d",
+    "chapters": [
+      {
+        "start": 0,
+        "label": "Recommendation or Evaluation"
+      },
+      {
+        "start": 20,
+        "label": "Choose a feed"
+      },
+      {
+        "start": 48,
+        "label": "Enter the price"
+      },
+      {
+        "start": 75,
+        "label": "Add more feeds"
+      }
+    ]
+  },
+  "steps": [
+    {
+      "text": "डाइट रिकमेंडेशन चुनें (या अपनी मात्रा जाँचने के लिए इवैल्यूएशन)।",
+      "image": "/v1/help/media/en/pick-feeds-1.webp?v=1a2b3c",
+      "video_start": 0
+    },
+    {
+      "text": "In Feed 1, pick the Feed Type, then the Category, then the Feed.",
+      "image": "/v1/help/media/en/pick-feeds-2.webp?v=4d5e6f",
+      "video_start": 20
+    },
+    {
+      "text": "Type the price per kg in your currency.",
+      "image": "/v1/help/media/en/pick-feeds-3.webp?v=7a8b9c",
+      "video_start": 48
+    },
+    {
+      "text": "Add more feeds. Include at least one forage.\nTip: the search box fills the selected card.",
+      "image": null,
+      "video_start": 75
+    }
+  ],
+  "problems": [
+    {
+      "title": "\"At least one forage is required\"",
+      "text": "Add a feed whose type is Forage, then generate again."
+    },
+    {
+      "title": "A feed is refused by name",
+      "text": "That feed has no dry-matter value. Pick another feed or create your own with a dry-matter value."
+    }
+  ],
+  "related": ["own-feeds", "limits"],
+  "next": "get-diet",
+  "updated": "2026-11-16"
+}

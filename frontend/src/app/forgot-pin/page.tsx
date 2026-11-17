@@ -11,6 +11,7 @@ import { useT } from "@/lib/i18n-ui";
 import Spinner from "@/components/ui/Spinner";
 import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
+import HelpButton from "@/components/help/HelpButton";
 
 export default function ForgotPinPage() {
   const router = useRouter();
@@ -31,7 +32,11 @@ export default function ForgotPinPage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
+    <div
+      className="relative flex flex-col min-h-screen"
+      style={{ backgroundColor: COLORS.authenticWhite }}
+    >
+      <HelpButton screen="forgot-pin" floating />
       {/* Toolbar — transparent so page bg extends up through it */}
       <div
         className="flex items-center px-3 py-3 gap-3"
