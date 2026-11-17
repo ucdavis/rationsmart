@@ -24,6 +24,19 @@ describe("FeedbackDetailsSheet", () => {
     expect(screen.getByText("Your Feedback")).toBeInTheDocument();
   });
 
+  it("N14: someone else's feedback gets 'Rating' / 'Feedback' and a From line (N/A if unknown)", () => {
+    render(
+      <FeedbackDetailsSheet
+        details={make({ author: { name: null, email: null } })}
+        onClose={() => {}}
+      />
+    );
+    expect(screen.getByText("Rating")).toBeInTheDocument();
+    expect(screen.getByText("Feedback")).toBeInTheDocument();
+    expect(screen.getByText("From N/A")).toBeInTheDocument();
+    expect(screen.queryByText("Your Rating")).not.toBeInTheDocument();
+  });
+
   it("renders the category value and date", () => {
     render(<FeedbackDetailsSheet details={make({ category: "Defect" })} onClose={() => {}} />);
     expect(screen.getByText("Defect")).toBeInTheDocument();

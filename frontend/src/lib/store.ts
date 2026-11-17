@@ -93,9 +93,8 @@ interface AppState {
   setUser: (user: User) => void;
   setToken: (token: string | null) => void;
   logout: () => void;
-  // Accepts null so callers like the report page "New Case" button can
-  // fully wipe the previous simulation (including simulation_language)
-  // and land on Cattle Info in a clean state.
+  // Accepts null so Cattle Info's Reset can fully wipe
+  // the previous simulation (including simulation_language).
   setCattleInfo: (info: CattleInfo | null) => void;
   // N1: New Case on a result screen keeps every input but the Simulation
   // Name, so the next run can't go out under the previous run's name.
