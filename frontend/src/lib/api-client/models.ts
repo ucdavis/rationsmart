@@ -573,5 +573,28 @@ export const LANGUAGE_NATIVE_LABELS: Record<string, string> = {
   ta: "தமிழ்",
   te: "తెలుగు",
 };
+// N10: admins can activate any of ~200 languages, so a code missing from the
+// map above (ti, kn, ar, fr…) takes the browser's own name for it, in its own
+// script (ti → ትግርኛ). The map still wins for the names chosen on purpose.
+// Cached: the lists call this on every render.
+const nativeNameCache = new Map<string, string | null>();
+
+function browserNativeName(code: string): string | null {
+  const cached = nativeNameCache.get(code);
+  if (cached !== undefined) return cached;
+  let name: string | null = null;
+  try {
+    const found = new Intl.DisplayNames([code], { type: "language" }).of(code);
+    // An unknown code comes back as itself: no real name.
+    if (found && found.toLowerCase() !== code.toLowerCase()) {
+      name = found.charAt(0).toLocaleUpperCase(code) + found.slice(1);
+    }
+  } catch {
+    // Not a valid language tag (or no Intl.DisplayNames): fall through.
+  }
+  nativeNameCache.set(code, name);
+  return name;
+}
+
 export const labelForLanguage = (code: string): string =>
-  LANGUAGE_NATIVE_LABELS[code] ?? code.toUpperCase();
+  LANGUAGE_NATIVE_LABELS[code] ?? browserNativeName(code) ?? code.toUpperCase();

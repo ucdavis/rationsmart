@@ -97,6 +97,9 @@ interface AppState {
   // fully wipe the previous simulation (including simulation_language)
   // and land on Cattle Info in a clean state.
   setCattleInfo: (info: CattleInfo | null) => void;
+  // N1: New Case on a result screen keeps every input but the Simulation
+  // Name, so the next run can't go out under the previous run's name.
+  startNewCase: () => void;
   setFeedSelectionType: (type: "recommendation" | "evaluation") => void;
   setFeedSelections: (items: FeedItem[]) => void;
   // null clears the report (Reset on Cattle Info). `inputs` is the copy of
@@ -163,6 +166,11 @@ export const useStore = create<AppState>()(
       },
 
       setCattleInfo: (info) => set({ cattleInfo: info }),
+
+      startNewCase: () =>
+        set((s) => ({
+          cattleInfo: s.cattleInfo ? { ...s.cattleInfo, simulation_name: "" } : null,
+        })),
 
       setFeedSelectionType: (type) => set({ feedSelectionType: type }),
 

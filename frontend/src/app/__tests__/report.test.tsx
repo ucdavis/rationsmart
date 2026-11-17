@@ -465,6 +465,17 @@ describe('Report — "New Case" button', () => {
     expect(push).toHaveBeenCalledWith("/cattle-info");
   });
 
+  it("N1: clears only the Simulation Name; every other input stays", () => {
+    const cattleInfo = baseCattleInfo({ simulation_name: "Run 1" });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+      cattleInfo,
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /New Case/ }));
+    expect(useStore.getState().cattleInfo).toEqual({ ...cattleInfo, simulation_name: "" });
+  });
+
   it("does NOT clear feedSelections or reset feedSelectionType — current source deliberately preserves them (diverges from CLAUDE.md §5's documented behavior)", () => {
     const existingSelections: FeedItem[] = [
       {
