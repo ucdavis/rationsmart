@@ -25,7 +25,7 @@ export default function WelcomePage() {
       {/* Illustration centered vertically between branding and button */}
       <div className="px-3 flex justify-center">
         <Image
-          src="/images/ic_welcome_image.png"
+          src="/images/ic_welcome_image.webp"
           alt={t("Welcome illustration")}
           width={500}
           height={500}

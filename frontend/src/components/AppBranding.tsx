@@ -14,7 +14,7 @@ export default function AppBranding() {
         style={{ boxShadow: "0 4px 16px rgba(0,0,0,0.12)" }}
       >
         <Image
-          src="/images/app_logo.png"
+          src="/images/app_logo.webp"
           alt="RationSmart"
           width={80}
           height={80}
