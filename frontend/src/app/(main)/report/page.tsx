@@ -37,14 +37,17 @@ import { reportHelpScreen } from "@/lib/help";
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, reportData, reportInputs, setFeedSelectionType, ...live } = useStore((s) => ({
-    feedSelections: s.feedSelections,
-    user: s.user,
-    cattleInfo: s.cattleInfo,
-    reportData: s.reportData,
-    reportInputs: s.reportInputs,
-    setFeedSelectionType: s.setFeedSelectionType,
-  }));
+  const { user, reportData, reportInputs, setFeedSelectionType, startNewCase, ...live } = useStore(
+    (s) => ({
+      feedSelections: s.feedSelections,
+      user: s.user,
+      cattleInfo: s.cattleInfo,
+      reportData: s.reportData,
+      reportInputs: s.reportInputs,
+      setFeedSelectionType: s.setFeedSelectionType,
+      startNewCase: s.startNewCase,
+    })
+  );
   // F47 — render from the inputs this run was sent with, not the live form:
   // after New Case / restore / a country change the form no longer matches
   // the results. Only a report persisted by an older build (no copy) falls
@@ -424,7 +427,10 @@ export default function ReportPage() {
         canSave={!!reportIdForSave}
         isSaving={isSaving}
         onSave={handleSave}
-        onNewCase={() => router.push("/cattle-info")}
+        onNewCase={() => {
+          startNewCase();
+          router.push("/cattle-info");
+        }}
         t={t}
       >
         {isEval && (

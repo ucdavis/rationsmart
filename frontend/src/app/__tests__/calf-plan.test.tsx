@@ -88,10 +88,13 @@ describe("Calf milk plan — the backend's answer (W13)", () => {
     expect(replace).toHaveBeenCalledWith("/cattle-info");
   });
 
-  it("New Case returns to Cattle Info", () => {
+  it("New Case returns to Cattle Info with only the Simulation Name cleared (N1)", () => {
+    const before = useStore.getState().cattleInfo;
+    expect(before?.simulation_name).toBeTruthy();
     render(<CalfPlanPage />);
     fireEvent.click(screen.getByRole("button", { name: /New Case/ }));
     expect(push).toHaveBeenCalledWith("/cattle-info");
+    expect(useStore.getState().cattleInfo).toEqual({ ...before, simulation_name: "" });
   });
 
   it("Save Report saves the run's report_id and offers View PDF", async () => {
