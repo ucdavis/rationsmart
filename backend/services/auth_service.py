@@ -71,15 +71,37 @@ def is_legacy_hash(hashed_pin: str) -> bool:
 _EMAIL_VERIFY_TOKEN_HOURS = 24
 
 
+async def _registration_language(db: AsyncSession, language: Optional[str]) -> Optional[str]:
+    """The stored code of an active language named by `language`, else None (G4).
+
+    Same rule as the profile update (case-insensitive match against the active
+    languages), but a miss is only logged: registration must never fail on it. The
+    country lists also offer linked languages that are not active yet.
+    """
+    if not language or not language.strip():
+        return None
+    from app.lang import get_active_languages
+    from app.language_tags import match_language_code
+
+    code = match_language_code(language.strip(), await get_active_languages(db))
+    if code is None:
+        logger.warning("Register: language %r is not active; preferred_language left empty", language[:35])
+    return code
+
+
 async def register(
     db: AsyncSession,
     name: str,
     email: str,
     pin: str,
     country_id: str,
+    language: Optional[str] = None,
 ) -> Tuple[Optional[UserInformationModel], Optional[str], Optional[str]]:
     """
     Create a new (unverified) user account and return a verification token.
+
+    `language` (G4) becomes the user's preferred_language when it names an active
+    language; anything else is ignored and logged, so a bad code never blocks an account.
 
     Returns (user, None, verify_token) on success or (None, error_message, None) on failure.
     Caller must commit the session after sending the verification email.
@@ -96,11 +118,16 @@ async def register(
     if not await repo.get_country_by_id(country_id):
         return None, "Invalid country selected", None
 
+    preferred_language = await _registration_language(db, language)
+
     if existing:
         # Same account, so the user's saved reports and custom feeds come back.
         # It stays inactive until the new verification link is used.
         user = existing
-        await repo.reregister_self_deleted(user, name=name, pin_hash=hash_pin(pin), country_id=country_id)
+        await repo.reregister_self_deleted(
+            user, name=name, pin_hash=hash_pin(pin), country_id=country_id,
+            preferred_language=preferred_language,
+        )
     else:
         user = await repo.create(
             name=name,
@@ -109,6 +136,7 @@ async def register(
             country_id=country_id,
             is_active=False,
             is_email_verified=False,
+            preferred_language=preferred_language,
         )
 
     verify_token = secrets.token_urlsafe(48)

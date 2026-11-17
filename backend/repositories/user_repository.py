@@ -63,6 +63,7 @@ class UserRepository:
         country_id: str,
         is_active: bool = False,
         is_email_verified: bool = False,
+        preferred_language: Optional[str] = None,
     ) -> UserInformationModel:
         user = UserInformationModel(
             name=name.strip(),
@@ -71,6 +72,7 @@ class UserRepository:
             country_id=country_id,
             is_active=is_active,
             is_email_verified=is_email_verified,
+            preferred_language=preferred_language,
         )
         self.db.add(user)
         await self.db.flush()
@@ -162,17 +164,21 @@ class UserRepository:
         await self.db.flush()
 
     async def reregister_self_deleted(
-        self, user: UserInformationModel, name: str, pin_hash: str, country_id: str
+        self, user: UserInformationModel, name: str, pin_hash: str, country_id: str,
+        preferred_language: Optional[str] = None,
     ) -> None:
         """Reuse a self-deleted account for a new registration (F60).
 
         Takes the new name / PIN / country and needs the email verified again;
         the account stays inactive (deactivated_by 'self') until the link is used,
-        so only the owner of the address can bring it back.
+        so only the owner of the address can bring it back. A valid language picked
+        on Register replaces the old one (G4); none keeps the old one.
         """
         user.name = name.strip()
         user.pin_hash = pin_hash
         user.country_id = country_id
+        if preferred_language is not None:
+            user.preferred_language = preferred_language
         user.is_email_verified = False
         user.requires_pin_reset = False
         user.updated_at = datetime.utcnow()

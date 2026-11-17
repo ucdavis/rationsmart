@@ -82,6 +82,9 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
 
     **Mandatory fields:** `name`, `email_id`, `pin` (6-digit), `country_id` (UUID — any country from `GET /v1/auth/countries?scope=all`; it need not be enabled).
 
+    **Optional:** `language` — saved as the user's `preferred_language` when it is an active language
+    (case-insensitive); an unknown or inactive code is ignored (the user starts in English).
+
     The account remains inactive until the user clicks the verification link sent to their email.
     Login returns `403` until email is confirmed.
 
@@ -90,7 +93,8 @@ async def register(body: UserRegistration, db: AsyncSession = Depends(get_db)):
     new link is clicked. Any other existing account → `400` "Email address already registered".
     """
     user, error, verify_token = await auth_service.register(
-        db, name=body.name, email=body.email_id, pin=body.pin, country_id=body.country_id
+        db, name=body.name, email=body.email_id, pin=body.pin, country_id=body.country_id,
+        language=body.language,
     )
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=error)
