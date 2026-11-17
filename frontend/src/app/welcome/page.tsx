@@ -7,13 +7,18 @@ import PoweredBy from "@/components/PoweredBy";
 import { IcArrowRight } from "@/components/Icons";
 import { useT } from "@/lib/i18n-ui";
 import { COLORS } from "@/lib/colors";
+import HelpButton from "@/components/help/HelpButton";
 
 export default function WelcomePage() {
   const router = useRouter();
   const t = useT();
 
   return (
-    <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
+    <div
+      className="relative flex flex-col min-h-screen"
+      style={{ backgroundColor: COLORS.authenticWhite }}
+    >
+      <HelpButton screen="welcome" floating />
       {/* Top: App Branding */}
       <div className="flex justify-center pt-5 pb-2">
         <AppBranding />

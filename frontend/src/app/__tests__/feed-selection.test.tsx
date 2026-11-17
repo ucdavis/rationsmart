@@ -984,7 +984,9 @@ describe("feed-selection — UI-label i18n (simulation_language override)", () =
     });
     render(<FeedSelectionPage />);
 
-    await screen.findByText("पशु आहार का चयन"); // "Feed Selection" (toolbar title)
+    // First Hindi render in this file: it loads the Hindi labels, which can
+    // take over the default 1 s on a slow CI runner.
+    await screen.findByText("पशु आहार का चयन", undefined, { timeout: 5000 }); // "Feed Selection" (toolbar title)
     expect(screen.getByText("अनुकूलित आहार सीमाएँ")).toBeInTheDocument(); // "Custom Diet Limits"
     expect(screen.getByText("अनुकूलित पशु आहार")).toBeInTheDocument(); // "Custom Feed"
     expect(screen.queryByText("Feed Selection")).not.toBeInTheDocument();

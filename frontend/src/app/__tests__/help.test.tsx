@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-const { back } = vi.hoisted(() => ({ back: vi.fn() }));
+const { back, push } = vi.hoisted(() => ({ back: vi.fn(), push: vi.fn() }));
 
 vi.mock("next/navigation", () => ({
-  useRouter: () => ({ back, replace: vi.fn(), push: vi.fn() }),
+  useRouter: () => ({ back, replace: vi.fn(), push }),
 }));
 
 import HelpAndSupportPage from "@/app/help/page";
@@ -28,6 +28,7 @@ const seedUser = (over: Partial<User> = {}): User => ({
 
 beforeEach(() => {
   back.mockClear();
+  push.mockClear();
   useStore.setState({ user: null });
 });
 
@@ -76,21 +77,16 @@ describe("Help & Support page", () => {
     window.location = originalLocation as string & Location;
   });
 
-  it("User Manual has no handler yet (TODO) — clicking does nothing and does not throw", () => {
+  it("User Manual and FAQs open the in-app help screens (N11)", () => {
     render(<HelpAndSupportPage />);
-    const row = screen.getByText("User Manual").closest("button") as HTMLButtonElement;
-    // Native buttons aren't `disabled` here (Android parity keeps them
-    // tappable-looking); the TODO-ness shows up as onClick={undefined}
-    // and cursor:"default" rather than a disabled attribute.
-    expect(() => fireEvent.click(row)).not.toThrow();
-    expect(row).toHaveStyle({ cursor: "default" });
-  });
-
-  it("FAQs has no handler yet (TODO) — clicking does nothing and does not throw", () => {
-    render(<HelpAndSupportPage />);
-    const row = screen.getByText("FAQs").closest("button") as HTMLButtonElement;
-    expect(() => fireEvent.click(row)).not.toThrow();
-    expect(row).toHaveStyle({ cursor: "default" });
+    const manual = screen.getByText("User Manual").closest("button") as HTMLButtonElement;
+    const faqs = screen.getByText("FAQs").closest("button") as HTMLButtonElement;
+    expect(manual).toHaveStyle({ cursor: "pointer" });
+    expect(manual).not.toBeDisabled();
+    fireEvent.click(manual);
+    expect(push).toHaveBeenCalledWith("/help/manual");
+    fireEvent.click(faqs);
+    expect(push).toHaveBeenCalledWith("/help/faqs");
   });
 
   it("Contact Us row is interactive (cursor: pointer) and opens the support mailto link", () => {
