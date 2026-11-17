@@ -120,6 +120,16 @@ class UserRepository:
         user.updated_at = datetime.utcnow()
         await self.db.flush()
 
+    async def set_pin_after_reset(self, user: UserInformationModel, new_hash: str) -> None:
+        """New PIN from the e-mailed reset link (O14): clears the legacy-upgrade flag and
+        ends every login made before now (the link may have been used by someone else)."""
+        now = datetime.utcnow()
+        user.pin_hash = new_hash
+        user.requires_pin_reset = False
+        user.sessions_valid_after = now
+        user.updated_at = now
+        await self.db.flush()
+
     async def update_profile(
         self,
         user: UserInformationModel,

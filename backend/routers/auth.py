@@ -1,9 +1,10 @@
 import logging
 from collections import defaultdict
+from html import escape as html_escape
 from typing import List, Literal, Optional
 
 import jwt
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Query, Request, status
 from fastapi.responses import HTMLResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
@@ -320,47 +321,138 @@ async def update_user(
     return await _user_response(user, db)
 
 
-FORGOT_PIN_SENT_MESSAGE = "If an account exists for this email, a new PIN has been sent to it."
+FORGOT_PIN_SENT_MESSAGE = "If an account exists for this email, a link to reset your PIN has been sent to it."
 
 
-@router.post("/forgot-pin", response_model=ForgotPinResponse, summary="Request a PIN reset via email")
+@router.post("/forgot-pin", response_model=ForgotPinResponse, summary="Request a PIN reset link via email")
 @limiter.limit("30/minute")
-async def forgot_pin(request: Request, body: ForgotPinRequest, db: AsyncSession = Depends(get_db)):
+async def forgot_pin(request: Request, body: ForgotPinRequest, background_tasks: BackgroundTasks):
     """
-    Generate a new temporary PIN and send it to the user's registered email address.
+    Email a one-time link to choose a new PIN (O14). The PIN does **not** change here:
+    the old PIN keeps working until the user sets a new one on the linked page.
 
     **Mandatory field:** `email_id`.
 
     Always answers `200` with the same message, whether or not an account exists, and
     also when the reset is refused or the email can't be sent, so the endpoint can't be
-    used to find out which emails are registered. The new PIN travels only in the email,
-    never in this response, and is saved only once that email has gone out.
-    One reset per email address per minute (`pin_reset_cooldown`); the per-IP limit is
-    only a flood guard, since PWA traffic arrives from the proxy's address.
-    After receiving the temporary PIN, the user should call `POST /v1/auth/change-pin` to set a permanent one.
+    used to find out which emails are registered. The account lookup and the email run
+    after the reply has gone out, so the response time doesn't tell them apart either.
+    One email per address per minute (`pin_reset_cooldown`); the per-IP limit is only a
+    flood guard, since PWA traffic arrives from the proxy's address. The link works once,
+    for 30 minutes, and only for accounts that can log in (not admin-disabled or deleted).
     """
     neutral = ForgotPinResponse(success=True, message=FORGOT_PIN_SENT_MESSAGE)
     if not email_service.is_configured:
-        # Email would only be simulated: changing the PIN now would lock the user out.
-        logger.warning("Forgot PIN: SMTP is not configured; PIN left unchanged")
+        logger.warning("Forgot PIN: SMTP is not configured; no reset link sent")
         return neutral
-    if not await pin_reset_cooldown.claim(body.email_id):
-        return neutral
-
-    success, _message, new_pin = await auth_service.forgot_pin(db, body.email_id)
-    if not success:
-        return neutral
-
-    user = await UserRepository(db).get_by_email(body.email_id)
-    sent, err = await email_service.send_pin_reset_email(
-        to_email=user.email_id, user_name=user.name, new_pin=new_pin
-    )
-    if not sent:
-        logger.error("Forgot PIN: reset email failed (%s); PIN change undone", err)
-        await db.rollback()
-        return neutral
-    await db.commit()
+    if await pin_reset_cooldown.claim(body.email_id):
+        background_tasks.add_task(send_pin_reset_link, body.email_id)
     return neutral
+
+
+async def send_pin_reset_link(email_id: str) -> None:
+    """Background part of POST /forgot-pin, after the reply has been sent.
+
+    Uses its own session (the request's is closed by now) and writes nothing: the
+    link's token is signed, not stored. Unknown or locked account: nothing happens.
+    """
+    from app.db.session import AsyncSessionLocal
+
+    try:
+        async with AsyncSessionLocal() as db:
+            user, token = await auth_service.forgot_pin(db, email_id)
+            if not user:
+                return
+            sent, send_err = await email_service.send_pin_reset_link_email(
+                to_email=user.email_id, user_name=user.name, token=token,
+                minutes=auth_service.PIN_RESET_LINK_MINUTES,
+            )
+            if not sent:
+                logger.error("Forgot PIN: reset link email failed for user id=%s (%s)", user.id, send_err)
+    except Exception:
+        logger.exception("Forgot PIN: background task failed")
+
+
+# ── PIN reset page (the link in the email, O14) ──────────────────────────────
+# Plain HTML from the API, like the e-mail verification page: no PWA screen needed.
+# GET only shows the form (mail scanners open links in advance); POST uses the link.
+
+_RESET_PAGE_HEADERS = {
+    "Cache-Control": "no-store",
+    "Referrer-Policy": "no-referrer",          # the token is in the URL
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; frame-ancestors 'none'",
+}
+
+
+def _reset_page(title: str, body: str, status_code: int = 200, tone: str = "info") -> HTMLResponse:
+    bg, fg = {"ok": ("#d1e7dd", "#0f5132"), "warn": ("#fff3cd", "#856404")}.get(tone, ("#ffffff", "#1d2420"))
+    page = f"""<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>RationSmart · {html_escape(title)}</title></head>
+<body style="font-family:Arial,sans-serif;max-width:460px;margin:40px auto;padding:0 16px">
+<div style="background:{bg};border-radius:10px;padding:28px;box-shadow:0 2px 8px rgba(0,0,0,.1)">
+<h2 style="color:{fg};margin-top:0">{html_escape(title)}</h2>{body}</div></body></html>"""
+    return HTMLResponse(content=page, status_code=status_code, headers=_RESET_PAGE_HEADERS)
+
+
+def _reset_form(token: str, error: Optional[str] = None, status_code: int = 200) -> HTMLResponse:
+    field = ('style="width:100%;box-sizing:border-box;font-size:22px;letter-spacing:6px;padding:10px;'
+             'margin:4px 0 14px;border:1px solid #bbb;border-radius:6px" type="password" '
+             'inputmode="numeric" pattern="[0-9]{6}" maxlength="6" minlength="6" required autocomplete="new-password"')
+    err = (f'<p style="color:#b3261e;background:#fbe9e7;padding:10px;border-radius:6px">{html_escape(error)}</p>'
+           if error else "")
+    body = f"""{err}<p style="color:#555">Choose a new 6-digit PIN. Your current PIN works until you save.</p>
+<form method="post" action="reset-pin-link">
+<input type="hidden" name="token" value="{html_escape(token, quote=True)}">
+<label for="new_pin">New PIN</label><input id="new_pin" name="new_pin" {field}>
+<label for="confirm_pin">Confirm PIN</label><input id="confirm_pin" name="confirm_pin" {field}>
+<button type="submit" style="width:100%;background:#2c5aa0;color:#fff;border:0;border-radius:6px;padding:14px;font-size:16px;font-weight:bold">Save new PIN</button>
+</form>"""
+    return _reset_page("Set a new PIN", body, status_code)
+
+
+def _reset_link_invalid(message: str) -> HTMLResponse:
+    return _reset_page("Link expired", f'<p style="color:#555">{html_escape(message)}</p>', 400, "warn")
+
+
+@router.get("/reset-pin-link", response_class=HTMLResponse,
+            summary="PIN reset page (the link in the Forgot PIN email)")
+async def reset_pin_link_page(token: str = Query("", max_length=2048), db: AsyncSession = Depends(get_db)):
+    """
+    Show the form to choose a new PIN. Changes nothing (mail scanners open links in
+    advance); an expired, used or invalid link shows an error page (`400`).
+    """
+    user, error = await auth_service.check_pin_reset_token(db, token)
+    if not user:
+        return _reset_link_invalid(error)
+    return _reset_form(token)
+
+
+@router.post("/reset-pin-link", response_class=HTMLResponse,
+             summary="Save the new PIN from the reset page")
+@limiter.limit("10/minute")
+async def reset_pin_link_submit(
+    request: Request,
+    token: str = Form("", max_length=2048),
+    new_pin: str = Form("", max_length=12),
+    confirm_pin: str = Form("", max_length=12),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Set the new PIN (6 digits, typed twice). The link then stops working, the old PIN is
+    refused and every earlier login ends. Bad PINs show the form again (`400`); a bad
+    link shows the expired page (`400`).
+    """
+    user, error, link_ok = await auth_service.reset_pin_with_token(db, token, new_pin, confirm_pin)
+    if not user:
+        return _reset_form(token, error, 400) if link_ok else _reset_link_invalid(error)
+    await db.commit()
+    return _reset_page(
+        "PIN changed",
+        '<p>Your PIN has been changed. Open RationSmart and log in with your new PIN.</p>',
+        200, "ok",
+    )
 
 
 @router.post("/change-pin", response_model=ChangePinResponse, summary="Change the current PIN")

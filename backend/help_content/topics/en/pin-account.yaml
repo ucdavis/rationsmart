@@ -1,17 +1,19 @@
 title: "PIN and account"
 summary: "Forgot PIN, change PIN, edit your profile or delete your account."
-updated: "2026-11-16"
+updated: "2026-11-17"
 video: null
 steps:
   - text: "Forgot your PIN? On the Login screen tap 'Forgot PIN? Tap here', type your registered email address and tap 'Proceed'."
-  - text: "Open the email from RationSmart. It contains a new 6-digit PIN. Log in with it; your old PIN no longer works."
-  - text: "Now choose your own PIN: open the menu, tap 'Profile', then 'Change PIN'. Enter the PIN from the email, then your new 6-digit PIN twice, and tap 'Update PIN'."
+  - text: "Open the email from RationSmart and tap 'Reset my PIN'. A page opens: type your new 6-digit PIN twice and tap 'Save new PIN'. The link works once, for 30 minutes; until you save, your old PIN still works."
+  - text: "Log in with your new PIN. To change your PIN another time while you remember it, open the menu, tap 'Profile', then 'Change PIN': enter your current PIN, then the new one twice, and tap 'Update PIN'."
   - text: "To change your name, country or language, open 'Profile', make the change and tap 'Update Profile'. The button works only after you change something."
   - text: "Still have an old 4-digit PIN? When you log in with it, the app asks you to set a 6-digit PIN. Enter the old PIN and the new one twice."
   - text: "To delete your account, open 'Profile', tap 'Delete', then 'Yes', and confirm with your PIN. To come back later, register again with the same email address: your saved reports return."
 problems:
   - title: "No email arrived"
     text: "Look in the spam folder and check the address you typed. You can ask again after one minute. For your safety, the app shows the same message for every address."
+  - title: "'Link expired'"
+    text: "The reset link works once and only for 30 minutes. Open the app, tap 'Forgot PIN? Tap here' again and use the newest email."
   - title: "'New PINs do not match'"
     text: "Type exactly the same new PIN in both boxes."
   - title: "'Invalid PIN.' when deleting"
