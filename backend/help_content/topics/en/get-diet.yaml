@@ -5,10 +5,15 @@ video: null
 steps:
   - text: "On Feed Selection tap 'Generate Recommendation'. 'Generating your report' shows for a few seconds, then the 'Recommendation Report' opens."
   - text: "'Report Details' at the top shows the Report ID, the Simulation ID, your name and when the report was made. 'Animal Characteristics' repeats the animal details you typed, so you can check them."
+    image: get-diet-02.webp
   - text: "'Cost-Effective Diet' is the answer: for each feed, how many kg to give per day as fed (the weight you put in front of the cow), its price per kg and its cost per day. The last line is the Total Diet Cost per day."
+    image: get-diet-03.webp
   - text: "'Solution Summary' shows the Daily Cost, the milk the diet is planned for, the Dry Matter Intake (feed without its water, kg per day) and the Forage : Concentrate ratio."
+    image: get-diet-04.webp
   - text: "'Milk Cost Margin' shows for lactating cows when you typed a milk price. 'Diet Cost / L' is the feed cost for each litre of milk, 'Milk Price / L' is your milk price, and the difference is what the milk earns over the feed cost only. Labour, vet care and other costs are not in it."
+    image: get-diet-05.webp
   - text: "'Limits You Set' appears when you set feed or diet limits: it lists each limit and how much of that feed the diet used (topic 9)."
+    image: get-diet-06.webp
   - text: "'Notes' appears only when something needs your attention, for example a nutrient below its target, with advice on what to change. 'Environmental Impact' shows the methane the cow makes on this diet."
   - text: "Tap 'Save Report' to keep it; then 'Get PDF', 'View PDF' or 'Share Report' (topic 10). 'New Case' starts the next animal with the same inputs. The back arrow returns to Feed Selection, where you can change feeds or prices and generate again."
 problems:

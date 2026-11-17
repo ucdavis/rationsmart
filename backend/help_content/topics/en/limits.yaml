@@ -4,9 +4,12 @@ updated: "2026-11-17"
 video: null
 steps:
   - text: "Feed limit: on a feed card, after picking the feed, turn on 'Set inclusion limits'. Type a Min and/or a Max in kg per day as fed. Leave a box empty for no limit."
+    image: limits-01.webp
   - text: "Example: Soybean meal with Max 2 kg gives a diet with 1.88 kg of it. The diet may cost more than without the limit, because the app must use other feeds."
   - text: "Diet limits: tap 'Custom Diet Limits'. Each limit shows its allowed range and the default for the Physiological State, for example 'NDF max' or 'Starch max'. Change only what you need and tap 'Apply Limits'."
+    image: limits-03.webp
   - text: "Generate the diet. The report's 'Limits You Set' card lists every limit you set and how much of each limited feed the diet used. The saved PDF has the same section."
+    image: get-diet-06.webp
   - text: "Fat, fibre and starch limits are soft: the app aims for them, and the report shows 'Diet Limit Notes' when the diet ends up above one by more than 2.5 % of the limit."
   - text: "Limits are saved with the report. When you load a saved simulation from the history on Cattle Info, its limits come back too."
 problems:
