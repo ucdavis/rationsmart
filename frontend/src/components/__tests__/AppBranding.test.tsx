@@ -44,7 +44,7 @@ describe("AppBranding", () => {
     expect(img).toBeInTheDocument();
     // next/image rewrites `src` through its loader; the original path
     // should still be embedded somewhere in the resulting URL.
-    expect(img.src).toContain("app_logo.png");
+    expect(img.src).toContain("app_logo.webp");
   });
 
   it("wordmark uses the dark_aquamarine_green brand color", () => {

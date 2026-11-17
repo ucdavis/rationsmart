@@ -32,6 +32,8 @@ import type {
   CostEffectiveDiet,
 } from "@/lib/api";
 import { simulationCurrency, sumMoney } from "@/lib/money";
+import HelpButton from "@/components/help/HelpButton";
+import { reportHelpScreen } from "@/lib/help";
 
 export default function ReportPage() {
   const router = useRouter();
@@ -59,7 +61,8 @@ export default function ReportPage() {
   // chain as store.ts's langProvider (used for feed-data i18n). See the
   // doc comment on useT() in src/lib/i18n-ui.ts for why this screen
   // passes an explicit langOverride instead of calling useT() bare.
-  const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
+  const reportLang = cattleInfo?.simulation_language ?? user?.preferred_language ?? "en";
+  const t = useT(reportLang);
   const { isSaving, pdfUrl, setPdfUrl, savedReportId, save: saveReportPdf } = useSaveReport(t);
 
   // i18n V2 — fallback lookup so the report body shows translated feed
@@ -298,6 +301,7 @@ export default function ReportPage() {
         type="back"
         title={isEval ? t("Evaluation Report") : t("Recommendation Report")}
         onBack={() => router.back()}
+        help={<HelpButton screen={reportHelpScreen(report.mode, dietRating)} lang={reportLang} />}
       />
 
       <div className="flex-1 overflow-y-auto pb-28">

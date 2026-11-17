@@ -19,6 +19,7 @@ import GetPdfButton from "@/components/report/GetPdfButton";
 import PdfActions from "@/components/report/PdfActions";
 import ReportActionBar from "@/components/report/ReportActionBar";
 import { stringField } from "@/lib/api-client/normalize";
+import HelpButton from "@/components/help/HelpButton";
 
 export default function CalfPlanPage() {
   const router = useRouter();
@@ -45,7 +46,12 @@ export default function CalfPlanPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title={t("Calf Milk Feeding")} onBack={() => router.back()} />
+      <Toolbar
+        type="back"
+        title={t("Calf Milk Feeding")}
+        onBack={() => router.back()}
+        help={<HelpButton screen="calf-plan" lang={cattleInfo?.simulation_language ?? undefined} />}
+      />
 
       <div className="flex-1 overflow-y-auto pb-28">
         <CalfMilkFeedingCard

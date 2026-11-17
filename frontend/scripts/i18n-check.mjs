@@ -44,6 +44,7 @@ const NON_VISIBLE_ATTRS = new Set([
   "aria-modal", "aria-labelledby", "aria-describedby", "aria-controls", "data-testid",
   "enterKeyHint", "fillRule", "clipRule", "loading", "decoding", "direction", "icon", "color",
   "tone", "kind", "status", "as", "download", "lang", "dir", "spellCheck", "strategy",
+  "screen", "allow", "referrerPolicy",
 ]);
 // The only aria-* attributes a screen reader reads out (the rest are states).
 const SPOKEN_ARIA = new Set(["aria-label", "aria-valuetext", "aria-placeholder", "aria-roledescription"]);

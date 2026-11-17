@@ -69,10 +69,12 @@ describe("NavDrawer", () => {
     expect(screen.queryByText("Admin")).toBeNull();
   });
 
-  it("shows the 'Ongoing' badge on Help & Support and Terms & Conditions", () => {
+  it("shows the 'Ongoing' badge on Terms & Conditions only (Help & Support is live, N11)", () => {
     useStore.setState({ user: makeUser() });
     render(<NavDrawer open onClose={() => {}} />);
-    expect(screen.getAllByText("Ongoing")).toHaveLength(2);
+    expect(screen.getAllByText("Ongoing")).toHaveLength(1);
+    expect(screen.getByText("Terms & Conditions").parentElement).toHaveTextContent("Ongoing");
+    expect(screen.getByText("Help & Support").parentElement).not.toHaveTextContent("Ongoing");
   });
 
   it("Admin item appears first when user.is_admin is true", () => {
@@ -191,7 +193,7 @@ describe("NavDrawer", () => {
     expect(screen.getByText("सहायता एवं समर्थन")).toBeInTheDocument(); // Help & Support
     expect(screen.getByText("प्रतिक्रिया")).toBeInTheDocument(); // Feedback
     expect(screen.getByText("नियम और शर्तें")).toBeInTheDocument(); // Terms & Conditions
-    expect(screen.getAllByText("चल रहा है")).toHaveLength(2); // Ongoing
+    expect(screen.getAllByText("चल रहा है")).toHaveLength(1); // Ongoing (Terms only)
     expect(screen.getByText("लॉगआउट")).toBeInTheDocument(); // Logout
     expect(screen.queryByText("Profile")).not.toBeInTheDocument();
   });

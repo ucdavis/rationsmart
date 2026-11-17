@@ -12,6 +12,8 @@ interface ToolbarProps {
   showForward?: boolean;
   onForward?: () => void;
   rightContent?: React.ReactNode;
+  /** N11: the screen's ❓ HelpButton, shown before the right button. */
+  help?: React.ReactNode;
 }
 
 export default function Toolbar({
@@ -22,6 +24,7 @@ export default function Toolbar({
   showForward,
   onForward,
   rightContent,
+  help,
 }: ToolbarProps) {
   const t = useT();
   return (
@@ -79,6 +82,8 @@ export default function Toolbar({
         {title}
       </h1>
 
+      {help}
+
       {/* Right button */}
       {rightContent ? (
         rightContent
@@ -91,7 +96,7 @@ export default function Toolbar({
         >
           <IcForward size={20} color={COLORS.darkAquamarineGreen} />
         </button>
-      ) : (
+      ) : help ? null : (
         <div style={{ width: 40 }} />
       )}
     </div>

@@ -24,6 +24,7 @@ import { useResetPin } from "@/lib/use-reset-pin";
 import { COLORS } from "@/lib/colors";
 import { authErrorMessage } from "@/lib/errors";
 import { messageOf } from "@/lib/api-client/normalize";
+import HelpButton from "@/components/help/HelpButton";
 
 const inputStyle = (readOnly?: boolean) => ({
   backgroundColor: readOnly ? COLORS.authenticWhite : COLORS.americanDiamond,
@@ -288,7 +289,12 @@ export default function ProfilePage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title={t("Your Profile")} onBack={() => router.back()} />
+      <Toolbar
+        type="back"
+        title={t("Your Profile")}
+        onBack={() => router.back()}
+        help={<HelpButton screen="profile" />}
+      />
 
       <div className="flex-1 overflow-y-auto pb-8">
         {/* Profile card */}

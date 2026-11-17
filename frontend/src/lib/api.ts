@@ -156,3 +156,13 @@ export {
 } from "./api-client/admin";
 export type { FeedLibraryWipeResult } from "./api-client/admin";
 export { default } from "./api-client/client";
+export { clearHelpIndexCache, getHelpIndex, getHelpTopic, helpMediaUrl } from "./api-client/help";
+export type {
+  HelpFaq,
+  HelpIndex,
+  HelpScreen,
+  HelpStep,
+  HelpTopic,
+  HelpTopicSummary,
+  HelpVideo,
+} from "./api-client/help";
