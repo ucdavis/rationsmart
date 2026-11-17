@@ -31,6 +31,8 @@ export default function SplashGuard() {
     const { PUBLIC_PATHS, pathname, router } = effectInputs1.current;
     if (pathname === "/") return;
     if (PUBLIC_PATHS.has(pathname)) return;
+    // In-app help (N11): /help/manual, /help/topic, /help/faqs work before login.
+    if (pathname.startsWith("/help/")) return;
 
     const nav = performance.getEntriesByType("navigation")[0] as
       PerformanceNavigationTiming | undefined;

@@ -1,0 +1,196 @@
+{
+  "content_version": "2026-11-16.1",
+  "language": "hi",
+  "fallback": true,
+  "quick_start": "quick-start",
+  "topics": [
+    {
+      "key": "quick-start",
+      "number": 0,
+      "title": "जल्दी शुरुआत: लॉगिन से रिपोर्ट तक",
+      "summary": "पूरा ऐप 3 मिनट में।",
+      "audience": "all",
+      "video_seconds": 180
+    },
+    {
+      "key": "install-login",
+      "number": 1,
+      "title": "Install the app, register, log in",
+      "summary": "Add RationSmart to your phone, create an account and sign in.",
+      "audience": "all",
+      "video_seconds": 100
+    },
+    {
+      "key": "pin-account",
+      "number": 2,
+      "title": "PIN and account",
+      "summary": "Forgot PIN, change PIN, edit your profile or delete your account.",
+      "audience": "all",
+      "video_seconds": 90
+    },
+    {
+      "key": "describe-animal",
+      "number": 3,
+      "title": "अपने पशु का विवरण दें",
+      "summary": "Fill in Cattle Info: state, breed, weight, milk and more.",
+      "audience": "all",
+      "video_seconds": 140
+    },
+    {
+      "key": "pick-feeds",
+      "number": 4,
+      "title": "चारा और कीमतें चुनें",
+      "summary": "आपके पास जो चारा है उसे चुनें और हर एक की कीमत डालें।",
+      "audience": "all",
+      "video_seconds": 130
+    },
+    {
+      "key": "get-diet",
+      "number": 5,
+      "title": "Get a least-cost diet and read the report",
+      "summary": "Run a recommendation and understand each part of the report.",
+      "audience": "all",
+      "video_seconds": 160
+    },
+    {
+      "key": "check-diet",
+      "number": 6,
+      "title": "Check your current diet",
+      "summary": "Enter the amounts you feed today and see how the diet performs.",
+      "audience": "all",
+      "video_seconds": 120
+    },
+    {
+      "key": "calf-plan",
+      "number": 7,
+      "title": "Calf milk-feeding plan",
+      "summary": "Daily milk, feedings and weaning for a calf.",
+      "audience": "farmers",
+      "video_seconds": null
+    },
+    {
+      "key": "own-feeds",
+      "number": 8,
+      "title": "Your own feeds",
+      "summary": "Create a custom feed or edit the nutrient values of a feed.",
+      "audience": "advanced",
+      "video_seconds": 110
+    },
+    {
+      "key": "limits",
+      "number": 9,
+      "title": "Feed limits and diet limits",
+      "summary": "Set min/max kg for a feed or limits for the whole diet.",
+      "audience": "nutritionists",
+      "video_seconds": 150
+    },
+    {
+      "key": "reports",
+      "number": 10,
+      "title": "Save, share and reuse reports",
+      "summary": "Save a report, open its PDF, share it and reuse a past case.",
+      "audience": "all",
+      "video_seconds": 100
+    },
+    {
+      "key": "language-feedback",
+      "number": 11,
+      "title": "Language, feedback and help",
+      "summary": "Change the app language, send feedback, find help.",
+      "audience": "all",
+      "video_seconds": 80
+    },
+    {
+      "key": "troubleshooting",
+      "number": 12,
+      "title": "No diet found?",
+      "summary": "What to change when the app can't find a diet.",
+      "audience": "all",
+      "video_seconds": 120
+    }
+  ],
+  "screens": {
+    "welcome": {
+      "topic": "install-login",
+      "related": ["quick-start"]
+    },
+    "login": {
+      "topic": "install-login",
+      "related": ["pin-account"]
+    },
+    "register": {
+      "topic": "install-login",
+      "related": ["quick-start"]
+    },
+    "verify-email": {
+      "topic": "pin-account",
+      "related": ["install-login"]
+    },
+    "forgot-pin": {
+      "topic": "pin-account",
+      "related": []
+    },
+    "set-new-pin": {
+      "topic": "pin-account",
+      "related": []
+    },
+    "cattle-info": {
+      "topic": "describe-animal",
+      "related": ["quick-start"]
+    },
+    "calf-plan": {
+      "topic": "calf-plan",
+      "related": []
+    },
+    "feed-selection": {
+      "topic": "pick-feeds",
+      "related": ["own-feeds", "limits"]
+    },
+    "report.recommendation": {
+      "topic": "get-diet",
+      "related": ["reports"]
+    },
+    "report.evaluation": {
+      "topic": "check-diet",
+      "related": ["reports"]
+    },
+    "report.no-diet": {
+      "topic": "troubleshooting",
+      "related": ["get-diet", "limits"]
+    },
+    "reports": {
+      "topic": "reports",
+      "related": []
+    },
+    "profile": {
+      "topic": "pin-account",
+      "related": ["language-feedback"]
+    },
+    "feedback": {
+      "topic": "language-feedback",
+      "related": []
+    }
+  },
+  "faqs": [
+    {
+      "question": "Why does the app say \"At least one forage is required\"?",
+      "answer": "Every diet needs at least one feed of type Forage. Add one on Feed Selection and generate again.",
+      "topic": "pick-feeds"
+    },
+    {
+      "question": "The report says no diet was found. What can I do?",
+      "answer": "Add more feeds, check the prices and loosen any limits you set. The topic shows each step.",
+      "topic": "troubleshooting"
+    },
+    {
+      "question": "My report shows \"PDF Pending\".",
+      "answer": "The PDF is made in the background after you save. Open Feed Reports again after a minute.",
+      "topic": "reports"
+    },
+    {
+      "question": "How do I contact the RationSmart team?",
+      "answer": "Open Menu, then Help & Support, then Contact Us.",
+      "topic": null
+    }
+  ]
+}

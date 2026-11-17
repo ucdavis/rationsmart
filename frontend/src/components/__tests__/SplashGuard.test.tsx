@@ -51,6 +51,10 @@ describe("SplashGuard", () => {
     "/verify-email",
     "/terms",
     "/help",
+    // In-app help (N11) works before login.
+    "/help/manual",
+    "/help/topic",
+    "/help/faqs",
   ])("never redirects on public path %s", (path) => {
     pathnameRef.current = path;
     mockNavigationType("navigate");

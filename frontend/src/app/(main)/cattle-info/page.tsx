@@ -49,6 +49,8 @@ import {
   specFieldsValid,
   withHiddenDefaults,
 } from "@/components/cattle-info/form-model";
+import HelpButton from "@/components/help/HelpButton";
+import { peekHelpDraft, useKeepOnHelp } from "@/lib/help-draft";
 
 export default function CattleInfoPage() {
   const router = useRouter();
@@ -77,7 +79,9 @@ export default function CattleInfoPage() {
     setReportData: s.setReportData,
   }));
 
+  const [helpDraft] = useState(() => peekHelpDraft<FormState>("cattle-info")); // back from ❓ (N11)
   const [form, setForm] = useState<FormState>(() => {
+    if (helpDraft) return helpDraft;
     if (cattleInfo) {
       return {
         simulation_name: cattleInfo.simulation_name ?? "",
@@ -116,6 +120,7 @@ export default function CattleInfoPage() {
       country_name: user?.country ?? "",
     };
   });
+  useKeepOnHelp("cattle-info", form);
 
   // Field specs per physiological state, cached for the session so flipping
   // between states doesn't refetch. `specs` is the one for the form's CURRENT
@@ -239,11 +244,11 @@ export default function CattleInfoPage() {
   // store keeps its values and is only clamped (it may predate a retune).
   // The state-guard drops the result if the user changed state meanwhile.
   // Read, not re-run on: see useLatestRef (audit B-20).
-  const effectInputs2 = useLatestRef({ cattleInfo, form, loadSpecs, reportAdjustments });
+  const effectInputs2 = useLatestRef({ cattleInfo, form, helpDraft, loadSpecs, reportAdjustments });
   useEffect(() => {
-    const { cattleInfo, form, loadSpecs, reportAdjustments } = effectInputs2.current;
+    const { cattleInfo, form, helpDraft, loadSpecs, reportAdjustments } = effectInputs2.current;
     const state = form.animal_category;
-    const hydrated = !!cattleInfo;
+    const hydrated = !!cattleInfo || !!helpDraft;
     void loadSpecs(state).then((s) => {
       if (!s) return;
       if (!hydrated) {
@@ -471,6 +476,7 @@ export default function CattleInfoPage() {
         onMenuOpen={openDrawer}
         showForward={!!reportData && !!reportInputs}
         onForward={() => router.push(reportData?.calf_milk_feeding_plan ? "/calf-plan" : "/report")}
+        help={<HelpButton screen="cattle-info" lang={effectiveSimulationLanguage} />}
       />
 
       <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 90 }}>
