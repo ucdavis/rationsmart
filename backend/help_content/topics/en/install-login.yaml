@@ -1,12 +1,12 @@
 title: "Install the app, register, log in"
 summary: "Add RationSmart to your phone, create an account and sign in."
-updated: "2026-11-16"
+updated: "2026-11-17"
 video: null
 steps:
   - text: "Open RationSmart in your phone's browser: Chrome on Android, Safari on iPhone. On the Welcome screen tap 'Continue'."
     image: install-login-01.webp
   - text: "To use it like an app, wait a few seconds for the install banner and tap 'Install'. On Android: tap the menu (three dots), then 'Add to Home screen', then 'Add'. On iPhone: tap the Share button, then 'Add to Home Screen', then 'Add'. Then open RationSmart from its icon."
-  - text: "New user? On the Login screen tap 'Register here'. Enter your name, email address and country, choose a 6-digit PIN, type it again in 'Confirm PIN', and tap 'Proceed'."
+  - text: "New user? On the Login screen tap 'Register here'. Enter your name, email address and country, and choose your language: the app will open in it after you log in. Choose a 6-digit PIN, type it again in 'Confirm PIN', and tap 'Proceed'."
     image: install-login-03.webp
   - text: "Open the email from RationSmart and tap the link in it. Your account is now ready."
   - text: "On the Login screen enter your email address and PIN and tap 'Proceed'. The app opens on Cattle Info. Next time you open the app, you are still logged in."
@@ -24,4 +24,4 @@ problems:
   - title: "'This account was deleted'"
     text: "Register again with the same email address. After you verify it, your earlier saved reports come back."
   - title: "The app is not in my language"
-    text: "After logging in, open the menu, tap 'Profile', choose your Language and tap 'Update Profile'."
+    text: "If you did not choose it when registering, or want another one: after logging in, open the menu, tap 'Profile', choose your Language and tap 'Update Profile'."
