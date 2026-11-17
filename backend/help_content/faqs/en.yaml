@@ -30,7 +30,7 @@ pdf-pending:
   answer: "The PDF is made in the background after you save. Open 'Feed Reports' again after a minute."
 forgot-pin:
   question: "I forgot my PIN. What do I do?"
-  answer: "On the Login screen tap 'Forgot PIN? Tap here' and type your email address. Log in with the PIN in the email, then set your own in Profile, 'Change PIN'."
+  answer: "On the Login screen tap 'Forgot PIN? Tap here' and type your email address. Open the email, tap 'Reset my PIN' and choose a new 6-digit PIN. Your old PIN works until you do."
 change-language:
   question: "How do I use the app in my language?"
   answer: "Choose the Language on Cattle Info for this report, or set your default in Profile and tap 'Update Profile'. The languages offered depend on the country."
