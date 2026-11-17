@@ -4,6 +4,7 @@ updated: "2026-11-17"
 video: null
 steps:
   - text: "When the report says 'No optimized solution found', no mix of your feeds meets this animal's needs. There is no diet table; the 'Notes' card explains why."
+    image: troubleshooting-01.webp
   - text: "Read 'Violated Parameters': each line names what the diet could not meet, for example 'Phosphorus Requirement: below minimum' or 'Total Fibre (NDF): above maximum'. 'Recommendations' suggests what to change."
   - text: "Add a feed that supplies what is missing: a mineral feed for calcium or phosphorus, a protein meal for protein, a grain for energy. A ration of only one or two feeds often cannot meet every need."
   - text: "If you set limits ('Set inclusion limits' or 'Custom Diet Limits'), loosen or remove them. The 'Limits You Set' card on the report shows which ones you set."

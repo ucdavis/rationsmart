@@ -4,9 +4,12 @@ updated: "2026-11-17"
 video: null
 steps:
   - text: "Forgot your PIN? On the Login screen tap 'Forgot PIN? Tap here', type your registered email address and tap 'Proceed'."
+    image: pin-account-01.webp
   - text: "Open the email from RationSmart and tap 'Reset my PIN'. A page opens: type your new 6-digit PIN twice and tap 'Save new PIN'. The link works once, for 30 minutes; until you save, your old PIN still works."
+    image: pin-account-02.webp
   - text: "Log in with your new PIN. To change your PIN another time while you remember it, open the menu, tap 'Profile', then 'Change PIN': enter your current PIN, then the new one twice, and tap 'Update PIN'."
   - text: "To change your name, country or language, open 'Profile', make the change and tap 'Update Profile'. The button works only after you change something."
+    image: pin-account-04.webp
   - text: "Still have an old 4-digit PIN? When you log in with it, the app asks you to set a 6-digit PIN. Enter the old PIN and the new one twice."
   - text: "To delete your account, open 'Profile', tap 'Delete', then 'Yes', and confirm with your PIN. To come back later, register again with the same email address: your saved reports return."
 problems:

@@ -4,7 +4,9 @@ updated: "2026-11-17"
 video: null
 steps:
   - text: "On Cattle Info choose the Physiological State 'Calves'. Type the calf's body weight in kg and tap 'Continue'."
+    image: calf-plan-01.webp
   - text: "The 'Calf Milk Feeding' plan opens. 'Daily milk' is the litres of milk per day: one tenth of the calf's body weight."
+    image: calf-plan-02.webp
   - text: "'Per feeding' splits the daily milk into 2 feedings a day. 'Wean by' gives the age in days by which to stop milk feeding (56 days)."
   - text: "Example: a 40 kg calf gets 4.0 litres a day, given as 2.0 litres twice a day."
   - text: "Read the care tips under the plan. The plan is a guide: adjust it with your vet."

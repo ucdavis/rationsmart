@@ -5,7 +5,9 @@ video: null
 steps:
   - text: "On a report tap 'Save Report'. The app says 'Report saved successfully'. Saving the same report again does not make a second copy."
   - text: "Tap 'Get PDF' to make the PDF. When it is ready, 'View PDF' opens it and 'Share Report' sends it with your phone's share options (or copies the PDF link)."
+    image: reports-02.webp
   - text: "Open the menu and tap 'Feed Reports' to see your saved reports, newest first. 'View Report' opens the PDF; tap the bar under a report to see its Report ID, Report Type and Date."
+    image: reports-03.webp
   - text: "A new report may show 'PDF Pending' for a minute while its PDF is made. Open 'Feed Reports' again a little later."
   - text: "With more than 20 saved reports, use the next and previous page buttons at the bottom."
   - text: "To reuse a saved case, open Cattle Info and tap the history icon next to 'Simulation Details'. Only saved reports are listed there."

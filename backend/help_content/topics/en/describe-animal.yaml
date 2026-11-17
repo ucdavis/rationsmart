@@ -4,12 +4,16 @@ updated: "2026-11-16"
 video: null
 steps:
   - text: "Under 'Simulation Details', type a Simulation Name (for example the cow's name and the date), choose the Country and the Language of the report. The country decides which feeds you can pick and the currency."
+    image: describe-animal-01.webp
   - text: "Choose the 'Physiological State': Lactating cows, Dry cows, Heifers or Calves. The form then shows only the fields for that state, with usual values already filled in."
+    image: describe-animal-02.webp
   - text: "Under 'Animal Characteristics', choose the breed and enter the Body Weight (kg), Body Condition Score, Parity (number of calvings) and BW Gain (kg per day)."
+    image: describe-animal-03.webp
   - text: "Under 'Reproductive Data', enter the Days of Pregnancy, and for lactating cows the Days in Milk."
   - text: "For lactating cows, under 'Milk Production' enter the milk per day (litres), Milk Fat % and Milk Protein %. The Milk Price is optional: with it, the report compares milk income with feed cost."
   - text: "Under 'Environment', enter the average temperature (°C). If the animal walks to graze, switch on 'Active Grazing' and enter the Topography and the distance walked (km)."
   - text: "Tap 'Continue to Feed'. It turns green when every required field is filled and inside its range. For a calf, tap 'Continue' to see the milk-feeding plan."
+    image: describe-animal-07.webp
   - text: "To reuse an earlier case, tap the history icon next to 'Simulation Details' and pick a saved simulation; type a new Simulation Name before continuing. 'Reset' clears Cattle Info and Feed Selection to start fresh."
 problems:
   - title: "A value shows 'Value Range' in red"
