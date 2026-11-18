@@ -158,12 +158,19 @@ then `az ssh vm -g <resource-group> -n <vm-name>` and run
 `sudo ./deploy.sh create-admin --email you@example.org --name "Your Name" --country-code ETH` in `/opt/rationsmart`.
 Remove `sshAllowedCidr` and apply again afterwards. (Signing in with Entra ID needs the **Virtual Machine Administrator Login** role on the VM.)
 
+Without an Azure login, the **Deploy** and **Data** workflows run the same commands on the VM: actions `seed-dry-run`, `seed` and
+`create-admin`. `create-admin` makes the first super admin (email, name and PIN come from the `ADMIN_*` secrets of the `stage`
+environment) and is not a routine action, so it only runs when you type `CREATE-ADMIN` in the `confirm` input; it also refuses
+by itself when an active super admin already exists.
+
 ## Day to day
 
 | I want to... | Do this |
 |---|---|
-| release a change | merge to `main`, then **Deploy**, Run workflow, and approve it |
-| go back to the previous version | **Deploy**, Run workflow, action `rollback` (code only; the database is not undone) |
+| release a change (everything: both stacks, migrations, database backup) | merge to `main`, then **Deploy**, Run workflow, action `up` |
+| release a small code change quickly | **Deploy**, action `app-release`, `target` `frontend` or `backend`: only that stack is rebuilt and restarted; a frontend release skips the migrations and the backup. Use `up` when the database, the gateway or both stacks change |
+| go back to the previous version | **Deploy**, action `rollback` (code only; the database is not undone); `target` `frontend` or `backend` rolls back just that stack |
+| see why a release failed or what the VM is doing | **Deploy**, action `diagnose` (read-only: checkout, containers, listeners, what answers on `localhost`); the output of the VM script ends with a summary of the run's `[deploy]` lines, because Azure keeps only the last ~4 KB |
 | change the infrastructure | edit `infra/`, open a PR (the Bicep diff is the review), merge, then run **Infrastructure** by hand and approve it |
 | only preview a change | **Infrastructure**, Run workflow, mode `whatif` (approve the environment; nothing is applied) |
 | rotate a secret | change it in the **`stage-infra`** GitHub secrets, run **Infrastructure** (apply), then **Deploy**. Editing it only in Key Vault would be overwritten by the next infrastructure run |
@@ -196,4 +203,9 @@ For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applie
   free disk (the VM has 100 GB). There is no registry and no image kept outside the VM.
 - **Database access:** PostgreSQL has no public address; the Key Vault does (reads need the Azure role).
 - **The first release has no rollback point** (nothing was running before it); later ones do.
+- **HTTPS on the gateway:** the repository's gateway serves plain http. On the stage VM the gateway also serves https for
+  `rationsmart.ucdavis.edu` (Cloudflare in front), configured on the VM itself with an untracked
+  `gateway/docker-compose.override.yml`, so that port 80 only redirects to https. The smoke test in `deploy.sh` recognises
+  that redirect and checks the https server on the VM instead (`GATEWAY_TLS_PORT`, default 443). That VM-only setup is not
+  reproducible from the repository: moving it into the repo (a reviewed pull request) is still to do.
 - The app is served over plain `http`; https and a domain name are not part of this setup.

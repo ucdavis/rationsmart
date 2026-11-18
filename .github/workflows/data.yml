@@ -11,10 +11,14 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "seed-dry-run reports what the pack would change; seed loads it; create-admin makes the first admin from the ADMIN_* secrets"
+        description: "seed-dry-run reports what the pack would change; seed loads it; create-admin makes the first admin from the ADMIN_* secrets (needs confirm)"
         type: choice
         options: [seed-dry-run, seed, create-admin]
         default: seed-dry-run
+      confirm:
+        description: "create-admin only: type CREATE-ADMIN to confirm (the action creates the first super admin and is not meant to be run routinely)"
+        type: string
+        default: ""
       admin_country_code:
         description: "create-admin only: 3-letter code of an existing country, e.g. ETH (not secret). The email, name and PIN come from the ADMIN_EMAIL, ADMIN_NAME and ADMIN_PIN secrets of the stage environment, so they are masked."
         type: string
@@ -37,12 +41,22 @@ jobs:
       contents: read
     env:
       DATA_ACTION: ${{ inputs.action || 'seed-dry-run' }}
+      CONFIRM: ${{ inputs.confirm }}
       RELEASE_SHA: ${{ github.sha }}
       RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
       VM_NAME: ${{ vars.VM_NAME }}
       POSTGRES_DB: ${{ vars.POSTGRES_DB }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Fails before anything touches Azure.
+      - name: Check the inputs
+        run: |
+          set -euo pipefail
+          if [[ "$DATA_ACTION" == "create-admin" && "$CONFIRM" != "CREATE-ADMIN" ]]; then
+            echo "::error::create-admin makes the first super admin and is not a routine action: type CREATE-ADMIN in the confirm input to run it"
+            exit 1
+          fi
 
       # Not azure/login: this repository only allows GitHub-owned actions. This does the same OIDC exchange with
       # the Azure CLI: GitHub issues the job's token (ACTIONS_ID_TOKEN_REQUEST_* exist because of id-token: write)

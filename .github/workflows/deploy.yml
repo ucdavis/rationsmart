@@ -13,10 +13,19 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: "up deploys this commit; rollback returns the VM to the previous images; seed-dry-run and seed load the data pack, create-admin makes the first admin (see deploy/vm-data.sh)"
+        description: "up: full release of this commit (both stacks, migrations, database backup). app-release: release only the stack chosen in target (a small code change). rollback: previous images (of the stack in target, or both). diagnose: read-only look at the VM. seed-dry-run / seed: load the data pack. create-admin: first admin (needs confirm)."
         type: choice
-        options: [up, rollback, seed-dry-run, seed, create-admin]
+        options: [up, app-release, rollback, diagnose, seed-dry-run, seed, create-admin]
         default: up
+      target:
+        description: "app-release and rollback only: frontend or backend rebuilds/restarts/rolls back just that stack; both is the whole app (app-release needs frontend or backend: use up for both)"
+        type: choice
+        options: [both, frontend, backend]
+        default: both
+      confirm:
+        description: "create-admin only: type CREATE-ADMIN to confirm (the action creates the first super admin and is not meant to be run routinely)"
+        type: string
+        default: ""
       admin_country_code:
         description: "create-admin only: 3-letter code of an existing country, e.g. ETH (not secret). The email, name and PIN come from the ADMIN_EMAIL, ADMIN_NAME and ADMIN_PIN secrets of the stage environment, so they are masked."
         type: string
@@ -39,6 +48,8 @@ jobs:
       contents: read
     env:
       DEPLOY_ACTION: ${{ inputs.action || 'up' }}
+      DEPLOY_TARGET: ${{ inputs.target || 'both' }}
+      CONFIRM: ${{ inputs.confirm }}
       RELEASE_SHA: ${{ github.sha }}
       RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
       VM_NAME: ${{ vars.VM_NAME }}
@@ -54,6 +65,19 @@ jobs:
       ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # Fails before anything touches Azure: the inputs must make sense for the chosen action.
+      - name: Check the inputs
+        run: |
+          set -euo pipefail
+          if [[ "$DEPLOY_ACTION" == "create-admin" && "$CONFIRM" != "CREATE-ADMIN" ]]; then
+            echo "::error::create-admin makes the first super admin and is not a routine action: type CREATE-ADMIN in the confirm input to run it"
+            exit 1
+          fi
+          if [[ "$DEPLOY_ACTION" == "app-release" && "$DEPLOY_TARGET" == "both" ]]; then
+            echo "::error::app-release needs target frontend or backend; use the up action to release both stacks"
+            exit 1
+          fi
 
       # Not azure/login: this repository only allows GitHub-owned actions. This does the same OIDC exchange with
       # the Azure CLI: GitHub issues the job's token (ACTIONS_ID_TOKEN_REQUEST_* exist because of id-token: write)
@@ -93,12 +117,22 @@ jobs:
             echo "::add-mask::${ADMIN_EMAIL,,}"
           fi
           script="$(mktemp)"
-          for v in DEPLOY_ACTION RELEASE_SHA KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
+          # app-release is an "up" for the VM script, narrowed to one stack by DEPLOY_ONLY (see deploy.sh); a rollback can
+          # be narrowed the same way. With target "both" DEPLOY_ONLY is not set and both stacks are handled.
+          vm_action="$DEPLOY_ACTION"
+          [[ "$vm_action" != "app-release" ]] || vm_action=up
+          printf 'export DEPLOY_ACTION=%q\n' "$vm_action" >> "$script"
+          if [[ "$DEPLOY_ACTION" == "app-release" || "$DEPLOY_ACTION" == "rollback" ]] && [[ "$DEPLOY_TARGET" != "both" ]]; then
+            printf 'export DEPLOY_ONLY=%q\n' "$DEPLOY_TARGET" >> "$script"
+          fi
+          for v in RELEASE_SHA KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
                    SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
             printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
           done
-          # The data actions run vm-data.sh (checkout plus ./deploy.sh seed); up and rollback run vm-deploy.sh.
+          # The data actions run vm-data.sh (checkout plus ./deploy.sh seed); diagnose runs vm-diagnose.sh (read-only);
+          # up, app-release and rollback run vm-deploy.sh.
           case "$DEPLOY_ACTION" in
+            diagnose) cat deploy/vm-diagnose.sh >> "$script" ;;
             seed-dry-run|seed) printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"; cat deploy/vm-data.sh >> "$script" ;;
             create-admin)
               printf 'export DATA_ACTION=%q\n' "$DEPLOY_ACTION" >> "$script"
