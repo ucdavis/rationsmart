@@ -22,6 +22,8 @@
 #   SKIP_GIT_PULL=1        do not `git pull --ff-only` first
 #   SKIP_BACKUP=1          skip the pre-deploy pg_dump (not recommended)
 #   GATEWAY_PORT=80        host port nginx listens on
+#   DEPLOY_ONLY=<stack>    backend | frontend: release (or roll back) only that app stack and leave the other running
+#                          as it is; a frontend-only release skips the migrations and the database backup. Unset = both
 #
 # Needs: docker with the compose plugin, curl, flock, and backend/.env (see DEPLOYMENT.md).
 set -euo pipefail
@@ -30,6 +32,15 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NETWORK="rationsmart_edge"
 STACKS=(backend frontend gateway)           # start order
 APP_STACKS=(backend frontend)               # stacks whose images we build/roll back
+# DEPLOY_ONLY narrows both lists to one app stack. The snapshot, build, start, rollback-point and rollback code all walk
+# these two lists, so the other stack is neither rebuilt nor restarted nor rolled back. The gateway always restarts
+# last (it reloads its config).
+case "${DEPLOY_ONLY:-}" in
+  "")       ;;
+  backend)  STACKS=(backend gateway);  APP_STACKS=(backend) ;;
+  frontend) STACKS=(frontend gateway); APP_STACKS=(frontend) ;;
+  *) echo "DEPLOY_ONLY must be backend or frontend (or unset), not '${DEPLOY_ONLY}'" >&2; exit 2 ;;
+esac
 GATEWAY_PORT="${GATEWAY_PORT:-80}"
 LOG_FILE="$ROOT/deploy.log"
 
@@ -180,6 +191,9 @@ EOF
     || die "database backup failed (fix it, or re-run with SKIP_BACKUP=1)"
 }
 
+# True when the backend is part of this release (always, unless DEPLOY_ONLY=frontend).
+backend_in_release() { [[ " ${APP_STACKS[*]} " == *" backend "* ]]; }
+
 migrate() {
   log "running alembic migrations"
   dc backend run --rm --no-deps -T api alembic upgrade head
@@ -237,7 +251,11 @@ do_prepare() {
   local stack
   for stack in "${STACKS[@]}"; do pull_or_build "$stack"; done
 
-  backup_db
+  if backend_in_release; then
+    backup_db
+  else
+    log "frontend-only release: no database change, so no backup"
+  fi
 }
 
 # A deploy builds the schema but loads no data. Say so when the database is still empty, so the next step is not missed.
@@ -252,7 +270,11 @@ remind_if_empty() {
 }
 
 do_apply() {
-  migrate
+  if backend_in_release; then
+    migrate
+  else
+    log "frontend-only release: no migrations"
+  fi
   start_all
   smoke_test
   log "deploy OK"
@@ -321,7 +343,7 @@ main() {
     down)
       for ((i=${#STACKS[@]}-1; i>=0; i--)); do dc "${STACKS[i]}" down; done; return ;;
     up|rollback|seed|create-admin) ;;
-    *) sed -n '2,26p' "${BASH_SOURCE[0]}"; exit 2 ;;
+    *) sed -n '2,28p' "${BASH_SOURCE[0]}"; exit 2 ;;
   esac
 
   # Mutating commands: one at a time, and everything is also written to deploy.log.
