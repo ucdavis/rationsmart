@@ -22,6 +22,7 @@
 #   SKIP_GIT_PULL=1        do not `git pull --ff-only` first
 #   SKIP_BACKUP=1          skip the pre-deploy pg_dump (not recommended)
 #   GATEWAY_PORT=80        host port nginx listens on
+#   GATEWAY_TLS_PORT=443   host port of the gateway's https server, used by the smoke test when port 80 only redirects to https
 #   DEPLOY_ONLY=<stack>    backend | frontend: release (or roll back) only that app stack and leave the other running
 #                          as it is; a frontend-only release skips the migrations and the database backup. Unset = both
 #
@@ -42,6 +43,7 @@ case "${DEPLOY_ONLY:-}" in
   *) echo "DEPLOY_ONLY must be backend or frontend (or unset), not '${DEPLOY_ONLY}'" >&2; exit 2 ;;
 esac
 GATEWAY_PORT="${GATEWAY_PORT:-80}"
+GATEWAY_TLS_PORT="${GATEWAY_TLS_PORT:-443}"
 LOG_FILE="$ROOT/deploy.log"
 
 # IMAGE_REGISTRY / IMAGE_TAG may be set in backend/.env (a variable given on the command line wins).
@@ -200,10 +202,22 @@ migrate() {
 }
 
 smoke_test() {
-  local base="http://localhost:${GATEWAY_PORT}" i
-  log "smoke test against $base"
+  local base="http://localhost:${GATEWAY_PORT}" i probe host
+  local tls=()                         # extra curl options while the gateway serves https (see below)
   for i in $(seq 1 30); do
-    if curl -fsS -o /dev/null -L --max-time 5 "$base/healthz" && curl -fsS -o /dev/null -L --max-time 10 "$base/"; then
+    # A gateway that terminates TLS answers plain http with a redirect to https://<host>/ (a 301, 302, 307 or 308), so
+    # /docs on port 80 would be that redirect and not the application. Then test its https server on this machine instead:
+    # the same host name (SNI and Host header) resolved to localhost, and the certificate not verified (it is issued for
+    # the public name; the connection never leaves the machine).
+    probe="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 5 "http://localhost:${GATEWAY_PORT}/" || true)"
+    if [[ "$probe" =~ ^30[1278]\ https://([^/:]+) ]]; then
+      host="${BASH_REMATCH[1]}"
+      tls=(--resolve "${host}:${GATEWAY_TLS_PORT}:127.0.0.1" -k)
+      base="https://${host}:${GATEWAY_TLS_PORT}"
+    fi
+    [[ "$i" != 1 ]] || log "smoke test against $base"
+    if curl -fsS -o /dev/null -L --max-time 5 ${tls[@]+"${tls[@]}"} "$base/healthz" \
+       && curl -fsS -o /dev/null -L --max-time 10 ${tls[@]+"${tls[@]}"} "$base/"; then
       break
     fi
     [[ "$i" == 30 ]] && { log "gateway/frontend did not answer in time"; return 1; }
@@ -211,8 +225,8 @@ smoke_test() {
   done
   # The backend must be hidden from the outside, yet reachable by the app.
   local code
-  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 "$base/docs" || true)"
-  [[ "$code" == "404" ]] || { log "expected 404 for /docs through the gateway, got $code"; return 1; }
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 ${tls[@]+"${tls[@]}"} "$base/docs" || true)"
+  [[ "$code" == "404" ]] || { log "expected 404 for /docs through the gateway ($base), got $code"; return 1; }
   dc backend exec -T api python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)" \
     || { log "api /health failed (database or redis down?)"; return 1; }
   log "smoke test passed"
@@ -343,7 +357,7 @@ main() {
     down)
       for ((i=${#STACKS[@]}-1; i>=0; i--)); do dc "${STACKS[i]}" down; done; return ;;
     up|rollback|seed|create-admin) ;;
-    *) sed -n '2,28p' "${BASH_SOURCE[0]}"; exit 2 ;;
+    *) sed -n '2,29p' "${BASH_SOURCE[0]}"; exit 2 ;;
   esac
 
   # Mutating commands: one at a time, and everything is also written to deploy.log.

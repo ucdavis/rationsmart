@@ -203,4 +203,9 @@ For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applie
   free disk (the VM has 100 GB). There is no registry and no image kept outside the VM.
 - **Database access:** PostgreSQL has no public address; the Key Vault does (reads need the Azure role).
 - **The first release has no rollback point** (nothing was running before it); later ones do.
+- **HTTPS on the gateway:** the repository's gateway serves plain http. On the stage VM the gateway also serves https for
+  `rationsmart.ucdavis.edu` (Cloudflare in front), configured on the VM itself with an untracked
+  `gateway/docker-compose.override.yml`, so that port 80 only redirects to https. The smoke test in `deploy.sh` recognises
+  that redirect and checks the https server on the VM instead (`GATEWAY_TLS_PORT`, default 443). That VM-only setup is not
+  reproducible from the repository: moving it into the repo (a reviewed pull request) is still to do.
 - The app is served over plain `http`; https and a domain name are not part of this setup.
