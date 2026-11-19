@@ -127,6 +127,10 @@ beforeEach(() => {
   } as never);
 });
 
+// The "Registered Languages" heading is drawn while the card is still
+// loading; the Register button (and the rows) only once the list is in.
+const languagesLoaded = () => screen.findByLabelText("Register a new language");
+
 describe("Admin Country/Language — Countries & Languages screen", () => {
   it("loads and renders enabled countries with their language chips", async () => {
     render(<AdminCountryLanguagePage />);
@@ -192,7 +196,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
   it("registers a new language with only name + code (no native-name field)", async () => {
     createLanguage.mockResolvedValue({ data: { code: "sw", name: "Swahili", is_active: true } });
     render(<AdminCountryLanguagePage />);
-    await screen.findByText("Registered Languages");
+    await languagesLoaded();
     fireEvent.click(screen.getByLabelText("Register a new language"));
     expect(await screen.findByText("Register a new language")).toBeInTheDocument();
     expect(screen.queryByText(/Native name/i)).not.toBeInTheDocument();
@@ -208,7 +212,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     // The backend stores the standard BCP 47 form: typed "BEN" → saved "bn".
     createLanguage.mockResolvedValue({ data: { code: "bn", name: "Bengali", is_active: true } });
     render(<AdminCountryLanguagePage />);
-    await screen.findByText("Registered Languages");
+    await languagesLoaded();
     fireEvent.click(screen.getByLabelText("Register a new language"));
     fireEvent.change(screen.getByPlaceholderText("e.g. Swahili"), { target: { value: "Bengali" } });
     fireEvent.change(screen.getByPlaceholderText("e.g. sw"), { target: { value: "BEN" } });
@@ -226,7 +230,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
   it("asks for confirmation before deactivating a language globally", async () => {
     patchLanguage.mockResolvedValue({ data: { code: "hi", name: "Hindi", is_active: false } });
     render(<AdminCountryLanguagePage />);
-    await screen.findByText("Registered Languages");
+    await languagesLoaded();
     fireEvent.click(screen.getByLabelText("Deactivate Hindi"));
     expect(await screen.findByText(/Deactivate Hindi\?/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Deactivate" }));
@@ -247,7 +251,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
 
     it("filters by any part of the English name, ignoring case", async () => {
       render(<AdminCountryLanguagePage />);
-      await screen.findByText("Registered Languages");
+      await languagesLoaded();
       fireEvent.change(search(), { target: { value: "ROM" } });
       expect(shown("Oromo")).toBeInTheDocument();
       expect(shown("Hindi")).toBeNull();
@@ -256,7 +260,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
 
     it("filters by code and by native label", async () => {
       render(<AdminCountryLanguagePage />);
-      await screen.findByText("Registered Languages");
+      await languagesLoaded();
       fireEvent.change(search(), { target: { value: "tl" } });
       expect(shown("Tagalog")).toBeInTheDocument();
       expect(shown("Hindi")).toBeNull();
@@ -269,8 +273,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
 
     it("shows only active languages by default; Inactive and All switch the list (W8)", async () => {
       render(<AdminCountryLanguagePage />);
-      await screen.findByText("Registered Languages");
-      // The heading renders before the language list has loaded.
+      await languagesLoaded();
       await waitFor(() => expect(shown("Hindi")).toBeInTheDocument());
       expect(screen.getByRole("button", { name: "Active" })).toHaveAttribute(
         "aria-pressed",
@@ -296,7 +299,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
 
     it("shows a no-match line, and ✕ clears the search", async () => {
       render(<AdminCountryLanguagePage />);
-      await screen.findByText("Registered Languages");
+      await languagesLoaded();
       await waitFor(() => expect(shown("Hindi")).toBeInTheDocument());
       fireEvent.change(search(), { target: { value: "zzz" } });
       expect(screen.getByText("No languages match “zzz”")).toBeInTheDocument();
@@ -311,7 +314,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     it("toggles a language while filtered and keeps the search text", async () => {
       patchLanguage.mockResolvedValue({ data: { code: "am", name: "Amharic", is_active: true } });
       render(<AdminCountryLanguagePage />);
-      await screen.findByText("Registered Languages");
+      await languagesLoaded();
       fireEvent.click(screen.getByRole("button", { name: "Inactive" }));
       fireEvent.change(search(), { target: { value: "amh" } });
       fireEvent.click(screen.getByLabelText("Activate Amharic"));
