@@ -372,9 +372,7 @@ describe("Bulk Upload — UI-label translation (Hindi)", () => {
 
     await screen.findByText("पशु आहार अपलोड करें"); // UPLOAD FEEDS
     expect(screen.getByText("Excel फ़ाइल चुनने के लिए टैप करें (.xlsx, .xls)")).toBeInTheDocument(); // Tap to browse an Excel file (.xlsx, .xls)
-    expect(
-      screen.getByText("* केवल आपके डिवाइस में संग्रहीत फाइलें ही समर्थित हैं।")
-    ).toBeInTheDocument();
+    expect(screen.getByText("* केवल आपके डिवाइस में संग्रहीत फाइलें ही समर्थित हैं।")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /टेम्पलेट डाउनलोड करें/ })).toBeInTheDocument(); // Download Template
   });
 

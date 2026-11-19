@@ -576,8 +576,11 @@ describe("edit dialog — nutrient field layout by category", () => {
       fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
       await screen.findByText("Edit Nutritional Information");
 
+      // The field grid renders once the edit check has answered.
+      await waitFor(() =>
+        expect(container.querySelector(".grid.grid-cols-2.gap-3.mb-5")).not.toBeNull()
+      );
       const grid = container.querySelector(".grid.grid-cols-2.gap-3.mb-5") as HTMLElement;
-      expect(grid).not.toBeNull();
       expect(grid.querySelectorAll("input")).toHaveLength(count);
 
       if (hasNpn) {
@@ -1047,7 +1050,7 @@ describe("stale non-ASCII feed_type_name / category_name self-heal", () => {
 });
 
 describe("feed swap resets the old feed's values (audit B-12)", () => {
-  const props = (item: FeedItem, onUpdate: ReturnType<typeof vi.fn>) => ({
+  const props = (item: FeedItem, onUpdate: (id: string, updates: Partial<FeedItem>) => void) => ({
     item,
     index: 0,
     showQuantity: true,
