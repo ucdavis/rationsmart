@@ -60,12 +60,13 @@ describe("Help & Support rows (F3)", () => {
 });
 
 describe("HelpButton (❓)", () => {
-  it("opens the screen's topic with the screen's language", () => {
+  it("opens the screen's topic in the profile language, not the screen's (simulation) one", () => {
+    useStore.setState({ user: { preferred_language: "vi" } as never });
     render(<HelpButton screen="feed-selection" lang="hi" />);
     fireEvent.click(screen.getByRole("button"));
-    expect(push).toHaveBeenCalledWith("/help/topic?screen=feed-selection&lang=hi");
+    expect(push).toHaveBeenCalledWith("/help/topic?screen=feed-selection&lang=vi");
   });
-  it("uses the app language when the screen passes none", () => {
+  it("uses the device's last language before sign-in", () => {
     useStore.setState({ user: null, lastUiLanguage: "vi" });
     render(<HelpButton screen="login" floating />);
     fireEvent.click(screen.getByRole("button", { name: "How to" }));
@@ -84,8 +85,8 @@ describe("Help home", () => {
     expect(getHelpIndex).toHaveBeenCalledWith("en");
   });
 
-  it("opens a topic, keeping the language", async () => {
-    searchRef.current = "lang=hi";
+  it("asks for the profile language and keeps it when opening a topic", async () => {
+    useStore.setState({ user: { preferred_language: "hi" } as never });
     render(<HelpHomePage />);
     fireEvent.click(await screen.findByText("Pick feeds and prices"));
     expect(push).toHaveBeenCalledWith("/help/topic?key=pick-feeds&lang=hi");
@@ -208,6 +209,7 @@ describe("Topic screen", () => {
 
   it("fallback topic → content plus the note", async () => {
     getHelpTopic.mockResolvedValue(parseHelpTopic(pickFeedsHi));
+    useStore.setState({ user: { preferred_language: "hi" } as never });
     searchRef.current = "key=pick-feeds&lang=hi";
     render(<HelpTopicPage />);
     expect(await screen.findByText("चारा और कीमतें चुनें")).toBeInTheDocument();
@@ -269,5 +271,16 @@ describe("FAQ list", () => {
     getHelpIndex.mockRejectedValueOnce(httpError());
     render(<HelpFaqsPage />);
     expect(await screen.findByText("Help needs internet.")).toBeInTheDocument();
+  });
+});
+
+describe("Help language = profile language", () => {
+  it("ignores a ?lang= that differs from the profile language", async () => {
+    useStore.setState({ user: { preferred_language: "hi" } as never });
+    searchRef.current = "lang=vi";
+    render(<HelpHomePage />);
+    await screen.findByText("Pick feeds and prices");
+    expect(getHelpIndex).toHaveBeenCalledWith("hi");
+    expect(getHelpIndex).not.toHaveBeenCalledWith("vi");
   });
 });
