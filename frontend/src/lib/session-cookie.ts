@@ -54,7 +54,9 @@ export function isSameOriginRequest(req: NextRequest): boolean {
   const origin = req.headers.get("origin");
   if (!origin) return true; // same-origin fetches from some browsers omit it
   try {
-    return new URL(origin).host === req.nextUrl.host;
+    // Standalone Next.js builds nextUrl with its internal bind address.
+    // Our gateway sets Host to the public request host.
+    return new URL(origin).host === (req.headers.get("host") || req.nextUrl.host);
   } catch {
     return false;
   }

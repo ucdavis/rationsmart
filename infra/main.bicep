@@ -28,6 +28,16 @@ param adminUsername string = 'ubuntu'
 param adminSshPublicKey string
 @description('Address range allowed to reach SSH. Empty keeps port 22 closed (use Entra ID SSH).')
 param sshAllowedCidr string = ''
+
+@description('SSH source ranges; takes precedence over sshAllowedCidr when nonempty.')
+param sshAllowedCidrs array = []
+
+@description('HTTP source ranges. Use Cloudflare ranges for a proxied origin.')
+param httpAllowedCidrs array = ['Internet']
+
+@description('HTTPS source ranges. Empty leaves port 443 closed.')
+param httpsAllowedCidrs array = []
+
 @description('Repository the VM clones on first boot (its default branch; releases then check out the commit being deployed). A private repository needs a deploy key, see INFRASTRUCTURE.md.')
 param repoUrl string = 'https://github.com/ucdavis/rationsmart.git'
 
@@ -70,6 +80,9 @@ module network 'modules/network.bicep' = {
     prefix: namePrefix
     zone: zone
     sshAllowedCidr: sshAllowedCidr
+    sshAllowedCidrs: sshAllowedCidrs
+    httpAllowedCidrs: httpAllowedCidrs
+    httpsAllowedCidrs: httpsAllowedCidrs
   }
 }
 

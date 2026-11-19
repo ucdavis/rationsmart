@@ -26,7 +26,7 @@
 #   DEPLOY_ONLY=<stack>    backend | frontend: release (or roll back) only that app stack and leave the other running
 #                          as it is; a frontend-only release skips the migrations and the database backup. Unset = both
 #
-# Needs: docker with the compose plugin, curl, flock, and backend/.env (see DEPLOYMENT.md).
+# Needs: docker with the compose plugin, curl, python3, flock, and backend/.env (see DEPLOYMENT.md).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -78,6 +78,7 @@ preflight() {
   cv="$(docker compose version --short 2>/dev/null | tr -d 'v')"
   [[ "$(printf '%s\n2.20.0\n' "$cv" | sort -V | head -1)" == "2.20.0" ]] || die "docker compose $cv is too old; need >= 2.20"
   command -v curl >/dev/null || die "curl not found"
+  command -v python3 >/dev/null || die "python3 not found"
   docker info >/dev/null 2>&1 || die "cannot talk to the docker daemon (is this user in the docker group?)"
 
   local env_file="$ROOT/backend/.env" key

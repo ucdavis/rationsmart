@@ -1,0 +1,7 @@
+services:
+  nginx:
+    ports:
+      - "443:443"
+    volumes:
+      - /etc/rationsmart/nginx:/etc/nginx/conf.d:ro
+      - /etc/rationsmart/tls:/etc/nginx/tls:ro
