@@ -63,6 +63,8 @@ MarkupSafe==3.0.2
 # security fixes still arrive; httpx also uses it to decode "br" responses.
 zopfli==0.2.3.post1
 Brotli==1.2.1
+# QR codes in the printable Help guide (services/help_guide); pure Python, no dependencies
+segno==1.6.1
 
 # ── Optimisation science (pinned exactly — do not change) ─────────────────────
 pymoo==0.6.1.3
