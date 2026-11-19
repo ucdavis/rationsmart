@@ -32,17 +32,22 @@ import type {
   CostEffectiveDiet,
 } from "@/lib/api";
 import { simulationCurrency, sumMoney } from "@/lib/money";
+import HelpButton from "@/components/help/HelpButton";
+import { reportHelpScreen } from "@/lib/help";
 
 export default function ReportPage() {
   const router = useRouter();
-  const { user, reportData, reportInputs, setFeedSelectionType, ...live } = useStore((s) => ({
-    feedSelections: s.feedSelections,
-    user: s.user,
-    cattleInfo: s.cattleInfo,
-    reportData: s.reportData,
-    reportInputs: s.reportInputs,
-    setFeedSelectionType: s.setFeedSelectionType,
-  }));
+  const { user, reportData, reportInputs, setFeedSelectionType, startNewCase, ...live } = useStore(
+    (s) => ({
+      feedSelections: s.feedSelections,
+      user: s.user,
+      cattleInfo: s.cattleInfo,
+      reportData: s.reportData,
+      reportInputs: s.reportInputs,
+      setFeedSelectionType: s.setFeedSelectionType,
+      startNewCase: s.startNewCase,
+    })
+  );
   // F47 — render from the inputs this run was sent with, not the live form:
   // after New Case / restore / a country change the form no longer matches
   // the results. Only a report persisted by an older build (no copy) falls
@@ -56,7 +61,8 @@ export default function ReportPage() {
   // chain as store.ts's langProvider (used for feed-data i18n). See the
   // doc comment on useT() in src/lib/i18n-ui.ts for why this screen
   // passes an explicit langOverride instead of calling useT() bare.
-  const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
+  const reportLang = cattleInfo?.simulation_language ?? user?.preferred_language ?? "en";
+  const t = useT(reportLang);
   const { isSaving, pdfUrl, setPdfUrl, savedReportId, save: saveReportPdf } = useSaveReport(t);
 
   // i18n V2 — fallback lookup so the report body shows translated feed
@@ -295,6 +301,7 @@ export default function ReportPage() {
         type="back"
         title={isEval ? t("Evaluation Report") : t("Recommendation Report")}
         onBack={() => router.back()}
+        help={<HelpButton screen={reportHelpScreen(report.mode, dietRating)} lang={reportLang} />}
       />
 
       <div className="flex-1 overflow-y-auto pb-28">
@@ -332,13 +339,11 @@ export default function ReportPage() {
 
         {/* Y3 §2.1 — Milk Cost Margin card. Shows only when the user
             entered a milk price on the Animal Inputs screen. Compares
-            the diet's cost-per-litre against that price and surfaces a
-            positive (green) or negative (red) margin per litre.
-            Computed client-side from existing response fields until
-            Maria ships a backend MilkCostMargin block on the response */}
+            the diet's feed cost per litre against that price (N12: milk
+            revenue over / under feed costs). Evaluation takes the
+            backend's margin_summary (N13); Recommendation computes it. */}
         <MilkCostMarginCard
           reportCtx={reportCtx}
-          reportData={reportData}
           cattleInfo={cattleInfo}
           isEval={isEval}
           evalReport={evalReport}
@@ -420,7 +425,10 @@ export default function ReportPage() {
         canSave={!!reportIdForSave}
         isSaving={isSaving}
         onSave={handleSave}
-        onNewCase={() => router.push("/cattle-info")}
+        onNewCase={() => {
+          startNewCase();
+          router.push("/cattle-info");
+        }}
         t={t}
       >
         {isEval && (

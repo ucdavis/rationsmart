@@ -5,8 +5,11 @@ video: null
 steps:
   - text: "Log in with your email and your 6-digit PIN. The app opens on Cattle Info."
   - text: "On Cattle Info, type a Simulation Name, choose the Country and the Physiological State, and fill in the animal's details. Tap 'Continue to Feed'."
+    image: describe-animal-01.webp
   - text: "On Feed Selection, keep 'Diet Recommendation'. In each feed card choose the Feed Type, then the Feed Category, then the Feed, and type its price per kg. Include at least one forage."
+    image: pick-feeds-02.webp
   - text: "Tap 'Generate Recommendation'. After a few seconds the report shows the cheapest diet: how many kg of each feed to give per day, and the cost per day."
+    image: get-diet-03.webp
   - text: "Tap 'Save Report' to keep it. Your saved reports and their PDFs are in the menu under 'Feed Reports'."
   - text: "Tap 'New Case' to work on the next animal."
 problems:

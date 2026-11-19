@@ -65,6 +65,9 @@ const contentSecurityPolicy = [
   "connect-src 'self'",
   "worker-src 'self'",
   "manifest-src 'self'",
+  // In-app help (N11): help videos play in YouTube's no-cookie player, loaded
+  // only after the user taps ▶. Nothing else may be framed.
+  "frame-src https://www.youtube-nocookie.com",
   "frame-ancestors 'self'",
   "base-uri 'self'",
   "object-src 'none'",
@@ -88,6 +91,9 @@ const securityHeaders = [
 ];
 
 module.exports = withPWA({
+  // frontend/ is its own npm project: don't let Next 15 pick a lockfile
+  // further up (a stray ~/package-lock.json) as the tracing root.
+  outputFileTracingRoot: __dirname,
   // Self-contained server bundle (.next/standalone) so the Docker image
   // only ships what `node server.js` needs.
   output: "standalone",
@@ -104,9 +110,7 @@ module.exports = withPWA({
   },
   compiler: {
     removeConsole:
-      process.env.NODE_ENV === "production" && !keepConsole
-        ? { exclude: ["error"] }
-        : false,
+      process.env.NODE_ENV === "production" && !keepConsole ? { exclude: ["error"] } : false,
   },
   async headers() {
     return [

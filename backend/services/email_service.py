@@ -30,31 +30,36 @@ class EmailService:
 
     # ── HTML templates ────────────────────────────────────────────────────────
 
-    def _pin_reset_html(self, user_name: str, new_pin: str) -> str:
-        ts = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+    def _pin_reset_url(self, token: str) -> str:
+        return f"{settings.api_base_url}/v1/auth/reset-pin-link?token={token}"
+
+    def _pin_reset_html(self, user_name: str, token: str, minutes: int) -> str:
+        url = html.escape(self._pin_reset_url(token), quote=True)
+        user_name = html.escape(user_name)
         return f"""<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto">
 <div style="background:#fff;border-radius:8px;padding:30px;box-shadow:0 2px 6px rgba(0,0,0,.1)">
   <h2 style="color:#2c5aa0">Hello {user_name},</h2>
-  <p>Your RationSmart PIN has been reset. Use the PIN below to log in.</p>
-  <div style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;padding:25px;border-radius:8px;text-align:center;margin:20px 0">
-    <p style="font-size:16px;margin:0 0 10px">Your New PIN</p>
-    <p style="font-size:40px;font-weight:bold;letter-spacing:10px;margin:0">{new_pin}</p>
+  <p>We received a request to reset your RationSmart PIN. Tap the button to choose a new PIN.</p>
+  <div style="text-align:center;margin:30px 0">
+    <a href="{url}" style="background:#2c5aa0;color:#fff;padding:14px 32px;border-radius:6px;text-decoration:none;font-size:16px;font-weight:bold;display:inline-block">
+      Reset my PIN
+    </a>
   </div>
+  <p style="color:#555">The link works once, for {minutes} minutes. Your current PIN keeps working until you choose a new one.</p>
   <p style="color:#856404;background:#fff3cd;padding:12px;border-radius:6px">
-    <strong>Security notice:</strong> If you did not request this reset, contact support immediately.
+    If you did not ask for this, ignore this email: your PIN has not changed.
   </p>
-  <p style="color:#666;font-size:13px">Requested on {ts}.</p>
 </div>
 </body></html>"""
 
-    def _pin_reset_text(self, user_name: str, new_pin: str) -> str:
-        ts = datetime.now(timezone.utc).strftime("%B %d, %Y at %I:%M %p UTC")
+    def _pin_reset_text(self, user_name: str, token: str, minutes: int) -> str:
         return (
             f"Hello {user_name},\n\n"
-            f"Your RationSmart PIN has been reset.\n\n"
-            f"New PIN: {new_pin}\n\n"
-            f"If you did not request this, contact support immediately.\n\n"
-            f"Requested on {ts}.\n\n-- RationSmart"
+            f"We received a request to reset your RationSmart PIN.\n"
+            f"Open this link to choose a new PIN:\n\n"
+            f"{self._pin_reset_url(token)}\n\n"
+            f"The link works once, for {minutes} minutes. Your current PIN keeps working until you choose a new one.\n\n"
+            f"If you did not ask for this, ignore this email: your PIN has not changed.\n\n-- RationSmart"
         )
 
     def _verification_html(self, user_name: str, token: str) -> str:
@@ -150,14 +155,16 @@ class EmailService:
 
     # ── Public API ────────────────────────────────────────────────────────────
 
-    async def send_pin_reset_email(
-        self, to_email: str, user_name: str, new_pin: str
+    async def send_pin_reset_link_email(
+        self, to_email: str, user_name: str, token: str, minutes: int
     ) -> Tuple[bool, Optional[str]]:
-        return self._send(
+        # smtplib blocks; in a worker thread a slow mail server doesn't stall other requests.
+        return await asyncio.to_thread(
+            self._send,
             to_email,
-            subject="Your new RationSmart PIN",
-            text=self._pin_reset_text(user_name, new_pin),
-            html=self._pin_reset_html(user_name, new_pin),
+            subject="Reset your RationSmart PIN",
+            text=self._pin_reset_text(user_name, token, minutes),
+            html=self._pin_reset_html(user_name, token, minutes),
         )
 
     async def send_verification_email(

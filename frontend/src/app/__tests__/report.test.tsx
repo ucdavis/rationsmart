@@ -465,6 +465,17 @@ describe('Report — "New Case" button', () => {
     expect(push).toHaveBeenCalledWith("/cattle-info");
   });
 
+  it("N1: clears only the Simulation Name; every other input stays", () => {
+    const cattleInfo = baseCattleInfo({ simulation_name: "Run 1" });
+    useStore.setState({
+      reportData: makeRecResponse({}, { diet_rating: "OPTIMAL" }),
+      cattleInfo,
+    });
+    render(<ReportPage />);
+    fireEvent.click(screen.getByRole("button", { name: /New Case/ }));
+    expect(useStore.getState().cattleInfo).toEqual({ ...cattleInfo, simulation_name: "" });
+  });
+
   it("does NOT clear feedSelections or reset feedSelectionType — current source deliberately preserves them (diverges from CLAUDE.md §5's documented behavior)", () => {
     const existingSelections: FeedItem[] = [
       {
@@ -884,5 +895,114 @@ describe("Report — evaluation Environment Impact matches the PDF (QA 2026-10-1
     expect(screen.getByText("26.84")).toBeInTheDocument();
     expect(screen.getByText("13.07")).toBeInTheDocument();
     expect(screen.getByText(/\+7\.01\s+Mcal/)).toBeInTheDocument();
+  });
+});
+
+// ─── N12 / N13 — Milk Cost Margin card ─────────────────────────────────────
+describe("Report — Milk Cost Margin card (N12 wording, N13 evaluation figures)", () => {
+  // TD-EV1: target 15 L, milk 40 ETB/L, ration 180 ETB/day; the diet only
+  // supports 7.68 L (protein-limited), so the backend costs it at 23.44 ETB/L.
+  const tdEv1 = (over: Partial<EvaluationResponse["cost_analysis"]> = {}) => {
+    const r = makeEvalResponse({ currency: "ETB" });
+    r.cost_analysis = {
+      ...r.cost_analysis,
+      currency: "ETB",
+      total_diet_cost_as_fed: 180,
+      feed_cost_per_kg_milk: 23.44,
+      margin_summary: {
+        milk_price: 40,
+        cost_per_liter: 23.44,
+        margin_per_liter: 16.56,
+        daily_iofc: 127.2,
+        is_positive: true,
+        comparison: "profitable",
+        message: "Milk revenue exceeds feed costs by ETB 16.56 per liter",
+      },
+      ...over,
+    };
+    r.milk_production_analysis = {
+      ...r.milk_production_analysis,
+      actual_milk_supported_kg_per_day: 7.68,
+      target_production_kg_per_day: 15,
+      limiting_nutrient: "Protein",
+    };
+    return r;
+  };
+  const cow = baseCattleInfo({ milk_production: 15, milk_price: 40 });
+
+  it("N13: Evaluation uses margin_summary (supported milk), not the target milk", () => {
+    useStore.setState({ cattleInfo: cow, reportData: tdEv1() });
+    render(<ReportPage />);
+    expect(screen.getByText("Milk Cost Margin")).toBeInTheDocument();
+    expect(screen.getAllByText("23.44").length).toBeGreaterThan(0);
+    expect(screen.getByText("+16.56")).toBeInTheDocument();
+    expect(screen.getByText("127.20")).toBeInTheDocument();
+    // The old target-milk figures: 180 / 15 L = 12.00/L, margin +28.00, 420.00/day.
+    expect(screen.queryByText("+28.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("420.00")).not.toBeInTheDocument();
+    expect(
+      screen.getByText("Based on the 7.68 L/day this diet supports (limited by Protein)")
+    ).toBeInTheDocument();
+  });
+
+  it("N13: no extra line when the diet supports the target", () => {
+    const r = tdEv1();
+    r.milk_production_analysis.actual_milk_supported_kg_per_day = 15;
+    useStore.setState({ cattleInfo: cow, reportData: r });
+    render(<ReportPage />);
+    expect(screen.getByText("Milk Cost Margin")).toBeInTheDocument();
+    expect(screen.queryByText(/this diet supports/)).not.toBeInTheDocument();
+  });
+
+  it("N13: no margin_summary (no milk price, 0 L supported) → no card, no target-milk fallback", () => {
+    useStore.setState({ cattleInfo: cow, reportData: tdEv1({ margin_summary: null }) });
+    render(<ReportPage />);
+    expect(screen.queryByText("Milk Cost Margin")).not.toBeInTheDocument();
+  });
+
+  it("N12: Recommendation keeps its figures (TD-LC1) under feed-cost wording", () => {
+    useStore.setState({
+      cattleInfo: cow,
+      reportData: makeRecResponse({ total_diet_cost: 306.15 }, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("20.41")).toBeInTheDocument();
+    expect(screen.getByText("+19.59")).toBeInTheDocument();
+    expect(screen.getByText("Milk revenue over feed costs / Litre")).toBeInTheDocument();
+    expect(screen.getByText("293.85")).toBeInTheDocument();
+    expect(screen.queryByText(/profit|loss/i)).not.toBeInTheDocument();
+  });
+
+  it("N12: a negative margin reads 'Feed costs over milk revenue'", () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ milk_production: 15, milk_price: 17 }),
+      reportData: makeRecResponse({ total_diet_cost: 306.15 }, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Feed costs over milk revenue / Litre")).toBeInTheDocument();
+    expect(screen.getByText("−3.41")).toBeInTheDocument();
+    expect(screen.queryByText(/profit|loss/i)).not.toBeInTheDocument();
+  });
+
+  it("N12: a zero margin reads 'Milk revenue equals feed costs' with no sign and no daily line", () => {
+    useStore.setState({
+      cattleInfo: baseCattleInfo({ milk_production: 15, milk_price: 20.41 }),
+      reportData: makeRecResponse({ total_diet_cost: 306.15 }, { diet_rating: "OPTIMAL" }),
+    });
+    render(<ReportPage />);
+    expect(screen.getByText("Milk revenue equals feed costs")).toBeInTheDocument();
+    expect(screen.getByText("0.00")).toBeInTheDocument();
+    expect(screen.queryByText(/^Across /)).not.toBeInTheDocument();
+  });
+
+  it("N12: Hindi shows the feed-cost wording, no लाभ / हानि (profit / loss)", async () => {
+    useStore.setState({
+      cattleInfo: { ...cow, simulation_language: "hi" },
+      reportData: tdEv1(),
+    });
+    render(<ReportPage />);
+    await screen.findByText("फ़ीड लागत से अधिक दूध आय / लीटर", undefined, { timeout: 5000 });
+    expect(screen.getByText("दूध लागत मार्जिन")).toBeInTheDocument();
+    expect(screen.queryByText(/लाभ|हानि/)).not.toBeInTheDocument();
   });
 });

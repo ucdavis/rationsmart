@@ -84,8 +84,10 @@ beforeEach(() => {
 async function renderReady() {
   getCountries.mockResolvedValueOnce({ data: countries });
   render(<ProfilePage />);
-  // Wait for the loaded state (Name input rendered as textbox)
+  // Wait for the loaded state. The Name box is on screen during the shimmer
+  // too, so wait for the countries themselves (Vietnam is an option once they load).
   await waitFor(() => expect(screen.getAllByRole("textbox").length).toBeGreaterThan(0));
+  await screen.findByRole("option", { name: "Vietnam" });
 }
 
 describe("Profile — loading shimmer (real fields in place, not a separate skeleton)", () => {
@@ -150,8 +152,9 @@ describe("Profile — loaded state", () => {
   it("India → English + Hindi + Bengali in Language dropdown", async () => {
     // Seed a user on India; countries mock already includes hi/bn.
     await renderReady();
+    // The language list fills in once the countries have loaded.
+    expect(await screen.findByRole("option", { name: "हिन्दी" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "English" })).toBeInTheDocument();
-    expect(screen.getByRole("option", { name: "हिन्दी" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "বাংলা" })).toBeInTheDocument();
     // No Vietnamese
     expect(screen.queryByRole("option", { name: "Tiếng Việt" })).toBeNull();
@@ -205,8 +208,8 @@ describe("Profile — Update Profile call", () => {
 
     // Store reflects the new choice for the current session.
     // Backend has been notified via updateUserProfile so a subsequent
-    // login returns the same value.
-    expect(useStore.getState().user?.preferred_language).toBe("bn");
+    // login returns the same value. (setUser runs a tick after the call.)
+    await waitFor(() => expect(useStore.getState().user?.preferred_language).toBe("bn"));
     // registered_language is now legacy — carried through unchanged.
   });
 
@@ -220,9 +223,10 @@ describe("Profile — Update Profile call", () => {
     await waitFor(() => expect(update).not.toBeDisabled());
     fireEvent.click(update);
     await waitFor(() => expect(updateUserProfile).toHaveBeenCalledOnce());
+    // setUser runs after the API promise resolves, a tick after the call.
+    await waitFor(() => expect(useStore.getState().user?.country).toBe("Vietnam"));
 
     const u = useStore.getState().user!;
-    expect(u.country).toBe("Vietnam");
     expect(u.country_id).toBe("2");
     expect(u.country_code).toBe("VN");
     expect(u.currency).toBe("VND");

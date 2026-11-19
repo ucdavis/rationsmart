@@ -27,8 +27,9 @@ interface NavDrawerProps {
 }
 
 // User options order matches Android NavigationDrawerItem.userOptions exactly.
-// `badge: "Ongoing"` shows a light-green pill next to the label (matches Android
-// where Help & Support and Terms & Conditions display an "Ongoing" status chip).
+// `badge: "Ongoing"` shows a light-green pill next to the label (Android shows
+// it on Help & Support and Terms & Conditions; Help & Support dropped it once
+// the in-app User Manual and FAQs shipped, N11).
 type MenuItem = {
   label: string;
   href: string;
@@ -51,7 +52,6 @@ const userMenuItems: MenuItem[] = [
     label: "Help & Support",
     href: "/help",
     icon: <IcHelpSupport size={20} color={COLORS.darkAquamarineGreen} />,
-    badge: "Ongoing",
   },
   {
     label: "Feedback",

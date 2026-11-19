@@ -37,6 +37,7 @@ import {
   limitOutOfRange,
   ndfFloorAboveCeiling,
 } from "@/components/feed-selection/preflight";
+import HelpButton from "@/components/help/HelpButton";
 
 // Custom Diet Limits rows are NOT hardcoded any more. They are built from
 // GET /v1/animal/diet-thresholds for the simulation's physiological state,
@@ -93,7 +94,8 @@ export default function FeedSelectionPage() {
   // profile-wide user.preferred_language, matching the exact priority
   // chain the feed-data i18n langProvider already uses in store.ts.
   // See src/lib/i18n-ui.ts's doc comment on the `langOverride` param.
-  const t = useT(cattleInfo?.simulation_language ?? user?.preferred_language ?? "en");
+  const simLang = cattleInfo?.simulation_language ?? user?.preferred_language ?? "en";
+  const t = useT(simLang);
 
   const { items, setItems, loadingRows, handleCascadeLoading, addFeed, updateItem, deleteItem } =
     useFeedItems(feedSelections, setFeedSelections, showSnackbar, t);
@@ -321,7 +323,12 @@ export default function FeedSelectionPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title={t("Feed Selection")} onBack={() => router.back()} />
+      <Toolbar
+        type="back"
+        title={t("Feed Selection")}
+        onBack={() => router.back()}
+        help={<HelpButton screen="feed-selection" lang={simLang} />}
+      />
 
       <OptionalToolsRow
         limitsApplyToAnimal={limitsApplyToAnimal}

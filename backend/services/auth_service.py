@@ -6,6 +6,7 @@ Covers PIN hashing/generation (Tasks 1.5+1.6), business-logic functions
 (issue_token, verify_token) added in Task 2.6.
 """
 import hashlib
+import hmac
 import logging
 import secrets
 from datetime import datetime, timedelta, timezone
@@ -71,15 +72,37 @@ def is_legacy_hash(hashed_pin: str) -> bool:
 _EMAIL_VERIFY_TOKEN_HOURS = 24
 
 
+async def _registration_language(db: AsyncSession, language: Optional[str]) -> Optional[str]:
+    """The stored code of an active language named by `language`, else None (G4).
+
+    Same rule as the profile update (case-insensitive match against the active
+    languages), but a miss is only logged: registration must never fail on it. The
+    country lists also offer linked languages that are not active yet.
+    """
+    if not language or not language.strip():
+        return None
+    from app.lang import get_active_languages
+    from app.language_tags import match_language_code
+
+    code = match_language_code(language.strip(), await get_active_languages(db))
+    if code is None:
+        logger.warning("Register: language %r is not active; preferred_language left empty", language[:35])
+    return code
+
+
 async def register(
     db: AsyncSession,
     name: str,
     email: str,
     pin: str,
     country_id: str,
+    language: Optional[str] = None,
 ) -> Tuple[Optional[UserInformationModel], Optional[str], Optional[str]]:
     """
     Create a new (unverified) user account and return a verification token.
+
+    `language` (G4) becomes the user's preferred_language when it names an active
+    language; anything else is ignored and logged, so a bad code never blocks an account.
 
     Returns (user, None, verify_token) on success or (None, error_message, None) on failure.
     Caller must commit the session after sending the verification email.
@@ -96,11 +119,16 @@ async def register(
     if not await repo.get_country_by_id(country_id):
         return None, "Invalid country selected", None
 
+    preferred_language = await _registration_language(db, language)
+
     if existing:
         # Same account, so the user's saved reports and custom feeds come back.
         # It stays inactive until the new verification link is used.
         user = existing
-        await repo.reregister_self_deleted(user, name=name, pin_hash=hash_pin(pin), country_id=country_id)
+        await repo.reregister_self_deleted(
+            user, name=name, pin_hash=hash_pin(pin), country_id=country_id,
+            preferred_language=preferred_language,
+        )
     else:
         user = await repo.create(
             name=name,
@@ -109,6 +137,7 @@ async def register(
             country_id=country_id,
             is_active=False,
             is_email_verified=False,
+            preferred_language=preferred_language,
         )
 
     verify_token = secrets.token_urlsafe(48)
@@ -162,24 +191,115 @@ async def login(
     return user, None, needs_reset
 
 
+# ── Forgot PIN: one-time reset link (O14) ─────────────────────────────────────
+#
+# Forgot PIN used to set a random PIN at once and e-mail it in plain text. Now it
+# e-mails a link to a backend page where the user chooses the new PIN; nothing
+# changes until then. The link carries a signed token (no DB column, no migration):
+#   - signed with a key derived from jwt_secret_key, so it can never pass as a login
+#     token (and a login token can never pass as a reset token);
+#   - `pfp` = fingerprint of the PIN hash it was issued for: once the PIN changes,
+#     every older link is dead, which makes each link single-use;
+#   - expires after PIN_RESET_LINK_MINUTES.
+
+PIN_RESET_LINK_MINUTES = 30
+_PIN_RESET_PURPOSE = "pin_reset"
+_PIN_RESET_ALG = "HS256"
+PIN_RESET_LINK_INVALID = "This link has expired or was already used. Open RationSmart and tap 'Forgot PIN' again."
+
+
+def _pin_reset_key() -> str:
+    from app.config import settings
+    return hmac.new(settings.jwt_secret_key.encode(), b"rationsmart/pin-reset/v1", hashlib.sha256).hexdigest()
+
+
+def _pin_fingerprint(pin_hash: Optional[str]) -> str:
+    return hashlib.sha256((pin_hash or "").encode()).hexdigest()[:16]
+
+
+def can_reset_pin(user: UserInformationModel) -> bool:
+    """Accounts that can log in once they have a new PIN: active ones and ones still
+    waiting for e-mail verification. Not admin-disabled or self-deleted accounts
+    (their login is refused whatever the PIN), nor older inactive rows without a reason."""
+    if user.deactivated_by is not None:
+        return False
+    return bool(user.is_active) or not bool(user.is_email_verified)
+
+
+def issue_pin_reset_token(user: UserInformationModel) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": str(user.id),
+        "purpose": _PIN_RESET_PURPOSE,
+        "pfp": _pin_fingerprint(user.pin_hash),
+        "iat": now,
+        "exp": now + timedelta(minutes=PIN_RESET_LINK_MINUTES),
+    }
+    import jwt
+    return jwt.encode(payload, _pin_reset_key(), algorithm=_PIN_RESET_ALG)
+
+
 async def forgot_pin(
     db: AsyncSession,
     email: str,
-) -> Tuple[bool, str, Optional[str]]:
+) -> Tuple[Optional[UserInformationModel], Optional[str]]:
     """
-    Generate a new 6-digit PIN and store its hash.
+    Make a PIN reset link token for `email` (O14). Changes nothing in the database.
 
-    Returns (True, message, new_pin) on success.
-    Caller must commit after confirming the email was sent.
+    Returns (user, token), or (None, None) when there is no account for the address or
+    the account can't log in (admin-disabled, self-deleted). The caller replies with the
+    same neutral message either way.
     """
-    repo = UserRepository(db)
-    user = await repo.get_by_email(email)
+    user = await UserRepository(db).get_by_email(email)
+    if not user or not can_reset_pin(user):
+        return None, None
+    return user, issue_pin_reset_token(user)
+
+
+async def check_pin_reset_token(
+    db: AsyncSession, token: Optional[str], for_update: bool = False
+) -> Tuple[Optional[UserInformationModel], Optional[str]]:
+    """The account a reset link belongs to, or (None, PIN_RESET_LINK_INVALID).
+
+    Refuses a bad signature, another kind of token, an expired link, a link whose PIN
+    has changed since (already used), and an account that can no longer log in.
+    """
+    import jwt
+    if not token or len(token) > 2048:
+        return None, PIN_RESET_LINK_INVALID
+    try:
+        claims = jwt.decode(token, _pin_reset_key(), algorithms=[_PIN_RESET_ALG],
+                            options={"require": ["exp", "sub", "purpose", "pfp"]})
+    except jwt.PyJWTError:
+        return None, PIN_RESET_LINK_INVALID
+    if claims.get("purpose") != _PIN_RESET_PURPOSE:
+        return None, PIN_RESET_LINK_INVALID
+    user = await UserRepository(db).get_by_id(str(claims["sub"]), for_update=for_update)
+    if (not user or not can_reset_pin(user)
+            or not hmac.compare_digest(str(claims["pfp"]), _pin_fingerprint(user.pin_hash))):
+        return None, PIN_RESET_LINK_INVALID
+    return user, None
+
+
+async def reset_pin_with_token(
+    db: AsyncSession, token: Optional[str], new_pin: Optional[str], confirm_pin: Optional[str]
+) -> Tuple[Optional[UserInformationModel], Optional[str], bool]:
+    """Set the PIN chosen on the reset page. Returns (user, error, link_ok).
+
+    link_ok is False when the link itself is bad (show the expired page), True when only
+    the PINs need fixing (show the form again). On success the PIN changes, the legacy
+    reset flag clears and every earlier login ends. Caller must commit.
+    """
+    user, error = await check_pin_reset_token(db, token, for_update=True)
     if not user:
-        return False, "Email address not found in our system.", None
-
-    new_pin = generate_pin()
-    await repo.update_pin_hash(user, hash_pin(new_pin))
-    return True, "PIN updated successfully", new_pin
+        return None, error, False
+    if not new_pin or not new_pin.isascii() or not new_pin.isdigit() or len(new_pin) != 6:
+        return None, "Your PIN must be exactly 6 digits.", True
+    if new_pin != confirm_pin:
+        return None, "The two PINs do not match.", True
+    await UserRepository(db).set_pin_after_reset(user, hash_pin(new_pin))
+    logger.info("PIN reset through the e-mail link for user id=%s", user.id)
+    return user, None, True
 
 
 async def change_pin(

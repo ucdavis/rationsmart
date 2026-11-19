@@ -4,9 +4,11 @@ updated: "2026-11-17"
 video: null
 steps:
   - text: "On Feed Selection tap 'Custom Feed'. In 'Add Custom Feed' choose the Feed Type and Feed Category, type a name for the feed, and fill in its nutrient values in % of dry matter. Tap 'Submit'."
+    image: own-feeds-01.webp
   - text: "The app says 'Custom feed saved! It will appear in the feed list.' Pick it in any feed card under its type and category, or search for its name."
   - text: "The fields depend on the category. Minerals ask only for Dry Matter, Ash, Calcium and Phosphorus; Additive also asks for NPN."
   - text: "To use your own values for a feed from the list: pick it in a card and tap the pencil icon. The form opens with the feed's values; change them and tap 'Submit'. This saves your own copy (its name starts with your first name) and the card uses it. The shared feed does not change."
+    image: own-feeds-04.webp
   - text: "Tap the pencil on one of your own custom feeds to change it; the app says 'Custom feed updated!'."
   - text: "Your custom feeds are private: other users never see them. They go with you to every country you choose on Cattle Info."
 problems:

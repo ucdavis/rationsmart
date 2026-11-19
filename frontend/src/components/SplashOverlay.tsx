@@ -64,7 +64,7 @@ export default function SplashOverlay() {
           }}
         >
           <img
-            src="/images/app_logo.png"
+            src="/images/app_logo.webp"
             alt="RationSmart"
             width={80}
             height={80}

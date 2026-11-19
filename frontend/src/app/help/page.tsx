@@ -5,29 +5,24 @@ import Toolbar from "@/components/Toolbar";
 import { useT } from "@/lib/i18n-ui";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { COLORS } from "@/lib/colors";
+import { helpFaqsHref, helpHomeHref } from "@/lib/help";
 
 // English source strings stay as the identity/lookup key (see i18n-ui.ts)
 // — item.title is passed through t() at render time, not translated here.
-const items = [
-  {
-    title: "User Manual",
-    onPress: undefined as (() => void) | undefined,
-  },
-  {
-    title: "FAQs",
-    onPress: undefined as (() => void) | undefined,
-  },
-  {
-    title: "Contact Us",
-    onPress: () => {
-      window.location.href = `mailto:${SUPPORT_EMAIL}`;
-    },
-  },
-];
-
 export default function HelpAndSupportPage() {
   const router = useRouter();
   const t = useT();
+  const items: { title: string; onPress?: () => void }[] = [
+    // N11: in-app help screens (outside (main), so they work before login).
+    { title: "User Manual", onPress: () => router.push(helpHomeHref()) },
+    { title: "FAQs", onPress: () => router.push(helpFaqsHref()) },
+    {
+      title: "Contact Us",
+      onPress: () => {
+        window.location.href = `mailto:${SUPPORT_EMAIL}`;
+      },
+    },
+  ];
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
@@ -43,8 +38,8 @@ export default function HelpAndSupportPage() {
             <div key={idx}>
               <button
                 onClick={item.onPress}
-                // User Manual / FAQs have no content yet: expose them as
-                // disabled instead of rows that look tappable but do nothing.
+                // A row without a handler is disabled rather than looking
+                // tappable but doing nothing.
                 disabled={!item.onPress}
                 className="w-full flex items-center justify-between text-left"
                 style={{

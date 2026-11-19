@@ -19,12 +19,14 @@ import GetPdfButton from "@/components/report/GetPdfButton";
 import PdfActions from "@/components/report/PdfActions";
 import ReportActionBar from "@/components/report/ReportActionBar";
 import { stringField } from "@/lib/api-client/normalize";
+import HelpButton from "@/components/help/HelpButton";
 
 export default function CalfPlanPage() {
   const router = useRouter();
   const reportData = useStore((s) => s.reportData);
   const reportInputs = useStore((s) => s.reportInputs);
   const liveCattleInfo = useStore((s) => s.cattleInfo);
+  const startNewCase = useStore((s) => s.startNewCase);
   // The inputs this run was sent with, not the live form (as on /report).
   const cattleInfo = reportInputs?.cattleInfo ?? liveCattleInfo;
   const t = useT(cattleInfo?.simulation_language ?? undefined);
@@ -44,7 +46,12 @@ export default function CalfPlanPage() {
 
   return (
     <div className="flex flex-col min-h-screen" style={{ backgroundColor: COLORS.authenticWhite }}>
-      <Toolbar type="back" title={t("Calf Milk Feeding")} onBack={() => router.back()} />
+      <Toolbar
+        type="back"
+        title={t("Calf Milk Feeding")}
+        onBack={() => router.back()}
+        help={<HelpButton screen="calf-plan" lang={cattleInfo?.simulation_language ?? undefined} />}
+      />
 
       <div className="flex-1 overflow-y-auto pb-28">
         <CalfMilkFeedingCard
@@ -59,7 +66,10 @@ export default function CalfPlanPage() {
         canSave={!!reportId}
         isSaving={isSaving}
         onSave={() => void save(reportId)}
-        onNewCase={() => router.push("/cattle-info")}
+        onNewCase={() => {
+          startNewCase();
+          router.push("/cattle-info");
+        }}
         t={t}
       >
         {!pdfUrl && savedReportId && (

@@ -23,8 +23,9 @@ export default function ReportActionBar({
   onSave: () => void;
   /**
    * New Case = "make a small tweak and run again" rather than "start from
-   * scratch": everything the user typed stays on Cattle Info. The clean
-   * slate is Cattle Info's Reset.
+   * scratch": everything the user typed stays on Cattle Info except the
+   * Simulation Name (N1, store.startNewCase). The clean slate is Cattle
+   * Info's Reset.
    */
   onNewCase: () => void;
   t: (source: string) => string;

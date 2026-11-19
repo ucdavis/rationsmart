@@ -47,6 +47,9 @@ class UserRegistration(BaseModel):
     email_id: str = Field(..., max_length=255)
     pin: str = Field(..., min_length=6, max_length=6, description="6-digit PIN")
     country_id: str = Field(..., description="Country UUID")
+    # G4: the language picked on Register (BCP 47 code from GET /v1/auth/countries).
+    # Saved as preferred_language when it is an active language; otherwise ignored.
+    language: Optional[str] = Field(None, max_length=35, description="Preferred language code")
 
     @field_validator('email_id', mode='before')
     @classmethod

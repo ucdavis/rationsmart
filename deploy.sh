@@ -22,6 +22,9 @@
 #   SKIP_GIT_PULL=1        do not `git pull --ff-only` first
 #   SKIP_BACKUP=1          skip the pre-deploy pg_dump (not recommended)
 #   GATEWAY_PORT=80        host port nginx listens on
+#   GATEWAY_TLS_PORT=443   host port of the gateway's https server, used by the smoke test when port 80 only redirects to https
+#   DEPLOY_ONLY=<stack>    backend | frontend: release (or roll back) only that app stack and leave the other running
+#                          as it is; a frontend-only release skips the migrations and the database backup. Unset = both
 #
 # Needs: docker with the compose plugin, curl, python3, flock, and backend/.env (see DEPLOYMENT.md).
 set -euo pipefail
@@ -30,7 +33,17 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NETWORK="rationsmart_edge"
 STACKS=(backend frontend gateway)           # start order
 APP_STACKS=(backend frontend)               # stacks whose images we build/roll back
+# DEPLOY_ONLY narrows both lists to one app stack. The snapshot, build, start, rollback-point and rollback code all walk
+# these two lists, so the other stack is neither rebuilt nor restarted nor rolled back. The gateway always restarts
+# last (it reloads its config).
+case "${DEPLOY_ONLY:-}" in
+  "")       ;;
+  backend)  STACKS=(backend gateway);  APP_STACKS=(backend) ;;
+  frontend) STACKS=(frontend gateway); APP_STACKS=(frontend) ;;
+  *) echo "DEPLOY_ONLY must be backend or frontend (or unset), not '${DEPLOY_ONLY}'" >&2; exit 2 ;;
+esac
 GATEWAY_PORT="${GATEWAY_PORT:-80}"
+GATEWAY_TLS_PORT="${GATEWAY_TLS_PORT:-443}"
 LOG_FILE="$ROOT/deploy.log"
 
 # IMAGE_REGISTRY / IMAGE_TAG may be set in backend/.env (a variable given on the command line wins).
@@ -181,29 +194,31 @@ EOF
     || die "database backup failed (fix it, or re-run with SKIP_BACKUP=1)"
 }
 
+# True when the backend is part of this release (always, unless DEPLOY_ONLY=frontend).
+backend_in_release() { [[ " ${APP_STACKS[*]} " == *" backend "* ]]; }
+
 migrate() {
   log "running alembic migrations"
   dc backend run --rm --no-deps -T api alembic upgrade head
 }
 
 smoke_test() {
-  local base="http://localhost:${GATEWAY_PORT}" i
-  local tls_port
-  local curl_tls=()
-  # Read the effective configuration so removing the HTTPS override also restores HTTP checks.
-  tls_port="$(dc gateway config --format json | python3 -c '
-import json, sys
-ports = json.load(sys.stdin)["services"]["nginx"].get("ports", [])
-print(next((str(p["published"]) for p in ports if str(p["target"]) == "443"), ""))
-')" || return 1
-  if [[ -n "$tls_port" ]]; then
-    base="https://rationsmart.ucdavis.edu:$tls_port"
-    curl_tls=(--resolve "rationsmart.ucdavis.edu:$tls_port:127.0.0.1"
-      --cacert /etc/rationsmart/tls/cloudflare-origin-ca-root.pem)
-  fi
-  log "smoke test against $base"
+  local base="http://localhost:${GATEWAY_PORT}" i probe host
+  local tls=()                         # extra curl options while the gateway serves https (see below)
   for i in $(seq 1 30); do
-    if curl ${curl_tls[@]+"${curl_tls[@]}"} -fsS -o /dev/null -L --max-time 5 "$base/healthz" && curl ${curl_tls[@]+"${curl_tls[@]}"} -fsS -o /dev/null -L --max-time 10 "$base/"; then
+    # A gateway that terminates TLS answers plain http with a redirect to https://<host>/ (a 301, 302, 307 or 308), so
+    # /docs on port 80 would be that redirect and not the application. Then test its https server on this machine instead:
+    # the same host name (SNI and Host header) resolved to localhost, and the certificate not verified (it is issued for
+    # the public name; the connection never leaves the machine).
+    probe="$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' --max-time 5 "http://localhost:${GATEWAY_PORT}/" || true)"
+    if [[ "$probe" =~ ^30[1278]\ https://([^/:]+) ]]; then
+      host="${BASH_REMATCH[1]}"
+      tls=(--resolve "${host}:${GATEWAY_TLS_PORT}:127.0.0.1" -k)
+      base="https://${host}:${GATEWAY_TLS_PORT}"
+    fi
+    [[ "$i" != 1 ]] || log "smoke test against $base"
+    if curl -fsS -o /dev/null -L --max-time 5 ${tls[@]+"${tls[@]}"} "$base/healthz" \
+       && curl -fsS -o /dev/null -L --max-time 10 ${tls[@]+"${tls[@]}"} "$base/"; then
       break
     fi
     [[ "$i" == 30 ]] && { log "gateway/frontend did not answer in time"; return 1; }
@@ -211,8 +226,8 @@ print(next((str(p["published"]) for p in ports if str(p["target"]) == "443"), ""
   done
   # The backend must be hidden from the outside, yet reachable by the app.
   local code
-  code="$(curl ${curl_tls[@]+"${curl_tls[@]}"} -s -o /dev/null -w '%{http_code}' --max-time 5 "$base/docs" || true)"
-  [[ "$code" == "404" ]] || { log "expected 404 for /docs through the gateway, got $code"; return 1; }
+  code="$(curl -s -o /dev/null -w '%{http_code}' --max-time 5 ${tls[@]+"${tls[@]}"} "$base/docs" || true)"
+  [[ "$code" == "404" ]] || { log "expected 404 for /docs through the gateway ($base), got $code"; return 1; }
   dc backend exec -T api python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)" \
     || { log "api /health failed (database or redis down?)"; return 1; }
   log "smoke test passed"
@@ -251,7 +266,11 @@ do_prepare() {
   local stack
   for stack in "${STACKS[@]}"; do pull_or_build "$stack"; done
 
-  backup_db
+  if backend_in_release; then
+    backup_db
+  else
+    log "frontend-only release: no database change, so no backup"
+  fi
 }
 
 # A deploy builds the schema but loads no data. Say so when the database is still empty, so the next step is not missed.
@@ -266,7 +285,11 @@ remind_if_empty() {
 }
 
 do_apply() {
-  migrate
+  if backend_in_release; then
+    migrate
+  else
+    log "frontend-only release: no migrations"
+  fi
   start_all
   smoke_test
   log "deploy OK"
@@ -335,7 +358,7 @@ main() {
     down)
       for ((i=${#STACKS[@]}-1; i>=0; i--)); do dc "${STACKS[i]}" down; done; return ;;
     up|rollback|seed|create-admin) ;;
-    *) sed -n '2,26p' "${BASH_SOURCE[0]}"; exit 2 ;;
+    *) sed -n '2,29p' "${BASH_SOURCE[0]}"; exit 2 ;;
   esac
 
   # Mutating commands: one at a time, and everything is also written to deploy.log.

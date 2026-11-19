@@ -4,12 +4,17 @@ updated: "2026-11-16"
 video: null
 steps:
   - text: "At the top, choose 'Diet Recommendation' (the app finds the cheapest diet) or 'Diet Evaluation' (you type the amounts you feed now, and the app checks them)."
+    image: pick-feeds-01.webp
   - text: "In 'FEED 1', choose the Feed Type (Forage, Concentrate or Complete diet), then the Feed Category, then the Feed. Each list opens only after you choose the one before it."
+    image: pick-feeds-02.webp
   - text: "Or search: tap a card so it shows 'Selected', then type part of the feed name (for example 'soybean') in the search box. Tap a result to fill that card."
+    image: pick-feeds-03.webp
   - text: "Type the price per kg in your country's currency. The label shows the currency, for example 'Price ETB/KG'."
   - text: "In 'Diet Evaluation', also type the kg per day you feed now. The card shows the cost (price × kg)."
   - text: "Tap 'Add More Feed' for each extra feed; remove a card with its bin icon. Include at least one forage."
+    image: pick-feeds-06.webp
   - text: "Tap 'Generate Recommendation' (or 'Get Evaluation' in Diet Evaluation). The report opens after a few seconds."
+    image: pick-feeds-07.webp
   - text: "Optional: 'Custom Feed' adds a feed of your own (topic 8). 'Custom Diet Limits' and 'Set inclusion limits' on a card control the diet (topic 9)."
 problems:
   - title: "'Forage Required'"

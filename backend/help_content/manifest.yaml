@@ -2,7 +2,7 @@
 # Contract: In-App Help API contract v1 (backend design docs, dev_docs/in_app_help).
 # Texts live in topics/<lang>/<key>.yaml and faqs/<lang>.yaml; English is the master.
 # Change content_version whenever any help content changes.
-content_version: "2026-11-17.1"
+content_version: "2026-11-18.1"
 quick_start: quick-start
 
 topics:

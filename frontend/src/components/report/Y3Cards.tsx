@@ -1,11 +1,12 @@
 "use client";
 
 // Report — the three Y3 cards: Milk Cost Margin (§2.1), Calf Milk Feeding
-// (§2.3) and the Forage : Concentrate ratio (§2.2). Each prefers the
-// backend-computed block when the response carries it; Milk Cost Margin and
-// Forage : Concentrate fall back to a client-side estimate, the calf card has
-// no fallback (W13: the calf rule lives in the backend only). Split out of
-// report/page.tsx (audit B-17).
+// (§2.3) and the Forage : Concentrate ratio (§2.2). Milk Cost Margin takes
+// the backend's margin_summary on an Evaluation (N13) and is computed here
+// for a Recommendation; Forage : Concentrate prefers the backend block and
+// falls back to a client-side estimate; the calf card has no fallback (W13:
+// the calf rule lives in the backend only). Split out of report/page.tsx
+// (audit B-17).
 
 import type {
   CattleInfo,
@@ -14,7 +15,7 @@ import type {
   FeedItem,
   RecommendationResponse,
 } from "@/lib/api";
-import { fillTemplate } from "@/lib/i18n-ui";
+import { fillTemplate, fillText } from "@/lib/i18n-ui";
 import { formatMoney, roundMoney } from "@/lib/money";
 import { COLORS } from "@/lib/colors";
 import { IcCalfMilk } from "@/components/Icons";
@@ -23,9 +24,66 @@ import { SCard, type ReportContext } from "./parts";
 type Translate = (source: string) => string;
 type ReportData = EvaluationResponse | RecommendationResponse | null;
 
+type MarginTone = "above" | "below" | "equal";
+
+interface MarginFigures {
+  milkPrice: number;
+  costPerLitre: number;
+  margin: number;
+  /** Litres per day the figures are based on. */
+  litres: number;
+  /** Signed daily amount: margin × litres (IOFC). */
+  dailyAmount: number;
+  /** Set when the litres are below the target (Evaluation only). */
+  basedOn: { nutrient: string | null } | null;
+}
+
+// N13: Evaluation takes every figure from the backend's
+// cost_analysis.margin_summary, which costs the diet on the milk it
+// SUPPORTS (not the target) — the same numbers as Cost Analysis and the
+// PDF. No margin_summary (no milk price, 0 L supported): no card.
+function evaluationMargin(
+  evalReport: EvaluationResponse | null,
+  cattleInfo: CattleInfo | null
+): MarginFigures | null {
+  const ms = evalReport?.cost_analysis?.margin_summary;
+  if (!ms) return null;
+  const mpa = evalReport?.milk_production_analysis;
+  const litres = mpa?.actual_milk_supported_kg_per_day ?? 0;
+  if (!(litres > 0)) return null;
+  const target = mpa?.target_production_kg_per_day ?? cattleInfo?.milk_production ?? null;
+  return {
+    milkPrice: ms.milk_price,
+    costPerLitre: ms.cost_per_liter,
+    margin: ms.margin_per_liter,
+    litres,
+    dailyAmount: ms.daily_iofc,
+    basedOn:
+      target != null && litres < target ? { nutrient: mpa?.limiting_nutrient ?? null } : null,
+  };
+}
+
+// Recommendation: the diet is built to meet the target milk, so the card
+// costs it on the target, from the form and the run's daily cost.
+function recommendationMargin(
+  recReport: RecommendationResponse | null,
+  cattleInfo: CattleInfo | null
+): MarginFigures | null {
+  const milkPrice = cattleInfo?.milk_price ?? null;
+  const litres = cattleInfo?.milk_production ?? null;
+  if (milkPrice == null || !litres) return null;
+  // Top-level total_diet_cost equals solution_summary's daily_cost when
+  // present, but is the more reliable source since some payloads omit
+  // solution_summary.
+  const dailyCost = recReport?.total_diet_cost ?? recReport?.solution_summary?.daily_cost ?? null;
+  if (dailyCost == null || dailyCost <= 0) return null;
+  const costPerLitre = roundMoney(dailyCost / litres);
+  const margin = roundMoney(milkPrice - costPerLitre);
+  return { milkPrice, costPerLitre, margin, litres, dailyAmount: margin * litres, basedOn: null };
+}
+
 export function MilkCostMarginCard({
   reportCtx,
-  reportData,
   cattleInfo,
   isEval,
   evalReport,
@@ -34,7 +92,6 @@ export function MilkCostMarginCard({
   t,
 }: {
   reportCtx: ReportContext;
-  reportData: ReportData;
   cattleInfo: CattleInfo | null;
   isEval: boolean;
   evalReport: EvaluationResponse | null;
@@ -43,34 +100,39 @@ export function MilkCostMarginCard({
   t: Translate;
 }) {
   if (!reportCtx.showMilkCostMarginCard) return null;
-  // Prefer the backend-computed MilkCostMargin block when Maria
-  // ships it.
-  // Falls through to the client-side compute when the block is
-  // absent. Either path produces the same UI.
-  const serverMargin = reportData?.milk_cost_margin;
-  const milkPrice = serverMargin?.milk_price_per_litre ?? cattleInfo?.milk_price ?? null;
-  const milkProduction =
-    serverMargin?.daily_milk_production_l ?? cattleInfo?.milk_production ?? null;
-  if (milkPrice == null || !milkProduction) return null;
-  // Pick the right daily cost source per mode. Evaluation uses
-  // cost_analysis.total_diet_cost_as_fed; Recommendation uses
-  // top-level total_diet_cost (which equals solution_summary's
-  // daily_cost when present, but is the more reliable source
-  // since some payloads omit solution_summary).
-  const dailyCost =
-    serverMargin?.total_diet_cost_as_fed ??
-    (isEval
-      ? (evalReport?.cost_analysis?.total_diet_cost_as_fed ?? null)
-      : (recReport?.total_diet_cost ?? recReport?.solution_summary?.daily_cost ?? null));
-  if (dailyCost == null || dailyCost <= 0) return null;
-  const costPerLitre = roundMoney(serverMargin?.cost_per_litre ?? dailyCost / milkProduction);
-  const margin = roundMoney(serverMargin?.margin_per_litre ?? milkPrice - costPerLitre);
-  const isPositive = margin >= 0;
+  const m = isEval
+    ? evaluationMargin(evalReport, cattleInfo)
+    : recommendationMargin(recReport, cattleInfo);
+  if (!m) return null;
+  const { milkPrice, costPerLitre, margin, litres, dailyAmount, basedOn } = m;
+  // Up to 2 decimals, as the backend sends them: 7.68 L, 15 L.
+  const litresText = `${Math.round(litres * 100) / 100} L`;
+  // N12: the margin is milk price minus FEED cost only (no labour, water,
+  // vet…), so it reads "milk revenue over feed costs", never profit/loss —
+  // the same meaning as the backend's margin_summary.message and the PDF.
+  const tone: MarginTone = margin > 0 ? "above" : margin < 0 ? "below" : "equal";
   // Color tokens chosen to match existing report banners
-  // (dark_green_turquoise / carmine_pink theme).
-  const accent = isPositive ? COLORS.darkGreenTurquoise : COLORS.carminePink;
-  const accentBg = isPositive ? COLORS.honeydew : COLORS.peachyPink;
-  const accentBorder = isPositive ? "rgba(5,188,109,0.20)" : "rgba(228,74,74,0.25)";
+  // (dark_green_turquoise / carmine_pink theme); break-even is neutral.
+  const accent = {
+    above: COLORS.darkGreenTurquoise,
+    below: COLORS.carminePink,
+    equal: COLORS.darkSilver,
+  }[tone];
+  const accentBg = {
+    above: COLORS.honeydew,
+    below: COLORS.peachyPink,
+    equal: COLORS.authenticWhite,
+  }[tone];
+  const accentBorder = {
+    above: "rgba(5,188,109,0.20)",
+    below: "rgba(228,74,74,0.25)",
+    equal: COLORS.webDivider,
+  }[tone];
+  const bannerLabel = {
+    above: t("Milk revenue over feed costs / Litre"),
+    below: t("Feed costs over milk revenue / Litre"),
+    equal: t("Milk revenue equals feed costs"),
+  }[tone];
   return (
     <SCard
       title={t("Milk Cost Margin")}
@@ -146,11 +208,11 @@ export function MilkCostMarginCard({
               letterSpacing: 0.3,
             }}
           >
-            {isPositive ? t("Profit / Litre") : t("Loss / Litre")}
+            {bannerLabel}
           </p>
           <div className="flex items-baseline gap-1" style={{ marginTop: 2 }}>
             <p className="font-bold" style={{ color: accent, fontSize: 24 }}>
-              {isPositive ? "+" : "−"}
+              {{ above: "+", below: "−", equal: "" }[tone]}
               {formatMoney(Math.abs(margin))}
             </p>
             <p className="font-bold" style={{ color: accent, fontSize: 13 }}>
@@ -158,43 +220,53 @@ export function MilkCostMarginCard({
             </p>
           </div>
         </div>
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
-          {isPositive ? (
+        {tone !== "equal" && (
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none">
             <path
-              d="M7 14l5-5 5 5"
+              d={tone === "above" ? "M7 14l5-5 5 5" : "M7 10l5 5 5-5"}
               stroke={accent}
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-          ) : (
-            <path
-              d="M7 10l5 5 5-5"
-              stroke={accent}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          )}
-        </svg>
+          </svg>
+        )}
       </div>
       {/* Daily margin context line */}
-      <p className="mt-2 ml-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
-        {fillTemplate(
-          isPositive
-            ? t("Across ${L}/day, net profit ${amount} ${currency}/day")
-            : t("Across ${L}/day, net loss ${amount} ${currency}/day"),
-          {
-            L: `${milkProduction.toFixed(1)} L`,
-            amount: (
-              <span className="font-bold" style={{ color: accent }}>
-                {formatMoney(Math.abs(margin) * milkProduction)}
-              </span>
-            ),
-            currency: currencySymbol,
-          }
-        )}
-      </p>
+      {tone !== "equal" && (
+        <p className="mt-2 ml-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
+          {fillTemplate(
+            tone === "above"
+              ? t("Across ${L}/day, milk revenue over feed costs: ${amount} ${currency}/day")
+              : t("Across ${L}/day, feed costs over milk revenue: ${amount} ${currency}/day"),
+            {
+              L: litresText,
+              amount: (
+                <span className="font-bold" style={{ color: accent }}>
+                  {formatMoney(Math.abs(dailyAmount))}
+                </span>
+              ),
+              currency: currencySymbol,
+            }
+          )}
+        </p>
+      )}
+      {/* N13: an evaluated diet that can't reach the target milk is costed
+          on the litres it supports — say so, and what limits it. */}
+      {basedOn && (
+        <p className="mt-1 ml-1" style={{ color: COLORS.darkSilver, fontSize: 12 }}>
+          {basedOn.nutrient
+            ? fillText(t("Based on the ${L}/day this diet supports (limited by ${nutrient})"), {
+                L: litresText,
+                nutrient:
+                  { Energy: t("Energy"), Protein: t("Protein") }[basedOn.nutrient] ??
+                  basedOn.nutrient,
+              })
+            : fillText(t("Based on the ${L}/day this diet supports"), {
+                L: litresText,
+              })}
+        </p>
+      )}
     </SCard>
   );
 }

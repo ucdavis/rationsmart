@@ -6,6 +6,8 @@
 #
 # Needed variables (set by the workflow, none of them secret):
 #   DEPLOY_ACTION      up | rollback
+#   DEPLOY_ONLY        optional: backend | frontend. Release (or roll back) only that app stack; the other keeps running
+#                      as it is (see deploy.sh). Left out: both stacks.
 #   RELEASE_SHA        git commit to deploy (up only)
 #   KEY_VAULT_NAME     vault that holds postgres-password, jwt-secret-key, redis-password, smtp-password
 #   POSTGRES_HOST  POSTGRES_USER  POSTGRES_DB
@@ -74,8 +76,21 @@ trap - EXIT
 
 # deploy.sh refuses to run when backend/.env points at another database.
 export EXPECT_DB="$POSTGRES_DB" SKIP_GIT_PULL=1 FORCE_BUILD=1   # FORCE_BUILD: build from the checked-out commit
+# deploy.sh keeps a full log in $APP_DIR/deploy.log. Azure returns only the last ~4 KB of this script's output, so on a long
+# deploy the first failure would be cut off. Run it, then print the tail of this run's log and, last, the short story of
+# the [deploy] lines (the part that survives the cut).
+log_start=0
+[[ ! -f deploy.log ]] || log_start="$(wc -l < deploy.log)"
+rc=0
 if [[ "$DEPLOY_ACTION" == "rollback" ]]; then
-  ./deploy.sh rollback
+  ./deploy.sh rollback || rc=$?
 else
-  ./deploy.sh
+  ./deploy.sh || rc=$?
 fi
+if [[ "$rc" != 0 ]]; then
+  echo; echo "== last lines of this run's log ($APP_DIR/deploy.log on the VM) =="
+  tail -n +"$((log_start + 1))" deploy.log | tail -n 12 | cut -c1-200
+fi
+echo; echo "== summary of this run (the [deploy] lines) =="
+tail -n +"$((log_start + 1))" deploy.log | grep -E '\[deploy\]' | tail -n 30 | cut -c1-200 || true
+exit "$rc"
