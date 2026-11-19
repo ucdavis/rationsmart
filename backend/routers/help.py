@@ -5,7 +5,7 @@ backend/help_content/ via services.help_content (validated once per process).
 """
 import logging
 import re
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException, Query, Response, status
 from fastapi.responses import FileResponse
@@ -18,6 +18,7 @@ from services.help_content import (
     HelpContentError,
     get_help_content,
 )
+from services.help_guide import guide_pdf
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Help"])
@@ -86,3 +87,30 @@ def help_media(lang: str, name: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     path, media_type = found
     return FileResponse(path, media_type=media_type, headers={"Cache-Control": MEDIA_CACHE})
+
+
+@router.get("/guide", summary="Printable User Guide or Quick Start card (PDF)",
+            response_class=FileResponse)
+def help_guide(
+    edition: Literal["full", "quick"] = Query(
+        "full", description="`full` = the User Guide (every topic + FAQs); "
+        "`quick` = the 2-page Quick Start card."),
+    lang: Optional[str] = LANG_QUERY,
+):
+    """
+    The In-App Help as a printable A4 PDF, made from the same content as the topics.
+    Videos are reached through a QR code per topic.
+
+    No authentication. Each edition is rendered once per language and `content_version`,
+    then served from a cache. `422` for an unknown edition; `503` when the help content
+    could not be loaded or the PDF could not be made.
+    """
+    content = _content()
+    try:
+        path, filename = guide_pdf(content, edition, lang)
+    except Exception:
+        logger.error("Help guide (%s, %s) could not be made", edition, lang, exc_info=True)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=NOT_AVAILABLE)
+    return FileResponse(path, media_type="application/pdf", filename=filename,
+                        content_disposition_type="inline",
+                        headers={"Cache-Control": TEXT_CACHE})

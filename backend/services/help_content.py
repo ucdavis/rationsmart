@@ -300,6 +300,11 @@ class HelpContent:
     def content_version(self) -> str:
         return self._manifest["content_version"]
 
+    @property
+    def faq_keys(self) -> List[str]:
+        """FAQ keys in manifest order, the same order index() lists the FAQs in."""
+        return [entry["key"] for entry in self._manifest["faqs"]]
+
     def _served(self, lang: Optional[str]) -> str:
         return match_language_code(lang, self.languages, fallback=True) or ENGLISH
 

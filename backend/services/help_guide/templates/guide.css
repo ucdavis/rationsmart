@@ -1,0 +1,158 @@
+/* Printable Help guide (services/help_guide). WeasyPrint 63.1, A4, colour; app palette.
+   EDITION is replaced with the content_version by builder.build_guide_html(). */
+:root {
+  --green: #1CA069;
+  --dark: #064E3B;
+  --tint: #F0FDF4;
+  --tint2: #E4F7EF;
+  --ink: #231F20;
+  --muted: #5F6B66;
+  --line: #CFE3D8;
+  --warn: #B45309;
+  --warn-bg: #FFF8EB;
+  --warn-line: #F4C77B;
+}
+
+@page {
+  size: A4;
+  margin: 20mm 15mm 18mm 15mm;
+  @top-left { content: "RationSmart · User Guide"; font-size: 7.5pt; color: var(--muted); }
+  @top-right { content: string(topic); font-size: 7.5pt; color: var(--muted); }
+  @bottom-left { content: "Edition EDITION"; font-size: 7.5pt; color: var(--muted); }
+  @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 7.5pt; color: var(--muted); }
+}
+@page cover { margin: 0; @top-left { content: none; } @top-right { content: none; }
+  @bottom-left { content: none; } @bottom-right { content: none; } }
+@page card { margin: 12mm 13mm 12mm 13mm;
+  @top-left { content: none; } @top-right { content: none; }
+  @bottom-left { content: "RationSmart · Quick Start · Edition EDITION"; font-size: 7pt; color: var(--muted); }
+  @bottom-right { content: counter(page) " / " counter(pages); font-size: 7pt; color: var(--muted); } }
+
+html { font-family: "DejaVu Sans", "Noto Sans", sans-serif; color: var(--ink); font-size: 9.4pt; line-height: 1.45; }
+body { margin: 0; }
+h1, h2, h3 { color: var(--dark); line-height: 1.2; margin: 0; }
+p { margin: 0 0 2mm; }
+.q { white-space: nowrap; }
+
+/* ── cover ───────────────────────────── */
+.cover { page: cover; height: 297mm; position: relative; background: var(--tint); }
+.cover-band { background: var(--dark); color: white; padding: 34mm 20mm 14mm; }
+.cover-band .brand { font-size: 12pt; letter-spacing: 3pt; text-transform: uppercase; color: #A7F3D0; }
+.cover-band h1 { color: white; font-size: 36pt; margin: 4mm 0 3mm; bookmark-level: none; }
+.cover-band .tag { font-size: 13pt; color: #D1FAE5; }
+.cover-stripe { height: 4mm; background: var(--green); }
+.cover-body { padding: 14mm 20mm 0; }
+.cover-poster { width: 170mm; border-radius: 3mm; border: 0.6pt solid var(--line); }
+.cover-meta { margin-top: 10mm; display: table; width: 170mm; }
+.cover-meta > div { display: table-cell; vertical-align: middle; }
+.cover-meta .facts { font-size: 10pt; color: var(--dark); }
+.cover-meta .facts b { display: inline-block; width: 26mm; color: var(--muted); font-weight: normal; }
+.cover-meta .scan { width: 52mm; text-align: center; font-size: 8pt; color: var(--muted); }
+.cover-meta .scan img { width: 30mm; height: 30mm; display: block; margin: 0 auto 2mm; }
+.cover-foot { position: absolute; bottom: 14mm; left: 20mm; right: 20mm; font-size: 8.5pt; color: var(--muted);
+  border-top: 0.6pt solid var(--line); padding-top: 3mm; }
+
+/* ── front matter ────────────────────── */
+.front { page-break-before: always; }
+.front h2 { font-size: 18pt; margin-bottom: 5mm; string-set: topic content(); }
+.howto { display: table; width: 100%; border-spacing: 0 3mm; }
+.howto > div { display: table-row; }
+.howto .ico { display: table-cell; width: 22mm; vertical-align: middle; text-align: center; background: var(--tint2);
+  border-radius: 3mm 0 0 3mm; font-size: 17pt; font-weight: bold; color: var(--dark); padding: 3mm 0; }
+.howto .txt { display: table-cell; vertical-align: middle; background: var(--tint); border-radius: 0 3mm 3mm 0; padding: 3mm 5mm; }
+.howto .txt b { color: var(--dark); }
+.tip { margin-top: 5mm; border-left: 1.4mm solid var(--green); background: var(--tint); padding: 3mm 5mm; border-radius: 0 2mm 2mm 0; }
+
+.toc { margin-top: 2mm; }
+.toc a { display: block; color: var(--ink); text-decoration: none; padding: 1.8mm 0; border-bottom: 0.4pt dotted var(--line); }
+.toc a::after { content: leader(" ") target-counter(attr(href), page); color: var(--dark); font-weight: bold; }
+.toc .n { display: inline-block; width: 9mm; height: 6mm; line-height: 6mm; text-align: center; border-radius: 1.5mm;
+  background: var(--green); color: white; font-weight: bold; margin-right: 3mm; }
+.toc .len { color: var(--muted); font-size: 8pt; margin-left: 2mm; }
+.toc .extra .n { background: var(--dark); }
+
+/* ── topic ───────────────────────────── */
+.topic { page-break-before: always; }
+.topic-head { display: table; width: 100%; margin-bottom: 4mm; }
+.topic-head > div { display: table-cell; vertical-align: middle; }
+.topic-num { width: 17mm; }
+.topic-num span { display: block; width: 14mm; height: 14mm; line-height: 14mm; border-radius: 3mm; text-align: center;
+  background: var(--green); color: white; font-size: 18pt; font-weight: bold; }
+.topic-head h2 { font-size: 16pt; string-set: topic content(); }
+.topic-head .summary { color: var(--muted); margin-top: 1.5mm; }
+.chips { margin-top: 2mm; }
+.chip { display: inline-block; font-size: 7.5pt; padding: 0.6mm 2.4mm; border-radius: 3mm; background: var(--tint2); color: var(--dark); margin-right: 1.5mm; }
+.chip.aud { background: #FEF3C7; color: #78350F; }
+
+.video { display: table; width: 100%; background: var(--tint); border: 0.6pt solid var(--line); border-radius: 3mm;
+  margin: 1mm 0 5mm; page-break-inside: avoid; }
+.video > div { display: table-cell; vertical-align: top; padding: 3.5mm; }
+.video .poster { width: 52mm; }
+.video .poster img { width: 52mm; border-radius: 1.5mm; display: block; }
+.video .poster .len { font-size: 7.5pt; color: var(--muted); margin-top: 1.5mm; }
+.video .chap h3 { font-size: 10pt; margin-bottom: 1.5mm; }
+.video .chap ol { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 4mm; font-size: 8pt; }
+.video .chap li { margin: 0 0 0.8mm; break-inside: avoid; }
+.video .chap .t { display: inline-block; width: 10mm; color: var(--dark); font-weight: bold; }
+.video .scan { width: 30mm; text-align: center; font-size: 6.8pt; color: var(--muted); }
+.video .scan img { width: 27mm; height: 27mm; display: block; margin: 0 auto 1.2mm; }
+
+.steps { counter-reset: step; }
+.step { display: table; width: 100%; margin-bottom: 4mm; page-break-inside: avoid; }
+.step > div { display: table-cell; vertical-align: top; }
+.step .no { width: 10mm; }
+.step .no span { display: block; width: 7mm; height: 7mm; line-height: 7mm; border-radius: 50%; text-align: center;
+  background: var(--dark); color: white; font-weight: bold; font-size: 9pt; }
+.step .at { float: right; margin-left: 3mm; font-size: 7.5pt; color: var(--dark); background: var(--tint2);
+  padding: 0.4mm 2mm; border-radius: 2mm; white-space: nowrap; }
+.step .txt { padding-right: 4mm; }
+.step .pic { width: 74mm; }
+.step .pic img { display: block; width: 74mm; max-height: 92mm; object-fit: contain; object-position: left top;
+  border: 0.6pt solid #C9D3CE; border-radius: 2mm; }
+
+.problems { margin-top: 3mm; background: var(--warn-bg); border: 0.6pt solid var(--warn-line); border-radius: 3mm;
+  padding: 3mm 5mm 1mm; }
+.problems h3 { page-break-after: avoid; }
+.problems .p { page-break-inside: avoid; }
+.problems h3 { color: var(--warn); font-size: 10.5pt; margin-bottom: 2mm; }
+.problems .p { margin-bottom: 2mm; }
+.problems .p b { color: #7C2D12; }
+
+/* ── FAQs + back page ────────────────── */
+.faqs h2, .back h2 { font-size: 18pt; margin-bottom: 4mm; string-set: topic content(); }
+.faq { margin-bottom: 3.5mm; padding-bottom: 3mm; border-bottom: 0.4pt solid var(--line); page-break-inside: avoid; }
+.faq .qq { font-weight: bold; color: var(--dark); margin-bottom: 1mm; }
+.faq .see { font-size: 8pt; color: var(--muted); margin-top: 1mm; }
+.back { page-break-before: always; }
+.back .box { background: var(--tint); border-radius: 3mm; padding: 4mm 6mm; margin-bottom: 4mm; }
+.back .box h3 { font-size: 11pt; margin-bottom: 1.5mm; }
+
+/* ── quick start card ────────────────── */
+.card { page: card; }
+.card-head { display: table; width: 100%; background: var(--dark); color: white; border-radius: 3mm; }
+.card-head > div { display: table-cell; vertical-align: middle; padding: 4mm 6mm; }
+.card-head .brand { font-size: 8pt; letter-spacing: 2pt; text-transform: uppercase; color: #A7F3D0; }
+.card-head h1 { color: white; font-size: 21pt; margin: 1mm 0; bookmark-level: none; }
+.card-head .tag { color: #D1FAE5; font-size: 9pt; }
+.card-head .scan { width: 32mm; text-align: center; font-size: 6.8pt; color: #D1FAE5; }
+.card-head .scan img { width: 24mm; height: 24mm; background: white; padding: 1.5mm; border-radius: 1.5mm; display: block; margin: 0 auto 1mm; }
+.grid { display: table; width: 100%; border-spacing: 3mm; margin: 0 -3mm; }
+.grid .row { display: table-row; }
+.cell { display: table-cell; width: 50%; vertical-align: top; background: var(--tint); border-radius: 3mm; padding: 3mm; }
+.cell .no span { display: inline-block; width: 7mm; height: 7mm; line-height: 7mm; border-radius: 50%; text-align: center;
+  background: var(--green); color: white; font-weight: bold; margin-right: 2mm; }
+.cell .no b { color: var(--dark); font-size: 10pt; }
+.cell p { margin: 1.5mm 0 0; font-size: 8.6pt; }
+.cell img { display: block; width: 100%; max-height: 52mm; object-fit: contain; object-position: left top;
+  margin-top: 2mm; border: 0.6pt solid #C9D3CE; border-radius: 1.5mm; background: white; }
+.card2 { page-break-before: always; }
+.card2 h2 { font-size: 14pt; margin: 2mm 0 3mm; }
+.card2 .faq { margin-bottom: 2.5mm; padding-bottom: 2mm; }
+.list13 { columns: 2; column-gap: 6mm; font-size: 8.5pt; margin: 0; padding: 0; list-style: none; }
+.list13 li { margin-bottom: 1.2mm; break-inside: avoid; }
+.list13 .n { display: inline-block; width: 6mm; height: 5mm; line-height: 5mm; text-align: center; border-radius: 1mm;
+  background: var(--green); color: white; font-weight: bold; font-size: 7.5pt; margin-right: 2mm; }
+.more { margin-top: 4mm; border-left: 1.4mm solid var(--green); background: var(--tint); padding: 3mm 5mm; border-radius: 0 2mm 2mm 0; }
+.cell .no span.at { float: none; display: inline-block; vertical-align: middle; width: auto; height: auto;
+  line-height: 1.3; border-radius: 2mm; background: var(--tint2); color: var(--dark); font-weight: normal;
+  font-size: 7.5pt; padding: 0.4mm 2mm; margin: 0 0 0 2mm; }

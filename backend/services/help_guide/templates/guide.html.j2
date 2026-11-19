@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<title>RationSmart User Guide</title>
+<meta name="author" content="RationSmart">
+<style>{{ css|safe }}</style>
+</head>
+<body>
+
+{# ── cover ── #}
+<section class="cover">
+  <div class="cover-band">
+    <div class="brand">RationSmart</div>
+    <h1>User Guide</h1>
+    <div class="tag">Least-cost diets for dairy cattle, step by step</div>
+  </div>
+  <div class="cover-stripe"></div>
+  <div class="cover-body">
+    {% if quick.video %}<img class="cover-poster" src="{{ quick.video.poster }}" alt="">{% endif %}
+    <div class="cover-meta">
+      <div class="facts">
+        <div><b>Language</b> {{ language }}</div>
+        <div><b>Edition</b> {{ edition }}</div>
+        <div><b>Updated</b> {{ updated }}</div>
+        <div><b>Topics</b> {{ topics|length }} · with pictures and videos</div>
+      </div>
+      {% if quick.video %}
+      <div class="scan"><img src="{{ quick.video.qr }}" alt="">Scan to watch the<br>Quick start video ({{ quick.video.length }})</div>
+      {% endif %}
+    </div>
+  </div>
+  <div class="cover-foot">For extension workers and trainers. The topic numbers match the 'Help &amp; Support' screen in the app.</div>
+</section>
+
+{# ── how to use ── #}
+<section class="front">
+  <h2>How to use this guide</h2>
+  <div class="howto">
+    <div><div class="ico">{{ topics[0].number }}–{{ topics[-1].number }}</div><div class="txt"><b>Topics follow the app.</b> Each topic is one task, in the order you use the app. The numbers are the same as in the app's 'Help &amp; Support' screen, so you can point farmers to the same topic on their phone.</div></div>
+    <div><div class="ico">▦</div><div class="txt"><b>Scan a QR code to watch.</b> Open the phone camera and point it at the code. The topic's short video opens on YouTube. Below each code is the link, if you prefer to type it.</div></div>
+    <div><div class="ico">▶</div><div class="txt"><b>▶ 0:21 means “this step is in the video at 0 min 21 s”.</b> Use it to jump to one step while you train.</div></div>
+    <div><div class="ico">⚠</div><div class="txt"><b>“If something goes wrong”</b> at the end of each topic lists the messages people see most and what to do.</div></div>
+  </div>
+  <div class="tip"><b>Tip for trainers:</b> start with topic {{ quick.number }}, <i>{{ quick.title }}</i>, and its video. It shows the whole app in under two minutes. The pictures come from the app; your screen may look slightly different.</div>
+</section>
+
+{# ── contents ── #}
+<section class="front">
+  <h2>Contents</h2>
+  <div class="toc">
+    {% for t in topics %}
+    <a href="#t-{{ t.key }}"><span class="n">{{ t.number }}</span>{{ t.title }}{% if t.video %}<span class="len">▶ {{ t.video.length }}</span>{% endif %}</a>
+    {% endfor %}
+    <a class="extra" href="#faqs"><span class="n">?</span>Frequently asked questions</a>
+    <a class="extra" href="#more"><span class="n">+</span>Where to get more help</a>
+  </div>
+</section>
+
+{# ── topics ── #}
+{% for t in topics %}
+<section class="topic" id="t-{{ t.key }}">
+  <div class="topic-head">
+    <div class="topic-num"><span>{{ t.number }}</span></div>
+    <div>
+      <h2>{{ t.title }}</h2>
+      <div class="summary">{{ t.summary }}</div>
+      <div class="chips"><span class="chip">Screen: {{ t.screen_label }}</span>{% if t.audience %}<span class="chip aud">{{ t.audience }}</span>{% endif %}</div>
+    </div>
+  </div>
+
+  {% if t.video %}
+  <div class="video">
+    <div class="poster"><img src="{{ t.video.poster }}" alt=""><div class="len">▶ Video, {{ t.video.length }}</div></div>
+    <div class="chap">
+      <h3>In the video</h3>
+      <ol>{% for c in t.video.chapters %}<li><span class="t">{{ c.at }}</span>{{ c.label }}</li>{% endfor %}</ol>
+    </div>
+    <div class="scan"><img src="{{ t.video.qr }}" alt="">Scan to watch<br>{{ t.video.short }}</div>
+  </div>
+  {% endif %}
+
+  <div class="steps">
+    {% for s in t.steps %}
+    <div class="step">
+      <div class="no"><span>{{ loop.index }}</span></div>
+      <div class="txt">
+        {% if s.at %}<span class="at">▶ {{ s.at }}</span>{% endif %}
+        {{ s.text }}
+      </div>
+      {% if s.image %}<div class="pic"><img src="{{ s.image }}" alt=""></div>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if t.problems %}
+  <div class="problems">
+    <h3>⚠ If something goes wrong</h3>
+    {% for p in t.problems %}<div class="p"><b>{{ p.title }}</b><br>{{ p.text }}</div>{% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endfor %}
+
+{# ── FAQs ── #}
+<section class="topic faqs" id="faqs">
+  <h2>Frequently asked questions</h2>
+  {% for f in faqs %}
+  <div class="faq">
+    <div class="qq">{{ f.question }}</div>
+    <div>{{ f.answer }}</div>
+    {% if f.topic_title %}<div class="see">→ Topic {{ f.topic_number }}: {{ f.topic_title }}</div>{% endif %}
+  </div>
+  {% endfor %}
+</section>
+
+{# ── back page ── #}
+<section class="back" id="more">
+  <h2>Where to get more help</h2>
+  <div class="box"><h3>In the app</h3>Open the menu and tap 'Help &amp; Support'. Every screen also has a help button that opens the topic for that screen.</div>
+  <div class="box"><h3>Questions or problems</h3>Open the menu and tap 'Contact Us'. Write the Simulation Name if your question is about one report.</div>
+  <div class="box"><h3>Videos</h3>All {{ videos }} videos are on the YouTube channel “RationSmart”. Each topic page has its QR code.</div>
+  <div class="box"><h3>This edition</h3>Edition {{ edition }} · {{ language }} · {{ updated }}. When the app changes, a new edition is made from the same help text the app shows.</div>
+</section>
+
+</body>
+</html>
