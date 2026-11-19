@@ -1,16 +1,33 @@
 title: "Language, feedback and help"
 summary: "Use the app in your language, tell us what you think and get help."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "qi4ZEfEGXgU"
+  seconds: 84
+  poster: language-feedback-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Choose the language"}
+    - {start: 21, label: "Your default language"}
+    - {start: 31, label: "Language of the PDF"}
+    - {start: 44, label: "Send feedback"}
+    - {start: 61, label: "Your past feedback"}
+    - {start: 72, label: "Help and support"}
 steps:
   - text: "On Cattle Info choose the Language under 'Simulation Details'. The screens and the report switch to it at once. The list shows the languages set up for the country you chose."
     image: language-feedback-01.webp
+    video_start: 10
   - text: "To make a language your default, open the menu, tap 'Profile', choose the Language and tap 'Update Profile'."
+    video_start: 21
   - text: "The saved PDF uses the report language for its headings, notes and feed names where a translation exists. Numbers do not change. A few status words stay in English on purpose."
+    video_start: 31
   - text: "To give feedback, open the menu and tap 'Feedback'. Choose 1 to 5 stars under 'Rate The App', pick a 'Feedback Category', write your comment (up to 1000 characters) and tap 'Submit Feedback'."
     image: language-feedback-04.webp
+    video_start: 44
   - text: "Your past feedback is listed under 'Your Feedbacks'. Tap one to read it again."
+    video_start: 61
   - text: "For help, open the menu and tap 'Help & Support': the user manual, frequently asked questions, and 'Contact Us', which opens your email app to write to the RationSmart team. 'Terms & Conditions' is also in the menu."
+    video_start: 72
 problems:
   - title: "'Submit Feedback' stays grey"
     text: "Choose a star rating first."

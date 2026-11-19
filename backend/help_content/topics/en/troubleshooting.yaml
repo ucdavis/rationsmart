@@ -1,16 +1,35 @@
 title: "When no diet is found, and other problems"
 summary: "What to do when the report finds no diet, a message appears or the app does not respond."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "GWkrzAygCw8"
+  seconds: 87
+  poster: troubleshooting-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "No solution found"}
+    - {start: 23, label: "Read the notes"}
+    - {start: 34, label: "Add a feed"}
+    - {start: 45, label: "Loosen your limits"}
+    - {start: 55, label: "Check the animal"}
+    - {start: 66, label: "Use Diet Evaluation"}
+    - {start: 76, label: "Try again"}
 steps:
   - text: "When the report says 'No optimized solution found', no mix of your feeds meets this animal's needs. There is no diet table; the 'Notes' card explains why."
     image: troubleshooting-01.webp
+    video_start: 10
   - text: "Read 'Violated Parameters': each line names what the diet could not meet, for example 'Phosphorus Requirement: below minimum' or 'Total Fibre (NDF): above maximum'. 'Recommendations' suggests what to change."
+    video_start: 23
   - text: "Add a feed that supplies what is missing: a mineral feed for calcium or phosphorus, a protein meal for protein, a grain for energy. A ration of only one or two feeds often cannot meet every need."
+    video_start: 34
   - text: "If you set limits ('Set inclusion limits' or 'Custom Diet Limits'), loosen or remove them. The 'Limits You Set' card on the report shows which ones you set."
+    video_start: 45
   - text: "Check the animal: a milk target that is very high for the feeds you have cannot be met. Lower the milk, or add better feeds."
+    video_start: 55
   - text: "To see which nutrient is short in a ration you choose yourself, use 'Diet Evaluation' (topic 6)."
+    video_start: 66
   - text: "Then tap the back arrow to Feed Selection, make the change and tap 'Generate Recommendation' again."
+    video_start: 76
 problems:
   - title: "'Forage Required'"
     text: "Every diet needs at least one feed of type Forage. Add one and generate again."

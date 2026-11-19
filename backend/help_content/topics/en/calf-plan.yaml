@@ -1,16 +1,33 @@
 title: "Milk-feeding plan for a calf"
 summary: "How much milk to give a calf each day, in how many feedings, and when to wean."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "tahyDnUtiWo"
+  seconds: 76
+  poster: calf-plan-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Choose 'Calves'"}
+    - {start: 23, label: "Daily milk"}
+    - {start: 33, label: "Feedings and weaning"}
+    - {start: 44, label: "An example"}
+    - {start: 55, label: "Care tips"}
+    - {start: 65, label: "Save and PDF"}
 steps:
   - text: "On Cattle Info choose the Physiological State 'Calves'. Type the calf's body weight in kg and tap 'Continue'."
     image: calf-plan-01.webp
+    video_start: 10
   - text: "The 'Calf Milk Feeding' plan opens. 'Daily milk' is the litres of milk per day: one tenth of the calf's body weight."
     image: calf-plan-02.webp
+    video_start: 23
   - text: "'Per feeding' splits the daily milk into 2 feedings a day. 'Wean by' gives the age in days by which to stop milk feeding (56 days)."
+    video_start: 33
   - text: "Example: a 40 kg calf gets 4.0 litres a day, given as 2.0 litres twice a day."
+    video_start: 44
   - text: "Read the care tips under the plan. The plan is a guide: adjust it with your vet."
+    video_start: 55
   - text: "Tap 'Save Report' to keep the plan, then 'Get PDF' for a copy with the full milk-feeding schedule (topic 10)."
+    video_start: 65
 problems:
   - title: "The body weight is refused"
     text: "For calves the body weight must be between 30 and 100 kg. The allowed range shows under the field."

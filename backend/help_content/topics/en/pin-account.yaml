@@ -1,17 +1,34 @@
 title: "PIN and account"
 summary: "Forgot PIN, change PIN, edit your profile or delete your account."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "0Mr24hGFHY0"
+  seconds: 88
+  poster: pin-account-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Forgot your PIN"}
+    - {start: 21, label: "Set a new PIN"}
+    - {start: 34, label: "Change your PIN"}
+    - {start: 54, label: "Update your profile"}
+    - {start: 65, label: "An old 4-digit PIN"}
+    - {start: 75, label: "Delete your account"}
 steps:
   - text: "Forgot your PIN? On the Login screen tap 'Forgot PIN? Tap here', type your registered email address and tap 'Proceed'."
     image: pin-account-01.webp
+    video_start: 10
   - text: "Open the email from RationSmart and tap 'Reset my PIN'. A page opens: type your new 6-digit PIN twice and tap 'Save new PIN'. The link works once, for 30 minutes; until you save, your old PIN still works."
     image: pin-account-02.webp
+    video_start: 21
   - text: "Log in with your new PIN. To change your PIN another time while you remember it, open the menu, tap 'Profile', then 'Change PIN': enter your current PIN, then the new one twice, and tap 'Update PIN'."
+    video_start: 34
   - text: "To change your name, country or language, open 'Profile', make the change and tap 'Update Profile'. The button works only after you change something."
     image: pin-account-04.webp
+    video_start: 54
   - text: "Still have an old 4-digit PIN? When you log in with it, the app asks you to set a 6-digit PIN. Enter the old PIN and the new one twice."
+    video_start: 65
   - text: "To delete your account, open 'Profile', tap 'Delete', then 'Yes', and confirm with your PIN. To come back later, register again with the same email address: your saved reports return."
+    video_start: 75
 problems:
   - title: "No email arrived"
     text: "Look in the spam folder and check the address you typed. You can ask again after one minute. For your safety, the app shows the same message for every address."

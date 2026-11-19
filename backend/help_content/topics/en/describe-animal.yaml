@@ -1,20 +1,41 @@
 title: "Describe your animal"
 summary: "Fill in Cattle Info: the case name, country, animal state, body, milk and environment."
-updated: "2026-11-16"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "1l-Qz6XU2AA"
+  seconds: 110
+  poster: describe-animal-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Simulation details"}
+    - {start: 23, label: "Physiological state"}
+    - {start: 36, label: "Animal characteristics"}
+    - {start: 48, label: "Reproductive data"}
+    - {start: 58, label: "Milk production"}
+    - {start: 72, label: "Environment"}
+    - {start: 85, label: "Continue to Feed"}
+    - {start: 98, label: "Reuse or reset a case"}
 steps:
   - text: "Under 'Simulation Details', type a Simulation Name (for example the cow's name and the date), choose the Country and the Language of the report. The country decides which feeds you can pick and the currency."
     image: describe-animal-01.webp
+    video_start: 10
   - text: "Choose the 'Physiological State': Lactating cows, Dry cows, Heifers or Calves. The form then shows only the fields for that state, with usual values already filled in."
     image: describe-animal-02.webp
+    video_start: 23
   - text: "Under 'Animal Characteristics', choose the breed and enter the Body Weight (kg), Body Condition Score, Parity (number of calvings) and BW Gain (kg per day)."
     image: describe-animal-03.webp
+    video_start: 36
   - text: "Under 'Reproductive Data', enter the Days of Pregnancy, and for lactating cows the Days in Milk."
+    video_start: 48
   - text: "For lactating cows, under 'Milk Production' enter the milk per day (litres), Milk Fat % and Milk Protein %. The Milk Price is optional: with it, the report compares milk income with feed cost."
+    video_start: 58
   - text: "Under 'Environment', enter the average temperature (°C). If the animal walks to graze, switch on 'Active Grazing' and enter the Topography and the distance walked (km)."
+    video_start: 72
   - text: "Tap 'Continue to Feed'. It turns green when every required field is filled and inside its range. For a calf, tap 'Continue' to see the milk-feeding plan."
     image: describe-animal-07.webp
+    video_start: 85
   - text: "To reuse an earlier case, tap the history icon next to 'Simulation Details' and pick a saved simulation; type a new Simulation Name before continuing. 'Reset' clears Cattle Info and Feed Selection to start fresh."
+    video_start: 98
 problems:
   - title: "A value shows 'Value Range' in red"
     text: "The number is outside the allowed range for this animal. Type a value inside the range shown."
