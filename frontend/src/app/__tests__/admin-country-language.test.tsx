@@ -270,11 +270,12 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     it("shows only active languages by default; Inactive and All switch the list (W8)", async () => {
       render(<AdminCountryLanguagePage />);
       await screen.findByText("Registered Languages");
+      // The heading renders before the language list has loaded.
+      await waitFor(() => expect(shown("Hindi")).toBeInTheDocument());
       expect(screen.getByRole("button", { name: "Active" })).toHaveAttribute(
         "aria-pressed",
         "true"
       );
-      expect(shown("Hindi")).toBeInTheDocument();
       expect(shown("Amharic")).toBeNull();
 
       fireEvent.click(screen.getByRole("button", { name: "Inactive" }));
@@ -296,6 +297,7 @@ describe("Admin Country/Language — Countries & Languages screen", () => {
     it("shows a no-match line, and ✕ clears the search", async () => {
       render(<AdminCountryLanguagePage />);
       await screen.findByText("Registered Languages");
+      await waitFor(() => expect(shown("Hindi")).toBeInTheDocument());
       fireEvent.change(search(), { target: { value: "zzz" } });
       expect(screen.getByText("No languages match “zzz”")).toBeInTheDocument();
       expect(shown("Hindi")).toBeNull();

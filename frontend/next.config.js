@@ -91,6 +91,9 @@ const securityHeaders = [
 ];
 
 module.exports = withPWA({
+  // frontend/ is its own npm project: don't let Next 15 pick a lockfile
+  // further up (a stray ~/package-lock.json) as the tracing root.
+  outputFileTracingRoot: __dirname,
   // Self-contained server bundle (.next/standalone) so the Docker image
   // only ships what `node server.js` needs.
   output: "standalone",
