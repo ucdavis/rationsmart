@@ -1,16 +1,33 @@
 title: "Your own feeds and feed values"
 summary: "Add a feed that is not in the list, or use your own lab values for a feed."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "8_jDq1L4WZs"
+  seconds: 86
+  poster: own-feeds-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Add a custom feed"}
+    - {start: 27, label: "Use it in a card"}
+    - {start: 37, label: "Fields by category"}
+    - {start: 48, label: "Your values for a listed feed"}
+    - {start: 65, label: "Change your own feed"}
+    - {start: 75, label: "Private to you"}
 steps:
   - text: "On Feed Selection tap 'Custom Feed'. In 'Add Custom Feed' choose the Feed Type and Feed Category, type a name for the feed, and fill in its nutrient values in % of dry matter. Tap 'Submit'."
     image: own-feeds-01.webp
+    video_start: 10
   - text: "The app says 'Custom feed saved! It will appear in the feed list.' Pick it in any feed card under its type and category, or search for its name."
+    video_start: 27
   - text: "The fields depend on the category. Minerals ask only for Dry Matter, Ash, Calcium and Phosphorus; Additive also asks for NPN."
+    video_start: 37
   - text: "To use your own values for a feed from the list: pick it in a card and tap the pencil icon. The form opens with the feed's values; change them and tap 'Submit'. This saves your own copy (its name starts with your first name) and the card uses it. The shared feed does not change."
     image: own-feeds-04.webp
+    video_start: 48
   - text: "Tap the pencil on one of your own custom feeds to change it; the app says 'Custom feed updated!'."
+    video_start: 65
   - text: "Your custom feeds are private: other users never see them. They go with you to every country you choose on Cattle Info."
+    video_start: 75
 problems:
   - title: "'Feed name and type are required'"
     text: "Type a name and choose the Feed Type before tapping 'Submit'."

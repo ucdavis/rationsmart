@@ -1,20 +1,41 @@
 title: "Check the ration you feed now"
 summary: "Type what your animal eats today and see what it lacks, what milk it can support and what it costs."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "_5PPzK8eyvA"
+  seconds: 102
+  poster: check-diet-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Run an evaluation"}
+    - {start: 25, label: "Evaluation summary"}
+    - {start: 36, label: "Dry matter intake"}
+    - {start: 46, label: "Milk production"}
+    - {start: 59, label: "Nutrient balance"}
+    - {start: 70, label: "Cost analysis"}
+    - {start: 81, label: "Milk cost margin"}
+    - {start: 91, label: "Get a recommendation"}
 steps:
   - text: "On Feed Selection choose 'Diet Evaluation'. Pick each feed you give now, type its price and the kg per day you feed (as fed). Tap 'Get Evaluation'. The 'Evaluation Report' opens."
+    video_start: 10
   - text: "'Evaluation Summary' gives the Overall Status of the ration (for example Marginal) and the Limiting Factor: the nutrient that holds the cow back."
     image: check-diet-02.webp
+    video_start: 25
   - text: "'Dry Matter Intake' compares the Actual Intake your feeds give with the Target Intake the cow can eat. 'Below target' means the ration gives less feed than the cow could eat."
+    video_start: 36
   - text: "'Milk Production Analysis': 'Actual Milk' is the milk this ration can support, next to your Target. 'Energy-Supported' and 'Protein-Supported' show the milk each nutrient allows; the lower one is the Limiting Nutrient."
     image: check-diet-04.webp
+    video_start: 46
   - text: "'Nutrient Balance' shows each nutrient as a surplus (+) or a shortage (−) against what the cow needs."
+    video_start: 59
   - text: "'Cost Analysis' shows the Total Diet Cost per day, the cost of each feed in 'Feed Breakdown', and 'Cost/Litre Milk': the diet cost divided by the milk this ration can support (Actual Milk)."
     image: check-diet-06.webp
+    video_start: 70
   - text: "'Milk Cost Margin' compares the feed cost per litre with your milk price. For an evaluation, the cost that counts is the 'Cost/Litre Milk' in Cost Analysis, because it is based on the milk this ration can really support."
+    video_start: 81
   - text: "Tap 'Generate Diet Recommendation' to get the cheapest diet from the same feeds for the same animal. Save and share the evaluation the same way as a recommendation (topic 10)."
     image: check-diet-08.webp
+    video_start: 91
 problems:
   - title: "'Actual Milk' is lower than my target"
     text: "The ration is short of the Limiting Nutrient. Add a feed rich in it (for example a protein meal when protein is limiting), or tap 'Generate Diet Recommendation'."

@@ -1,17 +1,34 @@
 title: "Quick start: from login to report"
 summary: "The whole app in a few minutes: log in, describe your animal, pick your feeds and get the cheapest diet."
-updated: "2026-11-16"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "epJicMW6-10"
+  seconds: 86
+  poster: quick-start-video.webp
+  chapters:
+    - {start: 0, label: "What RationSmart does"}
+    - {start: 10, label: "Log in"}
+    - {start: 21, label: "Describe your animal"}
+    - {start: 38, label: "Pick feeds and prices"}
+    - {start: 55, label: "Get the cheapest diet"}
+    - {start: 65, label: "Save the report"}
+    - {start: 76, label: "Next animal"}
 steps:
   - text: "Log in with your email and your 6-digit PIN. The app opens on Cattle Info."
+    video_start: 10
   - text: "On Cattle Info, type a Simulation Name, choose the Country and the Physiological State, and fill in the animal's details. Tap 'Continue to Feed'."
     image: describe-animal-01.webp
+    video_start: 21
   - text: "On Feed Selection, keep 'Diet Recommendation'. In each feed card choose the Feed Type, then the Feed Category, then the Feed, and type its price per kg. Include at least one forage."
     image: pick-feeds-02.webp
+    video_start: 38
   - text: "Tap 'Generate Recommendation'. After a few seconds the report shows the cheapest diet: how many kg of each feed to give per day, and the cost per day."
     image: get-diet-03.webp
+    video_start: 55
   - text: "Tap 'Save Report' to keep it. Your saved reports and their PDFs are in the menu under 'Feed Reports'."
+    video_start: 65
   - text: "Tap 'New Case' to work on the next animal."
+    video_start: 76
 problems:
   - title: "'Continue to Feed' stays grey"
     text: "A required field is empty, or a value is outside its range (the range shows in red under the field). Fix it and the button turns green."

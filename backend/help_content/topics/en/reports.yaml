@@ -1,17 +1,36 @@
 title: "Save, share and find your reports"
 summary: "Keep a report, get its PDF, share it and open it again later."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "Z7HuW-tGpWU"
+  seconds: 85
+  poster: reports-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Save the report"}
+    - {start: 21, label: "Get, view, share the PDF"}
+    - {start: 32, label: "Feed Reports"}
+    - {start: 43, label: "PDF Pending"}
+    - {start: 54, label: "Many reports"}
+    - {start: 64, label: "Reuse a saved case"}
+    - {start: 75, label: "Unsaved reports"}
 steps:
   - text: "On a report tap 'Save Report'. The app says 'Report saved successfully'. Saving the same report again does not make a second copy."
+    video_start: 10
   - text: "Tap 'Get PDF' to make the PDF. When it is ready, 'View PDF' opens it and 'Share Report' sends it with your phone's share options (or copies the PDF link)."
     image: reports-02.webp
+    video_start: 21
   - text: "Open the menu and tap 'Feed Reports' to see your saved reports, newest first. 'View Report' opens the PDF; tap the bar under a report to see its Report ID, Report Type and Date."
     image: reports-03.webp
+    video_start: 32
   - text: "A new report may show 'PDF Pending' for a minute while its PDF is made. Open 'Feed Reports' again a little later."
+    video_start: 43
   - text: "With more than 20 saved reports, use the next and previous page buttons at the bottom."
+    video_start: 54
   - text: "To reuse a saved case, open Cattle Info and tap the history icon next to 'Simulation Details'. Only saved reports are listed there."
+    video_start: 64
   - text: "A report you did not save stays on this phone for 24 hours, then it is gone. Save the ones you need."
+    video_start: 75
 problems:
   - title: "'No saved reports'"
     text: "You have not saved a report yet. Tap 'Create Report', make a diet and tap 'Save Report'."
