@@ -1,8 +1,9 @@
 "use client";
 
 // N11: the ❓ "How to" button. It only sends the screen key; the topic screen
-// looks the key up in the backend's map (contract §3). `lang` is the same
-// override the screen passes to useT(), so help opens in the screen's language.
+// looks the key up in the backend's map (contract §3). Help opens in the
+// user's profile language; `lang` (the screen's useT() override, e.g. the
+// simulation language) only translates the button's own label.
 import { useRouter } from "next/navigation";
 import { COLORS } from "@/lib/colors";
 import { helpScreenHref, type HelpScreenKey } from "@/lib/help";
@@ -33,14 +34,14 @@ export function IcHelp({ size = 20, color = COLORS.darkAquamarineGreen }) {
 
 export default function HelpButton({ screen, lang, floating }: HelpButtonProps) {
   const router = useRouter();
-  const uiLang = useUiLang(lang);
+  const helpLang = useUiLang();
   const t = useT(lang);
   return (
     <button
       type="button"
       onClick={() => {
         markHelpOpened(screen);
-        router.push(helpScreenHref(screen, uiLang));
+        router.push(helpScreenHref(screen, helpLang));
       }}
       className="flex items-center justify-center rounded-xl bg-white p-2.5"
       style={{

@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 import { getHelpIndex, type HelpIndex } from "@/lib/api";
 import { useUiLang } from "@/lib/i18n-ui";
 import { helpErrorMessage } from "./HelpParts";
 
-/** The language help is shown in: the opening screen's (`?lang=`), else the app's. */
+/**
+ * The language help is asked for and shown in: always the user's profile
+ * language (before sign-in, the device's last-used one), whichever screen
+ * opened it — never a simulation's language or a stale `?lang=` in the URL.
+ */
 export function useHelpLang(): string {
-  return useUiLang(useSearchParams().get("lang") || undefined);
+  return useUiLang();
 }
 
 /** The help index for `lang`; `error` is the English message to show via t(). */
