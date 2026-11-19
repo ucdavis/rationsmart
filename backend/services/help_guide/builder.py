@@ -25,7 +25,7 @@ import re
 import tempfile
 import threading
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import segno
 from jinja2 import Environment, FileSystemLoader, select_autoescape
