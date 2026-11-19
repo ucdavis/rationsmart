@@ -1,21 +1,42 @@
 title: "Pick feeds and prices"
 summary: "Choose the feeds you have, type the price of each and run the diet."
-updated: "2026-11-16"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "aY0oK_H40RI"
+  seconds: 98
+  poster: pick-feeds-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Choose the mode"}
+    - {start: 21, label: "Fill a feed card"}
+    - {start: 31, label: "Search for a feed"}
+    - {start: 44, label: "Type the price"}
+    - {start: 55, label: "Amounts for an evaluation"}
+    - {start: 65, label: "Add more feeds"}
+    - {start: 76, label: "Run the diet"}
+    - {start: 87, label: "Own feeds and limits"}
 steps:
   - text: "At the top, choose 'Diet Recommendation' (the app finds the cheapest diet) or 'Diet Evaluation' (you type the amounts you feed now, and the app checks them)."
     image: pick-feeds-01.webp
+    video_start: 10
   - text: "In 'FEED 1', choose the Feed Type (Forage, Concentrate or Complete diet), then the Feed Category, then the Feed. Each list opens only after you choose the one before it."
     image: pick-feeds-02.webp
+    video_start: 21
   - text: "Or search: tap a card so it shows 'Selected', then type part of the feed name (for example 'soybean') in the search box. Tap a result to fill that card."
     image: pick-feeds-03.webp
+    video_start: 31
   - text: "Type the price per kg in your country's currency. The label shows the currency, for example 'Price ETB/KG'."
+    video_start: 44
   - text: "In 'Diet Evaluation', also type the kg per day you feed now. The card shows the cost (price × kg)."
+    video_start: 55
   - text: "Tap 'Add More Feed' for each extra feed; remove a card with its bin icon. Include at least one forage."
     image: pick-feeds-06.webp
+    video_start: 65
   - text: "Tap 'Generate Recommendation' (or 'Get Evaluation' in Diet Evaluation). The report opens after a few seconds."
     image: pick-feeds-07.webp
+    video_start: 76
   - text: "Optional: 'Custom Feed' adds a feed of your own (topic 8). 'Custom Diet Limits' and 'Set inclusion limits' on a card control the diet (topic 9)."
+    video_start: 87
 problems:
   - title: "'Forage Required'"
     text: "Every diet needs at least one feed of type Forage. Tap 'OK, Add a Forage', add one and generate again."

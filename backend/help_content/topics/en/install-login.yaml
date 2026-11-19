@@ -1,17 +1,34 @@
 title: "Install the app, register, log in"
 summary: "Add RationSmart to your phone, create an account and sign in."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "QLanu_eq3fM"
+  seconds: 119
+  poster: install-login-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Open the app"}
+    - {start: 22, label: "Add it to your phone"}
+    - {start: 35, label: "Register"}
+    - {start: 87, label: "Confirm your email"}
+    - {start: 97, label: "Log in"}
+    - {start: 109, label: "Log out"}
 steps:
   - text: "Open RationSmart in your phone's browser: Chrome on Android, Safari on iPhone. On the Welcome screen tap 'Continue'."
     image: install-login-01.webp
+    video_start: 10
   - text: "To use it like an app, wait a few seconds for the install banner and tap 'Install'. On Android: tap the menu (three dots), then 'Add to Home screen', then 'Add'. On iPhone: tap the Share button, then 'Add to Home Screen', then 'Add'. Then open RationSmart from its icon."
+    video_start: 22
   - text: "New user? On the Login screen tap 'Register here'. Enter your name, email address and country, and choose your language: the app will open in it after you log in. Choose a 6-digit PIN, type it again in 'Confirm PIN', and tap 'Proceed'."
     image: install-login-03.webp
+    video_start: 35
   - text: "Open the email from RationSmart and tap the link in it. Your account is now ready."
+    video_start: 87
   - text: "On the Login screen enter your email address and PIN and tap 'Proceed'. The app opens on Cattle Info. Next time you open the app, you are still logged in."
     image: install-login-05.webp
+    video_start: 97
   - text: "To log out, open the menu, tap 'Logout', then 'Yes, Logout'."
+    video_start: 109
 problems:
   - title: "No verification email"
     text: "Look in the spam folder. On 'Check Your Email' tap 'Resend Verification Email'. You can ask for a new email once a minute."

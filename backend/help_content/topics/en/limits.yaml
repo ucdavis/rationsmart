@@ -1,17 +1,34 @@
 title: "Set limits for feeds and for the diet"
 summary: "Control how much of a feed the diet may use, and set nutrient limits for the whole diet."
-updated: "2026-11-17"
-video: null
+updated: "2026-11-19"
+video:
+  youtube_id: "O61fjYiQZdI"
+  seconds: 81
+  poster: limits-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Limit one feed"}
+    - {start: 24, label: "An example"}
+    - {start: 35, label: "Limits for the diet"}
+    - {start: 47, label: "Limits on the report"}
+    - {start: 58, label: "Soft limits"}
+    - {start: 70, label: "Saved with the report"}
 steps:
   - text: "Feed limit: on a feed card, after picking the feed, turn on 'Set inclusion limits'. Type a Min and/or a Max in kg per day as fed. Leave a box empty for no limit."
     image: limits-01.webp
+    video_start: 10
   - text: "Example: Soybean meal with Max 2 kg gives a diet with 1.88 kg of it. The diet may cost more than without the limit, because the app must use other feeds."
+    video_start: 24
   - text: "Diet limits: tap 'Custom Diet Limits'. Each limit shows its allowed range and the default for the Physiological State, for example 'NDF max' or 'Starch max'. Change only what you need and tap 'Apply Limits'."
     image: limits-03.webp
+    video_start: 35
   - text: "Generate the diet. The report's 'Limits You Set' card lists every limit you set and how much of each limited feed the diet used. The saved PDF has the same section."
     image: get-diet-06.webp
+    video_start: 47
   - text: "Fat, fibre and starch limits are soft: the app aims for them, and the report shows 'Diet Limit Notes' when the diet ends up above one by more than 2.5 % of the limit."
+    video_start: 58
   - text: "Limits are saved with the report. When you load a saved simulation from the history on Cattle Info, its limits come back too."
+    video_start: 70
 problems:
   - title: "'Minimum can't be more than the maximum.'"
     text: "Make the Min smaller than the Max, or clear one of them."
