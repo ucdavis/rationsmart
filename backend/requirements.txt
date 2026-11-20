@@ -47,14 +47,17 @@ slowapi>=0.1.10
 boto3==1.43.118
 
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
-weasyprint==63.1
-tinycss2==1.4.0
+# 63.1 → 70.0 on 2026-11-20 (security release: 4 advisories). 70.0 needs tinycss2 ≥1.5,
+# cssselect2 ≥0.8, fonttools ≥4.59.2 and a URLFetcher-class url_fetcher (pdf_service).
+# Upgraded with an old-vs-new page-by-page PDF comparison; do the same next time.
+weasyprint==70.0
+tinycss2==1.5.1
 tinyhtml5==2.0.0
-cssselect2==0.7.0
+cssselect2==0.8.0
 pydyf==0.11.0
 pyphen==0.17.0
 webencodings==0.5.1
-fonttools==4.55.3
+fonttools==4.60.2
 pillow==13.0.0
 Jinja2>=3.1.6
 MarkupSafe==3.0.2

@@ -1271,9 +1271,10 @@ def _localize_feed_columns(df, name_map=None, type_map=None):
 
 # Right-to-left reports (report_text.RTL_LANGUAGES): mirror what the main style
 # block pins to the left. Naskh is named first because DejaVu, the default font, also
-# has Arabic letters but draws them less well. WeasyPrint 63.1 (pinned) raises an
+# has Arabic letters but draws them less well. WeasyPrint 63.1 raised an
 # AssertionError laying out any overflow:hidden box in a right-to-left page, so every
-# such box is made visible here; check for new ones when the main style changes.
+# such box is made visible here; kept for 70.0 (re-check before removing), and check
+# for new ones when the main style changes.
 _RTL_STYLE = """
     <style>
       body { font-family: 'Noto Naskh Arabic', 'DejaVu Sans', sans-serif; direction: rtl; }

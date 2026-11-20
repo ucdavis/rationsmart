@@ -47,6 +47,10 @@ updates:
       # SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), breaking Alembic (#42).
       - dependency-name: "sqlalchemy"
         versions: [">=2.1"]
+      # botocore (boto3) requires python-dateutil<3.0.0; a 3.x/4.x bump makes pip fail with
+      # ResolutionImpossible although CI stays green (#103, #140, #148). Remove once botocore allows it.
+      - dependency-name: "python-dateutil"
+        versions: [">=3"]
     groups:
       dependencies:
         patterns:

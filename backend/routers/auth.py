@@ -11,7 +11,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.models import CountryLanguage, UserInformationModel
-from app.dependencies import get_current_user, get_db
+from app.dependencies import get_current_user, get_db, require_admin_user
 from app.schemas.auth import (
     AuthenticationResponse,
     ChangePinRequest,
@@ -606,13 +606,14 @@ async def send_verification_resend(email_id: str) -> None:
         logger.exception("Resend verification: background job failed")
 
 
-@router.get("/email-config", summary="Check email service configuration (diagnostic)")
-async def email_config():
+@router.get("/email-config", summary="Check email service configuration (admin diagnostic)")
+async def email_config(_admin: UserInformationModel = Depends(require_admin_user)):
     """
-    Diagnostic endpoint that returns the current email service configuration status.
+    Admin-only diagnostic: SMTP settings and a live login test, without sending an email.
 
-    Useful for verifying SMTP settings without sending a test email. No authentication required.
-    Not intended for production client use.
+    Each call logs in to the mail server, so it must not be open to anonymous callers
+    (repeated logins can get the mail account rate-limited). A failed login answers with
+    a generic message; the real error goes to the server log. Not for client use.
     """
     return email_service.get_email_config()
 
