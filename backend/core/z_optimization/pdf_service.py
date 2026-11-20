@@ -9,6 +9,7 @@ Task 2.8 — ORM imports removed from core.
   - get_country_* helpers use raw SQL so no app.models import is needed.
 """
 
+import functools
 import logging
 import os
 import pandas as pd
@@ -241,40 +242,72 @@ class BlockedResourceError(ValueError):
     """Report HTML referenced a resource outside the allowed set."""
 
 
-def report_url_fetcher(url: str, *args, **kwargs):
-    """WeasyPrint url_fetcher for report PDFs: bundled assets and data: URIs only.
+def _report_url_allowed(url: str) -> bool:
+    """True for data: URIs and for local files inside REPORT_ASSETS_DIR.
 
-    Report HTML carries user-typed text (feed and simulation names), so it is not
-    trusted. WeasyPrint's default fetcher follows any URL it finds -- an internal
-    http(s) address, or a local file that it then embeds in the PDF. Allowed:
-      * data: URIs -- inline content; reports stored before icons were referenced by
-        filename embed them this way;
-      * local file: URLs that resolve inside REPORT_ASSETS_DIR (symlinks and ../ are
-        resolved before the check).
-    Anything else raises BlockedResourceError; WeasyPrint logs it and renders the PDF
-    without that resource.
+    Symlinks and ../ are resolved before the check, so neither can leave the folder.
     """
-    from weasyprint.urls import default_url_fetcher
-
     parts = urlsplit(url)
     scheme = parts.scheme.lower()
     if scheme == "data":
-        return default_url_fetcher(url, *args, **kwargs)
+        return True
     if scheme == "file" and parts.netloc in ("", "localhost"):
         path = os.path.realpath(url2pathname(parts.path))
-        if os.path.commonpath([path, _REPORT_ASSETS_REAL]) == _REPORT_ASSETS_REAL:
-            return default_url_fetcher(url, *args, **kwargs)
-    raise BlockedResourceError(f"report PDF may not load {scheme or 'relative'} URLs outside its assets")
+        return os.path.commonpath([path, _REPORT_ASSETS_REAL]) == _REPORT_ASSETS_REAL
+    return False
+
+
+@functools.lru_cache(maxsize=1)
+def _report_url_fetcher_class():
+    """Build the fetcher class on first use, so importing this module never imports
+    WeasyPrint (the manual runners import REPORT_ASSETS_DIR without it installed)."""
+    from weasyprint.urls import URLFetcher
+
+    class ReportURLFetcher(URLFetcher):
+        """WeasyPrint URL fetcher for report PDFs: bundled assets and data: URIs only.
+
+        Report HTML carries user-typed text (feed and simulation names), so it is not
+        trusted. WeasyPrint's default fetcher follows any URL it finds -- an internal
+        http(s) address, or a local file that it then embeds in the PDF. Allowed:
+          * data: URIs -- inline content; reports stored before icons were referenced by
+            filename embed them this way, and the help guide embeds its pictures so;
+          * local file: URLs that resolve inside REPORT_ASSETS_DIR.
+        Anything else raises BlockedResourceError; WeasyPrint logs it and renders the PDF
+        without that resource. The protocol list and allow_redirects=False are a second
+        lock: even a mistake in _report_url_allowed can't reach the network.
+        """
+
+        def __init__(self):
+            super().__init__(allowed_protocols={"data", "file"}, allow_redirects=False)
+
+        def fetch(self, url, headers=None):
+            if not _report_url_allowed(url):
+                scheme = urlsplit(url).scheme.lower()
+                raise BlockedResourceError(
+                    f"report PDF may not load {scheme or 'relative'} URLs outside its assets"
+                )
+            return super().fetch(url, headers)
+
+    return ReportURLFetcher
+
+
+def report_url_fetcher():
+    """A new report fetcher for each render (WeasyPrint's URLFetcher keeps per-request state).
+
+    WeasyPrint 68 replaced the url_fetcher *function* (default_url_fetcher, removed in 70)
+    with a URLFetcher class; a plain function no longer works as url_fetcher.
+    """
+    return _report_url_fetcher_class()()
 
 
 def html_to_pdf(html_content: str, base_url: Optional[str] = REPORT_ASSETS_DIR) -> bytes:
-    """Render report HTML to PDF bytes, loading only what report_url_fetcher allows.
+    """Render report HTML to PDF bytes, loading only what ReportURLFetcher allows.
 
     Every report PDF must go through here rather than calling WeasyPrint directly.
     """
     from weasyprint import HTML
 
-    return HTML(string=html_content, base_url=base_url, url_fetcher=report_url_fetcher).write_pdf()
+    return HTML(string=html_content, base_url=base_url, url_fetcher=report_url_fetcher()).write_pdf()
 
 
 async def rec_pdf_report_generator_v2(
