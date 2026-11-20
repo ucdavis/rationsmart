@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: PIN at account
+summary: Nakalimutang PIN, pagpapalit ng PIN, pag-edit ng profile o pagbura ng account.
+screen_label: Iyong Profile
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Nakalimutan ang PIN
+- Magtakda ng bagong PIN
+- Palitan ang PIN
+- I-update ang profile
+- Lumang 4-digit na PIN
+- Burahin ang account
+steps:
+- text: Nakalimutan ang PIN? Sa screen ng Pag-login, i-tap ang 'Forgot PIN? Tap here', i-type ang email address na ginamit mo sa pagparehistro at i-tap ang 'Magpatuloy'.
+- text: 'Buksan ang email mula sa RationSmart at i-tap ang ''Reset my PIN''. Magbubukas ang isang pahina: i-type nang dalawang beses ang bago mong 6-digit na PIN at i-tap ang ''Save new PIN''. Isang beses lang gumagana ang link, sa loob ng 30 minuto; hangga''t hindi ka nagse-save, gumagana pa rin ang luma mong PIN.'
+- text: 'Mag-login gamit ang bago mong PIN. Para palitan ang PIN sa ibang pagkakataon habang naaalala mo pa ito, buksan ang menu, i-tap ang ''Profile'', pagkatapos ang ''Baguhin ang PIN'': ilagay ang kasalukuyan mong PIN, pagkatapos ang bago nang dalawang beses, at i-tap ang ''I-update ang PIN''.'
+- text: Para palitan ang iyong pangalan, bansa o wika, buksan ang 'Profile', gawin ang pagbabago at i-tap ang 'I-update ang Profile'. Gumagana lang ang button kapag may binago ka.
+- text: May luma ka pang 4-digit na PIN? Kapag nag-login ka gamit ito, hihilingin ng app na magtakda ka ng 6-digit na PIN. Ilagay ang lumang PIN at ang bago nang dalawang beses.
+- text: 'Para burahin ang iyong account, buksan ang ''Profile'', i-tap ang ''Tanggalin'', pagkatapos ang ''Oo'', at kumpirmahin gamit ang iyong PIN. Para bumalik sa ibang araw, magparehistro muli gamit ang parehong email address: babalik ang iyong mga naka-save na ulat.'
+problems:
+- title: Walang dumating na email
+  text: Tingnan sa spam folder at suriin ang address na in-type mo. Maaari kang humingi muli pagkalipas ng isang minuto. Para sa iyong kaligtasan, pareho ang mensaheng ipinapakita ng app para sa bawat address.
+- title: '''Link expired'''
+  text: Isang beses lang at sa loob lang ng 30 minuto gumagana ang reset link. Buksan ang app, i-tap muli ang 'Forgot PIN? Tap here' at gamitin ang pinakabagong email.
+- title: '''Hindi tugma ang mga bagong PIN'''
+  text: I-type ang eksaktong parehong bagong PIN sa dalawang kahon.
+- title: '''Invalid PIN.'' kapag nagbubura'
+  text: Mali ang PIN, kaya walang nabura. I-type ang kasalukuyan mong PIN.
+- title: '''Hindi maaaring blangko ang pangalan'''
+  text: Mag-type ng pangalan bago i-tap ang 'I-update ang Profile'.

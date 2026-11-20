@@ -1,0 +1,40 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+forage-required:
+  question: Mengapa aplikasi menampilkan 'Hijauan yang diperlukan'?
+  answer: Setiap ransum memerlukan paling sedikit satu pakan berjenis Hijauan. Ketuk 'OK, Tambahkan Hijauan', pilih hijauan di Pemilihan Pakan, lalu hasilkan lagi.
+no-diet-found:
+  question: Laporan menyatakan 'Tidak ditemukan solusi yang optimal'. Apa yang bisa saya lakukan?
+  answer: 'Pakan Anda tidak bisa memenuhi kebutuhan ternak ini. Baca Catatan: tambahkan pakan yang menyediakan apa yang kurang (mineral, protein, atau energi), longgarkan batas yang Anda tetapkan, atau periksa target susu. Lihat ''Jika tidak ada ransum yang ditemukan''.'
+feed-missing:
+  question: Mengapa saya tidak menemukan sebuah pakan di daftar?
+  answer: Daftar menampilkan pakan dari Negara yang dipilih di Info Sapi, ditambah pakan custom milik Anda sendiri. Periksa negaranya, cari dengan sebagian nama, atau tambahkan sendiri pakan itu dengan 'Pakan yang disesuaikan (custom)'.
+own-values:
+  question: Bisakah saya memakai pakan sendiri atau nilai hasil lab saya sendiri?
+  answer: Bisa. 'Pakan yang disesuaikan (custom)' menambah pakan baru; ikon pensil di kartu pakan menyimpan salinan milik Anda dengan nilai Anda. Hanya Anda yang bisa melihat pakan custom Anda.
+margin-meaning:
+  question: Apakah margin susu di laporan adalah keuntungan saya?
+  answer: 'Bukan. Margin itu adalah harga susu dikurangi biaya pakan per liter: pendapatan susu di atas biaya pakan saja. Biaya tenaga kerja, perawatan dokter hewan, dan biaya lain tidak termasuk.'
+eval-cost-per-litre:
+  question: Dalam evaluasi, biaya per liter mana yang harus saya pakai?
+  answer: Pakai 'Biaya/Liter Susu' di Analisis Biaya. Nilai ini membagi biaya ransum dengan susu yang benar-benar bisa didukung ransum ('Susu Aktual'), yang mungkin lebih sedikit dari target Anda.
+calf-milk:
+  question: Berapa banyak susu yang harus diberikan kepada anak sapi saya?
+  answer: Pilih 'Anak sapi' di Info Sapi dan ketik berat badannya. Rencana memberikan sepersepuluh berat badan dalam liter per hari, dalam 2 kali pemberian, dan penyapihan paling lambat umur 56 hari. Sesuaikan bersama dokter hewan Anda.
+limit-feed:
+  question: Bagaimana agar ransum tidak memakai terlalu banyak satu pakan?
+  answer: Di kartu pakan itu nyalakan 'Tentukan batas inklusi' dan ketik Maks dalam kg per hari. Kartu 'Batas yang Anda Tetapkan' di laporan menunjukkan berapa banyak yang dipakai ransum.
+saved-reports:
+  question: Di mana laporan saya yang tersimpan?
+  answer: Buka menu dan ketuk 'Laporan Pakan'. 'Lihat Laporan' membuka PDF. Laporan yang tidak Anda simpan tidak tercantum di sana.
+pdf-pending:
+  question: Laporan saya menampilkan 'PDF Sedang Diproses'.
+  answer: PDF dibuat di latar belakang setelah Anda menyimpan. Buka 'Laporan Pakan' lagi setelah satu menit.
+forgot-pin:
+  question: Saya lupa PIN. Apa yang harus saya lakukan?
+  answer: Di layar Login ketuk 'Lupa PIN? Ketuk di sini' dan ketik alamat email Anda. Buka email itu, ketuk 'Reset my PIN', dan pilih PIN baru 6 digit. PIN lama Anda tetap berlaku sampai Anda melakukannya.
+change-language:
+  question: Bagaimana cara memakai aplikasi dalam bahasa saya?
+  answer: Pilih Bahasa di Info Sapi untuk laporan ini, atau atur bahasa bawaan Anda di Profil lalu ketuk 'Perbarui Profil'. Bahasa yang tersedia tergantung negaranya.
+contact-team:
+  question: Bagaimana cara menghubungi tim RationSmart?
+  answer: Buka menu, ketuk 'Bantuan & Dukungan', lalu 'Hubungi Kami'. Ini membuka aplikasi email Anda.

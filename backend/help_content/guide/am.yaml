@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: አማርኛ
+date: '{month} {day}፣ {year}'
+length_min_sec: '{min} ደቂቃ {sec} ሰከንድ'
+length_sec: '{sec} ሰከንድ'
+header_guide: RationSmart · የተጠቃሚ መመሪያ
+footer_edition: እትም {edition}
+footer_page: ገጽ {page} ከ{pages}
+footer_card: RationSmart · ፈጣን መጀመሪያ · እትም {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: የተጠቃሚ መመሪያ
+guide_tagline: ለወተት ላሞች በዝቅተኛ ወጪ የሚዘጋጅ አመጋገብ፣ ደረጃ በደረጃ
+fact_language: ቋንቋ
+fact_edition: እትም
+fact_updated: የተሻሻለው
+fact_topics: ርዕሶች
+fact_topics_value: '{count} · ከሥዕሎች እና ቪዲዮዎች ጋር'
+cover_scan_1: ይቃኙ እና ይመልከቱ፦
+cover_scan_2: የፈጣን መጀመሪያ ቪዲዮ ({length})
+cover_foot: ለግብርና ልማት ሠራተኞች (extension workers) እና ለአሰልጣኞች። የርዕሶቹ ቁጥሮች በመተግበሪያው ውስጥ ካለው 'እርዳታ እና ድጋፍ' ገጽ ጋር አንድ ናቸው።
+ai_note: በሰው ሰራሽ አስተውሎት (AI) የተተረጎመ፤ ቋንቋውን አፍ መፍቻ በሆነ ሰው ገና አልተረጋገጠም።
+translated_from: ከእንግሊዝኛው እትም {edition} የተተረጎመ።
+howto_title: ይህንን መመሪያ እንዴት መጠቀም እንደሚቻል
+howto_topics_lead: ርዕሶቹ የመተግበሪያውን ቅደም ተከተል ይከተላሉ።
+howto_topics: እያንዳንዱ ርዕስ አንድ ሥራ ነው፤ መተግበሪያውን በሚጠቀሙበት ቅደም ተከተል ተቀምጠዋል። ቁጥሮቹ በመተግበሪያው 'እርዳታ እና ድጋፍ' ገጽ ላይ ካሉት ጋር አንድ ናቸው፤ ስለዚህ አርሶ አደሮችን በስልካቸው ወደዚያው ርዕስ መምራት ይችላሉ።
+howto_scan_lead: ለማየት የQR ኮዱን ይቃኙ።
+howto_scan: የስልኩን ካሜራ ይክፈቱ እና ወደ ኮዱ ያቅኑት። የርዕሱ አጭር ቪዲዮ በYouTube ላይ ይከፈታል። መጻፍ ከመረጡ፣ ከእያንዳንዱ ኮድ በታች አገናኙ (link) አለ።
+videos_english: ቪዲዮዎቹ በእንግሊዝኛ ናቸው።
+howto_time_lead: ▶ 0:21 ማለት “ይህ ደረጃ በቪዲዮው ውስጥ በ0 ደቂቃ 21 ሰከንድ ላይ ነው” ማለት ነው።
+howto_time: በስልጠና ወቅት በቀጥታ ወደ አንድ ደረጃ ለመሄድ ይጠቀሙበት።
+howto_problems_lead: “ችግር ካጋጠመ”
+howto_problems: የሚለው ክፍል በእያንዳንዱ ርዕስ መጨረሻ ላይ ይገኛል፤ ሰዎች በብዛት የሚያዩአቸውን መልዕክቶች እና ምን ማድረግ እንዳለባቸው ይዘረዝራል።
+tip_lead: ለአሰልጣኞች ጠቃሚ ምክር፦
+tip: በርዕስ {number}፣ {title}፣ እና በቪዲዮው ይጀምሩ። ሙሉውን መተግበሪያ ከሁለት ደቂቃ ባነሰ ጊዜ ያሳያል። ሥዕሎቹ ከመተግበሪያው የተወሰዱ ናቸው፤ የእርስዎ ስክሪን ትንሽ ለየት ብሎ ሊታይ ይችላል።
+contents_title: ማውጫ
+faqs_title: በተደጋጋሚ የሚጠየቁ ጥያቄዎች
+more_title: ተጨማሪ እርዳታ የት ይገኛል
+screen_chip: ገጽ፦ {screen}
+audience_advanced: ከፍተኛ ደረጃ
+audience_farmers: ለአርሶ አደሮች
+audience_nutritionists: ለሥነ-ምግብ ባለሙያዎች
+video_length: ▶ ቪዲዮ፣ {length}
+in_the_video: በቪዲዮው ውስጥ
+scan_to_watch: ለማየት ይቃኙ
+problems_title: ⚠ ችግር ካጋጠመ
+faq_see: → ርዕስ {number}፦ {title}
+back_app_title: በመተግበሪያው ውስጥ
+back_app: ምናሌውን ይክፈቱ እና 'እርዳታ እና ድጋፍ' የሚለውን ይንኩ። እያንዳንዱ ገጽ የዚያን ገጽ ርዕስ የሚከፍት የእርዳታ ቁልፍም አለው።
+back_contact_title: ጥያቄዎች ወይም ችግሮች
+back_contact: ምናሌውን ይክፈቱ እና 'ያግኙን' የሚለውን ይንኩ። ጥያቄዎ ስለ አንድ ሪፖርት ከሆነ የማስመሰል ስሙን (Simulation Name) ይጻፉ።
+back_videos_title: ቪዲዮዎች
+back_videos: ሁሉም {count} ቪዲዮዎች በYouTube ቻናል “RationSmart” ላይ ይገኛሉ። እያንዳንዱ የርዕስ ገጽ የራሱ QR ኮድ አለው።
+back_edition_title: ይህ እትም
+back_edition: እትም {edition} · {language} · {updated}። መተግበሪያው ሲቀየር፣ መተግበሪያው ከሚያሳየው ተመሳሳይ የእርዳታ ጽሑፍ አዲስ እትም ይዘጋጃል።
+card_title: ፈጣን መጀመሪያ
+card_tagline: ከመግቢያ እስከ ርካሹ አመጋገብ፣ በ{count} ደረጃዎች
+card_problems_title: ⚠ ችግር ካጋጠመ
+card_faqs_title: ሰዎች የሚጠይቋቸው ጥያቄዎች
+card_topics_title: ተጨማሪ ይማሩ፦ {count} የእርዳታ ርዕሶች
+card_more: በመተግበሪያው ውስጥ፦ ምናሌ → 'እርዳታ እና ድጋፍ'። እያንዳንዱ ርዕስ አጭር ቪዲዮ አለው። ሊታተም የሚችለው ሙሉ የተጠቃሚ መመሪያም እዚያው ይገኛል።
+months:
+- ጃንዋሪ
+- ፌብሩዋሪ
+- ማርች
+- ኤፕሪል
+- ሜይ
+- ጁን
+- ጁላይ
+- ኦገስት
+- ሴፕቴምበር
+- ኦክቶበር
+- ኖቬምበር
+- ዲሴምበር

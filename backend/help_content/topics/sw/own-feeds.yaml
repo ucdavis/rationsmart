@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Vyakula vyako na thamani za vyakula
+summary: Ongeza chakula ambacho hakipo kwenye orodha, au tumia thamani zako za maabara kwa chakula.
+screen_label: Feed Selection
+chapters:
+- Video hii inaonyesha nini
+- Ongeza chakula maalum
+- Kitumie kwenye kadi
+- Sehemu kulingana na kundi
+- Thamani zako kwa chakula cha orodha
+- Badilisha chakula chako
+- Ni chako peke yako
+steps:
+- text: Kwenye Feed Selection gusa 'Custom Feed'. Kwenye 'Add Custom Feed' chagua Feed Type na Feed Category, andika jina la chakula, na ujaze thamani zake za virutubisho kwa % ya kiini kikavu (dry matter). Gusa 'Submit'.
+- text: Programu inasema 'Custom feed saved! It will appear in the feed list.' Kichague kwenye kadi yoyote ya chakula chini ya aina na kundi lake, au tafuta jina lake.
+- text: Sehemu zinategemea kundi (category). Minerals (madini) zinaomba tu Dry Matter (kiini kikavu), Ash (majivu), Calcium (kalsiamu) na Phosphorus (fosforasi); Additive (viongezeo) pia inaomba NPN.
+- text: 'Ili kutumia thamani zako kwa chakula kilichopo kwenye orodha: kichague kwenye kadi na uguse ikoni ya penseli. Fomu hufunguka ikiwa na thamani za chakula hicho; zibadilishe na uguse ''Submit''. Hii huhifadhi nakala yako mwenyewe (jina lake linaanza na jina lako la kwanza) na kadi inaitumia. Chakula cha pamoja hakibadiliki.'
+- text: Gusa penseli kwenye mojawapo ya vyakula vyako maalum ili kukibadilisha; programu inasema 'Custom feed updated!'.
+- text: 'Vyakula vyako maalum ni vya siri: watumiaji wengine hawavioni kamwe. Vinakufuata kwenye kila nchi unayochagua kwenye Cattle Info.'
+problems:
+- title: '''Feed name and type are required'''
+  text: Andika jina na uchague Feed Type kabla ya kugusa 'Submit'.
+- title: '''Nutrient values must be numbers between 0 and 100 %.'''
+  text: Virutubisho viko kwa % ya kiini kikavu, kwa hiyo kila kimoja lazima kiwe kati ya 0 na 100. Angalia kama nukta ya desimali imewekwa mahali pasipo sahihi.
+- title: Siwezi kupata chakula changu maalum
+  text: Angalia chini ya Feed Type na Feed Category ulizochagua ulipokihifadhi, au tafuta jina lake.
+- title: Nitapata wapi thamani za virutubisho?
+  text: Bora kutoka kwenye uchambuzi wa maabara wa chakula chako mwenyewe. Kama huna, anza na chakula kinachofanana kwenye orodha na ubadilishe tu unachojua.

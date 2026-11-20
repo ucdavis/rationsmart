@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: 'Bắt đầu nhanh: từ đăng nhập đến báo cáo'
+summary: 'Toàn bộ ứng dụng trong vài phút: đăng nhập, mô tả con vật, chọn thức ăn và nhận khẩu phần rẻ nhất.'
+screen_label: Trợ giúp và hỗ trợ
+chapters:
+- RationSmart làm gì
+- Đăng nhập
+- Mô tả con vật
+- Chọn thức ăn và giá
+- Nhận khẩu phần rẻ nhất
+- Lưu báo cáo
+- Con vật tiếp theo
+steps:
+- text: Đăng nhập bằng email và mã PIN 6 chữ số của bạn. Ứng dụng mở ra ở màn hình Thông tin gia súc.
+- text: Tại Thông tin gia súc, nhập Tên mô phỏng, chọn Quốc gia và Trạng thái sinh lý, rồi điền thông tin của con vật. Nhấn 'Tiếp tục đến phần Thức ăn'.
+- text: Tại Chọn thức ăn, giữ 'Khuyến nghị khẩu phần'. Trong mỗi thẻ thức ăn, chọn Loại thức ăn, rồi Nhóm thức ăn, rồi Thức ăn, và nhập giá mỗi kg. Phải có ít nhất một loại thức ăn thô.
+- text: 'Nhấn ''Tạo khẩu phần khuyến nghị''. Sau vài giây, báo cáo hiển thị khẩu phần rẻ nhất: mỗi ngày cho ăn bao nhiêu kg mỗi loại thức ăn, và chi phí mỗi ngày.'
+- text: Nhấn 'Lưu báo cáo' để lưu lại. Các báo cáo đã lưu và file PDF của chúng nằm trong menu, mục 'Báo cáo khẩu phần'.
+- text: Nhấn 'Mô phỏng mới' để làm cho con vật tiếp theo.
+problems:
+- title: '''Tiếp tục đến phần Thức ăn'' vẫn màu xám'
+  text: Có một ô bắt buộc còn trống, hoặc một giá trị nằm ngoài khoảng cho phép (khoảng này hiện màu đỏ dưới ô). Sửa lại thì nút sẽ chuyển sang màu xanh.
+- title: Con vật của tôi là bê
+  text: Chọn 'Bê' ở Trạng thái sinh lý. Khi đó ứng dụng sẽ hiển thị kế hoạch cho bê uống sữa thay vì khẩu phần thức ăn.
+- title: '''Cần có thức ăn thô'''
+  text: Mọi khẩu phần cần ít nhất một thức ăn thuộc loại Thức ăn thô. Hãy thêm một loại rồi tạo lại khẩu phần.

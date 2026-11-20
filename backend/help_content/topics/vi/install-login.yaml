@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Cài đặt ứng dụng, đăng ký, đăng nhập
+summary: Thêm RationSmart vào điện thoại, tạo tài khoản và đăng nhập.
+screen_label: Đăng nhập
+chapters:
+- Nội dung video này
+- Mở ứng dụng
+- Thêm vào điện thoại
+- Đăng ký
+- Xác nhận email
+- Đăng nhập
+- Đăng xuất
+steps:
+- text: 'Mở RationSmart trong trình duyệt của điện thoại: Chrome trên Android, Safari trên iPhone. Ở màn hình Chào mừng, nhấn ''Tiếp tục''.'
+- text: 'Để dùng như một ứng dụng, chờ vài giây cho thanh cài đặt hiện ra rồi nhấn ''Cài đặt''. Trên Android: nhấn menu (ba chấm), rồi ''Thêm vào màn hình chính'' (Add to Home screen), rồi ''Thêm'' (Add). Trên iPhone: nhấn nút Chia sẻ, rồi ''Thêm vào màn hình chính'' (Add to Home Screen), rồi ''Thêm'' (Add). Sau đó mở RationSmart từ biểu tượng của ứng dụng.'
+- text: 'Người dùng mới? Ở màn hình Đăng nhập, nhấn ''Đăng ký''. Nhập tên, địa chỉ email, quốc gia và chọn ngôn ngữ: ứng dụng sẽ mở bằng ngôn ngữ này sau khi bạn đăng nhập. Chọn mã PIN 6 chữ số, nhập lại vào ô ''Xác nhận mã PIN'' và nhấn ''Tiếp tục''.'
+- text: Mở email từ RationSmart và nhấn vào liên kết trong đó. Tài khoản của bạn đã sẵn sàng.
+- text: Ở màn hình Đăng nhập, nhập địa chỉ email và mã PIN rồi nhấn 'Tiếp tục'. Ứng dụng mở ra ở màn hình Thông tin gia súc. Lần sau mở ứng dụng, bạn vẫn đang đăng nhập.
+- text: Để đăng xuất, mở menu, nhấn 'Đăng xuất', rồi 'Có, đăng xuất'.
+problems:
+- title: Không nhận được email xác minh
+  text: Hãy xem trong thư mục thư rác (spam). Ở màn hình 'Kiểm tra email', nhấn 'Gửi lại email xác minh'. Mỗi phút bạn có thể yêu cầu một email mới.
+- title: '''Please verify your email address'''
+  text: Mã PIN của bạn đúng, nhưng tài khoản chưa được xác minh. Mở email xác minh, nhấn vào liên kết trong đó, rồi đăng nhập lại.
+- title: '''Email hoặc PIN không đúng.'''
+  text: Kiểm tra lại địa chỉ email và 6 chữ số. Quên mã PIN? Nhấn 'Quên mã PIN? Nhấn vào đây' (chủ đề 2).
+- title: Tạm khóa đăng nhập sau nhiều lần thử
+  text: Sau nhiều lần nhập sai trong thời gian ngắn, ứng dụng tạm ngừng nhận đăng nhập một lúc. Hãy chờ một phút rồi thử lại.
+- title: '''This account was deleted'''
+  text: Đăng ký lại bằng chính địa chỉ email đó. Sau khi bạn xác minh email, các báo cáo đã lưu trước đây sẽ trở lại.
+- title: Ứng dụng không hiển thị bằng ngôn ngữ của tôi
+  text: 'Nếu bạn chưa chọn ngôn ngữ khi đăng ký, hoặc muốn đổi sang ngôn ngữ khác: sau khi đăng nhập, mở menu, nhấn ''Hồ sơ'', chọn Ngôn ngữ và nhấn ''Cập nhật hồ sơ''.'

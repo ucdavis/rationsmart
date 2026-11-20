@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Mpango wa kunywesha maziwa kwa ndama
+summary: Kiasi cha maziwa cha kumpa ndama kila siku, kwa milo mingapi, na wakati wa kumwachisha maziwa.
+screen_label: Calf Milk Feeding
+chapters:
+- Video hii inaonyesha nini
+- Chagua 'Calves'
+- Maziwa ya kila siku
+- Milo na kuachisha maziwa
+- Mfano
+- Ushauri wa matunzo
+- Hifadhi na PDF
+steps:
+- text: Kwenye Cattle Info chagua Physiological State 'Calves'. Andika uzito wa mwili wa ndama kwa kg na uguse 'Continue'.
+- text: 'Mpango wa ''Calf Milk Feeding'' hufunguka. ''Daily milk'' ni lita za maziwa kwa siku: sehemu moja ya kumi ya uzito wa mwili wa ndama.'
+- text: '''Per feeding'' hugawa maziwa ya siku katika milo 2 kwa siku. ''Wean by'' inatoa umri kwa siku ambapo unapaswa kuacha kumnywesha maziwa (siku 56).'
+- text: 'Mfano: ndama wa kg 40 anapata lita 4.0 kwa siku, zinazotolewa kama lita 2.0 mara mbili kwa siku.'
+- text: 'Soma ushauri wa matunzo chini ya mpango. Mpango ni mwongozo tu: urekebishe pamoja na daktari wako wa mifugo.'
+- text: Gusa 'Save Report' ili kuhifadhi mpango, kisha 'Get PDF' kupata nakala yenye ratiba kamili ya kunywesha maziwa (mada 10).
+problems:
+- title: Uzito wa mwili unakataliwa
+  text: Kwa ndama, uzito wa mwili lazima uwe kati ya kg 30 na 100. Kiwango kinachoruhusiwa kinaonyeshwa chini ya sehemu hiyo.
+- title: Sioni Feed Selection kwa ndama wangu
+  text: Ndama hupata mpango wa kunywesha maziwa tu; programu haitengenezi lishe ya vyakula wala tathmini kwa ajili yao.
+- title: Ndama wangu ni mkubwa zaidi na anakula chakula kigumu
+  text: Chagua 'Heifers' badala ya 'Calves' ili kupata lishe ya vyakula kwa mnyama mchanga anayekua.

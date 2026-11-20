@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: 'Mulai cepat: dari login sampai laporan'
+summary: 'Seluruh aplikasi dalam beberapa menit: login, jelaskan ternak Anda, pilih pakan, dan dapatkan ransum termurah.'
+screen_label: Bantuan & Dukungan
+chapters:
+- Apa fungsi RationSmart
+- Login
+- Jelaskan ternak Anda
+- Pilih pakan dan harga
+- Dapatkan ransum termurah
+- Simpan laporan
+- Ternak berikutnya
+steps:
+- text: Login dengan email dan PIN 6 digit Anda. Aplikasi terbuka di Info Sapi.
+- text: Di Info Sapi, ketik Nama Simulasi, pilih Negara dan Status Fisiologis, lalu isi data ternak. Ketuk 'Lanjutkan ke Pakan'.
+- text: Di Pemilihan Pakan, biarkan 'Rekomendasi Ransum' terpilih. Di setiap kartu pakan pilih Jenis Pakan, lalu Kategori Pakan, lalu Pakan, dan ketik harganya per kg. Masukkan paling sedikit satu hijauan.
+- text: 'Ketuk ''Hasilkan Rekomendasi''. Setelah beberapa detik, laporan menampilkan ransum termurah: berapa kg setiap pakan diberikan per hari, dan biaya per hari.'
+- text: Ketuk 'Simpan Laporan' untuk menyimpannya. Laporan yang tersimpan dan PDF-nya ada di menu, di bagian 'Laporan Pakan'.
+- text: Ketuk 'Kasus Baru' untuk mengerjakan ternak berikutnya.
+problems:
+- title: '''Lanjutkan ke Pakan'' tetap abu-abu'
+  text: Ada kolom wajib yang kosong, atau ada nilai di luar rentangnya (rentang terlihat dengan warna merah di bawah kolom). Perbaiki, dan tombol menjadi hijau.
+- title: Ternak saya anak sapi
+  text: Pilih 'Anak sapi' sebagai Status Fisiologis. Aplikasi lalu menampilkan rencana pemberian susu, bukan ransum pakan.
+- title: '''Hijauan yang diperlukan'''
+  text: Setiap ransum memerlukan paling sedikit satu pakan berjenis Hijauan. Tambahkan satu, lalu hasilkan lagi.

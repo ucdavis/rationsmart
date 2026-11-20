@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: 'Mwanzo wa haraka: kutoka kuingia hadi ripoti'
+summary: 'Programu nzima kwa dakika chache: ingia, eleza mnyama wako, chagua vyakula vyako na upate lishe ya gharama nafuu zaidi.'
+screen_label: Help & Support
+chapters:
+- RationSmart inafanya nini
+- Ingia
+- Eleza mnyama wako
+- Chagua vyakula na bei
+- Pata lishe ya gharama nafuu zaidi
+- Hifadhi ripoti
+- Mnyama anayefuata
+steps:
+- text: Ingia kwa barua pepe yako na PIN yako ya tarakimu 6. Programu inafunguka kwenye Cattle Info.
+- text: Kwenye Cattle Info, andika Simulation Name (jina la kesi), chagua Country (nchi) na Physiological State (hali ya mnyama), kisha jaza taarifa za mnyama. Gusa 'Continue to Feed'.
+- text: Kwenye Feed Selection, acha 'Diet Recommendation' kama ilivyo. Kwenye kila kadi ya chakula chagua Feed Type (aina ya chakula), kisha Feed Category (kundi la chakula), kisha Feed (chakula), na uandike bei yake kwa kg. Weka angalau malisho (forage) moja.
+- text: 'Gusa ''Generate Recommendation''. Baada ya sekunde chache ripoti inaonyesha lishe ya gharama nafuu zaidi: kg ngapi za kila chakula za kutoa kwa siku, na gharama kwa siku.'
+- text: Gusa 'Save Report' ili kuihifadhi. Ripoti zako zilizohifadhiwa na PDF zake ziko kwenye menyu chini ya 'Feed Reports'.
+- text: Gusa 'New Case' ili kushughulikia mnyama anayefuata.
+problems:
+- title: '''Continue to Feed'' inabaki kijivu'
+  text: Sehemu ya lazima iko wazi, au thamani iko nje ya kiwango chake (kiwango kinaonyeshwa kwa rangi nyekundu chini ya sehemu hiyo). Rekebisha na kitufe kitakuwa kijani.
+- title: Mnyama wangu ni ndama
+  text: Chagua 'Calves' kama Physiological State. Programu itaonyesha mpango wa kunywesha maziwa badala ya lishe ya vyakula.
+- title: '''Forage Required'''
+  text: Kila lishe inahitaji angalau chakula kimoja cha aina ya Forage (malisho). Ongeza kimoja na utengeneze tena.

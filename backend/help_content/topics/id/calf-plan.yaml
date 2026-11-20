@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Rencana pemberian susu untuk anak sapi
+summary: Berapa banyak susu diberikan kepada anak sapi setiap hari, dalam berapa kali pemberian, dan kapan disapih.
+screen_label: Pemberian Susu pada Anak Sapi
+chapters:
+- Isi video ini
+- Pilih 'Anak sapi'
+- Susu harian
+- Pemberian dan penyapihan
+- Contoh
+- Tips perawatan
+- Simpan dan PDF
+steps:
+- text: Di Info Sapi pilih Status Fisiologis 'Anak sapi'. Ketik berat badan anak sapi dalam kg, lalu ketuk 'Lanjutkan'.
+- text: 'Rencana ''Pemberian Susu pada Anak Sapi'' terbuka. ''Susu harian'' adalah jumlah liter susu per hari: sepersepuluh dari berat badan anak sapi.'
+- text: '''Per pemberian pakan'' membagi susu harian menjadi 2 kali pemberian sehari. ''Sapih pada'' memberikan umur dalam hari saat pemberian susu harus dihentikan (56 hari).'
+- text: 'Contoh: anak sapi 40 kg mendapat 4.0 liter sehari, diberikan 2.0 liter dua kali sehari.'
+- text: 'Baca tips perawatan di bawah rencana. Rencana ini adalah panduan: sesuaikan bersama dokter hewan Anda.'
+- text: Ketuk 'Simpan Laporan' untuk menyimpan rencana, lalu 'Dapatkan PDF' untuk salinan dengan jadwal pemberian susu lengkap (topik 10).
+problems:
+- title: Berat badan ditolak
+  text: Untuk anak sapi, berat badan harus antara 30 dan 100 kg. Rentang yang diizinkan terlihat di bawah kolom.
+- title: Saya tidak melihat Pemilihan Pakan untuk anak sapi saya
+  text: Anak sapi hanya mendapat rencana pemberian susu; aplikasi tidak membuat ransum pakan atau evaluasi untuk mereka.
+- title: Anak sapi saya sudah lebih besar dan makan pakan padat
+  text: Pilih 'Sapi dara', bukan 'Anak sapi', untuk mendapatkan ransum pakan bagi ternak muda yang sedang tumbuh.

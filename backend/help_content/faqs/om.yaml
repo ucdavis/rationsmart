@@ -1,0 +1,40 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+forage-required:
+  question: Aplikeeshiinichi maaliif 'Fooreejii Barbaachisa' jedha?
+  answer: Nyaanni hundi yoo xiqqaate nyaata gosa Fooreejii tokko barbaada. 'Tole, Fooreejii Dabali' tuqi, Filannoo Nyaataa irratti fooreejii filadhuutii irra deebi'ii maddisiisi.
+no-diet-found:
+  question: Gabaasni 'Furmaatni madaalawaan hin argamne' jedha. Maal gochuu danda'a?
+  answer: 'Nyaanni kee fedhii horii kanaa guutuu hin danda''u. Yaadannoowwan dubbisi: nyaata waan dhabame kennu (albuuda, pirotiinii ykn anniisaa) dabali, daangaa kaa''atte kamiyyuu bal''isi, ykn galma aannanii mirkaneeffadhu. ''Yeroo nyaanni hin argamne'' ilaali.'
+feed-missing:
+  question: Maaliif nyaata tokko tarree keessaa argachuu hin danda'u?
+  answer: Tarreewwan nyaata Biyya Odeeffannoo Loonii irratti filatamee, akkasumas nyaata baratamaa ta'e kee agarsiisu. Biyya mirkaneeffadhu, kutaa maqaatiin barbaadi, ykn 'Nyaata baratamaa ta'e' fayyadamuun ofii keetii nyaata sana dabali.
+own-values:
+  question: Nyaata mataa kootii ykn gatiiwwan laaboraatoorii kootii fayyadamuu nan danda'aa?
+  answer: Eeyyee. 'Nyaata baratamaa ta'e' nyaata haaraa dabala; qalamni kaardii nyaataa irra jiru garagalcha mataa keetii gatiiwwan kee waliin olkaa'a. Nyaata baratamaa ta'e kee si qofatu arga.
+margin-meaning:
+  question: Daangaan baasii aannanii (milk margin) gabaasa irra jiru bu'aa (profit) kooti?
+  answer: 'Lakki. Inni gatii aannanii liitira tokkoo irraa baasii nyaataa hir''isuu dha: waan aannan baasii nyaataa qofa irra caalaa argamsiisu. Baasiin humna hojii, yaala horii fi baasiiwwan biroo isa keessa hin jiran.'
+eval-cost-per-litre:
+  question: Madaallii keessatti, baasii liitira tokkoo kam fayyadamuu qaba?
+  answer: '''Baasii/Aannan Litira tokkotti'' kan Xiinxala Baasii jala jiru fayyadami. Inni baasii nyaataa aannan nyaanni kun dhugumaan deeggaruu danda''uun (''Aannan Qabatamaan'') qooda, kunis galma kee gadi ta''uu danda''a.'
+calf-milk:
+  question: Jabbiin koo aannan hammam argachuu qabdi?
+  answer: Odeeffannoo Loonii irratti 'Jiboota' filadhuutii ulfaatina qaamaa barreessi. Karoorichi guyyaatti liitira ulfaatina qaamaa harka kudhan keessaa harka tokko, hoosisa 2n, fi guusisuu hanga guyyaa 56tti kenna. Ogeessa fayyaa horii kee waliin sirreessi.
+limit-feed:
+  question: Nyaanni nyaata tokko baay'ee akka hin fayyadamne akkamitti dhorka?
+  answer: Kaardii nyaata sanaa irratti 'Daangaa hammatamu kaahi' baniitii Ol'aanaa (Max) kg guyyaatti barreessi. Kaardiin 'Daangaa Ati Kaawwatte' gabaasa keessaa nyaanni hammam akka fayyadame agarsiisa.
+saved-reports:
+  question: Gabaasaaleen koo olkaa'aman eessa jiru?
+  answer: Menyuu banii 'Gabaasaalee Nyaataa' tuqi. 'Gabaasa Ilaali' PDF bana. Gabaasaaleen ati hin olkaa'in achitti hin tarreeffaman.
+pdf-pending:
+  question: Gabaasni koo 'PDF’n Eeggamaa Jira' agarsiisa.
+  answer: PDF erga olkaa'attee booda duuba keessatti (background) hojjetama. Daqiiqaa tokko booda 'Gabaasaalee Nyaataa' irra deebi'ii bani.
+forgot-pin:
+  question: PIN koo dagadhe. Maal gochuun qaba?
+  answer: Fuula Seensaa irratti 'Forgot PIN? Tap here' tuqiitii teessoo imeelii kee barreessi. Imeelii banii 'Reset my PIN' tuqi, PIN dijiitii 6 haaraa filadhu. Hanga kana gootutti PIN kee moofaan ni hojjeta.
+change-language:
+  question: Aplikeeshiinii afaan kootiin akkamitti fayyadama?
+  answer: Gabaasa kanaaf Odeeffannoo Loonii irratti Afaan filadhu, ykn Ibsa Eenyummaa keessatti afaan durtii kee kaa'iitii 'Ibsa Eenyummaa Haaromsi' tuqi. Afaanonni dhiyaatan biyya irratti hundaa'u.
+contact-team:
+  question: Garee RationSmart akkamitti qunnama?
+  answer: Menyuu bani, 'Gargaarsaafi Deeggarsa' tuqi, itti aansee 'Nu Qunnamaa'. Aplikeeshiinii imeelii kee bana.

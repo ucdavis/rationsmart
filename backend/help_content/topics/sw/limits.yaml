@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Weka vikomo vya vyakula na vya lishe
+summary: Dhibiti kiasi cha chakula ambacho lishe inaweza kutumia, na weka vikomo vya virutubisho kwa lishe nzima.
+screen_label: Feed Selection
+chapters:
+- Video hii inaonyesha nini
+- Weka kikomo kwa chakula kimoja
+- Mfano
+- Vikomo vya lishe
+- Vikomo kwenye ripoti
+- Vikomo laini
+- Huhifadhiwa pamoja na ripoti
+steps:
+- text: 'Kikomo cha chakula: kwenye kadi ya chakula, baada ya kuchagua chakula, washa ''Set inclusion limits''. Andika Min (kiwango cha chini) na/au Max (kiwango cha juu) kwa kg kwa siku kama kinavyolishwa (as fed). Acha kisanduku wazi kama hutaki kikomo.'
+- text: 'Mfano: Soybean meal (mashudu ya soya) yenye Max ya kg 2 inatoa lishe yenye kg 1.88 ya chakula hicho. Lishe inaweza kugharimu zaidi kuliko bila kikomo, kwa sababu programu lazima itumie vyakula vingine.'
+- text: 'Vikomo vya lishe: gusa ''Custom Diet Limits''. Kila kikomo kinaonyesha kiwango chake kinachoruhusiwa na thamani ya kawaida kwa Physiological State, kwa mfano ''NDF max'' au ''Starch max''. Badilisha tu unachohitaji na uguse ''Apply Limits''.'
+- text: Tengeneza lishe. Kadi ya 'Limits You Set' kwenye ripoti inaorodhesha kila kikomo ulichoweka na kiasi cha kila chakula chenye kikomo ambacho lishe ilitumia. PDF iliyohifadhiwa ina sehemu hiyohiyo.
+- text: 'Vikomo vya mafuta, nyuzinyuzi na wanga ni laini: programu inajaribu kuvifikia, na ripoti inaonyesha ''Diet Limit Notes'' pale lishe inapozidi kimojawapo kwa zaidi ya 2.5 % ya kikomo.'
+- text: Vikomo huhifadhiwa pamoja na ripoti. Ukifungua kesi iliyohifadhiwa kutoka kwenye historia kwenye Cattle Info, vikomo vyake vinarudi pia.
+problems:
+- title: '''Minimum can''t be more than the maximum.'''
+  text: Fanya Min iwe ndogo kuliko Max, au futa kimojawapo.
+- title: Max ya 0 inakataliwa
+  text: Ili kuacha chakula nje ya lishe, ondoa kadi yake. Kama hutaki kikomo, acha kisanduku wazi.
+- title: '''Value must be between … and …'''
+  text: Kila kikomo cha lishe kina kiwango kilichowekwa na wataalamu wa lishe kwa Physiological State hiyo. Andika thamani iliyo ndani yake; 'Apply Limits' itafanya kazi tena.
+- title: '''Forage NDF Min cannot exceed NDF Max'''
+  text: Nyuzinyuzi kutoka kwenye malisho haziwezi kuzidi nyuzinyuzi zote. Punguza Forage NDF Min au ongeza NDF Max.
+- title: '''Set inclusion limits'' ni kijivu'
+  text: Chagua chakula kwenye kadi kwanza.
+- title: Ukiweka vikomo, hakuna lishe inayopatikana
+  text: Vikomo vimebana mno kwa vyakula hivi. Legeza au ondoa kikomo, au ongeza chakula kingine (mada 12).

@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Kapag walang nahanap na diyeta, at iba pang problema
+summary: Ano ang gagawin kapag walang nahanap na diyeta ang ulat, may lumabas na mensahe o hindi tumutugon ang app.
+screen_label: Ulat ng Rekomendasyon
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Walang nahanap na solusyon
+- Basahin ang mga tala
+- Magdagdag ng pakain
+- Luwagan ang mga limitasyon
+- Suriin ang hayop
+- Gamitin ang Pagsusuri ng Diyeta
+- Subukang muli
+steps:
+- text: Kapag sinabi ng ulat na 'Walang nahanap na pinakamainam na solusyon', walang halo ng iyong mga pakain na tumutugon sa pangangailangan ng hayop na ito. Walang talahanayan ng diyeta; ipinapaliwanag ng card na 'Mga Tala' kung bakit.
+- text: 'Basahin ang ''Violated Parameters'': binabanggit ng bawat linya kung ano ang hindi naabot ng diyeta, halimbawa ''Phosphorus Requirement: below minimum'' o ''Total Fibre (NDF): above maximum''. Nagmumungkahi ang ''Recommendations'' kung ano ang babaguhin.'
+- text: 'Magdagdag ng pakaing nagbibigay ng kulang: pakaing mineral para sa calcium o phosphorus, protein meal para sa protina, butil para sa enerhiya. Kadalasan, hindi matutugunan ng rasyong may isa o dalawang pakain lang ang bawat pangangailangan.'
+- text: Kung nagtakda ka ng mga limitasyon ('Itakda ang mga limitasyon ng pagsama' o 'Custom na Mga Limitasyon ng Diyeta'), luwagan o alisin ang mga ito. Ipinapakita ng card na 'Mga Limitasyong Itinakda Mo' sa ulat kung alin ang itinakda mo.
+- text: 'Suriin ang hayop: hindi maaabot ang target na gatas na napakataas para sa mga pakaing mayroon ka. Babaan ang gatas, o magdagdag ng mas mahusay na pakain.'
+- text: Para makita kung aling sustansya ang kulang sa rasyong ikaw mismo ang pumili, gamitin ang 'Pagsusuri ng Diyeta' (paksa 6).
+- text: Pagkatapos, i-tap ang back arrow pabalik sa Pagpili ng Pakain, gawin ang pagbabago at i-tap muli ang 'Bumuo ng Rekomendasyon'.
+problems:
+- title: '''Kailangan ng Forage'''
+  text: Kailangan ng bawat diyeta ng kahit isang pakain na uri na Forage. Magdagdag ng isa at bumuo muli.
+- title: '''… of the selected feeds are no longer available'''
+  text: May pakaing inalis sa library. Alisin ito sa pagpili at piliin muli ang mga pakain.
+- title: Napakatagal ng ulat o hindi ito nagbubukas
+  text: Suriin ang iyong internet connection at subukang muli. Kung patuloy itong nangyayari, sumulat sa amin sa pamamagitan ng 'Makipag-ugnayan sa Amin' kasama ang Pangalan ng Simulation.
+- title: Nagpapakita ng error ang app o huminto ito sa pagtugon
+  text: Bumalik nang isang screen at subukang muli; nananatili ang iyong mga input. Kung pumapalya pa rin, mag-logout, mag-login muli, at sabihin sa amin sa pamamagitan ng 'Feedback' o 'Makipag-ugnayan sa Amin'.

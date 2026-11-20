@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Nyaata amma kennitu madaali
+summary: Waan horiin kee har'a nyaattu barreessiitii waan hir'ate, aannan deeggaruu danda'u fi baasii isaa ilaali.
+screen_label: Gabaasa Madaallii
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Madaallii hojjechiisi
+- Cuunfaa madaallii
+- Qabiyyee gogaa nyaatamu
+- Oomisha aannanii
+- Madaallii qabiyyee nyaataa
+- Xiinxala baasii
+- Daangaa baasii aannanii
+- Yaada furmaataa argadhu
+steps:
+- text: Filannoo Nyaataa irratti 'Madaallii Nyaataa' filadhu. Nyaata amma kennitu hunda filadhu, gatii isaa fi kg guyyaatti kennitu (akka kennamutti, as fed) barreessi. 'Madaallii Argadhu' tuqi. 'Gabaasa Madaallii' bana.
+- text: '''Cuunfaa Madaallii'' Haala Waliigalaa nyaatichaa (fakkeenyaaf Marginal) fi Sababa Daangessaa kenna: qabiyyee nyaataa kan saawwan duubatti hambisu.'
+- text: '''Dry Matter Intake'' hamma nyaanni kee Qabatamatti kennu (Actual Intake) hamma saawwan nyaachuu dandeessu (Target Intake) wajjin wal bira qaba. ''Below target'' jechuun nyaatichi hamma saawwan nyaachuu dandeessu gadi kenna jechuudha.'
+- text: '''Xiinxala Oomisha Aannanii'': ''Aannan Qabatamaan'' aannan nyaanni kun deeggaruu danda''u dha, Galma (Target) kee cinaatti. ''Anniisaa-Deeggarame'' fi ''Pirotiinii-Deeggarame'' aannan qabiyyeen nyaataa tokkoon tokkoon isaa hayyamu agarsiisu; kan gadi aanu Qabiyyee nyaataa murteessaa (Limiting Nutrient) dha.'
+- text: '''Madaallii Qabiyee Nyaataa'' qabiyyee nyaataa hunda akka hambaa (+) ykn hir''ina (−) fedhii saawwanii wajjin wal bira qabee agarsiisa.'
+- text: '''Xiinxala Baasii'' Baasii Nyaataa kan Waliigalaa guyyaatti, baasii nyaata tokkoon tokkoo ''Qoqqoodama Nyaataa'' keessatti, fi ''Baasii/Aannan Litira tokkotti'' agarsiisa: baasii nyaataa aannan nyaanni kun deeggaruu danda''uun (Aannan Qabatamaan) qoodame.'
+- text: '''Daangaa Baasii Aannanii'' baasii nyaataa liitira tokkoof gatii aannanii kee wajjin wal bira qaba. Madaalliif, baasiin ilaalamu ''Baasii/Aannan Litira tokkotti'' kan Xiinxala Baasii keessaa ti, sababni isaas aannan nyaanni kun dhugumaan deeggaruu danda''u irratti hundaa''a.'
+- text: Nyaata sana irraa horii kanaaf nyaata baasii xiqqaa argachuuf 'Yaada Furmaataa Nyaataa Maddisiisi' tuqi. Madaallii akkuma yaada furmaataatti olkaa'iitii qoodi (mata-duree 10).
+problems:
+- title: '''Aannan Qabatamaan'' galma koo gadi'
+  text: Nyaatichi Qabiyyee nyaataa murteessaa sana hir'isa. Nyaata isa sanaan badhaadhe dabali (fakkeenyaaf yeroo pirotiiniin daangessu nyaata pirotiinii), ykn 'Yaada Furmaataa Nyaataa Maddisiisi' tuqi.
+- title: '''Nyaata hundaaf hamma 0 ol galchi, ykn nyaata sana haqi.'''
+  text: Madaallii keessatti nyaanni hundi kg guyyaatti amma kennitu barbaada. Barreessi, ykn nyaata sana haqi.
+- title: Nyaanni ani mataa kootiin oomishu gatii hin qabu
+  text: Gatii isaatiif 0 barreessi. Madaalliin ammallee ni hojjeta; nyaanni sun baasii irratti homaa hin dabalu.
+- title: '''… of the selected feeds are no longer available'''
+  text: Erga ati yeroo dhumaaf fayyadamtee booda nyaanni tokko kuusaa nyaataa (library) keessaa haqameera. Filannoo keessaa haqiitii nyaata irra deebi'ii filadhu.
+- title: Jabbii kootiif 'Madaallii Nyaataa' hin jiru
+  text: Jibootni nyaata horii osoo hin taane karoora aannan hoosisuu argatu (mata-duree 7).

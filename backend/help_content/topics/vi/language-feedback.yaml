@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Ngôn ngữ, phản hồi và trợ giúp
+summary: Dùng ứng dụng bằng ngôn ngữ của bạn, cho chúng tôi biết ý kiến và nhận trợ giúp.
+screen_label: Phản hồi
+chapters:
+- Nội dung video này
+- Chọn ngôn ngữ
+- Ngôn ngữ mặc định
+- Ngôn ngữ của PDF
+- Gửi phản hồi
+- Phản hồi trước đây
+- Trợ giúp và hỗ trợ
+steps:
+- text: Tại Thông tin gia súc, chọn Ngôn ngữ trong 'Thông tin mô phỏng'. Các màn hình và báo cáo chuyển sang ngôn ngữ đó ngay lập tức. Danh sách hiển thị các ngôn ngữ đã được thiết lập cho quốc gia bạn chọn.
+- text: Để đặt một ngôn ngữ làm mặc định, mở menu, nhấn 'Hồ sơ', chọn Ngôn ngữ và nhấn 'Cập nhật hồ sơ'.
+- text: File PDF đã lưu dùng ngôn ngữ của báo cáo cho tiêu đề, ghi chú và tên thức ăn khi đã có bản dịch. Các con số không thay đổi. Một vài từ chỉ trạng thái được cố ý giữ bằng tiếng Anh.
+- text: Để gửi phản hồi, mở menu và nhấn 'Phản hồi'. Chọn từ 1 đến 5 sao trong 'Đánh giá ứng dụng', chọn 'Loại phản hồi', viết nhận xét (tối đa 1000 ký tự) và nhấn 'Gửi phản hồi'.
+- text: Các phản hồi trước đây của bạn được liệt kê trong 'Phản hồi của bạn'. Nhấn vào một phản hồi để đọc lại.
+- text: 'Để được trợ giúp, mở menu và nhấn ''Trợ giúp và hỗ trợ'': có hướng dẫn sử dụng, các câu hỏi thường gặp, và ''Liên hệ'', mục này mở ứng dụng email để bạn viết thư cho nhóm RationSmart. ''Điều khoản và điều kiện'' cũng nằm trong menu.'
+problems:
+- title: '''Gửi phản hồi'' vẫn màu xám'
+  text: Hãy chọn số sao đánh giá trước.
+- title: Ngôn ngữ của tôi không có trong danh sách
+  text: Nhóm RationSmart thêm ngôn ngữ theo từng quốc gia. Hãy kiểm tra Quốc gia ở Thông tin gia súc, hoặc yêu cầu thêm ngôn ngữ của bạn qua 'Liên hệ'.
+- title: Một ngôn ngữ hiển thị dưới dạng mã ngắn
+  text: Một số ngôn ngữ hiển thị mã (ví dụ 'TI') thay vì tên. Bạn vẫn có thể chọn ngôn ngữ đó; các màn hình hoạt động như bình thường.
+- title: Một số chữ trên màn hình vẫn bằng tiếng Anh
+  text: Phần chữ đó chưa được dịch sang ngôn ngữ của bạn. Hãy cho chúng tôi biết qua 'Phản hồi' những từ bạn thấy.

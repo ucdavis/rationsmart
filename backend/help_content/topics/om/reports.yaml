@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Gabaasaalee kee olkaa'i, qoodi, argadhu
+summary: Gabaasa olkaa'i, PDF isaa argadhu, qoodi, booda irra deebi'ii bani.
+screen_label: Gabaasaalee Nyaataa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Gabaasa olkaa'i
+- PDF argadhu, ilaali, qoodi
+- Gabaasaalee Nyaataa
+- PDF eeggamaa jira
+- Gabaasaalee baay'ee
+- Dhimma olkaa'ame irra deebi'ii fayyadami
+- Gabaasaalee hin olkaa'amne
+steps:
+- text: Gabaasa irratti 'Gabaasa Olkaahi' tuqi. Aplikeeshiinichi 'Report saved successfully' jedha. Gabaasa wal fakkaataa irra deebi'ii olkaa'uun garagalcha lammaffaa hin uumu.
+- text: PDF uumuuf 'PDF argadhu' tuqi. Yeroo qophaa'u, 'PDF Ilaali' ni bana, 'Gabaasa Qoodi' immoo filannoo qooduu bilbila keetiitiin erga (ykn hidhaa PDF garagalcha).
+- text: Gabaasaalee kee olkaa'aman ilaaluuf menyuu banii 'Gabaasaalee Nyaataa' tuqi; kan haaraan dursa. 'Gabaasa Ilaali' PDF bana; Lakkoofsa Eenyummaa Gabaasaa, Gosa Gabaasaa fi Guyyaa isaa ilaaluuf sarara gabaasa jalaa tuqi.
+- text: Gabaasni haaraan yeroo PDF isaa hojjetamu daqiiqaa tokkoof 'PDF’n Eeggamaa Jira' agarsiisuu danda'a. Xiqqoo booda 'Gabaasaalee Nyaataa' irra deebi'ii bani.
+- text: Gabaasaalee olkaa'aman 20 ol yoo qabaatte, qabduuwwan fuula itti aanuu fi fuula duraa kan gadi jiran fayyadami.
+- text: Dhimma olkaa'ame irra deebi'ii fayyadamuuf, Odeeffannoo Loonii banii mallattoo seenaa kan 'Odeeffannoo dabalataa Walfakkii' cinaa jiru tuqi. Achitti gabaasaalee olkaa'aman qofatu tarreeffama.
+- text: Gabaasni ati hin olkaa'in bilbila kana irra sa'aatii 24 tura, sana booda ni bada. Kan barbaaddu olkaa'i.
+problems:
+- title: '''Gabaasaaleen olkaahaman hin jirani'''
+  text: Ammaan dura gabaasa hin olkaa'in. 'Gabaasa Uumi' tuqi, nyaata hojjedhuutii 'Gabaasa Olkaahi' tuqi.
+- title: '''PDF’n Eeggamaa Jira'' hin badu'
+  text: '''Gabaasaalee Nyaataa'' cufiitii irra deebi''ii bani. Daqiiqaa muraasa booda ammallee yoo mul''ate, gabaasa tarree keessaa banii ''PDF argadhu'' tuqi.'
+- title: '''Hidhanni PDF gara gabateetti (clipboard) garagalfameera'''
+  text: Bilbilli kee asitti filannoo qooduu hin qabu, kanaaf aplikeeshiinichi bakka isaa hidhaa sana garagalche. Ergaa ykn imeelii keessa maxxansi.
+- title: Gabaasni koo seenaa Odeeffannoo Loonii keessa hin jiru
+  text: Seenaan gabaasaalee olkaa'aman qofa tarreessa. Dhimma sana irra deebi'ii hojjechiisiitii 'Gabaasa Olkaahi' tuqi.

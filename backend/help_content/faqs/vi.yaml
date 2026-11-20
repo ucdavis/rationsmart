@@ -1,0 +1,40 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+forage-required:
+  question: Vì sao ứng dụng báo 'Cần có thức ăn thô'?
+  answer: Mọi khẩu phần cần ít nhất một thức ăn thuộc loại Thức ăn thô. Nhấn 'Đồng ý, thêm thức ăn thô', chọn một loại thức ăn thô ở Chọn thức ăn và tạo lại khẩu phần.
+no-diet-found:
+  question: Báo cáo hiện 'Không tìm thấy khẩu phần tối ưu.' Tôi có thể làm gì?
+  answer: 'Các thức ăn của bạn không đáp ứng được nhu cầu của con vật này. Đọc phần Ghi chú: thêm một thức ăn cung cấp phần còn thiếu (khoáng, protein hoặc năng lượng), nới lỏng các giới hạn bạn đã đặt, hoặc kiểm tra mục tiêu sữa. Xem ''Khi không tìm thấy khẩu phần''.'
+feed-missing:
+  question: Vì sao tôi không tìm thấy một thức ăn trong danh sách?
+  answer: Danh sách hiển thị thức ăn của Quốc gia đã chọn ở Thông tin gia súc, cùng với các thức ăn tùy chỉnh của bạn. Hãy kiểm tra quốc gia, tìm theo một phần của tên, hoặc tự thêm thức ăn bằng 'Thức ăn tùy chỉnh'.
+own-values:
+  question: Tôi có thể dùng thức ăn riêng hoặc kết quả phân tích riêng của mình không?
+  answer: Có. 'Thức ăn tùy chỉnh' thêm một thức ăn mới; biểu tượng bút chì trên thẻ thức ăn lưu một bản sao riêng với các giá trị của bạn. Chỉ bạn mới thấy được các thức ăn tùy chỉnh của mình.
+margin-meaning:
+  question: Biên sữa trong báo cáo có phải là lợi nhuận của tôi không?
+  answer: 'Không. Đó là giá sữa trừ chi phí thức ăn cho mỗi lít: số tiền sữa mang lại sau khi chỉ trừ chi phí thức ăn. Công lao động, chi phí thú y và các chi phí khác không được tính vào.'
+eval-cost-per-litre:
+  question: Khi đánh giá khẩu phần, nên dùng chi phí mỗi lít nào?
+  answer: Dùng 'Chi phí/Lít sữa' trong Phân tích chi phí. Chỉ số này lấy chi phí khẩu phần chia cho lượng sữa khẩu phần thực sự có thể đáp ứng ('Sản lượng sữa thực tế'), có thể thấp hơn mục tiêu của bạn.
+calf-milk:
+  question: Bê của tôi nên uống bao nhiêu sữa?
+  answer: Chọn 'Bê' ở Thông tin gia súc và nhập khối lượng cơ thể. Kế hoạch cho bê uống mỗi ngày số lít sữa bằng một phần mười khối lượng cơ thể, chia làm 2 lần, và cai sữa trước 56 ngày tuổi. Hãy điều chỉnh cùng bác sĩ thú y.
+limit-feed:
+  question: Làm sao để khẩu phần không dùng quá nhiều một loại thức ăn?
+  answer: Trên thẻ của thức ăn đó, bật 'Đặt giới hạn phối trộn' và nhập mức Tối đa theo kg mỗi ngày. Thẻ 'Giới hạn bạn đã đặt' trong báo cáo cho biết khẩu phần đã dùng bao nhiêu.
+saved-reports:
+  question: Các báo cáo đã lưu của tôi ở đâu?
+  answer: Mở menu và nhấn 'Báo cáo khẩu phần'. 'Xem báo cáo' mở file PDF. Các báo cáo bạn chưa lưu không có trong danh sách này.
+pdf-pending:
+  question: Báo cáo của tôi hiện 'Đang tạo PDF'.
+  answer: File PDF được tạo ngầm sau khi bạn lưu. Hãy mở lại 'Báo cáo khẩu phần' sau một phút.
+forgot-pin:
+  question: Tôi quên mã PIN. Tôi phải làm gì?
+  answer: Ở màn hình Đăng nhập, nhấn 'Quên mã PIN? Nhấn vào đây' và nhập địa chỉ email. Mở email, nhấn 'Reset my PIN' và chọn mã PIN 6 chữ số mới. Mã PIN cũ vẫn dùng được cho đến khi bạn đổi.
+change-language:
+  question: Làm sao để dùng ứng dụng bằng ngôn ngữ của tôi?
+  answer: Chọn Ngôn ngữ ở Thông tin gia súc cho báo cáo này, hoặc đặt ngôn ngữ mặc định trong Hồ sơ và nhấn 'Cập nhật hồ sơ'. Các ngôn ngữ có sẵn tùy theo quốc gia.
+contact-team:
+  question: Làm sao để liên hệ nhóm RationSmart?
+  answer: Mở menu, nhấn 'Trợ giúp và hỗ trợ', rồi 'Liên hệ'. Mục này sẽ mở ứng dụng email của bạn.

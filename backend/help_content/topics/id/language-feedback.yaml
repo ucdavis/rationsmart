@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Bahasa, umpan balik, dan bantuan
+summary: Pakai aplikasi dalam bahasa Anda, sampaikan pendapat Anda, dan dapatkan bantuan.
+screen_label: Umpan Balik
+chapters:
+- Isi video ini
+- Pilih bahasa
+- Bahasa bawaan Anda
+- Bahasa PDF
+- Kirim umpan balik
+- Umpan balik Anda sebelumnya
+- Bantuan dan dukungan
+steps:
+- text: Di Info Sapi pilih Bahasa di bagian 'Detail Simulasi'. Layar dan laporan langsung berganti ke bahasa itu. Daftar menampilkan bahasa yang disiapkan untuk negara yang Anda pilih.
+- text: Untuk menjadikan sebuah bahasa sebagai bahasa bawaan, buka menu, ketuk 'Profil', pilih Bahasa, lalu ketuk 'Perbarui Profil'.
+- text: PDF yang tersimpan memakai bahasa laporan untuk judul, catatan, dan nama pakan jika terjemahannya ada. Angka tidak berubah. Beberapa kata status sengaja tetap dalam bahasa Inggris.
+- text: Untuk memberi umpan balik, buka menu dan ketuk 'Umpan Balik'. Pilih 1 sampai 5 bintang di 'Beri Rating Aplikasi', pilih 'Kategori Umpan Balik', tulis komentar Anda (sampai 1000 karakter), lalu ketuk 'Kirim Umpan Balik'.
+- text: Umpan balik Anda sebelumnya tercantum di 'Umpan Balik Anda'. Ketuk salah satu untuk membacanya lagi.
+- text: 'Untuk bantuan, buka menu dan ketuk ''Bantuan & Dukungan'': ada manual pengguna, pertanyaan yang sering diajukan, dan ''Hubungi Kami'', yang membuka aplikasi email Anda untuk menulis kepada tim RationSmart. ''Syarat & Ketentuan'' juga ada di menu.'
+problems:
+- title: '''Kirim Umpan Balik'' tetap abu-abu'
+  text: Pilih rating bintang terlebih dahulu.
+- title: Bahasa saya tidak ada di daftar
+  text: Bahasa ditambahkan per negara oleh tim RationSmart. Periksa Negara di Info Sapi, atau minta bahasa Anda lewat 'Hubungi Kami'.
+- title: Sebuah bahasa tampil sebagai kode pendek
+  text: Beberapa bahasa tampil sebagai kode (misalnya 'TI'), bukan namanya. Anda tetap bisa memilihnya; layar berfungsi sama.
+- title: Sebagian teks layar masih dalam bahasa Inggris
+  text: Teks itu belum punya terjemahan dalam bahasa Anda. Beri tahu kami lewat 'Umpan Balik' kata-kata mana yang Anda lihat.

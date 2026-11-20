@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Nyaata baasii xiqqaa argadhu, gabaasa dubbisi
+summary: Yaada furmaataa hojjechiisiitii kutaa gabaasaa hunda hubadhu.
+screen_label: Gabaasa Yaada Furmaataa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Nyaata maddisiisi
+- Bal'ina gabaasaa
+- Nyaata baasii madaalawaa
+- Furmaata gabaabinaan
+- Daangaa baasii aannanii
+- Daangaa ati kaawwatte
+- Yaadannoo fi mitteenii
+- Olkaa'i, PDF, dhimma itti aanu
+steps:
+- text: Filannoo Nyaataa irratti 'Yaada Furmaataa Maddisiisi' tuqi. 'Gabaasaa kee maddisiisaa jira' sekondii muraasaaf mul'ata, sana booda 'Gabaasa Yaada Furmaataa' bana.
+- text: Gubbaa irratti 'Bal'ina Gabaasaa' Lakkoofsa Eenyummaa Gabaasaa (Report ID), Lak. Eenyummaa Walfakkii (Simulation ID), maqaa kee fi yeroo gabaasni hojjetame agarsiisa. 'Amaloota Horii' odeeffannoo horii ati barreessite irra deebi'ee agarsiisa, akka ati mirkaneeffattuuf.
+- text: '''Nyaata Baasiin isaa Madaalawaa ta''e'' deebii dha: nyaata tokkoon tokkoon isaatiif guyyaatti kg meeqa akka kennamutti (as fed: ulfaatina saawwan duratti keessu) kennitu, gatii kiilo tokkoo fi baasii guyyaa isaa. Sararri dhumaa Baasii Nyaataa kan Waliigalaa guyyaatti agarsiisa.'
+- text: '''Furmaata gabaabinaan'' Baasii Guyyaa, aannan nyaanni kun itti karoorfame, Dry Matter Intake (qabiyyee gogaa nyaatamu: nyaata bishaan isaa malee, guyyaatti kg) fi hammamtaa Fooreejii : Konsantireetii agarsiisa.'
+- text: '''Daangaa Baasii Aannanii'' saawwan elmamaniif, yeroo gatii aannanii barreessite mul''ata. ''Baasii Nyaataa / Litiri''aan (L)'' baasii nyaataa liitira aannanii tokkoof, ''Gatii Aannanii / L'' gatii aannanii keeti, garaagarummaan isaanii immoo waan aannan baasii nyaataa qofa irra caalaa argamsiisuu dha. Baasiin humna hojii, yaala horii fi baasiiwwan biroo isa keessa hin jiran.'
+- text: '''Daangaa Ati Kaawwatte'' yeroo daangaa nyaata tokkoo ykn daangaa nyaata guutuu kaa''atte mul''ata: daangaa hunda fi nyaanni sun hammam akka fayyadame tarreessa (mata-duree 9).'
+- text: '''Yaadannoowwan'' yeroo wanti tokko xiyyeeffannaa kee barbaadu qofa mul''ata, fakkeenyaaf qabiyyeen nyaataa tokko galma isaa gadi yoo ta''e, gorsa waan jijjiiruu qabdu waliin. ''Dhiibbaa Naannoo irraatti dhufu'' mitteenii saawwan nyaata kana irratti oomishtu agarsiisa.'
+- text: Olkaa'uuf 'Gabaasa Olkaahi' tuqi; sana booda 'PDF argadhu', 'PDF Ilaali' ykn 'Gabaasa Qoodi' (mata-duree 10). 'Dhimma Haaraa' galtee wal fakkaatuun horii itti aanu jalqaba. Xiyyi duubaa gara Filannoo Nyaataatti deebisa, achitti nyaata ykn gatii jijjiirtee irra deebi'ii maddisiisuu dandeessa.
+problems:
+- title: '''Furmaatni madaalawaan hin argamne'''
+  text: Walmakaan nyaata kee kamiyyuu fedhii horii kanaa hin guutu. Yaadannoowwan waan dhabame fi waan jijjiiramuu qabu tarreessu. Mata-duree 12 ilaali.
+- title: Kaardiin 'Daangaa Baasii Aannanii' hin jiru
+  text: Saawwan elmamaniif qofa, akkasumas Odeeffannoo Loonii irratti gatiin aannanii yoo barreeffame qofa mul'ata. Duubatti deebi'i, gatii aannanii barreessiitii irra deebi'ii maddisiisi.
+- title: '''Yaadannoo Daangaa Nyaataa'''
+  text: Nyaanni daangaa ati 'Daangaa Nyaata baratamaa ta'ee' keessatti kaa'atte keessa turuu hin dandeenye. Yaadannichi bu'aa fi daangaa kee agarsiisa. Daangaa sana bal'isi ykn nyaata biroo dabali.
+- title: Nyaanni tokko hamma baay'ee xiqqaa, kan akka kg 0.01, agarsiisa
+  text: Nyaanni baasii xiqqaan nyaata sana baay'ee hin barbaadu. Dhiisiitii irra deebi'ii maddisiisuu dandeessa; baasiin baay'ee xiqqoo qofa jijjiirama.
+- title: Jechoonni tokko tokko Afaan Ingiliffaatiin hafu
+  text: Jechoonni haalaa (status) aplikeeshiinii keessaa beekamee Afaan Ingiliffaatiin hafu. PDF olkaa'ame mata-dureewwan, yaadannoo fi maqaa nyaataatiif afaan gabaasaa fayyadama, bakka hiikkaan jirutti.

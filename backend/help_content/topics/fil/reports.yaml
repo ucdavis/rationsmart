@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: I-save, ibahagi at hanapin ang iyong mga ulat
+summary: Itago ang ulat, kunin ang PDF nito, ibahagi ito at buksan muli mamaya.
+screen_label: Mga Ulat ng Pakain
+chapters:
+- Ano ang ipinapakita ng video na ito
+- I-save ang ulat
+- Kunin, tingnan, ibahagi ang PDF
+- Mga Ulat ng Pakain
+- PDF Pending
+- Maraming ulat
+- Gamitin muli ang naka-save na kaso
+- Mga hindi naka-save na ulat
+steps:
+- text: Sa isang ulat, i-tap ang 'I-save ang Ulat'. Sasabihin ng app ang 'Matagumpay na na-save ang ulat'. Hindi gagawa ng pangalawang kopya ang pag-save muli ng parehong ulat.
+- text: I-tap ang 'Kunin ang PDF' para gawin ang PDF. Kapag handa na ito, binubuksan ito ng 'Tingnan ang PDF' at ipinapadala ito ng 'Ibahagi ang Ulat' gamit ang mga opsyon sa pagbabahagi ng iyong phone (o kinokopya ang PDF link).
+- text: Buksan ang menu at i-tap ang 'Mga Ulat ng Pakain' para makita ang iyong mga naka-save na ulat, pinakabago muna. Binubuksan ng 'Tingnan ang Ulat' ang PDF; i-tap ang bar sa ilalim ng ulat para makita ang Report ID, Uri ng Ulat at Petsa nito.
+- text: Maaaring magpakita ang bagong ulat ng 'PDF Pending' nang isang minuto habang ginagawa ang PDF nito. Buksan muli ang 'Mga Ulat ng Pakain' makalipas ang ilang sandali.
+- text: Kapag higit sa 20 ang naka-save na ulat, gamitin ang mga button ng susunod at nakaraang pahina sa ibaba.
+- text: Para gamitin muli ang naka-save na kaso, buksan ang Impormasyon ng Baka at i-tap ang icon ng kasaysayan sa tabi ng 'Mga Detalye ng Simulation'. Mga naka-save na ulat lang ang nakalista roon.
+- text: Nananatili sa phone na ito nang 24 oras ang ulat na hindi mo na-save, pagkatapos ay mawawala na ito. I-save ang mga kailangan mo.
+problems:
+- title: '''Walang naka-save na mga ulat'''
+  text: Wala ka pang na-save na ulat. I-tap ang 'Gumawa ng Ulat', gumawa ng diyeta at i-tap ang 'I-save ang Ulat'.
+- title: Hindi nawawala ang 'PDF Pending'
+  text: Isara at buksan muli ang 'Mga Ulat ng Pakain'. Kung nandoon pa rin ito pagkalipas ng ilang minuto, buksan ang ulat mula sa listahan at i-tap ang 'Kunin ang PDF'.
+- title: '''Nakopya ang PDF link sa clipboard'''
+  text: Walang share sheet ang iyong phone dito, kaya kinopya na lang ng app ang link. I-paste ito sa isang mensahe o email.
+- title: Wala ang ulat ko sa kasaysayan sa Impormasyon ng Baka
+  text: Mga naka-save na ulat lang ang nakalista sa kasaysayan. Patakbuhin muli ang kaso at i-tap ang 'I-save ang Ulat'.

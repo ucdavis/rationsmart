@@ -1,0 +1,36 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Chagua vyakula na bei
+summary: Chagua vyakula ulivyo navyo, andika bei ya kila kimoja na utengeneze lishe.
+screen_label: Feed Selection
+chapters:
+- Video hii inaonyesha nini
+- Chagua aina ya kazi
+- Jaza kadi ya chakula
+- Tafuta chakula
+- Andika bei
+- Kiasi kwa ajili ya tathmini
+- Ongeza vyakula zaidi
+- Tengeneza lishe
+- Vyakula vyako na vikomo
+steps:
+- text: Juu kabisa, chagua 'Diet Recommendation' (programu inatafuta lishe ya gharama nafuu zaidi) au 'Diet Evaluation' (unaandika kiasi unacholisha sasa, na programu inakikagua).
+- text: Kwenye 'FEED 1', chagua Feed Type (Forage = malisho, Concentrate = chakula cha nyongeza, au Complete diet = lishe kamili), kisha Feed Category, kisha Feed. Kila orodha hufunguka tu baada ya kuchagua ile iliyotangulia.
+- text: 'Au tafuta: gusa kadi ili ionyeshe ''Selected'', kisha andika sehemu ya jina la chakula (kwa mfano ''soybean'') kwenye kisanduku cha kutafuta. Gusa tokeo ili kujaza kadi hiyo.'
+- text: Andika bei kwa kg kwa sarafu ya nchi yako. Lebo inaonyesha sarafu, kwa mfano 'Price ETB/KG'.
+- text: Kwenye 'Diet Evaluation', pia andika kg kwa siku unazolisha sasa. Kadi inaonyesha gharama (bei × kg).
+- text: Gusa 'Add More Feed' kwa kila chakula cha ziada; ondoa kadi kwa ikoni yake ya pipa la taka. Weka angalau malisho (forage) moja.
+- text: Gusa 'Generate Recommendation' (au 'Get Evaluation' kwenye Diet Evaluation). Ripoti hufunguka baada ya sekunde chache.
+- text: 'Si lazima: ''Custom Feed'' huongeza chakula chako mwenyewe (mada 8). ''Custom Diet Limits'' na ''Set inclusion limits'' kwenye kadi hudhibiti lishe (mada 9).'
+problems:
+- title: '''Forage Required'''
+  text: Kila lishe inahitaji angalau chakula kimoja cha aina ya Forage (malisho). Gusa 'OK, Add a Forage', ongeza kimoja na utengeneze tena.
+- title: '''Incomplete Feeds'''
+  text: Kadi ina aina lakini haina chakula. Gusa 'No, Review' ili kuikamilisha, au 'Yes, Proceed' ili kuendelea bila kadi hiyo.
+- title: '''Already this feed is selected'''
+  text: Kila chakula kinaweza kuwa kwenye kadi moja tu. Badilisha bei kwenye kadi ambayo tayari ina chakula hicho.
+- title: '''Price can''t be negative.'''
+  text: Andika bei ya 0 au zaidi.
+- title: '''Enter a quantity greater than 0 for every feed, or remove the feed.'''
+  text: Kwenye Diet Evaluation kila chakula kinahitaji kg kwa siku unazolisha sasa. Ziandike, au ondoa chakula hicho.
+- title: Chakula ninachotarajia hakipo
+  text: Orodha zinaonyesha vyakula vya nchi iliyochaguliwa kwenye Cattle Info, pamoja na vyakula vyako maalum (custom feeds). Kagua nchi, au ongeza chakula kwa 'Custom Feed'.

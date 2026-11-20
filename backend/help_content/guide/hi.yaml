@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: हिन्दी
+date: '{day} {month} {year}'
+length_min_sec: '{min} मिनट {sec} सेकंड'
+length_sec: '{sec} सेकंड'
+header_guide: RationSmart · उपयोगकर्ता मार्गदर्शिका
+footer_edition: संस्करण {edition}
+footer_page: पृष्ठ {page} / {pages}
+footer_card: RationSmart · त्वरित शुरुआत · संस्करण {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: उपयोगकर्ता मार्गदर्शिका
+guide_tagline: डेयरी पशुओं के लिए सबसे कम लागत वाला आहार, कदम दर कदम
+fact_language: भाषा
+fact_edition: संस्करण
+fact_updated: अपडेट किया गया
+fact_topics: विषय
+fact_topics_value: '{count} · चित्रों और वीडियो के साथ'
+cover_scan_1: 'स्कैन करके देखें:'
+cover_scan_2: त्वरित शुरुआत वीडियो ({length})
+cover_foot: विस्तार कार्यकर्ताओं और प्रशिक्षकों के लिए। विषयों के नंबर ऐप की 'सहायता एवं समर्थन' स्क्रीन के नंबरों से मेल खाते हैं।
+ai_note: AI द्वारा किया गया अनुवाद, जिसे अभी किसी हिन्दी भाषी व्यक्ति ने नहीं जाँचा है।
+translated_from: अंग्रेज़ी संस्करण {edition} से अनुवादित।
+howto_title: इस मार्गदर्शिका का उपयोग कैसे करें
+howto_topics_lead: विषय ऐप के क्रम में हैं।
+howto_topics: हर विषय एक काम है, उसी क्रम में जिसमें आप ऐप का उपयोग करते हैं। नंबर वही हैं जो ऐप की 'सहायता एवं समर्थन' स्क्रीन में हैं, ताकि आप किसानों को उनके फ़ोन पर वही विषय दिखा सकें।
+howto_scan_lead: देखने के लिए QR कोड स्कैन करें।
+howto_scan: फ़ोन का कैमरा खोलें और उसे कोड की ओर करें। विषय का छोटा वीडियो YouTube पर खुल जाता है। हर कोड के नीचे उसका लिंक भी है, अगर आप उसे टाइप करना चाहें।
+videos_english: वीडियो अंग्रेज़ी में हैं।
+howto_time_lead: ▶ 0:21 का मतलब है “यह कदम वीडियो में 0 मिनट 21 सेकंड पर है”।
+howto_time: प्रशिक्षण के दौरान किसी एक कदम पर सीधे जाने के लिए इसका उपयोग करें।
+howto_problems_lead: “अगर कुछ गलत हो जाए”
+howto_problems: 'हर विषय के अंत में है: इसमें वे संदेश हैं जो लोग सबसे ज़्यादा देखते हैं, और यह भी कि तब क्या करें।'
+tip_lead: 'प्रशिक्षकों के लिए सुझाव:'
+tip: विषय {number}, {title}, और उसके वीडियो से शुरू करें। यह दो मिनट से कम में पूरा ऐप दिखाता है। चित्र ऐप से लिए गए हैं; आपकी स्क्रीन थोड़ी अलग दिख सकती है।
+contents_title: विषय-सूची
+faqs_title: अक्सर पूछे जाने वाले प्रश्न
+more_title: और सहायता कहाँ मिलेगी
+screen_chip: 'स्क्रीन: {screen}'
+audience_advanced: उन्नत
+audience_farmers: किसानों के लिए
+audience_nutritionists: पोषण विशेषज्ञों के लिए
+video_length: ▶ वीडियो, {length}
+in_the_video: वीडियो में
+scan_to_watch: देखने के लिए स्कैन करें
+problems_title: ⚠ अगर कुछ गलत हो जाए
+faq_see: '→ विषय {number}: {title}'
+back_app_title: ऐप में
+back_app: मेनू खोलें और 'सहायता एवं समर्थन' पर टैप करें। हर स्क्रीन पर एक सहायता बटन भी है, जो उस स्क्रीन का विषय खोलता है।
+back_contact_title: प्रश्न या समस्याएँ
+back_contact: मेनू खोलें और 'संपर्क करें' पर टैप करें। अगर आपका प्रश्न किसी एक रिपोर्ट के बारे में है, तो उसका सिमुलेशन नाम (Simulation Name) लिखें।
+back_videos_title: वीडियो
+back_videos: सभी {count} वीडियो YouTube चैनल “RationSmart” पर हैं। हर विषय के पृष्ठ पर उसका QR कोड है।
+back_edition_title: यह संस्करण
+back_edition: संस्करण {edition} · {language} · {updated}। जब ऐप बदलता है, तो उसी सहायता पाठ से नया संस्करण बनाया जाता है जो ऐप में दिखता है।
+card_title: त्वरित शुरुआत
+card_tagline: लॉगिन से सबसे सस्ते आहार तक, {count} कदमों में
+card_problems_title: ⚠ अगर कुछ गलत हो जाए
+card_faqs_title: लोग जो प्रश्न पूछते हैं
+card_topics_title: 'और जानें: {count} सहायता विषय'
+card_more: 'ऐप में: मेनू → ''सहायता एवं समर्थन''। हर विषय का एक छोटा वीडियो है। पूरी छापने योग्य उपयोगकर्ता मार्गदर्शिका भी वहीं है।'
+months:
+- जनवरी
+- फ़रवरी
+- मार्च
+- अप्रैल
+- मई
+- जून
+- जुलाई
+- अगस्त
+- सितंबर
+- अक्टूबर
+- नवंबर
+- दिसंबर

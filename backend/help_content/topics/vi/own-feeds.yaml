@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Thức ăn riêng và giá trị dinh dưỡng của bạn
+summary: Thêm một thức ăn không có trong danh sách, hoặc dùng kết quả phân tích phòng thí nghiệm của riêng bạn cho một thức ăn.
+screen_label: Chọn thức ăn
+chapters:
+- Nội dung video này
+- Thêm thức ăn tùy chỉnh
+- Dùng trong thẻ
+- Các ô theo nhóm
+- Giá trị riêng cho thức ăn có sẵn
+- Sửa thức ăn của bạn
+- Chỉ riêng bạn thấy
+steps:
+- text: Tại Chọn thức ăn, nhấn 'Thức ăn tùy chỉnh'. Trong 'Thêm thức ăn tùy chỉnh', chọn Loại thức ăn và Nhóm thức ăn, nhập tên thức ăn, và điền các giá trị dinh dưỡng theo % vật chất khô. Nhấn 'Xác nhận'.
+- text: Ứng dụng báo 'Đã lưu thức ăn tùy chỉnh. Thức ăn sẽ xuất hiện trong danh sách.' Chọn thức ăn này trong bất kỳ thẻ thức ăn nào, theo loại và nhóm của nó, hoặc tìm theo tên.
+- text: Các ô cần điền tùy theo nhóm. Nhóm Khoáng chỉ yêu cầu Vật chất khô, Tro, Canxi và Phốt pho; nhóm Phụ gia còn yêu cầu thêm NPN.
+- text: 'Để dùng giá trị riêng của bạn cho một thức ăn trong danh sách: chọn thức ăn đó trong thẻ và nhấn biểu tượng bút chì. Biểu mẫu mở ra với các giá trị của thức ăn đó; sửa chúng và nhấn ''Xác nhận''. Thao tác này lưu một bản sao riêng của bạn (tên bản sao bắt đầu bằng tên của bạn) và thẻ sẽ dùng bản sao đó. Thức ăn dùng chung không thay đổi.'
+- text: Nhấn biểu tượng bút chì trên một thức ăn tùy chỉnh của bạn để sửa; ứng dụng báo 'Đã cập nhật thức ăn tùy chỉnh!'.
+- text: 'Thức ăn tùy chỉnh của bạn là riêng tư: người dùng khác không bao giờ thấy được. Chúng đi theo bạn đến mọi quốc gia bạn chọn ở Thông tin gia súc.'
+problems:
+- title: '''Vui lòng nhập tên và chọn loại thức ăn.'''
+  text: Nhập tên và chọn Loại thức ăn trước khi nhấn 'Xác nhận'.
+- title: '''Giá trị dinh dưỡng phải là số từ 0 đến 100 %.'''
+  text: Các chất dinh dưỡng tính theo % vật chất khô, nên mỗi giá trị phải từ 0 đến 100. Hãy kiểm tra xem có đặt sai dấu thập phân không.
+- title: Tôi không tìm thấy thức ăn tùy chỉnh của mình
+  text: Hãy tìm trong Loại thức ăn và Nhóm thức ăn bạn đã chọn khi lưu, hoặc tìm theo tên.
+- title: Lấy giá trị dinh dưỡng ở đâu?
+  text: Tốt nhất là từ kết quả phân tích phòng thí nghiệm thức ăn của chính bạn. Nếu không có, hãy bắt đầu từ một thức ăn tương tự trong danh sách và chỉ sửa những gì bạn biết.

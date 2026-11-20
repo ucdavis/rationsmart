@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Nyaata tokkoo fi nyaata guutuuf daangaa kaa'i
+summary: Nyaanni nyaata tokko irraa hammam fayyadamuu akka danda'u to'adhu, nyaata guutuuf daangaa qabiyyee nyaataa kaa'i.
+screen_label: Filannoo Nyaataa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Nyaata tokko daangessi
+- Fakkeenya
+- Daangaa nyaata guutuu
+- Daangaa gabaasa irratti
+- Daangaa laafaa
+- Gabaasa waliin olkaa'ama
+steps:
+- text: 'Daangaa nyaataa: kaardii nyaataa irratti, erga nyaata filattee booda, ''Daangaa hammatamu kaahi'' bani. Gad''aanaa (Min) fi/ykn Ol''aanaa (Max) kg guyyaatti akka kennamutti (as fed) barreessi. Daangaa malee gochuuf saanduqa duwwaa dhiisi.'
+- text: 'Fakkeenya: Atara boonsituu daakame (soybean meal) Ol''aanaa kg 2 wajjin nyaata kg 1.88 isaa qabu kenna. Nyaanni daangaa malee caalaa qaalii ta''uu danda''a, sababni isaas aplikeeshiinichi nyaata biroo fayyadamuu qaba.'
+- text: 'Daangaa nyaata guutuu: ''Daangaa Nyaata baratamaa ta''ee'' tuqi. Daangaan hundi daangaa hayyamame isaa fi gatii durtii (default) Haala Qaamaa sanaaf agarsiisa, fakkeenyaaf ''NDF max'' ykn ''Starch max''. Waan barbaaddu qofa jijjiiriitii ''Daangaalee Hojiirra Oolchi'' tuqi.'
+- text: Nyaata maddisiisi. Kaardiin 'Daangaa Ati Kaawwatte' gabaasa keessaa daangaa ati kaa'atte hunda fi nyaata daangeffame tokkoon tokkoo irraa hammam akka nyaanni fayyadame tarreessa. PDF olkaa'ame kutaa wal fakkaataa qaba.
+- text: 'Daangaan coomaa, fibaraa fi istaarchii laafaa dha: aplikeeshiinichi isaan galmeeffata, gabaasni immoo yeroo nyaanni daangaa tokko % 2.5 daangaa sanaa ol caalu ''Yaadannoo Daangaa Nyaataa'' agarsiisa.'
+- text: Daangaaleen gabaasa waliin olkaa'amu. Yeroo walfakkii olkaa'ame seenaa Odeeffannoo Loonii irraa feetu, daangaaleen isaas ni deebi'u.
+problems:
+- title: '''Xiqqaan olaanaa caaluu hin danda''u.'''
+  text: Gad'aanaa (Min) Ol'aanaa (Max) irra xiqqeessi, ykn isaan keessaa tokko haqi.
+- title: Ol'aanaan (Max) 0 hin fudhatamu
+  text: Nyaata tokko alatti dhiisuuf, kaardii isaa haqi. Daangaa malee gochuuf saanduqa duwwaa dhiisi.
+- title: '''Value must be between … and …'''
+  text: Daangaan nyaata guutuu hundi daangaa ogeeyyii nyaataatiin Haala Qaamaa sanaaf kaa'ame qaba. Gatii isa keessa jiru barreessi; 'Daangaalee Hojiirra Oolchi' irra deebi'ee hojjeta.
+- title: '''Forage NDF Min NDF Max caaluu hin danda''u'''
+  text: Fibarri fooreejii irraa dhufu fibara waliigalaa caaluu hin danda'u. Fooreejii NDF Gad'aanaa gadi buusi ykn NDF Ol'aanaa ol kaasi.
+- title: '''Daangaa hammatamu kaahi'' daalacha dha'
+  text: Jalqaba kaardii keessatti nyaata filadhu.
+- title: Daangaa waliin, nyaanni tokkollee hin argamu
+  text: Daangaaleen nyaata kanaaf baay'ee cimaa dha. Daangaa tokko bal'isi ykn haqi, ykn nyaata biraa dabali (mata-duree 12).

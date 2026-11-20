@@ -1,0 +1,36 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Pumili ng pakain at presyo
+summary: Piliin ang mga pakaing mayroon ka, i-type ang presyo ng bawat isa at patakbuhin ang diyeta.
+screen_label: Pagpili ng Pakain
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Piliin ang mode
+- Punan ang card ng pakain
+- Maghanap ng pakain
+- I-type ang presyo
+- Dami para sa pagsusuri
+- Magdagdag ng pakain
+- Patakbuhin ang diyeta
+- Sariling pakain at limitasyon
+steps:
+- text: Sa itaas, piliin ang 'Rekomendasyon ng Diyeta' (hahanapin ng app ang pinakamurang diyeta) o 'Pagsusuri ng Diyeta' (i-type mo ang dami ng ipinapakain mo ngayon, at susuriin ito ng app).
+- text: Sa 'FEED 1', piliin ang Uri ng Pakain (Forage, Concentrate o Complete diet), pagkatapos ang Kategorya ng Pakain, pagkatapos ang Pakain. Bubukas lang ang bawat listahan pagkatapos mong piliin ang nauna rito.
+- text: 'O maghanap: i-tap ang isang card para magpakita ito ng ''Napili'', pagkatapos ay i-type ang bahagi ng pangalan ng pakain (halimbawa ''soybean'') sa search box. I-tap ang isang resulta para punan ang card na iyon.'
+- text: I-type ang presyo bawat kg sa pera (currency) ng iyong bansa. Ipinapakita ng label ang currency, halimbawa 'Presyo ETB/KG'.
+- text: Sa 'Pagsusuri ng Diyeta', i-type din ang kg bawat araw na ipinapakain mo ngayon. Ipinapakita ng card ang gastos (presyo × kg).
+- text: I-tap ang 'Magdagdag ng Iba pang Pakain' para sa bawat dagdag na pakain; alisin ang card gamit ang icon ng basurahan nito. Magsama ng kahit isang forage.
+- text: I-tap ang 'Bumuo ng Rekomendasyon' (o 'Kumuha ng Pagsusuri' sa Pagsusuri ng Diyeta). Magbubukas ang ulat pagkalipas ng ilang segundo.
+- text: 'Opsyonal: nagdadagdag ang ''Custom na Pakain'' ng sarili mong pakain (paksa 8). Kinokontrol ng ''Custom na Mga Limitasyon ng Diyeta'' at ng ''Itakda ang mga limitasyon ng pagsama'' sa card ang diyeta (paksa 9).'
+problems:
+- title: '''Kailangan ng Forage'''
+  text: Kailangan ng bawat diyeta ng kahit isang pakain na uri na Forage. I-tap ang 'OK, Magdagdag ng Forage', magdagdag ng isa at bumuo muli.
+- title: '''Hindi Kumpletong Pakain'''
+  text: May card na may uri pero walang pakain. I-tap ang 'Hindi, Suriin' para tapusin ito, o 'Oo, Magpatuloy' para tumakbo nang wala ang card na iyon.
+- title: '''Napili na ang pakaing ito'''
+  text: Isang card lang ang maaaring paglagyan ng bawat pakain. Palitan ang presyo sa card na mayroon na nito.
+- title: '''Hindi maaaring negatibo ang presyo.'''
+  text: Mag-type ng presyong 0 o higit pa.
+- title: '''Maglagay ng dami na higit sa 0 para sa bawat pakain, o alisin ang pakain.'''
+  text: Sa Pagsusuri ng Diyeta, kailangan ng bawat pakain ang kg bawat araw na ipinapakain mo ngayon. I-type ito, o alisin ang pakain.
+- title: Wala ang pakaing inaasahan ko
+  text: Ipinapakita ng mga listahan ang mga pakain ng bansang pinili sa Impormasyon ng Baka, pati ang sarili mong mga custom na pakain. Suriin ang bansa, o idagdag ang pakain gamit ang 'Custom na Pakain'.

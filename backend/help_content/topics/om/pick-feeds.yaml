@@ -1,0 +1,36 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Nyaataafi gatii filadhu
+summary: Nyaata qabdu filadhu, gatii tokkoon tokkoo isaa barreessi, nyaata herreegsisi.
+screen_label: Filannoo Nyaataa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Akkaataa hojii filadhu
+- Kaardii nyaataa guuti
+- Nyaata barbaadi
+- Gatii barreessi
+- Hamma madaalliif
+- Nyaata dabalataa dabali
+- Nyaata herreegsisi
+- Nyaata kee fi daangaa
+steps:
+- text: Gubbaa irratti 'Yaada Furmaataa Nyaataa' (aplikeeshiinichi nyaata baasii xiqqaa barbaada) ykn 'Madaallii Nyaataa' (ati hamma amma kennitu barreessita, aplikeeshiinichi ni madaala) filadhu.
+- text: '''FEED 1'' keessatti Gosa Nyaataa (Fooreejii, Konsantireetii ykn Nyaata guutuu), itti aansee Ramaddii Nyaataa, itti aansee Nyaata filadhu. Tarreen hundi kan banamu erga isa isaa dura jiru filattee booda qofa.'
+- text: 'Ykn barbaadi: kaardii tokko akka ''Filatameera'' agarsiisuuf tuqi, sana booda saanduqa barbaachaa keessatti kutaa maqaa nyaataa (fakkeenyaaf ''soybean'') barreessi. Kaardii sana guutuuf bu''aa tokko tuqi.'
+- text: Gatii kiilo tokkoo maallaqa biyya keetiitiin barreessi. Moggaasni (label) maallaqa sana agarsiisa, fakkeenyaaf 'Price ETB/KG'.
+- text: '''Madaallii Nyaataa'' keessatti kg guyyaatti amma kennitus barreessi. Kaardichi baasii (gatii × kg) agarsiisa.'
+- text: Nyaata dabalataa hundaaf 'Nyaata Dabalataa Itti Dabali' tuqi; kaardii tokko mallattoo qodaa kosii isaatiin haqi. Yoo xiqqaate fooreejii tokko itti dabali.
+- text: '''Yaada Furmaataa Maddisiisi'' tuqi (ykn Madaallii Nyaataa keessatti ''Madaallii Argadhu''). Gabaasni sekondii muraasa booda bana.'
+- text: 'Kan dirqama hin taane: ''Nyaata baratamaa ta''e'' nyaata mataa keetii dabala (mata-duree 8). ''Daangaa Nyaata baratamaa ta''ee'' fi ''Daangaa hammatamu kaahi'' kan kaardii irraa nyaata sana to''atu (mata-duree 9).'
+problems:
+- title: '''Fooreejii Barbaachisa'''
+  text: Nyaanni hundi yoo xiqqaate nyaata gosa Fooreejii tokko barbaada. 'Tole, Fooreejii Dabali' tuqi, tokko dabaliitii irra deebi'ii maddisiisi.
+- title: '''Nyaata guutuu hin taane'''
+  text: Kaardiin tokko gosa qaba garuu nyaata hin qabu. Xumuruuf 'Lakki, Keessa Deebi'i' tuqi, ykn kaardii sana malee hojjechiisuuf 'Eeyyee, Itti Fufi' tuqi.
+- title: '''Nyaanni kun duraan filatameera'''
+  text: Nyaanni tokko kaardii tokko qofa irra ta'uu danda'a. Gatii kaardii duraan isa qabu irratti jijjiiri.
+- title: '''Gatiin gadi aanaa zeeroo ta''uu hin danda''u.'''
+  text: Gatii 0 ykn isaa ol barreessi.
+- title: '''Nyaata hundaaf hamma 0 ol galchi, ykn nyaata sana haqi.'''
+  text: Madaallii Nyaataa keessatti nyaanni hundi kg guyyaatti amma kennitu barbaada. Barreessi, ykn nyaata sana haqi.
+- title: Nyaanni ani eeggadhu hin jiru
+  text: Tarreewwan nyaata biyya Odeeffannoo Loonii irratti filatamee, akkasumas nyaata baratamaa ta'e (custom feed) kee agarsiisu. Biyya mirkaneeffadhu, ykn 'Nyaata baratamaa ta'e' fayyadamuun nyaata sana dabali.

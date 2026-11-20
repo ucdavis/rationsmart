@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: Filipino
+date: '{month} {day}, {year}'
+length_min_sec: '{min} min {sec} seg'
+length_sec: '{sec} seg'
+header_guide: RationSmart · Gabay sa Paggamit
+footer_edition: Edisyon {edition}
+footer_page: Pahina {page} ng {pages}
+footer_card: RationSmart · Mabilis na Pagsisimula · Edisyon {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: Gabay sa Paggamit
+guide_tagline: Pinakamurang diyeta para sa mga gatasang baka, hakbang-hakbang
+fact_language: Wika
+fact_edition: Edisyon
+fact_updated: Na-update
+fact_topics: Mga Paksa
+fact_topics_value: '{count} · may mga larawan at video'
+cover_scan_1: I-scan para mapanood ang
+cover_scan_2: video ng Mabilis na Pagsisimula ({length})
+cover_foot: Para sa mga extension worker at trainer. Tugma ang mga numero ng paksa sa screen na 'Tulong at Suporta' sa app.
+ai_note: Salin ng AI, hindi pa nasusuri ng katutubong tagapagsalita.
+translated_from: Isinalin mula sa English na edisyon {edition}.
+howto_title: Paano gamitin ang gabay na ito
+howto_topics_lead: Sinusundan ng mga paksa ang app.
+howto_topics: Bawat paksa ay isang gawain, ayon sa pagkakasunod-sunod ng paggamit mo ng app. Pareho ang mga numero sa screen na 'Tulong at Suporta' ng app, kaya maituturo mo sa mga magsasaka ang parehong paksa sa kanilang phone.
+howto_scan_lead: I-scan ang QR code para manood.
+howto_scan: Buksan ang camera ng phone at itutok ito sa code. Magbubukas sa YouTube ang maikling video ng paksa. Nasa ilalim ng bawat code ang link, kung mas gusto mong i-type ito.
+videos_english: Nasa English ang mga video.
+howto_time_lead: Ang ▶ 0:21 ay nangangahulugang “nasa video ang hakbang na ito sa 0 min 21 seg”.
+howto_time: Gamitin ito para lumundag sa isang hakbang habang nagtuturo ka.
+howto_problems_lead: “Kung may problema”
+howto_problems: sa dulo ng bawat paksa ay naglilista ng mga mensaheng pinakamadalas makita ng mga tao at kung ano ang gagawin.
+tip_lead: 'Payo para sa mga trainer:'
+tip: magsimula sa paksa {number}, {title}, at sa video nito. Ipinapakita nito ang buong app sa loob ng wala pang dalawang minuto. Galing sa app ang mga larawan; maaaring medyo iba ang hitsura ng iyong screen.
+contents_title: Nilalaman
+faqs_title: Mga madalas itanong
+more_title: Saan makakakuha ng dagdag na tulong
+screen_chip: 'Screen: {screen}'
+audience_advanced: Advanced
+audience_farmers: Para sa mga magsasaka
+audience_nutritionists: Para sa mga nutrisyunista
+video_length: ▶ Video, {length}
+in_the_video: Sa video
+scan_to_watch: I-scan para manood
+problems_title: ⚠ Kung may problema
+faq_see: '→ Paksa {number}: {title}'
+back_app_title: Sa app
+back_app: Buksan ang menu at i-tap ang 'Tulong at Suporta'. May help button din ang bawat screen na nagbubukas ng paksa para sa screen na iyon.
+back_contact_title: Mga tanong o problema
+back_contact: Buksan ang menu at i-tap ang 'Makipag-ugnayan sa Amin'. Isulat ang Pangalan ng Simulation kung tungkol sa isang ulat ang tanong mo.
+back_videos_title: Mga video
+back_videos: Nasa YouTube channel na “RationSmart” ang lahat ng {count} video. May sariling QR code ang pahina ng bawat paksa.
+back_edition_title: Ang edisyong ito
+back_edition: Edisyon {edition} · {language} · {updated}. Kapag nagbago ang app, gagawa ng bagong edisyon mula sa parehong help text na ipinapakita ng app.
+card_title: Mabilis na Pagsisimula
+card_tagline: Mula pag-login hanggang sa pinakamurang diyeta, sa {count} hakbang
+card_problems_title: ⚠ Kung may problema
+card_faqs_title: Mga tanong ng mga tao
+card_topics_title: 'Alamin pa: {count} paksa ng tulong'
+card_more: 'Sa app: menu → ''Tulong at Suporta''. May maikling video ang bawat paksa. Nasa parehong lugar ang buong Gabay sa Paggamit na maaaring i-print.'
+months:
+- Enero
+- Pebrero
+- Marso
+- Abril
+- Mayo
+- Hunyo
+- Hulyo
+- Agosto
+- Setyembre
+- Oktubre
+- Nobyembre
+- Disyembre

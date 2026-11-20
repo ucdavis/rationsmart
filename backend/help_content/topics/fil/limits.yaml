@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Magtakda ng limitasyon para sa pakain at sa diyeta
+summary: Kontrolin kung gaano karami ng isang pakain ang magagamit ng diyeta, at magtakda ng limitasyon ng sustansya para sa buong diyeta.
+screen_label: Pagpili ng Pakain
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Limitahan ang isang pakain
+- Isang halimbawa
+- Mga limitasyon ng diyeta
+- Mga limitasyon sa ulat
+- Maluwag na limitasyon
+- Naka-save kasama ng ulat
+steps:
+- text: 'Limitasyon ng pakain: sa card ng pakain, pagkatapos piliin ang pakain, i-on ang ''Itakda ang mga limitasyon ng pagsama''. Mag-type ng Min at/o Max sa kg bawat araw nang as fed. Iwanang walang laman ang kahon kung walang limitasyon.'
+- text: 'Halimbawa: ang Soybean meal na may Max 2 kg ay nagbibigay ng diyeta na may 1.88 kg nito. Maaaring mas mahal ang diyeta kaysa kung walang limitasyon, dahil kailangang gumamit ang app ng ibang pakain.'
+- text: 'Mga limitasyon ng diyeta: i-tap ang ''Custom na Mga Limitasyon ng Diyeta''. Ipinapakita ng bawat limitasyon ang pinapayagang saklaw nito at ang default para sa Pisyolohikal na Kalagayan, halimbawa ''NDF max'' o ''Starch max''. Palitan lang ang kailangan mo at i-tap ang ''Mag-apply ng Mga Limitasyon''.'
+- text: Bumuo ng diyeta. Inililista ng card na 'Mga Limitasyong Itinakda Mo' sa ulat ang bawat limitasyong itinakda mo at kung gaano karami ng bawat nilimitahang pakain ang ginamit ng diyeta. May parehong seksyon ang naka-save na PDF.
+- text: 'Maluwag (soft) ang mga limitasyon sa taba, hibla (fibre) at almirol (starch): sinisikap itong abutin ng app, at ipinapakita ng ulat ang ''Mga Tala sa Limitasyon ng Diyeta'' kapag lumampas ang diyeta sa isa nang higit sa 2.5 % ng limitasyon.'
+- text: Naka-save ang mga limitasyon kasama ng ulat. Kapag nag-load ka ng naka-save na simulation mula sa kasaysayan sa Impormasyon ng Baka, babalik din ang mga limitasyon nito.
+problems:
+- title: '''Hindi maaaring mas malaki ang minimum kaysa sa maximum.'''
+  text: Gawing mas maliit ang Min kaysa sa Max, o burahin ang isa sa mga ito.
+- title: Hindi tinatanggap ang Max na 0
+  text: Para hindi isama ang isang pakain, alisin ang card nito. Kung walang limitasyon, iwanang walang laman ang kahon.
+- title: '''Ang halaga ay dapat na sa pagitan ng … at …'''
+  text: May saklaw ang bawat limitasyon ng diyeta na itinakda ng mga nutrisyunista para sa Pisyolohikal na Kalagayang iyon. Mag-type ng halagang nasa loob nito; gagana muli ang 'Mag-apply ng Mga Limitasyon'.
+- title: '''Hindi maaaring lumampas ang Forage NDF Min sa NDF Max'''
+  text: Hindi maaaring mas marami ang hibla mula sa forage kaysa sa kabuuang hibla. Babaan ang Forage NDF Min o taasan ang NDF Max.
+- title: Kulay abo ang 'Itakda ang mga limitasyon ng pagsama'
+  text: Pumili muna ng pakain sa card.
+- title: May limitasyon, walang nahanap na diyeta
+  text: Masyadong mahigpit ang mga limitasyon para sa mga pakaing ito. Luwagan o alisin ang isang limitasyon, o magdagdag ng ibang pakain (paksa 12).

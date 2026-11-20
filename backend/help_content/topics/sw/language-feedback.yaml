@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Lugha, maoni na msaada
+summary: Tumia programu kwa lugha yako, tueleze maoni yako na upate msaada.
+screen_label: Feedback
+chapters:
+- Video hii inaonyesha nini
+- Chagua lugha
+- Lugha yako chaguomsingi
+- Lugha ya PDF
+- Tuma maoni
+- Maoni yako ya awali
+- Msaada na usaidizi
+steps:
+- text: Kwenye Cattle Info chagua Language (lugha) chini ya 'Simulation Details'. Skrini na ripoti hubadilika kwa lugha hiyo mara moja. Orodha inaonyesha lugha zilizowekwa kwa nchi uliyochagua.
+- text: Ili kufanya lugha iwe lugha yako chaguomsingi, fungua menyu, gusa 'Profile', chagua Language na uguse 'Update Profile'.
+- text: PDF iliyohifadhiwa hutumia lugha ya ripoti kwa vichwa vyake, maelezo na majina ya vyakula pale tafsiri ilipo. Namba hazibadiliki. Maneno machache ya hali (status) yanabaki kwa Kiingereza kwa makusudi.
+- text: Ili kutoa maoni, fungua menyu na uguse 'Feedback'. Chagua nyota 1 hadi 5 chini ya 'Rate The App', chagua 'Feedback Category', andika maoni yako (hadi herufi 1000) na uguse 'Submit Feedback'.
+- text: Maoni yako ya awali yanaorodheshwa chini ya 'Your Feedbacks'. Gusa moja ili kuyasoma tena.
+- text: 'Kwa msaada, fungua menyu na uguse ''Help & Support'': mwongozo wa mtumiaji, maswali yanayoulizwa mara kwa mara, na ''Contact Us'', inayofungua programu yako ya barua pepe ili kuiandikia timu ya RationSmart. ''Terms & Conditions'' pia iko kwenye menyu.'
+problems:
+- title: '''Submit Feedback'' inabaki kijivu'
+  text: Chagua idadi ya nyota kwanza.
+- title: Lugha yangu haipo kwenye orodha
+  text: Lugha huongezwa kwa kila nchi na timu ya RationSmart. Kagua Country kwenye Cattle Info, au omba lugha yako kupitia 'Contact Us'.
+- title: Lugha inaonekana kama msimbo mfupi
+  text: Baadhi ya lugha zinaonyesha msimbo (kwa mfano 'TI') badala ya jina lake. Bado unaweza kuichagua; skrini zinafanya kazi vilevile.
+- title: Baadhi ya maandishi ya skrini bado yako kwa Kiingereza
+  text: Maandishi hayo bado hayana tafsiri kwa lugha yako. Tueleze kupitia 'Feedback' ni maneno gani unayoyaona.

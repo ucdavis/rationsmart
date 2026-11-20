@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: I-install ang app, magparehistro, mag-login
+summary: Idagdag ang RationSmart sa iyong phone, gumawa ng account at mag-login.
+screen_label: Pag-login
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Buksan ang app
+- Idagdag sa iyong phone
+- Magparehistro
+- Kumpirmahin ang iyong email
+- Mag-login
+- Mag-logout
+steps:
+- text: 'Buksan ang RationSmart sa browser ng iyong phone: Chrome sa Android, Safari sa iPhone. Sa Welcome screen, i-tap ang ''Magpatuloy''.'
+- text: 'Para magamit ito na parang app, maghintay ng ilang segundo para sa install banner at i-tap ang ''I-install''. Sa Android: i-tap ang menu (tatlong tuldok), pagkatapos ang ''Add to Home screen'', pagkatapos ang ''Add''. Sa iPhone: i-tap ang Share button, pagkatapos ang ''Add to Home Screen'', pagkatapos ang ''Add''. Pagkatapos, buksan ang RationSmart mula sa icon nito.'
+- text: 'Bagong user? Sa screen ng Pag-login, i-tap ang ''Magparehistro dito''. Ilagay ang iyong pangalan, email address at bansa, at piliin ang iyong wika: magbubukas ang app sa wikang iyon pagka-login mo. Pumili ng 6-digit na PIN, i-type itong muli sa ''Kumpirmahin ang PIN'', at i-tap ang ''Magpatuloy''.'
+- text: Buksan ang email mula sa RationSmart at i-tap ang link dito. Handa na ang iyong account.
+- text: Sa screen ng Pag-login, ilagay ang iyong email address at PIN at i-tap ang 'Magpatuloy'. Magbubukas ang app sa Impormasyon ng Baka. Sa susunod na buksan mo ang app, naka-login ka pa rin.
+- text: Para mag-logout, buksan ang menu, i-tap ang 'Mag-logout', pagkatapos ang 'Oo, Mag-logout'.
+problems:
+- title: Walang dumating na verification email
+  text: Tingnan sa spam folder. Sa 'Tingnan ang Iyong Email', i-tap ang 'Ipadala Muli ang Verification Email'. Maaari kang humingi ng bagong email isang beses bawat minuto.
+- title: '''Please verify your email address'''
+  text: Tama ang iyong PIN, pero hindi pa verified ang account. Buksan ang verification email at i-tap ang link nito, pagkatapos ay mag-login muli.
+- title: '''Mali ang email o PIN.'''
+  text: Suriin ang email address at ang 6 na digit. Nakalimutan ang PIN? I-tap ang 'Forgot PIN? Tap here' (paksa 2).
+- title: Huminto ang pag-login pagkatapos ng maraming subok
+  text: Pagkatapos ng maraming maling subok sa maikling oras, hihinto muna ang app sa pagtanggap ng login nang ilang sandali. Maghintay ng isang minuto at subukang muli.
+- title: '''This account was deleted'''
+  text: Magparehistro muli gamit ang parehong email address. Pagkatapos mo itong i-verify, babalik ang iyong mga dating naka-save na ulat.
+- title: Wala sa wika ko ang app
+  text: 'Kung hindi mo ito pinili noong nagparehistro ka, o gusto mo ng iba: pagka-login, buksan ang menu, i-tap ang ''Profile'', piliin ang iyong Wika at i-tap ang ''I-update ang Profile''.'

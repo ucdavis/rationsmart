@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Pata lishe ya gharama nafuu zaidi na usome ripoti
+summary: Tengeneza pendekezo la lishe na uelewe kila sehemu ya ripoti.
+screen_label: Recommendation Report
+chapters:
+- Video hii inaonyesha nini
+- Tengeneza lishe
+- Taarifa za ripoti
+- Lishe ya gharama nafuu
+- Muhtasari wa matokeo
+- Bei ya maziwa dhidi ya gharama
+- Vikomo ulivyoweka
+- Maelezo na methane
+- Hifadhi, PDF, kesi inayofuata
+steps:
+- text: Kwenye Feed Selection gusa 'Generate Recommendation'. 'Generating your report' huonekana kwa sekunde chache, kisha 'Recommendation Report' hufunguka.
+- text: '''Report Details'' juu kabisa inaonyesha Report ID (namba ya ripoti), Simulation ID, jina lako na wakati ripoti ilipotengenezwa. ''Animal Characteristics'' inarudia taarifa za mnyama ulizoandika, ili uweze kuzikagua.'
+- text: '''Cost-Effective Diet'' ndilo jibu: kwa kila chakula, kg ngapi za kutoa kwa siku kama kinavyolishwa (as fed: uzito unaouweka mbele ya ng’ombe), bei yake kwa kg na gharama yake kwa siku. Mstari wa mwisho ni Total Diet Cost (jumla ya gharama ya lishe) kwa siku.'
+- text: '''Solution Summary'' inaonyesha Daily Cost (gharama ya siku), maziwa ambayo lishe imepangwa kwa ajili yake, Dry Matter Intake (ulaji wa kiini kikavu: chakula bila maji yake, kg kwa siku) na uwiano wa Forage : Concentrate (malisho : chakula cha nyongeza).'
+- text: '''Milk Cost Margin'' huonekana kwa ng’ombe wanaokamuliwa ukiwa umeandika bei ya maziwa. ''Diet Cost / L'' ni gharama ya chakula kwa kila lita ya maziwa, ''Milk Price / L'' ni bei yako ya maziwa, na tofauti ni kile maziwa yanachopata juu ya gharama ya chakula peke yake. Gharama za kazi, huduma ya daktari wa mifugo na gharama nyingine hazimo.'
+- text: '''Limits You Set'' huonekana ukiwa umeweka vikomo vya chakula au vya lishe: inaorodhesha kila kikomo na kiasi cha chakula hicho ambacho lishe ilitumia (mada 9).'
+- text: '''Notes'' huonekana tu wakati kuna kitu kinachohitaji uangalifu wako, kwa mfano kirutubisho kilicho chini ya lengo lake, pamoja na ushauri wa nini cha kubadilisha. ''Environmental Impact'' inaonyesha methane ambayo ng’ombe hutoa kwa lishe hii.'
+- text: Gusa 'Save Report' ili kuihifadhi; kisha 'Get PDF', 'View PDF' au 'Share Report' (mada 10). 'New Case' huanzisha mnyama anayefuata kwa taarifa zilezile. Mshale wa kurudi nyuma unakurudisha kwenye Feed Selection, ambapo unaweza kubadilisha vyakula au bei na kutengeneza tena.
+problems:
+- title: '''No optimized solution found'''
+  text: Hakuna mchanganyiko wa vyakula vyako unaokidhi mahitaji ya mnyama huyu. Notes (maelezo) zinaorodhesha kinachokosekana na nini cha kubadilisha. Tazama mada 12.
+- title: Hakuna kadi ya 'Milk Cost Margin'
+  text: Inaonekana kwa ng’ombe wanaokamuliwa tu, na tu wakati bei ya maziwa iliandikwa kwenye Cattle Info. Rudi nyuma, andika bei ya maziwa na utengeneze tena.
+- title: '''Diet Limit Notes'''
+  text: Lishe haikuweza kubaki ndani ya kikomo ulichoweka kwenye 'Custom Diet Limits'. Maelezo yanaonyesha matokeo na kikomo chako. Legeza kikomo au ongeza vyakula vingine.
+- title: Chakula kinaonyesha kiasi kidogo sana, kama 0.01 kg
+  text: Lishe ya gharama nafuu zaidi karibu haihitaji chakula hicho. Unaweza kukiacha na kutengeneza tena; gharama inabadilika kidogo sana.
+- title: Baadhi ya maneno yanabaki kwa Kiingereza
+  text: Maneno ya hali (status) kwenye programu yanabaki kwa Kiingereza kwa makusudi. PDF iliyohifadhiwa hutumia lugha ya ripoti kwa vichwa vyake, maelezo na majina ya vyakula pale tafsiri ilipo.

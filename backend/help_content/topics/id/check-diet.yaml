@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Periksa ransum yang Anda berikan sekarang
+summary: Ketik apa yang dimakan ternak Anda hari ini dan lihat apa yang kurang, berapa susu yang bisa didukung, dan berapa biayanya.
+screen_label: Laporan Evaluasi
+chapters:
+- Isi video ini
+- Jalankan evaluasi
+- Ringkasan evaluasi
+- Asupan bahan kering
+- Produksi susu
+- Keseimbangan nutrisi
+- Analisis biaya
+- Margin biaya susu
+- Dapatkan rekomendasi
+steps:
+- text: Di Pemilihan Pakan pilih 'Evaluasi Ransum'. Pilih setiap pakan yang Anda berikan sekarang, ketik harganya dan berapa kg per hari yang Anda berikan (bentuk segar). Ketuk 'Dapatkan Evaluasi'. 'Laporan Evaluasi' terbuka.
+- text: '''Ringkasan Evaluasi'' memberikan Status Keseluruhan ransum (misalnya Marginal) dan Faktor Pembatas: nutrien yang menahan produksi sapi.'
+- text: '''Asupan Bahan Kering'' membandingkan Asupan Aktual dari pakan Anda dengan Target Asupan yang bisa dimakan sapi. ''Below target'' (di bawah target) berarti ransum memberikan lebih sedikit pakan daripada yang bisa dimakan sapi.'
+- text: '''Analisis Produksi Susu'': ''Susu Aktual'' adalah jumlah susu yang bisa didukung ransum ini, di samping Target Anda. ''Energi-Pendukung'' dan ''Protein-Pendukung'' menunjukkan susu yang dimungkinkan oleh masing-masing nutrien; yang lebih rendah adalah Nutrien Pembatas.'
+- text: '''Keseimbangan Nutrisi'' menampilkan setiap nutrien sebagai kelebihan (+) atau kekurangan (−) dibandingkan kebutuhan sapi.'
+- text: '''Analisis Biaya'' menampilkan Total Biaya Ransum per hari, biaya setiap pakan di ''Rincian Pakan'', dan ''Biaya/Liter Susu'': biaya ransum dibagi susu yang bisa didukung ransum ini (Susu Aktual).'
+- text: '''Margin Biaya Susu'' membandingkan biaya pakan per liter dengan harga susu Anda. Untuk evaluasi, biaya yang dipakai adalah ''Biaya/Liter Susu'' di Analisis Biaya, karena biaya itu berdasarkan susu yang benar-benar bisa didukung ransum ini.'
+- text: Ketuk 'Hasilkan Rekomendasi Ransum' untuk mendapatkan ransum termurah dari pakan yang sama untuk ternak yang sama. Simpan dan bagikan evaluasi dengan cara yang sama seperti rekomendasi (topik 10).
+problems:
+- title: '''Susu Aktual'' lebih rendah dari target saya'
+  text: Ransum kekurangan Nutrien Pembatas. Tambahkan pakan yang kaya nutrien itu (misalnya bungkil sumber protein jika protein yang membatasi), atau ketuk 'Hasilkan Rekomendasi Ransum'.
+- title: '''Masukkan jumlah lebih dari 0 untuk setiap pakan, atau hapus pakan tersebut.'''
+  text: Setiap pakan dalam evaluasi perlu diisi berapa kg per hari yang Anda berikan sekarang. Ketik jumlahnya, atau hapus pakan itu.
+- title: Pakan yang saya tanam sendiri tidak punya harga
+  text: Ketik 0 sebagai harganya. Evaluasi tetap berjalan; pakan itu tidak menambah biaya.
+- title: '''… of the selected feeds are no longer available'' (… pakan yang dipilih sudah tidak tersedia)'
+  text: Sebuah pakan sudah dihapus dari pustaka pakan sejak terakhir Anda memakainya. Hapus dari pilihan dan pilih pakan lagi.
+- title: Tidak ada 'Evaluasi Ransum' untuk anak sapi saya
+  text: Anak sapi mendapat rencana pemberian susu, bukan ransum pakan (topik 7).

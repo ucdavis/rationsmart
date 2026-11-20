@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Lishe isipopatikana, na matatizo mengine
+summary: Nini cha kufanya ripoti isipopata lishe, ujumbe ukitokea au programu isipojibu.
+screen_label: Recommendation Report
+chapters:
+- Video hii inaonyesha nini
+- Hakuna jibu lililopatikana
+- Soma maelezo
+- Ongeza chakula
+- Legeza vikomo vyako
+- Kagua mnyama
+- Tumia Diet Evaluation
+- Jaribu tena
+steps:
+- text: Ripoti ikisema 'No optimized solution found', hakuna mchanganyiko wa vyakula vyako unaokidhi mahitaji ya mnyama huyu. Hakuna jedwali la lishe; kadi ya 'Notes' inaeleza kwa nini.
+- text: 'Soma ''Violated Parameters'': kila mstari unataja kile ambacho lishe haikuweza kukidhi, kwa mfano ''Phosphorus Requirement: below minimum'' au ''Total Fibre (NDF): above maximum''. ''Recommendations'' inapendekeza nini cha kubadilisha.'
+- text: 'Ongeza chakula kinachotoa kile kinachokosekana: chakula cha madini kwa kalsiamu au fosforasi, mashudu yenye protini kwa protini, nafaka kwa nishati. Mgao wa vyakula kimoja au viwili tu mara nyingi hauwezi kukidhi kila hitaji.'
+- text: Kama uliweka vikomo ('Set inclusion limits' au 'Custom Diet Limits'), vilegeze au viondoe. Kadi ya 'Limits You Set' kwenye ripoti inaonyesha vile ulivyoweka.
+- text: 'Kagua mnyama: lengo la maziwa lililo juu sana kwa vyakula ulivyo navyo haliwezi kufikiwa. Punguza maziwa, au ongeza vyakula bora zaidi.'
+- text: Ili kuona ni kirutubisho gani kinachopungua katika mgao unaouchagua mwenyewe, tumia 'Diet Evaluation' (mada 6).
+- text: Kisha gusa mshale wa kurudi nyuma hadi Feed Selection, fanya badiliko na uguse 'Generate Recommendation' tena.
+problems:
+- title: '''Forage Required'''
+  text: Kila lishe inahitaji angalau chakula kimoja cha aina ya Forage (malisho). Ongeza kimoja na utengeneze tena.
+- title: '''… of the selected feeds are no longer available'''
+  text: Chakula kiliondolewa kwenye maktaba ya vyakula. Kiondoe kwenye uteuzi na uchague vyakula tena.
+- title: Ripoti inachukua muda mrefu sana au haifunguki
+  text: Kagua muunganisho wako wa intaneti na ujaribu tena. Ikiendelea kutokea, tuandikie kupitia 'Contact Us' ukitaja Simulation Name.
+- title: Programu inaonyesha hitilafu au inaacha kujibu
+  text: Rudi nyuma skrini moja na ujaribu tena; taarifa ulizoingiza zinabaki. Ikiendelea kushindwa, toka, ingia tena, na utueleze kupitia 'Feedback' au 'Contact Us'.

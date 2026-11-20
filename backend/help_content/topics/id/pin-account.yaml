@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: PIN dan akun
+summary: Lupa PIN, ganti PIN, ubah profil, atau hapus akun Anda.
+screen_label: Profil Anda
+chapters:
+- Isi video ini
+- Lupa PIN
+- Buat PIN baru
+- Ganti PIN Anda
+- Perbarui profil Anda
+- PIN lama 4 digit
+- Hapus akun Anda
+steps:
+- text: Lupa PIN? Di layar Login ketuk 'Lupa PIN? Ketuk di sini', ketik alamat email yang terdaftar, lalu ketuk 'Lanjutkan'.
+- text: 'Buka email dari RationSmart dan ketuk ''Reset my PIN''. Sebuah halaman terbuka: ketik PIN baru 6 digit dua kali, lalu ketuk ''Save new PIN''. Tautan hanya bisa dipakai sekali, selama 30 menit; selama Anda belum menyimpan, PIN lama masih berlaku.'
+- text: 'Login dengan PIN baru Anda. Untuk mengganti PIN lain kali selagi Anda masih ingat PIN-nya, buka menu, ketuk ''Profil'', lalu ''Ubah PIN'': masukkan PIN sekarang, lalu PIN baru dua kali, dan ketuk ''Perbarui PIN''.'
+- text: Untuk mengubah nama, negara, atau bahasa, buka 'Profil', buat perubahan, lalu ketuk 'Perbarui Profil'. Tombol ini hanya berfungsi setelah Anda mengubah sesuatu.
+- text: Masih punya PIN lama 4 digit? Saat Anda login dengan PIN itu, aplikasi meminta Anda membuat PIN 6 digit. Masukkan PIN lama, lalu PIN baru dua kali.
+- text: 'Untuk menghapus akun, buka ''Profil'', ketuk ''Hapus'', lalu ''Ya'', dan konfirmasi dengan PIN Anda. Untuk kembali nanti, daftar lagi dengan alamat email yang sama: laporan yang tersimpan akan kembali.'
+problems:
+- title: Email tidak datang
+  text: Lihat di folder spam dan periksa alamat yang Anda ketik. Anda bisa meminta lagi setelah satu menit. Demi keamanan Anda, aplikasi menampilkan pesan yang sama untuk setiap alamat.
+- title: '''Link expired'' (tautan kedaluwarsa)'
+  text: Tautan atur ulang hanya bisa dipakai sekali dan hanya selama 30 menit. Buka aplikasi, ketuk 'Lupa PIN? Ketuk di sini' lagi, dan pakai email yang paling baru.
+- title: '''PIN baru tidak cocok'''
+  text: Ketik PIN baru yang persis sama di kedua kotak.
+- title: '''Invalid PIN.'' (PIN salah) saat menghapus'
+  text: PIN salah, jadi tidak ada yang dihapus. Ketik PIN Anda yang sekarang.
+- title: '''Nama tidak boleh kosong'''
+  text: Ketik nama sebelum mengetuk 'Perbarui Profil'.

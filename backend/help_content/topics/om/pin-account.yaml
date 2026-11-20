@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: PIN fi herrega
+summary: PIN dagachuu, PIN jijjiiruu, ibsa eenyummaa gulaaluu ykn herrega kee haquu.
+screen_label: Ibsa Eenyummaa Kee
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- PIN kee dagatte
+- PIN haaraa kaa'i
+- PIN kee jijjiiri
+- Ibsa eenyummaa kee haaromsi
+- PIN dijiitii 4 moofaa
+- Herrega kee haqi
+steps:
+- text: PIN kee dagattee? Fuula Seensaa irratti 'Forgot PIN? Tap here' tuqi, teessoo imeelii galmeessite barreessiitii 'Itti fufi' tuqi.
+- text: 'Imeelii RationSmart irraa dhufe banii ''Reset my PIN'' tuqi. Fuulli tokko bana: PIN dijiitii 6 haaraa kee si''a lama barreessiitii ''Save new PIN'' tuqi. Hidhaan kun al tokko qofa, daqiiqaa 30f hojjeta; hanga olkaa''attutti PIN kee moofaan ammallee hojjeta.'
+- text: 'PIN haaraa keetiin seeni. Yeroo biraa PIN kee osoo yaadattuu jijjiiruuf, menyuu bani, ''Ibsa Eenyummaa'' tuqi, itti aansee ''Lak. Iccitii Jijjiiri'': PIN kee kan ammaa galchi, itti aansee isa haaraa si''a lama, ''Lak. Iccitii haaromsi'' tuqi.'
+- text: Maqaa, biyya ykn afaan kee jijjiiruuf, 'Ibsa Eenyummaa' bani, jijjiirama godhiitii 'Ibsa Eenyummaa Haaromsi' tuqi. Qabduun kun kan hojjetu erga waan tokko jijjiirtee booda qofa.
+- text: Ammallee PIN dijiitii 4 moofaa qabdaa? Yeroo isaan seentu, aplikeeshiinichi PIN dijiitii 6 akka kaa'attu si gaafata. PIN moofaa fi isa haaraa si'a lama galchi.
+- text: 'Herrega kee haquuf, ''Ibsa Eenyummaa'' bani, ''Haqi'' tuqi, itti aansee ''Eeyyee'', PIN keetiin mirkaneessi. Booda deebi''uuf, teessoo imeelii wal fakkaatuun irra deebi''ii galmaa''i: gabaasaaleen kee olkaa''aman ni deebi''u.'
+problems:
+- title: Imeeliin tokkollee hin dhufne
+  text: Foldara spam keessa ilaali, teessoo barreessites mirkaneeffadhu. Daqiiqaa tokko booda irra deebi'ii gaafachuu dandeessa. Nageenya keetiif, aplikeeshiinichi teessoo hundaaf ergaa wal fakkaataa agarsiisa.
+- title: '''Link expired'''
+  text: Hidhaan PIN deebisanii kaa'uu al tokko qofa, daqiiqaa 30f qofa hojjeta. Aplikeeshiinii banii irra deebi'ii 'Forgot PIN? Tap here' tuqi, imeelii haaraa dhumaa fayyadami.
+- title: '''Lak. Iccitii haarawaan wal hin simu'''
+  text: Saanduqa lamaan keessatti PIN haaraa sirriitti wal fakkaatu barreessi.
+- title: Yeroo haqxu 'Invalid PIN.'
+  text: PIN sun dogoggora ture, kanaaf homtuu hin haqamne. PIN kee kan ammaa barreessi.
+- title: '''Maqaan duwwaa ta''uu hin danda''u'''
+  text: '''Ibsa Eenyummaa Haaromsi'' tuquu kee dura maqaa barreessi.'

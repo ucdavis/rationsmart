@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Ilarawan ang iyong hayop
+summary: 'Punan ang Impormasyon ng Baka: pangalan ng kaso, bansa, kalagayan ng hayop, katawan, gatas at kapaligiran.'
+screen_label: Impormasyon ng Baka
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Mga detalye ng simulation
+- Pisyolohikal na kalagayan
+- Mga katangian ng hayop
+- Datos ng pag-aanak
+- Produksyon ng gatas
+- Kapaligiran
+- Magpatuloy sa Pakain
+- Gamitin muli o i-reset ang kaso
+steps:
+- text: Sa ilalim ng 'Mga Detalye ng Simulation', mag-type ng Pangalan ng Simulation (halimbawa, ang pangalan ng baka at ang petsa), piliin ang Bansa at ang Wika ng ulat. Ang bansa ang nagpapasya kung aling mga pakain ang mapipili mo at ang pera (currency).
+- text: 'Piliin ang ''Pisyolohikal na Kalagayan'': Mga nagpapasusong baka, Mga tuyong baka, Mga heifer o Mga guya. Ipapakita lang ng form ang mga field para sa kalagayang iyon, na may mga karaniwang halaga nang nakalagay.'
+- text: Sa ilalim ng 'Mga Katangian ng Hayop', piliin ang lahi at ilagay ang Timbang ng Katawan (kg), Iskor ng Kondisyon ng Katawan, Bilang ng Pag-aanak (ilang beses nang nanganak) at BW Tubo (dagdag na timbang, kg bawat araw).
+- text: Sa ilalim ng 'Datos ng Pag-aanak', ilagay ang Mga Araw ng Pagbubuntis, at para sa mga nagpapasusong baka, ang Mga Araw sa Gatas.
+- text: 'Para sa mga nagpapasusong baka, sa ilalim ng ''Produksyon ng Gatas'' ilagay ang gatas bawat araw (litro), Taba ng Gatas % at Protina ng Gatas %. Opsyonal ang Presyo ng Gatas: kapag mayroon nito, ikinukumpara ng ulat ang kita sa gatas at ang gastos sa pakain.'
+- text: Sa ilalim ng 'Kapaligiran', ilagay ang karaniwang temperatura (°C). Kung naglalakad ang hayop para manginain, i-on ang 'Aktibong Pastol' at ilagay ang Topograpiya at ang distansyang nilakad (km).
+- text: I-tap ang 'Magpatuloy sa Pakain'. Nagiging berde ito kapag napunan ang bawat kailangang field at nasa loob ng saklaw nito. Para sa guya, i-tap ang 'Magpatuloy' para makita ang plano sa pagpapakain ng gatas.
+- text: Para gamitin muli ang dating kaso, i-tap ang icon ng kasaysayan sa tabi ng 'Mga Detalye ng Simulation' at pumili ng naka-save na simulation; mag-type ng bagong Pangalan ng Simulation bago magpatuloy. Nililinis ng 'I-reset' ang Impormasyon ng Baka at Pagpili ng Pakain para magsimula muli.
+problems:
+- title: May halagang nagpapakita ng 'Saklaw ng Halaga' na kulay pula
+  text: Labas ang numero sa pinapayagang saklaw para sa hayop na ito. Mag-type ng halagang nasa loob ng ipinapakitang saklaw.
+- title: '''Palitan ang bansa?'''
+  text: May sariling listahan ng pakain ang bawat bansa, kaya inaalis ng pagpapalit ng bansa ang mga pakaing napili mo na. I-tap ang 'Magpatuloy' para alisin ang mga ito, o 'Kanselahin' para panatilihin ang dati mong bansa.
+- title: '''Inayos ang ilang halaga para magkasya sa pinapayagang saklaw'''
+  text: May halaga ang isang naka-save na kaso na labas sa saklaw ngayon, kaya inilipat ito ng app sa loob ng saklaw. Suriin ang mga halaga bago ka magpatuloy.
+- title: '''Ang distansyang nilakad ay dapat hindi bababa sa 1 km'''
+  text: Kapag naka-on ang 'Aktibong Pastol', ilagay ang distansyang nilakad, 1 km o higit pa. Kung hindi nanginginain ang hayop, i-off ito.

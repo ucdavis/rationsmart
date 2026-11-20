@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Eleza mnyama wako
+summary: 'Jaza Cattle Info: jina la kesi, nchi, hali ya mnyama, mwili, maziwa na mazingira.'
+screen_label: Cattle Info
+chapters:
+- Video hii inaonyesha nini
+- Taarifa za kesi
+- Hali ya mnyama
+- Sifa za mnyama
+- Taarifa za uzazi
+- Uzalishaji wa maziwa
+- Mazingira
+- Endelea kwenye vyakula
+- Tumia tena kesi au anza upya
+steps:
+- text: Chini ya 'Simulation Details', andika Simulation Name (jina la kesi; kwa mfano jina la ng’ombe na tarehe), chagua Country (nchi) na Language (lugha) ya ripoti. Nchi huamua vyakula unavyoweza kuchagua na sarafu.
+- text: 'Chagua ''Physiological State'' (hali ya mnyama): Lactating cows (ng’ombe wanaokamuliwa), Dry cows (ng’ombe waliokaushwa), Heifers (mitamba) au Calves (ndama). Fomu kisha inaonyesha sehemu za hali hiyo tu, na thamani za kawaida zikiwa tayari zimejazwa.'
+- text: Chini ya 'Animal Characteristics', chagua aina (breed) na uandike Body Weight (uzito wa mwili, kg), Body Condition Score (alama ya hali ya mwili), Parity (idadi ya mara alizozaa) na BW Gain (ongezeko la uzito, kg kwa siku).
+- text: Chini ya 'Reproductive Data', andika Days of Pregnancy (siku za mimba), na kwa ng’ombe wanaokamuliwa Days in Milk (siku za kukamuliwa tangu kuzaa).
+- text: 'Kwa ng’ombe wanaokamuliwa, chini ya ''Milk Production'' andika maziwa kwa siku (lita), Milk Fat % (mafuta ya maziwa) na Milk Protein % (protini ya maziwa). Milk Price (bei ya maziwa) si lazima: ukiiweka, ripoti inalinganisha mapato ya maziwa na gharama ya chakula.'
+- text: Chini ya 'Environment', andika wastani wa joto (°C). Kama mnyama hutembea kwenda malishoni, washa 'Active Grazing' na uandike Topography (hali ya ardhi) na umbali anaotembea (km).
+- text: Gusa 'Continue to Feed'. Kitufe kinakuwa kijani wakati kila sehemu ya lazima imejazwa na iko ndani ya kiwango chake. Kwa ndama, gusa 'Continue' ili kuona mpango wa kunywesha maziwa.
+- text: Ili kutumia tena kesi ya awali, gusa ikoni ya historia kando ya 'Simulation Details' na uchague kesi iliyohifadhiwa (simulation); andika Simulation Name mpya kabla ya kuendelea. 'Reset' hufuta Cattle Info na Feed Selection ili uanze upya.
+problems:
+- title: Thamani inaonyesha 'Value Range' kwa rangi nyekundu
+  text: Namba iko nje ya kiwango kinachoruhusiwa kwa mnyama huyu. Andika thamani iliyo ndani ya kiwango kinachoonyeshwa.
+- title: '''Change country?'''
+  text: Kila nchi ina orodha yake ya vyakula, kwa hiyo kubadilisha nchi kunafuta vyakula ulivyokwisha kuchagua. Gusa 'Continue' ili kuvifuta, au 'Cancel' ili kubaki na nchi uliyokuwa nayo.
+- title: '''Some values were adjusted to fit the allowed range'''
+  text: Kesi iliyohifadhiwa ilikuwa na thamani nje ya kiwango cha leo, kwa hiyo programu iliiweka ndani ya kiwango. Kagua thamani kabla ya kuendelea.
+- title: '''Distance walked must be at least 1 km'''
+  text: '''Active Grazing'' ikiwa imewashwa, andika umbali anaotembea, km 1 au zaidi. Kama mnyama hachungi malishoni, izime.'

@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Karoora aannan hoosisuu jabbiif
+summary: Jabbiif guyyaatti aannan hammam kennuu, al meeqaan, fi yoom guusisuu.
+screen_label: Jabbii Aannan Hoosisuu
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- '''Jiboota'' filadhu'
+- Aannan guyyaa
+- Hoosisuu fi guusisuu
+- Fakkeenya
+- Gorsa kunuunsaa
+- Olkaa'i fi PDF
+steps:
+- text: Odeeffannoo Loonii irratti Haala Qaamaa 'Jiboota' filadhu. Ulfaatina qaama jabbichaa kg n barreessiitii 'Itti fufi' tuqi.
+- text: 'Karoorri ''Jabbii Aannan Hoosisuu'' bana. ''Aannan Guyyaatti'' liitira aannanii guyyaatti: ulfaatina qaama jabbichaa harka kudhan keessaa harka tokko.'
+- text: '''Nyaachisa tokkorratti'' aannan guyyaa gara hoosisa 2 guyyaatti qooda. ''Guusisi'' umurii guyyootaan kenna, hanga yoomitti aannan hoosisuu dhaabuu qabdu (guyyaa 56).'
+- text: 'Fakkeenya: jabbiin kg 40 guyyaatti liitira 4.0 argatti, guyyaatti si''a lama liitira 2.0 kennamaaf.'
+- text: 'Gorsa kunuunsaa karoora jala jiru dubbisi. Karoorichi qajeelfama qofa: ogeessa fayyaa horii (vet) kee waliin sirreessi.'
+- text: Karoora olkaa'uuf 'Gabaasa Olkaahi' tuqi, sana booda garagalcha sagantaa aannan hoosisuu guutuu qabu argachuuf 'PDF argadhu' tuqi (mata-duree 10).
+problems:
+- title: Ulfaatinni qaamaa hin fudhatamu
+  text: Jibootaaf ulfaatinni qaamaa kg 30 fi 100 gidduu ta'uu qaba. Daangaan hayyamame bakka sana jalatti mul'ata.
+- title: Jabbii kootiif Filannoo Nyaataa hin argu
+  text: Jibootni karoora aannan hoosisuu qofa argatu; aplikeeshiinichi isaaniif nyaata horii ykn madaallii hin hojjetu.
+- title: Jabbiin koo guddattee nyaata jabaa nyaatti
+  text: Horii dargaggeessa guddachaa jiruuf nyaata argachuuf, 'Jiboota' osoo hin taane 'Gorommii' filadhu.

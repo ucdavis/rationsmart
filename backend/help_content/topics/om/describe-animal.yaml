@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Horii kee ibsi
+summary: 'Odeeffannoo Loonii guuti: maqaa dhimmichaa, biyya, haala horichaa, qaama, aannan fi naannoo.'
+screen_label: Odeeffannoo Loonii
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Odeeffannoo walfakkii
+- Haala qaamaa
+- Amaloota horii
+- Ragaalee horsiisaa
+- Oomisha aannanii
+- Naannoo
+- Gara nyaataatti itti fufi
+- Dhimma irra deebi'ii fayyadami ykn haqi
+steps:
+- text: '''Odeeffannoo dabalataa Walfakkii'' jalatti Maqaa Walfakkii barreessi (fakkeenyaaf maqaa saawwichaa fi guyyaa), Biyya fi Afaan gabaasaa filadhu. Biyyi nyaata ati filachuu dandeessu fi maallaqa (currency) murteessa.'
+- text: '''Physiological State'' (Haala Qaamaa) filadhu: Saawwan elmaman, Saawwan gu''an, Gorommii ykn Jiboota. Sana booda unkaan bakkeewwan haala sanaaf qofa agarsiisa, gatiiwwan baratamoon dursanii guutamaniiru.'
+- text: '''Amaloota Horii'' jalatti sanyii filadhu, Ulfaatina Qaamaa (kg), Qabxii Haalota Qaamaa, Hanga Dhale (al meeqa akka dhalte) fi UQ argamu (guyyaatti kg) galchi.'
+- text: '''Ragaalee Horsiisaa'' jalatti Guyyoota Rimaa, saawwan elmamaniif immoo Guyyoota Elmaman galchi.'
+- text: 'Saawwan elmamaniif, ''Oomisha Aannanii'' jalatti aannan guyyaatti (liitira), Dhadhaa Aannanii % fi Pirotiinii Aannanii % galchi. Gatiin Aannanii dirqama miti: yoo galchite, gabaasni galii aannanii baasii nyaataa wajjin wal bira qabee madaala.'
+- text: '''Naannoo'' jalatti ho''insa qilleensaa giddugaleessaa (°C) galchi. Horiin dheedichaaf yoo deemte, ''Kan Dheedaa Jiran'' banii Haala Teessuma Lafaa fi fageenya deemame (km) galchi.'
+- text: '''Gara Nyaataatti Itti fufi'' tuqi. Yeroo bakkeewwan guutamuu qaban hundi guutamanii daangaa isaanii keessa jiran magariisa ta''a. Jabbiif, karoora aannan hoosisuu ilaaluuf ''Itti fufi'' tuqi.'
+- text: Dhimma kanaan duraa irra deebi'ii fayyadamuuf, mallattoo seenaa kan 'Odeeffannoo dabalataa Walfakkii' cinaa jiru tuqiitii walfakkii olkaa'ame filadhu; itti fufuu kee dura Maqaa Walfakkii haaraa barreessi. 'Deebi'ii sirreessi' haaroftee jalqabuuf Odeeffannoo Loonii fi Filannoo Nyaataa qulqulleessa.
+problems:
+- title: Gatiin tokko 'Value Range' diimaan agarsiisa
+  text: Lakkoofsi sun horii kanaaf daangaa hayyamame ala jira. Gatii daangaa agarsiifame keessa jiru barreessi.
+- title: '''Biyya jijjiiruu?'''
+  text: Biyyi hundi tarree nyaataa mataa isaa qaba, kanaaf biyya jijjiiruun nyaata duraan filatte qulqulleessa. Isaan qulqulleessuuf 'Itti fufi' tuqi, ykn biyya duraan qabde eeggachuuf 'Haqi/Dhiisi' tuqi.
+- title: '''Gatiiwwan tokko tokko hangii hayyamameen akka walsimaniif sirreeffamaniiru'''
+  text: Dhimmi olkaa'ame tokko gatii daangaa har'aa ala jiru qaba ture, kanaaf aplikeeshiinichi gara daangaa keessaatti galche. Itti fufuu kee dura gatiiwwan sana mirkaneeffadhu.
+- title: '''Fageenyi deemame yoo xiqqaate km 1 ta''uu qaba'''
+  text: '''Kan Dheedaa Jiran'' yoo banaa ta''e, fageenya deemame, km 1 ykn isaa ol galchi. Horiin yoo hin dheedne, cufi.'

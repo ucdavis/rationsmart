@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Đặt giới hạn cho thức ăn và cho khẩu phần
+summary: Kiểm soát lượng một thức ăn mà khẩu phần được dùng, và đặt giới hạn dinh dưỡng cho cả khẩu phần.
+screen_label: Chọn thức ăn
+chapters:
+- Nội dung video này
+- Giới hạn một thức ăn
+- Một ví dụ
+- Giới hạn cho khẩu phần
+- Giới hạn trên báo cáo
+- Giới hạn mềm
+- Lưu cùng báo cáo
+steps:
+- text: 'Giới hạn thức ăn: trên một thẻ thức ăn, sau khi chọn thức ăn, bật ''Đặt giới hạn phối trộn''. Nhập mức Tối thiểu và/hoặc Tối đa theo kg mỗi ngày ở dạng cho ăn. Để trống một ô nếu không muốn giới hạn.'
+- text: 'Ví dụ: Khô dầu đậu tương với mức Tối đa 2 kg cho ra khẩu phần có 1.88 kg khô dầu đậu tương. Khẩu phần có thể đắt hơn so với khi không đặt giới hạn, vì ứng dụng phải dùng các thức ăn khác.'
+- text: 'Giới hạn khẩu phần: nhấn ''Giới hạn khẩu phần tùy chỉnh''. Mỗi giới hạn hiển thị khoảng cho phép và giá trị mặc định cho Trạng thái sinh lý, ví dụ ''Xơ (NDF) tối đa'' hoặc ''Tinh bột tối đa''. Chỉ thay đổi những gì cần và nhấn ''Áp dụng giới hạn''.'
+- text: Tạo khẩu phần. Thẻ 'Giới hạn bạn đã đặt' trong báo cáo liệt kê mọi giới hạn bạn đã đặt và lượng mỗi thức ăn bị giới hạn mà khẩu phần đã dùng. File PDF đã lưu cũng có phần này.
+- text: 'Giới hạn chất béo, xơ và tinh bột là giới hạn mềm: ứng dụng cố gắng đạt các giới hạn này, và báo cáo sẽ hiện ''Ghi chú giới hạn khẩu phần'' khi khẩu phần vượt một giới hạn quá 2.5 % của giới hạn đó.'
+- text: Giới hạn được lưu cùng báo cáo. Khi bạn tải một mô phỏng đã lưu từ lịch sử ở Thông tin gia súc, các giới hạn của mô phỏng đó cũng được khôi phục.
+problems:
+- title: '''Giá trị tối thiểu không được lớn hơn tối đa.'''
+  text: Đặt mức Tối thiểu nhỏ hơn mức Tối đa, hoặc xóa một trong hai.
+- title: Mức Tối đa bằng 0 bị từ chối
+  text: Để bỏ một thức ăn ra, hãy xóa thẻ của thức ăn đó. Nếu không muốn giới hạn, hãy để trống ô.
+- title: '''Giá trị phải nằm trong khoảng …–…'''
+  text: Mỗi giới hạn khẩu phần có một khoảng do chuyên gia dinh dưỡng đặt cho Trạng thái sinh lý đó. Nhập một giá trị trong khoảng này; 'Áp dụng giới hạn' sẽ hoạt động trở lại.
+- title: '''NDF thức ăn thô tối thiểu không được lớn hơn NDF tối đa'''
+  text: Xơ từ thức ăn thô không thể nhiều hơn tổng lượng xơ. Hãy giảm NDF thức ăn thô tối thiểu hoặc tăng NDF tối đa.
+- title: '''Đặt giới hạn phối trộn'' bị xám'
+  text: Hãy chọn thức ăn trong thẻ trước.
+- title: Có giới hạn thì không tìm được khẩu phần
+  text: Các giới hạn quá chặt đối với những thức ăn này. Hãy nới lỏng hoặc bỏ một giới hạn, hoặc thêm thức ăn khác (chủ đề 12).

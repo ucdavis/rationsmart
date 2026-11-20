@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Sakinisha programu, jisajili, ingia
+summary: Weka RationSmart kwenye simu yako, fungua akaunti na uingie.
+screen_label: Login
+chapters:
+- Video hii inaonyesha nini
+- Fungua programu
+- Iweke kwenye simu yako
+- Jisajili
+- Thibitisha barua pepe yako
+- Ingia
+- Toka
+steps:
+- text: 'Fungua RationSmart kwenye kivinjari cha simu yako: Chrome kwenye Android, Safari kwenye iPhone. Kwenye skrini ya Welcome (Karibu) gusa ''Continue''.'
+- text: 'Ili kuitumia kama programu, subiri sekunde chache bango la kusakinisha lionekane na uguse ''Install''. Kwenye Android: gusa menyu (vitone vitatu), kisha ''Add to Home screen'', kisha ''Add''. Kwenye iPhone: gusa kitufe cha Share (Shiriki), kisha ''Add to Home Screen'', kisha ''Add''. Kisha fungua RationSmart kutoka kwenye ikoni yake.'
+- text: 'Mtumiaji mpya? Kwenye skrini ya Login gusa ''Register here''. Andika jina lako, anwani ya barua pepe na nchi, na uchague lugha yako: programu itafunguka kwa lugha hiyo baada ya kuingia. Chagua PIN ya tarakimu 6, iandike tena kwenye ''Confirm PIN'', na uguse ''Proceed''.'
+- text: Fungua barua pepe kutoka RationSmart na uguse kiungo kilichomo. Akaunti yako sasa iko tayari.
+- text: Kwenye skrini ya Login andika anwani yako ya barua pepe na PIN na uguse 'Proceed'. Programu inafunguka kwenye Cattle Info. Ukifungua programu wakati ujao, bado utakuwa umeingia.
+- text: Ili kutoka, fungua menyu, gusa 'Logout', kisha 'Yes, Logout'.
+problems:
+- title: Hakuna barua pepe ya uthibitisho
+  text: Angalia kwenye folda ya spam. Kwenye 'Check Your Email' gusa 'Resend Verification Email'. Unaweza kuomba barua pepe mpya mara moja kwa dakika.
+- title: '''Please verify your email address'''
+  text: PIN yako ni sahihi, lakini akaunti bado haijathibitishwa. Fungua barua pepe ya uthibitisho na uguse kiungo chake, kisha uingie tena.
+- title: '''Email or PIN is incorrect.'''
+  text: Angalia anwani ya barua pepe na tarakimu 6. Umesahau PIN yako? Gusa 'Forgot PIN? Tap here' (mada 2).
+- title: Kuingia kumesimamishwa baada ya majaribio mengi
+  text: Baada ya majaribio mengi yasiyo sahihi kwa muda mfupi, programu inaacha kupokea maombi ya kuingia kwa muda. Subiri dakika moja na ujaribu tena.
+- title: '''This account was deleted'''
+  text: Jisajili tena kwa anwani ileile ya barua pepe. Baada ya kuithibitisha, ripoti zako za awali zilizohifadhiwa zinarudi.
+- title: Programu haiko kwa lugha yangu
+  text: 'Kama hukuichagua wakati wa kujisajili, au unataka nyingine: baada ya kuingia, fungua menyu, gusa ''Profile'', chagua Language (lugha) yako na uguse ''Update Profile''.'

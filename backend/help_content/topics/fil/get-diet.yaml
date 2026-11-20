@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Kumuha ng pinakamurang diyeta at basahin ang ulat
+summary: Magpatakbo ng rekomendasyon at unawain ang bawat bahagi ng ulat.
+screen_label: Ulat ng Rekomendasyon
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Bumuo ng diyeta
+- Mga detalye ng ulat
+- Cost-effective na diyeta
+- Buod ng solusyon
+- Margin ng gastos sa gatas
+- Mga limitasyong itinakda mo
+- Mga tala at methane
+- I-save, PDF, susunod na kaso
+steps:
+- text: Sa Pagpili ng Pakain, i-tap ang 'Bumuo ng Rekomendasyon'. Lalabas ang 'Bumubuo ng iyong ulat' nang ilang segundo, pagkatapos ay magbubukas ang 'Ulat ng Rekomendasyon'.
+- text: Ipinapakita ng 'Mga Detalye ng Ulat' sa itaas ang Report ID, ang Simulation ID, ang iyong pangalan at kung kailan ginawa ang ulat. Inuulit ng 'Mga Katangian ng Hayop' ang mga detalye ng hayop na in-type mo, para masuri mo ang mga ito.
+- text: 'Ang ''Cost-Effective na Diyeta'' ang sagot: para sa bawat pakain, ilang kg ang ibibigay bawat araw nang as fed (ang timbang na inilalagay mo sa harap ng baka), ang presyo nito bawat kg at ang gastos nito bawat araw. Ang huling linya ay ang Kabuuang Gastos sa Diyeta bawat araw.'
+- text: 'Ipinapakita ng ''Buod ng Solusyon'' ang Araw-araw na Gastos, ang gatas na pinaplano ng diyeta, ang Pagkonsumo ng Tuyong Materya (dry matter: ang pakain na walang tubig nito, kg bawat araw) at ang ratio ng Forage : Concentrate.'
+- text: Lumalabas ang 'Margin ng Gastos sa Gatas' para sa mga nagpapasusong baka kapag nag-type ka ng presyo ng gatas. Ang 'Gastos ng Diyeta / L' ay ang gastos sa pakain para sa bawat litro ng gatas, ang 'Presyo ng Gatas / L' ay ang presyo ng iyong gatas, at ang diperensya ay ang kinikita ng gatas nang higit sa gastos sa pakain lamang. Hindi kasama rito ang bayad sa trabahador, pagpapagamot sa beterinaryo at iba pang gastos.
+- text: 'Lumalabas ang ''Mga Limitasyong Itinakda Mo'' kapag nagtakda ka ng limitasyon sa pakain o diyeta: inililista nito ang bawat limitasyon at kung gaano karami ng pakaing iyon ang ginamit ng diyeta (paksa 9).'
+- text: Lumalabas lang ang 'Mga Tala' kapag may kailangang bigyang-pansin, halimbawa isang sustansyang mas mababa sa target nito, kasama ang payo kung ano ang babaguhin. Ipinapakita ng 'Epekto sa Kapaligiran' ang methane na nalilikha ng baka sa diyetang ito.
+- text: I-tap ang 'I-save ang Ulat' para itago ito; pagkatapos ang 'Kunin ang PDF', 'Tingnan ang PDF' o 'Ibahagi ang Ulat' (paksa 10). Sinisimulan ng 'Bagong Kaso' ang susunod na hayop gamit ang parehong mga input. Ibinabalik ka ng back arrow sa Pagpili ng Pakain, kung saan mapapalitan mo ang mga pakain o presyo at bumuo muli.
+problems:
+- title: '''Walang nahanap na pinakamainam na solusyon'''
+  text: Walang halo ng iyong mga pakain na tumutugon sa pangangailangan ng hayop na ito. Inililista ng Mga Tala kung ano ang kulang at kung ano ang babaguhin. Tingnan ang paksa 12.
+- title: Walang card na 'Margin ng Gastos sa Gatas'
+  text: Lumalabas lang ito para sa mga nagpapasusong baka, at kapag may na-type na presyo ng gatas sa Impormasyon ng Baka. Bumalik, i-type ang presyo ng gatas at bumuo muli.
+- title: '''Mga Tala sa Limitasyon ng Diyeta'''
+  text: Hindi nanatili ang diyeta sa loob ng limitasyong itinakda mo sa 'Custom na Mga Limitasyon ng Diyeta'. Ipinapakita ng tala ang resulta at ang iyong limitasyon. Luwagan ang limitasyon o magdagdag ng ibang pakain.
+- title: Napakaliit ng dami ng isang pakain, gaya ng 0.01 kg
+  text: Halos hindi kailangan ng pinakamurang diyeta ang pakaing iyon. Maaari mo itong alisin at bumuo muli; kaunti lang ang magbabago sa gastos.
+- title: May ilang salitang nananatiling English
+  text: Sinadyang manatiling English ang mga status word sa app. Ginagamit ng naka-save na PDF ang wika ng ulat para sa mga heading, tala at pangalan ng pakain kung may salin.

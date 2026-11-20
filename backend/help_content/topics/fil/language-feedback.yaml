@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Wika, feedback at tulong
+summary: Gamitin ang app sa iyong wika, sabihin sa amin ang iyong opinyon at humingi ng tulong.
+screen_label: Feedback
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Piliin ang wika
+- Ang default mong wika
+- Wika ng PDF
+- Magpadala ng feedback
+- Ang mga dati mong feedback
+- Tulong at suporta
+steps:
+- text: Sa Impormasyon ng Baka, piliin ang Wika sa ilalim ng 'Mga Detalye ng Simulation'. Agad na lilipat dito ang mga screen at ang ulat. Ipinapakita ng listahan ang mga wikang naka-set up para sa bansang pinili mo.
+- text: Para gawing default ang isang wika, buksan ang menu, i-tap ang 'Profile', piliin ang Wika at i-tap ang 'I-update ang Profile'.
+- text: Ginagamit ng naka-save na PDF ang wika ng ulat para sa mga heading, tala at pangalan ng pakain kung may salin. Hindi nagbabago ang mga numero. Sinadyang manatiling English ang ilang status word.
+- text: Para magbigay ng feedback, buksan ang menu at i-tap ang 'Feedback'. Pumili ng 1 hanggang 5 bituin sa ilalim ng 'I-rate ang App', pumili ng 'Kategorya ng Feedback', isulat ang iyong komento (hanggang 1000 character) at i-tap ang 'Isumite ang Feedback'.
+- text: Nakalista sa ilalim ng 'Iyong mga Feedback' ang mga dati mong feedback. I-tap ang isa para basahin itong muli.
+- text: 'Para sa tulong, buksan ang menu at i-tap ang ''Tulong at Suporta'': ang user manual, mga madalas itanong, at ang ''Makipag-ugnayan sa Amin'', na nagbubukas ng iyong email app para sumulat sa RationSmart team. Nasa menu din ang ''Mga Tuntunin at Kondisyon''.'
+problems:
+- title: Nananatiling kulay abo ang 'Isumite ang Feedback'
+  text: Pumili muna ng bilang ng bituin.
+- title: Wala sa listahan ang wika ko
+  text: Idinadagdag ng RationSmart team ang mga wika para sa bawat bansa. Suriin ang Bansa sa Impormasyon ng Baka, o hilingin ang iyong wika sa pamamagitan ng 'Makipag-ugnayan sa Amin'.
+- title: Lumalabas ang isang wika bilang maikling code
+  text: Ang ilang wika ay nagpapakita ng code (halimbawa 'TI') sa halip na pangalan nito. Mapipili mo pa rin ito; pareho ang paggana ng mga screen.
+- title: May ilang text sa screen na English pa rin
+  text: Wala pang salin ang text na iyon sa iyong wika. Sabihin sa amin sa pamamagitan ng 'Feedback' kung aling mga salita ang nakikita mo.

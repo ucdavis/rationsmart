@@ -1,0 +1,36 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Chọn thức ăn và nhập giá
+summary: Chọn các loại thức ăn bạn có, nhập giá từng loại và tính khẩu phần.
+screen_label: Chọn thức ăn
+chapters:
+- Nội dung video này
+- Chọn chế độ
+- Điền thẻ thức ăn
+- Tìm thức ăn
+- Nhập giá
+- Lượng cho ăn khi đánh giá
+- Thêm thức ăn
+- Tính khẩu phần
+- Thức ăn riêng và giới hạn
+steps:
+- text: Ở trên cùng, chọn 'Khuyến nghị khẩu phần' (ứng dụng tìm khẩu phần rẻ nhất) hoặc 'Đánh giá khẩu phần' (bạn nhập lượng thức ăn đang cho ăn và ứng dụng kiểm tra).
+- text: Trong 'THỨC ĂN 1', chọn Loại thức ăn (Thức ăn thô, Thức ăn tinh hoặc Khẩu phần hoàn chỉnh), rồi Nhóm thức ăn, rồi Thức ăn. Mỗi danh sách chỉ mở ra sau khi bạn chọn danh sách trước nó.
+- text: 'Hoặc tìm kiếm: nhấn vào một thẻ để thẻ hiện ''Đã chọn'', rồi nhập một phần tên thức ăn (ví dụ ''soybean'') vào ô tìm kiếm. Nhấn vào một kết quả để điền vào thẻ đó.'
+- text: Nhập giá mỗi kg theo đơn vị tiền tệ của nước bạn. Nhãn sẽ hiện đơn vị tiền tệ, ví dụ 'Giá ETB/kg'.
+- text: Trong 'Đánh giá khẩu phần', nhập thêm số kg mỗi ngày bạn đang cho ăn. Thẻ sẽ hiện chi phí (giá × kg).
+- text: Nhấn 'Thêm thức ăn' cho mỗi loại thức ăn thêm; xóa một thẻ bằng biểu tượng thùng rác. Phải có ít nhất một loại thức ăn thô.
+- text: Nhấn 'Tạo khẩu phần khuyến nghị' (hoặc 'Đánh giá khẩu phần' trong chế độ Đánh giá khẩu phần). Báo cáo mở ra sau vài giây.
+- text: 'Tùy chọn: ''Thức ăn tùy chỉnh'' thêm một thức ăn của riêng bạn (chủ đề 8). ''Giới hạn khẩu phần tùy chỉnh'' và ''Đặt giới hạn phối trộn'' trên mỗi thẻ dùng để kiểm soát khẩu phần (chủ đề 9).'
+problems:
+- title: '''Cần có thức ăn thô'''
+  text: Mọi khẩu phần cần ít nhất một thức ăn thuộc loại Thức ăn thô. Nhấn 'Đồng ý, thêm thức ăn thô', thêm một loại rồi tạo lại khẩu phần.
+- title: '''Thức ăn thiếu dữ liệu'''
+  text: Một thẻ đã chọn loại nhưng chưa chọn thức ăn. Nhấn 'Không, xem lại' để hoàn tất thẻ đó, hoặc 'Có, tiếp tục' để chạy mà không có thẻ đó.
+- title: '''Thức ăn này đã được chọn'''
+  text: Mỗi thức ăn chỉ được nằm trên một thẻ. Hãy đổi giá trên thẻ đã có thức ăn đó.
+- title: '''Giá không được âm.'''
+  text: Nhập giá từ 0 trở lên.
+- title: '''Nhập số lượng lớn hơn 0 cho mỗi thức ăn, hoặc xóa thức ăn đó.'''
+  text: Trong Đánh giá khẩu phần, mỗi thức ăn cần có số kg mỗi ngày bạn đang cho ăn. Hãy nhập số đó, hoặc xóa thức ăn.
+- title: Không thấy thức ăn tôi cần
+  text: Danh sách hiển thị thức ăn của quốc gia đã chọn ở Thông tin gia súc, cùng với các thức ăn tùy chỉnh của bạn. Hãy kiểm tra quốc gia, hoặc thêm thức ăn bằng 'Thức ăn tùy chỉnh'.

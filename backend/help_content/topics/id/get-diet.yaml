@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Dapatkan ransum biaya termurah dan baca laporannya
+summary: Jalankan rekomendasi dan pahami setiap bagian laporan.
+screen_label: Laporan Rekomendasi
+chapters:
+- Isi video ini
+- Hasilkan ransum
+- Detail laporan
+- Ransum hemat biaya
+- Ringkasan solusi
+- Margin biaya susu
+- Batas yang Anda tetapkan
+- Catatan dan metana
+- Simpan, PDF, kasus berikutnya
+steps:
+- text: Di Pemilihan Pakan ketuk 'Hasilkan Rekomendasi'. 'Menghasilkan laporan Anda' muncul selama beberapa detik, lalu 'Laporan Rekomendasi' terbuka.
+- text: '''Detail Laporan'' di bagian atas menampilkan ID Laporan, ID Simulasi, nama Anda, dan waktu laporan dibuat. ''Karakteristik Ternak'' mengulang data ternak yang Anda ketik, agar Anda bisa memeriksanya.'
+- text: '''Ransum yang Hemat Biaya'' adalah jawabannya: untuk setiap pakan, berapa kg diberikan per hari dalam bentuk segar (as fed, yaitu berat yang Anda taruh di depan sapi), harganya per kg, dan biayanya per hari. Baris terakhir adalah Total Biaya Ransum per hari.'
+- text: '''Ringkasan Solusi'' menampilkan Biaya Harian, jumlah susu yang menjadi target ransum, Asupan Bahan Kering (pakan tanpa airnya, kg per hari), dan rasio Hijauan : Konsentrat.'
+- text: '''Margin Biaya Susu'' muncul untuk sapi laktasi jika Anda mengetik harga susu. ''Biaya Ransum / L'' adalah biaya pakan untuk setiap liter susu, ''Harga Susu / L'' adalah harga susu Anda, dan selisihnya adalah pendapatan susu di atas biaya pakan saja. Biaya tenaga kerja, perawatan dokter hewan, dan biaya lain tidak termasuk.'
+- text: '''Batas yang Anda Tetapkan'' muncul jika Anda menetapkan batas pakan atau batas ransum: kartu ini mencantumkan setiap batas dan berapa banyak pakan itu dipakai dalam ransum (topik 9).'
+- text: '''Catatan'' hanya muncul jika ada yang perlu Anda perhatikan, misalnya nutrien di bawah targetnya, beserta saran apa yang perlu diubah. ''Dampak Lingkungan'' menampilkan metana yang dihasilkan sapi dengan ransum ini.'
+- text: Ketuk 'Simpan Laporan' untuk menyimpannya; lalu 'Dapatkan PDF', 'Lihat PDF', atau 'Bagikan Laporan' (topik 10). 'Kasus Baru' memulai ternak berikutnya dengan isian yang sama. Panah kembali membawa Anda ke Pemilihan Pakan, tempat Anda bisa mengubah pakan atau harga dan menghasilkan lagi.
+problems:
+- title: '''Tidak ditemukan solusi yang optimal'''
+  text: Tidak ada campuran pakan Anda yang memenuhi kebutuhan ternak ini. Catatan menjelaskan apa yang kurang dan apa yang perlu diubah. Lihat topik 12.
+- title: Tidak ada kartu 'Margin Biaya Susu'
+  text: Kartu ini hanya muncul untuk sapi laktasi, dan hanya jika harga susu diketik di Info Sapi. Kembali, ketik harga susu, lalu hasilkan lagi.
+- title: '''Catatan Batas Diet'''
+  text: Ransum tidak bisa tetap di dalam batas yang Anda tetapkan di 'Batas Ransum yang disesuaikan (custom)'. Catatan menampilkan hasilnya dan batas Anda. Longgarkan batasnya atau tambahkan pakan lain.
+- title: Sebuah pakan menunjukkan jumlah sangat kecil, misalnya 0.01 kg
+  text: Ransum termurah hampir tidak memerlukan pakan itu. Anda bisa menghapusnya dan menghasilkan lagi; biayanya hanya berubah sangat sedikit.
+- title: Beberapa kata tetap dalam bahasa Inggris
+  text: Kata status di aplikasi sengaja tetap dalam bahasa Inggris. PDF yang tersimpan memakai bahasa laporan untuk judul, catatan, dan nama pakan jika terjemahannya ada.

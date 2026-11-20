@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Suriin ang rasyong ipinapakain mo ngayon
+summary: I-type kung ano ang kinakain ng iyong hayop ngayon at tingnan kung ano ang kulang, gaano karaming gatas ang kaya nitong suportahan at magkano ang gastos.
+screen_label: Ulat ng Pagsusuri
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Magpatakbo ng pagsusuri
+- Buod ng pagsusuri
+- Pagkonsumo ng tuyong materya
+- Produksyon ng gatas
+- Balanse ng sustansya
+- Pagsusuri sa gastos
+- Margin ng gastos sa gatas
+- Kumuha ng rekomendasyon
+steps:
+- text: Sa Pagpili ng Pakain, piliin ang 'Pagsusuri ng Diyeta'. Piliin ang bawat pakaing ibinibigay mo ngayon, i-type ang presyo nito at ang kg bawat araw na ipinapakain mo (as fed). I-tap ang 'Kumuha ng Pagsusuri'. Magbubukas ang 'Ulat ng Pagsusuri'.
+- text: 'Ibinibigay ng ''Buod ng Pagsusuri'' ang Pangkalahatang Katayuan ng rasyon (halimbawa Marginal) at ang Limitasyong Salik: ang sustansyang pumipigil sa baka.'
+- text: Ikinukumpara ng 'Pagkonsumo ng Tuyong Materya' ang Aktwal na Pagkonsumo na ibinibigay ng iyong mga pakain sa Target na Pagkonsumo na kayang kainin ng baka. Ang 'Below target' ay nangangahulugang mas kaunting pakain ang ibinibigay ng rasyon kaysa sa kayang kainin ng baka.
+- text: '''Pagsusuri sa Produksyon ng Gatas'': ang ''Aktwal na Gatas'' ay ang gatas na kayang suportahan ng rasyong ito, katabi ng iyong Target. Ipinapakita ng ''Sinusuportahan ng Enerhiya'' at ''Sinusuportahan ng Protina'' ang gatas na pinapayagan ng bawat sustansya; ang mas mababa ang Limitasyong Sustansya.'
+- text: Ipinapakita ng 'Balanse ng Sustansya' ang bawat sustansya bilang sobra (+) o kulang (−) kumpara sa kailangan ng baka.
+- text: 'Ipinapakita ng ''Pagsusuri sa Gastos'' ang Kabuuang Gastos sa Diyeta bawat araw, ang gastos ng bawat pakain sa ''Detalyadong Pakain'', at ang ''Gastos/Litro ng Gatas'': ang gastos ng diyeta na hinati sa gatas na kayang suportahan ng rasyong ito (Aktwal na Gatas).'
+- text: Ikinukumpara ng 'Margin ng Gastos sa Gatas' ang gastos sa pakain bawat litro sa presyo ng iyong gatas. Para sa pagsusuri, ang gastos na mahalaga ay ang 'Gastos/Litro ng Gatas' sa Pagsusuri sa Gastos, dahil batay ito sa gatas na talagang kayang suportahan ng rasyong ito.
+- text: I-tap ang 'Bumuo ng Rekomendasyon sa Diyeta' para makuha ang pinakamurang diyeta mula sa parehong mga pakain para sa parehong hayop. I-save at ibahagi ang pagsusuri sa parehong paraan tulad ng rekomendasyon (paksa 10).
+problems:
+- title: Mas mababa ang 'Aktwal na Gatas' kaysa sa target ko
+  text: Kulang ang rasyon sa Limitasyong Sustansya. Magdagdag ng pakaing mayaman dito (halimbawa protein meal kapag protina ang kulang), o i-tap ang 'Bumuo ng Rekomendasyon sa Diyeta'.
+- title: '''Maglagay ng dami na higit sa 0 para sa bawat pakain, o alisin ang pakain.'''
+  text: Kailangan ng bawat pakain sa pagsusuri ang kg bawat araw na ipinapakain mo ngayon. I-type ito, o alisin ang pakaing iyon.
+- title: Walang presyo ang pakaing ako mismo ang nagtatanim
+  text: I-type ang 0 bilang presyo nito. Tatakbo pa rin ang pagsusuri; walang idinadagdag ang pakaing iyon sa gastos.
+- title: '''… of the selected feeds are no longer available'''
+  text: May pakaing inalis sa library mula noong huli mo itong ginamit. Alisin ito sa pagpili at piliin muli ang mga pakain.
+- title: Walang 'Pagsusuri ng Diyeta' para sa guya ko
+  text: Plano sa pagpapakain ng gatas ang nakukuha ng mga guya sa halip na diyeta ng pakain (paksa 7).

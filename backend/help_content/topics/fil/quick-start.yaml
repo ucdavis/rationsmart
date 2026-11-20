@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: 'Mabilis na pagsisimula: mula pag-login hanggang ulat'
+summary: 'Ang buong app sa ilang minuto: mag-login, ilarawan ang iyong hayop, piliin ang iyong mga pakain at kunin ang pinakamurang diyeta.'
+screen_label: Tulong at Suporta
+chapters:
+- Ano ang ginagawa ng RationSmart
+- Mag-login
+- Ilarawan ang iyong hayop
+- Pumili ng pakain at presyo
+- Kunin ang pinakamurang diyeta
+- I-save ang ulat
+- Susunod na hayop
+steps:
+- text: Mag-login gamit ang iyong email at 6-digit na PIN. Magbubukas ang app sa Impormasyon ng Baka.
+- text: Sa Impormasyon ng Baka, mag-type ng Pangalan ng Simulation, piliin ang Bansa at ang Pisyolohikal na Kalagayan, at punan ang mga detalye ng hayop. I-tap ang 'Magpatuloy sa Pakain'.
+- text: Sa Pagpili ng Pakain, panatilihin ang 'Rekomendasyon ng Diyeta'. Sa bawat card ng pakain, piliin ang Uri ng Pakain, pagkatapos ang Kategorya ng Pakain, pagkatapos ang Pakain, at i-type ang presyo nito bawat kg. Magsama ng kahit isang forage (damong pakain).
+- text: 'I-tap ang ''Bumuo ng Rekomendasyon''. Pagkalipas ng ilang segundo, ipapakita ng ulat ang pinakamurang diyeta: ilang kg ng bawat pakain ang ibibigay bawat araw, at ang gastos bawat araw.'
+- text: I-tap ang 'I-save ang Ulat' para itago ito. Nasa menu sa ilalim ng 'Mga Ulat ng Pakain' ang iyong mga naka-save na ulat at ang kanilang PDF.
+- text: I-tap ang 'Bagong Kaso' para sa susunod na hayop.
+problems:
+- title: Nananatiling kulay abo ang 'Magpatuloy sa Pakain'
+  text: May kailangang field na walang laman, o may halagang labas sa saklaw nito (makikita ang saklaw na kulay pula sa ilalim ng field). Ayusin ito at magiging berde ang button.
+- title: Guya ang hayop ko
+  text: Piliin ang 'Mga guya' bilang Pisyolohikal na Kalagayan. Magpapakita ang app ng plano sa pagpapakain ng gatas sa halip na diyeta ng pakain.
+- title: '''Kailangan ng Forage'''
+  text: Kailangan ng bawat diyeta ng kahit isang pakain na uri na Forage. Magdagdag ng isa at bumuo muli.
