@@ -226,8 +226,10 @@ class EmailService:
                 server.starttls()
                 server.login(self.smtp_username, self.smtp_password)
             return {**base, "status": "configured", "message": "SMTP connection OK"}
-        except Exception as exc:
-            return {**base, "status": "error", "message": str(exc)}
+        except Exception:
+            # The mail server's error text stays in the server log, never in the reply.
+            logger.exception("SMTP connection check failed")
+            return {**base, "status": "error", "message": "SMTP connection failed; see the server log"}
 
 
 email_service = EmailService()
