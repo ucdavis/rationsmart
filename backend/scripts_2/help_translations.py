@@ -130,8 +130,61 @@ def current_translation(root: Path, lang: str) -> Dict[str, str]:
     return {k: str(v).strip() for k, v in out.items()}
 
 
-def app_labels(lang: str, path: Path = UI_LABELS) -> Optional[Dict[str, str]]:
-    """English app label → this language's label, from the PWA sheet; None = no column."""
+_SHEET_SLOT = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_.]*)\}")
+
+
+def _norm(label: str) -> str:
+    """A label without what the help never quotes: a required-field ' *', a trailing ':', '!' or
+    '.', and letter case."""
+    return re.sub(r"[\s*:!.]+$", "", label.strip()).casefold()
+
+
+class AppLabels(dict):
+    """English app label → this language's label (the PWA sheet's column).
+
+    lookup() also finds a label the help quotes slightly differently from the sheet: without the
+    sheet's ' *' or trailing punctuation, in other letter case, or with a value where the sheet
+    has a ${slot} ('FEED 1' ↔ 'FEED ${N}'; 'between … and …' ↔ 'between ${min} and ${max}').
+    """
+
+    def __init__(self, pairs: Dict[str, str]) -> None:
+        super().__init__(pairs)
+        self._normal = {}
+        self._slotted = []
+        for english, translated in pairs.items():
+            if _SHEET_SLOT.search(english):
+                names = _SHEET_SLOT.findall(english)
+                pattern = "".join(re.escape(part) if i % 2 == 0 else "(.+?)"
+                                  for i, part in enumerate(_SHEET_SLOT.split(_norm(english))))
+                self._slotted.append((re.compile(pattern), names, translated))
+            else:
+                self._normal.setdefault(_norm(english), translated)
+
+    def lookup(self, label: str) -> Optional[str]:
+        if label in self:
+            return self[label]
+        found = self._fuzzy(label)
+        if found and not re.search(r"[*:]\s*$", label):
+            found = re.sub(r"[\s*:]+$", "", found)  # the sheet's field mark or colon, not quoted in the help
+        return found
+
+    def _fuzzy(self, label: str) -> Optional[str]:
+        key = _norm(label)
+        if key in self._normal:
+            return self._normal[key]
+        for pattern, names, translated in self._slotted:
+            m = pattern.fullmatch(key)
+            if m:
+                # Give each slot the value the help used, e.g. 'THỨC ĂN ${N}' → 'THỨC ĂN 1'.
+                values = {}
+                for name, value in zip(names, m.groups()):
+                    values.setdefault(name, value)
+                return _SHEET_SLOT.sub(lambda s: values.get(s.group(1), s.group(0)), translated)
+        return None
+
+
+def app_labels(lang: str, path: Path = UI_LABELS) -> Optional[AppLabels]:
+    """This language's app labels from the PWA sheet; None = the sheet has no column for it."""
     if not path.is_file():
         return None
     ws = load_workbook(path, read_only=True).worksheets[0]
@@ -140,18 +193,21 @@ def app_labels(lang: str, path: Path = UI_LABELS) -> Optional[Dict[str, str]]:
     col = next((i for i, h in enumerate(header) if h and str(h).strip().endswith(f"({lang})")), None)
     if col is None:
         return None
-    return {str(r[0]).strip(): str(r[col]).strip() for r in rows
-            if r and r[0] and col < len(r) and r[col]}
+    return AppLabels({str(r[0]).strip(): str(r[col]).strip() for r in rows
+                      if r and r[0] and col < len(r) and r[col]})
 
 
-def label_hints(english: str, labels: Optional[Dict[str, str]], has_sheet: bool) -> str:
+def label_hints(english: str, labels: Optional[AppLabels], has_sheet: bool) -> str:
     found = list(dict.fromkeys(QUOTED.findall(english)))
     if not found:
         return ""
     if labels is None:
         return "\n".join(f"'{x}' → keep English" if has_sheet else f"'{x}'" for x in found)
-    return "\n".join(f"'{x}' → '{labels[x]}'" if x in labels else f"'{x}' → (not an app label)"
-                     for x in found)
+    lines = []
+    for x in found:
+        translated = labels.lookup(x)
+        lines.append(f"'{x}' → '{translated}'" if translated else f"'{x}' → (not an app label)")
+    return "\n".join(lines)
 
 
 # ── export ────────────────────────────────────────────────────────────────────
