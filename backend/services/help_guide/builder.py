@@ -273,7 +273,7 @@ def page_count(pdf: bytes) -> Optional[int]:
         try:
             chunks.append(zlib.decompress(m.group(1)))
         except zlib.error:
-            pass
+            continue  # not a Flate stream (e.g. an embedded JPEG): it holds no page tree
     counts = [int(n) for chunk in chunks
               for tree in re.findall(rb"<<[^<>]*/Type\s*/Pages\b[^<>]*>>", chunk)
               for n in re.findall(rb"/Count\s+(\d+)", tree)]
