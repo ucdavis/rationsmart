@@ -6,7 +6,7 @@ import { useT } from "@/lib/i18n-ui";
 import { endServerSession, useStore } from "@/lib/store";
 import { COLUMN_WIDTH } from "@/lib/column";
 import { useEscapeKey } from "@/lib/use-escape";
-import { INSTALL_PROMPT_DELAY_MS } from "@/lib/ui-timings";
+import { INSTALL_PROMPT_DELAY_MS, INSTALL_PROMPT_SNOOZE_MS } from "@/lib/ui-timings";
 import { COLORS } from "@/lib/colors";
 
 // A fresh install must open to login. Removing the localStorage key alone
@@ -68,6 +68,29 @@ function writeInstalledFlag(installed: boolean) {
     else window.localStorage.removeItem(INSTALLED_KEY);
   } catch {
     // Storage unavailable (private mode etc.) — banner just falls back to showing.
+  }
+}
+
+// The banner's timer restarts on every screen change, so a dismissal kept only
+// in state brought it back on the next screen. × and "Got it" store when they
+// were tapped (also outside rationsmart-storage) and the banner stays away for
+// INSTALL_PROMPT_SNOOZE_MS.
+const DISMISSED_KEY = "rationsmart-install-dismissed";
+
+function readSnoozed(): boolean {
+  try {
+    const at = Number(window.localStorage.getItem(DISMISSED_KEY));
+    return at > 0 && Date.now() - at < INSTALL_PROMPT_SNOOZE_MS;
+  } catch {
+    return false;
+  }
+}
+
+function writeDismissed() {
+  try {
+    window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
+  } catch {
+    // Storage unavailable — the banner can come back on the next screen.
   }
 }
 
@@ -133,7 +156,7 @@ export default function InstallPrompt() {
   // the banner is informational (tells the user to tap Share → Add).
   useEffect(() => {
     if (pathname === "/") return;
-    if (isStandaloneAnyPlatform()) return;
+    if (isStandaloneAnyPlatform() || readSnoozed()) return;
     const t = setTimeout(() => setVisible(true), INSTALL_PROMPT_DELAY_MS);
     return () => clearTimeout(t);
   }, [pathname]);
@@ -154,6 +177,11 @@ export default function InstallPrompt() {
       setInstalled(true);
       setVisible(false);
     }
+  };
+
+  const dismiss = () => {
+    writeDismissed();
+    setVisible(false);
   };
 
   useEscapeKey(visible && showSteps, () => setShowSteps(false));
@@ -358,7 +386,7 @@ export default function InstallPrompt() {
             </div>
           ))}
           <button
-            onClick={() => setVisible(false)}
+            onClick={dismiss}
             style={{
               width: "100%",
               marginTop: 8,
@@ -438,7 +466,7 @@ export default function InstallPrompt() {
             </p>
           </div>
           <button
-            onClick={() => setVisible(false)}
+            onClick={dismiss}
             style={{
               background: "none",
               border: "none",

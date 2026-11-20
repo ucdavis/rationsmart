@@ -20,3 +20,5 @@ export const SCROLL_AFTER_RENDER_MS = 100;
 
 /** Delay before the install banner appears after leaving the splash. */
 export const INSTALL_PROMPT_DELAY_MS = 1500;
+/** After × or "Got it", the install banner stays away this long. */
+export const INSTALL_PROMPT_SNOOZE_MS = 7 * 24 * 60 * 60 * 1000;
