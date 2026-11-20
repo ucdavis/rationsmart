@@ -1,14 +1,14 @@
 # ── Web framework ─────────────────────────────────────────────────────────────
-fastapi>=0.162.0
+fastapi>=0.162.5
 uvicorn>=0.54.0
 uvloop==0.23.0
 httptools>=0.9.0
-python-multipart>=0.0.32
+python-multipart>=0.0.33
 
 # ── Database ──────────────────────────────────────────────────────────────────
 # <2.1: SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), which is not
 # installed — Alembic (settings.database_url, sync) then fails on every deploy.
-SQLAlchemy>=2.0.55,<2.1
+SQLAlchemy>=2.0.57,<2.1
 asyncpg>=0.32.0
 psycopg2==2.9.13
 alembic>=1.20.1
@@ -18,22 +18,22 @@ bcrypt>=5.0.0
 PyJWT>=2.15.1
 
 # ── Pydantic / Settings ───────────────────────────────────────────────────────
-pydantic>=2.14.1
-pydantic-settings>=2.16.1
+pydantic>=2.14.3
+pydantic-settings>=2.16.3
 python-dotenv>=1.2.4
 annotated-types==0.8.0
 typing_extensions==4.16.0
 
 # ── Async / HTTP ──────────────────────────────────────────────────────────────
-anyio>=4.15.1
+anyio>=4.16.0
 httpx>=0.28.1
 httpcore>=1.0.9
 h11>=0.16.0
-websockets==17.3
+websockets==17.4
 
 # ── Cache / Queue ─────────────────────────────────────────────────────────────
 redis[asyncio]>=8.1.0
-celery>=5.6.3
+celery>=5.7.0
 
 # ── Language tags (BCP 47: validate and standardise language codes) ──────────
 # Pinned exactly: its alias data decides the stored code ('tl' -> 'fil'); upgrade
@@ -44,7 +44,7 @@ langcodes==3.5.1
 slowapi>=0.1.10
 
 # ── AWS ───────────────────────────────────────────────────────────────────────
-boto3==1.43.118
+boto3==1.44.2
 
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
 # 63.1 → 70.0 on 2026-11-20 (security release: 4 advisories). 70.0 needs tinycss2 ≥1.5,
@@ -67,7 +67,7 @@ MarkupSafe==3.0.2
 zopfli==0.2.3.post1
 Brotli==1.2.1
 # QR codes in the printable Help guide (services/help_guide); pure Python, no dependencies
-segno==1.6.1
+segno==1.6.6
 
 # ── Optimisation science (pinned exactly — do not change) ─────────────────────
 pymoo==0.6.1.3
@@ -90,16 +90,16 @@ pyparsing==3.3.3
 # ── Utilities ─────────────────────────────────────────────────────────────────
 requests==2.34.2
 python-dateutil==2.9.0.post0
-pytz==2026.5
-tzdata==2026.5
+pytz==2026.6
+tzdata==2026.6
 PyYAML==6.0.3
-regex==2026.9.29
+regex==2026.11.9
 packaging==26.3
 certifi==2026.10.23
 idna==3.20
 six==1.17.0
-wrapt==2.5.1
-Deprecated==3.0.0
+wrapt==2.5.2
+Deprecated==3.0.1
 cffi==2.1.1
 pycparser==3.12
 appdirs==1.4.4
@@ -110,16 +110,16 @@ alive-progress==3.3.0
 about-time==4.2.1
 
 # ── Testing ───────────────────────────────────────────────────────────────────
-pytest>=9.1.1
-pytest-asyncio>=1.4.0
+pytest>=9.2.0
+pytest-asyncio>=1.5.0
 iniconfig==2.3.1
 pluggy==1.7.0
 
 # ── Dev tools (linting / formatting) ─────────────────────────────────────────
 black==26.10.1
-flake8==7.4.1
+flake8==7.5.0
 pycodestyle==2.15.0
-pyflakes==4.0.3
+pyflakes==4.1.0
 mccabe==0.7.0
-mypy-extensions==1.1.0
+mypy-extensions==1.2.0
 pathspec==1.1.1
