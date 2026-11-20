@@ -51,8 +51,17 @@ jobs:
 
       # Fails before anything touches Azure.
       - name: Check the inputs
+        env:
+          REPO_IS_FORK: ${{ github.event.repository.fork }}
         run: |
           set -euo pipefail
+          # The VM checks out the commit this run starts from, so Production gets only reviewed, merged code:
+          # every action runs from main. GITHUB_REF is set by GitHub to the branch the run was started from.
+          # A fork deploys to its own Azure (INFRASTRUCTURE.md, "Testing from a branch or fork"): not applied there.
+          if [[ "$REPO_IS_FORK" != "true" && "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Data runs only from main, not from ${GITHUB_REF#refs/heads/}: choose 'Use workflow from: Branch: main'"
+            exit 1
+          fi
           if [[ "$DATA_ACTION" == "create-admin" && "$CONFIRM" != "CREATE-ADMIN" ]]; then
             echo "::error::create-admin makes the first super admin and is not a routine action: type CREATE-ADMIN in the confirm input to run it"
             exit 1

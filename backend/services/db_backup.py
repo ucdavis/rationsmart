@@ -47,7 +47,7 @@ def backup_database(backup_dir: Path, prefix: str) -> Path:
     if not backup_dir.is_dir():
         raise BackupError(
             f"Backup folder {backup_dir} does not exist. On the server it is "
-            "~/rationsmart/backups, mounted into the api container by docker-compose.yml."
+            "~/rationsmart/backups, mounted into the api container by the compose file."
         )
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
     path = backup_dir / f"{prefix}{stamp}.dump"

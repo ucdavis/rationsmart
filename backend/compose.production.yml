@@ -1,6 +1,9 @@
-# Compose file for the Azure / single-VM deployment (deploy.sh passes it with -f). It sits beside
-# docker-compose.yml, which is the original host-database setup and is left unchanged. By hand:
-#   docker compose -f docker-compose-azure.yml <command>
+# PRODUCTION (Azure, single VM) only. The Test server uses compose.test.yml instead.
+# Neither file has a default name, so a plain `docker compose` never guesses which one to use:
+#   - deploy.sh (repo root) passes this file with -f;
+#   - on the VM, backend/.env (written by deploy/vm-deploy.sh at every release) sets
+#     COMPOSE_FILE=compose.production.yml, so a hand `docker compose <command>` in backend/ uses it too.
+# Prefer the GitHub Deploy workflow over hand commands on Production.
 #
 # PostgreSQL is an external server (Azure Database for PostgreSQL Flexible Server) —
 # no db service here. Set POSTGRES_HOST / POSTGRES_PORT in .env, and PGSSLMODE=require

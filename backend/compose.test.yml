@@ -1,3 +1,8 @@
+# TEST server (AWS) and local development only. NOT for Production: Production (Azure) uses
+# compose.production.yml. Neither file has a default name, so a plain `docker compose` never
+# guesses which one to use: pass it (`docker compose -f compose.test.yml <command>`) or set
+# COMPOSE_FILE=compose.test.yml in backend/.env (done on the Test server).
+#
 # PostgreSQL runs natively on the host (port 9900) — no db service here.
 # Containers reach the host DB via host.docker.internal (resolved by extra_hosts below).
 # Set POSTGRES_HOST=host.docker.internal in .env on the server.

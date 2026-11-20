@@ -2,7 +2,7 @@
 as one SQL file plus a manifest, for loading into an empty database built with
 `alembic upgrade head` (the Azure move).
 
-Run inside the API container, from the folder holding docker-compose.yml:
+Run inside the API container, from the backend/ folder (its .env names the server's compose file):
 
     docker compose exec -T api python -m scripts_2.export_master_data \\
         --commit "$(git -C ~/rationsmart rev-parse HEAD)"

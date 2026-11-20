@@ -63,9 +63,10 @@ die()  { log "ERROR: $*"; exit 1; }
 # dc <stack> <compose args...>: run docker compose inside a stack's directory.
 dc() {
   local stack="$1"; shift
-  # The backend uses docker-compose-azure.yml: backend/docker-compose.yml is the existing host-database setup.
+  # The backend uses compose.production.yml: backend/compose.test.yml is the Test server's host-database setup.
+  # backend/ has no default compose file name, so this -f is required.
   local files=()
-  [[ "$stack" == backend ]] && files=(-f docker-compose-azure.yml)
+  [[ "$stack" == backend ]] && files=(-f compose.production.yml)
   (cd "$ROOT/$stack" && docker compose ${files[@]+"${files[@]}"} "$@")
 }
 
