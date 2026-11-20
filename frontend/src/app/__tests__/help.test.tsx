@@ -1,10 +1,19 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-const { back, push } = vi.hoisted(() => ({ back: vi.fn(), push: vi.fn() }));
+const { back, push, checkHelpGuide } = vi.hoisted(() => ({
+  back: vi.fn(),
+  push: vi.fn(),
+  checkHelpGuide: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ back, replace: vi.fn(), push }),
+}));
+
+vi.mock("@/lib/api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/api")>()),
+  checkHelpGuide,
 }));
 
 import HelpAndSupportPage from "@/app/help/page";
@@ -29,15 +38,24 @@ const seedUser = (over: Partial<User> = {}): User => ({
 beforeEach(() => {
   back.mockClear();
   push.mockClear();
+  checkHelpGuide.mockReset();
   useStore.setState({ user: null });
 });
 
+/** A stand-in for the tab window.open returns. */
+const fakeTab = () => ({ opener: {} as unknown, location: { href: "" }, close: vi.fn() });
+
 describe("Help & Support page", () => {
-  it("renders all 3 rows", () => {
+  it("renders all 5 rows, the two printable guides after FAQs (N16)", () => {
     render(<HelpAndSupportPage />);
-    expect(screen.getByText("User Manual")).toBeInTheDocument();
-    expect(screen.getByText("FAQs")).toBeInTheDocument();
-    expect(screen.getByText("Contact Us")).toBeInTheDocument();
+    const rows = screen.getAllByRole("button").map((b) => b.textContent);
+    expect(rows.filter((r) => r !== "")).toEqual([
+      "User Manual",
+      "FAQs",
+      "Printable User Guide (PDF)",
+      "Quick Start card (PDF)",
+      "Contact Us",
+    ]);
   });
 
   // UI-label translation (src/lib/i18n-ui.ts) — this is the first screen
@@ -108,5 +126,80 @@ describe("Help & Support page", () => {
     expect(window.location.href).toBe("mailto:admin@digitalgreen.org");
 
     window.location = originalLocation as string & Location;
+  });
+
+  describe("printable guide (N16)", () => {
+    it("opens the User Guide in a new tab once it loads, in the profile language", async () => {
+      useStore.setState({ user: seedUser({ preferred_language: "hi" }) });
+      checkHelpGuide.mockResolvedValue(undefined);
+      const tab = fakeTab();
+      const open = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+      render(<HelpAndSupportPage />);
+      fireEvent.click(
+        (await screen.findByText("छापने योग्य उपयोगकर्ता गाइड (PDF)")).closest("button")!
+      );
+      // The tab is opened on the tap (pop-up blockers), with no link back to the app.
+      expect(open).toHaveBeenCalledWith("", "_blank");
+      expect(tab.opener).toBeNull();
+      expect(checkHelpGuide).toHaveBeenCalledWith("full", "hi");
+      await waitFor(() =>
+        expect(tab.location.href).toBe("/api/proxy/v1/help/guide?edition=full&lang=hi")
+      );
+      open.mockRestore();
+    });
+
+    it("opens the Quick Start card when logged out (English)", async () => {
+      checkHelpGuide.mockResolvedValue(undefined);
+      const tab = fakeTab();
+      const open = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+      render(<HelpAndSupportPage />);
+      fireEvent.click(screen.getByText("Quick Start card (PDF)").closest("button")!);
+      await waitFor(() =>
+        expect(tab.location.href).toBe("/api/proxy/v1/help/guide?edition=quick&lang=en")
+      );
+      expect(checkHelpGuide).toHaveBeenCalledWith("quick", "en");
+      open.mockRestore();
+    });
+
+    it("a 503 closes the tab and shows the Help home message, not raw JSON", async () => {
+      checkHelpGuide.mockRejectedValue(Object.assign(new Error("x"), { status: 503 }));
+      const tab = fakeTab();
+      const open = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+      render(<HelpAndSupportPage />);
+      fireEvent.click(screen.getByText("Printable User Guide (PDF)").closest("button")!);
+      expect(await screen.findByRole("alert")).toHaveTextContent(
+        "Help is not available right now."
+      );
+      expect(tab.close).toHaveBeenCalled();
+      expect(tab.location.href).toBe("");
+      open.mockRestore();
+    });
+
+    it("no internet shows 'Help needs internet.'", async () => {
+      checkHelpGuide.mockRejectedValue(new Error("Network Error"));
+      const open = vi.spyOn(window, "open").mockReturnValue(fakeTab() as unknown as Window);
+      render(<HelpAndSupportPage />);
+      fireEvent.click(screen.getByText("Quick Start card (PDF)").closest("button")!);
+      expect(await screen.findByRole("alert")).toHaveTextContent("Help needs internet.");
+      open.mockRestore();
+    });
+
+    it("a blocked pop-up opens the PDF in this tab instead", async () => {
+      checkHelpGuide.mockResolvedValue(undefined);
+      const open = vi.spyOn(window, "open").mockReturnValue(null);
+      const assign = vi.fn();
+      const originalLocation = window.location;
+      // @ts-expect-error — intentionally replacing with a minimal stub
+      delete window.location;
+      // @ts-expect-error — minimal stub, only `assign` is used here
+      window.location = { assign };
+      render(<HelpAndSupportPage />);
+      fireEvent.click(screen.getByText("Printable User Guide (PDF)").closest("button")!);
+      await waitFor(() =>
+        expect(assign).toHaveBeenCalledWith("/api/proxy/v1/help/guide?edition=full&lang=en")
+      );
+      window.location = originalLocation as string & Location;
+      open.mockRestore();
+    });
   });
 });

@@ -4,6 +4,7 @@ const { get } = vi.hoisted(() => ({ get: vi.fn() }));
 vi.mock("@/lib/api-client/client", () => ({ api: { get } }));
 
 import {
+  checkHelpGuide,
   clearHelpIndexCache,
   getHelpIndex,
   getHelpTopic,
@@ -14,6 +15,7 @@ import {
 import {
   formatVideoLength,
   helpFaqsHref,
+  helpGuideHref,
   helpHomeHref,
   helpScreenHref,
   helpTopicHref,
@@ -53,6 +55,10 @@ describe("help links", () => {
     expect(helpScreenHref("report.no-diet", "en")).toBe(
       "/help/topic?screen=report.no-diet&lang=en"
     );
+  });
+  it("builds the printable guide link (N16)", () => {
+    expect(helpGuideHref("full", "hi")).toBe("/api/proxy/v1/help/guide?edition=full&lang=hi");
+    expect(helpGuideHref("quick")).toBe("/api/proxy/v1/help/guide?edition=quick");
   });
   it("formats video lengths as m:ss", () => {
     expect(formatVideoLength(130)).toBe("2:10");
@@ -146,5 +152,13 @@ describe("getHelpIndex / getHelpTopic", () => {
     get.mockClear();
     await expect(getHelpTopic("../admin", "en")).rejects.toMatchObject({ status: 404 });
     expect(get).not.toHaveBeenCalled();
+  });
+  it("checks the printable guide as a blob with edition and lang (N16)", async () => {
+    get.mockResolvedValue({ data: new Blob() });
+    await expect(checkHelpGuide("quick", "en")).resolves.toBeUndefined();
+    expect(get).toHaveBeenCalledWith("/v1/help/guide", {
+      params: { edition: "quick", lang: "en" },
+      responseType: "blob",
+    });
   });
 });
