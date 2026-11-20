@@ -3,7 +3,7 @@
 # rebuilt every layer (full pip install, ~10 min) even with no code change.
 # Updates come as a monthly Dependabot "docker" PR (.github/dependabot.yml).
 # Latest digest: docker buildx imagetools inspect python:3.12-slim
-FROM python:3.12-slim@sha256:6b25cbe6577518889d553cdd5a5da97d259348d8f6e45b527dd731caaba27a07
+FROM python:3.12-slim@sha256:5e2bdb1b0d542d5039cffb8181c65930093949194a65c365dfb1b0fe13a4fa5b
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
