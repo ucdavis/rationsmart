@@ -68,6 +68,20 @@ There is nothing to go back to (for example, this was the first deploy). Fix the
 ### The page opens but actions fail with an error 502
 The web app cannot reach the API. Run `./deploy.sh status` and `./deploy.sh logs api`. The API must be `healthy`.
 
+Behind Cloudflare the same failure shows as *"The origin web server returned an invalid or incomplete response to
+Cloudflare"* (for example on the login screen). If the API is healthy but the web app's log
+(`docker logs rationsmart-frontend-frontend-1`) says `getaddrinfo EAI_AGAIN api`, the backend was started with the wrong
+compose file: the API is not on the `rationsmart_edge` network. Check with
+`docker inspect -f '{{index .Config.Labels "com.docker.compose.project.config_files"}}' rationsmart-api-1`: it must end in
+`compose.production.yml`. Fix it by releasing the backend again (`./deploy.sh`, or on Azure the **Deploy** workflow, action
+`app-release`, target `backend`). It happens when someone runs `docker compose` in `backend/` by hand with
+`compose.test.yml`, or on a server whose `backend/.env` lacks the `COMPOSE_FILE` line.
+
+### `docker compose` says "no configuration file provided"
+`backend/` has two compose files and no default (`compose.production.yml` for this setup, `compose.test.yml` for the Test
+server). Add `COMPOSE_FILE=compose.production.yml` to `backend/.env` (a release on Azure writes it), or pass
+`-f compose.production.yml`.
+
 ### `/health` shows `"cache": "disconnected"`
 The Redis password has a special character. Set `REDIS_PASSWORD` to letters and digits (`openssl rand -hex 24`) and run `./deploy.sh`.
 

@@ -64,6 +64,8 @@ request to `main`, and make sure the reviewers are set first. Then add:
 
 > **Testing from a branch or fork:** run the workflow by hand (**Run workflow**) and, in the fork only, let the environments
 > deploy from `main` plus `test/*`. A fork also needs its own bootstrap run with `githubRepo=<fork owner>/<fork name>`.
+> In this repository itself, **Deploy** and **Data** run only from `main`: their first step stops a run started from any
+> other branch, before it signs in to Azure. Forks are exempt (they deploy to their own Azure).
 >
 > **No personal Azure login:** if someone else gives you a managed identity with Owner on the subscription (trusted for
 > branches such as `main` or `test/azure-pipeline`), skip the `az` commands in step 2. Put that identity's IDs in
@@ -167,16 +169,32 @@ by itself when an active super admin already exists.
 
 | I want to... | Do this |
 |---|---|
-| release a change (everything: both stacks, migrations, database backup) | merge to `main`, then **Deploy**, Run workflow, action `up` |
+| release a change (everything: both stacks, migrations, database backup) | merge to `main`, then **Deploy**, Run workflow (branch `main`, the only one it accepts), action `up` |
 | release a small code change quickly | **Deploy**, action `app-release`, `target` `frontend` or `backend`: only that stack is rebuilt and restarted; a frontend release skips the migrations and the backup. Use `up` when the database, the gateway or both stacks change |
 | go back to the previous version | **Deploy**, action `rollback` (code only; the database is not undone); `target` `frontend` or `backend` rolls back just that stack |
 | see why a release failed or what the VM is doing | **Deploy**, action `diagnose` (read-only: checkout, containers, listeners, what answers on `localhost`); the output of the VM script ends with a summary of the run's `[deploy]` lines, because Azure keeps only the last ~4 KB |
 | change the infrastructure | edit `infra/`, open a PR (the Bicep diff is the review), merge, then run **Infrastructure** by hand and approve it |
 | only preview a change | **Infrastructure**, Run workflow, mode `whatif` (approve the environment; nothing is applied) |
 | rotate a secret | change it in the **`stage-infra`** GitHub secrets, run **Infrastructure** (apply), then **Deploy**. Editing it only in Key Vault would be overwritten by the next infrastructure run |
+| change only the email password | change `SMTP_PASSWORD` in the **`stage-infra`** GitHub secrets, run **Infrastructure (SMTP secret)**, then **Deploy**, action `app-release`, `target` `backend` |
+| change any other setting of the app | change the variable of the **`stage`** environment (or the secret, as above), then **Deploy**, action `app-release`, `target` `backend`. **Never edit `backend/.env` on the VM**: every release writes it again from Key Vault and those variables, so a hand edit is lost (the file says so on its first line) |
+| run a `docker compose` command by hand on the VM | in `/opt/rationsmart/backend`: `backend/.env` sets `COMPOSE_FILE=compose.production.yml`, so a plain `docker compose <command>` uses the right file. Never use `compose.test.yml` there: it is the Test server's file, and the API would leave the network the web app and nginx use (every request then fails with a 502) |
 | read logs | `az ssh vm ...` then `sudo ./deploy.sh logs api`, or the output of the Deploy run |
 | see the VM's setup log | `/var/log/cloud-init-output.log` on the VM |
 | a new environment (client tenant) | new parameter file and GitHub environments, then steps 1 to 7 again |
+
+## Test server and this environment
+
+The same code also runs on the team's **Test** server (outside Azure), so `backend/` holds one compose file for each. Neither
+has a default name: a `docker compose` that does not say which file to use refuses to run instead of guessing.
+
+| | Test server | This environment (Azure, `stage`) |
+|---|---|---|
+| Backend compose file | `backend/compose.test.yml` | `backend/compose.production.yml` |
+| How it is chosen | `-f` in the Test deploy script; `COMPOSE_FILE=compose.test.yml` in its hand-made `backend/.env` | `-f` in `deploy.sh`; `COMPOSE_FILE=compose.production.yml` in the generated `backend/.env` |
+| Release | the Test deploy script, any branch | **Deploy** workflow, branch `main` only |
+| `backend/.env` | edited by hand on the server | written by every release; never edit by hand |
+| Database / Redis | PostgreSQL on the host; bundled Redis | Azure PostgreSQL (private); bundled Redis with a password |
 
 ## When something fails
 

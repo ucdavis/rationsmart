@@ -210,7 +210,7 @@ Run these on the server. The answers shown are what you should get:
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost/       # 200  (the web app)
 curl -s -o /dev/null -w '%{http_code}\n' http://localhost/docs   # 404  (the API docs are private)
-cd backend && docker compose -f docker-compose-azure.yml exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"; cd ..
+cd backend && docker compose -f compose.production.yml exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/health').read().decode())"; cd ..
 ```
 
 The last command should print:
@@ -244,6 +244,9 @@ Backups are written to `backups/` on the server. Copy them somewhere safe now an
 - **Web address:** the app is served over plain `http`. For `https`, put the server behind your cloud provider's load balancer or add
   certificates later; the app works without it.
 - **Rolling back** returns to the previous program version only. It does not undo database changes or `.env` edits; use a backup for that.
+- **Compose files:** `backend/` holds `compose.production.yml` (this setup) and `compose.test.yml` (the team's Test server),
+  and neither is a default. `./deploy.sh` names the right file; for your own `docker compose` commands in `backend/`, the
+  `COMPOSE_FILE` line in `backend/.env` does (it comes with `env.template`).
 
 ## More
 

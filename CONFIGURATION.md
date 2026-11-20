@@ -89,6 +89,7 @@ Put these **before** the command: `FORCE_BUILD=1 ./deploy.sh`.
 | `SKIP_GIT_PULL=1` | do not run `git pull` first (it is skipped automatically when the branch has nothing to pull from) |
 | `SKIP_BACKUP=1` | do not back up the database first. Not recommended |
 | `IMAGE_TAG`, `IMAGE_REGISTRY` | choose which downloadable images to use (in `backend/.env` or on the command line), see [Registry images](#registry-images) |
+| `COMPOSE_FILE=compose.production.yml` | in `backend/.env` only: which compose file a hand `docker compose` command in `backend/` uses (there is no default file). `./deploy.sh` does not need it. Leave it as in `env.template` |
 
 All commands: `./deploy.sh` (deploy), `rollback`, `status`, `logs [service]`, `down`, `seed`, `create-admin`.
 

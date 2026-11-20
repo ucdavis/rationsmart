@@ -5,7 +5,7 @@ master data (taxonomy, countries, languages,
 translations of types/categories, CLIMDES sync settings, migration head).
 The admin who runs it is the only account left.
 
-Run inside the API container, from the folder holding docker-compose.yml:
+Run inside the API container, from the backend/ folder (its .env names the server's compose file):
 
     docker compose exec api python -m scripts_2.db_reset              # dry run
     docker compose exec api python -m scripts_2.db_reset --execute    # delete
@@ -304,7 +304,7 @@ async def run(
     stamp = datetime.now(timezone.utc).isoformat(timespec="seconds")
     summary = ", ".join(f"{t}={n}" for t, n in deleted.items())
     append_log(backup_dir, f"{stamp}\t{operator_email}\t{label}\t{backup.name}\t{summary}")
-    print(f"\nDone. To undo, from the folder holding docker-compose.yml:\n  {restore_command(backup)}")
+    print(f"\nDone. To undo, from the backend/ folder (where the compose file is):\n  {restore_command(backup)}")
     return 0
 
 
