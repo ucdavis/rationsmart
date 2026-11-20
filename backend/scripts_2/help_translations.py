@@ -133,13 +133,17 @@ def current_translation(root: Path, lang: str) -> Dict[str, str]:
 _SHEET_SLOT = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_.]*)\}")
 
 
+def _bare(label: str) -> str:
+    """A label without what the help never quotes: a required-field ' *', a trailing ':', '!' or '.'."""
+    return re.sub(r"[\s*:!.]+$", "", label.strip())
+
+
 def _norm(label: str) -> str:
-    """A label without what the help never quotes: a required-field ' *', a trailing ':', '!' or
-    '.', and letter case."""
-    return re.sub(r"[\s*:!.]+$", "", label.strip()).casefold()
+    """_bare() and letter case ignored: the key for comparing labels."""
+    return _bare(label).casefold()
 
 
-class AppLabels(dict):
+class AppLabels:
     """English app label → this language's label (the PWA sheet's column).
 
     lookup() also finds a label the help quotes slightly differently from the sheet: without the
@@ -148,21 +152,22 @@ class AppLabels(dict):
     """
 
     def __init__(self, pairs: Dict[str, str]) -> None:
-        super().__init__(pairs)
-        self._normal = {}
-        self._slotted = []
+        self._exact = dict(pairs)
+        self._normal: Dict[str, str] = {}
+        self._slotted: List[Tuple[re.Pattern, List[str], str]] = []
         for english, translated in pairs.items():
             if _SHEET_SLOT.search(english):
                 names = _SHEET_SLOT.findall(english)
+                # Fixed words compare without letter case; slots capture the help's own text.
                 pattern = "".join(re.escape(part) if i % 2 == 0 else "(.+?)"
-                                  for i, part in enumerate(_SHEET_SLOT.split(_norm(english))))
-                self._slotted.append((re.compile(pattern), names, translated))
+                                  for i, part in enumerate(_SHEET_SLOT.split(_bare(english))))
+                self._slotted.append((re.compile(pattern, re.IGNORECASE), names, translated))
             else:
                 self._normal.setdefault(_norm(english), translated)
 
     def lookup(self, label: str) -> Optional[str]:
-        if label in self:
-            return self[label]
+        if label in self._exact:
+            return self._exact[label]
         found = self._fuzzy(label)
         if found and not re.search(r"[*:]\s*$", label):
             found = re.sub(r"[\s*:]+$", "", found)  # the sheet's field mark or colon, not quoted in the help
@@ -173,7 +178,7 @@ class AppLabels(dict):
         if key in self._normal:
             return self._normal[key]
         for pattern, names, translated in self._slotted:
-            m = pattern.fullmatch(key)
+            m = pattern.fullmatch(_bare(label))  # not casefolded: slot values keep their case
             if m:
                 # Give each slot the value the help used, e.g. 'THỨC ĂN ${N}' → 'THỨC ĂN 1'.
                 values = {}
