@@ -51,6 +51,12 @@ export const helpTopicHref = (key: string, lang?: string) =>
 export const helpScreenHref = (screen: HelpScreenKey, lang?: string) =>
   withParams("/help/topic", { screen, lang });
 
+export type HelpGuideEdition = "full" | "quick";
+
+/** The printable guide (N16): `full` = User Guide, `quick` = Quick Start card. Public PDF. */
+export const helpGuideHref = (edition: HelpGuideEdition, lang?: string) =>
+  withParams("/api/proxy/v1/help/guide", { edition, lang });
+
 /** "m:ss" for a video-length pill. */
 export function formatVideoLength(seconds: number): string {
   const s = Math.max(0, Math.round(seconds));

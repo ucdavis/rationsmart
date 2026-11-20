@@ -181,6 +181,15 @@ export const getHelpTopic = async (key: string, lang: string): Promise<HelpTopic
   return parseHelpTopic(res.data);
 };
 
+/**
+ * Fetches the printable guide (N16) so a 503 or no internet is caught here and
+ * not shown as raw JSON in the new tab. The answer is cached for 5 minutes, so
+ * the tab that opens next is served from the browser cache.
+ */
+export const checkHelpGuide = async (edition: "full" | "quick", lang: string): Promise<void> => {
+  await api.get("/v1/help/guide", { params: { edition, lang }, responseType: "blob" });
+};
+
 /** Same-origin URL for a help image path from the JSON; null for anything else. */
 export function helpMediaUrl(path: string | null | undefined): string | null {
   if (!path || !path.startsWith("/v1/help/media/") || path.includes("..")) return null;
