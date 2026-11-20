@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: Kiswahili
+date: '{day} {month} {year}'
+length_min_sec: dak. {min} sek. {sec}
+length_sec: sek. {sec}
+header_guide: RationSmart · Mwongozo wa Mtumiaji
+footer_edition: Toleo {edition}
+footer_page: Ukurasa {page} kati ya {pages}
+footer_card: RationSmart · Mwanzo wa Haraka · Toleo {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: Mwongozo wa Mtumiaji
+guide_tagline: Lishe ya gharama nafuu zaidi kwa ng’ombe wa maziwa, hatua kwa hatua
+fact_language: Lugha
+fact_edition: Toleo
+fact_updated: Imesasishwa
+fact_topics: Mada
+fact_topics_value: '{count} · zenye picha na video'
+cover_scan_1: Changanua ili kutazama
+cover_scan_2: video ya Mwanzo wa Haraka ({length})
+cover_foot: Kwa maafisa ugani na wakufunzi. Namba za mada zinalingana na skrini ya 'Help & Support' kwenye programu.
+ai_note: Tafsiri ya AI, bado haijakaguliwa na mzungumzaji asilia wa Kiswahili.
+translated_from: Imetafsiriwa kutoka toleo la Kiingereza {edition}.
+howto_title: Jinsi ya kutumia mwongozo huu
+howto_topics_lead: Mada zinafuata programu.
+howto_topics: Kila mada ni kazi moja, kwa mpangilio unaotumia programu. Namba ni zilezile za skrini ya 'Help & Support' kwenye programu, hivyo unaweza kuwaelekeza wakulima kwenye mada hiyohiyo kwenye simu zao.
+howto_scan_lead: Changanua msimbo wa QR ili kutazama.
+howto_scan: Fungua kamera ya simu na uielekeze kwenye msimbo. Video fupi ya mada itafunguka kwenye YouTube. Chini ya kila msimbo kuna kiungo, ukipenda kukiandika.
+videos_english: Video ziko kwa Kiingereza.
+howto_time_lead: ▶ 0:21 inamaanisha “hatua hii iko kwenye video katika dakika 0 sekunde 21”.
+howto_time: Itumie kuruka moja kwa moja hadi hatua moja unapofundisha.
+howto_problems_lead: “Kama kuna tatizo”
+howto_problems: mwishoni mwa kila mada huorodhesha jumbe ambazo watu huziona mara nyingi na nini cha kufanya.
+tip_lead: 'Ushauri kwa wakufunzi:'
+tip: anza na mada {number}, {title}, pamoja na video yake. Inaonyesha programu nzima kwa chini ya dakika mbili. Picha zimetoka kwenye programu; skrini yako inaweza kuonekana tofauti kidogo.
+contents_title: Yaliyomo
+faqs_title: Maswali yanayoulizwa mara kwa mara
+more_title: Mahali pa kupata msaada zaidi
+screen_chip: 'Skrini: {screen}'
+audience_advanced: Kiwango cha juu
+audience_farmers: Kwa wakulima
+audience_nutritionists: Kwa wataalamu wa lishe
+video_length: ▶ Video, {length}
+in_the_video: Ndani ya video
+scan_to_watch: Changanua ili kutazama
+problems_title: ⚠ Kama kuna tatizo
+faq_see: '→ Mada {number}: {title}'
+back_app_title: Ndani ya programu
+back_app: Fungua menyu na uguse 'Help & Support'. Kila skrini pia ina kitufe cha msaada kinachofungua mada ya skrini hiyo.
+back_contact_title: Maswali au matatizo
+back_contact: Fungua menyu na uguse 'Contact Us'. Andika Simulation Name (jina la kesi) kama swali lako linahusu ripoti moja.
+back_videos_title: Video
+back_videos: Video zote {count} ziko kwenye chaneli ya YouTube “RationSmart”. Kila ukurasa wa mada una msimbo wake wa QR.
+back_edition_title: Toleo hili
+back_edition: Toleo {edition} · {language} · {updated}. Programu ikibadilika, toleo jipya hutengenezwa kutoka maandishi yaleyale ya msaada yanayoonyeshwa kwenye programu.
+card_title: Mwanzo wa Haraka
+card_tagline: Kutoka kuingia hadi lishe ya gharama nafuu zaidi, kwa hatua {count}
+card_problems_title: ⚠ Kama kuna tatizo
+card_faqs_title: Maswali ambayo watu huuliza
+card_topics_title: 'Jifunze zaidi: mada {count} za msaada'
+card_more: 'Ndani ya programu: menyu → ''Help & Support''. Kila mada ina video fupi. Mwongozo kamili wa Mtumiaji wa kuchapisha uko mahali hapohapo.'
+months:
+- Januari
+- Februari
+- Machi
+- Aprili
+- Mei
+- Juni
+- Julai
+- Agosti
+- Septemba
+- Oktoba
+- Novemba
+- Desemba

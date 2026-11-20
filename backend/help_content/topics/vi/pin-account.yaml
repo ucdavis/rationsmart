@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Mã PIN và tài khoản
+summary: Quên mã PIN, đổi mã PIN, sửa hồ sơ hoặc xóa tài khoản.
+screen_label: Hồ sơ của bạn
+chapters:
+- Nội dung video này
+- Quên mã PIN
+- Đặt mã PIN mới
+- Đổi mã PIN
+- Cập nhật hồ sơ
+- Mã PIN cũ 4 chữ số
+- Xóa tài khoản
+steps:
+- text: Quên mã PIN? Ở màn hình Đăng nhập, nhấn 'Quên mã PIN? Nhấn vào đây', nhập địa chỉ email đã đăng ký và nhấn 'Tiếp tục'.
+- text: 'Mở email từ RationSmart và nhấn ''Reset my PIN''. Một trang web mở ra: nhập mã PIN 6 chữ số mới hai lần và nhấn ''Save new PIN''. Liên kết chỉ dùng được một lần, trong 30 phút; trước khi bạn lưu, mã PIN cũ vẫn dùng được.'
+- text: 'Đăng nhập bằng mã PIN mới. Để đổi mã PIN vào lúc khác khi bạn vẫn nhớ mã, mở menu, nhấn ''Hồ sơ'', rồi ''Đổi mã PIN'': nhập mã PIN hiện tại, rồi nhập mã mới hai lần, và nhấn ''Cập nhật mã PIN''.'
+- text: Để đổi tên, quốc gia hoặc ngôn ngữ, mở 'Hồ sơ', thay đổi rồi nhấn 'Cập nhật hồ sơ'. Nút này chỉ hoạt động sau khi bạn đã thay đổi một thông tin nào đó.
+- text: Vẫn còn mã PIN cũ 4 chữ số? Khi bạn đăng nhập bằng mã đó, ứng dụng sẽ yêu cầu bạn đặt mã PIN 6 chữ số. Nhập mã PIN cũ và nhập mã mới hai lần.
+- text: 'Để xóa tài khoản, mở ''Hồ sơ'', nhấn ''Xóa'', rồi ''Có'', và xác nhận bằng mã PIN. Muốn quay lại sau này, hãy đăng ký lại bằng chính địa chỉ email đó: các báo cáo đã lưu sẽ trở lại.'
+problems:
+- title: Không nhận được email
+  text: Hãy xem trong thư mục thư rác (spam) và kiểm tra địa chỉ bạn đã nhập. Sau một phút bạn có thể yêu cầu lại. Vì sự an toàn của bạn, ứng dụng hiển thị cùng một thông báo cho mọi địa chỉ.
+- title: '''Link expired'''
+  text: Liên kết đặt lại chỉ dùng được một lần và chỉ trong 30 phút. Mở ứng dụng, nhấn lại 'Quên mã PIN? Nhấn vào đây' và dùng email mới nhất.
+- title: '''Mã PIN mới không khớp'''
+  text: Nhập chính xác cùng một mã PIN mới vào cả hai ô.
+- title: '''Invalid PIN.'' khi xóa tài khoản'
+  text: Mã PIN sai nên không có gì bị xóa. Hãy nhập mã PIN hiện tại của bạn.
+- title: '''Tên không được để trống'''
+  text: Nhập tên trước khi nhấn 'Cập nhật hồ sơ'.

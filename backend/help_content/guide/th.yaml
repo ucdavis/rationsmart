@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: ไทย
+date: '{day} {month} {year}'
+length_min_sec: '{min} นาที {sec} วินาที'
+length_sec: '{sec} วินาที'
+header_guide: RationSmart · คู่มือผู้ใช้
+footer_edition: ฉบับ {edition}
+footer_page: หน้า {page} จาก {pages}
+footer_card: RationSmart · เริ่มต้นใช้งานด่วน · ฉบับ {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: คู่มือผู้ใช้
+guide_tagline: สูตรอาหารต้นทุนต่ำสำหรับโคนม ทีละขั้นตอน
+fact_language: ภาษา
+fact_edition: ฉบับ
+fact_updated: ปรับปรุงล่าสุด
+fact_topics: หัวข้อ
+fact_topics_value: '{count} · พร้อมภาพและวิดีโอ'
+cover_scan_1: สแกนเพื่อดู
+cover_scan_2: วิดีโอเริ่มต้นใช้งานด่วน ({length})
+cover_foot: สำหรับเจ้าหน้าที่ส่งเสริมและวิทยากร หมายเลขหัวข้อตรงกับหน้า 'ความช่วยเหลือและการสนับสนุน' ในแอป
+ai_note: แปลโดย AI ยังไม่ได้ตรวจทานโดยเจ้าของภาษา
+translated_from: แปลจากฉบับภาษาอังกฤษ {edition}
+howto_title: วิธีใช้คู่มือนี้
+howto_topics_lead: หัวข้อเรียงตามแอป
+howto_topics: แต่ละหัวข้อคือหนึ่งงาน เรียงตามลำดับที่คุณใช้แอป หมายเลขตรงกับหน้า 'ความช่วยเหลือและการสนับสนุน' ในแอป คุณจึงบอกเกษตรกรให้เปิดหัวข้อเดียวกันบนโทรศัพท์ของเขาได้
+howto_scan_lead: สแกนคิวอาร์โค้ด (QR code) เพื่อดูวิดีโอ
+howto_scan: เปิดกล้องโทรศัพท์แล้วส่องไปที่โค้ด วิดีโอสั้นของหัวข้อนั้นจะเปิดบน YouTube ใต้โค้ดแต่ละอันมีลิงก์ไว้ หากคุณอยากพิมพ์เอง
+videos_english: วิดีโอเป็นภาษาอังกฤษ
+howto_time_lead: ▶ 0:21 หมายถึง “ขั้นตอนนี้อยู่ในวิดีโอที่ 0 นาที 21 วินาที”
+howto_time: ใช้เพื่อข้ามไปยังขั้นตอนที่ต้องการระหว่างการอบรม
+howto_problems_lead: “หากเกิดปัญหา”
+howto_problems: ท้ายแต่ละหัวข้อ รวบรวมข้อความที่ผู้ใช้พบบ่อยที่สุดและวิธีแก้ไข
+tip_lead: 'เคล็ดลับสำหรับวิทยากร:'
+tip: เริ่มจากหัวข้อ {number} {title} และวิดีโอของหัวข้อนั้น ซึ่งแสดงทั้งแอปในเวลาไม่ถึงสองนาที ภาพในคู่มือมาจากแอป หน้าจอของคุณอาจดูต่างไปเล็กน้อย
+contents_title: สารบัญ
+faqs_title: คำถามที่พบบ่อย
+more_title: ขอความช่วยเหลือเพิ่มเติมได้ที่ไหน
+screen_chip: 'หน้าจอ: {screen}'
+audience_advanced: ขั้นสูง
+audience_farmers: สำหรับเกษตรกร
+audience_nutritionists: สำหรับนักโภชนาการ
+video_length: ▶ วิดีโอ {length}
+in_the_video: ในวิดีโอ
+scan_to_watch: สแกนเพื่อดู
+problems_title: ⚠ หากเกิดปัญหา
+faq_see: '→ หัวข้อ {number}: {title}'
+back_app_title: ในแอป
+back_app: เปิดเมนูแล้วแตะ 'ความช่วยเหลือและการสนับสนุน' ทุกหน้าจอยังมีปุ่มช่วยเหลือที่เปิดหัวข้อของหน้าจอนั้น
+back_contact_title: คำถามหรือปัญหา
+back_contact: เปิดเมนูแล้วแตะ 'ติดต่อเรา' ระบุชื่อการจำลองด้วย หากคำถามของคุณเกี่ยวกับรายงานฉบับใดฉบับหนึ่ง
+back_videos_title: วิดีโอ
+back_videos: วิดีโอทั้ง {count} เรื่องอยู่บนช่อง YouTube “RationSmart” ทุกหน้าหัวข้อมีคิวอาร์โค้ดของตัวเอง
+back_edition_title: ฉบับนี้
+back_edition: ฉบับ {edition} · {language} · {updated} เมื่อแอปเปลี่ยนแปลง จะมีการจัดทำฉบับใหม่จากข้อความช่วยเหลือชุดเดียวกับที่แสดงในแอป
+card_title: เริ่มต้นใช้งานด่วน
+card_tagline: ตั้งแต่เข้าสู่ระบบจนได้สูตรอาหารที่ถูกที่สุด ใน {count} ขั้นตอน
+card_problems_title: ⚠ หากเกิดปัญหา
+card_faqs_title: คำถามที่ผู้ใช้ถาม
+card_topics_title: 'เรียนรู้เพิ่มเติม: หัวข้อช่วยเหลือ {count} หัวข้อ'
+card_more: 'ในแอป: เมนู → ''ความช่วยเหลือและการสนับสนุน'' ทุกหัวข้อมีวิดีโอสั้น คู่มือผู้ใช้ฉบับเต็มสำหรับพิมพ์ก็อยู่ที่เดียวกัน'
+months:
+- มกราคม
+- กุมภาพันธ์
+- มีนาคม
+- เมษายน
+- พฤษภาคม
+- มิถุนายน
+- กรกฎาคม
+- สิงหาคม
+- กันยายน
+- ตุลาคม
+- พฤศจิกายน
+- ธันวาคม

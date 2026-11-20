@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Aplikeeshiinii ijaari, galmaa'i, seeni
+summary: RationSmart bilbila keetti dabali, herrega uumi, seeni.
+screen_label: Seensa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Aplikeeshiinii bani
+- Bilbila keetti dabali
+- Galmaa'i
+- Imeelii kee mirkaneessi
+- Seeni
+- Ba'i
+steps:
+- text: 'RationSmart biraawuzara bilbila keetii keessatti bani: Android irratti Chrome, iPhone irratti Safari. Fuula Baga Nagaan Dhuftan irratti ''Itti fufi'' tuqi.'
+- text: 'Akka aplikeeshiiniitti fayyadamuuf, beeksisni ijaarsaa hanga mul''atutti sekondii muraasa eegiitii ''Ijaari'' tuqi. Android irratti: menyuu (tuqaalee sadii) tuqi, itti aansee ''Add to Home screen'', itti aansee ''Add''. iPhone irratti: qabduu Share tuqi, itti aansee ''Add to Home Screen'', itti aansee ''Add''. Sana booda RationSmart mallattoo isaa irraa bani.'
+- text: 'Fayyadamaa haaraa? Fuula Seensaa irratti ''Asitti galmaahi'' tuqi. Maqaa kee, teessoo imeelii fi biyya kee galchi, afaan kee filadhu: erga seentee booda aplikeeshiinichi afaan sanaan bana. PIN dijiitii 6 filadhu, ''Lak. Iccitii mirkaneessi'' keessatti irra deebi''ii barreessi, ''Itti fufi'' tuqi.'
+- text: Imeelii RationSmart irraa dhufe banii hidhaa (link) isa keessa jiru tuqi. Herregni kee amma qophaa'eera.
+- text: Fuula Seensaa irratti teessoo imeelii fi PIN kee galchiitii 'Itti fufi' tuqi. Aplikeeshiinichi Odeeffannoo Loonii irratti bana. Yeroo itti aanu aplikeeshiinii yoo banattu, ammallee seentee jirta.
+- text: Ba'uuf, menyuu bani, 'Bahi' tuqi, itti aansee 'Eeyyeen, Bahi'.
+problems:
+- title: Imeeliin mirkaneeffannaa hin dhufne
+  text: Foldara spam keessa ilaali. Fuula 'Imeelii kee ilaali' irratti 'Imeelii mirkaneeffannaa irra deebi'ii ergi' tuqi. Daqiiqaa tokkotti al tokko imeelii haaraa gaafachuu dandeessa.
+- title: '''Please verify your email address'''
+  text: PIN kee sirrii dha, garuu herregni kee ammallee hin mirkanoofne. Imeelii mirkaneeffannaa banii hidhaa isaa tuqi, sana booda irra deebi'ii seeni.
+- title: '''Imeeliin ykn PIN dogoggora.'''
+  text: Teessoo imeelii fi lakkoofsota 6 sana mirkaneeffadhu. PIN kee dagattee? 'Forgot PIN? Tap here' tuqi (mata-duree 2).
+- title: Yaalii baay'ee booda seensi ni dhaabbata
+  text: Yeroo gabaabaa keessatti yaalii dogoggoraa baay'ee booda, aplikeeshiinichi yeroo muraasaaf seensa hin fudhatu. Daqiiqaa tokko eegiitii irra deebi'ii yaali.
+- title: '''This account was deleted'''
+  text: Teessoo imeelii wal fakkaatuun irra deebi'ii galmaa'i. Erga mirkaneessitee booda, gabaasaaleen kee kanaan dura olkaa'aman ni deebi'u.
+- title: Aplikeeshiinichi afaan kootiin miti
+  text: 'Yeroo galmooftu yoo hin filanne, ykn afaan biraa yoo barbaadde: erga seentee booda menyuu bani, ''Ibsa Eenyummaa'' tuqi, Afaan kee filadhu, ''Ibsa Eenyummaa Haaromsi'' tuqi.'

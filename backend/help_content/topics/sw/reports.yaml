@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Hifadhi, shiriki na tafuta ripoti zako
+summary: Hifadhi ripoti, pata PDF yake, ishiriki na uifungue tena baadaye.
+screen_label: Feed Reports
+chapters:
+- Video hii inaonyesha nini
+- Hifadhi ripoti
+- Pata, tazama, shiriki PDF
+- Feed Reports
+- PDF Pending
+- Ripoti nyingi
+- Tumia tena kesi iliyohifadhiwa
+- Ripoti ambazo hazijahifadhiwa
+steps:
+- text: Kwenye ripoti gusa 'Save Report'. Programu inasema 'Report saved successfully'. Kuhifadhi ripoti ileile tena hakutengenezi nakala ya pili.
+- text: Gusa 'Get PDF' ili kutengeneza PDF. Ikiwa tayari, 'View PDF' huifungua na 'Share Report' huituma kwa njia za kushiriki za simu yako (au hunakili kiungo cha PDF).
+- text: Fungua menyu na uguse 'Feed Reports' kuona ripoti zako zilizohifadhiwa, mpya kwanza. 'View Report' hufungua PDF; gusa ukanda chini ya ripoti kuona Report ID, Report Type (aina ya ripoti) na Date (tarehe) yake.
+- text: Ripoti mpya inaweza kuonyesha 'PDF Pending' kwa dakika moja wakati PDF yake inatengenezwa. Fungua 'Feed Reports' tena baada ya muda mfupi.
+- text: Ukiwa na ripoti zaidi ya 20 zilizohifadhiwa, tumia vitufe vya ukurasa unaofuata na uliotangulia vilivyo chini.
+- text: Ili kutumia tena kesi iliyohifadhiwa, fungua Cattle Info na uguse ikoni ya historia kando ya 'Simulation Details'. Ripoti zilizohifadhiwa tu ndizo zinaorodheshwa hapo.
+- text: Ripoti ambayo hukuihifadhi inabaki kwenye simu hii kwa saa 24, kisha inapotea. Hifadhi zile unazozihitaji.
+problems:
+- title: '''No saved reports'''
+  text: Bado hujahifadhi ripoti. Gusa 'Create Report', tengeneza lishe na uguse 'Save Report'.
+- title: '''PDF Pending'' haiondoki'
+  text: Funga na ufungue tena 'Feed Reports'. Kama bado inaonekana baada ya dakika chache, fungua ripoti kutoka kwenye orodha na uguse 'Get PDF'.
+- title: '''PDF link copied to clipboard'''
+  text: Simu yako haina sehemu ya kushiriki hapa, kwa hiyo programu ilinakili kiungo badala yake. Kibandike kwenye ujumbe au barua pepe.
+- title: Ripoti yangu haipo kwenye historia kwenye Cattle Info
+  text: Historia inaorodhesha ripoti zilizohifadhiwa tu. Fanya kesi tena na uguse 'Save Report'.

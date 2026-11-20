@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Tạo khẩu phần chi phí thấp nhất và đọc báo cáo
+summary: Chạy khuyến nghị khẩu phần và hiểu từng phần của báo cáo.
+screen_label: Báo cáo khẩu phần khuyến nghị
+chapters:
+- Nội dung video này
+- Tạo khẩu phần
+- Thông tin báo cáo
+- Khẩu phần tối ưu chi phí
+- Tóm tắt giải pháp
+- Biên chi phí sữa
+- Giới hạn bạn đã đặt
+- Ghi chú và khí methane
+- Lưu, PDF, mô phỏng mới
+steps:
+- text: Tại Chọn thức ăn, nhấn 'Tạo khẩu phần khuyến nghị'. Dòng 'Đang tạo báo cáo của bạn...' hiện trong vài giây, sau đó 'Báo cáo khẩu phần khuyến nghị' mở ra.
+- text: '''Thông tin báo cáo'' ở trên cùng hiển thị Mã báo cáo, Mã mô phỏng, tên bạn và thời điểm tạo báo cáo. ''Đặc điểm vật nuôi'' nhắc lại thông tin con vật bạn đã nhập để bạn kiểm tra.'
+- text: '''Khẩu phần tối ưu chi phí'' là kết quả: với mỗi thức ăn, mỗi ngày cho ăn bao nhiêu kg ở dạng cho ăn (as fed, tức khối lượng bạn đặt trước mặt con bò), giá mỗi kg và chi phí mỗi ngày. Dòng cuối là Tổng chi phí khẩu phần mỗi ngày.'
+- text: '''Tóm tắt giải pháp'' hiển thị Chi phí hằng ngày, lượng sữa mà khẩu phần được tính cho, Lượng vật chất khô thu nhận (thức ăn không tính nước, kg mỗi ngày) và tỷ lệ Thức ăn thô : Thức ăn tinh.'
+- text: '''Biên chi phí sữa'' hiển thị cho bò đang cho sữa khi bạn đã nhập giá sữa. ''Chi phí khẩu phần/L sữa'' là chi phí thức ăn cho mỗi lít sữa, ''Giá sữa/L'' là giá sữa của bạn, và phần chênh lệch là số tiền sữa mang lại sau khi chỉ trừ chi phí thức ăn. Công lao động, chi phí thú y và các chi phí khác không được tính vào.'
+- text: '''Giới hạn bạn đã đặt'' xuất hiện khi bạn đặt giới hạn cho thức ăn hoặc khẩu phần: thẻ này liệt kê từng giới hạn và lượng thức ăn đó mà khẩu phần đã dùng (chủ đề 9).'
+- text: '''Ghi chú'' chỉ xuất hiện khi có điều cần bạn chú ý, ví dụ một chất dinh dưỡng thấp hơn mục tiêu, kèm lời khuyên nên thay đổi gì. ''Tác động môi trường'' hiển thị lượng khí methane con bò thải ra với khẩu phần này.'
+- text: Nhấn 'Lưu báo cáo' để lưu lại; sau đó 'Lấy PDF', 'Xem PDF' hoặc 'Chia sẻ báo cáo' (chủ đề 10). 'Mô phỏng mới' bắt đầu con vật tiếp theo với cùng các thông tin đã nhập. Mũi tên quay lại đưa bạn về Chọn thức ăn, nơi bạn có thể đổi thức ăn hoặc giá rồi tạo lại khẩu phần.
+problems:
+- title: '''Không tìm thấy khẩu phần tối ưu.'''
+  text: Không có cách phối trộn nào từ các thức ăn của bạn đáp ứng được nhu cầu của con vật này. Phần Ghi chú liệt kê những gì còn thiếu và cần thay đổi gì. Xem chủ đề 12.
+- title: Không có thẻ 'Biên chi phí sữa'
+  text: Thẻ này chỉ hiển thị cho bò đang cho sữa, và chỉ khi đã nhập giá sữa ở Thông tin gia súc. Hãy quay lại, nhập giá sữa và tạo lại khẩu phần.
+- title: '''Ghi chú giới hạn khẩu phần'''
+  text: Khẩu phần không thể nằm trong một giới hạn bạn đặt ở 'Giới hạn khẩu phần tùy chỉnh'. Ghi chú hiển thị kết quả và giới hạn của bạn. Hãy nới lỏng giới hạn hoặc thêm thức ăn khác.
+- title: Một thức ăn có lượng rất nhỏ, như 0.01 kg
+  text: Khẩu phần rẻ nhất gần như không cần thức ăn đó. Bạn có thể bỏ nó ra và tạo lại khẩu phần; chi phí thay đổi rất ít.
+- title: Một số từ vẫn bằng tiếng Anh
+  text: Các từ chỉ trạng thái trong ứng dụng được cố ý giữ bằng tiếng Anh. File PDF đã lưu dùng ngôn ngữ của báo cáo cho tiêu đề, ghi chú và tên thức ăn khi đã có bản dịch.

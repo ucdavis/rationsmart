@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Yeroo nyaanni hin argamne, fi rakkoolee biroo
+summary: Yeroo gabaasni nyaata hin arganne, ergaan tokko mul'atu ykn aplikeeshiinichi deebii hin kennine maal gochuu qabda.
+screen_label: Gabaasa Yaada Furmaataa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Furmaatni hin argamne
+- Yaadannoo dubbisi
+- Nyaata dabali
+- Daangaa kee bal'isi
+- Horii mirkaneeffadhu
+- Madaallii Nyaataa fayyadami
+- Irra deebi'ii yaali
+steps:
+- text: Yeroo gabaasni 'Furmaatni madaalawaan hin argamne' jedhu, walmakaan nyaata kee kamiyyuu fedhii horii kanaa hin guutu. Gabateen nyaataa hin jiru; kaardiin 'Yaadannoowwan' sababa isaa ibsa.
+- text: '''Violated Parameters'' dubbisi: sararri hundi waan nyaanni guutuu hin dandeenye himu, fakkeenyaaf ''Phosphorus Requirement: below minimum'' ykn ''Total Fibre (NDF): above maximum''. ''Recommendations'' waan jijjiiramuu qabu yaada kenna.'
+- text: 'Nyaata waan dhabame kennu dabali: kaalsiyeemii ykn foosfarasiif nyaata albuudaa, pirotiiniif nyaata pirotiinii (protein meal), anniisaaf midhaan. Nyaanni nyaata tokko ykn lama qofa qabu yeroo baay''ee fedhii hunda guutuu hin danda''u.'
+- text: Daangaa yoo kaa'atte ('Daangaa hammatamu kaahi' ykn 'Daangaa Nyaata baratamaa ta'ee'), bal'isi ykn haqi. Kaardiin 'Daangaa Ati Kaawwatte' gabaasa irratti kan ati kaa'atte agarsiisa.
+- text: 'Horii mirkaneeffadhu: galmi aannanii nyaata qabduuf baay''ee ol''aanaa ta''e guutamuu hin danda''u. Aannan gadi buusi, ykn nyaata caalaa gaarii dabali.'
+- text: Nyaata ati mataan kee filattu keessatti qabiyyeen nyaataa kam akka hir'ate ilaaluuf, 'Madaallii Nyaataa' fayyadami (mata-duree 6).
+- text: Sana booda xiyya duubaa tuqiitii gara Filannoo Nyaataatti deebi'i, jijjiirama godhiitii irra deebi'ii 'Yaada Furmaataa Maddisiisi' tuqi.
+problems:
+- title: '''Fooreejii Barbaachisa'''
+  text: Nyaanni hundi yoo xiqqaate nyaata gosa Fooreejii tokko barbaada. Tokko dabaliitii irra deebi'ii maddisiisi.
+- title: '''… of the selected feeds are no longer available'''
+  text: Nyaanni tokko kuusaa nyaataa (library) keessaa haqameera. Filannoo keessaa haqiitii nyaata irra deebi'ii filadhu.
+- title: Gabaasni baay'ee tura ykn hin banamu
+  text: Walqunnamtii interneetii kee mirkaneeffadhuutii irra deebi'ii yaali. Yoo itti fufe, Maqaa Walfakkii waliin 'Nu Qunnamaa' fayyadamuun nutti barreessi.
+- title: Aplikeeshiinichi dogoggora agarsiisa ykn deebii kennuu dhaaba
+  text: Fuula tokko duubatti deebi'iitii irra deebi'ii yaali; galteen kee ni eegama. Ammallee yoo hin hojjenne, ba'i, irra deebi'ii seeni, 'Duubdeebii' ykn 'Nu Qunnamaa' fayyadamuun nutti himi.

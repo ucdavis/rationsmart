@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Jelaskan ternak Anda
+summary: 'Isi Info Sapi: nama kasus, negara, status ternak, tubuh, susu, dan lingkungan.'
+screen_label: Info Sapi
+chapters:
+- Isi video ini
+- Detail simulasi
+- Status fisiologis
+- Karakteristik ternak
+- Data reproduksi
+- Produksi susu
+- Lingkungan
+- Lanjutkan ke Pakan
+- Pakai ulang atau atur ulang kasus
+steps:
+- text: Di bagian 'Detail Simulasi', ketik Nama Simulasi (misalnya nama sapi dan tanggal), pilih Negara dan Bahasa laporan. Negara menentukan pakan yang bisa Anda pilih dan mata uangnya.
+- text: 'Pilih ''Status Fisiologis'': Sapi laktasi, Sapi kering, Sapi dara, atau Anak sapi. Formulir lalu hanya menampilkan kolom untuk status itu, dengan nilai yang biasa sudah terisi.'
+- text: Di bagian 'Karakteristik Ternak', pilih ras dan masukkan Berat Badan (kg), Skor Kondisi Tubuh, Paritas (jumlah beranak), dan Pertambahan Bobot Badan (kg per hari).
+- text: Di bagian 'Data Reproduksi', masukkan Hari Kebuntingan, dan untuk sapi laktasi Jumlah Hari Laktasi.
+- text: 'Untuk sapi laktasi, di bagian ''Produksi Susu'' masukkan susu per hari (liter), Lemak Susu %, dan Protein Susu %. Harga Susu boleh diisi atau tidak: jika diisi, laporan membandingkan pendapatan susu dengan biaya pakan.'
+- text: Di bagian 'Lingkungan', masukkan suhu rata-rata (°C). Jika ternak berjalan untuk merumput, nyalakan 'Penggembalaan Aktif' dan masukkan Topografi serta jarak yang ditempuh (km).
+- text: Ketuk 'Lanjutkan ke Pakan'. Tombol menjadi hijau jika semua kolom wajib sudah terisi dan berada dalam rentangnya. Untuk anak sapi, ketuk 'Lanjutkan' untuk melihat rencana pemberian susu.
+- text: Untuk memakai ulang kasus lama, ketuk ikon riwayat di samping 'Detail Simulasi' dan pilih simulasi yang tersimpan; ketik Nama Simulasi baru sebelum melanjutkan. 'Atur Ulang' mengosongkan Info Sapi dan Pemilihan Pakan untuk mulai dari awal.
+problems:
+- title: Sebuah nilai menampilkan 'Rentang Nilai' berwarna merah
+  text: Angkanya di luar rentang yang diizinkan untuk ternak ini. Ketik nilai di dalam rentang yang ditampilkan.
+- title: '''Ganti negara?'''
+  text: Setiap negara punya daftar pakan sendiri, jadi mengganti negara akan menghapus pakan yang sudah Anda pilih. Ketuk 'Lanjutkan' untuk menghapusnya, atau 'Batal' untuk tetap memakai negara sebelumnya.
+- title: '''Beberapa nilai disesuaikan agar sesuai rentang yang diizinkan'''
+  text: Kasus yang tersimpan punya nilai di luar rentang yang berlaku sekarang, jadi aplikasi memindahkannya ke dalam rentang. Periksa nilainya sebelum Anda melanjutkan.
+- title: '''Jarak berjalan minimal 1 km'''
+  text: Jika 'Penggembalaan Aktif' menyala, masukkan jarak yang ditempuh, 1 km atau lebih. Jika ternak tidak merumput, matikan.

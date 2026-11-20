@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Kế hoạch cho bê uống sữa
+summary: Cho bê uống bao nhiêu sữa mỗi ngày, chia làm mấy lần, và khi nào cai sữa.
+screen_label: Cho bê uống sữa
+chapters:
+- Nội dung video này
+- Chọn 'Bê'
+- Lượng sữa mỗi ngày
+- Số lần uống và cai sữa
+- Một ví dụ
+- Lời khuyên chăm sóc
+- Lưu và PDF
+steps:
+- text: Tại Thông tin gia súc, chọn Trạng thái sinh lý 'Bê'. Nhập khối lượng cơ thể của bê theo kg và nhấn 'Tiếp tục'.
+- text: 'Kế hoạch ''Cho bê uống sữa'' mở ra. ''Lượng sữa mỗi ngày'' là số lít sữa mỗi ngày: bằng một phần mười khối lượng cơ thể của bê.'
+- text: '''Mỗi lần uống'' chia lượng sữa mỗi ngày thành 2 lần uống. ''Thời điểm cai sữa'' cho biết tuổi (tính theo ngày) cần ngừng cho uống sữa (56 ngày).'
+- text: 'Ví dụ: bê nặng 40 kg được uống 4.0 lít mỗi ngày, chia làm 2 lần, mỗi lần 2.0 lít.'
+- text: 'Đọc các lời khuyên chăm sóc bên dưới kế hoạch. Kế hoạch chỉ là hướng dẫn: hãy điều chỉnh cùng bác sĩ thú y của bạn.'
+- text: Nhấn 'Lưu báo cáo' để lưu kế hoạch, rồi 'Lấy PDF' để có bản sao kèm lịch cho uống sữa đầy đủ (chủ đề 10).
+problems:
+- title: Khối lượng cơ thể không được chấp nhận
+  text: Với bê, khối lượng cơ thể phải từ 30 đến 100 kg. Khoảng cho phép hiển thị dưới ô nhập.
+- title: Tôi không thấy Chọn thức ăn cho bê của mình
+  text: Bê chỉ được nhận kế hoạch cho uống sữa; ứng dụng không lập khẩu phần thức ăn hay bản đánh giá cho bê.
+- title: Bê của tôi đã lớn hơn và ăn thức ăn đặc
+  text: Chọn 'Bò tơ' thay vì 'Bê' để có khẩu phần thức ăn cho con vật non đang lớn.

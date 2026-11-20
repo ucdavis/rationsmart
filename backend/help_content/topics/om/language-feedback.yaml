@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Afaan, duubdeebii fi gargaarsa
+summary: Aplikeeshiinii afaan keetiin fayyadami, yaada kee nutti himi, gargaarsa argadhu.
+screen_label: Duubdeebii
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Afaan filadhu
+- Afaan durtii kee
+- Afaan PDF
+- Duubdeebii ergi
+- Duubdeebii kee kanaan duraa
+- Gargaarsaafi deeggarsa
+steps:
+- text: Odeeffannoo Loonii irratti 'Odeeffannoo dabalataa Walfakkii' jalatti Afaan filadhu. Fuulonni fi gabaasni battaluma sanatti gara isaatti jijjiiramu. Tarreen afaanota biyya filatteef qophaa'an agarsiisa.
+- text: Afaan tokko afaan durtii kee gochuuf, menyuu bani, 'Ibsa Eenyummaa' tuqi, Afaan filadhuutii 'Ibsa Eenyummaa Haaromsi' tuqi.
+- text: PDF olkaa'ame mata-dureewwan, yaadannoo fi maqaa nyaataatiif afaan gabaasaa fayyadama, bakka hiikkaan jirutti. Lakkoofsonni hin jijjiiraman. Jechoonni haalaa (status) muraasni beekamee Afaan Ingiliffaatiin hafu.
+- text: Duubdeebii kennuuf, menyuu banii 'Duubdeebii' tuqi. 'Aplikeeshiinii Madaali' jalatti urjii 1 hanga 5 filadhu, 'Ramaddii Duubdeebii' filadhu, yaada kee barreessi (hanga qubee 1000) 'Duubdeebii Galchi' tuqi.
+- text: Duubdeebiin kee kanaan duraa 'Duubdeebiiwwan kee' jalatti tarreeffama. Irra deebi'ii dubbisuuf tokko tuqi.
+- text: 'Gargaarsaaf, menyuu banii ''Gargaarsaafi Deeggarsa'' tuqi: qajeelfama fayyadamaa, gaaffilee yeroo baay''ee gaafataman, fi ''Nu Qunnamaa'', kan garee RationSmart''tti barreessuuf aplikeeshiinii imeelii kee banu. ''Waliigalteewwanfi Haalotaa'' illee menyuu keessa jira.'
+problems:
+- title: '''Duubdeebii Galchi'' daalacha ta''ee hafa'
+  text: Jalqaba sadarkaa urjii filadhu.
+- title: Afaan koo tarree keessa hin jiru
+  text: Afaanonni biyya biyyaan garee RationSmart'n dabalamu. Biyya Odeeffannoo Loonii irratti jiru mirkaneeffadhu, ykn 'Nu Qunnamaa' fayyadamuun afaan kee gaafadhu.
+- title: Afaan tokko koodii gabaabaa ta'ee mul'ata
+  text: Afaanonni tokko tokko maqaa isaanii osoo hin taane koodii (fakkeenyaaf 'TI') agarsiisu. Ammallee filachuu dandeessa; fuulonni akkuma duraatti hojjetu.
+- title: Barreeffamni fuulaa tokko tokko ammallee Afaan Ingiliffaatiin jira
+  text: Barreeffamni sun afaan keetiin ammallee hiikkaa hin qabu. Jechoota argitu 'Duubdeebii' fayyadamuun nutti himi.

@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Kiểm tra khẩu phần bạn đang cho ăn
+summary: Nhập những gì con vật đang ăn hôm nay để xem khẩu phần thiếu gì, đủ cho bao nhiêu sữa và tốn bao nhiêu tiền.
+screen_label: Báo cáo đánh giá khẩu phần
+chapters:
+- Nội dung video này
+- Chạy đánh giá
+- Tóm tắt đánh giá
+- Lượng vật chất khô thu nhận
+- Sản lượng sữa
+- Cân bằng dinh dưỡng
+- Phân tích chi phí
+- Biên chi phí sữa
+- Nhận khuyến nghị
+steps:
+- text: Tại Chọn thức ăn, chọn 'Đánh giá khẩu phần'. Chọn từng thức ăn bạn đang cho ăn, nhập giá và số kg mỗi ngày bạn cho ăn (dạng cho ăn). Nhấn 'Đánh giá khẩu phần'. 'Báo cáo đánh giá khẩu phần' sẽ mở ra.
+- text: '''Tóm tắt đánh giá'' cho biết Đánh giá chung của khẩu phần (ví dụ Marginal) và Yếu tố hạn chế: chất dinh dưỡng đang kìm hãm con bò.'
+- text: '''Lượng vật chất khô thu nhận (DMI)'' so sánh Lượng thu nhận thực tế từ thức ăn của bạn với Lượng thu nhận mục tiêu mà con bò có thể ăn. ''Below target'' nghĩa là khẩu phần cung cấp ít thức ăn hơn mức con bò có thể ăn.'
+- text: '''Phân tích sản lượng sữa'': ''Sản lượng sữa thực tế'' là lượng sữa khẩu phần này có thể đáp ứng, bên cạnh Mục tiêu của bạn. ''Giới hạn theo năng lượng'' và ''Giới hạn theo protein'' cho biết lượng sữa mà mỗi chất dinh dưỡng cho phép; giá trị thấp hơn là Dưỡng chất hạn chế.'
+- text: '''Cân bằng dinh dưỡng'' hiển thị từng chất dinh dưỡng là thừa (+) hay thiếu (−) so với nhu cầu của con bò.'
+- text: '''Phân tích chi phí'' hiển thị Tổng chi phí khẩu phần mỗi ngày, chi phí từng thức ăn trong ''Chi tiết các loại thức ăn'', và ''Chi phí/Lít sữa'': chi phí khẩu phần chia cho lượng sữa khẩu phần này có thể đáp ứng (Sản lượng sữa thực tế).'
+- text: '''Biên chi phí sữa'' so sánh chi phí thức ăn mỗi lít với giá sữa của bạn. Khi đánh giá khẩu phần, chi phí cần xem là ''Chi phí/Lít sữa'' trong Phân tích chi phí, vì chỉ số này dựa trên lượng sữa khẩu phần thực sự có thể đáp ứng.'
+- text: Nhấn 'Tạo khẩu phần khuyến nghị' để có khẩu phần rẻ nhất từ cùng các thức ăn cho cùng con vật. Lưu và chia sẻ bản đánh giá giống như với khuyến nghị (chủ đề 10).
+problems:
+- title: '''Sản lượng sữa thực tế'' thấp hơn mục tiêu của tôi'
+  text: Khẩu phần đang thiếu Dưỡng chất hạn chế. Hãy thêm một thức ăn giàu chất đó (ví dụ khô dầu giàu protein khi protein là yếu tố hạn chế), hoặc nhấn 'Tạo khẩu phần khuyến nghị'.
+- title: '''Nhập số lượng lớn hơn 0 cho mỗi thức ăn, hoặc xóa thức ăn đó.'''
+  text: Mỗi thức ăn trong bản đánh giá cần có số kg mỗi ngày bạn đang cho ăn. Hãy nhập số đó, hoặc xóa thức ăn đó.
+- title: Thức ăn tôi tự trồng không có giá
+  text: Nhập giá là 0. Bản đánh giá vẫn chạy; thức ăn đó không làm tăng chi phí.
+- title: '''… of the selected feeds are no longer available'''
+  text: Một thức ăn đã bị xóa khỏi thư viện kể từ lần cuối bạn dùng. Hãy bỏ nó khỏi danh sách đã chọn và chọn lại thức ăn.
+- title: Không có 'Đánh giá khẩu phần' cho bê của tôi
+  text: Bê được nhận kế hoạch cho uống sữa thay vì khẩu phần thức ăn (chủ đề 7).

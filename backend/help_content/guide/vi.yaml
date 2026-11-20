@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: Tiếng Việt
+date: '{day} {month} năm {year}'
+length_min_sec: '{min} phút {sec} giây'
+length_sec: '{sec} giây'
+header_guide: RationSmart · Hướng dẫn sử dụng
+footer_edition: Ấn bản {edition}
+footer_page: Trang {page}/{pages}
+footer_card: RationSmart · Bắt đầu nhanh · Ấn bản {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: Hướng dẫn sử dụng
+guide_tagline: Khẩu phần chi phí thấp nhất cho bò sữa, từng bước một
+fact_language: Ngôn ngữ
+fact_edition: Ấn bản
+fact_updated: Cập nhật
+fact_topics: Chủ đề
+fact_topics_value: '{count} · có hình ảnh và video'
+cover_scan_1: Quét mã để xem
+cover_scan_2: video Bắt đầu nhanh ({length})
+cover_foot: Dành cho cán bộ khuyến nông và người tập huấn. Số thứ tự chủ đề khớp với màn hình 'Trợ giúp và hỗ trợ' trong ứng dụng.
+ai_note: Bản dịch bằng AI, chưa được người bản ngữ kiểm tra.
+translated_from: Dịch từ ấn bản tiếng Anh {edition}.
+howto_title: Cách dùng hướng dẫn này
+howto_topics_lead: Các chủ đề đi theo ứng dụng.
+howto_topics: Mỗi chủ đề là một việc, theo thứ tự bạn dùng ứng dụng. Số thứ tự giống với màn hình 'Trợ giúp và hỗ trợ' trong ứng dụng, nên bạn có thể chỉ cho nông dân đúng chủ đề đó trên điện thoại của họ.
+howto_scan_lead: Quét mã QR để xem video.
+howto_scan: Mở camera điện thoại và hướng vào mã. Video ngắn của chủ đề sẽ mở trên YouTube. Dưới mỗi mã có đường liên kết, nếu bạn muốn tự nhập.
+videos_english: Các video bằng tiếng Anh.
+howto_time_lead: ▶ 0:21 nghĩa là “bước này nằm ở phút 0 giây 21 trong video”.
+howto_time: Dùng mốc này để chuyển ngay đến một bước khi tập huấn.
+howto_problems_lead: “Nếu gặp sự cố”
+howto_problems: ở cuối mỗi chủ đề liệt kê các thông báo thường gặp nhất và cách xử lý.
+tip_lead: 'Mẹo cho người tập huấn:'
+tip: hãy bắt đầu với chủ đề {number}, {title}, và video của chủ đề này. Video giới thiệu toàn bộ ứng dụng trong chưa đầy hai phút. Hình ảnh được chụp từ ứng dụng; màn hình của bạn có thể hơi khác.
+contents_title: Mục lục
+faqs_title: Câu hỏi thường gặp
+more_title: Nhận thêm trợ giúp ở đâu
+screen_chip: 'Màn hình: {screen}'
+audience_advanced: Nâng cao
+audience_farmers: Dành cho nông dân
+audience_nutritionists: Dành cho chuyên gia dinh dưỡng
+video_length: ▶ Video, {length}
+in_the_video: Trong video
+scan_to_watch: Quét để xem
+problems_title: ⚠ Nếu gặp sự cố
+faq_see: '→ Chủ đề {number}: {title}'
+back_app_title: Trong ứng dụng
+back_app: Mở menu và nhấn 'Trợ giúp và hỗ trợ'. Mỗi màn hình cũng có nút trợ giúp để mở chủ đề dành cho màn hình đó.
+back_contact_title: Câu hỏi hoặc sự cố
+back_contact: Mở menu và nhấn 'Liên hệ'. Ghi Tên mô phỏng nếu câu hỏi của bạn liên quan đến một báo cáo.
+back_videos_title: Video
+back_videos: Tất cả {count} video đều có trên kênh YouTube “RationSmart”. Mỗi trang chủ đề có mã QR riêng.
+back_edition_title: Ấn bản này
+back_edition: Ấn bản {edition} · {language} · {updated}. Khi ứng dụng thay đổi, một ấn bản mới sẽ được tạo từ chính nội dung trợ giúp mà ứng dụng hiển thị.
+card_title: Bắt đầu nhanh
+card_tagline: Từ đăng nhập đến khẩu phần rẻ nhất, trong {count} bước
+card_problems_title: ⚠ Nếu gặp sự cố
+card_faqs_title: Những câu hỏi hay gặp
+card_topics_title: 'Tìm hiểu thêm: {count} chủ đề trợ giúp'
+card_more: 'Trong ứng dụng: menu → ''Trợ giúp và hỗ trợ''. Mỗi chủ đề có một video ngắn. Bản Hướng dẫn sử dụng đầy đủ để in cũng nằm ở đó.'
+months:
+- tháng 1
+- tháng 2
+- tháng 3
+- tháng 4
+- tháng 5
+- tháng 6
+- tháng 7
+- tháng 8
+- tháng 9
+- tháng 10
+- tháng 11
+- tháng 12

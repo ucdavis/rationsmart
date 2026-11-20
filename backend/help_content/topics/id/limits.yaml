@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Tetapkan batas untuk pakan dan untuk ransum
+summary: Atur berapa banyak sebuah pakan boleh dipakai dalam ransum, dan tetapkan batas nutrien untuk seluruh ransum.
+screen_label: Pemilihan Pakan
+chapters:
+- Isi video ini
+- Batasi satu pakan
+- Contoh
+- Batas untuk ransum
+- Batas di laporan
+- Batas lunak
+- Disimpan bersama laporan
+steps:
+- text: 'Batas pakan: di kartu pakan, setelah memilih pakan, nyalakan ''Tentukan batas inklusi''. Ketik Min dan/atau Maks dalam kg per hari bentuk segar (as fed). Biarkan kotak kosong jika tidak ada batas.'
+- text: 'Contoh: Bungkil kedelai dengan Maks 2 kg menghasilkan ransum yang berisi 1.88 kg bungkil kedelai. Ransum bisa lebih mahal daripada tanpa batas, karena aplikasi harus memakai pakan lain.'
+- text: 'Batas ransum: ketuk ''Batas Ransum yang disesuaikan (custom)''. Setiap batas menampilkan rentang yang diizinkan dan nilai bawaan untuk Status Fisiologis, misalnya ''NDF max'' atau ''Starch max''. Ubah hanya yang perlu, lalu ketuk ''Terapkan Batas''.'
+- text: Hasilkan ransum. Kartu 'Batas yang Anda Tetapkan' di laporan mencantumkan setiap batas yang Anda tetapkan dan berapa banyak setiap pakan yang dibatasi dipakai dalam ransum. PDF yang tersimpan punya bagian yang sama.
+- text: 'Batas lemak, serat, dan pati adalah batas lunak: aplikasi berusaha memenuhinya, dan laporan menampilkan ''Catatan Batas Diet'' jika ransum akhirnya melebihi salah satu batas lebih dari 2.5 % dari batas itu.'
+- text: Batas disimpan bersama laporan. Saat Anda memuat simulasi tersimpan dari riwayat di Info Sapi, batasnya juga kembali.
+problems:
+- title: '''Minimum tidak boleh lebih dari maksimum.'''
+  text: Buat Min lebih kecil dari Maks, atau kosongkan salah satunya.
+- title: Maks 0 ditolak
+  text: Untuk tidak memakai sebuah pakan, hapus kartunya. Jika tidak ada batas, biarkan kotak kosong.
+- title: '''Value must be between … and …'' (nilai harus antara … dan …)'
+  text: Setiap batas ransum punya rentang yang ditetapkan ahli nutrisi untuk Status Fisiologis itu. Ketik nilai di dalam rentang; 'Terapkan Batas' akan berfungsi lagi.
+- title: '''NDF Hijauan Min tidak boleh melebihi NDF Maks'''
+  text: Serat dari hijauan tidak boleh lebih dari total serat. Turunkan NDF Hijauan Min atau naikkan NDF Maks.
+- title: '''Tentukan batas inklusi'' berwarna abu-abu'
+  text: Pilih pakan di kartu terlebih dahulu.
+- title: Dengan batas, tidak ada ransum yang ditemukan
+  text: Batasnya terlalu ketat untuk pakan-pakan ini. Longgarkan atau hapus satu batas, atau tambahkan pakan lain (topik 12).

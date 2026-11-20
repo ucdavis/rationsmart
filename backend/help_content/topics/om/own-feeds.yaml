@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Nyaata mataa keetii fi gatiiwwan nyaataa
+summary: Nyaata tarree keessa hin jirre dabali, ykn nyaata tokkoof gatiiwwan laaboraatoorii mataa keetii fayyadami.
+screen_label: Filannoo Nyaataa
+chapters:
+- Wanta viidiyoon kun agarsiisu
+- Nyaata baratamaa ta'e dabali
+- Kaardii keessatti fayyadami
+- Bakkeewwan ramaddiidhaan
+- Gatii kee nyaata tarree keessaatiif
+- Nyaata kee jijjiiri
+- Siif qofa
+steps:
+- text: Filannoo Nyaataa irratti 'Nyaata baratamaa ta'e' tuqi. 'Nyaata Baratamaa ta'e Dabali' keessatti Gosa Nyaataa fi Ramaddii Nyaataa filadhu, maqaa nyaatichaa barreessi, gatiiwwan qabiyyee nyaataa isaa % qabiyyee gogaa (dry matter) tiin guuti. 'Galchi' tuqi.
+- text: Aplikeeshiinichi 'Nyaanni baratamaa ta'e olkaahame! Tarree nyaataa keessatti ni mul'ata.' jedha. Kaardii nyaataa kamiyyuu keessatti gosaa fi ramaddii isaa jalaa filadhu, ykn maqaa isaatiin barbaadi.
+- text: Bakkeewwan ramaddii irratti hundaa'u. Albuudonni (Minerals) Qabiyyee gogaa (Dry Matter), Daaraa (Ash), Kaalsiyeemii fi Foosfarasii qofa gaafatu; Dabaltoonni (Additive) NPN illee gaafatu.
+- text: 'Nyaata tarree keessaatiif gatiiwwan mataa keetii fayyadamuuf: kaardii keessatti filadhuutii mallattoo qalamaa tuqi. Unkaan gatiiwwan nyaatichaa waliin bana; jijjiiriitii ''Galchi'' tuqi. Kun garagalcha mataa keetii olkaa''a (maqaan isaa maqaa kee duraatiin jalqaba), kaardichis isa fayyadama. Nyaanni waliin qooddatamu hin jijjiiramu.'
+- text: Nyaata baratamaa ta'e kee tokko jijjiiruuf qalama isaa tuqi; aplikeeshiinichi 'Nyaanni baratamaa ta'e haaromfameera!' jedha.
+- text: 'Nyaanni baratamaa ta''e kee kan dhuunfaa ti: fayyadamtoonni biroo gonkumaa hin argan. Biyya Odeeffannoo Loonii irratti filattu hunda keessatti si waliin deemu.'
+problems:
+- title: '''Maqaafi gosti nyaataa barbaachisaa'''
+  text: '''Galchi'' tuquu kee dura maqaa barreessiitii Gosa Nyaataa filadhu.'
+- title: '''Gatiin nyaataa lakkoofsa 0 fi 100 % gidduu ta''uu qaba.'''
+  text: Qabiyyeewwan nyaataa % qabiyyee gogaatiin jiru, kanaaf tokkoon tokkoon isaanii 0 hanga 100 ta'uu qaba. Tuqaan desimaalaa bakka dogoggoraa irra jiraachuu isaa mirkaneeffadhu.
+- title: Nyaata baratamaa ta'e koo argachuu hin danda'u
+  text: Gosa Nyaataa fi Ramaddii Nyaataa yeroo olkaa'attu filatte jala ilaali, ykn maqaa isaatiin barbaadi.
+- title: Gatiiwwan qabiyyee nyaataa eessaa argadha?
+  text: Irra caalaa qorannoo laaboraatoorii nyaata mataa keetii irraa. Yoo hin qabaatin, nyaata tarree keessaa wal fakkaatu irraa jalqabiitii waan beektu qofa jijjiiri.

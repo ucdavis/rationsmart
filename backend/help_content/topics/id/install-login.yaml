@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Pasang aplikasi, daftar, login
+summary: Tambahkan RationSmart ke ponsel Anda, buat akun, dan masuk.
+screen_label: Login
+chapters:
+- Isi video ini
+- Buka aplikasi
+- Tambahkan ke ponsel
+- Daftar
+- Konfirmasi email Anda
+- Login
+- Keluar
+steps:
+- text: 'Buka RationSmart di browser ponsel Anda: Chrome di Android, Safari di iPhone. Di layar Selamat Datang ketuk ''Lanjutkan''.'
+- text: 'Agar bisa dipakai seperti aplikasi, tunggu beberapa detik sampai muncul spanduk pemasangan, lalu ketuk ''Pasang''. Di Android: ketuk menu (tiga titik), lalu ''Add to Home screen'' (Tambahkan ke layar utama), lalu ''Add'' (Tambahkan). Di iPhone: ketuk tombol Bagikan, lalu ''Add to Home Screen'' (Tambahkan ke Layar Utama), lalu ''Add'' (Tambah). Lalu buka RationSmart dari ikonnya.'
+- text: 'Pengguna baru? Di layar Login ketuk ''Daftar di sini''. Masukkan nama, alamat email, dan negara Anda, lalu pilih bahasa Anda: aplikasi akan terbuka dalam bahasa itu setelah Anda login. Pilih PIN 6 digit, ketik lagi di ''Konfirmasi PIN'', lalu ketuk ''Lanjutkan''.'
+- text: Buka email dari RationSmart dan ketuk tautan di dalamnya. Akun Anda sekarang siap.
+- text: Di layar Login masukkan alamat email dan PIN Anda, lalu ketuk 'Lanjutkan'. Aplikasi terbuka di Info Sapi. Lain kali Anda membuka aplikasi, Anda masih dalam keadaan login.
+- text: Untuk keluar, buka menu, ketuk 'Keluar', lalu 'Ya, Keluar'.
+problems:
+- title: Email verifikasi tidak datang
+  text: Lihat di folder spam. Di layar 'Periksa Email Anda' ketuk 'Kirim Ulang Email Verifikasi'. Anda bisa meminta email baru sekali per menit.
+- title: '''Please verify your email address'' (verifikasi alamat email Anda)'
+  text: PIN Anda benar, tetapi akun belum diverifikasi. Buka email verifikasi dan ketuk tautannya, lalu login lagi.
+- title: '''Email atau PIN salah.'''
+  text: Periksa alamat email dan 6 digit PIN. Lupa PIN? Ketuk 'Lupa PIN? Ketuk di sini' (topik 2).
+- title: Login dihentikan sementara setelah banyak percobaan
+  text: Setelah banyak percobaan yang salah dalam waktu singkat, aplikasi berhenti menerima login untuk sementara. Tunggu satu menit dan coba lagi.
+- title: '''This account was deleted'' (akun ini sudah dihapus)'
+  text: Daftar lagi dengan alamat email yang sama. Setelah Anda memverifikasinya, laporan yang dulu Anda simpan akan kembali.
+- title: Aplikasi tidak dalam bahasa saya
+  text: 'Jika Anda tidak memilihnya saat mendaftar, atau ingin bahasa lain: setelah login, buka menu, ketuk ''Profil'', pilih Bahasa Anda, lalu ketuk ''Perbarui Profil''.'

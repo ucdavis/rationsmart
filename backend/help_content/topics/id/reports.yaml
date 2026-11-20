@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Simpan, bagikan, dan temukan laporan Anda
+summary: Simpan laporan, dapatkan PDF-nya, bagikan, dan buka lagi nanti.
+screen_label: Laporan Pakan
+chapters:
+- Isi video ini
+- Simpan laporan
+- Dapatkan, lihat, bagikan PDF
+- Laporan Pakan
+- PDF Sedang Diproses
+- Banyak laporan
+- Pakai ulang kasus tersimpan
+- Laporan yang tidak disimpan
+steps:
+- text: Di laporan ketuk 'Simpan Laporan'. Aplikasi menampilkan 'Report saved successfully' (laporan berhasil disimpan). Menyimpan laporan yang sama lagi tidak membuat salinan kedua.
+- text: Ketuk 'Dapatkan PDF' untuk membuat PDF. Jika sudah siap, 'Lihat PDF' membukanya dan 'Bagikan Laporan' mengirimnya lewat pilihan berbagi di ponsel Anda (atau menyalin tautan PDF).
+- text: Buka menu dan ketuk 'Laporan Pakan' untuk melihat laporan yang tersimpan, yang terbaru di atas. 'Lihat Laporan' membuka PDF; ketuk bilah di bawah laporan untuk melihat ID Laporan, Jenis Laporan, dan Tanggal.
+- text: Laporan baru mungkin menampilkan 'PDF Sedang Diproses' selama satu menit saat PDF-nya dibuat. Buka 'Laporan Pakan' lagi sebentar kemudian.
+- text: Jika ada lebih dari 20 laporan tersimpan, pakai tombol halaman berikutnya dan sebelumnya di bagian bawah.
+- text: Untuk memakai ulang kasus yang tersimpan, buka Info Sapi dan ketuk ikon riwayat di samping 'Detail Simulasi'. Hanya laporan yang tersimpan yang tercantum di sana.
+- text: Laporan yang tidak Anda simpan tetap ada di ponsel ini selama 24 jam, lalu hilang. Simpan laporan yang Anda perlukan.
+problems:
+- title: '''Tidak ada laporan tersimpan'''
+  text: Anda belum menyimpan laporan. Ketuk 'Buat Laporan', buat ransum, lalu ketuk 'Simpan Laporan'.
+- title: '''PDF Sedang Diproses'' tidak hilang'
+  text: Tutup dan buka lagi 'Laporan Pakan'. Jika masih muncul setelah beberapa menit, buka laporan dari daftar dan ketuk 'Dapatkan PDF'.
+- title: '''Tautan PDF disalin ke clipboard'''
+  text: Ponsel Anda tidak punya menu berbagi di sini, jadi aplikasi menyalin tautannya. Tempelkan ke pesan atau email.
+- title: Laporan saya tidak ada di riwayat Info Sapi
+  text: Riwayat hanya mencantumkan laporan yang tersimpan. Jalankan kasus itu lagi dan ketuk 'Simpan Laporan'.

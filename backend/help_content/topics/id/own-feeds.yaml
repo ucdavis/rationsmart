@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Pakan Anda sendiri dan nilai pakan
+summary: Tambahkan pakan yang tidak ada di daftar, atau pakai nilai hasil lab Anda sendiri untuk sebuah pakan.
+screen_label: Pemilihan Pakan
+chapters:
+- Isi video ini
+- Tambah pakan custom
+- Pakai di kartu
+- Kolom menurut kategori
+- Nilai Anda untuk pakan di daftar
+- Ubah pakan Anda sendiri
+- Hanya untuk Anda
+steps:
+- text: Di Pemilihan Pakan ketuk 'Pakan yang disesuaikan (custom)'. Di 'Tambah pakan yang disesuaikan (custom)' pilih Jenis Pakan dan Kategori Pakan, ketik nama pakan, lalu isi nilai nutriennya dalam % bahan kering. Ketuk 'Kirim'.
+- text: Aplikasi menampilkan 'Pakan yang disesuaikan (custom) disimpan! Akan muncul di daftar pakan.' Pilih pakan itu di kartu pakan mana saja, di bawah jenis dan kategorinya, atau cari namanya.
+- text: Kolom yang diminta tergantung kategori. Mineral hanya meminta Bahan Kering, Abu, Kalsium, dan Fosfor; Aditif juga meminta NPN.
+- text: 'Untuk memakai nilai Anda sendiri untuk pakan dari daftar: pilih pakan itu di kartu dan ketuk ikon pensil. Formulir terbuka dengan nilai pakan itu; ubah nilainya lalu ketuk ''Kirim''. Ini menyimpan salinan milik Anda sendiri (namanya diawali nama depan Anda) dan kartu memakai salinan itu. Pakan bersama tidak berubah.'
+- text: Ketuk pensil pada salah satu pakan custom milik Anda untuk mengubahnya; aplikasi menampilkan 'Pakan yang disesuaikan (custom) telah diperbarui!'.
+- text: 'Pakan custom Anda bersifat pribadi: pengguna lain tidak pernah melihatnya. Pakan itu ikut bersama Anda ke setiap negara yang Anda pilih di Info Sapi.'
+problems:
+- title: '''Nama dan jenis pakan diperlukan'''
+  text: Ketik nama dan pilih Jenis Pakan sebelum mengetuk 'Kirim'.
+- title: '''Nilai nutrien harus berupa angka antara 0 dan 100 %.'''
+  text: Nutrien dihitung dalam % bahan kering, jadi setiap nilai harus dari 0 sampai 100. Periksa apakah ada titik desimal yang salah tempat.
+- title: Saya tidak menemukan pakan custom saya
+  text: Lihat di bawah Jenis Pakan dan Kategori Pakan yang Anda pilih saat menyimpannya, atau cari namanya.
+- title: Dari mana saya mendapat nilai nutrien?
+  text: Paling baik dari analisis lab pakan Anda sendiri. Jika tidak ada, mulailah dari pakan serupa di daftar dan ubah hanya yang Anda ketahui.

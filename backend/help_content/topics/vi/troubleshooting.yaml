@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Khi không tìm thấy khẩu phần, và các vấn đề khác
+summary: Cần làm gì khi báo cáo không tìm thấy khẩu phần, khi có thông báo hiện ra hoặc khi ứng dụng không phản hồi.
+screen_label: Báo cáo khẩu phần khuyến nghị
+chapters:
+- Nội dung video này
+- Không tìm thấy giải pháp
+- Đọc ghi chú
+- Thêm thức ăn
+- Nới lỏng giới hạn
+- Kiểm tra con vật
+- Dùng Đánh giá khẩu phần
+- Thử lại
+steps:
+- text: Khi báo cáo hiện 'Không tìm thấy khẩu phần tối ưu.', nghĩa là không có cách phối trộn nào từ các thức ăn của bạn đáp ứng được nhu cầu của con vật này. Không có bảng khẩu phần; thẻ 'Ghi chú' giải thích lý do.
+- text: 'Đọc ''Violated Parameters'' (Các chỉ tiêu không đạt): mỗi dòng nêu điều khẩu phần không đáp ứng được, ví dụ ''Phosphorus Requirement: below minimum'' (Nhu cầu phốt pho: dưới mức tối thiểu) hoặc ''Total Fibre (NDF): above maximum'' (Tổng xơ (NDF): trên mức tối đa). ''Recommendations'' (Khuyến nghị) gợi ý cần thay đổi gì.'
+- text: 'Thêm một thức ăn cung cấp phần còn thiếu: thức ăn khoáng cho canxi hoặc phốt pho, khô dầu giàu protein cho protein, hạt ngũ cốc cho năng lượng. Khẩu phần chỉ có một hoặc hai loại thức ăn thường không đáp ứng được mọi nhu cầu.'
+- text: Nếu bạn đã đặt giới hạn ('Đặt giới hạn phối trộn' hoặc 'Giới hạn khẩu phần tùy chỉnh'), hãy nới lỏng hoặc bỏ chúng. Thẻ 'Giới hạn bạn đã đặt' trong báo cáo cho biết bạn đã đặt những giới hạn nào.
+- text: 'Kiểm tra con vật: mục tiêu sữa quá cao so với các thức ăn bạn có thì không thể đạt được. Hãy giảm lượng sữa mục tiêu, hoặc thêm thức ăn tốt hơn.'
+- text: Để xem chất dinh dưỡng nào bị thiếu trong khẩu phần do bạn tự chọn, hãy dùng 'Đánh giá khẩu phần' (chủ đề 6).
+- text: Sau đó nhấn mũi tên quay lại để về Chọn thức ăn, thay đổi và nhấn lại 'Tạo khẩu phần khuyến nghị'.
+problems:
+- title: '''Cần có thức ăn thô'''
+  text: Mọi khẩu phần cần ít nhất một thức ăn thuộc loại Thức ăn thô. Hãy thêm một loại rồi tạo lại khẩu phần.
+- title: '''… of the selected feeds are no longer available'''
+  text: Một thức ăn đã bị xóa khỏi thư viện. Hãy bỏ nó khỏi danh sách đã chọn và chọn lại thức ăn.
+- title: Báo cáo chạy rất lâu hoặc không mở ra
+  text: Kiểm tra kết nối internet và thử lại. Nếu vẫn tiếp tục xảy ra, hãy viết cho chúng tôi qua 'Liên hệ' kèm Tên mô phỏng.
+- title: Ứng dụng báo lỗi hoặc không phản hồi
+  text: Quay lại một màn hình và thử lại; thông tin bạn đã nhập vẫn được giữ. Nếu vẫn lỗi, hãy đăng xuất, đăng nhập lại, và báo cho chúng tôi qua 'Phản hồi' hoặc 'Liên hệ'.

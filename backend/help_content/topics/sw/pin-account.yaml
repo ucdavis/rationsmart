@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: PIN na akaunti
+summary: Umesahau PIN, badilisha PIN, hariri wasifu wako au futa akaunti yako.
+screen_label: Your Profile
+chapters:
+- Video hii inaonyesha nini
+- Umesahau PIN yako
+- Weka PIN mpya
+- Badilisha PIN yako
+- Sasisha wasifu wako
+- PIN ya zamani ya tarakimu 4
+- Futa akaunti yako
+steps:
+- text: Umesahau PIN yako? Kwenye skrini ya Login gusa 'Forgot PIN? Tap here', andika anwani ya barua pepe uliyojisajili nayo na uguse 'Proceed'.
+- text: 'Fungua barua pepe kutoka RationSmart na uguse ''Reset my PIN''. Ukurasa utafunguka: andika PIN yako mpya ya tarakimu 6 mara mbili na uguse ''Save new PIN''. Kiungo kinafanya kazi mara moja tu, kwa dakika 30; hadi utakapohifadhi, PIN yako ya zamani bado inafanya kazi.'
+- text: 'Ingia kwa PIN yako mpya. Ili kubadilisha PIN yako wakati mwingine ukiwa bado unaikumbuka, fungua menyu, gusa ''Profile'', kisha ''Change PIN'': andika PIN yako ya sasa, kisha mpya mara mbili, na uguse ''Update PIN''.'
+- text: Ili kubadilisha jina, nchi au lugha yako, fungua 'Profile', fanya badiliko na uguse 'Update Profile'. Kitufe kinafanya kazi tu baada ya kubadilisha kitu.
+- text: Bado una PIN ya zamani ya tarakimu 4? Ukiingia nayo, programu itakuomba uweke PIN ya tarakimu 6. Andika PIN ya zamani na PIN mpya mara mbili.
+- text: 'Ili kufuta akaunti yako, fungua ''Profile'', gusa ''Delete'', kisha ''Yes'', na uthibitishe kwa PIN yako. Ili kurudi baadaye, jisajili tena kwa anwani ileile ya barua pepe: ripoti zako zilizohifadhiwa zinarudi.'
+problems:
+- title: Hakuna barua pepe iliyofika
+  text: Angalia kwenye folda ya spam na uhakikishe anwani uliyoandika. Unaweza kuomba tena baada ya dakika moja. Kwa usalama wako, programu inaonyesha ujumbe uleule kwa kila anwani.
+- title: '''Link expired'''
+  text: Kiungo cha kubadilisha PIN kinafanya kazi mara moja tu na kwa dakika 30 tu. Fungua programu, gusa 'Forgot PIN? Tap here' tena na utumie barua pepe mpya zaidi.
+- title: '''New PINs do not match'''
+  text: Andika PIN mpya ileile kabisa kwenye visanduku vyote viwili.
+- title: '''Invalid PIN.'' wakati wa kufuta'
+  text: PIN haikuwa sahihi, kwa hiyo hakuna kilichofutwa. Andika PIN yako ya sasa.
+- title: '''Name cannot be empty'''
+  text: Andika jina kabla ya kugusa 'Update Profile'.

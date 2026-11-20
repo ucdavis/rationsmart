@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: 'Jalqaba saffisaa: seensa irraa hanga gabaasaatti'
+summary: 'Aplikeeshiinii guutuu daqiiqaa muraasaan: seeni, horii kee ibsi, nyaata kee filadhu, nyaata baasii xiqqaa qabu argadhu.'
+screen_label: Gargaarsaafi Deeggarsa
+chapters:
+- Wanta RationSmart hojjetu
+- Seeni
+- Horii kee ibsi
+- Nyaataafi gatii filadhu
+- Nyaata baasii xiqqaa argadhu
+- Gabaasa olkaa'i
+- Horii itti aanu
+steps:
+- text: Imeelii keetiifi PIN dijiitii 6 keetiin seeni. Aplikeeshiinichi Odeeffannoo Loonii irratti bana.
+- text: Odeeffannoo Loonii irratti Maqaa Walfakkii barreessi, Biyya fi Haala Qaamaa filadhu, odeeffannoo horichaa guuti. 'Gara Nyaataatti Itti fufi' tuqi.
+- text: Filannoo Nyaataa irratti 'Yaada Furmaataa Nyaataa' akkuma jirutti dhiisi. Kaardii nyaataa hunda keessatti Gosa Nyaataa, itti aansee Ramaddii Nyaataa, itti aansee Nyaata filadhu, gatii isaa kiilo (kg) tokkoof barreessi. Yoo xiqqaate fooreejii (forage) tokko itti dabali.
+- text: '''Yaada Furmaataa Maddisiisi'' tuqi. Sekondii muraasa booda gabaasni nyaata baasii xiqqaa agarsiisa: nyaata tokkoon tokkoon isaa guyyaatti kg meeqa akka kennitu, fi baasii guyyaa.'
+- text: Olkaa'uuf 'Gabaasa Olkaahi' tuqi. Gabaasaaleen kee olkaa'aman fi PDF isaanii menyuu keessatti 'Gabaasaalee Nyaataa' jala jiru.
+- text: Horii itti aanu irratti hojjechuuf 'Dhimma Haaraa' tuqi.
+problems:
+- title: '''Gara Nyaataatti Itti fufi'' daalacha ta''ee hafa'
+  text: Bakki guutamuu qabu tokko duwwaa dha, ykn gatiin tokko daangaa isaa ala jira (daangaan bakka sana jalatti diimaan mul'ata). Sirreessi, qabduun sun magariisa ta'a.
+- title: Horiin koo jabbii dha
+  text: Akka Haala Qaamaatti 'Jiboota' filadhu. Sana booda aplikeeshiinichi nyaata horii osoo hin taane karoora aannan hoosisuu agarsiisa.
+- title: '''Fooreejii Barbaachisa'''
+  text: Nyaanni hundi yoo xiqqaate nyaata gosa Fooreejii tokko barbaada. Tokko dabaliitii irra deebi'ii maddisiisi.

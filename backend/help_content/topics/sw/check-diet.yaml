@@ -1,0 +1,34 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Kagua mgao wa chakula unaolisha sasa
+summary: Andika anachokula mnyama wako leo na uone kinachokosekana, maziwa kiasi gani mgao huo unaweza kuwezesha, na gharama yake.
+screen_label: Evaluation Report
+chapters:
+- Video hii inaonyesha nini
+- Fanya tathmini
+- Muhtasari wa tathmini
+- Ulaji wa kiini kikavu
+- Uzalishaji wa maziwa
+- Mizani ya virutubisho
+- Uchambuzi wa gharama
+- Bei ya maziwa dhidi ya gharama
+- Pata pendekezo la lishe
+steps:
+- text: 'Kwenye Feed Selection chagua ''Diet Evaluation''. Chagua kila chakula unachotoa sasa, andika bei yake na kg kwa siku unazolisha (as fed: kama kinavyolishwa). Gusa ''Get Evaluation''. ''Evaluation Report'' hufunguka.'
+- text: '''Evaluation Summary'' inatoa Overall Status (hali ya jumla) ya mgao (kwa mfano Marginal) na Limiting Factor: kirutubisho kinachomzuia ng’ombe kufanya vizuri zaidi.'
+- text: '''Dry Matter Intake'' inalinganisha Actual Intake (ulaji halisi) ambao vyakula vyako vinatoa na Target Intake (ulaji lengwa) ambao ng’ombe anaweza kula. ''Below target'' inamaanisha mgao unatoa chakula kidogo kuliko ng’ombe angeweza kula.'
+- text: '''Milk Production Analysis'': ''Actual Milk'' ni maziwa ambayo mgao huu unaweza kuwezesha, kando ya Target (lengo) lako. ''Energy-Supported'' na ''Protein-Supported'' zinaonyesha maziwa ambayo kila kirutubisho kinaruhusu; kilicho chini zaidi ndicho Limiting Nutrient (kirutubisho kinachozuia).'
+- text: '''Nutrient Balance'' inaonyesha kila kirutubisho kama ziada (+) au upungufu (−) ukilinganisha na mahitaji ya ng’ombe.'
+- text: '''Cost Analysis'' inaonyesha Total Diet Cost kwa siku, gharama ya kila chakula kwenye ''Feed Breakdown'', na ''Cost/Litre Milk'': gharama ya lishe ikigawanywa kwa maziwa ambayo mgao huu unaweza kuwezesha (Actual Milk).'
+- text: '''Milk Cost Margin'' inalinganisha gharama ya chakula kwa lita na bei yako ya maziwa. Kwa tathmini, gharama inayohesabika ni ''Cost/Litre Milk'' kwenye Cost Analysis, kwa sababu inategemea maziwa ambayo mgao huu unaweza kuwezesha kweli.'
+- text: Gusa 'Generate Diet Recommendation' ili kupata lishe ya gharama nafuu zaidi kutoka vyakula vilevile kwa mnyama yuleyule. Hifadhi na shiriki tathmini kwa njia ileile kama pendekezo (mada 10).
+problems:
+- title: '''Actual Milk'' iko chini ya lengo langu'
+  text: Mgao una upungufu wa Limiting Nutrient (kirutubisho kinachozuia). Ongeza chakula chenye kirutubisho hicho kwa wingi (kwa mfano mashudu yenye protini wakati protini ndiyo inayozuia), au gusa 'Generate Diet Recommendation'.
+- title: '''Enter a quantity greater than 0 for every feed, or remove the feed.'''
+  text: Kila chakula kwenye tathmini kinahitaji kg kwa siku unazolisha sasa. Ziandike, au ondoa chakula hicho.
+- title: Chakula ninachozalisha mwenyewe hakina bei
+  text: Andika 0 kama bei yake. Tathmini bado inafanya kazi; chakula hicho hakiongezi chochote kwenye gharama.
+- title: '''… of the selected feeds are no longer available'''
+  text: Chakula kiliondolewa kwenye maktaba ya vyakula tangu ulipokitumia mara ya mwisho. Kiondoe kwenye uteuzi na uchague vyakula tena.
+- title: Hakuna 'Diet Evaluation' kwa ndama wangu
+  text: Ndama hupata mpango wa kunywesha maziwa badala ya lishe ya vyakula (mada 7).

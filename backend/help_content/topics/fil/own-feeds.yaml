@@ -1,0 +1,28 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Sariling pakain at mga halaga ng pakain
+summary: Magdagdag ng pakaing wala sa listahan, o gamitin ang sarili mong resulta ng lab para sa isang pakain.
+screen_label: Pagpili ng Pakain
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Magdagdag ng custom na pakain
+- Gamitin ito sa card
+- Mga field ayon sa kategorya
+- Sariling halaga para sa nakalistang pakain
+- Baguhin ang sariling pakain
+- Para sa iyo lang
+steps:
+- text: Sa Pagpili ng Pakain, i-tap ang 'Custom na Pakain'. Sa 'Magdagdag ng Custom na Pakain', piliin ang Uri ng Pakain at Kategorya ng Pakain, mag-type ng pangalan para sa pakain, at punan ang mga halaga ng sustansya nito sa % ng tuyong materya (dry matter). I-tap ang 'Isumite'.
+- text: Sasabihin ng app ang 'Na-save ang custom na pakain! Lalabas ito sa listahan ng pakain.' Piliin ito sa kahit anong card ng pakain sa ilalim ng uri at kategorya nito, o hanapin ang pangalan nito.
+- text: Nakadepende ang mga field sa kategorya. Ang Minerals ay humihingi lang ng Dry Matter, Ash, Calcium at Phosphorus; humihingi rin ng NPN ang Additive.
+- text: 'Para gamitin ang sarili mong mga halaga para sa pakain mula sa listahan: piliin ito sa card at i-tap ang icon ng lapis. Magbubukas ang form na may mga halaga ng pakain; palitan ang mga ito at i-tap ang ''Isumite''. Nagse-save ito ng sarili mong kopya (nagsisimula ang pangalan nito sa iyong unang pangalan) at ito ang gagamitin ng card. Hindi nagbabago ang pakaing ginagamit ng lahat.'
+- text: I-tap ang lapis sa isa sa sarili mong custom na pakain para baguhin ito; sasabihin ng app ang 'Na-update ang custom na pakain!'.
+- text: 'Pribado ang iyong mga custom na pakain: hindi kailanman nakikita ng ibang user ang mga ito. Kasama mo ang mga ito sa bawat bansang pipiliin mo sa Impormasyon ng Baka.'
+problems:
+- title: '''Kinakailangan ang pangalan at uri ng pakain'''
+  text: Mag-type ng pangalan at piliin ang Uri ng Pakain bago i-tap ang 'Isumite'.
+- title: '''Ang mga halaga ng sustansya ay dapat numero mula 0 hanggang 100 %.'''
+  text: Nasa % ng tuyong materya ang mga sustansya, kaya bawat isa ay dapat mula 0 hanggang 100. Tingnan kung may maling lagay ng decimal point.
+- title: Hindi ko makita ang custom na pakain ko
+  text: Tingnan sa ilalim ng Uri ng Pakain at Kategorya ng Pakain na pinili mo noong i-save mo ito, o hanapin ang pangalan nito.
+- title: Saan ko makukuha ang mga halaga ng sustansya?
+  text: Pinakamainam mula sa pagsusuri sa laboratoryo ng sarili mong pakain. Kung wala ka nito, magsimula sa katulad na pakain sa listahan at palitan lang ang alam mo.

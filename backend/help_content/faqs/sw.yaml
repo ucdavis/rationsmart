@@ -1,0 +1,40 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+forage-required:
+  question: Kwa nini programu inasema 'Forage Required'?
+  answer: Kila lishe inahitaji angalau chakula kimoja cha aina ya Forage (malisho). Gusa 'OK, Add a Forage', chagua malisho kwenye Feed Selection na utengeneze tena.
+no-diet-found:
+  question: Ripoti inasema 'No optimized solution found'. Nifanye nini?
+  answer: 'Vyakula vyako haviwezi kukidhi mahitaji ya mnyama huyu. Soma Notes (maelezo): ongeza chakula kinachotoa kile kinachokosekana (madini, protini au nishati), legeza vikomo vyovyote ulivyoweka, au kagua lengo la maziwa. Tazama ''When no diet is found''.'
+feed-missing:
+  question: Kwa nini siwezi kupata chakula kwenye orodha?
+  answer: Orodha zinaonyesha vyakula vya Country (nchi) iliyochaguliwa kwenye Cattle Info, pamoja na vyakula vyako maalum (custom feeds). Kagua nchi, tafuta kwa sehemu ya jina, au ongeza chakula mwenyewe kwa 'Custom Feed'.
+own-values:
+  question: Je, naweza kutumia chakula changu au thamani zangu za maabara?
+  answer: Ndiyo. 'Custom Feed' huongeza chakula kipya; penseli kwenye kadi ya chakula huhifadhi nakala yako mwenyewe yenye thamani zako. Ni wewe tu unayeweza kuona vyakula vyako maalum.
+margin-meaning:
+  question: Je, tofauti ya bei ya maziwa (milk margin) kwenye ripoti ndiyo faida yangu?
+  answer: 'Hapana. Ni bei ya maziwa ukitoa gharama ya chakula kwa lita: kile maziwa yanachopata juu ya gharama ya chakula peke yake. Gharama za kazi, huduma ya daktari wa mifugo na gharama nyingine hazimo.'
+eval-cost-per-litre:
+  question: Katika tathmini, nitumie gharama ipi kwa lita?
+  answer: Tumia 'Cost/Litre Milk' chini ya Cost Analysis. Inagawanya gharama ya lishe kwa maziwa ambayo mgao unaweza kuwezesha kweli ('Actual Milk'), ambayo yanaweza kuwa chini ya lengo lako.
+calf-milk:
+  question: Ndama wangu apewe maziwa kiasi gani?
+  answer: Chagua 'Calves' kwenye Cattle Info na uandike uzito wa mwili. Mpango unatoa lita kwa siku sawa na sehemu moja ya kumi ya uzito wa mwili, katika milo 2, na kuachisha maziwa kufikia siku 56. Urekebishe pamoja na daktari wako wa mifugo.
+limit-feed:
+  question: Nifanyeje ili lishe isitumie chakula kimoja kupita kiasi?
+  answer: Kwenye kadi ya chakula hicho washa 'Set inclusion limits' na uandike Max kwa kg kwa siku. Kadi ya 'Limits You Set' kwenye ripoti inaonyesha kiasi ambacho lishe ilitumia.
+saved-reports:
+  question: Ripoti zangu zilizohifadhiwa ziko wapi?
+  answer: Fungua menyu na uguse 'Feed Reports'. 'View Report' hufungua PDF. Ripoti ambazo hukuzihifadhi haziorodheshwi hapo.
+pdf-pending:
+  question: Ripoti yangu inaonyesha 'PDF Pending'.
+  answer: PDF hutengenezwa chinichini baada ya kuhifadhi. Fungua 'Feed Reports' tena baada ya dakika moja.
+forgot-pin:
+  question: Nimesahau PIN yangu. Nifanye nini?
+  answer: Kwenye skrini ya Login gusa 'Forgot PIN? Tap here' na uandike anwani yako ya barua pepe. Fungua barua pepe, gusa 'Reset my PIN' na uchague PIN mpya ya tarakimu 6. PIN yako ya zamani inafanya kazi hadi utakapofanya hivyo.
+change-language:
+  question: Ninatumiaje programu kwa lugha yangu?
+  answer: Chagua Language kwenye Cattle Info kwa ripoti hii, au weka lugha yako chaguomsingi kwenye Profile na uguse 'Update Profile'. Lugha zinazotolewa zinategemea nchi.
+contact-team:
+  question: Nawasiliana vipi na timu ya RationSmart?
+  answer: Fungua menyu, gusa 'Help & Support', kisha 'Contact Us'. Inafungua programu yako ya barua pepe.

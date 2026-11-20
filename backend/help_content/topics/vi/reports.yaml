@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Lưu, chia sẻ và tìm báo cáo
+summary: Lưu báo cáo, lấy file PDF, chia sẻ và mở lại sau.
+screen_label: Báo cáo khẩu phần
+chapters:
+- Nội dung video này
+- Lưu báo cáo
+- Lấy, xem, chia sẻ PDF
+- Báo cáo khẩu phần
+- Đang tạo PDF
+- Nhiều báo cáo
+- Dùng lại mô phỏng đã lưu
+- Báo cáo chưa lưu
+steps:
+- text: Trên báo cáo, nhấn 'Lưu báo cáo'. Ứng dụng báo 'Đã lưu báo cáo thành công!'. Lưu lại cùng một báo cáo sẽ không tạo bản thứ hai.
+- text: Nhấn 'Lấy PDF' để tạo file PDF. Khi xong, 'Xem PDF' mở file và 'Chia sẻ báo cáo' gửi file qua các tùy chọn chia sẻ của điện thoại (hoặc sao chép liên kết PDF).
+- text: Mở menu và nhấn 'Báo cáo khẩu phần' để xem các báo cáo đã lưu, mới nhất ở trên cùng. 'Xem báo cáo' mở file PDF; nhấn vào thanh bên dưới một báo cáo để xem Mã báo cáo, Loại báo cáo và Ngày.
+- text: Báo cáo mới có thể hiện 'Đang tạo PDF' trong khoảng một phút khi file PDF đang được tạo. Hãy mở lại 'Báo cáo khẩu phần' một lúc sau.
+- text: Khi có hơn 20 báo cáo đã lưu, hãy dùng nút trang sau và trang trước ở cuối màn hình.
+- text: Để dùng lại một mô phỏng đã lưu, mở Thông tin gia súc và nhấn biểu tượng lịch sử cạnh 'Thông tin mô phỏng'. Ở đó chỉ liệt kê các báo cáo đã lưu.
+- text: Báo cáo bạn chưa lưu sẽ ở trên điện thoại này trong 24 giờ, sau đó sẽ mất. Hãy lưu những báo cáo bạn cần.
+problems:
+- title: '''Chưa có báo cáo đã lưu.'''
+  text: Bạn chưa lưu báo cáo nào. Nhấn 'Tạo báo cáo', lập khẩu phần và nhấn 'Lưu báo cáo'.
+- title: '''Đang tạo PDF'' không mất đi'
+  text: Đóng và mở lại 'Báo cáo khẩu phần'. Nếu sau vài phút vẫn còn, hãy mở báo cáo từ danh sách và nhấn 'Lấy PDF'.
+- title: '''Đã sao chép liên kết PDF vào bộ nhớ tạm.'''
+  text: Điện thoại của bạn không có bảng chia sẻ ở đây, nên ứng dụng đã sao chép liên kết thay thế. Hãy dán liên kết vào tin nhắn hoặc email.
+- title: Báo cáo của tôi không có trong lịch sử ở Thông tin gia súc
+  text: Lịch sử chỉ liệt kê các báo cáo đã lưu. Hãy chạy lại mô phỏng và nhấn 'Lưu báo cáo'.

@@ -1,0 +1,26 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Plano sa pagpapakain ng gatas para sa guya
+summary: Gaano karaming gatas ang ibibigay sa guya bawat araw, ilang beses ipapakain, at kailan aawatin.
+screen_label: Pagpapakain ng Gatas sa Guya
+chapters:
+- Ano ang ipinapakita ng video na ito
+- Piliin ang 'Mga guya'
+- Gatas bawat araw
+- Pagpapakain at pag-awat
+- Isang halimbawa
+- Mga payo sa pag-aalaga
+- I-save at PDF
+steps:
+- text: Sa Impormasyon ng Baka, piliin ang Pisyolohikal na Kalagayan na 'Mga guya'. I-type ang timbang ng katawan ng guya sa kg at i-tap ang 'Magpatuloy'.
+- text: 'Magbubukas ang planong ''Pagpapakain ng Gatas sa Guya''. Ang ''Araw-araw na gatas'' ay ang litro ng gatas bawat araw: ikasampung bahagi ng timbang ng katawan ng guya.'
+- text: Hinahati ng 'Bawat pagpapakain' ang gatas sa isang araw sa 2 pagpapakain bawat araw. Ibinibigay ng 'I-wean sa' ang edad sa araw kung kailan dapat itigil ang pagpapakain ng gatas o awatin (wean) ang guya (56 na araw).
+- text: 'Halimbawa: ang guyang 40 kg ay nakakakuha ng 4.0 litro bawat araw, ibinibigay bilang 2.0 litro nang dalawang beses sa isang araw.'
+- text: 'Basahin ang mga payo sa pag-aalaga sa ilalim ng plano. Gabay lang ang plano: iayon ito kasama ang iyong beterinaryo.'
+- text: I-tap ang 'I-save ang Ulat' para itago ang plano, pagkatapos ang 'Kunin ang PDF' para sa kopya na may buong iskedyul ng pagpapakain ng gatas (paksa 10).
+problems:
+- title: Hindi tinatanggap ang timbang ng katawan
+  text: Para sa mga guya, dapat nasa pagitan ng 30 at 100 kg ang timbang ng katawan. Makikita ang pinapayagang saklaw sa ilalim ng field.
+- title: Hindi ko makita ang Pagpili ng Pakain para sa guya ko
+  text: Plano sa pagpapakain ng gatas lang ang nakukuha ng mga guya; hindi gumagawa ang app ng diyeta ng pakain o pagsusuri para sa kanila.
+- title: Mas matanda na ang guya ko at kumakain na ng solidong pakain
+  text: Piliin ang 'Mga heifer' sa halip na 'Mga guya' para makakuha ng diyeta ng pakain para sa batang lumalaking hayop.

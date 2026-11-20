@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: Afaan Oromoo
+date: '{day} {month} {year}'
+length_min_sec: '{min} daq {sec} sek'
+length_sec: '{sec} sek'
+header_guide: RationSmart · Qajeelfama Fayyadamaa
+footer_edition: Maxxansa {edition}
+footer_page: Fuula {page} / {pages}
+footer_card: RationSmart · Jalqaba Saffisaa · Maxxansa {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: Qajeelfama Fayyadamaa
+guide_tagline: Nyaata loon aannanii baasii xiqqaa qabu, tarkaanfii tarkaanfiidhaan
+fact_language: Afaan
+fact_edition: Maxxansa
+fact_updated: Kan haaromfame
+fact_topics: Mata-dureewwan
+fact_topics_value: '{count} · fakkiiwwaniifi viidiyoowwan waliin'
+cover_scan_1: 'Ilaaluuf iskaanii godhi:'
+cover_scan_2: Viidiyoo jalqaba saffisaa ({length})
+cover_foot: Hojjettoota babal'insa qonnaatiifi leenjistootaaf. Lakkoofsonni mata-dureewwanii fuula 'Gargaarsaafi Deeggarsa' kan aplikeeshiinii keessaa wajjin tokko.
+ai_note: Hiikkaa AI; ammallee dubbataa afaanichaatiin hin mirkanoofne.
+translated_from: Maxxansa Ingiliffaa {edition} irraa kan hiikame.
+howto_title: Qajeelfama kana akkamitti itti fayyadamta
+howto_topics_lead: Mata-dureewwan aplikeeshiinii hordofu.
+howto_topics: Mata-dureen tokko hojii tokko; tartiiba ati aplikeeshiinii itti fayyadamtuun qindaa'aniiru. Lakkoofsonni fuula 'Gargaarsaafi Deeggarsa' kan aplikeeshiinii keessaa wajjin tokko, kanaaf qonnaan bultoota gara mata-duree wal fakkaatu kan bilbila isaanii irraatti qajeelchuu dandeessa.
+howto_scan_lead: Ilaaluuf koodii QR iskaanii godhi.
+howto_scan: Kaameraa bilbilaa banii gara koodichaatti qabi. Viidiyoon gabaabaan mata-duree sanaa YouTube irratti bana. Yoo barreessuu filatte, koodii hunda jala hidhaan (link) jira.
+videos_english: Viidiyoowwan Afaan Ingiliffaatiin.
+howto_time_lead: ▶ 0:21 jechuun “tarkaanfiin kun viidiyoo keessatti daqiiqaa 0 sekondii 21 irratti argama” jechuudha.
+howto_time: Yeroo leenjistu tarkaanfii tokkotti kallattiin darbuuf itti fayyadami.
+howto_problems_lead: “Yoo wanti tokko dogoggore”
+howto_problems: dhuma mata-duree hundaa irratti ergaawwan namoonni baay'inaan argan fi waan gochuu qaban tarreessa.
+tip_lead: 'Gorsa leenjistootaaf:'
+tip: mata-duree {number}, {title}, fi viidiyoo isaatiin jalqabi. Aplikeeshiinii guutuu daqiiqaa lama gadiitti agarsiisa. Fakkiiwwan aplikeeshiinii irraa fudhataman; fuulli bilbila keetii xiqqoo adda ta'uu danda'a.
+contents_title: Qabiyyee
+faqs_title: Gaaffilee yeroo baay'ee gaafataman
+more_title: Gargaarsa dabalataa eessaa argatta
+screen_chip: 'Fuula: {screen}'
+audience_advanced: Sadarkaa ol'aanaa
+audience_farmers: Qonnaan bultootaaf
+audience_nutritionists: Ogeeyyii nyaataatiif
+video_length: ▶ Viidiyoo, {length}
+in_the_video: Viidiyoo keessatti
+scan_to_watch: Ilaaluuf iskaanii godhi
+problems_title: ⚠ Yoo wanti tokko dogoggore
+faq_see: '→ Mata-duree {number}: {title}'
+back_app_title: Aplikeeshiinii keessatti
+back_app: Menyuu banii 'Gargaarsaafi Deeggarsa' tuqi. Fuulli hundi qabduu gargaarsaa kan mata-duree fuula sanaa banu qaba.
+back_contact_title: Gaaffii ykn rakkoo
+back_contact: Menyuu banii 'Nu Qunnamaa' tuqi. Gaaffiin kee waa'ee gabaasa tokkoo yoo ta'e, Maqaa Walfakkii barreessi.
+back_videos_title: Viidiyoowwan
+back_videos: Viidiyoowwan {count} hundi chaanaala YouTube “RationSmart” irra jiru. Fuulli mata-duree hundaa koodii QR mataa isaa qaba.
+back_edition_title: Maxxansa kana
+back_edition: Maxxansa {edition} · {language} · {updated}. Yeroo aplikeeshiinichi jijjiiramu, maxxansi haaraan barreeffama gargaarsaa aplikeeshiinichi agarsiisu sanarraa qophaa'a.
+card_title: Jalqaba Saffisaa
+card_tagline: Seensa irraa hanga nyaata baasii xiqqaatti, tarkaanfii {count}n
+card_problems_title: ⚠ Yoo wanti tokko dogoggore
+card_faqs_title: Gaaffilee namoonni gaafatan
+card_topics_title: 'Dabalataan baradhu: mata-dureewwan gargaarsaa {count}'
+card_more: 'Aplikeeshiinii keessatti: menyuu → ''Gargaarsaafi Deeggarsa''. Mata-dureen hundi viidiyoo gabaabaa qaba. Qajeelfamni Fayyadamaa guutuun kan maxxanfamu iddoo kanuma jira.'
+months:
+- Amajjii
+- Guraandhala
+- Bitootessa
+- Eebila
+- Caamsaa
+- Waxabajjii
+- Adooleessa
+- Hagayya
+- Fulbaana
+- Onkoloolessa
+- Sadaasa
+- Muddee

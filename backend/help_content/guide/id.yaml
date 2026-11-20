@@ -1,0 +1,73 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+language_name: Bahasa Indonesia
+date: '{day} {month} {year}'
+length_min_sec: '{min} mnt {sec} dtk'
+length_sec: '{sec} dtk'
+header_guide: RationSmart · Panduan Pengguna
+footer_edition: Edisi {edition}
+footer_page: Halaman {page} dari {pages}
+footer_card: RationSmart · Mulai Cepat · Edisi {edition}
+footer_card_page: '{page} / {pages}'
+guide_title: Panduan Pengguna
+guide_tagline: Ransum sapi perah dengan biaya termurah, langkah demi langkah
+fact_language: Bahasa
+fact_edition: Edisi
+fact_updated: Diperbarui
+fact_topics: Topik
+fact_topics_value: '{count} · dengan gambar dan video'
+cover_scan_1: Pindai untuk menonton
+cover_scan_2: video mulai cepat ({length})
+cover_foot: Untuk penyuluh dan pelatih. Nomor topik sama dengan layar 'Bantuan & Dukungan' di aplikasi.
+ai_note: Terjemahan AI, belum diperiksa oleh penutur asli.
+translated_from: Diterjemahkan dari edisi bahasa Inggris {edition}.
+howto_title: Cara memakai panduan ini
+howto_topics_lead: Topik mengikuti urutan aplikasi.
+howto_topics: Setiap topik adalah satu tugas, sesuai urutan Anda memakai aplikasi. Nomornya sama dengan layar 'Bantuan & Dukungan' di aplikasi, jadi Anda bisa menunjukkan topik yang sama kepada peternak di ponsel mereka.
+howto_scan_lead: Pindai kode QR untuk menonton.
+howto_scan: Buka kamera ponsel dan arahkan ke kode. Video pendek topik itu terbuka di YouTube. Di bawah setiap kode ada tautannya, jika Anda lebih suka mengetiknya.
+videos_english: Video dalam bahasa Inggris.
+howto_time_lead: ▶ 0:21 artinya “langkah ini ada di video pada menit 0 detik 21”.
+howto_time: Pakai ini untuk langsung ke satu langkah saat Anda melatih.
+howto_problems_lead: “Jika ada masalah”
+howto_problems: di akhir setiap topik berisi pesan yang paling sering muncul dan apa yang harus dilakukan.
+tip_lead: 'Tips untuk pelatih:'
+tip: mulailah dengan topik {number}, {title}, dan videonya. Video itu menunjukkan seluruh aplikasi dalam waktu kurang dari dua menit. Gambar diambil dari aplikasi; layar Anda mungkin sedikit berbeda.
+contents_title: Daftar isi
+faqs_title: Pertanyaan yang sering diajukan
+more_title: Tempat mendapat bantuan lebih lanjut
+screen_chip: 'Layar: {screen}'
+audience_advanced: Lanjutan
+audience_farmers: Untuk peternak
+audience_nutritionists: Untuk ahli nutrisi
+video_length: ▶ Video, {length}
+in_the_video: Di dalam video
+scan_to_watch: Pindai untuk menonton
+problems_title: ⚠ Jika ada masalah
+faq_see: '→ Topik {number}: {title}'
+back_app_title: Di aplikasi
+back_app: Buka menu dan ketuk 'Bantuan & Dukungan'. Setiap layar juga punya tombol bantuan yang membuka topik untuk layar itu.
+back_contact_title: Pertanyaan atau masalah
+back_contact: Buka menu dan ketuk 'Hubungi Kami'. Tulis Nama Simulasi jika pertanyaan Anda tentang satu laporan.
+back_videos_title: Video
+back_videos: Semua {count} video ada di kanal YouTube “RationSmart”. Setiap halaman topik memiliki kode QR-nya.
+back_edition_title: Edisi ini
+back_edition: Edisi {edition} · {language} · {updated}. Jika aplikasi berubah, edisi baru dibuat dari teks bantuan yang sama dengan yang ditampilkan aplikasi.
+card_title: Mulai Cepat
+card_tagline: Dari login sampai ransum termurah, dalam {count} langkah
+card_problems_title: ⚠ Jika ada masalah
+card_faqs_title: Pertanyaan yang sering muncul
+card_topics_title: 'Pelajari lebih lanjut: {count} topik bantuan'
+card_more: 'Di aplikasi: menu → ''Bantuan & Dukungan''. Setiap topik punya video pendek. Panduan Pengguna lengkap yang bisa dicetak ada di tempat yang sama.'
+months:
+- Januari
+- Februari
+- Maret
+- April
+- Mei
+- Juni
+- Juli
+- Agustus
+- September
+- Oktober
+- November
+- Desember

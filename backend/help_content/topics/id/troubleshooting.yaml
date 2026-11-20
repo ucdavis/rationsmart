@@ -1,0 +1,30 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Jika tidak ada ransum yang ditemukan, dan masalah lain
+summary: Apa yang harus dilakukan jika laporan tidak menemukan ransum, muncul sebuah pesan, atau aplikasi tidak merespons.
+screen_label: Laporan Rekomendasi
+chapters:
+- Isi video ini
+- Tidak ada solusi
+- Baca catatan
+- Tambah pakan
+- Longgarkan batas Anda
+- Periksa ternak
+- Pakai Evaluasi Ransum
+- Coba lagi
+steps:
+- text: Jika laporan menyatakan 'Tidak ditemukan solusi yang optimal', tidak ada campuran pakan Anda yang memenuhi kebutuhan ternak ini. Tidak ada tabel ransum; kartu 'Catatan' menjelaskan sebabnya.
+- text: 'Baca ''Violated Parameters'' (parameter yang tidak terpenuhi): setiap baris menyebut apa yang tidak bisa dipenuhi ransum, misalnya ''Phosphorus Requirement: below minimum'' (kebutuhan fosfor: di bawah minimum) atau ''Total Fibre (NDF): above maximum'' (total serat (NDF): di atas maksimum). ''Recommendations'' (rekomendasi) menyarankan apa yang perlu diubah.'
+- text: 'Tambahkan pakan yang menyediakan apa yang kurang: pakan mineral untuk kalsium atau fosfor, bungkil sumber protein untuk protein, biji-bijian untuk energi. Ransum yang hanya berisi satu atau dua pakan sering tidak bisa memenuhi semua kebutuhan.'
+- text: Jika Anda menetapkan batas ('Tentukan batas inklusi' atau 'Batas Ransum yang disesuaikan (custom)'), longgarkan atau hapus batas itu. Kartu 'Batas yang Anda Tetapkan' di laporan menunjukkan batas mana yang Anda tetapkan.
+- text: 'Periksa ternak: target susu yang sangat tinggi untuk pakan yang Anda punya tidak bisa dipenuhi. Turunkan target susu, atau tambahkan pakan yang lebih baik.'
+- text: Untuk melihat nutrien mana yang kurang dalam ransum yang Anda pilih sendiri, pakai 'Evaluasi Ransum' (topik 6).
+- text: Lalu ketuk panah kembali ke Pemilihan Pakan, buat perubahan, dan ketuk 'Hasilkan Rekomendasi' lagi.
+problems:
+- title: '''Hijauan yang diperlukan'''
+  text: Setiap ransum memerlukan paling sedikit satu pakan berjenis Hijauan. Tambahkan satu, lalu hasilkan lagi.
+- title: '''… of the selected feeds are no longer available'' (… pakan yang dipilih sudah tidak tersedia)'
+  text: Sebuah pakan sudah dihapus dari pustaka pakan. Hapus dari pilihan dan pilih pakan lagi.
+- title: Laporan sangat lama atau tidak terbuka
+  text: Periksa koneksi internet Anda dan coba lagi. Jika terus terjadi, tulis kepada kami lewat 'Hubungi Kami' dengan menyebut Nama Simulasi.
+- title: Aplikasi menampilkan kesalahan atau berhenti merespons
+  text: Kembali satu layar dan coba lagi; isian Anda tetap tersimpan. Jika masih gagal, keluar, login lagi, dan beri tahu kami lewat 'Umpan Balik' atau 'Hubungi Kami'.

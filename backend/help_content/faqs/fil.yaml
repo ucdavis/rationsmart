@@ -1,0 +1,40 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+forage-required:
+  question: Bakit sinasabi ng app ang 'Kailangan ng Forage'?
+  answer: Kailangan ng bawat diyeta ng kahit isang pakain na uri na Forage. I-tap ang 'OK, Magdagdag ng Forage', pumili ng forage sa Pagpili ng Pakain at bumuo muli.
+no-diet-found:
+  question: Sinasabi ng ulat na 'Walang nahanap na pinakamainam na solusyon'. Ano ang magagawa ko?
+  answer: 'Hindi matugunan ng iyong mga pakain ang pangangailangan ng hayop na ito. Basahin ang Mga Tala: magdagdag ng pakaing nagbibigay ng kulang (mineral, protina o enerhiya), luwagan ang anumang limitasyong itinakda mo, o suriin ang target na gatas. Tingnan ang ''Kapag walang nahanap na diyeta''.'
+feed-missing:
+  question: Bakit hindi ko makita ang isang pakain sa listahan?
+  answer: Ipinapakita ng mga listahan ang mga pakain ng Bansang pinili sa Impormasyon ng Baka, pati ang sarili mong mga custom na pakain. Suriin ang bansa, maghanap gamit ang bahagi ng pangalan, o ikaw mismo ang magdagdag ng pakain gamit ang 'Custom na Pakain'.
+own-values:
+  question: Maaari ko bang gamitin ang sarili kong pakain o sariling resulta ng lab?
+  answer: Oo. Nagdadagdag ng bagong pakain ang 'Custom na Pakain'; ang lapis sa card ng pakain ay nagse-save ng sarili mong kopya na may iyong mga halaga. Ikaw lang ang nakakakita ng iyong mga custom na pakain.
+margin-meaning:
+  question: Tubo ko ba ang margin ng gatas sa ulat?
+  answer: 'Hindi. Ito ay presyo ng gatas bawas ang gastos sa pakain bawat litro: ang kinikita ng gatas nang higit sa gastos sa pakain lamang. Hindi kasama rito ang bayad sa trabahador, pagpapagamot sa beterinaryo at iba pang gastos.'
+eval-cost-per-litre:
+  question: Sa pagsusuri, aling gastos bawat litro ang dapat kong gamitin?
+  answer: Gamitin ang 'Gastos/Litro ng Gatas' sa ilalim ng Pagsusuri sa Gastos. Hinahati nito ang gastos ng diyeta sa gatas na talagang kayang suportahan ng rasyon ('Aktwal na Gatas'), na maaaring mas mababa kaysa sa iyong target.
+calf-milk:
+  question: Gaano karaming gatas ang dapat makuha ng guya ko?
+  answer: Piliin ang 'Mga guya' sa Impormasyon ng Baka at i-type ang timbang ng katawan. Nagbibigay ang plano ng ikasampung bahagi ng timbang ng katawan sa litro bawat araw, sa 2 pagpapakain, at pag-awat bago mag-56 na araw. Iayon ito kasama ang iyong beterinaryo.
+limit-feed:
+  question: Paano ko pipigilan ang diyeta na gumamit ng sobrang dami ng isang pakain?
+  answer: Sa card ng pakaing iyon, i-on ang 'Itakda ang mga limitasyon ng pagsama' at mag-type ng Max sa kg bawat araw. Ipinapakita ng card na 'Mga Limitasyong Itinakda Mo' sa ulat kung gaano karami ang ginamit ng diyeta.
+saved-reports:
+  question: Nasaan ang mga naka-save kong ulat?
+  answer: Buksan ang menu at i-tap ang 'Mga Ulat ng Pakain'. Binubuksan ng 'Tingnan ang Ulat' ang PDF. Hindi nakalista roon ang mga ulat na hindi mo na-save.
+pdf-pending:
+  question: Nagpapakita ang ulat ko ng 'PDF Pending'.
+  answer: Ginagawa ang PDF sa background pagkatapos mong mag-save. Buksan muli ang 'Mga Ulat ng Pakain' pagkalipas ng isang minuto.
+forgot-pin:
+  question: Nakalimutan ko ang PIN ko. Ano ang gagawin ko?
+  answer: Sa screen ng Pag-login, i-tap ang 'Forgot PIN? Tap here' at i-type ang iyong email address. Buksan ang email, i-tap ang 'Reset my PIN' at pumili ng bagong 6-digit na PIN. Gumagana ang luma mong PIN hangga't hindi mo ito ginagawa.
+change-language:
+  question: Paano ko gagamitin ang app sa wika ko?
+  answer: Piliin ang Wika sa Impormasyon ng Baka para sa ulat na ito, o itakda ang iyong default sa Profile at i-tap ang 'I-update ang Profile'. Nakadepende sa bansa ang mga wikang inaalok.
+contact-team:
+  question: Paano ko makokontak ang RationSmart team?
+  answer: Buksan ang menu, i-tap ang 'Tulong at Suporta', pagkatapos ang 'Makipag-ugnayan sa Amin'. Bubuksan nito ang iyong email app.

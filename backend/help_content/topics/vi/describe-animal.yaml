@@ -1,0 +1,32 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Mô tả con vật của bạn
+summary: 'Điền màn hình Thông tin gia súc: tên mô phỏng, quốc gia, trạng thái con vật, cơ thể, sữa và môi trường.'
+screen_label: Thông tin gia súc
+chapters:
+- Nội dung video này
+- Thông tin mô phỏng
+- Trạng thái sinh lý
+- Đặc điểm vật nuôi
+- Thông tin sinh sản
+- Sản lượng sữa
+- Điều kiện môi trường
+- Tiếp tục đến phần Thức ăn
+- Dùng lại hoặc đặt lại mô phỏng
+steps:
+- text: Trong 'Thông tin mô phỏng', nhập Tên mô phỏng (ví dụ tên con bò và ngày), chọn Quốc gia và Ngôn ngữ của báo cáo. Quốc gia quyết định những thức ăn bạn có thể chọn và đơn vị tiền tệ.
+- text: 'Chọn ''Trạng thái sinh lý'': Bò đang cho sữa, Bò cạn sữa, Bò tơ hoặc Bê. Sau đó biểu mẫu chỉ hiển thị các ô cho trạng thái đó, với các giá trị thường gặp đã được điền sẵn.'
+- text: Trong 'Đặc điểm vật nuôi', chọn giống và nhập Khối lượng cơ thể (kg), Điểm thể trạng (BCS), Số lứa đẻ (số lần đẻ) và Tăng khối lượng cơ thể (kg mỗi ngày).
+- text: Trong 'Thông tin sinh sản', nhập Số ngày mang thai, và với bò đang cho sữa thì nhập thêm Số ngày cho sữa.
+- text: 'Với bò đang cho sữa, trong ''Sản lượng sữa'' nhập lượng sữa mỗi ngày (lít), Chất béo sữa (%) và Protein sữa (%). Giá sữa không bắt buộc: nếu có, báo cáo sẽ so sánh thu nhập từ sữa với chi phí thức ăn.'
+- text: Trong 'Điều kiện môi trường', nhập nhiệt độ trung bình (°C). Nếu con vật phải đi bộ để chăn thả, bật 'Đang chăn thả' và nhập Địa hình cùng quãng đường đi bộ (km).
+- text: Nhấn 'Tiếp tục đến phần Thức ăn'. Nút chuyển sang màu xanh khi mọi ô bắt buộc đã được điền và nằm trong khoảng cho phép. Với bê, nhấn 'Tiếp tục' để xem kế hoạch cho uống sữa.
+- text: Để dùng lại một mô phỏng trước đó, nhấn biểu tượng lịch sử cạnh 'Thông tin mô phỏng' và chọn một mô phỏng đã lưu; nhập Tên mô phỏng mới trước khi tiếp tục. 'Đặt lại' xóa trắng Thông tin gia súc và Chọn thức ăn để bắt đầu lại từ đầu.
+problems:
+- title: Một giá trị hiện 'Khoảng giá trị' màu đỏ
+  text: Con số nằm ngoài khoảng cho phép đối với con vật này. Hãy nhập một giá trị nằm trong khoảng được hiển thị.
+- title: '''Đổi quốc gia?'''
+  text: Mỗi quốc gia có danh sách thức ăn riêng, nên khi đổi quốc gia, các thức ăn bạn đã chọn sẽ bị xóa. Nhấn 'Tiếp tục' để xóa chúng, hoặc 'Hủy' để giữ quốc gia cũ.
+- title: '''Một số giá trị đã được điều chỉnh cho phù hợp phạm vi cho phép'''
+  text: Một mô phỏng đã lưu có giá trị nằm ngoài khoảng cho phép hiện nay, nên ứng dụng đã đưa giá trị đó vào trong khoảng. Hãy kiểm tra các giá trị trước khi tiếp tục.
+- title: '''Khoảng cách đi bộ phải ít nhất 1 km'''
+  text: Khi bật 'Đang chăn thả', hãy nhập quãng đường đi bộ, từ 1 km trở lên. Nếu con vật không chăn thả, hãy tắt mục này.

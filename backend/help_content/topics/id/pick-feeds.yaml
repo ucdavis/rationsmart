@@ -1,0 +1,36 @@
+# Written by scripts_2/help_translations.py from a translation workbook; edit through the workbook.
+title: Pilih pakan dan harga
+summary: Pilih pakan yang Anda punya, ketik harga masing-masing, lalu jalankan ransum.
+screen_label: Pemilihan Pakan
+chapters:
+- Isi video ini
+- Pilih mode
+- Isi kartu pakan
+- Cari pakan
+- Ketik harga
+- Jumlah untuk evaluasi
+- Tambah pakan lain
+- Jalankan ransum
+- Pakan sendiri dan batas
+steps:
+- text: Di bagian atas, pilih 'Rekomendasi Ransum' (aplikasi mencari ransum termurah) atau 'Evaluasi Ransum' (Anda mengetik jumlah yang Anda berikan sekarang, dan aplikasi memeriksanya).
+- text: Di 'FEED 1', pilih Jenis Pakan (Hijauan, Konsentrat, atau Ransum lengkap), lalu Kategori Pakan, lalu Pakan. Setiap daftar baru terbuka setelah Anda memilih daftar sebelumnya.
+- text: 'Atau cari: ketuk sebuah kartu sampai tertulis ''Dipilih'', lalu ketik sebagian nama pakan (misalnya ''kedelai'') di kotak pencarian. Ketuk satu hasil untuk mengisi kartu itu.'
+- text: Ketik harga per kg dalam mata uang negara Anda. Labelnya menunjukkan mata uang, misalnya 'Harga ETB/KG'.
+- text: Di 'Evaluasi Ransum', ketik juga berapa kg per hari yang Anda berikan sekarang. Kartu menampilkan biayanya (harga × kg).
+- text: Ketuk 'Tambah Pakan Lagi' untuk setiap pakan tambahan; hapus kartu dengan ikon tempat sampahnya. Masukkan paling sedikit satu hijauan.
+- text: Ketuk 'Hasilkan Rekomendasi' (atau 'Dapatkan Evaluasi' di Evaluasi Ransum). Laporan terbuka setelah beberapa detik.
+- text: 'Pilihan tambahan: ''Pakan yang disesuaikan (custom)'' menambah pakan milik Anda sendiri (topik 8). ''Batas Ransum yang disesuaikan (custom)'' dan ''Tentukan batas inklusi'' pada kartu mengatur ransum (topik 9).'
+problems:
+- title: '''Hijauan yang diperlukan'''
+  text: Setiap ransum memerlukan paling sedikit satu pakan berjenis Hijauan. Ketuk 'OK, Tambahkan Hijauan', tambahkan satu, lalu hasilkan lagi.
+- title: '''Pakan Tidak Lengkap'''
+  text: Ada kartu yang sudah punya jenis tetapi belum ada pakannya. Ketuk 'Tidak, Tinjau' untuk melengkapinya, atau 'Ya, Lanjutkan' untuk menjalankan tanpa kartu itu.
+- title: '''Pakan ini sudah dipilih'''
+  text: Setiap pakan hanya boleh ada di satu kartu. Ubah harga di kartu yang sudah berisi pakan itu.
+- title: '''Harga tidak boleh negatif.'''
+  text: Ketik harga 0 atau lebih.
+- title: '''Masukkan jumlah lebih dari 0 untuk setiap pakan, atau hapus pakan tersebut.'''
+  text: Di Evaluasi Ransum, setiap pakan perlu diisi berapa kg per hari yang Anda berikan sekarang. Ketik jumlahnya, atau hapus pakan itu.
+- title: Pakan yang saya cari tidak ada
+  text: Daftar menampilkan pakan dari negara yang dipilih di Info Sapi, ditambah pakan buatan Anda sendiri. Periksa negaranya, atau tambahkan pakan itu dengan 'Pakan yang disesuaikan (custom)'.
