@@ -206,6 +206,62 @@ describe("InstallPrompt", () => {
     expect(window.localStorage.getItem(STORAGE_KEY)).toBe("keep-me");
   });
 
+  describe("dismissal is remembered (Production: banner came back on every screen)", () => {
+    const DISMISSED_KEY = "rationsmart-install-dismissed";
+    const DAY = 24 * 60 * 60 * 1000;
+
+    const showBanner = async () => {
+      const view = render(<InstallPrompt />);
+      dispatchBeforeInstallPrompt();
+      await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+        timeout: 3000,
+      });
+      return view;
+    };
+
+    // A fresh mount with the timer run out = the next screen (or a reload).
+    const bannerAfterNextScreen = async () => {
+      vi.useFakeTimers();
+      render(<InstallPrompt />);
+      dispatchBeforeInstallPrompt();
+      await act(async () => {
+        vi.advanceTimersByTime(2000);
+      });
+      return screen.queryByText("Install RationSmart");
+    };
+
+    it("× keeps the banner away on the next screen", async () => {
+      const view = await showBanner();
+      fireEvent.click(screen.getByRole("button", { name: "Dismiss" }));
+      expect(Number(window.localStorage.getItem(DISMISSED_KEY))).toBeGreaterThan(0);
+      view.unmount();
+      expect(await bannerAfterNextScreen()).toBeNull();
+    });
+
+    it("'Got it' on the steps sheet also keeps it away", async () => {
+      vi.spyOn(navigator, "userAgent", "get").mockReturnValue("iPhone");
+      const view = render(<InstallPrompt />);
+      await waitFor(() => expect(screen.getByText("Install RationSmart")).toBeInTheDocument(), {
+        timeout: 3000,
+      });
+      fireEvent.click(screen.getByRole("button", { name: "Install" }));
+      fireEvent.click(screen.getByRole("button", { name: "Got it" }));
+      expect(window.localStorage.getItem(DISMISSED_KEY)).not.toBeNull();
+      view.unmount();
+      expect(await bannerAfterNextScreen()).toBeNull();
+    });
+
+    it("comes back once the 7 days are over", async () => {
+      window.localStorage.setItem(DISMISSED_KEY, String(Date.now() - 8 * DAY));
+      expect(await bannerAfterNextScreen()).not.toBeNull();
+    });
+
+    it("still hidden on day 6", async () => {
+      window.localStorage.setItem(DISMISSED_KEY, String(Date.now() - 6 * DAY));
+      expect(await bannerAfterNextScreen()).toBeNull();
+    });
+  });
+
   it("does not render the banner in a browser tab once this browser has installed the app", async () => {
     window.localStorage.setItem("rationsmart-installed", "1");
     vi.useFakeTimers();
