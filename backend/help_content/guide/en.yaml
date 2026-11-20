@@ -1,0 +1,77 @@
+# Texts of the printable Help guide (GET /v1/help/guide): the User Guide and the Quick Start card.
+# English is the master. guide/<lang>.yaml translates them with the same keys; a missing key
+# shows English. Keep every {placeholder} exactly as it is. Plain text only (no '<' or '>').
+# App labels in single quotes must match the app's screen in that language.
+
+language_name: "English"
+date: "{day} {month} {year}"
+months: [January, February, March, April, May, June, July, August, September, October, November, December]
+length_min_sec: "{min} min {sec} s"
+length_sec: "{sec} s"
+
+# page header and footer
+header_guide: "RationSmart · User Guide"
+footer_edition: "Edition {edition}"
+footer_page: "Page {page} of {pages}"
+footer_card: "RationSmart · Quick Start · Edition {edition}"
+footer_card_page: "{page} / {pages}"
+
+# cover
+guide_title: "User Guide"
+guide_tagline: "Least-cost diets for dairy cattle, step by step"
+fact_language: "Language"
+fact_edition: "Edition"
+fact_updated: "Updated"
+fact_topics: "Topics"
+fact_topics_value: "{count} · with pictures and videos"
+cover_scan_1: "Scan to watch the"
+cover_scan_2: "Quick start video ({length})"
+cover_foot: "For extension workers and trainers. The topic numbers match the 'Help & Support' screen in the app."
+ai_note: "AI translation, not yet checked by a native speaker."
+translated_from: "Translated from the English edition {edition}."
+
+# how to use this guide
+howto_title: "How to use this guide"
+howto_topics_lead: "Topics follow the app."
+howto_topics: "Each topic is one task, in the order you use the app. The numbers are the same as in the app's 'Help & Support' screen, so you can point farmers to the same topic on their phone."
+howto_scan_lead: "Scan a QR code to watch."
+howto_scan: "Open the phone camera and point it at the code. The topic's short video opens on YouTube. Below each code is the link, if you prefer to type it."
+videos_english: "The videos are in English."
+howto_time_lead: "▶ 0:21 means “this step is in the video at 0 min 21 s”."
+howto_time: "Use it to jump to one step while you train."
+howto_problems_lead: "“If something goes wrong”"
+howto_problems: "at the end of each topic lists the messages people see most and what to do."
+tip_lead: "Tip for trainers:"
+tip: "start with topic {number}, {title}, and its video. It shows the whole app in under two minutes. The pictures come from the app; your screen may look slightly different."
+
+# contents and topic pages
+contents_title: "Contents"
+faqs_title: "Frequently asked questions"
+more_title: "Where to get more help"
+screen_chip: "Screen: {screen}"
+audience_advanced: "Advanced"
+audience_farmers: "For farmers"
+audience_nutritionists: "For nutritionists"
+video_length: "▶ Video, {length}"
+in_the_video: "In the video"
+scan_to_watch: "Scan to watch"
+problems_title: "⚠ If something goes wrong"
+faq_see: "→ Topic {number}: {title}"
+
+# back page
+back_app_title: "In the app"
+back_app: "Open the menu and tap 'Help & Support'. Every screen also has a help button that opens the topic for that screen."
+back_contact_title: "Questions or problems"
+back_contact: "Open the menu and tap 'Contact Us'. Write the Simulation Name if your question is about one report."
+back_videos_title: "Videos"
+back_videos: "All {count} videos are on the YouTube channel “RationSmart”. Each topic page has its QR code."
+back_edition_title: "This edition"
+back_edition: "Edition {edition} · {language} · {updated}. When the app changes, a new edition is made from the same help text the app shows."
+
+# Quick Start card
+card_title: "Quick Start"
+card_tagline: "From login to the cheapest diet, in {count} steps"
+card_problems_title: "⚠ If something goes wrong"
+card_faqs_title: "Questions people ask"
+card_topics_title: "Learn more: {count} help topics"
+card_more: "In the app: menu → 'Help & Support'. Every topic has a short video. The full printable User Guide is in the same place."

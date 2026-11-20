@@ -52,6 +52,8 @@ MAX_MEDIA_BYTES = 300 * 1024
 MEDIA_TYPES = {".webp": "image/webp", ".png": "image/png"}
 AUDIENCES = ("all", "farmers", "advanced", "nutritionists")
 MEDIA_URL_PREFIX = "/v1/help/media"
+TRANSLATION_STATUSES = ("ai_draft", "reviewed")
+PLACEHOLDER_RE = re.compile(r"\{([a-z_]+)\}")
 
 
 class HelpContentError(Exception):
@@ -211,15 +213,34 @@ def _english_topic(data: Any, where: str, problems: _Problems) -> Optional[Dict[
 def _translated_topic(data: Any, english: Dict[str, Any], where: str,
                       problems: _Problems) -> Dict[str, Any]:
     """Text only, same shape as English; a missing field means 'use English'."""
-    out: Dict[str, Any] = {"steps": [], "problems": []}
-    if not _only_keys(data, {"title", "summary", "video", "steps", "problems"}, where, problems):
+    out: Dict[str, Any] = {"steps": [], "problems": [], "chapters": []}
+    allowed = {"title", "summary", "screen_label", "video", "chapters", "steps", "problems"}
+    if not _only_keys(data, allowed, where, problems):
         return out
     out["title"] = _text(data.get("title"), f"{where}.title", problems, required=False)
     out["summary"] = _text(data.get("summary"), f"{where}.summary", problems, required=False)
+    out["screen_label"] = _text(data.get("screen_label"), f"{where}.screen_label", problems,
+                                required=False)
     # A translated video replaces the English one completely (its own id, length, chapters).
     out["video"] = _video(data.get("video"), f"{where}.video", problems)
     if out["video"] and out["video"].get("poster"):
         problems.add(f"{where}.video.poster", "set posters in the English file only")
+    # Or: the English video with translated chapter names (one per English chapter; null = English).
+    if data.get("chapters") is not None:
+        if out["video"]:
+            problems.add(f"{where}.chapters", "not together with an own video (use video.chapters)")
+        elif not english["video"]:
+            problems.add(f"{where}.chapters", "set, but the English topic has no video")
+        else:
+            labels = _list(data.get("chapters"), f"{where}.chapters", problems)
+            count = len(english["video"]["chapters"])
+            if len(labels) > count:
+                problems.add(f"{where}.chapters", f"has {len(labels)}; the English video has {count}")
+            out["chapters"] = [
+                None if label is None
+                else _text(label, f"{where}.chapters[{i}]", problems, required=False)
+                for i, label in enumerate(labels[:count])
+            ]
     steps = _list(data.get("steps"), f"{where}.steps", problems)
     if len(steps) > len(english["steps"]):
         problems.add(f"{where}.steps", f"has {len(steps)} steps; English has {len(english['steps'])}")
@@ -259,6 +280,57 @@ def _faqs(data: Any, where: str, problems: _Problems, required: bool) -> Dict[st
     return out
 
 
+def _guide(data: Any, where: str, problems: _Problems,
+           english: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """Printable-guide texts (guide/<lang>.yaml). English is the master: a translation may only
+    use its keys, must keep its {placeholders}, and may leave keys out (English is used)."""
+    out: Dict[str, Any] = {}
+    if not isinstance(data, dict):
+        problems.add(where, "must map guide text keys to text")
+        return out
+    for key, value in data.items():
+        kw = f"{where}.{key}"
+        if english is not None and key not in english:
+            problems.add(kw, "not a key in guide/en.yaml")
+            continue
+        if key == "months":
+            names = _list(value, kw, problems)
+            if len(names) != 12:
+                problems.add(kw, "needs the 12 month names, January first")
+                continue
+            texts = [_text(n, f"{kw}[{i}]", problems) for i, n in enumerate(names)]
+            if all(texts):
+                out[key] = texts
+            continue
+        text = _text(value, kw, problems, required=english is None)
+        if text is None:
+            continue
+        if english is not None:
+            want, got = set(PLACEHOLDER_RE.findall(english[key])), set(PLACEHOLDER_RE.findall(text))
+            if want != got:
+                problems.add(kw, "must keep the {placeholders} of English: "
+                             + (", ".join("{" + p + "}" for p in sorted(want)) or "none"))
+                continue
+        out[key] = text
+    return out
+
+
+def _translation_info(data: Any, where: str, problems: _Problems) -> Optional[Dict[str, Any]]:
+    """translations/<lang>.yaml: how far a language can be trusted, and from which English."""
+    if not _only_keys(data, {"status", "from", "hashes"}, where, problems):
+        return None
+    status = data.get("status")
+    if status not in TRANSLATION_STATUSES:
+        problems.add(f"{where}.status", f"must be one of {', '.join(TRANSLATION_STATUSES)}")
+    source = _text(data.get("from"), f"{where}.from", problems)
+    hashes = data.get("hashes") or {}
+    if not isinstance(hashes, dict) or not all(
+            isinstance(k, str) and isinstance(v, str) for k, v in hashes.items()):
+        problems.add(f"{where}.hashes", "must map text IDs to hashes")
+        hashes = {}
+    return {"status": status, "from": source, "hashes": hashes}
+
+
 # ── the content object ────────────────────────────────────────────────────────
 
 
@@ -289,12 +361,16 @@ class HelpContent:
 
     def __init__(self, manifest: Dict[str, Any], topics: Dict[str, Dict[str, Any]],
                  faqs: Dict[str, Dict[str, Dict[str, str]]],
-                 media: Dict[str, Dict[str, Tuple[Path, str]]]) -> None:
+                 media: Dict[str, Dict[str, Tuple[Path, str]]],
+                 guide: Optional[Dict[str, Dict[str, Any]]] = None,
+                 translations: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
         self._manifest = manifest
         self._topics = topics  # lang -> key -> topic (English full, others text only)
         self._faqs = faqs  # lang -> faq key -> {question, answer}
         self._media = media  # lang -> file name -> (path, short hash)
-        self.languages = sorted(set(topics) | set(faqs) | {ENGLISH})
+        self._guide = guide or {}  # lang -> printable-guide text key -> text
+        self._translations = translations or {}  # lang -> {status, from, hashes}
+        self.languages = sorted(set(topics) | set(faqs) | set(self._guide) | {ENGLISH})
 
     @property
     def content_version(self) -> str:
@@ -304,6 +380,20 @@ class HelpContent:
     def faq_keys(self) -> List[str]:
         """FAQ keys in manifest order, the same order index() lists the FAQs in."""
         return [entry["key"] for entry in self._manifest["faqs"]]
+
+    def guide_texts(self, lang: Optional[str]) -> Tuple[str, Dict[str, Any]]:
+        """(served language, printable-guide texts): the translation, English for any key it lacks."""
+        served = self._served(lang)
+        texts = dict(self._guide.get(ENGLISH, {}))
+        if served != ENGLISH:
+            texts.update(self._guide.get(served, {}))
+        return served, texts
+
+    def translation_info(self, lang: Optional[str]) -> Optional[Dict[str, Any]]:
+        """{status, from} of the served language's translation; None for English."""
+        served = self._served(lang)
+        info = self._translations.get(served) if served != ENGLISH else None
+        return {"status": info["status"], "from": info["from"]} if info else None
 
     def _served(self, lang: Optional[str]) -> str:
         return match_language_code(lang, self.languages, fallback=True) or ENGLISH
@@ -329,10 +419,14 @@ class HelpContent:
         if not video:
             return None
         poster_name = english.get("poster") if english else None
+        names = [] if own else self._topics.get(lang, {}).get(key, {}).get("chapters", [])
         chapters = []
-        for ch in video["chapters"]:
+        for i, ch in enumerate(video["chapters"]):
             # English chapter names shown to a non-English user count as fallback text.
-            label = ch["label"] if own or pick is None else pick(None, ch["label"])
+            if own or pick is None:
+                label = ch["label"]
+            else:
+                label = pick(names[i] if i < len(names) else None, ch["label"])
             chapters.append({"start": ch["start"], "label": label})
         return {
             "youtube_id": video["youtube_id"],
@@ -404,6 +498,7 @@ class HelpContent:
                           "text": pick(t.get("text"), pr["text"])})
         title = pick(tr.get("title"), en["title"])
         summary = pick(tr.get("summary"), en["summary"])
+        screen_label = pick(tr.get("screen_label"), entry["screen_label"])
         video = self._video_for(served, key, pick)  # may mark English chapter names
         return {
             "key": key,
@@ -412,7 +507,7 @@ class HelpContent:
             "fallback": pick.fallback,  # every text above has been picked by now
             "title": title,
             "summary": summary,
-            "screen_label": entry["screen_label"],
+            "screen_label": screen_label,
             "video": video,
             "steps": steps,
             "problems": probs,
@@ -641,6 +736,38 @@ def _load(root: Path) -> HelpContent:
         for k in sorted(set(items) - faq_keys):
             problems.add(f"faqs/{lang}.yaml", f"'{k}' is not an FAQ in manifest.yaml")
 
+    guide: Dict[str, Dict[str, Any]] = {}
+    guide_dir = root / "guide"
+    en_guide = guide_dir / f"{ENGLISH}.yaml"
+    if not en_guide.is_file():
+        problems.add(f"guide/{ENGLISH}.yaml", "missing")
+    else:
+        guide[ENGLISH] = _guide(_read_yaml(en_guide, problems), f"guide/{ENGLISH}", problems)
+        for path in sorted(guide_dir.iterdir()):
+            if path.name.startswith(".") or path == en_guide:
+                continue
+            lang = path.stem
+            if path.suffix != ".yaml" or not LANG_DIR_RE.fullmatch(lang):
+                problems.add(f"guide/{path.name}", "must be <language code>.yaml")
+                continue
+            guide[lang] = _guide(_read_yaml(path, problems), f"guide/{lang}", problems, guide[ENGLISH])
+
+    translations: Dict[str, Dict[str, Any]] = {}
+    tr_dir = root / "translations"
+    if tr_dir.is_dir():
+        for path in sorted(tr_dir.iterdir()):
+            if path.name.startswith("."):
+                continue
+            lang = path.stem
+            if path.suffix != ".yaml" or not LANG_DIR_RE.fullmatch(lang) or lang == ENGLISH:
+                problems.add(f"translations/{path.name}", "must be <language code>.yaml (not en)")
+                continue
+            info = _translation_info(_read_yaml(path, problems), f"translations/{lang}", problems)
+            if info:
+                translations[lang] = info
+    for lang in sorted((set(topics) | set(faqs) | set(guide)) - {ENGLISH} - set(translations)):
+        problems.add(f"translations/{lang}.yaml", "missing (status and source edition of the translation)")
+
     english_names = set()
     for topic in topics[ENGLISH].values():
         english_names.update(st["image"] for st in topic["steps"] if st["image"])
@@ -650,7 +777,7 @@ def _load(root: Path) -> HelpContent:
 
     if problems.items:
         raise HelpContentError("\n".join(problems.items))
-    return HelpContent(manifest, topics, faqs, media)
+    return HelpContent(manifest, topics, faqs, media, guide, translations)
 
 
 _lock = threading.Lock()

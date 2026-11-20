@@ -2,18 +2,18 @@
 <html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
-<title>RationSmart Quick Start</title>
+<title>RationSmart {{ tr('card_title') }}</title>
 <style>{{ css|safe }}</style>
 </head>
-<body>
+<body{% if compact %} class="compact"{% endif %}>
 <section class="card">
   <div class="card-head">
     <div>
       <div class="brand">RationSmart</div>
-      <h1>Quick Start</h1>
-      <div class="tag">From login to the cheapest diet, in {{ quick.steps|length }} steps</div>
+      <h1>{{ tr('card_title') }}</h1>
+      <div class="tag">{{ tr('card_tagline', count=quick.steps|length) }}</div>
     </div>
-    {% if quick.video %}<div class="scan"><img src="{{ quick.video.qr }}" alt="">Scan to watch<br>({{ quick.video.length }})</div>{% endif %}
+    {% if quick.video %}<div class="scan"><img src="{{ quick.video.qr }}" alt="">{{ tr('scan_to_watch') }}<br>({{ quick.video.length }})</div>{% endif %}
   </div>
 
   <div class="grid">
@@ -32,21 +32,24 @@
 </section>
 
 <section class="card card2">
-  <h2>⚠ If something goes wrong</h2>
+  <h2>{{ tr('card_problems_title') }}</h2>
   <div class="problems" style="margin-top:0">
     {% for p in quick.problems %}<div class="p"><b>{{ p.title }}</b><br>{{ p.text }}</div>{% endfor %}
   </div>
 
-  <h2>Questions people ask</h2>
+  <h2>{{ tr('card_faqs_title') }}</h2>
   {% for f in quick_faqs %}
   <div class="faq"><div class="qq">{{ f.question }}</div><div>{{ f.answer }}</div></div>
   {% endfor %}
 
-  <h2>Learn more: {{ topics|length }} help topics</h2>
+  <h2>{{ tr('card_topics_title', count=topics|length) }}</h2>
   <ul class="list13">
     {% for t in topics %}<li><span class="n">{{ t.number }}</span>{{ t.title }}</li>{% endfor %}
   </ul>
-  <div class="more">In the app: menu → 'Help &amp; Support'. Every topic has a short video. The full printable User Guide is in the same place.</div>
+  <div class="more">{{ tr('card_more') }}</div>
+  {% if translation %}
+  <div class="card-note">{% if translation.status == 'ai_draft' %}{{ tr('ai_note') }} {% if tr('ai_note') != en('ai_note') %}{{ en('ai_note') }} {% endif %}{% endif %}{{ tr('translated_from', edition=translation.from) }}</div>
+  {% endif %}
 </section>
 </body>
 </html>
