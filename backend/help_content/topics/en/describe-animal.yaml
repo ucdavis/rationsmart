@@ -2,9 +2,9 @@ title: "Describe your animal"
 summary: "Fill in Cattle Info: the case name, country, animal state, body, milk and environment."
 updated: "2026-11-19"
 video:
-  youtube_id: "1l-Qz6XU2AA"
+  youtube_id: "ZeUVAyFqK1E"
   seconds: 110
-  poster: describe-animal-video.webp
+  poster: describe-animal-video-9x16.webp
   chapters:
     - {start: 0, label: "What this video shows"}
     - {start: 10, label: "Simulation details"}

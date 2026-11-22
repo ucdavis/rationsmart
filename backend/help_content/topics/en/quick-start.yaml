@@ -2,9 +2,9 @@ title: "Quick start: from login to report"
 summary: "The whole app in a few minutes: log in, describe your animal, pick your feeds and get the cheapest diet."
 updated: "2026-11-19"
 video:
-  youtube_id: "epJicMW6-10"
+  youtube_id: "bTwq7-mNbAQ"
   seconds: 86
-  poster: quick-start-video.webp
+  poster: quick-start-video-9x16.webp
   chapters:
     - {start: 0, label: "What RationSmart does"}
     - {start: 10, label: "Log in"}

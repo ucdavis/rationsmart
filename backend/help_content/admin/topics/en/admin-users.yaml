@@ -2,9 +2,9 @@ title: "Manage users"
 summary: "Find a user, turn their account off or on, and give or take admin rights."
 updated: "2026-11-22"
 video:
-  youtube_id: "XdvujT2nT24"
+  youtube_id: "Ci14DHqLEiY"
   seconds: 69
-  poster: admin-users-video.webp
+  poster: admin-users-video-9x16.webp
   chapters:
     - {start: 0, label: "What this video shows"}
     - {start: 10, label: "Find a user"}
