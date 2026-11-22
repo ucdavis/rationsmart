@@ -54,6 +54,9 @@ export const helpScreenHref = (screen: HelpScreenKey, lang?: string) =>
 /** Admin Manual list (N19); `notice` as for helpHomeHref. Never under /help. */
 export const adminManualHref = (notice?: string) => withParams("/admin/manual", { notice });
 
+/** The printable Admin Guide (N20). Admins only; English, so no lang. */
+export const adminGuideHref = () => "/api/proxy/v1/admin/help/guide";
+
 /** An Admin Manual topic by its key. */
 export const adminManualTopicHref = (key: string) => withParams("/admin/manual/topic", { key });
 

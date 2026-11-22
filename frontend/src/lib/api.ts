@@ -157,6 +157,7 @@ export {
 export type { FeedLibraryWipeResult } from "./api-client/admin";
 export { default } from "./api-client/client";
 export {
+  checkAdminGuide,
   checkHelpGuide,
   clearHelpIndexCache,
   getAdminHelpIndex,

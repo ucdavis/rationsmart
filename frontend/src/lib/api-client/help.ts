@@ -209,6 +209,11 @@ export const checkHelpGuide = async (edition: "full" | "quick", lang: string): P
   await api.get("/v1/help/guide", { params: { edition, lang }, responseType: "blob" });
 };
 
+/** The Admin Guide (N20): admins only, English only. Fetched first for the same reason as checkHelpGuide. */
+export const checkAdminGuide = async (): Promise<void> => {
+  await api.get("/v1/admin/help/guide", { responseType: "blob" });
+};
+
 const MEDIA_PREFIXES = ["/v1/help/media/", "/v1/admin/help/media/"];
 
 /** Same-origin URL for a help or Admin Manual image path from the JSON; null for anything else. */

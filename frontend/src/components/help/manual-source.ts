@@ -5,6 +5,7 @@
 // comes from and where its links go, so an admin never lands under /help.
 import { useMemo } from "react";
 import {
+  checkAdminGuide,
   getAdminHelpIndex,
   getAdminHelpTopic,
   getHelpIndex,
@@ -12,7 +13,13 @@ import {
   type HelpIndex,
   type HelpTopic,
 } from "@/lib/api";
-import { adminManualHref, adminManualTopicHref, helpHomeHref, helpTopicHref } from "@/lib/help";
+import {
+  adminGuideHref,
+  adminManualHref,
+  adminManualTopicHref,
+  helpHomeHref,
+  helpTopicHref,
+} from "@/lib/help";
 import { useUiLang } from "@/lib/i18n-ui";
 import { useHelpLang } from "./useHelpIndex";
 
@@ -28,6 +35,8 @@ export interface ManualSource {
   /** The list; `notice` = an English message to show there (via t()). */
   homeHref: (notice?: string) => string;
   topicHref: (key: string) => string;
+  /** A printable guide button on the list (N20, Admin Manual only); the User Manual's are on Help & Support. */
+  guide?: { label: string; check: () => Promise<void>; href: string };
 }
 
 /** The public User Manual, in the profile language. */
@@ -59,6 +68,11 @@ export function useAdminManualSource(): ManualSource {
       getTopic: getAdminHelpTopic,
       homeHref: adminManualHref,
       topicHref: adminManualTopicHref,
+      guide: {
+        label: "Printable Admin Guide (PDF)",
+        check: checkAdminGuide,
+        href: adminGuideHref(),
+      },
     }),
     [lang]
   );

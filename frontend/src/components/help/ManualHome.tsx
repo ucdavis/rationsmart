@@ -18,6 +18,7 @@ import {
   helpCard,
 } from "@/components/help/HelpParts";
 import { useManualIndex } from "@/components/help/useHelpIndex";
+import { useOpenGuide } from "@/components/help/useOpenGuide";
 import type { ManualSource } from "@/components/help/manual-source";
 import { COLORS } from "@/lib/colors";
 import { useT } from "@/lib/i18n-ui";
@@ -26,6 +27,8 @@ export default function ManualHome({ source }: { source: ManualSource }) {
   const router = useRouter();
   const t = useT(source.lang);
   const { index, error, retry } = useManualIndex(source.getIndex);
+  const { opening, error: guideError, openGuide } = useOpenGuide<"guide">();
+  const { guide } = source;
   const [query, setQuery] = useState("");
   // A topic that failed to load sends the user here with its message.
   const notice = useSearchParams().get("notice");
@@ -52,6 +55,7 @@ export default function ManualHome({ source }: { source: ManualSource }) {
           </>
         )}
         {!error && shownNotice && <HelpNote text={t(shownNotice)} tone="error" />}
+        {guideError && <HelpNote text={t(guideError)} tone="error" />}
 
         {!index && !error && (
           <div className="flex justify-center py-10" style={{ color: COLORS.darkAquamarineGreen }}>
@@ -128,6 +132,35 @@ export default function ManualHome({ source }: { source: ManualSource }) {
                   </div>
                 ))}
               </div>
+            )}
+
+            {/* N20: the printable guide (Admin Manual only), opened like N16's. */}
+            {guide && (
+              <button
+                type="button"
+                onClick={() => void openGuide("guide", guide.check, guide.href)}
+                disabled={opening !== null}
+                className="w-full flex items-center justify-between text-left mt-4"
+                style={{
+                  ...helpCard,
+                  border: "none",
+                  cursor: "pointer",
+                  padding: "12px 16px",
+                  color: COLORS.raisinBlack,
+                  fontSize: 15,
+                }}
+              >
+                <span className="font-bold">{t(guide.label)}</span>
+                {opening ? (
+                  <span style={{ color: COLORS.darkAquamarineGreen }}>
+                    <Spinner size={18} />
+                  </span>
+                ) : (
+                  <span aria-hidden style={{ color: COLORS.darkSilver }}>
+                    ↗
+                  </span>
+                )}
+              </button>
             )}
           </>
         )}
