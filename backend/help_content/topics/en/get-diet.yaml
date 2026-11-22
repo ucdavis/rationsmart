@@ -2,9 +2,9 @@ title: "Get a least-cost diet and read the report"
 summary: "Run a recommendation and understand each part of the report."
 updated: "2026-11-19"
 video:
-  youtube_id: "sVCptIc9fu8"
+  youtube_id: "yMWTJXeIAyE"
   seconds: 104
-  poster: get-diet-video.webp
+  poster: get-diet-video-9x16.webp
   chapters:
     - {start: 0, label: "What this video shows"}
     - {start: 10, label: "Generate the diet"}

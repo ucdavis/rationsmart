@@ -42,7 +42,10 @@ p { margin: 0 0 2mm; }
 .cover-band .tag { font-size: 13pt; color: #D1FAE5; }
 .cover-stripe { height: 4mm; background: var(--green); }
 .cover-body { padding: 14mm 20mm 0; }
-.cover-poster { width: 170mm; border-radius: 3mm; border: 0.6pt solid var(--line); }
+/* posters may be wide (16:9) or tall (9:16 Shorts): a wide one fills the width as before, a tall one is held to
+   the same height and centred */
+.cover-poster { display: block; width: auto; height: auto; max-width: 170mm; max-height: 96mm; margin: 0 auto;
+  border-radius: 3mm; border: 0.6pt solid var(--line); }
 .cover-meta { margin-top: 10mm; display: table; width: 170mm; }
 .cover-meta > div { display: table-cell; vertical-align: middle; }
 .cover-meta .facts { font-size: 10pt; color: var(--dark); }
@@ -90,7 +93,8 @@ p { margin: 0 0 2mm; }
   margin: 1mm 0 5mm; page-break-inside: avoid; }
 .video > div { display: table-cell; vertical-align: top; padding: 3.5mm; }
 .video .poster { width: 52mm; }
-.video .poster img { width: 52mm; border-radius: 1.5mm; display: block; }
+.video .poster img { width: auto; height: auto; max-width: 52mm; max-height: 40mm; margin: 0 auto;
+  border-radius: 1.5mm; display: block; }
 .video .poster .len { font-size: 7.5pt; color: var(--muted); margin-top: 1.5mm; }
 .video .chap h3 { font-size: 10pt; margin-bottom: 1.5mm; }
 .video .chap ol { list-style: none; margin: 0; padding: 0; columns: 2; column-gap: 4mm; font-size: 8pt; }
