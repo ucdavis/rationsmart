@@ -28,6 +28,8 @@ from .animal_requirements import rsm_create_animal_requirements_dataframe, CALF_
 from .report_text import NOTE_SECTION_LABELS, text_direction, translate_message, translator
 from .utilities import CALF_CARE_NOTES, CALF_WEANING_AGE_DAYS, CALF_WEANING_TEXT, milk_margin_message
 from .diet_tables import forage_concentrate_ratio_from_proportions
+from .paper_size import A4
+from .report_layout import render_report_html
 
 # Purpose: Compute weighted mineral absorption coefficients from forage/concentrate totals.
 # Notes: Uses total rows to derive proportional absorption for Ca and P; falls back to defaults.
@@ -1165,76 +1167,6 @@ def build_report_context(
     }
 
 
-# The print/PDF view transposes the proportions, forage and concentrate tables:
-# one column per ingredient plus Total. WeasyPrint clips a table wider than the
-# page rather than shrinking it, so a long diet lost its right-hand columns
-# (Total first). The columns are split into blocks of at most
-# TRANSPOSED_MAX_COLUMNS, laid out on a fixed grid (label column + equal data
-# columns, same widths in every block) so a block can never outgrow the page,
-# whatever the font or feed names. Sized for the server's font (DejaVu Sans, the
-# only one in the image): at the print CSS's 11px a bold "Concentrate" is 76px
-# against a 78px data column, so headers don't break mid-word. Those two numbers
-# depend on the A4 page margins, the font, the 11px size, the 4px cell padding,
-# TRANSPOSED_LABEL_PCT and TRANSPOSED_MAX_COLUMNS: re-render a PDF if any changes.
-TRANSPOSED_MAX_COLUMNS = 6
-TRANSPOSED_LABEL_PCT = 16
-_TABLE_OPEN_TAG = re.compile(r"^<table\b([^>]*)>")
-
-
-def _transposed_column_blocks(n_cols, max_cols=None):
-    """Split n_cols columns into consecutive (start, stop) blocks of at most
-    max_cols, balanced so block sizes differ by at most one (8 -> 4 + 4,
-    31 -> 6 + 5 + 5 + 5 + 5 + 5) and the last block isn't a lone Total. The
-    first block is the widest, which _transposed_blocks_html relies on."""
-    if max_cols is None:
-        max_cols = TRANSPOSED_MAX_COLUMNS
-    if max_cols < 1:
-        raise ValueError(f"max_cols must be at least 1, got {max_cols}")
-    if n_cols <= 0:
-        return []
-    n_blocks = math.ceil(n_cols / max_cols)
-    size, extra = divmod(n_cols, n_blocks)
-    blocks, start = [], 0
-    for i in range(n_blocks):
-        stop = start + size + (1 if i < extra else 0)
-        blocks.append((start, stop))
-        start = stop
-    return blocks
-
-
-def _transposed_blocks_html(tdf, title_text="", continued="(continued)"):
-    """Render a transposed table as one or more column blocks. Every block uses
-    the first block's column widths, so a shorter last block lines up with the
-    ones above it; blocks after the first get a "(continued)" caption
-    (`continued`, already escaped, in the report's language)."""
-    blocks = _transposed_column_blocks(tdf.shape[1])
-    if not blocks:
-        return ""
-    data_pct = (100 - TRANSPOSED_LABEL_PCT) / (blocks[0][1] - blocks[0][0])
-    parts = []
-    for i, (start, stop) in enumerate(blocks):
-        width = TRANSPOSED_LABEL_PCT + (stop - start) * data_pct
-        colgroup = (
-            "<colgroup>"
-            + f"<col style='width: {100 * TRANSPOSED_LABEL_PCT / width:.2f}%'>"
-            + f"<col style='width: {100 * data_pct / width:.2f}%'>" * (stop - start)
-            + "</colgroup>"
-        )
-        table, found = _TABLE_OPEN_TAG.subn(
-            lambda m: f"<table{m.group(1)} style='width: {width:.2f}%'>{colgroup}",
-            tdf.iloc[:, start:stop].to_html(classes='transposed-table'),
-            count=1,
-        )
-        if not found:
-            # Without the width and colgroup the block may overflow the page
-            # again. Log rather than raise: the caller (diet_service) turns any
-            # exception into "no report HTML", which would lose the whole PDF.
-            logger.error("Transposed table block left unsized: to_html output does not start with <table>")
-        caption = f"<p class='table-continued'>{title_text} {continued}</p>" if i and title_text else ""
-        parts.append(f"<div class='table-block'>{caption}<div class='table-container'>{table}</div></div>")
-    return "".join(parts)
-
-
 # The PWA appends the diet mode to simulation_id ("Sim 1 (Recommendation)") so one
 # simulation name gets a separate Simulation History entry per mode. The report title
 # already names the mode, so the header shows the name without it. The stored
@@ -1242,77 +1174,13 @@ def _transposed_blocks_html(tdf, title_text="", continued="(continued)"):
 _SIMULATION_MODE_SUFFIXES = (" (Recommendation)", " (Evaluation)")
 
 
-def _cells_escaped(df):
-    """Copy of df with every string cell HTML-escaped, for to_html(escape=False).
-
-    Some tables need escape=False because their column headers carry markup
-    ("Amount Fresh<br/>(Kg/day)"), but their cells hold user-typed text such as custom
-    feed names, which must print as text.
-    """
-    return df.apply(lambda col: col.map(lambda v: _escape_html(v) if isinstance(v, str) else v))
-
-
-def _localize_feed_columns(df, name_map=None, type_map=None):
-    """Copy of df with "Ingredient Name" / "Ingredient Type" cells translated.
-
-    name_map / type_map are {english: translated}; a value without a translation
-    (and the Total row) keeps its English text. Returns df itself when there is
-    nothing to translate.
-    """
-    columns = {"Ingredient Name": name_map, "Ingredient Type": type_map}
-    if df is None or df.empty or not any(m and col in df.columns for col, m in columns.items()):
-        return df
-    df = df.copy()
-    for col, mapping in columns.items():
-        if mapping and col in df.columns:
-            df[col] = df[col].map(lambda v: mapping.get(v, v) if isinstance(v, str) else v)
-    return df
-
-
-# Right-to-left reports (report_text.RTL_LANGUAGES): mirror what the main style
-# block pins to the left. Naskh is named first because DejaVu, the default font, also
-# has Arabic letters but draws them less well. WeasyPrint 63.1 raised an
-# AssertionError laying out any overflow:hidden box in a right-to-left page, so every
-# such box is made visible here; kept for 70.0 (re-check before removing), and check
-# for new ones when the main style changes.
-_RTL_STYLE = """
-    <style>
-      body { font-family: 'Noto Naskh Arabic', 'DejaVu Sans', sans-serif; direction: rtl; }
-      .container, .profile-bar-bg, .metric-item, .table-container { overflow: visible !important; }
-      th { text-align: right; }
-      .section-icon { margin-right: 0; margin-left: 10px; }
-      .header-icon { margin-right: 0; margin-left: 12px; }
-      .emoji { margin-right: 0; margin-left: 10px; }
-      .message-card { border-left: none; border-right: 4px solid #E9967A; }
-      .margin-verdict { text-align: right; }
-      .ltr { direction: ltr; unicode-bidi: embed; display: inline-block; }
-    </style>
-"""
-
-def _translate_table(df, t, cell_columns=("Parameter", "Value")):
-    """Copy of df with headers and the text cells of `cell_columns` passed through t
-    (report_text.translator). Numbers are left alone."""
-    if df is None or getattr(df, "empty", True):
-        return df
-    df = df.rename(columns=lambda c: t(c) if isinstance(c, str) else c)
-    for english_col in cell_columns:
-        name = t(english_col)
-        if name in df.columns:
-            df[name] = df[name].map(lambda v: t(v) if isinstance(v, str) else v)
-    return df
-
-
-def _translate_feed_table(df, t, headers=True):
-    """Copy of a feed table with its headers (optional) and the "Total" row label
-    passed through t. Feed names/types are not report text: see _localize_feed_columns."""
-    if df is None or getattr(df, "empty", True):
-        return df
-    df = df.copy()
-    if "Ingredient Name" in df.columns:
-        df["Ingredient Name"] = df["Ingredient Name"].map(lambda v: t(v) if v == "Total" else v)
-    if headers:
-        df = df.rename(columns=lambda c: t(c) if isinstance(c, str) else c)
-    return df
+def _num(value) -> float:
+    """value as a float; 0.0 for blanks, text and NaN (display arithmetic only)."""
+    try:
+        x = float(value)
+    except (TypeError, ValueError):
+        return 0.0
+    return x if np.isfinite(x) else 0.0
 
 
 def display_simulation_name(simulation_id) -> str:
@@ -1355,10 +1223,12 @@ def rsm_generate_report_v2(
     type_map=None,
     user_limits=None,
     time_zone=None,
+    paper_size=A4,
 ):
     """
-    Enhanced HTML report generation with PDF-parity features (icon-based layout,
-    print-friendly CSS, transposed tables for narrow screens / WeasyPrint).
+    The report HTML (stored in Report.report_html, converted to PDF later). This
+    function prepares the data; the page layout is report_layout.render_report_html
+    (page 1 "at a glance", page 2 Environmental Impact + Technical details).
 
     Returns the HTML content as a string (for Report.report_html) — icons are
     referenced by filename, not embedded, so WeasyPrint must be given
@@ -1372,41 +1242,23 @@ def rsm_generate_report_v2(
     the diet table; None (the default) leaves the report exactly as before.
 
     time_zone sets the zone of the "Generated" time (see _report_date).
-    """
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    icon_header_path = os.path.join(current_dir, "assets", "report_header.png")
-    icon_summary_path = os.path.join(current_dir, "assets", "summary_icon.png")
-    icon_animal_path = os.path.join(current_dir, "assets", "animal_icon.png")
-    icon_diet_path = os.path.join(current_dir, "assets", "reduction.png")
-    icon_env_path = os.path.join(current_dir, "assets", "Environmental_Impact.png")
-    icon_req_path = os.path.join(current_dir, "assets", "cattle_nutrition.png")
-    icon_prop_path = os.path.join(current_dir, "assets", "Nutrient_Information.png")
-    icon_forage_path = os.path.join(current_dir, "assets", "icons8-forage-48.png")
-    icon_concentrate_path = os.path.join(current_dir, "assets", "icons8-chemical-65.png")
-    icon_prod_path = os.path.join(current_dir, "assets", "target_1790044.png")
-    icon_daily_cost_path = os.path.join(current_dir, "assets", "daily_cost.png")
-    icon_water_path = os.path.join(current_dir, "assets", "bucket_6265910.png")
 
-    # Icons are referenced by filename (not embedded as base64) so the stored
-    # report_html stays small — WeasyPrint resolves these relative paths against
-    # `base_url=.../core/z_optimization/assets` at PDF-conversion time. See
+    paper_size: paper_size.A4 or paper_size.LETTER (the API passes the simulation
+    country's, see paper_size.country_paper_size).
+    """
+    # Icons of the five key-number boxes, referenced by filename (not embedded) so the
+    # stored report_html stays small: WeasyPrint resolves them against
+    # base_url=.../core/z_optimization/assets at PDF-conversion time. See
     # docs/dev_docs/reports/save_report_pdf_gap_implementation_plan.md.
-    icon_header = os.path.basename(icon_header_path)
-    icon_summary = os.path.basename(icon_summary_path)
-    icon_animal = os.path.basename(icon_animal_path)
-    icon_diet = os.path.basename(icon_diet_path)
-    icon_env = os.path.basename(icon_env_path)
-    icon_req = os.path.basename(icon_req_path)
-    icon_prop = os.path.basename(icon_prop_path)
-    icon_forage = os.path.basename(icon_forage_path)
-    icon_concentrate = os.path.basename(icon_concentrate_path)
-    icon_prod = os.path.basename(icon_prod_path)
-    icon_daily_cost = os.path.basename(icon_daily_cost_path)
-    icon_water = os.path.basename(icon_water_path)
+    icon_env = "Environmental_Impact.png"
+    icon_forage = "icons8-forage-48.png"
+    icon_prod = "target_1790044.png"
+    icon_daily_cost = "daily_cost.png"
+    icon_water = "bucket_6265910.png"
 
     # Fixed report text in the user's language (report_text.xlsx; English fallback).
-    # t() returns plain text for DataFrame cells/headers (to_html escapes them); h()
-    # escapes it for the f-strings below. Numbers and units stay as they are.
+    # t() returns plain text; h() escapes it for the HTML built here (Notes, NDF note).
+    # The layout translates its own labels. Numbers and units stay as they are.
     t = translator(lang)
 
     def h(text, **values):
@@ -1468,22 +1320,6 @@ def rsm_generate_report_v2(
 
     messages_html = notes_html
 
-    dt_results = pd.DataFrame(columns=['Ingredient Name', 'Amount Fresh (Kg/d)', 'Amount DM (Kg/d DM)', 'Price/kg', 'Price/d'])
-    if not dt_proportions.empty:
-        dt_results = dt_proportions[['Name', 'AF_kg', 'DM_kg', 'PRICE/KG', 'Cost']].copy()
-        dt_results.rename(columns={
-            "Name": "Ingredient Name",
-            "AF_kg": "Amount Fresh<br/>(Kg/day)",
-            "DM_kg": "Amount DM<br/>(Kg/day)",
-            "PRICE/KG": "Price<br/>(Per Kg)",
-            "Cost": "Price<br/>(Per day)",
-        }, inplace=True)
-        # The TOTAL row's price per kg is a sum of per-kg prices: meaningless, so blank it.
-        price_col = "Price<br/>(Per Kg)"
-        if "Ingredient Name" in dt_results.columns and price_col in dt_results.columns:
-            dt_results[price_col] = dt_results[price_col].astype(str)
-            dt_results.loc[dt_results["Ingredient Name"].str.upper().str.contains("TOTAL"), price_col] = ""
-
     from .animal_requirements import rsm_create_animal_requirements_dataframe
     diet_supply_results = post_results.get('diet_supply_results', {})
     An_Requirements = rsm_create_animal_requirements_dataframe(animal_requirements, diet_supply_results)
@@ -1503,18 +1339,13 @@ def rsm_generate_report_v2(
 
     # Forage-to-concentrate ratio on a fresh-matter (as-fed) basis, e.g. "60:40".
     # None when there is no formulated ration (empty diet / calf milk-only path).
+    # The ring chart on page 1 shows the dry-matter split instead (report_layout).
     forage_concentrate_ratio = forage_concentrate_ratio_from_proportions(dt_proportions, dt_forages)
-    ratio_display = (forage_concentrate_ratio or "").replace(':', ' : ')
+    ratio_html = _escape_html((forage_concentrate_ratio or "").replace(':', ' : '))
     if forage_concentrate_ratio and text_direction(lang) == "rtl":
         # A right-to-left label reads Forage first from the right, but the bidi
         # algorithm keeps "60 : 40" left to right: swap the numbers and pin the order.
-        ratio_display = "<span class='ltr'>" + " : ".join(reversed(forage_concentrate_ratio.split(":"))) + "</span>"
-    fc_ratio_card = (
-        f"    <div class='summary-card'><img src='{icon_forage}' class='summary-icon'>"
-        f"<span class='summary-lab'>{h('Forage:Concentrate')}</span>"
-        f"<span class='summary-val'>{ratio_display}</span></div>"
-        if forage_concentrate_ratio else ""
-    )
+        ratio_html = "<span class='ltr'>" + " : ".join(reversed(forage_concentrate_ratio.split(":"))) + "</span>"
 
     weighted_ca, weighted_p = calculate_weighted_absorption(dt_forages, dt_concentrates)
     ca_absorbed = animal_requirements.get("An_Ca_req", 0)
@@ -1528,14 +1359,11 @@ def rsm_generate_report_v2(
         ndf_bw = float(diet_supply_results[17])
         forage_ndf_bw = float(diet_supply_results[18])
 
-    forage_footnote_html = ""
-    if (ndf_bw is not None and np.isfinite(ndf_bw)) or (forage_ndf_bw is not None and np.isfinite(forage_ndf_bw)):
-        parts = []
-        if ndf_bw is not None and np.isfinite(ndf_bw):
-            parts.append(f"<strong>{h('NDF %BW')}</strong> = {ndf_bw:.2f}% ({h('target')} < 1.2%)")
-        if forage_ndf_bw is not None and np.isfinite(forage_ndf_bw):
-            parts.append(f"<strong>{h('Forage NDF %BW')}</strong> = {forage_ndf_bw:.2f}% ({h('target')} < 1.0%)")
-        forage_footnote_html = f"<p class='footnote'>{' | '.join(parts)}</p>"
+    ndf_parts = []
+    if ndf_bw is not None and np.isfinite(ndf_bw):
+        ndf_parts.append(f"<strong>{h('NDF %BW')}</strong> = {ndf_bw:.2f}% ({h('target')} &lt; 1.2%)")
+    if forage_ndf_bw is not None and np.isfinite(forage_ndf_bw):
+        ndf_parts.append(f"<strong>{h('Forage NDF %BW')}</strong> = {forage_ndf_bw:.2f}% ({h('target')} &lt; 1.0%)")
 
     # Per-state report shaping (all four physiological states). Filters the animal-input
     # and requirement rows, sets the headline summary metric, toggles the milk-price
@@ -1550,401 +1378,183 @@ def rsm_generate_report_v2(
     calf_feeding_table = report_context["calf_feeding_table"]
     show_methane_intensity = report_context["show_methane_intensity"]
 
-    dfs = [animal_inputs, An_Requirements, dt_results, dt_proportions, dt_forages, dt_concentrates, methane_report, ration_evaluation]
+    dfs = [animal_inputs, An_Requirements, dt_proportions, dt_forages, dt_concentrates, methane_report, ration_evaluation]
     for df in dfs:
-        if not df.empty:
+        if df is not None and not df.empty:
             if 'Ingr_Type' in df.columns and 'Name' in df.columns:
                 df.loc[df['Name'].str.upper() == 'TOTAL', 'Ingr_Type'] = ''
             num_cols = df.select_dtypes(include=[np.number]).columns
             df[num_cols] = df[num_cols].round(2)
 
-    if not methane_report.empty and 'Metric' in methane_report.columns:
-        methane_report.loc[methane_report['Metric'] == 'Classification', 'Metric'] = 'Impact Classification'
-
-    dt_proportions_display = format_feed_df(dt_proportions)
-    dt_forages_display = format_feed_df(dt_forages)
-    dt_concentrates_display = format_feed_df(dt_concentrates)
-
-    # Feed names/types in the user's language, on the display copies only: the
-    # logic above (concentrate filter, Total rows) matches the English values.
-    dt_results = _localize_feed_columns(dt_results, name_map, type_map)
-    dt_proportions_display = _localize_feed_columns(dt_proportions_display, name_map, type_map)
-    dt_forages_display = _localize_feed_columns(dt_forages_display, name_map, type_map)
-    dt_concentrates_display = _localize_feed_columns(dt_concentrates_display, name_map, type_map)
-
-    # Report text for the tables: headers, row labels and fixed values ("Crossbred",
-    # "Flat", "Total"). Last, because everything above matches the English labels.
-    # The diet table renders unescaped (its headers carry <br/>): each header part is
-    # translated and escaped here, its cells by _cells_escaped below.
-    dt_results = _translate_feed_table(dt_results, t, headers=False)
-    dt_results.columns = [
-        "<br/>".join(_escape_html(t(part)) for part in str(col).split("<br/>"))
-        for col in dt_results.columns
-    ]
-    dt_proportions_display = _translate_feed_table(dt_proportions_display, t)
-    dt_forages_display = _translate_feed_table(dt_forages_display, t)
-    dt_concentrates_display = _translate_feed_table(dt_concentrates_display, t)
-    animal_inputs = _translate_table(animal_inputs, t)
-    An_Requirements = _translate_table(An_Requirements, t)
-    if calf_feeding_table is not None:
-        calf_feeding_table = _translate_table(calf_feeding_table, t, cell_columns=("Feeding Time",))
-
     currency_display = currency + " " if len(currency) > 1 else currency
     # Numeric, so no English month name appears in a localized report.
     report_date = _report_date(time_zone)
+    names = name_map or {}
+    types = type_map or {}
 
-    # Milk price & profit margin banner (optional). Uses the same yield denominator
-    # (milk_den) and daily_cost already computed for the Cost / Liter card.
+    # --- Diet rows (page 1): one per selected feed, in the optimizer's order --------
+    diet_rows, diet_total = [], None
+    if not dt_proportions.empty:
+        for _, row in dt_proportions.iterrows():
+            name = str(row.get('Name', ''))
+            if name.strip().upper() == 'TOTAL':
+                diet_total = {'af': row.get('AF_kg'), 'dm': row.get('DM_kg'), 'cost': row.get('Cost')}
+                continue
+            ingr_type = str(row.get('Ingr_Type', '') or '')
+            dm = _num(row.get('DM_kg'))
+            diet_rows.append({
+                'name': names.get(name, name),
+                'type': types.get(ingr_type, ingr_type),
+                'is_forage': ingr_type == 'Forage',
+                'af': row.get('AF_kg'), 'dm': row.get('DM_kg'),
+                'price_kg': row.get('PRICE/KG'), 'cost': row.get('Cost'),
+                'zero': dm == 0,
+                '_dm': dm,
+            })
+        total_dm = _num(diet_total['dm']) if diet_total else sum(r['_dm'] for r in diet_rows)
+        for r in diet_rows:
+            r['share'] = (r['_dm'] / total_dm * 100) if total_dm else 0.0
+
+    # --- Nutrient composition (page 2+): Forages / Concentrates / Whole diet ---------
+    composition = None
+    dt_proportions_display = format_feed_df(dt_proportions)
+    if not dt_proportions_display.empty:
+        columns = [c for c in dt_proportions_display.columns if c not in ('Ingredient Type', 'Ingredient Name')]
+
+        def _group(display):
+            items, subtotal = [], None
+            if display is None or display.empty:
+                return items, subtotal
+            for _, row in display.iterrows():
+                values = [row.get(c) for c in columns]
+                feed = str(row.get('Ingredient Name', ''))
+                if feed.strip().upper() == 'TOTAL':
+                    subtotal = values
+                else:
+                    items.append((names.get(feed, feed), values, _num(row.get('Inclusion (% DM)')) == 0))
+            return items, subtotal
+
+        groups = []
+        for label, display in (('Forages', format_feed_df(dt_forages)), ('Concentrates', format_feed_df(dt_concentrates))):
+            items, subtotal = _group(display)
+            if items:
+                groups.append((label, items, subtotal))
+        whole = dt_proportions_display[dt_proportions_display['Ingredient Name'].astype(str).str.upper() == 'TOTAL']
+        composition = {
+            'columns': columns,
+            'groups': groups,
+            'total': [whole.iloc[0].get(c) for c in columns] if not whole.empty else None,
+            'ndf_note_html': ' | '.join(ndf_parts),
+        }
+
+    # --- Milk price economics (lactating cows) -----------------------------------
     # margin_per_liter = milk_price - cost_per_liter
     # daily_iofc (Income Over Feed Cost) = milk_price * milk_yield - daily_cost
-    margin_banner_html = ""
+    econ = None
     milk_price = post_results.get('milk_price')
-    if milk_price is not None and milk_den and cost_per_liter is not None:
+    if (report_context["show_milk_price_comparison"] and milk_price is not None
+            and milk_den and cost_per_liter is not None):
         milk_price = float(milk_price)
         margin_per_liter = milk_price - cost_per_liter
         daily_iofc = milk_price * milk_den - daily_cost
-        margin_cls = "margin-positive" if margin_per_liter >= 0 else "margin-negative"
-        margin_sign = "+" if margin_per_liter >= 0 else "−"
-        abs_margin = abs(margin_per_liter)
-        abs_iofc = abs(daily_iofc)
-        # Revenue-vs-feed-cost verdict (same text as solution_summary.margin_summary.message).
-        verdict_text = _escape_html(milk_margin_message(round(margin_per_liter, 2), currency_display, translate=t))
-        margin_banner_html = (
-            f"<div class='margin-section'>"
-            f"<h3 class='margin-section-title'>{h('Milk Price Economics')}</h3>"
-            f"<div class='margin-banner {margin_cls}'>"
-            f"<div class='margin-cell'><span class='margin-lab'>{h('Milk Price / Liter')}</span>"
-            f"<span class='margin-val'>{currency_display}{milk_price:.2f}</span></div>"
-            f"<div class='margin-cell'><span class='margin-lab'>{h('Cost / Liter')}</span>"
-            f"<span class='margin-val'>{currency_display}{cost_per_liter:.2f}</span></div>"
-            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>{h('Margin / Liter')}</span>"
-            f"<span class='margin-val'>{margin_sign}{currency_display}{abs_margin:.2f}</span></div>"
-            f"<div class='margin-cell margin-highlight'><span class='margin-lab'>{h('Income Over Feed Cost')}</span>"
-            f"<span class='margin-val'>{margin_sign}{currency_display}{abs_iofc:.2f}</span></div>"
-            f"</div>"
-            f"<div class='margin-verdict {margin_cls}'>{verdict_text}</div>"
-            f"</div>"
-        )
+        sign = "+" if margin_per_liter >= 0 else "−"
+        econ = {
+            'negative': margin_per_liter < 0,
+            'cells': [
+                ('Milk Price / Liter', f"{currency_display}{milk_price:.2f}"),
+                ('Cost / Liter', f"{currency_display}{cost_per_liter:.2f}"),
+                ('Margin / Liter', f"{sign}{currency_display}{abs(margin_per_liter):.2f}"),
+                ('Income Over Feed Cost', f"{sign}{currency_display}{abs(daily_iofc):.2f}"),
+            ],
+            # Revenue-vs-feed-cost verdict (same text as solution_summary.margin_summary.message).
+            'verdict': milk_margin_message(round(margin_per_liter, 2), currency_display, translate=t),
+        }
 
-    m_prod, m_yield, m_int, m_ym, m_class = 0.0, 0.0, 0.0, 0.0, "Unknown"
+    # --- Methane (page 2) ----------------------------------------------------------
+    environment = None
+    m_prod = 0.0
     if not methane_report.empty and 'Metric' in methane_report.columns:
         m_map = {row['Metric']: row['Value'] for _, row in methane_report.iterrows()}
         m_prod = m_map.get('Methane Production (g/day)', m_map.get('Methane Production', 0.0))
-        m_yield = m_map.get('Methane Yield (g/kg DMI)', m_map.get('Methane Yield', 0.0))
         m_int = m_map.get('Methane Intensity (g/kg ECM)', m_map.get('Methane Intensity', 0.0))
-        m_ym = m_map.get('Ym (%)', m_map.get('Ym', 0.0))
-        m_class = m_map.get('Impact Classification', m_map.get('Classification', 'Average'))
+        environment = {
+            'ym': m_map.get('Ym (%)', m_map.get('Ym', 0.0)),
+            'classification': m_map.get('Classification', 'Average'),
+            'Methane Production': (m_prod, 'g/day'),
+            'Methane Yield': (m_map.get('Methane Yield (g/kg DMI)', m_map.get('Methane Yield', 0.0)), 'g/kg DMI'),
+        }
+        # Methane Intensity (g/kg ECM) is undefined for a non-lactating animal (ECM is
+        # zero); the engine returns None for it, and the tile is left out.
+        if show_methane_intensity and m_int is not None:
+            environment['Methane Intensity'] = (m_int, 'g/kg ECM')
 
-    w_prod = min(100, (float(m_prod) / 800) * 100) if m_prod else 0
-    w_yield = min(100, (float(m_yield) / 35) * 100) if m_yield else 0
-    w_ym = min(100, (float(m_ym) / 12) * 100) if m_ym else 0
+    # --- Tables as rows (labels and text values are translated by the layout) ------
+    def _rows(df):
+        if df is None or df.empty or 'Parameter' not in df.columns:
+            return []
+        return [(str(r['Parameter']), r.get('Value'), str(r.get('Unit', '') or '')) for _, r in df.iterrows()]
 
-    # Methane Intensity (g/kg ECM) is undefined for a non-lactating animal — ECM (energy-
-    # corrected milk) is zero, and rsm_calculate_methane_emissions returns None for the
-    # metric rather than a real-looking number for it (see build_report_context /
-    # show_methane_intensity, and the plan doc this implements). Build the row as its own
-    # fragment so a suppressed metric is an absent row, not a rendered "None g/kg ECM".
-    methane_intensity_row_html = ""
-    if show_methane_intensity and m_int is not None:
-        w_int = min(100, (float(m_int) / 25) * 100) if m_int else 0
-        methane_intensity_row_html = f"""
-            <div class='profile-row'>
-                <div class='profile-info'><span>{h("Methane Intensity")}</span><span>{m_int} g/kg ECM</span></div>
-                <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_int}%; background: #ef4444;'></div></div>
-            </div>"""
+    animal_rows = _rows(animal_inputs)
+    requirement_rows = _rows(An_Requirements)
+    key_requirements = [r for r in requirement_rows if r[2] not in ('g/d', 'mg/d', 'IU/d')]
 
-    env_impact_html = f"""
-    <div class='section'>
-        <h2><img src='{icon_env}' class='section-icon'>{h("Environmental Impact")}</h2>
-        <div class='env-scorecard'>
-            <div class='profile-row'>
-                <div class='profile-info'><span>{h("Methane Production")}</span><span>{m_prod} g/day</span></div>
-                <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_prod}%;'></div></div>
-            </div>
-            <div class='profile-row'>
-                <div class='profile-info'><span>{h("Methane Yield")}</span><span>{m_yield} g/kg DMI</span></div>
-                <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_yield}%; background: #eab308;'></div></div>
-            </div>{methane_intensity_row_html}
-            <div class='profile-row'>
-                <div class='profile-info'><span>{h("Methane Conversion Rate (Ym)")}</span><span>{m_ym} %</span></div>
-                <div class='profile-bar-bg'><div class='profile-bar-fill' style='width: {w_ym}%; background: #3b82f6;'></div></div>
-            </div>
-            <div class='classification-container'>
-                <span class='classification-label'>{h("Classification :")}</span>
-                <span class='classification-tag'>{_escape_html(t(str(m_class)).upper())}</span>
-            </div>
-            <p class='footnote'>{h("*Ym(%) = Percentage of energy intake lost as methane.")}</p>
-        </div>
-    </div>
-    """
-
-    # Limits You Set: the inclusion and diet limits the user entered, so the diet above
-    # can be read in context. Only when there are any. Feed names are free text (custom
-    # feeds), so every cell is escaped.
-    limits_html = ""
-    if user_limits and not evaluation_mode:
-        def _num(v):
-            return "—" if v is None else f"{v:g}"
-
-        # nowrap: with the server's DejaVu Sans the narrow number columns broke the unit
-        # into "(Kg/ day)"; the feed-name column takes the extra lines instead.
-        kg = f"<span style='white-space: nowrap;'>{h('(Kg/day)')}</span>"
-        tables = []
-        feeds = user_limits.get("inclusion_limits") or []
-        if feeds:
-            rows = "".join(
-                f"<tr><td>{_escape_html((name_map or {}).get(f['feed_name'], f['feed_name']))}</td>"
-                f"<td>{_num(f['min_kg_asfed'])}</td><td>{_num(f['max_kg_asfed'])}</td>"
-                f"<td>{'—' if f['result_kg_asfed'] is None else format(f['result_kg_asfed'], '.2f')}</td></tr>"
-                for f in feeds
-            )
-            tables.append(
-                "<div class='table-container'><table class='diet-table'><thead><tr>"
-                f"<th>{h('Ingredient Name')}</th><th>{h('Min')}<br/>{kg}</th>"
-                f"<th>{h('Max')}<br/>{kg}</th><th>{h('In diet')}<br/>{kg}</th>"
-                f"</tr></thead><tbody>{rows}</tbody></table></div>"
-            )
-        diet_limits = user_limits.get("diet_limits") or []
-        if diet_limits:
-            sign = {"max": "≤", "min": "≥"}
-            rows = "".join(
-                f"<tr><td>{h(d['label'])}</td><td>{sign[d['direction']]} {_num(d['value'])}</td>"
-                f"<td>{sign[d['direction']] + ' ' + _num(d['default']) if d['default'] is not None else '—'}</td>"
-                f"<td>{_escape_html(d['unit'])}</td></tr>"
-                for d in diet_limits
-            )
-            tables.append(
-                "<div class='table-container'><table class='diet-table'><thead><tr>"
-                f"<th>{h('Parameter')}</th><th>{h('Your limit')}</th><th>{h('Default')}</th><th>{h('Unit')}</th>"
-                f"</tr></thead><tbody>{rows}</tbody></table></div>"
-            )
-        limits_html = (
-            f"<div class='section'><h2><img src='{icon_prop}' class='section-icon'>{h('Limits You Set')}</h2>"
-            + "".join(tables)
-            + f"<p class='footnote'>{h('These limits were set by the user and shape the diet above.')}</p></div>"
-        )
-
-    style = """
-    <style>
-      :root {
-        --primary-green: #2e7d32;
-        --secondary-green: #4caf50;
-        --header-bg: linear-gradient(135deg, #2e7d32 0%, #388e3c 100%);
-        --card-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      }
-      * { box-sizing: border-box; }
-      body {
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-        margin: 0; padding: 20px; line-height: 1.5; color: #333;
-        background: #f5f7fa;
-      }
-      .container { max-width: 1100px; margin: 0 auto; background: white; border-radius: 12px; box-shadow: var(--card-shadow); overflow: hidden; }
-      .header { background: var(--header-bg); color: white; padding: 25px; text-align: center; margin-bottom: 0; }
-      .header h1 { margin: 0; font-size: 2.2em; font-weight: 400; }
-      .report-meta { display: flex; justify-content: center; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
-      .meta-item { background: rgba(0,0,0,0.15); padding: 6px 10px; border-radius: 6px; text-align: center; min-width: 120px; }
-      .meta-item strong { display: block; font-size: 0.88em; color: #e8f5e8; text-transform: uppercase; font-weight: bold; }
-      .meta-item span { font-size: 0.95em; font-weight: normal; }
-      .content { padding: 30px; }
-      .section { margin-bottom: 60px; background: white; border-radius: 10px; }
-      h2 { color: var(--primary-green); border-bottom: 2px solid var(--secondary-green); padding-bottom: 8px; margin-top: 0; margin-bottom: 0; display: flex; align-items: center; gap: 8px; font-size: 1.6em; }
-      .section-icon { width: 32px; height: 32px; vertical-align: middle; margin-right: 10px; }
-      .header-icon { width: 48px; height: 48px; vertical-align: middle; margin-right: 12px; }
-      .emoji { margin-right: 10px; }
-      .metric-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 15px; margin-bottom: 30px; }
-      .metric-item { background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
-      .metric-value { font-size: 1.45em; font-weight: 600; color: var(--primary-green); }
-      .metric-label { font-size: 0.85em; color: #333; margin-top: 5px; font-weight: bold; }
-      .table-container { overflow-x: auto; margin-top: 15px; border-radius: 8px; border: 1px solid #eee; }
-      table { width: 100%; border-collapse: collapse; font-size: 15px; }
-      th { background: #eeeeee; color: #333; font-weight: 600; padding: 12px; border-bottom: 2px solid #ddd; text-align: left; }
-      td { padding: 10px 12px; border-bottom: 1px solid #eee; }
-      tr:nth-child(even) { background: #fafafa; }
-      .message-card { background: #FEEBE7; border-left: 4px solid #E9967A; padding: 15px; border-radius: 6px; margin: 15px 0; }
-      .recommendation-card { background: #f0fff4; border-left: 4px solid #28a745; }
-      .message-title { font-weight: 600; margin-bottom: 5px; }
-      .message-list { margin: 0; padding-left: 0; list-style: none; font-size: 0.9em; }
-      .note-value { font-size: 0.9em; }
-      .footnote { font-size: 0.85em; color: #666; margin-top: 10px; margin-bottom: 0; }
-      .footnote + .footnote { margin-top: 3px; }
-      .env-scorecard { margin-top: 15px; padding: 20px; background: #fff; border-radius: 12px; border: 1px solid #edf2f7; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
-      .profile-row { margin-bottom: 12px; }
-      .profile-info { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 0.92em; font-weight: normal; color: #475569; }
-      .profile-bar-bg { height: 7px; background: #f1f5f9; border-radius: 5px; overflow: hidden; }
-      .profile-bar-fill { height: 100%; background: #22c55e; border-radius: 5px; transition: width 0.5s ease; }
-      .classification-container { margin-top: 15px; display: flex; align-items: center; gap: 12px; border-top: 1px solid #f1f5f9; padding-top: 10px; }
-      .classification-label { font-size: 0.95em; font-weight: 600; color: #64748b; }
-      .classification-tag { background: #dcfce7 !important; color: #166534 !important; padding: 3px 10px; border-radius: 6px; font-size: 0.75em; font-weight: 700; border: 1px solid #bbf7d0; text-transform: uppercase; -webkit-print-color-adjust: exact; }
-      .summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 10px; margin-bottom: 20px; }
-      .summary-card { padding: 12px 10px; border-radius: 10px; background: #f0fdf4; text-align: center; border: 1px solid #bbf7d0; box-shadow: 0 2px 8px rgba(0,0,0,0.02); }
-      .summary-icon { width: 28px; height: 28px; margin: 0 auto 4px auto; display: block; object-fit: contain; }
-      .summary-val { font-size: 1.0rem; font-weight: 800; color: #2e7d32; display: block; margin-top: 2px; }
-      .summary-lab { font-size: 0.6rem; color: #64748b; font-weight: 700; letter-spacing: 0.5px; }
-      .margin-section { margin-top: 28px; }
-      .margin-section-title { color: var(--primary-green); font-size: 1.05rem; font-weight: 700; margin: 0 0 12px 0; padding-bottom: 6px; border-bottom: 1px solid #e2e8f0; }
-      .margin-banner { display: flex; justify-content: space-between; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: 10px; border: 1px solid; -webkit-print-color-adjust: exact; }
-      .margin-banner.margin-positive { background: #f0fdf4; border-color: #86efac; }
-      .margin-banner.margin-negative { background: #fef2f2; border-color: #fca5a5; }
-      .margin-cell { flex: 1 1 0px; min-width: 0; text-align: center; }
-      .margin-lab { display: block; font-size: 0.58rem; color: #64748b; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-      .margin-val { display: block; margin-top: 3px; font-size: 1.05rem; font-weight: 800; color: #334155; }
-      .margin-positive .margin-highlight .margin-val { color: #15803d; }
-      .margin-negative .margin-highlight .margin-val { color: #5d4037; }
-      .margin-verdict { margin-top: 6px; text-align: left; font-size: 0.72rem; font-weight: 700; }
-      .margin-verdict.margin-positive { color: #15803d; }
-      .margin-verdict.margin-negative { color: #5d4037; }
-      .transposed-only { display: none !important; }
-      .wide-only { display: block !important; }
-      @media print {
-        body { padding: 0; background: white; }
-        .container { box-shadow: none; border-radius: 0; max-width: 100%; }
-        .header { padding: 15px; background: #2e7d32 !important; -webkit-print-color-adjust: exact; margin-bottom: 30px !important; }
-        .report-meta { display: flex !important; flex-wrap: nowrap !important; justify-content: space-between !important; gap: 5px !important; margin-top: 10px !important; }
-        .meta-item { background: rgba(0,0,0,0.2) !important; padding: 4px 5px !important; min-width: 0 !important; flex: 1 1 0px !important; border: 1px solid rgba(255,255,255,0.1) !important; }
-        .meta-item strong { font-size: 7.7pt !important; font-weight: bold !important; }
-        .meta-item span { font-size: 8pt !important; font-weight: normal !important; }
-        .content { padding: 15px; display: block !important; }
-        .metric-grid { display: flex !important; flex-wrap: nowrap !important; justify-content: space-between !important; gap: 10px !important; margin-bottom: 20px !important; }
-        .metric-item { flex: 1 1 0px !important; min-width: 0 !important; padding: 10px 5px !important; white-space: nowrap !important; overflow: hidden !important; }
-        .metric-value { font-size: 1.15em !important; white-space: nowrap !important; }
-        .metric-label { font-size: 8.3pt !important; font-weight: bold !important; white-space: nowrap !important; }
-        .summary-grid { display: flex !important; flex-wrap: nowrap !important; justify-content: space-between !important; gap: 8px !important; margin-top: 5px !important; margin-bottom: 15px !important; }
-        .summary-card { flex: 1 1 0px !important; min-width: 0 !important; padding: 8px 4px !important; background: #f0fdf4 !important; -webkit-print-color-adjust: exact; }
-        .margin-section { margin-top: 16px !important; }
-        .margin-section-title { font-size: 0.9rem !important; margin-bottom: 8px !important; }
-        .margin-banner { display: flex !important; flex-wrap: nowrap !important; gap: 8px !important; margin-top: 8px !important; padding: 10px 12px !important; -webkit-print-color-adjust: exact; }
-        .margin-banner.margin-positive { background: #f0fdf4 !important; border-color: #86efac !important; }
-        .margin-banner.margin-negative { background: #fef2f2 !important; border-color: #fca5a5 !important; }
-        .margin-cell { flex: 1 1 0px !important; min-width: 0 !important; }
-        .margin-val { font-size: 0.9rem !important; }
-        .margin-lab { font-size: 5.5pt !important; }
-        .summary-icon { width: 22px !important; height: 22px !important; margin-bottom: 2px !important; }
-        .summary-val { font-size: 0.85rem !important; margin-top: 1px !important; }
-        .summary-lab { font-size: 5.5pt !important; }
-        .section { page-break-inside: avoid !important; margin-bottom: 58px !important; }
-        h2 { font-size: 1.3em !important; margin-bottom: 10px !important; }
-        table { font-size: 13.2px !important; page-break-inside: avoid !important; }
-        th { background: #eeeeee !important; -webkit-print-color-adjust: exact; padding: 6px !important; }
-        td { padding: 4px 6px !important; }
-        .wide-only { display: none !important; }
-        .transposed-only { display: block !important; }
-        .transposed-table { table-layout: fixed; font-size: 11px !important; }
-        .transposed-table th, .transposed-table td { padding-left: 4px !important; padding-right: 4px !important; overflow-wrap: anywhere; }
-        .table-block { page-break-inside: avoid; break-inside: avoid; }
-        .table-continued { color: var(--primary-green); font-weight: 600; margin: 18px 0 0 0; }
-        .table-container { overflow: visible !important; border: none !important; }
-        .page-break { page-break-after: always !important; }
-        .footnote { color: #004c99 !important; font-weight: 500 !important; margin-top: 10px !important; margin-bottom: 0 !important; }
-        .footnote + .footnote { margin-top: 3px !important; }
-      }
-    </style>
-    """
-
-    def _transpose_to_html(df, title_icon="", title_text="", footer="", show_title=True, is_img=True):
-        if df.empty:
-            return ""
-        index_col = df.columns[0]
-        tdf = df.set_index(index_col).T
-        html = "<div class='transposed-only'>"
-        if show_title and title_text:
-            if is_img:
-                html += f"<h2><img src='{title_icon}' class='section-icon'>{title_text}</h2>"
-            else:
-                html += f"<h2><span class='emoji'>{title_icon}</span>{title_text}</h2>"
-        html += _transposed_blocks_html(tdf, title_text, continued=h("(continued)"))
-        if footer:
-            html += footer
-        html += "</div>"
-        return html
-
-    # Shared document head (doctype + meta + title + style + header/meta block + open content)
-    rtl = text_direction(lang) == "rtl"
-    dir_attr = " dir='rtl'" if rtl else ""
-    head_parts = [
-        f"<!DOCTYPE html><html lang='{_escape_html(str(lang or 'en'))}'{dir_attr}><head>",
-        "<meta charset='utf-8'/><meta name='viewport' content='width=device-width, initial-scale=1.0'>",
-        f"<title>{h('Diet Evaluation') if evaluation_mode else h('Diet Recommendation')}</title>",
-        style, *([_RTL_STYLE] if rtl else []), "</head><body>",
-        "<div class='container'>",
-        f"<div class='header'><h1><img src='{icon_header}' class='header-icon'> {h('Evaluation Report') if evaluation_mode else h('Recommendation Report')}</h1>",
-        "<div class='report-meta'>",
-        # User-typed values: escaped, so they print as text and cannot inject markup
-        # into the HTML that WeasyPrint later renders server-side.
-        f"<div class='meta-item'><strong>{h('User')}</strong><span>{_escape_html(str(user_name))}</span></div>",
-        f"<div class='meta-item'><strong>{h('Simulation')}</strong><span>{_escape_html(display_simulation_name(simulation_id))}</span></div>",
-        f"<div class='meta-item'><strong>{h('Report ID')}</strong><span>{_escape_html(str(report_id))}</span></div>",
-        f"<div class='meta-item'><strong>{h('Country')}</strong><span>{_escape_html(str(country_name))}</span></div>",
-        f"<div class='meta-item'><strong>{h('Generated')}</strong><span>{report_date}</span></div>",
-        "</div></div>",
-        "<div class='content'>",
+    summary_kpi = {'icon': icon_prod, 'label': report_context['summary_metric_label'],
+                   'value_html': _escape_html(report_context['summary_metric_value'])}
+    meta = [
+        # User-typed values: escaped by the layout, so they print as text and cannot
+        # inject markup into the HTML that WeasyPrint later renders server-side.
+        ('User', str(user_name)),
+        ('Simulation', display_simulation_name(simulation_id)),
+        ('Report ID', str(report_id)),
+        ('Country', str(country_name)),
+        ('Generated', report_date),
     ]
+    ctx = {
+        'title': 'Evaluation Report' if evaluation_mode else 'Recommendation Report',
+        'meta': meta,
+        'animal_rows': animal_rows,
+        'requirement_rows': requirement_rows,
+    }
 
     if report_context["show_calf_feeding_summary"]:
         # Baby Calf/Heifer: milk-feeding schedule only — no diet / cost / methane sections.
-        calf_table_html = ""
+        calf_rows = []
         if calf_feeding_table is not None and not calf_feeding_table.empty:
-            calf_table_html = (
-                "<div class='table-container'>"
-                + calf_feeding_table.to_html(index=False, classes='diet-table')
-                + "</div>"
-            )
-        body_parts = [
-            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>{h('Solution Summary')}</h2>",
-            "<div class='summary-grid'>",
-            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{h(report_context['summary_metric_label'])}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
-            "</div></div>",
-            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Milk Feeding Schedule')}</h2>",
-            calf_table_html,
-            f"<p class='footnote'>{h('Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a calf.')}</p>",
-            f"<p class='footnote'>{h(CALF_WEANING_TEXT, days=CALF_WEANING_AGE_DAYS)}</p>",
-            *(f"<p class='footnote'>{h(note)}</p>" for note in CALF_CARE_NOTES),
-            "</div>",
-            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>{h('Animal Information')}</h2>",
-            "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
-            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>{h('Nutritional Requirements')}</h2>",
-            "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
-            "</div></div></body></html>",
-        ]
+            calf_rows = [(str(r['Feeding Time']), r['Milk Amount (liters)']) for _, r in calf_feeding_table.iterrows()]
+        ctx.update({
+            'kpis': [summary_kpi],
+            'calf': {
+                'rows': calf_rows,
+                'notes': [t('Milk intake only (up to ~8 weeks of age); no solid-feed ration is formulated for a calf.'),
+                          t(CALF_WEANING_TEXT, days=CALF_WEANING_AGE_DAYS)] + [t(note) for note in CALF_CARE_NOTES],
+            },
+        })
     else:
-        body_parts = [
-            f"<div class='section'><h2><img src='{icon_summary}' class='section-icon'>{h('Solution Summary')}</h2>",
-            "<div class='summary-grid'>",
-            f"    <div class='summary-card'><img src='{icon_prod}' class='summary-icon'><span class='summary-lab'>{h(report_context['summary_metric_label'])}</span><span class='summary-val'>{report_context['summary_metric_value']}</span></div>",
-            f"    <div class='summary-card'><img src='{icon_daily_cost}' class='summary-icon'><span class='summary-lab'>{h('Daily Cost')}</span><span class='summary-val'>{currency_display}{daily_cost:.2f}</span></div>",
-            f"    <div class='summary-card'><img src='{icon_env}' class='summary-icon'><span class='summary-lab'>{h('Methane')}</span><span class='summary-val'>{m_prod} g/day</span></div>",
-            f"    <div class='summary-card'><img src='{icon_water}' class='summary-icon'><span class='summary-lab'>{h('Water Intake')}</span><span class='summary-val'>{water_intake:.1f} L</span></div>",
-            fc_ratio_card,
-            "</div>",
-            (margin_banner_html if report_context["show_milk_price_comparison"] else ""),
-            "</div>",
-            f"<div class='section'><h2><img src='{icon_diet}' class='section-icon'>{h('Diet') if evaluation_mode else h('Least Cost Diet')}</h2>",
-            "<div class='table-container'>" + _cells_escaped(dt_results).to_html(index=False, classes='diet-table', escape=False) + "</div>",
-            messages_html, "</div>",
-            *([limits_html] if limits_html else []),
-            env_impact_html,
-            f"<div class='section'><h2><img src='{icon_animal}' class='section-icon'>{h('Animal Information')}</h2>",
-            "<div class='table-container'>" + animal_inputs.to_html(index=False, classes='animal-info-table') + "</div></div>",
-            f"<div class='section'><h2><img src='{icon_req}' class='section-icon'>{h('Nutritional Requirements')}</h2>",
-            "<div class='table-container'>" + An_Requirements.to_html(index=False, classes='requirements-table') + "</div></div>",
-            f"<div class='section wide-only'><h2><img src='{icon_prop}' class='section-icon'>{h('Nutrient Proportions (%)')}</h2>",
-            "<div class='table-container'>" + dt_proportions_display.to_html(index=False, classes='proportions-table') + "</div></div>",
-            _transpose_to_html(dt_proportions_display, icon_prop, h("Nutrient Proportions"), is_img=True),
-            f"<div class='section wide-only'><h2><img src='{icon_forage}' class='section-icon'>{h('Forage Details')}</h2>",
-            "<div class='table-container'>" + dt_forages_display.to_html(index=False, classes='forage-table') + "</div>",
-            forage_footnote_html, "</div>",
-            _transpose_to_html(dt_forages_display, icon_forage, h("Forage Details"), footer=forage_footnote_html, is_img=True),
-            f"<div class='section wide-only'><h2><img src='{icon_concentrate}' class='section-icon'>{h('Concentrate Details')}</h2>",
-            "<div class='table-container'>" + dt_concentrates_display.to_html(index=False, classes='concentrate-table') + "</div></div>",
-            _transpose_to_html(dt_concentrates_display, icon_concentrate, h("Concentrate Details"), is_img=True),
-            "</div>",
-            "</div>",
-            "</div></div></body></html>",
+        kpis = [
+            summary_kpi,
+            {'icon': icon_daily_cost, 'label': 'Daily Cost', 'value_html': _escape_html(f"{currency_display}{daily_cost:.2f}")},
+            {'icon': icon_env, 'label': 'Methane', 'value_html': _escape_html(f"{m_prod} g/day")},
+            {'icon': icon_water, 'label': 'Water Intake', 'value_html': f"{float(water_intake or 0):.1f} L"},
         ]
+        if forage_concentrate_ratio:
+            kpis.append({'icon': icon_forage, 'label': 'Forage:Conc. (as fed)', 'value_html': ratio_html})
+        ctx.update({
+            'kpis': kpis,
+            'econ': econ,
+            'key_requirements': key_requirements,
+            'diet': diet_rows,
+            'diet_total': diet_total,
+            'currency': currency_display,
+            'diet_heading': 'Diet' if evaluation_mode else 'Least Cost Diet',
+            'notes_html': messages_html,
+            'limits': user_limits if (user_limits and not evaluation_mode) else None,
+            'name_map': name_map,
+            'environment': environment,
+            'composition': composition,
+        })
 
-    parts = head_parts + body_parts
-
-    html_content = "\n".join(parts)
-    return html_content
+    return render_report_html(ctx, t, lang=str(lang or 'en'), rtl=text_direction(lang) == "rtl",
+                              paper_size=paper_size)
 
 
 def generate_report_from_runner_results_v2(results, output_file="final_report_v2.html"):
