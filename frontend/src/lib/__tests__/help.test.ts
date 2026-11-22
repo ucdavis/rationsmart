@@ -5,6 +5,7 @@ vi.mock("@/lib/api-client/client", () => ({ api: { get } }));
 
 import {
   checkHelpGuide,
+  checkAdminGuide,
   clearHelpIndexCache,
   getAdminHelpIndex,
   getAdminHelpTopic,
@@ -17,6 +18,7 @@ import {
 import {
   formatVideoLength,
   helpFaqsHref,
+  adminGuideHref,
   helpGuideHref,
   helpHomeHref,
   helpScreenHref,
@@ -197,5 +199,11 @@ describe("Admin Manual (N19)", () => {
     get.mockClear();
     await expect(getAdminHelpTopic("../users")).rejects.toMatchObject({ status: 404 });
     expect(get).not.toHaveBeenCalled();
+  });
+  it("checks the Admin Guide as a blob, with no lang (N20)", async () => {
+    get.mockResolvedValue({ data: new Blob() });
+    await expect(checkAdminGuide()).resolves.toBeUndefined();
+    expect(get).toHaveBeenCalledWith("/v1/admin/help/guide", { responseType: "blob" });
+    expect(adminGuideHref()).toBe("/api/proxy/v1/admin/help/guide");
   });
 });
