@@ -2,9 +2,9 @@ title: "Sync feeds from CLIMDES"
 summary: "Set the weekly sync, run it now, change the connection and read the run history."
 updated: "2026-11-22"
 video:
-  youtube_id: "5nsMjqtpwEI"
+  youtube_id: "MHBCbJwhRWE"
   seconds: 77
-  poster: admin-sync-video.webp
+  poster: admin-sync-video-9x16.webp
   chapters:
     - {start: 0, label: "What the sync does"}
     - {start: 10, label: "Weekly sync"}

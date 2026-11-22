@@ -2,9 +2,9 @@ title: "Countries and languages"
 summary: "Choose the countries in the app, and which languages each country's users can pick."
 updated: "2026-11-22"
 video:
-  youtube_id: "piQ55gK2s1k"
+  youtube_id: "ifTbfVHXDmY"
   seconds: 69
-  poster: admin-countries-languages-video.webp
+  poster: admin-countries-languages-video-9x16.webp
   chapters:
     - {start: 0, label: "What this card does"}
     - {start: 10, label: "Enabled countries"}

@@ -2,9 +2,9 @@ title: "Upload, download and delete feeds in bulk"
 summary: "Add or update many feeds with an Excel file, download the library, or delete it."
 updated: "2026-11-22"
 video:
-  youtube_id: "QTHeHA7pdRU"
+  youtube_id: "JUU9pN2KhFc"
   seconds: 77
-  poster: admin-bulk-video.webp
+  poster: admin-bulk-video-9x16.webp
   chapters:
     - {start: 0, label: "Many feeds at once"}
     - {start: 10, label: "Get the template"}
