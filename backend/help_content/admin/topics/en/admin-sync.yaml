@@ -1,0 +1,43 @@
+title: "Sync feeds from CLIMDES"
+summary: "Set the weekly sync, run it now, change the connection and read the run history."
+updated: "2026-11-22"
+video:
+  youtube_id: "5nsMjqtpwEI"
+  seconds: 77
+  poster: admin-sync-video.webp
+  chapters:
+    - {start: 0, label: "What the sync does"}
+    - {start: 10, label: "Weekly sync"}
+    - {start: 22, label: "Sync now"}
+    - {start: 32, label: "Connection settings"}
+    - {start: 43, label: "Run history"}
+    - {start: 54, label: "Skipped rows"}
+    - {start: 66, label: "How feeds are matched"}
+steps:
+  - text: "Open 'Feed Library Sync'. Under 'Automatic sync', switch the scheduler on and pick the day of the week. The sync runs at midnight UTC on that day."
+    image: admin-sync-01.webp
+    video_start: 10
+  - text: "'Sync now' starts a run straight away. It takes a few minutes. Only one sync or upload can run at a time."
+    image: admin-sync-02.webp
+    video_start: 22
+  - text: "'Connection settings' holds the CLIMDES address and token. The token is never shown in full. Tap 'Edit' to change them, then 'Save changes'."
+    image: admin-sync-03.webp
+    video_start: 32
+  - text: "'Run History' lists every sync and file upload: when it ran, its status, and how many rows were new, updated or skipped."
+    image: admin-sync-04.webp
+    video_start: 43
+  - text: "Tap a run to see each skipped row and why. You can search the rows or download them as a CSV file."
+    image: admin-sync-05.webp
+    video_start: 54
+  - text: "A feed is matched by its feed code. A new code with a name already used in that country is skipped, and a sync never renames a feed."
+    image: admin-sync-06.webp
+    video_start: 66
+problems:
+  - title: "I can't switch the scheduler on"
+    text: "Save the CLIMDES address in 'Connection settings' first."
+  - title: "An 'overdue' message shows"
+    text: "The last good sync is more than 8 days old. Open the latest run in 'Run History'. If it failed, check the connection settings and try 'Sync now'."
+  - title: "A feed kept its old name after the sync"
+    text: "A sync never renames a feed. Rename it in 'Feed Management' (topic 2)."
+  - title: "A whole run failed"
+    text: "When the CLIMDES file lacks a required column, nothing is loaded. Ask CLIMDES to fix the file, or upload a corrected Excel file in 'Bulk Upload / Download / Delete' (topic 3)."

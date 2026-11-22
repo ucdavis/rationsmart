@@ -1,0 +1,61 @@
+# Admin Manual content: order, numbers, screen names, related/next. Admins only (/v1/admin/help/*).
+# Contract: Admin Manual API contract v1 (backend design docs, dev_docs/admin_manual).
+# English only. Texts live in topics/en/<key>.yaml; images in media/en/.
+# Separate from the public help one folder up: its own content_version, and the public
+# /v1/help/* never reads this folder. Change content_version whenever anything here changes.
+content_version: "2026-11-22.1"
+quick_start: admin-tour
+
+topics:
+  - key: admin-tour
+    number: 0
+    audience: admin
+    screen_label: "Admin"
+    related: []
+    next: admin-users
+  - key: admin-users
+    number: 1
+    audience: admin
+    screen_label: "User Management"
+    related: [admin-tour]
+    next: admin-feeds
+  - key: admin-feeds
+    number: 2
+    audience: admin
+    screen_label: "Feed Management"
+    related: [admin-bulk, admin-local-names]
+    next: admin-bulk
+  - key: admin-bulk
+    number: 3
+    audience: admin
+    screen_label: "Bulk Upload / Download / Delete"
+    related: [admin-feeds, admin-sync]
+    next: admin-sync
+  - key: admin-sync
+    number: 4
+    audience: admin
+    screen_label: "Feed Library Sync"
+    related: [admin-bulk, admin-feeds]
+    next: admin-countries-languages
+  - key: admin-countries-languages
+    number: 5
+    audience: admin
+    screen_label: "Country / Language"
+    related: [admin-local-names]
+    next: admin-local-names
+  - key: admin-local-names
+    number: 6
+    audience: admin
+    screen_label: "Local Feed Names"
+    related: [admin-countries-languages, admin-feeds]
+    next: admin-monitoring
+  - key: admin-monitoring
+    number: 7
+    audience: admin
+    screen_label: "Feed Reports"
+    related: [admin-users]
+    next: null
+
+# No help buttons on admin screens and no admin FAQs in v1.
+screens: {}
+faqs: []

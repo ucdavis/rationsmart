@@ -1,0 +1,43 @@
+title: "Local feed names"
+summary: "Give feeds their names in local languages, one at a time or with a workbook, and check coverage."
+updated: "2026-11-22"
+video:
+  youtube_id: "wiy4kSMmpMo"
+  seconds: 80
+  poster: admin-local-names-video.webp
+  chapters:
+    - {start: 0, label: "Feed names in local languages"}
+    - {start: 10, label: "Pick country and language"}
+    - {start: 23, label: "Name one feed"}
+    - {start: 34, label: "Change or delete a name"}
+    - {start: 45, label: "Workbook for many names"}
+    - {start: 59, label: "Workbook rules"}
+    - {start: 69, label: "Check coverage"}
+steps:
+  - text: "Open 'Country / Language' and tap 'Local Feed Names'. Pick the country, then the language."
+    image: admin-local-names-01.webp
+    video_start: 10
+  - text: "Tap a feed, type its name in that language and tap 'Save name'. A name that another feed in that country already uses is refused."
+    image: admin-local-names-02.webp
+    video_start: 23
+  - text: "To change or remove a name, tap the feed again and use 'Update name' or 'Delete this name'."
+    image: admin-local-names-03.webp
+    video_start: 34
+  - text: "For many names at once, use the workbook. 'Download' gives one Excel file for the country with feeds, feed types and categories. Fill the language columns and upload it."
+    image: admin-local-names-04.webp
+    video_start: 45
+  - text: "Empty cells are skipped, so the workbook can't delete a name. Names of feed types and categories are translated only in the workbook."
+    image: admin-local-names-05.webp
+    video_start: 59
+  - text: "'Check Coverage' shows how many feeds, feed types and categories have a name in the language."
+    image: admin-local-names-06.webp
+    video_start: 69
+problems:
+  - title: "'Save name' is refused"
+    text: "Another feed in that country already has this name in this language. Choose a different name."
+  - title: "The workbook skipped some names"
+    text: "A name another feed already uses is skipped and listed in the result. Fix it and upload the workbook again."
+  - title: "My language has no column in the workbook"
+    text: "The columns come from the languages linked to the country. Link the language first (topic 5)."
+  - title: "I want to delete a name with the workbook"
+    text: "Empty cells are skipped. Delete a name here, one at a time, with 'Delete this name'."

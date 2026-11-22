@@ -1,0 +1,37 @@
+title: "Countries and languages"
+summary: "Choose the countries in the app, and which languages each country's users can pick."
+updated: "2026-11-22"
+video:
+  youtube_id: "piQ55gK2s1k"
+  seconds: 69
+  poster: admin-countries-languages-video.webp
+  chapters:
+    - {start: 0, label: "What this card does"}
+    - {start: 10, label: "Enabled countries"}
+    - {start: 25, label: "Link a language"}
+    - {start: 36, label: "Registered languages"}
+    - {start: 47, label: "Activate first"}
+    - {start: 57, label: "Register a language"}
+steps:
+  - text: "Open 'Country / Language'. 'Enabled countries' lists the countries users can pick, each with its languages. The plus button enables another country."
+    image: admin-countries-languages-01.webp
+    video_start: 10
+  - text: "To let a country's users pick a language, tap 'Add language' under that country and choose it. The cross next to a language removes it again."
+    image: admin-countries-languages-02.webp
+    video_start: 25
+  - text: "'Registered languages' holds more than two hundred languages. Most are inactive. Use the filters and the search box to find one."
+    image: admin-countries-languages-03.webp
+    video_start: 36
+  - text: "A language must be active before users can pick it. Activate it here first, then link it to the country."
+    image: admin-countries-languages-04.webp
+    video_start: 47
+  - text: "If a language is missing, tap the plus button to register it with its English name and ISO code. English is always on and can't be removed."
+    image: admin-countries-languages-05.webp
+    video_start: 57
+problems:
+  - title: "Users see a language but saving it in their profile fails"
+    text: "The language is linked to the country but not active. Activate it in 'Registered languages'."
+  - title: "Registering a language says it is already registered"
+    text: "It is in the list already, inactive. Search for it in 'Registered languages' and activate it."
+  - title: "A country is missing in 'Cattle Info'"
+    text: "Only enabled countries are shown there. Enable it under 'Enabled countries'."

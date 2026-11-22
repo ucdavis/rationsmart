@@ -80,3 +80,21 @@ class HelpTopicResponse(BaseModel):
     related: List[str]
     next: Optional[str] = None
     updated: str = Field(..., description="Last content change, YYYY-MM-DD")
+
+
+# ── Admin Manual (/v1/admin/help) ─────────────────────────────────────────────
+# Same shapes as the public help, so the PWA reuses its screens; only the audience
+# differs ("admin") and image links start with /v1/admin/help/media.
+
+
+class AdminHelpTopicSummary(HelpTopicSummary):
+    audience: Literal["admin"]
+
+
+class AdminHelpIndexResponse(HelpIndexResponse):
+    language: Literal["en"] = Field(..., description="Always 'en' (the Admin Manual is English only)")
+    topics: List[AdminHelpTopicSummary]
+
+
+class AdminHelpTopicResponse(HelpTopicResponse):
+    language: Literal["en"] = Field(..., description="Always 'en' (the Admin Manual is English only)")

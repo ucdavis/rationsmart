@@ -1,0 +1,29 @@
+title: "Reports and feedback"
+summary: "See every user's saved reports and the feedback users send."
+updated: "2026-11-22"
+video:
+  youtube_id: "Ug398xfU7GU"
+  seconds: 53
+  poster: admin-monitoring-video.webp
+  chapters:
+    - {start: 0, label: "What users do"}
+    - {start: 10, label: "All saved reports"}
+    - {start: 21, label: "Open a report"}
+    - {start: 32, label: "Feedback summary"}
+    - {start: 42, label: "Feedback messages"}
+steps:
+  - text: "'Feed Reports' lists every user's saved reports, newest first, with the simulation, the report type and the date."
+    image: admin-monitoring-01.webp
+    video_start: 10
+  - text: "'View Report' opens that report's PDF. Reports hold users' own data, so share them with care."
+    image: admin-monitoring-02.webp
+    video_start: 21
+  - text: "'Feedback Management' shows how many feedback messages came in and the overall rating."
+    image: admin-monitoring-03.webp
+    video_start: 32
+  - text: "Below, each message shows who sent it, its type and the date. Use them to find the problems users meet."
+    image: admin-monitoring-04.webp
+    video_start: 42
+problems:
+  - title: "'View Report' doesn't open a PDF"
+    text: "The PDF is made after the user saves the report and can take a moment. If it never appears, tell the server team."
