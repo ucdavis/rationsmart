@@ -26,8 +26,9 @@ in the answer is English (also when that language has no help files at all).
 
 Admin Manual: help_content/admin/ has the same layout and is read by the same code as a
 second, separate content object (get_admin_help_content, served by /v1/admin/help/* to
-admins only). It is English only: no other language folders, no guide/ and no
-translations/; its audience is "admin" and its image links start with /v1/admin/help/media.
+admins only). It is English only: no other language folders and no translations/; its
+guide/en.yaml (texts of the printable Admin Guide) must have every key of the User Guide's
+guide/en.yaml. Its audience is "admin" and its image links start with /v1/admin/help/media.
 The public loader never reads that folder, and each tree fails on its own.
 """
 from __future__ import annotations
@@ -74,13 +75,16 @@ class HelpContentError(Exception):
 class HelpTree:
     """What one content folder may hold and how its answers look."""
 
+    name: str  # "help" (public) or "admin"; picks the printable guide's file name
     audiences: Tuple[str, ...]
     media_url_prefix: str
-    english_only: bool  # True: only en/ folders, no guide/, no translations/
+    english_only: bool  # True: only en/ folders and guide/en.yaml, no translations/
+    guide_keys_from: Optional[Path] = None  # guide/en.yaml must have every key of this file
 
 
-PUBLIC_TREE = HelpTree(AUDIENCES, MEDIA_URL_PREFIX, english_only=False)
-ADMIN_TREE = HelpTree(ADMIN_AUDIENCES, ADMIN_MEDIA_URL_PREFIX, english_only=True)
+PUBLIC_TREE = HelpTree("help", AUDIENCES, MEDIA_URL_PREFIX, english_only=False)
+ADMIN_TREE = HelpTree("admin", ADMIN_AUDIENCES, ADMIN_MEDIA_URL_PREFIX, english_only=True,
+                      guide_keys_from=HELP_ROOT / "guide" / f"{ENGLISH}.yaml")
 
 
 # ── small checking helpers ────────────────────────────────────────────────────
@@ -387,7 +391,7 @@ class HelpContent:
                  media: Dict[str, Dict[str, Tuple[Path, str]]],
                  guide: Optional[Dict[str, Dict[str, Any]]] = None,
                  translations: Optional[Dict[str, Dict[str, Any]]] = None,
-                 media_url_prefix: str = MEDIA_URL_PREFIX) -> None:
+                 media_url_prefix: str = MEDIA_URL_PREFIX, tree: str = "help") -> None:
         self._manifest = manifest
         self._topics = topics  # lang -> key -> topic (English full, others text only)
         self._faqs = faqs  # lang -> faq key -> {question, answer}
@@ -395,7 +399,13 @@ class HelpContent:
         self._guide = guide or {}  # lang -> printable-guide text key -> text
         self._translations = translations or {}  # lang -> {status, from, hashes}
         self._media_url_prefix = media_url_prefix
+        self.tree = tree  # "help" or "admin" (see HelpTree.name)
         self.languages = sorted(set(topics) | set(faqs) | set(self._guide) | {ENGLISH})
+
+    @property
+    def media_url_prefix(self) -> str:
+        """Start of every image link in the answers, e.g. /v1/help/media."""
+        return self._media_url_prefix
 
     @property
     def content_version(self) -> str:
@@ -715,9 +725,13 @@ def _english_only(root: Path, problems: _Problems) -> None:
         for path in sorted(faq_dir.iterdir()):
             if not path.name.startswith(".") and path.name != f"{ENGLISH}.yaml":
                 problems.add(f"faqs/{path.name}", "this content is English only")
-    for folder in ("guide", "translations"):
-        if (root / folder).exists():
-            problems.add(folder, "not used in this content (English only, no printable guide)")
+    guide_dir = root / "guide"
+    if guide_dir.is_dir():
+        for path in sorted(guide_dir.iterdir()):
+            if not path.name.startswith(".") and path.name != f"{ENGLISH}.yaml":
+                problems.add(f"guide/{path.name}", "this content is English only")
+    if (root / "translations").exists():
+        problems.add("translations", "not used in this content (English only)")
 
 
 def _load(root: Path, tree: HelpTree = PUBLIC_TREE) -> HelpContent:
@@ -785,9 +799,7 @@ def _load(root: Path, tree: HelpTree = PUBLIC_TREE) -> HelpContent:
     guide: Dict[str, Dict[str, Any]] = {}
     guide_dir = root / "guide"
     en_guide = guide_dir / f"{ENGLISH}.yaml"
-    if tree.english_only:
-        pass  # no printable guide (checked in _english_only)
-    elif not en_guide.is_file():
+    if not en_guide.is_file():
         problems.add(f"guide/{ENGLISH}.yaml", "missing")
     else:
         guide[ENGLISH] = _guide(_read_yaml(en_guide, problems), f"guide/{ENGLISH}", problems)
@@ -799,7 +811,11 @@ def _load(root: Path, tree: HelpTree = PUBLIC_TREE) -> HelpContent:
                 problems.add(f"guide/{path.name}", "must be <language code>.yaml")
                 continue
             guide[lang] = _guide(_read_yaml(path, problems), f"guide/{lang}", problems, guide[ENGLISH])
-
+        if tree.guide_keys_from is not None:
+            # The printable guide's templates use the User Guide's keys: none may be missing.
+            master = _read_yaml(tree.guide_keys_from, problems)
+            for key in sorted(set(master or {}) - set(guide[ENGLISH])):
+                problems.add(f"guide/{ENGLISH}.yaml", f"missing '{key}' (a key of the User Guide's texts)")
     translations: Dict[str, Dict[str, Any]] = {}
     tr_dir = root / "translations"
     if tr_dir.is_dir():
@@ -825,7 +841,7 @@ def _load(root: Path, tree: HelpTree = PUBLIC_TREE) -> HelpContent:
 
     if problems.items:
         raise HelpContentError("\n".join(problems.items))
-    return HelpContent(manifest, topics, faqs, media, guide, translations, tree.media_url_prefix)
+    return HelpContent(manifest, topics, faqs, media, guide, translations, tree.media_url_prefix, tree.name)
 
 
 _lock = threading.Lock()

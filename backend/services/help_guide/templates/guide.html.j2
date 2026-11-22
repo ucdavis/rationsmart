@@ -55,7 +55,9 @@
     {% for t in topics %}
     <a href="#t-{{ t.key }}"><span class="n">{{ t.number }}</span>{{ t.title }}{% if t.video %}<span class="len">▶ {{ t.video.length }}</span>{% endif %}</a>
     {% endfor %}
+    {% if faqs %}
     <a class="extra" href="#faqs"><span class="n">?</span>{{ tr('faqs_title') }}</a>
+    {% endif %}
     <a class="extra" href="#more"><span class="n">+</span>{{ tr('more_title') }}</a>
   </div>
 </section>
@@ -105,7 +107,8 @@
 </section>
 {% endfor %}
 
-{# ── FAQs ── #}
+{# ── FAQs (the Admin Guide has none) ── #}
+{% if faqs %}
 <section class="topic faqs" id="faqs">
   <h2>{{ tr('faqs_title') }}</h2>
   {% for f in faqs %}
@@ -116,6 +119,7 @@
   </div>
   {% endfor %}
 </section>
+{% endif %}
 
 {# ── back page ── #}
 <section class="back" id="more">
