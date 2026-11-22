@@ -1,0 +1,77 @@
+# Texts of the printable Admin Guide (GET /v1/admin/help/guide), admins only.
+# Same keys as the User Guide's help_content/guide/en.yaml (the loader checks that none is
+# missing); the wording is for admins. English only. Keep every {placeholder} exactly as it
+# is. Plain text only (no '<' or '>'). App labels in single quotes must match the app.
+
+language_name: "English"
+date: "{day} {month} {year}"
+months: [January, February, March, April, May, June, July, August, September, October, November, December]
+length_min_sec: "{min} min {sec} s"
+length_sec: "{sec} s"
+
+# page header and footer
+header_guide: "RationSmart · Admin Guide"
+footer_edition: "Edition {edition}"
+footer_page: "Page {page} of {pages}"
+footer_card: "RationSmart · Admin Guide · Edition {edition}"
+footer_card_page: "{page} / {pages}"
+
+# cover
+guide_title: "Admin Guide"
+guide_tagline: "Running the Admin area, step by step"
+fact_language: "Language"
+fact_edition: "Edition"
+fact_updated: "Updated"
+fact_topics: "Topics"
+fact_topics_value: "{count} · with pictures and videos"
+cover_scan_1: "Scan to watch the"
+cover_scan_2: "Admin tour video ({length})"
+cover_foot: "For RationSmart admins only. The topic numbers match the 'Admin Manual' screen in the app."
+ai_note: "AI translation, not yet checked by a native speaker."
+translated_from: "Translated from the English edition {edition}."
+
+# how to use this guide
+howto_title: "How to use this guide"
+howto_topics_lead: "Topics follow the Admin cards."
+howto_topics: "Each topic is one admin task. The numbers are the same as in the app's 'Admin Manual' screen (menu, then 'Admin', then 'Admin Manual')."
+howto_scan_lead: "Scan a QR code to watch."
+howto_scan: "Open the phone camera and point it at the code. The topic's short video opens on YouTube. The videos are unlisted: only people with the link can find them, so don't post the links in public."
+videos_english: "The videos are in English."
+howto_time_lead: "▶ 0:22 means “this step is in the video at 0 min 22 s”."
+howto_time: "Use it to jump to one step."
+howto_problems_lead: "“If something goes wrong”"
+howto_problems: "at the end of each topic lists the messages admins see most and what to do."
+tip_lead: "Before you change anything:"
+tip: "watch topic {number}, {title}. Changes in the Admin area reach every user of a country at once, so try a change on the Test server first when you can. The pictures come from the app with demo data; your screen may look slightly different."
+
+# contents and topic pages
+contents_title: "Contents"
+faqs_title: "Frequently asked questions"
+more_title: "Where to get more help"
+screen_chip: "Screen: {screen}"
+audience_advanced: "Advanced"
+audience_farmers: "For farmers"
+audience_nutritionists: "For nutritionists"
+video_length: "▶ Video, {length}"
+in_the_video: "In the video"
+scan_to_watch: "Scan to watch"
+problems_title: "⚠ If something goes wrong"
+faq_see: "→ Topic {number}: {title}"
+
+# back page
+back_app_title: "In the app"
+back_app: "Open the menu, tap 'Admin', then 'Admin Manual'. It has the same topics with the videos, and it is always the newest edition."
+back_contact_title: "Questions or problems"
+back_contact: "Ask the team that runs RationSmart's servers. The Operations Guide explains releases, backups and health checks."
+back_videos_title: "Videos"
+back_videos: "All {count} videos are in the unlisted YouTube playlist “RationSmart - Admin Videos”. Each topic page has its QR code."
+back_edition_title: "This edition"
+back_edition: "Edition {edition} · {language} · {updated}. When the admin screens change, a new edition is made from the same text the Admin Manual shows."
+
+# Quick Start card (not made for the Admin Guide; kept so every key exists)
+card_title: "Admin Quick Start"
+card_tagline: "The Admin area in {count} steps"
+card_problems_title: "⚠ If something goes wrong"
+card_faqs_title: "Questions admins ask"
+card_topics_title: "Learn more: {count} admin topics"
+card_more: "In the app: menu → 'Admin' → 'Admin Manual'. The full printable Admin Guide is in the same place."

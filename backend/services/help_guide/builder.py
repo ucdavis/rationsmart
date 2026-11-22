@@ -13,6 +13,10 @@ as strict as it is. The PDF itself is made by pdf_service.html_to_pdf, like ever
 
 guide_pdf() caches each PDF on disk by edition, served language and content_version:
 a content change bumps the version, so a stale guide is never served.
+
+The same builder makes the printable Admin Guide from the Admin Manual content
+(help_content/admin/, GET /v1/admin/help/guide): full edition only, its own texts and file
+name, and smaller step pictures (the admin pictures are whole phone screens).
 """
 from __future__ import annotations
 
@@ -33,7 +37,7 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from markupsafe import Markup, escape
 from PIL import Image
 
-from services.help_content import ENGLISH, MEDIA_URL_PREFIX, PLACEHOLDER_RE, HelpContent
+from services.help_content import ENGLISH, PLACEHOLDER_RE, HelpContent
 
 logger = logging.getLogger(__name__)
 
@@ -45,15 +49,28 @@ CACHE_DIR = Path(tempfile.gettempdir()) / "rationsmart-help-guide"
 QUICK_CARD_FAQS = ("no-diet-found", "feed-missing", "calf-milk", "margin-meaning", "pdf-pending")
 
 AUDIENCES_LABELLED = ("advanced", "farmers", "nutritionists")  # "all" gets no chip
-FILE_TITLES = {"full": "RationSmart_User_Guide", "quick": "RationSmart_Quick_Start"}
+# Download names per content tree (HelpContent.tree) and edition; a missing pair is not made.
+FILE_TITLES = {
+    "help": {"full": "RationSmart_User_Guide", "quick": "RationSmart_Quick_Start"},
+    "admin": {"full": "RationSmart_Admin_Guide"},
+}
 
 STEP_PICTURE_WIDTH = 780  # px; the help screenshots are 780 px wide already
+# The Admin Manual's step pictures are whole phone screens (780 x 1688): 520 px keeps the
+# Admin Guide near 3 MB (measured 2026-11-22) and is still sharp at the printed 42 x 92 mm.
+STEP_PICTURE_WIDTHS = {"admin": 520}
+# Extra print styles per tree, added after guide.css (the User Guide gets none, so its output
+# stays as it was): the admin pictures are tall phone screens, so the frame takes the
+# picture's own width instead of the 74 mm column, and the step text gets the rest.
+EXTRA_CSS = {
+    "admin": "\n.step .pic { width: 42mm; }\n"
+             ".step .pic img { width: 42mm; max-height: 95mm; }\n",
+}
 POSTER_WIDTH = 640
 JPEG_QUALITY = 85
 QR_COLOUR = "#064E3B"
 QUICK_CARD_PAGES = 2  # the Quick Start card is a 2-page handout; longer languages get the compact layout
 
-_MEDIA_RE = re.compile(re.escape(MEDIA_URL_PREFIX) + r"/([^/?]+)/([^/?]+)")
 _SAFE_RE = re.compile(r"[^A-Za-z0-9._-]")
 
 _env = Environment(
@@ -134,17 +151,21 @@ class _Pictures:
     def __init__(self, content: HelpContent) -> None:
         self._content = content
         self._done: Dict[Tuple[str, int], Optional[str]] = {}
+        # Links look like <prefix>/<lang>/<file>?v=...; the prefix is the content's own.
+        self._media_re = re.compile(re.escape(content.media_url_prefix) + r"/([^/?]+)/([^/?]+)")
+        self.step_width = STEP_PICTURE_WIDTHS.get(content.tree, STEP_PICTURE_WIDTH)
 
-    def __call__(self, url: Optional[str], max_width: int = STEP_PICTURE_WIDTH) -> Optional[str]:
+    def __call__(self, url: Optional[str], max_width: Optional[int] = None) -> Optional[str]:
         if not url:
             return None
+        max_width = max_width or self.step_width
         key = (url, max_width)
         if key not in self._done:
             self._done[key] = self._encode(url, max_width)
         return self._done[key]
 
     def _encode(self, url: str, max_width: int) -> Optional[str]:
-        m = _MEDIA_RE.search(url)
+        m = self._media_re.search(url)
         found = self._content.media_file(*m.groups()) if m else None
         if not found:
             logger.warning("Help guide: picture %s is not a listed help file; left out", url)
@@ -246,13 +267,17 @@ def _guide_data(content: HelpContent, lang: Optional[str]) -> Dict[str, Any]:
 # ── public API ────────────────────────────────────────────────────────────────
 
 
+def _check_edition(content: HelpContent, edition: str) -> None:
+    if edition not in FILE_TITLES.get(content.tree, {}):
+        raise ValueError(f"unknown help guide edition {edition!r}")
+
+
 def build_guide_html(content: HelpContent, edition: str, lang: Optional[str] = None,
                      compact: bool = False) -> str:
     """The guide as one self-contained HTML page (pictures and QR codes inline).
 
     compact=True tightens the Quick Start card's second page for long languages."""
-    if edition not in EDITIONS:
-        raise ValueError(f"unknown help guide edition {edition!r}")
+    _check_edition(content, edition)
     data = _guide_data(content, lang)
     tr: _Texts = data["tr"]
     counters = {"page": "counter(page)", "pages": "counter(pages)",
@@ -262,6 +287,7 @@ def build_guide_html(content: HelpContent, edition: str, lang: Optional[str] = N
                        ("__FOOTER_PAGE__", "footer_page"), ("__FOOTER_CARD__", "footer_card"),
                        ("__FOOTER_CARD_PAGE__", "footer_card_page")):
         css = css.replace(token, tr.css(key, **counters))
+    css += EXTRA_CSS.get(content.tree, "")
     template = "guide.html.j2" if edition == "full" else "quick_start.html.j2"
     return _env.get_template(template).render(css=css, compact=compact, **data)
 
@@ -299,7 +325,7 @@ def guide_filename(content: HelpContent, edition: str, lang: Optional[str] = Non
     """Download name, e.g. RationSmart_User_Guide_en_2026-11-19.1.pdf."""
     served = content.index(lang)["language"]
     version = _SAFE_RE.sub("_", content.content_version)
-    return f"{FILE_TITLES[edition]}_{_SAFE_RE.sub('_', served)}_{version}.pdf"
+    return f"{FILE_TITLES[content.tree][edition]}_{_SAFE_RE.sub('_', served)}_{version}.pdf"
 
 
 _locks: Dict[str, threading.Lock] = {}
@@ -314,8 +340,7 @@ def _lock_for(name: str) -> threading.Lock:
 def guide_pdf(content: HelpContent, edition: str, lang: Optional[str] = None,
               cache_dir: Path = CACHE_DIR) -> Tuple[Path, str]:
     """(path of the cached PDF, download name). Renders once per edition, language and version."""
-    if edition not in EDITIONS:
-        raise ValueError(f"unknown help guide edition {edition!r}")
+    _check_edition(content, edition)
     name = guide_filename(content, edition, lang)
     path = cache_dir / name
     if path.is_file():

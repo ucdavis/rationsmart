@@ -23,11 +23,13 @@ from services.help_content import (
     HelpContentError,
     get_admin_help_content,
 )
+from services.help_guide import guide_pdf
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["Admin Manual"], dependencies=[Depends(require_admin_user)])
 
 TEXT_CACHE = "private, no-store"
+GUIDE_CACHE = "private, max-age=300"  # the admin's own browser only; lets the app check, then open
 MEDIA_CACHE = "private, max-age=31536000, immutable"
 NOT_AVAILABLE = "Help is not available right now"
 TOPIC_NOT_FOUND = "Help topic not found"
@@ -86,3 +88,25 @@ def admin_help_media(name: str):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
     path, media_type = found
     return FileResponse(path, media_type=media_type, headers={"Cache-Control": MEDIA_CACHE})
+
+
+@router.get("/guide", summary="Printable Admin Guide (PDF)", response_class=FileResponse)
+def admin_help_guide():
+    """
+    The Admin Manual as a printable A4 PDF (the **Admin Guide**): cover, how to use, contents,
+    every admin topic with its steps, pictures and a QR code for its video, back page.
+    Same builder as the User Guide (`GET /v1/help/guide`). English only, one edition.
+
+    Admins only: `401` without a session, `403` for other users. Rendered once per
+    `content_version`, then served from a cache. `503` when the admin help content could
+    not be loaded or the PDF could not be made.
+    """
+    content = _content()
+    try:
+        path, filename = guide_pdf(content, "full", ENGLISH)
+    except Exception:
+        logger.error("Admin guide could not be made", exc_info=True)
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=NOT_AVAILABLE)
+    return FileResponse(path, media_type="application/pdf", filename=filename,
+                        content_disposition_type="inline",
+                        headers={"Cache-Control": GUIDE_CACHE})

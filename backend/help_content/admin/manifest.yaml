@@ -3,7 +3,7 @@
 # English only. Texts live in topics/en/<key>.yaml; images in media/en/.
 # Separate from the public help one folder up: its own content_version, and the public
 # /v1/help/* never reads this folder. Change content_version whenever anything here changes.
-content_version: "2026-11-22.3"
+content_version: "2026-11-22.4"
 quick_start: admin-tour
 
 topics:
