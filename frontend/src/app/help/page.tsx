@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Toolbar from "@/components/Toolbar";
 import Spinner from "@/components/ui/Spinner";
-import { HelpNote, helpErrorMessage } from "@/components/help/HelpParts";
+import { HelpNote } from "@/components/help/HelpParts";
 import { useHelpLang } from "@/components/help/useHelpIndex";
+import { useOpenGuide } from "@/components/help/useOpenGuide";
 import { useT } from "@/lib/i18n-ui";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { COLORS } from "@/lib/colors";
@@ -18,31 +18,10 @@ export default function HelpAndSupportPage() {
   const router = useRouter();
   const t = useT();
   const lang = useHelpLang();
-  const [opening, setOpening] = useState<HelpGuideEdition | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  // N16: the printable guide opens in a new tab. The tab is opened on the tap
-  // itself (a tab opened after the wait is blocked as a pop-up), and only sent
-  // to the PDF once the PDF is known to load — a 503 or no internet shows the
-  // Help home's message here instead of raw JSON in the tab.
-  const openGuide = async (edition: HelpGuideEdition) => {
-    if (opening) return;
-    setError(null);
-    setOpening(edition);
-    const tab = window.open("", "_blank");
-    if (tab) tab.opener = null;
-    try {
-      await checkHelpGuide(edition, lang);
-      const href = helpGuideHref(edition, lang);
-      if (tab) tab.location.href = href;
-      else window.location.assign(href);
-    } catch (err) {
-      tab?.close();
-      setError(helpErrorMessage(err));
-    } finally {
-      setOpening(null);
-    }
-  };
+  // N16: the printable guides open in a new tab (see useOpenGuide).
+  const { opening, error, openGuide: open } = useOpenGuide<HelpGuideEdition>();
+  const openGuide = (edition: HelpGuideEdition) =>
+    open(edition, () => checkHelpGuide(edition, lang), helpGuideHref(edition, lang));
 
   const items: { title: string; onPress?: () => void; busy?: boolean }[] = [
     // N11: in-app help screens (outside (main), so they work before login).

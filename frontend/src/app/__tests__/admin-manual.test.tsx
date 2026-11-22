@@ -1,16 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 
-const { push, replace, back, searchRef, getAdminHelpIndex, getAdminHelpTopic, getHelpIndex } =
-  vi.hoisted(() => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    back: vi.fn(),
-    searchRef: { current: "" },
-    getAdminHelpIndex: vi.fn(),
-    getAdminHelpTopic: vi.fn(),
-    getHelpIndex: vi.fn(),
-  }));
+const {
+  push,
+  replace,
+  back,
+  searchRef,
+  getAdminHelpIndex,
+  getAdminHelpTopic,
+  getHelpIndex,
+  checkAdminGuide,
+} = vi.hoisted(() => ({
+  push: vi.fn(),
+  replace: vi.fn(),
+  back: vi.fn(),
+  searchRef: { current: "" },
+  getAdminHelpIndex: vi.fn(),
+  getAdminHelpTopic: vi.fn(),
+  getHelpIndex: vi.fn(),
+  checkAdminGuide: vi.fn(),
+}));
 
 vi.mock("next/navigation", () => ({
   useRouter: () => ({ push, replace, back }),
@@ -19,12 +28,13 @@ vi.mock("next/navigation", () => ({
 
 vi.mock("@/lib/api", async () => {
   const actual = await vi.importActual<typeof import("@/lib/api")>("@/lib/api");
-  return { ...actual, getAdminHelpIndex, getAdminHelpTopic, getHelpIndex };
+  return { ...actual, getAdminHelpIndex, getAdminHelpTopic, getHelpIndex, checkAdminGuide };
 });
 
 import AdminLayout from "@/app/(main)/admin/layout";
 import AdminManualPage from "@/app/(main)/admin/manual/page";
 import AdminManualTopicPage from "@/app/(main)/admin/manual/topic/page";
+import HelpHomePage from "@/app/help/manual/page";
 import { parseHelpIndex, parseHelpTopic } from "@/lib/api-client/help";
 import { useStore, type User } from "@/lib/store";
 import adminIndex from "./fixtures/help/admin-index.en.json";
@@ -48,6 +58,7 @@ beforeEach(() => {
   getAdminHelpIndex.mockReset().mockResolvedValue(INDEX);
   getAdminHelpTopic.mockReset().mockResolvedValue(USERS);
   getHelpIndex.mockReset();
+  checkAdminGuide.mockReset();
   searchRef.current = "";
   useStore.setState({ user: admin(), lastUiLanguage: "en" });
   window.scrollTo = vi.fn() as unknown as typeof window.scrollTo;
@@ -228,5 +239,54 @@ describe("Admin Manual topic", () => {
     render(<AdminManualTopicPage />);
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/admin/manual"));
     expect(getAdminHelpTopic).not.toHaveBeenCalled();
+  });
+});
+
+describe("Printable Admin Guide (N20)", () => {
+  /** A stand-in for the tab window.open returns. */
+  const fakeTab = () => ({ opener: {} as unknown, location: { href: "" }, close: vi.fn() });
+  const guideButton = () => screen.findByRole("button", { name: /Printable Admin Guide \(PDF\)/ });
+
+  it("opens the guide in a new tab once it loads, with no lang", async () => {
+    checkAdminGuide.mockResolvedValue(undefined);
+    const tab = fakeTab();
+    const open = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+    render(<AdminManualPage />);
+    fireEvent.click(await guideButton());
+    // The tab is opened on the tap (pop-up blockers), with no link back to the app.
+    expect(open).toHaveBeenCalledWith("", "_blank");
+    expect(tab.opener).toBeNull();
+    expect(checkAdminGuide).toHaveBeenCalledWith();
+    await waitFor(() => expect(tab.location.href).toBe("/api/proxy/v1/admin/help/guide"));
+    open.mockRestore();
+  });
+
+  it.each([
+    [503, "Help is not available right now."],
+    [undefined, "Help needs internet."],
+  ])("error %s closes the tab and shows the help message", async (status, message) => {
+    checkAdminGuide.mockRejectedValue(httpError(status));
+    const tab = fakeTab();
+    const open = vi.spyOn(window, "open").mockReturnValue(tab as unknown as Window);
+    render(<AdminManualPage />);
+    fireEvent.click(await guideButton());
+    expect(await screen.findByText(message)).toBeInTheDocument();
+    expect(tab.close).toHaveBeenCalled();
+    expect(tab.location.href).toBe("");
+    open.mockRestore();
+  });
+
+  it("the label follows the app language (Hindi)", async () => {
+    useStore.setState({ user: admin({ preferred_language: "hi" }) });
+    render(<AdminManualPage />);
+    expect(await screen.findByText("छापने योग्य प्रशासक गाइड (PDF)")).toBeInTheDocument();
+  });
+
+  it("the public User Manual has no admin guide button", async () => {
+    getHelpIndex.mockResolvedValue(INDEX);
+    render(<HelpHomePage />);
+    await screen.findByText("Admin tour: what admins do");
+    expect(screen.queryByText(/Printable Admin Guide/)).toBeNull();
+    expect(checkAdminGuide).not.toHaveBeenCalled();
   });
 });
