@@ -50,7 +50,7 @@ describe("Admin landing — admin user", () => {
     useStore.setState({ user: seedUser() } as never);
   });
 
-  it("renders the 5 documented nav cards and navigates to the right routes", () => {
+  it("renders the 8 nav cards, Admin Manual last, and navigates to the right routes", () => {
     render(<AdminPage />);
 
     const expected: [string, string][] = [
@@ -61,6 +61,7 @@ describe("Admin landing — admin user", () => {
       ["Feed Reports", "/admin/reports"],
       ["Country/ Language", "/admin/country-language"],
       ["Feed Library Sync", "/admin/feed-sync"],
+      ["Admin Manual", "/admin/manual"],
     ];
 
     // Card titles render with a literal "\n" (whiteSpace: pre-line for the
@@ -74,6 +75,9 @@ describe("Admin landing — admin user", () => {
       expect(push).toHaveBeenCalledWith(href);
       push.mockClear();
     }
+    const cards = screen.getAllByRole("button").filter((b) => b.closest(".grid"));
+    expect(cards).toHaveLength(8);
+    expect(cards.at(-1)?.textContent?.replace(/\s+/g, " ").trim()).toBe("Admin Manual");
   });
 
   it("does not redirect an admin user away", () => {

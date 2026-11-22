@@ -51,7 +51,13 @@ export function placeholdersMatch(en, translated) {
   const got = (translated.match(SLOT) ?? []).sort();
   const eq = (/** @type {string[]} */ a, /** @type {string[]} */ b) =>
     a.length === b.length && a.every((x, i) => x === b[i]);
-  return eq(want, got) || eq(want.filter((x) => x !== "${s}"), got);
+  return (
+    eq(want, got) ||
+    eq(
+      want.filter((x) => x !== "${s}"),
+      got
+    )
+  );
 }
 
 /**

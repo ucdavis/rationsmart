@@ -51,6 +51,12 @@ export const helpTopicHref = (key: string, lang?: string) =>
 export const helpScreenHref = (screen: HelpScreenKey, lang?: string) =>
   withParams("/help/topic", { screen, lang });
 
+/** Admin Manual list (N19); `notice` as for helpHomeHref. Never under /help. */
+export const adminManualHref = (notice?: string) => withParams("/admin/manual", { notice });
+
+/** An Admin Manual topic by its key. */
+export const adminManualTopicHref = (key: string) => withParams("/admin/manual/topic", { key });
+
 export type HelpGuideEdition = "full" | "quick";
 
 /** The printable guide (N16): `full` = User Guide, `quick` = Quick Start card. Public PDF. */

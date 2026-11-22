@@ -159,6 +159,8 @@ export { default } from "./api-client/client";
 export {
   checkHelpGuide,
   clearHelpIndexCache,
+  getAdminHelpIndex,
+  getAdminHelpTopic,
   getHelpIndex,
   getHelpTopic,
   helpMediaUrl,

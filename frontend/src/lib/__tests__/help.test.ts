@@ -6,6 +6,8 @@ vi.mock("@/lib/api-client/client", () => ({ api: { get } }));
 import {
   checkHelpGuide,
   clearHelpIndexCache,
+  getAdminHelpIndex,
+  getAdminHelpTopic,
   getHelpIndex,
   getHelpTopic,
   helpMediaUrl,
@@ -125,6 +127,11 @@ describe("helpMediaUrl", () => {
     expect(helpMediaUrl(null)).toBeNull();
     expect(helpMediaUrl("https://evil.example/a.png")).toBeNull();
     expect(helpMediaUrl("/v1/help/media/../../auth/me")).toBeNull();
+    // N19: Admin Manual images.
+    expect(helpMediaUrl("/v1/admin/help/media/en/admin-users-01.webp?v=1")).toBe(
+      "/api/proxy/v1/admin/help/media/en/admin-users-01.webp?v=1"
+    );
+    expect(helpMediaUrl("/v1/admin/help/media/../../admin/users")).toBeNull();
   });
 });
 
@@ -160,5 +167,35 @@ describe("getHelpIndex / getHelpTopic", () => {
       params: { edition: "quick", lang: "en" },
       responseType: "blob",
     });
+  });
+});
+
+describe("Admin Manual (N19)", () => {
+  it("asks the admin endpoints with no lang and reads audience: admin", async () => {
+    const { default: adminIndex } =
+      await import("@/app/__tests__/fixtures/help/admin-index.en.json");
+    get.mockResolvedValue({ data: adminIndex });
+    const index = await getAdminHelpIndex();
+    expect(get).toHaveBeenCalledWith("/v1/admin/help/index");
+    expect(index.topics).toHaveLength(8);
+    expect(index.topics[0]?.audience).toBe("admin");
+    expect(index.screens).toEqual({});
+    expect(index.faqs).toEqual([]);
+  });
+  it("is not cached: every call asks again", async () => {
+    get.mockResolvedValue({ data: {} });
+    await getAdminHelpIndex();
+    await getAdminHelpIndex();
+    expect(get).toHaveBeenCalledTimes(2);
+  });
+  it("gets a topic by key and refuses a malformed key without a request", async () => {
+    const { default: users } =
+      await import("@/app/__tests__/fixtures/help/admin-topic.admin-users.en.json");
+    get.mockResolvedValue({ data: users });
+    await expect(getAdminHelpTopic("admin-users")).resolves.toMatchObject({ key: "admin-users" });
+    expect(get).toHaveBeenCalledWith("/v1/admin/help/topics/admin-users");
+    get.mockClear();
+    await expect(getAdminHelpTopic("../users")).rejects.toMatchObject({ status: 404 });
+    expect(get).not.toHaveBeenCalled();
   });
 });
