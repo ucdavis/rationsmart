@@ -1,0 +1,35 @@
+title: "Admin tour: what admins do"
+summary: "Open the Admin area and see what each admin card is for."
+updated: "2026-11-22"
+video:
+  youtube_id: "i0BtoVuCi-M"
+  seconds: 68
+  poster: admin-tour-video.webp
+  chapters:
+    - {start: 0, label: "What admins do"}
+    - {start: 12, label: "Open the Admin area"}
+    - {start: 23, label: "Users, feedback and reports"}
+    - {start: 34, label: "Feeds"}
+    - {start: 47, label: "Sync and languages"}
+    - {start: 57, label: "Work with care"}
+steps:
+  - text: "Log in with your admin account. Open the menu at the top left and tap 'Admin'. Only admins see this item."
+    image: admin-tour-01.webp
+    video_start: 12
+  - text: "'User Management' turns accounts off or on and makes admins. 'Feedback Management' and 'Feed Reports' show what all users have sent and saved."
+    image: admin-tour-02.webp
+    video_start: 23
+  - text: "'Feed Management' changes the shared feed library one feed at a time. 'Bulk Upload / Download / Delete' works on many feeds at once with an Excel file."
+    image: admin-tour-03.webp
+    video_start: 34
+  - text: "'Feed Library Sync' brings feeds in from the CLIMDES feed database. 'Country / Language' decides which countries appear in the app and which languages each country's users can pick."
+    image: admin-tour-04.webp
+    video_start: 47
+  - text: "The server checks your admin role on every change. Shared feeds and languages affect every user of a country, so check before you save."
+    image: admin-tour-05.webp
+    video_start: 57
+problems:
+  - title: "I don't see 'Admin' in the menu"
+    text: "Your account is not an admin. Ask another admin to switch on 'Administrator Access' for you in 'User Management' (topic 1), then log out and log in again."
+  - title: "'Admin privileges required'"
+    text: "Your admin role was taken away while you were logged in. Ask another admin to check your account."

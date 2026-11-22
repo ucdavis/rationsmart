@@ -1,0 +1,43 @@
+title: "Upload, download and delete feeds in bulk"
+summary: "Add or update many feeds with an Excel file, download the library, or delete it."
+updated: "2026-11-22"
+video:
+  youtube_id: "QTHeHA7pdRU"
+  seconds: 77
+  poster: admin-bulk-video.webp
+  chapters:
+    - {start: 0, label: "Many feeds at once"}
+    - {start: 10, label: "Get the template"}
+    - {start: 21, label: "Fill the file"}
+    - {start: 32, label: "Upload the file"}
+    - {start: 42, label: "Skipped rows"}
+    - {start: 53, label: "Download the library"}
+    - {start: 64, label: "Delete the library"}
+steps:
+  - text: "Open 'Bulk Upload / Download / Delete'. Tap 'Download Template' to get an empty Excel file with the right columns."
+    image: admin-bulk-01.webp
+    video_start: 10
+  - text: "Fill one row per feed. A row whose feed code is already known updates that feed. A row with no feed code adds a new feed."
+    image: admin-bulk-02.webp
+    video_start: 21
+  - text: "Tap 'Upload feeds', pick your Excel file and confirm. The result shows how many rows were added, updated or skipped."
+    image: admin-bulk-03.webp
+    video_start: 32
+  - text: "The reasons for skipped rows are in 'Feed Library Sync', under 'Run History' (topic 4). Only one upload or sync can run at a time."
+    image: admin-bulk-04.webp
+    video_start: 42
+  - text: "Under 'Download', 'Feeds' gives the whole shared library as Excel. 'Custom Feeds' gives the feeds that users made for themselves."
+    image: admin-bulk-05.webp
+    video_start: 53
+  - text: "'Delete feed library' removes every shared feed and its local names. It shows the counts first and asks you to type DELETE ALL FEEDS. A backup is taken before anything is deleted."
+    image: admin-bulk-06.webp
+    video_start: 64
+problems:
+  - title: "My file is refused"
+    text: "Only Excel files (.xlsx) are accepted, even if the file picker offers .csv. Keep the template's headers in row 1 of the first sheet."
+  - title: "Some rows were skipped"
+    text: "Open 'Feed Library Sync', then 'Run History', and tap the run to read why. A common reason: a new feed code with a name that another feed in that country already has."
+  - title: "The upload says a sync is running"
+    text: "Only one sync or upload runs at a time. Wait until the running one ends (see 'Run History'), then upload again."
+  - title: "'Delete feed library' is refused"
+    text: "Deleting the whole library is switched off on the server unless the server team turns it on. Ask them if you really need it."

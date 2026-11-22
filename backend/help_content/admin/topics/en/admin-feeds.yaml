@@ -1,0 +1,41 @@
+title: "Manage shared feeds"
+summary: "Add, change or delete a feed in the shared library, and see the feed types and categories."
+updated: "2026-11-22"
+video:
+  youtube_id: "W5c5nWnzZg4"
+  seconds: 86
+  poster: admin-feeds-video.webp
+  chapters:
+    - {start: 0, label: "Shared feeds"}
+    - {start: 11, label: "Find a feed"}
+    - {start: 21, label: "Add a feed"}
+    - {start: 34, label: "Nutrient values"}
+    - {start: 47, label: "Change a feed"}
+    - {start: 58, label: "Delete a feed"}
+    - {start: 69, label: "Types and categories"}
+steps:
+  - text: "Open 'Feed Management' and tap 'Feed'. Search by name to find a feed. Each row shows its category, type and country."
+    image: admin-feeds-01.webp
+    video_start: 11
+  - text: "Tap 'Add feed'. Choose the country first, then the feed type and the category, and type the feed name. Names must be unique within a country."
+    image: admin-feeds-02.webp
+    video_start: 21
+  - text: "Type the feed's nutrient values, such as dry matter, crude protein and NDF, then tap 'Submit'. Users of that country can pick the feed straight away."
+    image: admin-feeds-03.webp
+    video_start: 34
+  - text: "To change a feed, find it and tap its edit button. Fix the value, for example the crude protein, and tap 'Submit'."
+    image: admin-feeds-04.webp
+    video_start: 47
+  - text: "To remove a feed, tap its delete button and confirm with 'Yes'. Users can no longer pick it."
+    image: admin-feeds-05.webp
+    video_start: 58
+  - text: "'Feed Type' and 'Feed Category' list the groups that feeds belong to. You can add or delete a group, but you can't rename it."
+    image: admin-feeds-06.webp
+    video_start: 69
+problems:
+  - title: "'Country is required'"
+    text: "Every shared feed belongs to one country. Choose the country before you submit."
+  - title: "The feed name is refused"
+    text: "Another feed in that country already has this name. Capital letters and extra spaces don't make a name different. Choose another name, or edit the feed that has it."
+  - title: "My change was undone after a sync"
+    text: "A feed that comes from CLIMDES gets CLIMDES's values again at the next sync. Ask CLIMDES to fix the value at the source."

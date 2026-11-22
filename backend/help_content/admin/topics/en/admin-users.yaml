@@ -1,0 +1,37 @@
+title: "Manage users"
+summary: "Find a user, turn their account off or on, and give or take admin rights."
+updated: "2026-11-22"
+video:
+  youtube_id: "XdvujT2nT24"
+  seconds: 69
+  poster: admin-users-video.webp
+  chapters:
+    - {start: 0, label: "What this video shows"}
+    - {start: 10, label: "Find a user"}
+    - {start: 22, label: "Open a user"}
+    - {start: 32, label: "Turn an account off"}
+    - {start: 46, label: "Turn it on again"}
+    - {start: 56, label: "Make an admin"}
+steps:
+  - text: "Open 'User Management'. Pick a country, then search by name or email. Use 'All', 'Active' or 'Inactive' to filter the list."
+    image: admin-users-01.webp
+    video_start: 10
+  - text: "Tap a user to see their email address, country, account status and admin access."
+    image: admin-users-02.webp
+    video_start: 22
+  - text: "To stop someone logging in, switch off 'Account Activation', tap 'Save' and confirm. They are logged out at once."
+    image: admin-users-03.webp
+    video_start: 32
+  - text: "To let them back in, open the user again, switch 'Account Activation' on and tap 'Save'."
+    image: admin-users-04.webp
+    video_start: 46
+  - text: "To make someone an admin, switch on 'Administrator Access' and confirm with 'Make Admin'. Switch it off again to take the role away."
+    image: admin-users-05.webp
+    video_start: 56
+problems:
+  - title: "'You can't deactivate your own account'"
+    text: "This stops an admin from locking themselves out. Ask another admin if your account must be turned off."
+  - title: "'You can't change your own admin role'"
+    text: "Another admin has to change it for you."
+  - title: "The user still can't log in after I turned the account on"
+    text: "If they never verified their email, they must open the verification link in that email first. Also check that they use the right email and PIN."

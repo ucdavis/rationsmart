@@ -23,6 +23,12 @@ fails the unit tests instead of reaching users):
 Language: `?lang=` is matched with match_language_code (no langcodes call on public
 input). `fallback` is true when a language other than English was asked and some text
 in the answer is English (also when that language has no help files at all).
+
+Admin Manual: help_content/admin/ has the same layout and is read by the same code as a
+second, separate content object (get_admin_help_content, served by /v1/admin/help/* to
+admins only). It is English only: no other language folders, no guide/ and no
+translations/; its audience is "admin" and its image links start with /v1/admin/help/media.
+The public loader never reads that folder, and each tree fails on its own.
 """
 from __future__ import annotations
 
@@ -31,6 +37,7 @@ import hashlib
 import logging
 import re
 import threading
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -41,6 +48,7 @@ from app.language_tags import match_language_code
 logger = logging.getLogger(__name__)
 
 HELP_ROOT = Path(__file__).resolve().parents[1] / "help_content"
+ADMIN_HELP_ROOT = HELP_ROOT / "admin"
 ENGLISH = "en"
 
 TOPIC_KEY_RE = re.compile(r"^[a-z0-9-]{1,40}$")
@@ -52,12 +60,27 @@ MAX_MEDIA_BYTES = 300 * 1024
 MEDIA_TYPES = {".webp": "image/webp", ".png": "image/png"}
 AUDIENCES = ("all", "farmers", "advanced", "nutritionists")
 MEDIA_URL_PREFIX = "/v1/help/media"
+ADMIN_AUDIENCES = ("admin",)
+ADMIN_MEDIA_URL_PREFIX = "/v1/admin/help/media"
 TRANSLATION_STATUSES = ("ai_draft", "reviewed")
 PLACEHOLDER_RE = re.compile(r"\{([a-z_]+)\}")
 
 
 class HelpContentError(Exception):
     """The help content is missing or invalid; the message lists every problem."""
+
+
+@dataclass(frozen=True)
+class HelpTree:
+    """What one content folder may hold and how its answers look."""
+
+    audiences: Tuple[str, ...]
+    media_url_prefix: str
+    english_only: bool  # True: only en/ folders, no guide/, no translations/
+
+
+PUBLIC_TREE = HelpTree(AUDIENCES, MEDIA_URL_PREFIX, english_only=False)
+ADMIN_TREE = HelpTree(ADMIN_AUDIENCES, ADMIN_MEDIA_URL_PREFIX, english_only=True)
 
 
 # ── small checking helpers ────────────────────────────────────────────────────
@@ -363,13 +386,15 @@ class HelpContent:
                  faqs: Dict[str, Dict[str, Dict[str, str]]],
                  media: Dict[str, Dict[str, Tuple[Path, str]]],
                  guide: Optional[Dict[str, Dict[str, Any]]] = None,
-                 translations: Optional[Dict[str, Dict[str, Any]]] = None) -> None:
+                 translations: Optional[Dict[str, Dict[str, Any]]] = None,
+                 media_url_prefix: str = MEDIA_URL_PREFIX) -> None:
         self._manifest = manifest
         self._topics = topics  # lang -> key -> topic (English full, others text only)
         self._faqs = faqs  # lang -> faq key -> {question, answer}
         self._media = media  # lang -> file name -> (path, short hash)
         self._guide = guide or {}  # lang -> printable-guide text key -> text
         self._translations = translations or {}  # lang -> {status, from, hashes}
+        self._media_url_prefix = media_url_prefix
         self.languages = sorted(set(topics) | set(faqs) | set(self._guide) | {ENGLISH})
 
     @property
@@ -403,7 +428,7 @@ class HelpContent:
             return None
         folder = lang if name in self._media.get(lang, {}) else ENGLISH
         _, digest = self._media[folder][name]
-        return f"{MEDIA_URL_PREFIX}/{folder}/{name}?v={digest}"
+        return f"{self._media_url_prefix}/{folder}/{name}?v={digest}"
 
     def _own_video(self, lang: str, key: str) -> bool:
         """True when `lang` has its own video for this topic (it replaces the English one)."""
@@ -527,7 +552,8 @@ class HelpContent:
 # ── loading ───────────────────────────────────────────────────────────────────
 
 
-def _manifest(data: Any, problems: _Problems) -> Dict[str, Any]:
+def _manifest(data: Any, problems: _Problems,
+              audiences: Tuple[str, ...] = AUDIENCES) -> Dict[str, Any]:
     where = "manifest.yaml"
     out: Dict[str, Any] = {"topics": [], "screens": {}, "faqs": [], "topic_by_key": {}}
     if not _only_keys(data, {"content_version", "quick_start", "topics", "screens", "faqs"},
@@ -552,8 +578,8 @@ def _manifest(data: Any, problems: _Problems) -> Dict[str, Any]:
         if number is not None and number in numbers:
             problems.add(f"{tw}.number", f"duplicate number {number}")
         numbers.add(number)
-        if t.get("audience") not in AUDIENCES:
-            problems.add(f"{tw}.audience", f"must be one of {', '.join(AUDIENCES)}")
+        if t.get("audience") not in audiences:
+            problems.add(f"{tw}.audience", f"must be one of {', '.join(audiences)}")
         entry = {
             "key": key,
             "number": number,
@@ -656,20 +682,20 @@ def _load_media(root: Path, english_names: set, problems: _Problems) -> Dict[str
     return media
 
 
-def help_content_problems(root: Path = HELP_ROOT) -> List[str]:
+def help_content_problems(root: Path = HELP_ROOT, tree: HelpTree = PUBLIC_TREE) -> List[str]:
     """Every problem in the content at `root` (empty list = valid)."""
     try:
-        load_help_content(root)
+        load_help_content(root, tree)
     except HelpContentError as exc:
         return str(exc).splitlines()
     return []
 
 
-def load_help_content(root: Path = HELP_ROOT) -> HelpContent:
+def load_help_content(root: Path = HELP_ROOT, tree: HelpTree = PUBLIC_TREE) -> HelpContent:
     """Load and validate the content at `root`. Any failure is a HelpContentError, so
     /v1/help answers 503 rather than 500 even for a case the checks did not foresee."""
     try:
-        return _load(root)
+        return _load(root, tree)
     except HelpContentError:
         raise
     except Exception as exc:
@@ -678,12 +704,32 @@ def load_help_content(root: Path = HELP_ROOT) -> HelpContent:
         ) from exc
 
 
-def _load(root: Path) -> HelpContent:
+def _english_only(root: Path, problems: _Problems) -> None:
+    """An English-only tree (the Admin Manual): refuse anything that would hold another language."""
+    for folder in ("topics", "media"):
+        for lang in _lang_dirs(root / folder, problems):
+            if lang != ENGLISH:
+                problems.add(f"{folder}/{lang}", "this content is English only")
+    faq_dir = root / "faqs"
+    if faq_dir.is_dir():
+        for path in sorted(faq_dir.iterdir()):
+            if not path.name.startswith(".") and path.name != f"{ENGLISH}.yaml":
+                problems.add(f"faqs/{path.name}", "this content is English only")
+    for folder in ("guide", "translations"):
+        if (root / folder).exists():
+            problems.add(folder, "not used in this content (English only, no printable guide)")
+
+
+def _load(root: Path, tree: HelpTree = PUBLIC_TREE) -> HelpContent:
     problems = _Problems()
     manifest_path = root / "manifest.yaml"
     if not manifest_path.is_file():
         raise HelpContentError(f"{manifest_path}: missing")
-    manifest = _manifest(_read_yaml(manifest_path, problems), problems)
+    if tree.english_only:
+        _english_only(root, problems)
+        if problems.items:
+            raise HelpContentError("\n".join(problems.items))
+    manifest = _manifest(_read_yaml(manifest_path, problems), problems, tree.audiences)
     _check_references(manifest, problems)
     keys = set(manifest["topic_by_key"])
 
@@ -739,7 +785,9 @@ def _load(root: Path) -> HelpContent:
     guide: Dict[str, Dict[str, Any]] = {}
     guide_dir = root / "guide"
     en_guide = guide_dir / f"{ENGLISH}.yaml"
-    if not en_guide.is_file():
+    if tree.english_only:
+        pass  # no printable guide (checked in _english_only)
+    elif not en_guide.is_file():
         problems.add(f"guide/{ENGLISH}.yaml", "missing")
     else:
         guide[ENGLISH] = _guide(_read_yaml(en_guide, problems), f"guide/{ENGLISH}", problems)
@@ -777,7 +825,7 @@ def _load(root: Path) -> HelpContent:
 
     if problems.items:
         raise HelpContentError("\n".join(problems.items))
-    return HelpContent(manifest, topics, faqs, media, guide, translations)
+    return HelpContent(manifest, topics, faqs, media, guide, translations, tree.media_url_prefix)
 
 
 _lock = threading.Lock()
@@ -792,3 +840,18 @@ def get_help_content() -> HelpContent:
             if _content is None:
                 _content = load_help_content(HELP_ROOT)
     return _content
+
+
+_admin_lock = threading.Lock()
+_admin_content: Optional[HelpContent] = None
+
+
+def get_admin_help_content() -> HelpContent:
+    """The Admin Manual (help_content/admin/), loaded once per process, separately from the
+    public help: a problem in one never affects the other. Raises HelpContentError if invalid."""
+    global _admin_content
+    if _admin_content is None:
+        with _admin_lock:
+            if _admin_content is None:
+                _admin_content = load_help_content(ADMIN_HELP_ROOT, ADMIN_TREE)
+    return _admin_content
