@@ -358,6 +358,7 @@ def _render_report_html(
     type_map: Optional[Dict[str, str]] = None,
     user_limits: Optional[Dict[str, Any]] = None,
     time_zone: str = "UTC",
+    paper_size: str = "A4",
 ) -> Optional[str]:
     """Render report HTML for Report.report_html at compute time.
 
@@ -374,6 +375,7 @@ def _render_report_html(
     user_limits (reporting.build_user_limits) adds the "Limits You Set" section.
     time_zone: the simulation country's IANA zone for the "Generated" time
     (_report_header_names); "UTC" when unknown, which the report marks as UTC.
+    paper_size: the simulation country's paper, "A4" or "LETTER" (paper_size.py).
     """
     try:
         from core.z_optimization.report_generation import rsm_generate_report_v2
@@ -396,6 +398,7 @@ def _render_report_html(
             type_map=type_map,
             user_limits=user_limits,
             time_zone=time_zone,
+            paper_size=paper_size,
             **names,
         )
     except Exception:
@@ -443,8 +446,8 @@ async def _feed_translation_maps(
 
 async def _report_header_names(
     db: AsyncSession, user_id: str, country_id: Optional[str]
-) -> Tuple[Optional[str], Optional[str], str]:
-    """(user name, country name, time zone) for the report header.
+) -> Tuple[Optional[str], Optional[str], str, str]:
+    """(user name, country name, time zone, paper size) for the report header.
 
     The user is the one who ran the simulation (the authenticated caller); the country
     is the simulation's country from the request, which may differ from the user's
@@ -456,8 +459,10 @@ async def _report_header_names(
 
     The time zone is the country's (country_time_zones), so the report's "Generated"
     time is the simulation country's local time; "UTC" when it cannot be resolved.
+    The paper size is the country's too (paper_size.py): "LETTER" or "A4" (the default).
     """
     from core.z_optimization.country_time_zones import country_time_zone
+    from core.z_optimization.paper_size import A4, country_paper_size
 
     try:
         cid = str(_uuid_mod.UUID(str(country_id))) if country_id else None
@@ -468,11 +473,12 @@ async def _report_header_names(
             user_repo = UserRepository(db)
             user = await user_repo.get_by_id(user_id)
             country = await user_repo.get_country_by_id(cid) if cid else None
-        zone = country_time_zone(country.country_code if country else None) or "UTC"
-        return (user.name if user else None), (country.name if country else None), zone
+        code = country.country_code if country else None
+        zone = country_time_zone(code) or "UTC"
+        return (user.name if user else None), (country.name if country else None), zone, country_paper_size(code)
     except Exception:
         logger.warning("Report header: could not resolve user/country names (user=%s)", user_id, exc_info=True)
-        return None, None, "UTC"
+        return None, None, "UTC", A4
 
 
 async def _run_baby_calf_recommendation(
@@ -529,11 +535,12 @@ async def _run_baby_calf_recommendation(
     # already handles that gracefully for the "Baby Calf/Heifer" profile (only
     # the animal-inputs + calf-feeding-schedule tables get rendered for it).
     post_results = {"animal_inputs": rsm_create_animal_inputs_dataframe(animal_requirements)}
-    user_name, country_name, time_zone = await _report_header_names(db, user_id, request.country_id)
+    user_name, country_name, time_zone, paper_size = await _report_header_names(db, user_id, request.country_id)
     report_html = _render_report_html(
         post_results, animal_requirements,
         simulation_id=request.simulation_id, report_id=report_id,
         user_name=user_name, country_name=country_name, lang=lang, time_zone=time_zone,
+        paper_size=paper_size,
     )
 
     report_repo = ReportRepository(db)
@@ -701,7 +708,7 @@ async def run_diet_recommendation(
     )
 
     # Report header names: the JSON's Owner Name (REC-02-C) and the report HTML.
-    user_name, country_name, time_zone = await _report_header_names(db, user_id, request.country_id)
+    user_name, country_name, time_zone, paper_size = await _report_header_names(db, user_id, request.country_id)
 
     response = build_diet_response(
         optimization_results=result_dict,
@@ -721,7 +728,7 @@ async def run_diet_recommendation(
         simulation_id=request.simulation_id, report_id=report_id, currency=currency,
         user_name=user_name, country_name=country_name,
         lang=lang, name_map=name_map, type_map=type_map, user_limits=user_limits,
-        time_zone=time_zone,
+        time_zone=time_zone, paper_size=paper_size,
     )
 
     # 6 — Persist report record
@@ -775,6 +782,7 @@ async def run_diet_evaluation(
     """
     from core.z_optimization.country_time_zones import country_time_zone
     from core.z_optimization.evaluation import evaluate_diet
+    from core.z_optimization.paper_size import country_paper_size
     from core.z_optimization.reporting import build_evaluation_response
     from core.z_optimization.utilities import has_dry_matter
 
@@ -875,7 +883,7 @@ async def run_diet_evaluation(
     )
 
     # Country is already resolved above (the request's country); only the user is needed.
-    user_name, _, _ = await _report_header_names(db, user_id, None)
+    user_name, _, _, _ = await _report_header_names(db, user_id, None)
     report_html = _render_report_html(
         eval_result.get("post_results", {}), eval_result.get("animal_requirements", {}),
         simulation_id=request.simulation_id, report_id=report_id,
@@ -883,6 +891,7 @@ async def run_diet_evaluation(
         user_name=user_name, country_name=country_name,
         lang=lang, name_map=name_map, type_map=type_map,
         time_zone=country_time_zone(getattr(country, "country_code", None)) or "UTC",
+        paper_size=country_paper_size(getattr(country, "country_code", None)),
     )
 
     report_repo = ReportRepository(db)

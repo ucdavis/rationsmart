@@ -1,9 +1,14 @@
 Report PDF fonts (installed into the image by the Dockerfile).
 
-All fonts: Noto, (c) The Noto Project Authors, SIL Open Font License 1.1 (OFL.txt).
+Noto fonts: (c) The Noto Project Authors, SIL Open Font License 1.1 (OFL.txt).
 Downloaded 2026-10-18 from https://github.com/notofonts/notofonts.github.io
-(fonts/<Family>/hinted/ttf/). Latin, Vietnamese, Swahili, Hausa etc. use DejaVu,
-which the image already has. Checked by tests/unit/test_report_local_language.py.
+(fonts/<Family>/hinted/ttf/). Checked by tests/unit/test_report_local_language.py.
+
+Lato: (c) 2010-2014 tyPoland Lukasz Dziedzic, SIL Open Font License 1.1 (Lato-OFL.txt).
+Downloaded 2026-11-23 from https://github.com/google/fonts/tree/main/ofl/lato (full
+2.015 files, not the web subset). The report's Latin text (report_layout.py); it draws
+every Latin letter in report_text.xlsx, Vietnamese, Hausa and Kikuyu included.
+DejaVu (already in the image) remains the fallback.
 
 File                               Version   Used for                                       Source project
 NotoNaskhArabic-Regular/Bold.ttf   2.021     Arabic (right to left)                         https://github.com/notofonts/arabic
@@ -18,3 +23,4 @@ NotoSansOriya-Regular/Bold.ttf     2.007     Odia                               
 NotoSansTamil-Regular/Bold.ttf     2.004     Tamil                                          https://github.com/notofonts/tamil
 NotoSansTelugu-Regular/Bold.ttf    2.005     Telugu                                         https://github.com/notofonts/telugu
 NotoSansThai-Regular/Bold.ttf      2.002     Thai                                           https://github.com/notofonts/thai
+Lato-Regular/Bold.ttf              2.015     Latin text of every report (report_layout.py)   https://github.com/latofonts/lato-source
