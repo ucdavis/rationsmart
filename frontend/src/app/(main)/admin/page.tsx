@@ -94,6 +94,21 @@ const adminCards: AdminCard[] = [
       </svg>
     ),
   },
+  // Admin Manual (N19) — how-to videos and steps for the cards above.
+  {
+    title: "Admin\nManual",
+    href: "/admin/manual",
+    icon: (
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M4 5.5A1.5 1.5 0 0 1 5.5 4H11v15H5.5A1.5 1.5 0 0 0 4 20.5v-15zM20 5.5A1.5 1.5 0 0 0 18.5 4H13v15h5.5a1.5 1.5 0 0 1 1.5 1.5v-15z"
+          stroke={COLORS.darkAquamarineGreen}
+          strokeWidth="1.8"
+          strokeLinejoin="round"
+        />
+      </svg>
+    ),
+  },
 ];
 
 export default function AdminPage() {

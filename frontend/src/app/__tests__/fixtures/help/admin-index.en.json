@@ -1,0 +1,74 @@
+{
+  "content_version": "2026-11-22.1",
+  "language": "en",
+  "fallback": false,
+  "quick_start": "admin-tour",
+  "topics": [
+    {
+      "key": "admin-tour",
+      "number": 0,
+      "title": "Admin tour: what admins do",
+      "summary": "Open the Admin area and see what each admin card is for.",
+      "audience": "admin",
+      "video_seconds": 68
+    },
+    {
+      "key": "admin-users",
+      "number": 1,
+      "title": "Manage users",
+      "summary": "Find a user, turn their account off or on, and give or take admin rights.",
+      "audience": "admin",
+      "video_seconds": 69
+    },
+    {
+      "key": "admin-feeds",
+      "number": 2,
+      "title": "Manage shared feeds",
+      "summary": "Add, change or delete a feed in the shared library, and see the feed types and categories.",
+      "audience": "admin",
+      "video_seconds": 86
+    },
+    {
+      "key": "admin-bulk",
+      "number": 3,
+      "title": "Upload, download and delete feeds in bulk",
+      "summary": "Add or update many feeds with an Excel file, download the library, or delete it.",
+      "audience": "admin",
+      "video_seconds": 77
+    },
+    {
+      "key": "admin-sync",
+      "number": 4,
+      "title": "Sync feeds from CLIMDES",
+      "summary": "Set the weekly sync, run it now, change the connection and read the run history.",
+      "audience": "admin",
+      "video_seconds": 77
+    },
+    {
+      "key": "admin-countries-languages",
+      "number": 5,
+      "title": "Countries and languages",
+      "summary": "Choose the countries in the app, and which languages each country's users can pick.",
+      "audience": "admin",
+      "video_seconds": 69
+    },
+    {
+      "key": "admin-local-names",
+      "number": 6,
+      "title": "Local feed names",
+      "summary": "Give feeds their names in local languages, one at a time or with a workbook, and check coverage.",
+      "audience": "admin",
+      "video_seconds": 80
+    },
+    {
+      "key": "admin-monitoring",
+      "number": 7,
+      "title": "Reports and feedback",
+      "summary": "See every user's saved reports and the feedback users send.",
+      "audience": "admin",
+      "video_seconds": 53
+    }
+  ],
+  "screens": {},
+  "faqs": []
+}

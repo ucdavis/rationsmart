@@ -39,7 +39,14 @@ export function HelpNote({ text, tone = "info" }: { text: string; tone?: "info" 
   );
 }
 
-export function VideoPill({ seconds }: { seconds: number | null }) {
+/** `onDark`: the light pill for the dark Quick start / Admin tour card, where the tint is unreadable. */
+export function VideoPill({
+  seconds,
+  onDark = false,
+}: {
+  seconds: number | null;
+  onDark?: boolean;
+}) {
   if (!seconds) return null;
   return (
     <span
@@ -47,7 +54,7 @@ export function VideoPill({ seconds }: { seconds: number | null }) {
       style={{
         padding: "2px 8px",
         borderRadius: 10,
-        backgroundColor: COLORS.goGreen15,
+        backgroundColor: onDark ? COLORS.white : COLORS.goGreen15,
         color: COLORS.darkAquamarineGreen,
       }}
     >

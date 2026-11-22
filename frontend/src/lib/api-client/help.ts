@@ -1,11 +1,13 @@
 // In-app help (N11): topics, the screen → topic map, FAQs and help images.
 // Contract: backend docs/dev_docs/in_app_help/v1_Help_API_Contract.md (v1 rev 3).
 // Public endpoints — no login. Import from "@/lib/api".
+// N19: the Admin Manual (/v1/admin/help) has the same shapes, admins only,
+// English only (no ?lang=); its images live under /v1/admin/help/media/.
 
 import { api } from "./client";
 import { asRecord, listFrom, numberField, stringField } from "./normalize";
 
-export type HelpAudience = "all" | "farmers" | "advanced" | "nutritionists";
+export type HelpAudience = "all" | "farmers" | "advanced" | "nutritionists" | "admin";
 
 export interface HelpTopicSummary {
   key: string;
@@ -66,7 +68,7 @@ export interface HelpTopic {
   updated: string;
 }
 
-const AUDIENCES: readonly string[] = ["all", "farmers", "advanced", "nutritionists"];
+const AUDIENCES: readonly string[] = ["all", "farmers", "advanced", "nutritionists", "admin"];
 const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 const TOPIC_KEY = /^[a-z0-9-]{1,40}$/;
 
@@ -172,12 +174,29 @@ export const getHelpIndex = (lang: string): Promise<HelpIndex> => {
 /** Test hook: forget the cached indexes. */
 export const clearHelpIndexCache = () => indexCache.clear();
 
-export const getHelpTopic = async (key: string, lang: string): Promise<HelpTopic> => {
-  // The backend answers 404 for a malformed key anyway; don't build a path from it.
+// The backend answers 404 for a malformed key anyway; don't build a path from it.
+function checkTopicKey(key: string) {
   if (!TOPIC_KEY.test(key)) {
     throw Object.assign(new Error("Help topic not found"), { status: 404 });
   }
+}
+
+export const getHelpTopic = async (key: string, lang: string): Promise<HelpTopic> => {
+  checkTopicKey(key);
   const res = await api.get(`/v1/help/topics/${key}`, { params: { lang } });
+  return parseHelpTopic(res.data);
+};
+
+// Admin Manual (N19). Not cached: the answers are `private, no-store`, and
+// nothing of an admin's manual may outlive their session in this tab.
+export const getAdminHelpIndex = async (): Promise<HelpIndex> => {
+  const res = await api.get("/v1/admin/help/index");
+  return parseHelpIndex(res.data);
+};
+
+export const getAdminHelpTopic = async (key: string): Promise<HelpTopic> => {
+  checkTopicKey(key);
+  const res = await api.get(`/v1/admin/help/topics/${key}`);
   return parseHelpTopic(res.data);
 };
 
@@ -190,8 +209,12 @@ export const checkHelpGuide = async (edition: "full" | "quick", lang: string): P
   await api.get("/v1/help/guide", { params: { edition, lang }, responseType: "blob" });
 };
 
-/** Same-origin URL for a help image path from the JSON; null for anything else. */
+const MEDIA_PREFIXES = ["/v1/help/media/", "/v1/admin/help/media/"];
+
+/** Same-origin URL for a help or Admin Manual image path from the JSON; null for anything else. */
 export function helpMediaUrl(path: string | null | undefined): string | null {
-  if (!path || !path.startsWith("/v1/help/media/") || path.includes("..")) return null;
+  if (!path || !MEDIA_PREFIXES.some((p) => path.startsWith(p)) || path.includes("..")) {
+    return null;
+  }
   return `/api/proxy${path}`;
 }
