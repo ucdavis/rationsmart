@@ -31,8 +31,9 @@ export function youtubeEmbedUrl(youtubeId: string, start: number, lang: string):
 export default function VideoFacade({ video, title, lang, start, onPlay, t }: VideoFacadeProps) {
   const frame: React.CSSProperties = {
     position: "relative",
-    width: "100%",
-    aspectRatio: "16 / 9",
+    width: "min(100%, calc(75dvh * 9 / 16))",
+    aspectRatio: "9 / 16",
+    margin: "0 auto",
     borderRadius: 12,
     overflow: "hidden",
     backgroundColor: COLORS.darkAquamarineGreen,
