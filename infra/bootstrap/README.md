@@ -14,6 +14,23 @@ It creates:
 
 ## Run it
 
+### Option 1: the Bootstrap workflow (no personal Azure login)
+
+Actions, **Bootstrap**, Run workflow. It has three modes, all started by hand, all run as an **Owner** identity on the subscription:
+
+| Mode | What it does |
+|---|---|
+| `bootstrap` | creates the resource group (inputs `resource_group`, `location`) and runs `oidc.bicep`. The run summary prints the (non-secret) outputs listed below |
+| `register-providers` | registers the resource providers the templates use (Compute, Network, DBforPostgreSQL, KeyVault, ManagedIdentity, Authorization). The `infra` identity cannot: that is a subscription-level action. Idempotent, creates nothing |
+| `preflight` | read-only: provider registration, vCPU quota, VM and PostgreSQL size availability, and the policy assignments that apply. Changes nothing; run it before the Infrastructure workflow |
+
+The jobs have **no GitHub environment**, so there is no approval step. They read the **repository-level** variables
+`AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` (the Owner identity), and the Owner identity only trusts runs from the
+branches it was set up for (`main` and `test/azure-pipeline`). Start the run from one of those branches. After `bootstrap`, put the
+outputs into the environment variables in the table below, then **delete the three repository-level variables**.
+
+### Option 2: from your computer
+
 ```bash
 az login
 az account set --subscription <subscription-id>
@@ -27,7 +44,9 @@ az deployment group create \
 az deployment group show --resource-group <resource-group> --name oidc --query properties.outputs
 ```
 
-The outputs are not secret:
+### The outputs (both options)
+
+They are not secret:
 
 | Output | Goes to |
 |---|---|

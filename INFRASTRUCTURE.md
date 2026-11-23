@@ -15,6 +15,27 @@ What gets created in one resource group: a virtual network (a subnet for the VM,
 virtual network (private access, as the UCD policy requires), a **Key Vault**, and the permissions between them. There is no
 container registry: the VM builds the images itself, from the commit being released.
 
+## Workflows at a glance
+
+Five workflows work on the environment. All are started by hand (**Actions**, **Run workflow**); none has a push or pull-request
+trigger. They share one concurrency group, `stage`, so a bootstrap, an infrastructure change, a release and a data load never run at
+the same time: they queue, and GitHub keeps only one waiting run per group (a newer waiting run replaces the older one).
+None of them uses `azure/login`: this repository only allows GitHub-owned actions, so each signs in with the Azure CLI and the job's OIDC token.
+
+| Workflow (file) | Inputs | Signs in as | GitHub environment (approval) | What it does |
+|---|---|---|---|---|
+| **Bootstrap** (`bootstrap.yml`) | `mode`: `bootstrap`, `register-providers`, `preflight`; `resource_group`, `location` | the **Owner** identity (repository-level `AZURE_*` variables) | none: **no approval**, trusted by branch (`main`, `test/azure-pipeline`) | creates the resource group and the two pipeline identities; registers resource providers; or reads quota, sizes and policies (read-only). See [infra/bootstrap/README.md](infra/bootstrap/README.md) |
+| **Infrastructure** (`infra.yml`) | `mode`: `whatif` (default) or `apply` | `infra` | `stage-infra` (approval, both modes) | lints and compiles the templates (no Azure access), then runs a what-if, and with `apply` deploys `infra/main.bicep` incrementally |
+| **Infrastructure (SMTP secret)** (`infra-smtp-secret.yml`) | `mode`: `whatif` or `apply`; `key_vault_name` (required) | `infra` | `stage-infra` (approval) | writes only the `smtp-password` secret of the vault. See [below](#changing-only-the-email-password-the-smtp-secret-workflow) |
+| **Deploy** (`deploy.yml`) | `action`: `up`, `app-release`, `rollback`, `diagnose`, `seed-dry-run`, `seed`, `create-admin`; `target`; `confirm`; `admin_country_code` | `app` | `stage` (approval) | runs a script on the VM through an Azure run-command. Only from `main` (forks excepted) |
+| **Data** (`data.yml`) | `action`: `seed-dry-run`, `seed`, `create-admin`; `confirm`; `admin_country_code` | `app` | `stage` (approval) | loads the data pack or creates the first admin on the VM. Only from `main` (forks excepted) |
+
+Deploy `target` (`both`, `frontend`, `backend`) applies to `app-release` and `rollback`: `app-release` needs `frontend` or `backend`
+(use `up` for both), and the run is refused otherwise. `create-admin` needs `CREATE-ADMIN` typed in `confirm`.
+
+Every step passes values to scripts through environment variables, never by pasting event data (titles, branch names, commit
+messages) into a command. Pull requests never reach a job that signs in to Azure.
+
 ## Before you start
 
 | You need | Notes |
@@ -36,9 +57,11 @@ already has `infra/params/stage.bicepparam`). It holds no secrets. The main sett
 | Setting | Meaning | Default |
 |---|---|---|
 | `namePrefix`, `databaseName` | resource names and the database | `rationsmart-stage`, `rationsmart_stage` |
-| `vmSize`, `zone` | the VM | `Standard_D4as_v6`, zone 2 (zone 1 is restricted in this subscription) |
-| `postgresSkuName`, `postgresStorageGb`, `postgresVersion` | the database server | Burstable `Standard_B2s`, 64 GB, version 15 |
-| `sshAllowedCidr` | address range allowed to reach SSH (port 22) | empty: SSH closed, sign in with Entra ID |
+| `location` | region of every resource | the resource group's region. `stage` sets `eastus2` (the group is in `eastus`, where PostgreSQL Flexible Server is not available to this subscription) |
+| `vmSize`, `zone` | the VM | module default `Standard_D4as_v6`, zone 1. `stage` uses zone 2 (zone 1 is restricted in this subscription) |
+| `postgresSkuName`, `postgresSkuTier`, `postgresStorageGb`, `postgresVersion` | the database server | module default Burstable `Standard_B2s`, 64 GB, version 15. `stage` uses GeneralPurpose `Standard_D2ds_v5`: Burstable fails with `SkuNotAvailable` in this subscription |
+| `sshAllowedCidrs` (or `sshAllowedCidr`) | address ranges allowed to reach SSH (port 22). The list wins when it is not empty | empty: SSH closed, sign in with Entra ID. `stage` allows two developer addresses |
+| `httpAllowedCidrs`, `httpsAllowedCidrs` | source ranges for ports 80 and 443. An empty HTTPS list leaves 443 closed | module default: HTTP from anywhere, HTTPS closed. `stage` allows only the Cloudflare IPv4 ranges on both |
 | `repoUrl` | what the VM clones on first boot (its default branch; each release then checks out its own commit). The Infrastructure workflow sets `REPO_URL` to the repository it runs in | this repository |
 
 Names that must be unique across Azure (the vault and database server) get a suffix made from the resource group, so
@@ -52,15 +75,31 @@ repository and to one GitHub environment each, so a run from a fork or an unappr
 | Identity | GitHub environment | Can |
 |---|---|---|
 | `infra` | `stage-infra` | change resources in the group, and hand out only the roles the templates assign (Key Vault secret read, run-command on a VM) |
-| `app` | `stage` | push images, and run commands on the one VM (nothing else) |
+| `app` | `stage` | run commands on the one VM (nothing else; it cannot even read the resource group). There is no registry, so nothing is pushed |
 
 ## Step 3: Set up GitHub
 
 In the repository, Settings, Environments: create **`stage-infra`** and **`stage`**. On both, add **required reviewers**, turn on
 **prevent self-review**, and set **deployment branches** to `main` only. The reviewers on `stage-infra` are not optional: they
-are the only gate before a run changes Azure. The Bootstrap, Infrastructure and Deploy workflows run **only when you start them
-by hand** (Actions, Run workflow); none has a push or pull-request trigger. To add one later, edit its `on:` block in a pull
-request to `main`, and make sure the reviewers are set first. Then add:
+are the only gate before a run changes Azure. Every workflow (see [Workflows at a glance](#workflows-at-a-glance)) runs **only when
+you start it by hand** (Actions, Run workflow); none has a push or pull-request trigger. To add one later, edit its `on:` block in
+a pull request to `main`, and make sure the reviewers are set first. Then add the variables and secrets below, and read the two notes after them.
+
+**Environment `stage-infra`** (used by the Infrastructure and Infrastructure (SMTP secret) workflows)
+
+| Name | Kind | Value |
+|---|---|---|
+| `AZURE_CLIENT_ID` | variable | the `infra` client ID from step 2 |
+| `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `RESOURCE_GROUP` | variable | your tenant, subscription and group |
+| `ADMIN_SSH_PUBLIC_KEY` | variable | contents of your `.pub` file |
+| `APP_IDENTITY_PRINCIPAL_ID`, `RUN_COMMAND_ROLE_ID` | variable | outputs of step 2 |
+| `POSTGRES_ADMIN_PASSWORD`, `JWT_SECRET_KEY`, `REDIS_PASSWORD`, `SMTP_PASSWORD` | **secret** | see below |
+
+Make the three generated secrets with `openssl rand -hex 24` (hex needs no escaping in a database URL, and Redis requires it).
+`SMTP_PASSWORD` is your email account's password and must not contain a single quote (`'`).
+
+The secrets are used once, as inputs to the infrastructure run; they are stored in Key Vault, and the VM reads them there
+(the whole path is under [Secrets: where they live and how they move](#secrets-where-they-live-and-how-they-move)).
 
 > **Testing from a branch or fork:** run the workflow by hand (**Run workflow**) and, in the fork only, let the environments
 > deploy from `main` plus `test/*`. A fork also needs its own bootstrap run with `githubRepo=<fork owner>/<fork name>`.
@@ -74,25 +113,15 @@ request to `main`, and make sure the reviewers are set first. Then add:
 > `stage` variables from the run summary and delete the repository-level ones. The `Infrastructure` and `Deploy`
 > workflows still need those environments to allow the branch you run from.
 
-**Environment `stage-infra`** (used by the Infrastructure workflow)
-
-| Name | Kind | Value |
-|---|---|---|
-| `AZURE_CLIENT_ID` | variable | the `infra` client ID from step 2 |
-| `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `RESOURCE_GROUP` | variable | your tenant, subscription and group |
-| `ADMIN_SSH_PUBLIC_KEY` | variable | contents of your `.pub` file |
-| `APP_IDENTITY_PRINCIPAL_ID`, `RUN_COMMAND_ROLE_ID` | variable | outputs of step 2 |
-| `POSTGRES_ADMIN_PASSWORD`, `JWT_SECRET_KEY`, `REDIS_PASSWORD`, `SMTP_PASSWORD` | **secret** | see below |
-
-Make the three generated secrets with `openssl rand -hex 24` (hex needs no escaping in a database URL, and Redis requires it).
-`SMTP_PASSWORD` is your email account's password and must not contain a single quote (`'`).
-
-The secrets are used once, as inputs to the infrastructure run; they are stored in Key Vault, and the VM reads them there.
-
 ## Step 4: Create the environment
 
-Run the **first** deployment from your computer (or run the **Infrastructure** workflow by hand once its variables are set). The parameter file reads its secrets and identity values from environment variables, so set them in your shell
-first (the values are the ones from steps 2 and 3, and are not stored anywhere):
+Create it either way:
+
+- **With the Infrastructure workflow (preferred, no personal Azure login):** once the `stage-infra` variables and secrets of step 3 are set,
+  run **Infrastructure** (from a branch the `stage-infra` environment allows) with mode `whatif`, read the summary, then run it again with mode `apply`. Both runs need the
+  `stage-infra` approval. The deployment is named `main`.
+- **From your computer:** the parameter file reads its secrets and identity values from environment variables, so set them in your shell
+  first (the values are the ones from steps 2 and 3, and are not stored anywhere):
 
 ```bash
 export ADMIN_SSH_PUBLIC_KEY="$(cat ~/.ssh/id_ed25519.pub)"
@@ -109,15 +138,16 @@ az deployment group create  -g <resource-group> --template-file infra/main.bicep
 ```
 
 Read the what-if first: it should list the VM, database server, private DNS zone, vault, network and roles, all as **Create**.
-The deployment takes about 10 to 15 minutes. Afterwards, the **Infrastructure** workflow takes over: a change under `infra/`
-shows a what-if in the run summary and, after approval, applies it (incremental only, so it never deletes anything the template
-does not mention).
+The deployment takes about 10 to 15 minutes. Afterwards, every infrastructure change goes through the **Infrastructure** workflow,
+started by hand: mode `whatif` shows the changes in the run summary and stops; mode `apply` shows them and then deploys. Both modes
+wait for the `stage-infra` approval, and a failed what-if fails the run. Deployments are incremental only, so nothing the template
+does not mention is ever deleted. Nothing runs by itself when a change under `infra/` is merged.
 
 The outputs give the names you need next (`az deployment group show -g <group> -n main --query properties.outputs`).
 
 ## Step 5: Tell GitHub about the new resources
 
-**Environment `stage`** (used by the Deploy workflow). It holds no secrets.
+**Environment `stage`** (used by the Deploy and Data workflows). It holds no infrastructure secrets (only the `ADMIN_*` secrets that the `create-admin` action reads, see step 7).
 
 | Name | Value |
 |---|---|
@@ -213,6 +243,67 @@ has a default name: a `docker compose` that does not say which file to use refus
 
 For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applies.
 
+## What the templates create
+
+All in one resource group (`infra/main.bicep` and `infra/modules/`):
+
+| Resource | Details |
+|---|---|
+| **Network** (`network.bicep`) | virtual network `172.16.0.0/16` with `snet-vm` (`172.16.0.0/24`) and `snet-postgres` (`172.16.1.0/24`, delegated to PostgreSQL); a static Standard public IP in the chosen zone; a network security group attached to the network interface. Rules: port 80 and port 443 from `httpAllowedCidrs` / `httpsAllowedCidrs`, port 22 from `sshAllowedCidrs`; a rule exists only when its list is not empty |
+| **VM** (`vm.bicep`, `cloud-init.yaml`) | Ubuntu 24.04, Trusted Launch (secure boot, vTPM), 100 GB Premium SSD, SSH key only, system-assigned identity, the Entra ID SSH login extension. On first boot cloud-init installs Docker Engine with the Compose plugin, git and the Azure CLI, clones the repository into `/opt/rationsmart`, and creates `/var/lib/rationsmart-bootstrap.done` when it is finished (a release waits for it) |
+| **PostgreSQL Flexible Server** (`postgres.bicep`) | private access only: a delegated subnet plus a private DNS zone linked to the virtual network, so only the VM can reach it; the app connects over TLS (`PGSSLMODE=require`). Storage **auto-grow is disabled** (the 64 GB are a ceiling: watch it and raise `postgresStorageGb`), backups kept 7 days, no high availability, no geo-redundant backup. To recover data, use point-in-time restore from the Azure portal or `az postgres flexible-server restore`: it creates a **new** server, which you then point the app at (`POSTGRES_HOST` in the `stage` environment). `deploy.sh` also dumps the database before any release that includes the backend (a frontend-only `app-release` skips it) |
+| **Key Vault** (`keyvault.bicep`) | Azure roles only (no access policies), public network access on, soft delete 90 days. Four secrets: `postgres-password`, `jwt-secret-key`, `redis-password`, `smtp-password` |
+| **Roles** (`roles.bicep`, `bootstrap/oidc.bicep`) | the VM's identity: *Key Vault Secrets User* on the vault. The `app` identity: the custom run-command role on the VM only. The `infra` identity: Contributor on the group plus Role Based Access Control Administrator limited to the roles the templates hand out |
+
+## Secrets: where they live and how they move
+
+```
+GitHub secret (stage-infra) --> environment variable --> infra/params/stage.bicepparam (readEnvironmentVariable)
+   --> @secure() Bicep parameter --> Key Vault secret --> VM reads it at release (az login --identity)
+   --> backend/.env on the VM (mode 600, rewritten at every release)
+```
+
+The Deploy workflow never sends a secret to the VM: the VM fetches them from Key Vault with its own identity. A value is changed only
+in the GitHub secret, and then pushed with **Infrastructure** (all secrets) or **Infrastructure (SMTP secret)** (the email password
+only), then released with **Deploy**. The `create-admin` inputs are the exception: the `ADMIN_EMAIL`, `ADMIN_NAME` and `ADMIN_PIN`
+secrets of the `stage` environment are masked in the log and sent to the VM for that one action.
+
+### Changing only the email password (the SMTP secret workflow)
+
+**Infrastructure (SMTP secret)** exists so that fixing the mail password does not re-evaluate the VM and the database. Give it
+`key_vault_name` (the `keyVault` output of the Infrastructure run; not secret). It then:
+
+1. refuses an invalid vault name, and an `SMTP_PASSWORD` that is empty, contains whitespace or a newline (check the ends of the
+   pasted value), or contains a single quote (`backend/.env` cannot hold one);
+2. runs a what-if of `infra/keyvault-smtp-secret.bicep` and **stops, in both modes**, if the result cannot be read or if anything
+   other than the `smtp-password` secret would change (the what-if does not always compare a secret's value, so an empty result
+   does not mean the value is right: `apply` still writes it);
+3. with mode `apply`, writes the secret as a new version.
+
+Then run **Deploy**, action `app-release`, `target` `backend`: the release rebuilds `backend/.env` from Key Vault.
+
+## Keeping the Cloudflare address list current
+
+The Cloudflare IPv4 ranges appear twice: in `infra/params/stage.bicepparam` (`cloudflareCidrs`, used for ports 80 and 443) and in
+the Nginx `set_real_ip_from` lines on the VM (`deploy/https/rationsmart.conf`). When Cloudflare changes its published list
+(https://www.cloudflare.com/ips/), change both in the same pull request, run **Infrastructure** (apply) for the firewall, and
+reinstall the Nginx file on the VM as described in [`deploy/https/README.md`](deploy/https/README.md).
+
+## Constraints this setup works within
+
+These are the reasons the pipeline looks the way it does. Check the reason before you "simplify" any of them.
+
+| What you see | Why |
+|---|---|
+| Workflows sign in with `curl` and `az login --federated-token`, not the `azure/login` action | the organisation allows only GitHub-owned actions; a workflow that uses another action fails at startup |
+| No container registry; the VM builds the images (`FORCE_BUILD=1`) | the UCD Azure Policy *Deny Public Network Access* denies public registries and public PostgreSQL servers |
+| PostgreSQL in a delegated subnet with a private DNS zone | the same policy; private access has to be chosen when the server is created |
+| `az vm run-command create` is given `--location` read from the VM | the `app` identity may not read the resource group; its role covers only the VM |
+| The Deploy run prints a short summary of the `[deploy]` lines last | Azure returns only the last ~4 KB of a run-command's output |
+| The what-if steps write to a file and then check the exit code of `az` | a pipe without `pipefail` once showed a failed what-if as green |
+| Bootstrap has no environment and no approval | the Owner identity is trusted by branch, and GitHub issues that kind of token only to jobs without an environment; protect the trusted branches |
+| Key Vault is public | the policy initiative does not list Key Vault; reads still need the Azure role |
+
 ## Good to know
 
 - **Private repository:** the VM clones over plain HTTPS. For a private repository, create a read-only deploy key, store it in
@@ -222,11 +313,11 @@ For errors inside the app, [TROUBLESHOOTING.md](TROUBLESHOOTING.md) still applie
 - **Database access:** PostgreSQL has no public address; the Key Vault does (reads need the Azure role).
 - **The first release has no rollback point** (nothing was running before it); later ones do.
 - **HTTPS on the gateway:** the repository's gateway serves plain http. On the stage VM the gateway also serves https for
-  `rationsmart.ucdavis.edu` (Cloudflare in front), configured on the VM itself with an untracked
-  `gateway/docker-compose.override.yml`, so that port 80 only redirects to https. The smoke test in `deploy.sh` recognises
-  that redirect and checks the https server on the VM instead (`GATEWAY_TLS_PORT`, default 443). That VM-only setup is not
-  reproducible from the repository: moving it into the repo (a reviewed pull request) is still to do.
-- The app is served over plain `http`; https and a domain name are not part of this setup.
+  `rationsmart.ucdavis.edu` (Cloudflare in front), so that port 80 only redirects to https. That part is installed **by hand** on the
+  VM (certificate, key, Nginx file and an untracked `gateway/docker-compose.override.yml`); the repository keeps copies and the
+  restore steps in [`deploy/https/`](deploy/https/README.md). Bicep manages only the firewall side: ports 80 and 443 from the
+  Cloudflare ranges, SSH from the developer addresses. The smoke test in `deploy.sh` recognises the redirect and checks the https
+  server on the VM instead (`GATEWAY_TLS_PORT`, default 443).
 
 ## Staging HTTPS
 
