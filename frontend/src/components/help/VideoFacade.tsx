@@ -3,6 +3,9 @@
 // N11: our own poster with a ▶ button. Nothing is requested from YouTube
 // until the user taps; then the no-cookie player replaces the poster and
 // plays in place (contract §4). `start` is null while the poster shows.
+// N21: the help videos (User and Admin Manual) are tall 9:16 Shorts with
+// 9:16 posters, so the box is 9:16 too — as wide as the column allows, but
+// never taller than 75% of the screen, centred.
 import { COLORS } from "@/lib/colors";
 import { helpMediaUrl, type HelpVideo } from "@/lib/api";
 import { formatVideoLength } from "@/lib/help";

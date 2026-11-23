@@ -471,7 +471,13 @@ describe("edit dialog — update path", () => {
     fireEvent.click(screen.getByRole("button", { name: "Edit feed nutritional values" }));
     await screen.findByText("Edit Nutritional Information");
 
-    const nameInput = container.querySelector('input[type="text"]') as HTMLInputElement;
+    // The title shows before the dialog has the check-insert answer that fills
+    // and locks the name field; under a loaded CI run reading it at once raced.
+    const nameInput = await waitFor(() => {
+      const input = container.querySelector('input[type="text"]') as HTMLInputElement | null;
+      expect(input?.value).toBe("MyFeed");
+      return input as HTMLInputElement;
+    });
     // Current code disables the name field whenever editIsInsert is false
     // (disabled={!editIsInsert}) — the user cannot actually rename a feed
     // from the update path via this UI. See final report: this contradicts

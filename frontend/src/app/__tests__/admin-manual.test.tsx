@@ -195,6 +195,15 @@ describe("Admin Manual topic", () => {
     expect(frame?.getAttribute("src")).toMatch(
       /^https:\/\/www\.youtube-nocookie\.com\/embed\/[\w-]{11}\?start=10&/
     );
+    // N21: the same tall 9:16 box as the User Manual.
+    expect(frame?.parentElement?.style.aspectRatio).toBe("9 / 16");
+  });
+
+  it("the poster is a tall 9:16 box (N21)", async () => {
+    searchRef.current = "key=admin-users";
+    render(<AdminManualTopicPage />);
+    const poster = await screen.findByRole("button", { name: "Play video" });
+    expect(poster.style.aspectRatio).toBe("9 / 16");
   });
 
   it("a topic with no video shows steps only", async () => {

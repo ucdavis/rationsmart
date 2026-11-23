@@ -195,6 +195,19 @@ describe("Topic screen", () => {
     expect(iframe?.getAttribute("referrerpolicy")).toBe("strict-origin-when-cross-origin");
   });
 
+  it("the poster and the player sit in a tall 9:16 box (N21: Shorts)", async () => {
+    searchRef.current = "key=pick-feeds";
+    const { container } = render(<HelpTopicPage />);
+    const poster = await screen.findByRole("button", { name: "Play video" });
+    expect(poster.style.aspectRatio).toBe("9 / 16");
+    // calc(75dvh * 9 / 16), which the browser reduces: never taller than 75% of the screen.
+    expect(poster.style.width).toBe("min(100%, 42.1875dvh)");
+    fireEvent.click(poster);
+    const box = container.querySelector("iframe")?.parentElement;
+    expect(box?.style.aspectRatio).toBe("9 / 16");
+    expect(box?.style.margin).toBe("0px auto");
+  });
+
   it("video: null → steps only (no player, no Watch this step, no problems box)", async () => {
     getHelpTopic.mockResolvedValue(parseHelpTopic(calfPlanEn));
     searchRef.current = "screen=calf-plan";
