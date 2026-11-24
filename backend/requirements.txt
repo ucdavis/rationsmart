@@ -1,14 +1,14 @@
 # ── Web framework ─────────────────────────────────────────────────────────────
-fastapi>=0.162.5
+fastapi>=0.163.2
 uvicorn>=0.54.0
 uvloop==0.23.0
 httptools>=0.9.0
-python-multipart>=0.0.33
+python-multipart>=0.0.34
 
 # ── Database ──────────────────────────────────────────────────────────────────
 # <2.1: SQLAlchemy 2.1 maps a bare postgresql:// URL to psycopg (v3), which is not
 # installed — Alembic (settings.database_url, sync) then fails on every deploy.
-SQLAlchemy>=2.0.57,<2.1
+SQLAlchemy>=2.0.58,<2.1
 asyncpg>=0.32.0
 psycopg2==2.9.13
 alembic>=1.20.1
@@ -44,7 +44,7 @@ langcodes==3.5.1
 slowapi>=0.1.10
 
 # ── AWS ───────────────────────────────────────────────────────────────────────
-boto3==1.44.2
+boto3==1.44.4
 
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
 # 63.1 → 70.0 on 2026-11-20 (security release: 4 advisories). 70.0 needs tinycss2 ≥1.5,
@@ -93,7 +93,7 @@ python-dateutil==2.9.0.post0
 pytz==2026.6
 tzdata==2026.6
 PyYAML==6.0.3
-regex==2026.11.9
+regex==2026.11.15
 packaging==26.3
 certifi==2026.10.23
 idna==3.20
