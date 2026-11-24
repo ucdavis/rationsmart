@@ -46,7 +46,7 @@ Add these to `backend/.env` only if you need to change the default.
 | `WORKERS` | `3` | number of API processes. Raise on bigger servers |
 | `OPTIMIZATION_POOL_WORKERS` | number of CPUs minus 1 | processes each API process uses for diet optimisation. **Lower it on small servers** to save memory |
 | `FORCE_PIN_RESET_FOR_LEGACY_USERS` | `true` | make users with an old 4-digit PIN choose a new 6-digit PIN |
-| `ALLOW_INFEASIBLE_REPORTS` | `false` | allow reports for diets that cannot meet the requirements |
+| `ALLOW_INFEASIBLE_REPORTS` | `true` | allow reports for diets that cannot meet the requirements. On by default; add `ALLOW_INFEASIBLE_REPORTS=false` to `backend/.env` to suppress them (the developer file `.env.example` already does) |
 | `ALLOW_FEED_LIBRARY_WIPE` | `false` | turns on an admin call that deletes the whole feed library. **Keep it off in production** |
 | `NSGA3_VERBOSE` | `false` | extra optimiser logging |
 | `BACKUP_DIR` | `/backups` | where the app writes its own backups |
@@ -151,7 +151,7 @@ A value given on the command line wins, for example `IMAGE_REGISTRY=ghcr.io/acme
 
 The web app needs no configuration: inside the stack it always talks to the API at `http://api:8000`. Two optional settings go in
 `frontend/.env` (create it if you need it): `DISABLE_PWA=true` (build without the offline mode; needs a rebuild with `./deploy.sh`) and
-`BACKEND_ENV` (a label such as `prod`, sent to the API in an `x-backend-env` header; default `custom`).
+`BACKEND_ENV` (a label such as `prod`, sent to the API in an `x-backend-env` header; empty unless you set it: the app's own fallback `custom` applies only when the variable is missing altogether, and the compose file always defines it).
 
 ## About https
 

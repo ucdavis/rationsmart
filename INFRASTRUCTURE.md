@@ -153,7 +153,7 @@ The outputs give the names you need next (`az deployment group show -g <group> -
 |---|---|
 | `AZURE_CLIENT_ID` | the `app` client ID from step 2 |
 | `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `RESOURCE_GROUP` | as above |
-| `VM_NAME`, `KEY_VAULT_NAME`, `POSTGRES_HOST` | the outputs `vmName`, `keyVaultName`, `postgresHost` |
+| `VM_NAME`, `KEY_VAULT_NAME`, `POSTGRES_HOST` | the outputs `vmName`, `keyVaultName` (shown as `keyVault` in the Infrastructure run summary), `postgresHost` |
 | `POSTGRES_USER`, `POSTGRES_DB` | `postgres` and the database name from the parameter file |
 | `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `FROM_EMAIL` | your mail settings (for Gmail `smtp.gmail.com` and `587`) |
 | `API_BASE_URL`, `ALLOWED_ORIGINS` | optional: `http://<address>`. Left empty, the VM uses its own public address |
@@ -185,10 +185,11 @@ az vm run-command invoke -g <resource-group> -n <vm-name> --command-id RunShellS
   --scripts "cd /opt/rationsmart && ./deploy.sh seed --dry-run && ./deploy.sh seed"
 ```
 
-The first admin asks for a PIN, so use a terminal: set `sshAllowedCidr` to your own address in the parameter file, apply it,
-then `az ssh vm -g <resource-group> -n <vm-name>` and run
+The first admin asks for a PIN, so use a terminal: add your own address (as `<your-address>/32`) to `sshAllowedCidrs` in the parameter
+file, keeping the addresses already there, and apply it (**Infrastructure**, mode `apply`). The single `sshAllowedCidr` is ignored while
+that list is not empty, as it is for `stage`. Then `az ssh vm -g <resource-group> -n <vm-name>` and run
 `sudo ./deploy.sh create-admin --email you@example.org --name "Your Name" --country-code ETH` in `/opt/rationsmart`.
-Remove `sshAllowedCidr` and apply again afterwards. (Signing in with Entra ID needs the **Virtual Machine Administrator Login** role on the VM.)
+Remove your address from `sshAllowedCidrs` and apply again afterwards. (Signing in with Entra ID needs the **Virtual Machine Administrator Login** role on the VM.)
 
 Without an Azure login, the **Deploy** and **Data** workflows run the same commands on the VM: actions `seed-dry-run`, `seed` and
 `create-admin`. `create-admin` makes the first super admin (email, name and PIN come from the `ADMIN_*` secrets of the `stage`
