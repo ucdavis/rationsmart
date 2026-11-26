@@ -3,7 +3,7 @@ from services.auth_service import (
     register, login, forgot_pin, change_pin, set_new_pin, deactivate_account, is_admin,
 )
 from services.email_service import email_service
-from services.storage_service import storage_service, AWSStorageService, StorageService
+from services.storage_service import storage_service, AWSStorageService, AzureBlobStorageService, StorageService
 from services.diet_service import (
     run_diet_recommendation, run_diet_evaluation,
     get_feed_details,

@@ -1,16 +1,31 @@
 """
 Storage service abstraction for RationSmart v4.0.
-AWS S3 implementation now; Azure Blob Storage added in Phase 5.
+Backends: AWS S3 (default) and Azure Blob Storage, selected by STORAGE_BACKEND.
 """
 import logging
+import re
+import threading
 from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Optional, Tuple
+from urllib.parse import quote, unquote, urlsplit
 
 logger = logging.getLogger(__name__)
 
 
+def _inline_pdf_disposition(report_id: str) -> str:
+    """Content-Disposition that shows the PDF in the browser and names a saved copy
+    rationsmart_rec_<id>.pdf. Anything outside [A-Za-z0-9._-] is replaced, so an odd report
+    id can never break the header."""
+    safe = re.sub(r"[^A-Za-z0-9._-]", "_", str(report_id))
+    return f'inline; filename="rationsmart_rec_{safe}.pdf"'
+
+
 class StorageService(ABC):
+    # Only the Azure backend sets an inline Content-Disposition on PDFs; S3 objects stay
+    # exactly as they were, so the Test server's behaviour does not change.
+    sets_content_disposition = False
+
     @abstractmethod
     def upload_file(
         self,
@@ -18,8 +33,13 @@ class StorageService(ABC):
         data: bytes,
         content_type: str = "application/octet-stream",
         metadata: Optional[dict] = None,
+        content_disposition: Optional[str] = None,
     ) -> str:
-        """Upload bytes to storage and return the public URL (never presigned)."""
+        """Upload bytes to storage and return the public URL (never presigned).
+
+        `metadata` and `content_disposition` are optional hints; a backend may ignore them
+        (Azure ignores `metadata`: on a public container it would be returned as
+        x-ms-meta-* headers to anyone holding the link)."""
         ...
 
     @abstractmethod
@@ -47,8 +67,11 @@ class StorageService(ABC):
             "upload_date": date_str,
             "file_type": "diet_recommendation_report",
         }
+        extra = {}
+        if self.sets_content_disposition:
+            extra["content_disposition"] = _inline_pdf_disposition(report_id)
         try:
-            url = self.upload_file(key, pdf_data, "application/pdf", metadata=metadata)
+            url = self.upload_file(key, pdf_data, "application/pdf", metadata=metadata, **extra)
             return True, url, None
         except Exception as exc:
             logger.error("PDF upload failed: %s", exc)
@@ -120,6 +143,7 @@ class AWSStorageService(StorageService):
         data: bytes,
         content_type: str = "application/octet-stream",
         metadata: Optional[dict] = None,
+        content_disposition: Optional[str] = None,
     ) -> str:
         if not self.is_configured or not self._client:
             raise RuntimeError("AWS S3 not configured properly")
@@ -133,6 +157,7 @@ class AWSStorageService(StorageService):
                 Body=data,
                 ContentType=content_type,
                 **({"Metadata": metadata} if metadata else {}),
+                **({"ContentDisposition": content_disposition} if content_disposition else {}),
             )
         except NoCredentialsError:
             raise RuntimeError("AWS credentials not found or invalid")
@@ -165,24 +190,65 @@ class AWSStorageService(StorageService):
             return False, str(exc)
 
 
+# Azure naming rules (https://learn.microsoft.com/azure/storage/common/storage-account-overview)
+_ACCOUNT_RE = re.compile(r"^[a-z0-9]{3,24}$")
+_CONTAINER_RE = re.compile(r"^[a-z0-9](?:[a-z0-9]|-(?=[a-z0-9])){2,62}$")
+
+
 class AzureBlobStorageService(StorageService):
-    """azure-storage-blob-based implementation (upload path only, for now)."""
+    """Azure Blob Storage, signed in with Microsoft Entra ID (the VM's managed identity).
 
-    def __init__(self, account_name: str, account_key: str, container: str):
-        if not account_name or not account_key:
-            raise ValueError(
-                "AzureBlobStorageService requires both account_name and account_key — "
-                "unlike AWSStorageService/boto3, there is no IAM-role-style credential "
-                "fallback for Azure account-key auth. Set AZURE_STORAGE_ACCOUNT_NAME and "
-                "AZURE_STORAGE_ACCOUNT_KEY."
-            )
-        from azure.storage.blob import BlobServiceClient
+    No account key or connection string exists: the storage account has shared-key access
+    off. Nothing here talks to Azure or imports the Azure SDK until the first upload, so
+    importing this module can never fail or hang, whatever the configuration. A bad
+    configuration is reported the way the AWS backend reports it: the upload fails with a
+    clear message and the report is saved without a PDF link.
+    """
 
-        self._account_name = account_name
-        self._container_name = container
-        account_url = f"https://{account_name}.blob.core.windows.net"
-        self._service_client = BlobServiceClient(account_url=account_url, credential=account_key)
-        self._container_client = self._service_client.get_container_client(container)
+    sets_content_disposition = True
+
+    def __init__(self, account_name: str, container: str, credential=None):
+        self._account_name = (account_name or "").strip()
+        self._container_name = (container or "").strip()
+        self._credential = credential  # None: DefaultAzureCredential, created on first use
+        self._container_client = None
+        self._lock = threading.Lock()
+        problems = []
+        if not _ACCOUNT_RE.match(self._account_name):
+            problems.append("AZURE_STORAGE_ACCOUNT must be 3-24 lowercase letters and digits")
+        if not _CONTAINER_RE.match(self._container_name):
+            problems.append("AZURE_STORAGE_CONTAINER must be a valid container name (3-63 lowercase letters, digits, single hyphens)")
+        self.config_error = "; ".join(problems) or None
+        self.is_configured = self.config_error is None
+        if not self.is_configured:
+            logger.error("Azure Blob Storage not configured (%s) - uploads will fail.", self.config_error)
+
+    # ── internals ─────────────────────────────────────────────────────────────
+
+    def _container(self):
+        """Create the SDK client on first use. Raises RuntimeError with a readable message."""
+        if not self.is_configured:
+            raise RuntimeError(f"Azure Blob Storage not configured properly: {self.config_error}")
+        if self._container_client is not None:
+            return self._container_client
+        with self._lock:
+            if self._container_client is None:
+                try:
+                    from azure.storage.blob import BlobServiceClient
+                    credential = self._credential
+                    if credential is None:
+                        from azure.identity import DefaultAzureCredential
+                        credential = DefaultAzureCredential()
+                except ImportError as exc:
+                    raise RuntimeError(f"Azure SDK is not installed (azure-storage-blob, azure-identity): {exc}")
+                service = BlobServiceClient(
+                    account_url=f"https://{self._account_name}.blob.core.windows.net",
+                    credential=credential,
+                )
+                self._container_client = service.get_container_client(self._container_name)
+        return self._container_client
+
+    # ── StorageService ────────────────────────────────────────────────────────
 
     def upload_file(
         self,
@@ -190,52 +256,79 @@ class AzureBlobStorageService(StorageService):
         data: bytes,
         content_type: str = "application/octet-stream",
         metadata: Optional[dict] = None,
+        content_disposition: Optional[str] = None,
     ) -> str:
-        from azure.storage.blob import ContentSettings
+        # `metadata` is deliberately NOT sent: the container is publicly readable, so blob
+        # metadata (user id, report id) would be returned as x-ms-meta-* headers to anyone
+        # holding the link.
+        container = self._container()
+        try:
+            from azure.core.exceptions import ClientAuthenticationError, HttpResponseError
+            from azure.storage.blob import ContentSettings
 
-        blob_client = self._container_client.get_blob_client(key)
-        blob_client.upload_blob(
-            data,
-            overwrite=True,
-            content_settings=ContentSettings(content_type=content_type),
-            metadata=metadata,
-        )
+            container.get_blob_client(key).upload_blob(
+                data,
+                overwrite=True,
+                content_settings=ContentSettings(
+                    content_type=content_type,
+                    **({"content_disposition": content_disposition} if content_disposition else {}),
+                ),
+            )
+        except ClientAuthenticationError:
+            raise RuntimeError("Azure credentials not found or invalid")
+        except HttpResponseError as exc:
+            raise RuntimeError(f"Azure Blob error: {exc}")
         return self.get_file_url(key)
 
     def get_file_url(self, key: str, expires_in: int = 3600) -> str:
-        # Plain blob URL — no SAS signing. `expires_in` is accepted (to satisfy the ABC
-        # signature) but unused; this must never return a presigned/SAS URL.
-        return f"https://{self._account_name}.blob.core.windows.net/{self._container_name}/{key}"
+        # Plain blob URL, no SAS signing; `expires_in` is accepted for interface parity and
+        # ignored. The key is percent-encoded so a space or '#' in it cannot break the link.
+        return f"https://{self._account_name}.blob.core.windows.net/{self._container_name}/{quote(key, safe='/')}"
 
     def delete_file(self, key: str) -> None:
-        # Minimal implementation to satisfy the ABC — not a focus of this pass.
         try:
-            self._container_client.delete_blob(key)
+            from azure.core.exceptions import ResourceNotFoundError
+
+            try:
+                self._container().delete_blob(key)
+            except ResourceNotFoundError:
+                pass  # already gone
         except Exception as exc:
             logger.warning("Azure Blob delete failed for key %s: %s", key, exc)
 
+    def delete_by_url(self, url: str) -> Tuple[bool, Optional[str]]:
+        """Delete the blob a stored link points to. Refuses a link to another account or container."""
+        try:
+            parts = urlsplit(url)
+            prefix = f"/{self._container_name}/"
+            if parts.netloc.lower() != f"{self._account_name}.blob.core.windows.net" or not parts.path.startswith(prefix):
+                return False, "URL does not belong to the configured storage account and container"
+            self.delete_file(unquote(parts.path[len(prefix):]))
+            return True, None
+        except Exception as exc:
+            logger.error("Azure delete_by_url failed for %s: %s", url, exc)
+            return False, str(exc)
+
 
 def make_storage_service() -> StorageService:
-    """Factory — returns the storage backend selected by settings.storage_provider."""
+    """Factory: the backend selected by settings.storage_backend (STORAGE_BACKEND=aws|azure)."""
     from app.config import settings
 
-    if settings.storage_provider == "aws":
+    if settings.storage_backend == "aws":
         return AWSStorageService(
             bucket=settings.aws_s3_bucket,
             region=settings.aws_region,
             access_key=settings.aws_access_key_id,
             secret_key=settings.aws_secret_access_key,
         )
-    if settings.storage_provider == "azure":
+    if settings.storage_backend == "azure":
         return AzureBlobStorageService(
-            account_name=settings.azure_storage_account_name,
-            account_key=settings.azure_storage_account_key,
+            account_name=settings.azure_storage_account,
             container=settings.azure_storage_container,
         )
-    # Not reachable through normal env-var configuration — Settings.storage_provider is a
-    # Literal["aws", "azure"], so pydantic already rejects any other value at app startup.
-    # This is a second, defensive layer for programmatic misuse (e.g. tests).
-    raise ValueError(f"Unsupported storage_provider: {settings.storage_provider!r}")
+    # Settings.storage_backend is a Literal["aws", "azure"], so pydantic already rejects any
+    # other value at startup. This is a second layer for programmatic misuse (e.g. tests).
+    raise ValueError(f"Unsupported storage_backend: {settings.storage_backend!r}")
 
 
 storage_service: StorageService = make_storage_service()
