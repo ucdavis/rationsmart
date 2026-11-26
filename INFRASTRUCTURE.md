@@ -17,7 +17,7 @@ container registry: the VM builds the images itself, from the commit being relea
 
 ## Workflows at a glance
 
-Five workflows work on the environment. All are started by hand (**Actions**, **Run workflow**); none has a push or pull-request
+Six workflows work on the environment. All are started by hand (**Actions**, **Run workflow**); none has a push or pull-request
 trigger. They share one concurrency group, `stage`, so a bootstrap, an infrastructure change, a release and a data load never run at
 the same time: they queue, and GitHub keeps only one waiting run per group (a newer waiting run replaces the older one).
 None of them uses `azure/login`: this repository only allows GitHub-owned actions, so each signs in with the Azure CLI and the job's OIDC token.
@@ -27,6 +27,7 @@ None of them uses `azure/login`: this repository only allows GitHub-owned action
 | **Bootstrap** (`bootstrap.yml`) | `mode`: `bootstrap`, `register-providers`, `preflight`; `resource_group`, `location` | the **Owner** identity (repository-level `AZURE_*` variables) | none: **no approval**, trusted by branch (`main`, `test/azure-pipeline`) | creates the resource group and the two pipeline identities; registers resource providers; or reads quota, sizes and policies (read-only). See [infra/bootstrap/README.md](infra/bootstrap/README.md) |
 | **Infrastructure** (`infra.yml`) | `mode`: `whatif` (default) or `apply` | `infra` | `stage-infra` (approval, both modes) | lints and compiles the templates (no Azure access), then runs a what-if, and with `apply` deploys `infra/main.bicep` incrementally |
 | **Infrastructure (SMTP secret)** (`infra-smtp-secret.yml`) | `mode`: `whatif` or `apply`; `key_vault_name` (required) | `infra` | `stage-infra` (approval) | writes only the `smtp-password` secret of the vault. See [below](#changing-only-the-email-password-the-smtp-secret-workflow) |
+| **Infrastructure (storage)** (`infra-storage.yml`) | `mode`: `whatif` or `apply`; `vm_name` (required) | `infra` | `stage-infra` (approval) | creates only the report PDF storage account, its `reports` container and the VM's write access to it. See [below](#report-pdf-storage-the-storage-workflow) |
 | **Deploy** (`deploy.yml`) | `action`: `up`, `app-release`, `rollback`, `diagnose`, `seed-dry-run`, `seed`, `create-admin`; `target`; `confirm`; `admin_country_code` | `app` | `stage` (approval) | runs a script on the VM through an Azure run-command. Only from `main` (forks excepted) |
 | **Data** (`data.yml`) | `action`: `seed-dry-run`, `seed`, `create-admin`; `confirm`; `admin_country_code` | `app` | `stage` (approval) | loads the data pack or creates the first admin on the VM. Only from `main` (forks excepted) |
 
@@ -41,7 +42,7 @@ messages) into a command. Pull requests never reach a job that signs in to Azure
 | You need | Notes |
 |---|---|
 | An **empty resource group** | for example `rg-rationsmart-stage` |
-| **Owner** on that group (or Contributor plus User Access Administrator) | needed once, to create the pipeline identities and their roles. The resource providers Compute, Network, DBforPostgreSQL, KeyVault and ManagedIdentity must be registered on the subscription (the **Bootstrap** workflow, mode `register-providers`, does it) |
+| **Owner** on that group (or Contributor plus User Access Administrator) | needed once, to create the pipeline identities and their roles. The resource providers Compute, Network, DBforPostgreSQL, KeyVault, ManagedIdentity and Storage must be registered on the subscription (the **Bootstrap** workflow, mode `register-providers`, does it) |
 | **Admin** on the GitHub repository | to create environments, variables and secrets |
 | Azure CLI (`az`) and optionally the GitHub CLI (`gh`) | on your computer |
 | An email account that can send mail | the app's verification emails |
@@ -74,7 +75,7 @@ repository and to one GitHub environment each, so a run from a fork or an unappr
 
 | Identity | GitHub environment | Can |
 |---|---|---|
-| `infra` | `stage-infra` | change resources in the group, and hand out only the roles the templates assign (Key Vault secret read, run-command on a VM) |
+| `infra` | `stage-infra` | change resources in the group, and hand out only the roles the templates assign (Key Vault secret read, blob write on the report storage account, run-command on a VM) |
 | `app` | `stage` | run commands on the one VM (nothing else; it cannot even read the resource group). There is no registry, so nothing is pushed |
 
 ## Step 3: Set up GitHub
@@ -85,7 +86,7 @@ are the only gate before a run changes Azure. Every workflow (see [Workflows at 
 you start it by hand** (Actions, Run workflow); none has a push or pull-request trigger. To add one later, edit its `on:` block in
 a pull request to `main`, and make sure the reviewers are set first. Then add the variables and secrets below, and read the two notes after them.
 
-**Environment `stage-infra`** (used by the Infrastructure and Infrastructure (SMTP secret) workflows)
+**Environment `stage-infra`** (used by the Infrastructure, Infrastructure (SMTP secret) and Infrastructure (storage) workflows)
 
 | Name | Kind | Value |
 |---|---|---|
@@ -207,6 +208,7 @@ by itself when an active super admin already exists.
 | change the infrastructure | edit `infra/`, open a PR (the Bicep diff is the review), merge, then run **Infrastructure** by hand and approve it |
 | only preview a change | **Infrastructure**, Run workflow, mode `whatif` (approve the environment; nothing is applied) |
 | rotate a secret | change it in the **`stage-infra`** GitHub secrets, run **Infrastructure** (apply), then **Deploy**. Editing it only in Key Vault would be overwritten by the next infrastructure run |
+| create the report PDF storage (once) | an Owner re-runs **Bootstrap** (`bootstrap`, then `register-providers`), then run **Infrastructure (storage)** with `whatif`, check it, then `apply` and approve it (details [below](#report-pdf-storage-the-storage-workflow)) |
 | change only the email password | change `SMTP_PASSWORD` in the **`stage-infra`** GitHub secrets, run **Infrastructure (SMTP secret)**, then **Deploy**, action `app-release`, `target` `backend` |
 | change any other setting of the app | change the variable of the **`stage`** environment (or the secret, as above), then **Deploy**, action `app-release`, `target` `backend`. **Never edit `backend/.env` on the VM**: every release writes it again from Key Vault and those variables, so a hand edit is lost (the file says so on its first line) |
 | run a `docker compose` command by hand on the VM | in `/opt/rationsmart/backend`: `backend/.env` sets `COMPOSE_FILE=compose.production.yml`, so a plain `docker compose <command>` uses the right file. Never use `compose.test.yml` there: it is the Test server's file, and the API would leave the network the web app and nginx use (every request then fails with a 502) |
@@ -233,7 +235,7 @@ has a default name: a `docker compose` that does not say which file to use refus
 |---|---|---|
 | `AADSTS70021: No matching federated identity record` | the repository or environment name in the trust does not match the run | re-run the bootstrap with the right `githubRepo` and `environmentName`; check the job's environment |
 | `Unable to get ACTIONS_ID_TOKEN_REQUEST_URL` | the job cannot request a token | the job needs `permissions: id-token: write` (already set in the workflows) |
-| `AuthorizationFailed` on a role assignment | the `infra` identity may only hand out four roles | add the role to the condition in `infra/bootstrap/oidc.bicep`, or have an Owner create it |
+| `AuthorizationFailed` on a role assignment | the `infra` identity may only hand out five roles | add the role to the condition in `infra/bootstrap/oidc.bicep`, or have an Owner create it |
 | `SkuNotAvailable` or a quota error | the VM size is missing in that region or zone | change `vmSize` or `zone`, or request quota |
 | the Deploy run says first-boot setup has not finished | the VM is still installing Docker | wait a few minutes and run it again; see `/var/log/cloud-init-output.log` |
 | the VM cannot clone the repository | the repository is private | give the VM a read-only deploy key (see below) |
@@ -254,7 +256,8 @@ All in one resource group (`infra/main.bicep` and `infra/modules/`):
 | **VM** (`vm.bicep`, `cloud-init.yaml`) | Ubuntu 24.04, Trusted Launch (secure boot, vTPM), 100 GB Premium SSD, SSH key only, system-assigned identity, the Entra ID SSH login extension. On first boot cloud-init installs Docker Engine with the Compose plugin, git and the Azure CLI, clones the repository into `/opt/rationsmart`, and creates `/var/lib/rationsmart-bootstrap.done` when it is finished (a release waits for it) |
 | **PostgreSQL Flexible Server** (`postgres.bicep`) | private access only: a delegated subnet plus a private DNS zone linked to the virtual network, so only the VM can reach it; the app connects over TLS (`PGSSLMODE=require`). Storage **auto-grow is disabled** (the 64 GB are a ceiling: watch it and raise `postgresStorageGb`), backups kept 7 days, no high availability, no geo-redundant backup. To recover data, use point-in-time restore from the Azure portal or `az postgres flexible-server restore`: it creates a **new** server, which you then point the app at: set `POSTGRES_HOST` in the `stage` environment, then run the **Deploy** workflow. The running app reads the host only when a release writes its environment file, so the change takes effect only after that run. `deploy.sh` also dumps the database before any release that includes the backend (a frontend-only `app-release` skips it) |
 | **Key Vault** (`keyvault.bicep`) | Azure roles only (no access policies), public network access on, soft delete 90 days. Four secrets: `postgres-password`, `jwt-secret-key`, `redis-password`, `smtp-password` |
-| **Roles** (`roles.bicep`, `bootstrap/oidc.bicep`) | the VM's identity: *Key Vault Secrets User* on the vault. The `app` identity: the custom run-command role on the VM only. The `infra` identity: Contributor on the group plus Role Based Access Control Administrator limited to the roles the templates hand out |
+| **Report PDF storage** (`storage-reports.bicep`, `modules/storage-blob-role.bicep`; **not** part of `main.bicep`) | created only by the **Infrastructure (storage)** workflow: a StorageV2 `Standard_LRS` account `rsreports<8 characters>` (the same suffix as the other names), HTTPS only, TLS 1.2, **shared-key access off**, and one container, `reports`, with anonymous read of a blob by its exact link (no listing). No soft delete or versioning: a deleted PDF is gone. The VM's identity gets *Storage Blob Data Contributor* on this account only |
+| **Roles** (`roles.bicep`, `storage-blob-role.bicep`, `bootstrap/oidc.bicep`) | the VM's identity: *Key Vault Secrets User* on the vault and *Storage Blob Data Contributor* on the report storage account. The `app` identity: the custom run-command role on the VM only. The `infra` identity: Contributor on the group plus Role Based Access Control Administrator limited to the roles the templates hand out |
 
 ## Secrets: where they live and how they move
 
@@ -268,6 +271,40 @@ The Deploy workflow never sends a secret to the VM: the VM fetches them from Key
 in the GitHub secret, and then pushed with **Infrastructure** (all secrets) or **Infrastructure (SMTP secret)** (the email password
 only), then released with **Deploy**. The `create-admin` inputs are the exception: the `ADMIN_EMAIL`, `ADMIN_NAME` and `ADMIN_PIN`
 secrets of the `stage` environment are masked in the log and sent to the VM for that one action.
+
+### Report PDF storage (the storage workflow)
+
+Production saves each report's PDF to object storage. **Infrastructure (storage)** creates the Azure side, separately from
+**Infrastructure**, so a run of one can never touch the other (the Infrastructure workflow does not know this template).
+Give it `vm_name` (the `vmName` output of the Infrastructure run; not secret). It then:
+
+1. refuses an invalid VM name, and lints and compiles the template first (no Azure access);
+2. runs a what-if of `infra/storage-reports.bicep` and **stops, in both modes**, if the result cannot be read or if anything
+   other than the storage account, its blob service, the `reports` container, the role assignment (or the optional lock) would
+   change. The first run should show those four creates;
+3. with mode `apply`, deploys it incrementally and prints the account and container names.
+
+**Order, once per environment:**
+
+1. An **Owner** re-runs **Bootstrap**, mode `bootstrap` (lets the `infra` identity hand out the fifth role) and then mode
+   `register-providers` (registers `Microsoft.Storage`). Until then the role assignment is refused.
+2. Run **Infrastructure (storage)** with `whatif`, read the summary, then `apply` and approve `stage-infra`.
+3. Note the account name from the output. The app is **not** switched over by this: nothing yet writes the three backend
+   settings below into `backend/.env`, so Production still behaves as before.
+
+**No key exists.** Shared-key access is off and nothing is stored in Key Vault. The app on the VM signs in with the VM's managed
+identity (the Azure SDK asks the VM's local metadata endpoint for a short-lived token), and the role assignment lets it write to
+this one account. The role assignment is named after the identity's principal ID, so it is created again if the VM is ever
+recreated.
+
+**The container is publicly readable on purpose.** The backend stores a plain link to each PDF and the browser opens it without
+signing in. A reader needs the exact link; the container cannot be listed. Public blob access can be denied by an organisation
+policy; if the first `apply` fails with `RequestDisallowedByPolicy`, nothing was created, and the alternative is a private
+container with the backend serving the PDFs (a code change).
+
+**How the backend chooses.** `backend/app/config.py` reads `STORAGE_BACKEND` (`aws`, the default, or `azure`),
+`AZURE_STORAGE_ACCOUNT` and `AZURE_STORAGE_CONTAINER` (default `reports`). The default keeps the Test server on S3. Azure
+settings that are missing or malformed make uploads fail with a clear log line instead of stopping the API.
 
 ### Changing only the email password (the SMTP secret workflow)
 
@@ -304,6 +341,8 @@ These are the reasons the pipeline looks the way it does. Check the reason befor
 | The what-if steps write to a file and then check the exit code of `az` | a pipe without `pipefail` once showed a failed what-if as green |
 | Bootstrap has no environment and no approval | the Owner identity is trusted by branch, and GitHub issues that kind of token only to jobs without an environment; protect the trusted branches |
 | Key Vault is public | the policy initiative does not list Key Vault; reads still need the Azure role |
+| The report storage has its own workflow and is not in `main.bicep` | a run of the Infrastructure workflow must never create, change or be blocked by it; the storage workflow's what-if refuses to touch anything else |
+| The report container is publicly readable and the account has no keys | the backend stores plain links that browsers open without signing in; writes use the VM's managed identity, so no secret exists to store or rotate |
 
 ## Good to know
 
