@@ -17,7 +17,6 @@ param lockAccount bool = false
 // Same suffix as main.bicep (uniqueString of the resource group), so the name is the same on every run.
 var storageAccountName = 'rsreports${take(uniqueString(resourceGroup().id), 8)}'
 var containerName = 'reports'
-var storageBlobDataContributorId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
 
 resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' existing = {
   name: vmName
@@ -52,13 +51,12 @@ resource reportsContainer 'Microsoft.Storage/storageAccounts/blobServices/contai
   }
 }
 
-resource vmWritesReports 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: storage
-  name: guid(storage.id, vm.id, storageBlobDataContributorId)
-  properties: {
-    roleDefinitionId: storageBlobDataContributorId
+// The assignment is named after the principal, so it lives in a module (see the comment there).
+module vmWritesReports 'modules/storage-blob-role.bicep' = {
+  name: 'report-storage-vm-role'
+  params: {
+    storageAccountName: storage.name
     principalId: vm.identity.principalId
-    principalType: 'ServicePrincipal'
   }
 }
 
