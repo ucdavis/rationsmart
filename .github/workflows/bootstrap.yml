@@ -110,13 +110,13 @@ jobs:
       - name: Register the resource providers the templates use
         run: |
           set -euo pipefail
-          for ns in Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization; do
+          for ns in Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization Microsoft.Storage; do
             az provider register --namespace "$ns" --wait --output none
           done
           {
             echo '### Resource providers'
             echo '```'
-            az provider list --query "[?contains('Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization', namespace)].{namespace:namespace, state:registrationState}" --output table
+            az provider list --query "[?contains('Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization Microsoft.Storage', namespace)].{namespace:namespace, state:registrationState}" --output table
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 
@@ -152,7 +152,7 @@ jobs:
           {
             echo '### Resource providers (must be Registered)'
             echo '```'
-            az provider list --query "[?contains('Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization', namespace)].{namespace:namespace, state:registrationState}" --output table 2>&1 || echo "(failed)"
+            az provider list --query "[?contains('Microsoft.Compute Microsoft.Network Microsoft.DBforPostgreSQL Microsoft.KeyVault Microsoft.ManagedIdentity Microsoft.Authorization Microsoft.Storage', namespace)].{namespace:namespace, state:registrationState}" --output table 2>&1 || echo "(failed)"
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
 

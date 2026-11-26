@@ -1,0 +1,72 @@
+// Storage for the report PDFs of the stage (production) environment. Standalone: it is NOT part of main.bicep, so the
+// Infrastructure workflow never creates or changes it. Run by .github/workflows/infra-storage.yml, started by hand only.
+//
+// No key and no connection string exist: shared-key access is off. The VM signs in with its managed identity, which
+// gets Storage Blob Data Contributor on this account only. The VM is only referenced (existing).
+// The container allows anonymous read of a blob by its exact link (no listing), because the backend stores a plain
+// link to each PDF and the browser opens it without signing in.
+
+param location string = resourceGroup().location
+
+@description('Name of the existing VM whose managed identity writes the PDFs.')
+param vmName string
+
+@description('Adds a CanNotDelete lock on the account. Removing a lock needs an Owner.')
+param lockAccount bool = false
+
+// Same suffix as main.bicep (uniqueString of the resource group), so the name is the same on every run.
+var storageAccountName = 'rsreports${take(uniqueString(resourceGroup().id), 8)}'
+var containerName = 'reports'
+var storageBlobDataContributorId = subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+
+resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' existing = {
+  name: vmName
+}
+
+resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
+  name: storageAccountName
+  location: location
+  kind: 'StorageV2'
+  sku: { name: 'Standard_LRS' }
+  properties: {
+    supportsHttpsTrafficOnly: true
+    minimumTlsVersion: 'TLS1_2'
+    allowSharedKeyAccess: false
+    allowBlobPublicAccess: true
+    publicNetworkAccess: 'Enabled'
+  }
+}
+
+resource blobService 'Microsoft.Storage/storageAccounts/blobServices@2023-05-01' = {
+  parent: storage
+  name: 'default'
+  // No soft delete, no versioning: a deleted PDF is gone.
+}
+
+resource reportsContainer 'Microsoft.Storage/storageAccounts/blobServices/containers@2023-05-01' = {
+  parent: blobService
+  name: containerName
+  properties: {
+    // Blob: anonymous read by exact link, no listing (Container would also allow listing).
+    publicAccess: 'Blob'
+  }
+}
+
+resource vmWritesReports 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  scope: storage
+  name: guid(storage.id, vm.id, storageBlobDataContributorId)
+  properties: {
+    roleDefinitionId: storageBlobDataContributorId
+    principalId: vm.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource noDelete 'Microsoft.Authorization/locks@2020-05-01' = if (lockAccount) {
+  scope: storage
+  name: 'no-delete'
+  properties: { level: 'CanNotDelete', notes: 'Report PDFs. Remove only with the backend owner approval.' }
+}
+
+output storageAccountName string = storage.name
+output containerName string = reportsContainer.name
