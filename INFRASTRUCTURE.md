@@ -208,7 +208,7 @@ by itself when an active super admin already exists.
 | change the infrastructure | edit `infra/`, open a PR (the Bicep diff is the review), merge, then run **Infrastructure** by hand and approve it |
 | only preview a change | **Infrastructure**, Run workflow, mode `whatif` (approve the environment; nothing is applied) |
 | rotate a secret | change it in the **`stage-infra`** GitHub secrets, run **Infrastructure** (apply), then **Deploy**. Editing it only in Key Vault would be overwritten by the next infrastructure run |
-| create the report PDF storage (once) | an Owner re-runs **Bootstrap** (`bootstrap`, then `register-providers`), then run **Infrastructure (storage)** with `whatif`, check it, then `apply` and approve it (details [below](#report-pdf-storage-the-storage-workflow)) |
+| create the report PDF storage (once) | an Owner adds back the three repository-level Owner variables, re-runs **Bootstrap** (`bootstrap`, then `register-providers`) and deletes the variables again, then run **Infrastructure (storage)** with `whatif`, check it, then `apply` and approve it (details [below](#report-pdf-storage-the-storage-workflow)) |
 | change only the email password | change `SMTP_PASSWORD` in the **`stage-infra`** GitHub secrets, run **Infrastructure (SMTP secret)**, then **Deploy**, action `app-release`, `target` `backend` |
 | change any other setting of the app | change the variable of the **`stage`** environment (or the secret, as above), then **Deploy**, action `app-release`, `target` `backend`. **Never edit `backend/.env` on the VM**: every release writes it again from Key Vault and those variables, so a hand edit is lost (the file says so on its first line) |
 | run a `docker compose` command by hand on the VM | in `/opt/rationsmart/backend`: `backend/.env` sets `COMPOSE_FILE=compose.production.yml`, so a plain `docker compose <command>` uses the right file. Never use `compose.test.yml` there: it is the Test server's file, and the API would leave the network the web app and nginx use (every request then fails with a 502) |
@@ -287,7 +287,10 @@ Give it `vm_name` (the `vmName` output of the Infrastructure run; not secret). I
 **Order, once per environment:**
 
 1. An **Owner** re-runs **Bootstrap**, mode `bootstrap` (lets the `infra` identity hand out the fifth role) and then mode
-   `register-providers` (registers `Microsoft.Storage`). Until then the role assignment is refused.
+   `register-providers` (registers `Microsoft.Storage`). Until then the role assignment is refused. The Bootstrap workflow signs
+   in with the repository-level variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` (the Owner identity),
+   which were deleted after the first run: add them again before both modes, and delete them again afterwards (details in
+   [infra/bootstrap/README.md](infra/bootstrap/README.md)).
 2. Run **Infrastructure (storage)** with `whatif`, read the summary, then `apply` and approve `stage-infra`.
 3. Note the account name from the output. The app is **not** switched over by this: nothing yet writes the three backend
    settings below into `backend/.env`, so Production still behaves as before.

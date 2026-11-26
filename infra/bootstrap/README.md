@@ -67,4 +67,10 @@ For example, with the GitHub CLI: `gh variable set AZURE_CLIENT_ID --env stage-i
 - **After pulling the report-storage change, run `bootstrap` and then `register-providers` once more** (as an Owner). Without the
   fifth role in the condition, the **Infrastructure (storage)** workflow's role assignment is refused, and without `Microsoft.Storage`
   registered the storage account cannot be created. Re-running changes only that condition: the identities, their trust and the
-  run-command role stay as they are.
+  run-command role stay as they are. With Option 1 (the workflow), the three repository-level variables were deleted after the
+  first run, so:
+  1. add the repository-level variables `AZURE_CLIENT_ID`, `AZURE_TENANT_ID` and `AZURE_SUBSCRIPTION_ID` (the Owner identity) again;
+  2. run `bootstrap`, then `register-providers`;
+  3. delete the three repository-level variables again.
+
+  With Option 2 (from your computer), `az login` as an Owner is enough; no GitHub variable is needed.
