@@ -2,14 +2,14 @@
 // Infrastructure workflow never creates or changes it. Run by .github/workflows/infra-storage.yml, started by hand only.
 //
 // No key and no connection string exist: shared-key access is off. The VM signs in with its managed identity, which
-// gets Storage Blob Data Contributor on this account only. The VM is only referenced (existing).
+// gets Storage Blob Data Contributor on this account only. The VM itself is not part of this deployment: only its principal ID is passed in.
 // The container allows anonymous read of a blob by its exact link (no listing), because the backend stores a plain
 // link to each PDF and the browser opens it without signing in.
 
 param location string = resourceGroup().location
 
-@description('Name of the existing VM whose managed identity writes the PDFs.')
-param vmName string
+@description('Principal ID of the VM managed identity that writes the PDFs. The workflow looks it up with az vm show, so the what-if can evaluate the role assignment (a value read from the VM inside the template cannot be).')
+param vmPrincipalId string
 
 @description('Adds a CanNotDelete lock on the account. Removing a lock needs an Owner.')
 param lockAccount bool = false
@@ -17,10 +17,6 @@ param lockAccount bool = false
 // Same suffix as main.bicep (uniqueString of the resource group), so the name is the same on every run.
 var storageAccountName = 'rsreports${take(uniqueString(resourceGroup().id), 8)}'
 var containerName = 'reports'
-
-resource vm 'Microsoft.Compute/virtualMachines@2024-07-01' existing = {
-  name: vmName
-}
 
 resource storage 'Microsoft.Storage/storageAccounts@2023-05-01' = {
   name: storageAccountName
@@ -56,7 +52,7 @@ module vmWritesReports 'modules/storage-blob-role.bicep' = {
   name: 'report-storage-vm-role'
   params: {
     storageAccountName: storage.name
-    principalId: vm.identity.principalId
+    principalId: vmPrincipalId
   }
 }
 
