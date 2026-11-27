@@ -46,6 +46,11 @@ slowapi>=0.1.10
 # ── AWS ───────────────────────────────────────────────────────────────────────
 boto3==1.44.4
 
+# ── Azure Blob Storage (STORAGE_BACKEND=azure). azure-identity signs in with the VM's managed
+#    identity: there is no storage key. Versions checked against PyPI on 2026-11-26. ─────────
+azure-storage-blob==12.31.1
+azure-identity==1.27.0
+
 # ── PDF generation (WeasyPrint — version-sensitive, do not bump) ──────────────
 # 63.1 → 70.0 on 2026-11-20 (security release: 4 advisories). 70.0 needs tinycss2 ≥1.5,
 # cssselect2 ≥0.8, fonttools ≥4.59.2 and a URLFetcher-class url_fetcher (pdf_service).

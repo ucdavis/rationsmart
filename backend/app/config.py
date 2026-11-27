@@ -1,5 +1,7 @@
 import os
+from typing import Literal
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 # Computed once at import time; can be overridden by OPTIMIZATION_POOL_WORKERS env var.
@@ -27,6 +29,17 @@ class Settings(BaseSettings):
     aws_secret_access_key: str = ""
     aws_region: str = "ap-southeast-2"
     aws_s3_bucket: str = "ucd-reports"
+
+    # ── Storage backend selection (STORAGE_BACKEND=aws|azure) ─────────────────
+    # Default "aws" keeps the current behaviour. Production sets "azure"; the Test server
+    # has no such line and stays on S3.
+    storage_backend: Literal["aws", "azure"] = "aws"
+
+    # ── Azure Blob Storage ────────────────────────────────────────────────────
+    # No key and no connection string: the VM signs in with its managed identity
+    # (Storage Blob Data Contributor on the account; shared-key access is off).
+    azure_storage_account: str = ""
+    azure_storage_container: str = "reports"
 
     # ── Security ──────────────────────────────────────────────────────────────
     jwt_secret_key: str
@@ -56,6 +69,20 @@ class Settings(BaseSettings):
     # ── App ───────────────────────────────────────────────────────────────────
     workers: int = 3
     api_base_url: str
+
+    @field_validator("storage_backend", mode="before")
+    @classmethod
+    def _normalise_storage_backend(cls, value):
+        """Accept "Azure", " azure " and an empty value (= the default, "aws")."""
+        if isinstance(value, str):
+            value = value.strip().lower()
+            return value or "aws"
+        return value
+
+    @field_validator("azure_storage_account", "azure_storage_container", mode="before")
+    @classmethod
+    def _strip_azure_names(cls, value):
+        return value.strip() if isinstance(value, str) else value
 
     @property
     def database_url(self) -> str:

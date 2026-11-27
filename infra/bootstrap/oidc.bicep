@@ -30,6 +30,7 @@ var rbacAdministratorId = subscriptionResourceId('Microsoft.Authorization/roleDe
 var acrPullGuid = '7f951dda-4ed3-4680-a7ca-43fe172d538d'
 var acrPushGuid = '8311e382-0749-4cb8-b61a-304f252e45ec'
 var keyVaultSecretsUserGuid = '4633458b-17de-408a-b874-0445c86b69e6'
+var storageBlobDataContributorGuid = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe'
 
 resource infraIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: '${namePrefix}-infra-gh'
@@ -92,8 +93,8 @@ resource infraContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   }
 }
 
-// May create and delete role assignments, but only for the four roles below (the condition is checked by Azure).
-var allowedRoles = '${acrPullGuid}, ${acrPushGuid}, ${keyVaultSecretsUserGuid}, ${runCommandRole.name}'
+// May create and delete role assignments, but only for the five roles below (the condition is checked by Azure).
+var allowedRoles = '${acrPullGuid}, ${acrPushGuid}, ${keyVaultSecretsUserGuid}, ${storageBlobDataContributorGuid}, ${runCommandRole.name}'
 var rbacCondition = '((!(ActionMatches{\'Microsoft.Authorization/roleAssignments/write\'})) OR (@Request[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {${allowedRoles}})) AND ((!(ActionMatches{\'Microsoft.Authorization/roleAssignments/delete\'})) OR (@Resource[Microsoft.Authorization/roleAssignments:RoleDefinitionId] ForAnyOfAnyValues:GuidEquals {${allowedRoles}}))'
 
 resource infraRoleAdmin 'Microsoft.Authorization/roleAssignments@2022-04-01' = {

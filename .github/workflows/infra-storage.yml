@@ -1,0 +1,140 @@
+# Creates the storage account for the report PDFs (infra/storage-reports.bicep): the account, its blob service, the
+# "reports" container and one role assignment (the VM's managed identity as Storage Blob Data Contributor on that account).
+# Started by hand only; the Infrastructure and Deploy workflows never create or change it.
+#
+# Before the first apply an Owner must have re-run Bootstrap (modes bootstrap, then register-providers): the infra
+# identity may only hand out the roles listed in infra/bootstrap/oidc.bicep, and Microsoft.Storage must be registered.
+#
+# Same sign-in, environment approval and concurrency group as the Infrastructure workflow. Incremental mode only.
+# No step interpolates event data into a command: every value reaches a script through env:.
+
+name: Infrastructure (storage)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "whatif shows the change only; apply also creates the storage"
+        type: choice
+        options: [whatif, apply]
+        default: whatif
+      vm_name:
+        description: "Name of the VM (the vmName output of the Infrastructure workflow; not secret)"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+# One group with the Deploy and Infrastructure workflows: a release and this change never run at the same time.
+concurrency:
+  group: stage
+  cancel-in-progress: false
+
+jobs:
+  # No Azure access: lints and compiles the template and its parameter file.
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Lint and compile the template
+        env:
+          # Placeholder value: the parameter file only needs the variable to exist to compile.
+          VM_NAME: placeholder
+        run: |
+          az bicep lint --file infra/storage-reports.bicep
+          az bicep build-params --file infra/params/stage-storage.bicepparam --stdout > /dev/null
+
+  # Needs a person's approval (environment protection rules).
+  deploy:
+    needs: validate
+    runs-on: ubuntu-latest
+    environment: stage-infra
+    permissions:
+      id-token: write   # lets the job ask GitHub for the OIDC token that the sign-in step exchanges
+      contents: read
+    env:
+      RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
+      # Read by infra/params/stage-storage.bicepparam
+      VM_NAME: ${{ inputs.vm_name }}
+      MODE: ${{ inputs.mode }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check the inputs
+        run: |
+          set -euo pipefail
+          [[ "$VM_NAME" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,62}[a-zA-Z0-9_]$ ]] || { echo "::error::vm_name is not a valid VM name"; exit 1; }
+
+      # Not azure/login: this repository only allows GitHub-owned actions (same exchange as infra.yml).
+      - name: Sign in to Azure (OIDC)
+        env:
+          AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+          AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+        run: |
+          set -euo pipefail
+          token="$(curl -sS --fail -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=api://AzureADTokenExchange" | jq -r .value)"
+          echo "::add-mask::$token"
+          az login --service-principal --username "$AZURE_CLIENT_ID" --tenant "$AZURE_TENANT_ID" \
+            --federated-token "$token" --allow-no-subscriptions --output none
+          az account set --subscription "$AZURE_SUBSCRIPTION_ID"
+          az account show --query '{subscription:name, tenant:tenantId}' --output yaml
+
+      # The what-if result decides the next step: if anything other than the storage account, its blob service, the
+      # reports container or the role assignment on the account would change, the run stops, in both modes.
+      - name: What would change
+        env:
+          AZURE_CORE_NO_COLOR: "true"   # plain text for the run summary
+        run: |
+          set -uo pipefail
+          # stdout (the JSON) and stderr (warnings, errors) go to separate files: a warning must not corrupt the JSON.
+          out="$(mktemp)"; err="$(mktemp)"
+          rc=0
+          az deployment group what-if \
+            --resource-group "$RESOURCE_GROUP" \
+            --name report-storage \
+            --template-file infra/storage-reports.bicep \
+            --parameters infra/params/stage-storage.bicepparam \
+            --no-pretty-print > "$out" 2> "$err" || rc=$?
+          if [[ "$rc" -ne 0 ]]; then
+            { echo '### What-if failed'; echo '```'; cat "$err" "$out"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+            exit "$rc"
+          fi
+          # Fail closed: without a parsed list of changes the run stops, in both modes.
+          if ! jq -e '.changes | type == "array"' "$out" > /dev/null 2>&1; then
+            echo "::error::the what-if result could not be read; nothing was applied"
+            exit 1
+          fi
+          # Resources the template would change (NoChange and Ignore are not changes).
+          changed="$(jq -c '[.changes[] | select(.changeType != "NoChange" and .changeType != "Ignore")]' "$out")" \
+            || { echo "::error::the what-if result could not be read; nothing was applied"; exit 1; }
+          # Allowed: the account, its blob service, the reports container, a role assignment (or lock) on the account.
+          others="$(jq -r '[.[] | select(
+              ((.resourceId | test("/providers/Microsoft\\.Storage/storageAccounts/rsreports[a-z0-9]+(/blobServices/default(/containers/reports)?)?$"))
+               or (.resourceId | test("/providers/Microsoft\\.Storage/storageAccounts/rsreports[a-z0-9]+/providers/Microsoft\\.Authorization/(roleAssignments|locks)/[^/]+$")))
+              | not)] | length' <<<"$changed")" \
+            || { echo "::error::the what-if result could not be read; nothing was applied"; exit 1; }
+          {
+            echo '### What-if'
+            jq -r '.[] | "- \(.changeType): \(.resourceId)"' <<<"$changed"
+            [[ "$(jq length <<<"$changed")" -gt 0 ]] || echo '- no change reported'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+          if [[ ! "$others" =~ ^[0-9]+$ || "$others" -ne 0 ]]; then
+            echo "::error::the what-if reports changes to resources other than the report storage; nothing was applied"
+            exit 1
+          fi
+
+      - name: Deploy (incremental)
+        if: env.MODE == 'apply'
+        run: |
+          set -euo pipefail
+          az deployment group create \
+            --resource-group "$RESOURCE_GROUP" \
+            --name report-storage \
+            --template-file infra/storage-reports.bicep \
+            --parameters infra/params/stage-storage.bicepparam \
+            --mode Incremental \
+            --query 'properties.{state:provisioningState, storageAccountName:outputs.storageAccountName.value, containerName:outputs.containerName.value}' \
+            --output yaml | tee -a "$GITHUB_STEP_SUMMARY"
