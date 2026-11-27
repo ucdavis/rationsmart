@@ -40,7 +40,7 @@ jobs:
       - name: Lint and compile the template
         env:
           # Placeholder value: the parameter file only needs the variable to exist to compile.
-          VM_NAME: placeholder
+          VM_PRINCIPAL_ID: placeholder
         run: |
           az bicep lint --file infra/storage-reports.bicep
           az bicep build-params --file infra/params/stage-storage.bicepparam --stdout > /dev/null
@@ -55,7 +55,6 @@ jobs:
       contents: read
     env:
       RESOURCE_GROUP: ${{ vars.RESOURCE_GROUP }}
-      # Read by infra/params/stage-storage.bicepparam
       VM_NAME: ${{ inputs.vm_name }}
       MODE: ${{ inputs.mode }}
     steps:
@@ -81,6 +80,18 @@ jobs:
             --federated-token "$token" --allow-no-subscriptions --output none
           az account set --subscription "$AZURE_SUBSCRIPTION_ID"
           az account show --query '{subscription:name, tenant:tenantId}' --output yaml
+
+      # The role assignment is named after the VM's principal ID, and a value read from the VM inside the template makes the
+      # what-if report that assignment as "Unsupported". So the ID is read here and passed in as a plain parameter
+      # (infra/params/stage-storage.bicepparam reads VM_PRINCIPAL_ID). It is an object ID, not a secret.
+      - name: Read the VM's managed identity
+        run: |
+          set -euo pipefail
+          id="$(az vm show --resource-group "$RESOURCE_GROUP" --name "$VM_NAME" --query 'identity.principalId' --output tsv)"
+          [[ "$id" =~ ^[0-9a-fA-F]{8}-([0-9a-fA-F]{4}-){3}[0-9a-fA-F]{12}$ ]] || {
+            echo "::error::the VM $VM_NAME has no system-assigned managed identity (or it could not be read); nothing was changed"; exit 1; }
+          echo "VM_PRINCIPAL_ID=$id" >> "$GITHUB_ENV"
+          echo "The VM's managed identity: $id"
 
       # The what-if result decides the next step: if anything other than the storage account, its blob service, the
       # reports container or the role assignment on the account would change, the run stops, in both modes.

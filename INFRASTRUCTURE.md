@@ -279,6 +279,8 @@ Production saves each report's PDF to object storage. **Infrastructure (storage)
 Give it `vm_name` (the `vmName` output of the Infrastructure run; not secret). It then:
 
 1. refuses an invalid VM name, and lints and compiles the template first (no Azure access);
+   it then reads the VM's managed identity (`az vm show`) and stops if the VM has none. The ID is passed to the template as a
+   plain parameter: read inside the template, the what-if cannot evaluate the role assignment and reports it as `Unsupported`;
 2. runs a what-if of `infra/storage-reports.bicep` and **stops, in both modes**, if the result cannot be read or if anything
    other than the storage account, its blob service, the `reports` container, the role assignment (or the optional lock) would
    change. The first run should show those four creates;
