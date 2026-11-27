@@ -50,7 +50,9 @@ Add these to `backend/.env` only if you need to change the default.
 | `ALLOW_FEED_LIBRARY_WIPE` | `false` | turns on an admin call that deletes the whole feed library. **Keep it off in production** |
 | `NSGA3_VERBOSE` | `false` | extra optimiser logging |
 | `BACKUP_DIR` | `/backups` | where the app writes its own backups |
-| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET` | empty | old S3 storage for reports (only if you use it) |
+| `STORAGE_BACKEND` | `aws` | where report PDFs are stored: `aws` (S3) or `azure` (Blob Storage). Production sets `azure` through the Deploy workflow (see [INFRASTRUCTURE.md](INFRASTRUCTURE.md)); do not set it by hand there |
+| `AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_CONTAINER` | empty, `reports` | with `STORAGE_BACKEND=azure`: the storage account and container for report PDFs. There is **no key**: the VM signs in with its managed identity |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION`, `AWS_S3_BUCKET` | empty | S3 storage for reports, used when `STORAGE_BACKEND` is `aws` (the default; the Test server) |
 | `PGSSLROOTCERT` | | with `PGSSLMODE=verify-full`: path to the CA certificate to check the database server against |
 
 A `REDIS_URL` line in `.env` is ignored on purpose (the stack sets it itself).

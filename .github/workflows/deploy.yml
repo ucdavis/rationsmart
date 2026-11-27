@@ -63,6 +63,8 @@ jobs:
       FROM_EMAIL: ${{ vars.FROM_EMAIL }}
       API_BASE_URL: ${{ vars.API_BASE_URL }}
       ALLOWED_ORIGINS: ${{ vars.ALLOWED_ORIGINS }}
+      # Optional: name of the report PDF storage account (Infrastructure (storage) output). Empty: the app keeps its default (S3).
+      AZURE_STORAGE_ACCOUNT: ${{ vars.AZURE_STORAGE_ACCOUNT }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -135,7 +137,7 @@ jobs:
             printf 'export DEPLOY_ONLY=%q\n' "$DEPLOY_TARGET" >> "$script"
           fi
           for v in RELEASE_SHA KEY_VAULT_NAME POSTGRES_HOST POSTGRES_USER POSTGRES_DB \
-                   SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS; do
+                   SMTP_SERVER SMTP_PORT SMTP_USERNAME FROM_EMAIL API_BASE_URL ALLOWED_ORIGINS AZURE_STORAGE_ACCOUNT; do
             printf 'export %s=%q\n' "$v" "${!v}" >> "$script"
           done
           # The data actions run vm-data.sh (checkout plus ./deploy.sh seed); diagnose runs vm-diagnose.sh (read-only);

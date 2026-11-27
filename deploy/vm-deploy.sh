@@ -13,6 +13,11 @@
 #   POSTGRES_HOST  POSTGRES_USER  POSTGRES_DB
 #   SMTP_SERVER  SMTP_PORT  SMTP_USERNAME  FROM_EMAIL
 #   API_BASE_URL  ALLOWED_ORIGINS   (optional: default to http://<this VM's public address>)
+#   AZURE_STORAGE_ACCOUNT           (optional: storage account for the report PDFs. Set: .env gets STORAGE_BACKEND=azure and the
+#                                    account and container names; the VM's managed identity writes there, no key. Empty: nothing
+#                                    is written and the app keeps its default, S3. Set it only after the backend that knows these
+#                                    settings is released, and clear it before rolling back to an older backend: it rejects unknown
+#                                    .env settings and would not start.)
 set -euo pipefail
 set +x   # never trace: secrets pass through this script
 
@@ -65,6 +70,17 @@ case "$DEPLOY_ACTION" in
     fi ;;
 esac
 
+# Report PDF storage (optional). Nothing is written unless AZURE_STORAGE_ACCOUNT is set; a malformed name stops the release
+# before backend/.env is replaced.
+storage_env_lines() {
+  [[ -n "${AZURE_STORAGE_ACCOUNT:-}" ]] || return 0
+  [[ "$AZURE_STORAGE_ACCOUNT" =~ ^[a-z0-9]{3,24}$ ]] || {
+    echo "AZURE_STORAGE_ACCOUNT is not a valid storage account name (3-24 lowercase letters and digits)" >&2; exit 2; }
+  echo "STORAGE_BACKEND=azure"
+  echo "AZURE_STORAGE_ACCOUNT=$(q "$AZURE_STORAGE_ACCOUNT" AZURE_STORAGE_ACCOUNT)"
+  echo "AZURE_STORAGE_CONTAINER=reports"
+}
+
 env_tmp="$(umask 077 && mktemp "$APP_DIR/backend/.env.XXXXXX")"
 trap 'rm -f "$env_tmp"' EXIT
 {
@@ -88,6 +104,7 @@ trap 'rm -f "$env_tmp"' EXIT
   echo "SMTP_PASSWORD=$(q "$(secret smtp-password)" smtp-password)"
   echo "FROM_EMAIL=$(q "$FROM_EMAIL" FROM_EMAIL)"
   echo "IMAGE_REGISTRY=rationsmart"   # only a local tag name: the images are built on this VM, there is no registry
+  storage_env_lines
   [[ -z "$image_tag" ]] || echo "IMAGE_TAG=$image_tag"
 } > "$env_tmp"
 chmod 600 "$env_tmp"

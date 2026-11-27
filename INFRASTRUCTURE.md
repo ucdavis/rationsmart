@@ -158,6 +158,7 @@ The outputs give the names you need next (`az deployment group show -g <group> -
 | `POSTGRES_USER`, `POSTGRES_DB` | `postgres` and the database name from the parameter file |
 | `SMTP_SERVER`, `SMTP_PORT`, `SMTP_USERNAME`, `FROM_EMAIL` | your mail settings (for Gmail `smtp.gmail.com` and `587`) |
 | `API_BASE_URL`, `ALLOWED_ORIGINS` | optional: `http://<address>`. Left empty, the VM uses its own public address |
+| `AZURE_STORAGE_ACCOUNT` | optional: the report PDF storage account (the `storageAccountName` of the **Infrastructure (storage)** run). Set, every release writes `STORAGE_BACKEND=azure`, the account and `AZURE_STORAGE_CONTAINER=reports` into `backend/.env`; empty, nothing is written and the app keeps using S3. Set it only after **Infrastructure (storage)** succeeded and a backend that knows these settings is released |
 
 ## Step 6: First release
 
@@ -294,8 +295,11 @@ Give it `vm_name` (the `vmName` output of the Infrastructure run; not secret). I
    which were deleted after the first run: add them again before both modes, and delete them again afterwards (details in
    [infra/bootstrap/README.md](infra/bootstrap/README.md)).
 2. Run **Infrastructure (storage)** with `whatif`, read the summary, then `apply` and approve `stage-infra`.
-3. Note the account name from the output. The app is **not** switched over by this: nothing yet writes the three backend
-   settings below into `backend/.env`, so Production still behaves as before.
+3. Note the account name from the output. The app is **not** switched over by this. To switch it, release the backend first
+   (**Deploy**, `app-release`, `backend`, with the variable still empty), then set the `stage` variable `AZURE_STORAGE_ACCOUNT` to
+   the account name and release the backend again: `vm-deploy.sh` then writes the three backend settings below into
+   `backend/.env`. To go back, clear the variable and release the backend again. Clear it **before** rolling back to a backend
+   older than this change: that backend rejects unknown `.env` settings and would not start.
 
 **No key exists.** Shared-key access is off and nothing is stored in Key Vault. The app on the VM signs in with the VM's managed
 identity (the Azure SDK asks the VM's local metadata endpoint for a short-lived token), and the role assignment lets it write to
