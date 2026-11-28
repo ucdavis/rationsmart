@@ -166,23 +166,27 @@ td.l, th.l {{ text-align: left; }}
 .kpi-icon {{ display: block; width: 6.5mm; height: 6.5mm; margin: 0 auto 1mm; }}
 .kpi-v {{ font-size: 13pt; font-weight: bold; color: {GREEN}; }}
 .kpi-k {{ font-size: 6.5pt; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.25pt; white-space: nowrap; }}
-.dash {{ display: flex; gap: 4mm; margin-top: 6mm; }}
-.dash .left {{ flex: 1 1 0; min-width: 0; }}
-.dash .right {{ width: 52mm; }}
+/* Table, not flex: WeasyPrint over-measures a flex item that holds a table (the tiles below). */
+.dash {{ display: table; width: 100%; margin-top: 6mm; }}
+.dash .left {{ display: table-cell; vertical-align: top; padding-right: 4mm; }}
+.dash .right {{ display: table-cell; vertical-align: top; width: 52mm; }}
 .econ {{ border-radius: 2.5mm; padding: 3mm 4mm; }}
 .econ.pos {{ background: {SOFT}; }} .econ.neg {{ background: #fff1f2; }}
 .econ-title {{ font-size: 7pt; font-weight: bold; text-transform: uppercase; letter-spacing: 1pt; color: {GREEN_2}; margin-bottom: 1.5mm; }}
-.econ-row {{ display: flex; }}
-.econ-cell {{ flex: 1 1 0; min-width: 0; }}
-.econ-k {{ font-size: 5.8pt; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.2pt; white-space: nowrap; }}
+.econ-row {{ display: table; width: 100%; }}
+.econ-cell {{ display: table-cell; vertical-align: bottom; padding-right: 3mm; }}
+.econ-k {{ font-size: 6.8pt; font-weight: bold; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.2pt; line-height: 1.2; margin-bottom: 0.3mm; }}
 .econ-v {{ font-size: 12pt; font-weight: bold; }}
 .pos .hi .econ-v, .pos .econ-verdict {{ color: #047857; }} .neg .hi .econ-v, .neg .econ-verdict {{ color: #be123c; }}
 .econ-verdict {{ margin-top: 1.5mm; font-weight: bold; font-size: 8pt; }}
 .cap2 {{ font-size: 6.6pt; text-transform: uppercase; letter-spacing: 1pt; color: {GREEN_2}; font-weight: bold; margin: 6mm 0 1.6mm; }}
 .dash .left > .cap2:first-child {{ margin-top: 0; }}
-.req-strip {{ display: flex; gap: 1.8mm; }}
-.req-chip {{ flex: 1 1 0; background: {TILE_FILL}; border-top: 0.3mm solid {TILE_LINE}; border-right: 0.3mm solid {TILE_LINE}; border-bottom: 0.3mm solid {TILE_LINE}; border-radius: 2mm; padding: 2mm 1.4mm 2mm 2mm; border-left: 1mm solid {BAR}; min-width: 0; }}
-.req-chip .rk {{ font-size: 6.8pt; font-weight: bold; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.2pt; white-space: nowrap; }}
+/* A table (not flex): wrapped labels push the values down evenly. Gaps are spacer cells; WeasyPrint adds
+   space under a table that has border-spacing. */
+.req-strip {{ display: table; table-layout: fixed; width: 100%; border-spacing: 0; }}
+.req-gap {{ display: table-cell; width: 1.8mm; }}
+.req-chip {{ display: table-cell; vertical-align: bottom; background: {TILE_FILL}; border-top: 0.3mm solid {TILE_LINE}; border-right: 0.3mm solid {TILE_LINE}; border-bottom: 0.3mm solid {TILE_LINE}; border-radius: 2mm; padding: 2mm 1.4mm 2mm 2mm; border-left: 1mm solid {BAR}; }}
+.req-chip .rk {{ font-size: 6.8pt; font-weight: bold; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.2pt; line-height: 1.2; margin-bottom: 0.3mm; }}
 .req-chip .rv {{ font-size: 11.5pt; font-weight: bold; color: {GREEN}; white-space: nowrap; }}
 .req-chip .rv span {{ font-size: 7.6pt; font-weight: normal; color: {LABEL}; margin-left: 0.5mm; }}
 .chart {{ background: #fff; border: 0.3mm solid {SOFT_2}; border-radius: 2.5mm; padding: 3mm; text-align: center; }}
@@ -259,6 +263,8 @@ td, th {{ text-align: left; }}
 td.l, th.l {{ text-align: right; }}
 .pct {{ text-align: left; }}
 .meta-item {{ padding-right: 0; padding-left: 2mm; }}
+.dash .left {{ padding-right: 0; padding-left: 4mm; }}
+.econ-cell {{ padding-right: 0; padding-left: 3mm; }}
 .req-chip {{ border-left: 0.3mm solid {TILE_LINE}; border-right: 1mm solid {BAR}; }}
 .tile {{ border-left-width: 0.3mm; border-right: 1.4mm solid; }}
 h2 .chip {{ margin-left: 0; margin-right: 2mm; }}
@@ -390,7 +396,7 @@ def _econ_html(econ: Optional[Dict[str, Any]], h) -> str:
 def _key_requirements_html(rows: Sequence[Tuple[str, Any, str]], h) -> str:
     if not rows:
         return ""
-    chips = "".join(
+    chips = "<div class='req-gap'></div>".join(
         f"<div class='req-chip'><div class='rk'>{h(KEY_REQUIREMENT_LABELS.get(label, label))}</div>"
         f"<div class='rv'>{fmt(value)}<span>{_esc(unit or '')}</span></div></div>"
         for label, value, unit in rows
