@@ -164,10 +164,11 @@ td.l, th.l {{ text-align: left; }}
 .kpi {{ flex: 1 1 0; min-width: 0; background: {TILE_FILL}; border: 0.3mm solid {TILE_LINE}; border-bottom: 0.5mm solid {GOLD}; border-radius: 2.5mm; padding: 3mm 2mm; text-align: center; }}
 .kpis.single .kpi {{ flex: 0 0 52mm; }}
 .kpi-icon {{ display: block; width: 6.5mm; height: 6.5mm; margin: 0 auto 1mm; }}
-.kpi-v {{ font-size: 13pt; font-weight: bold; color: {GREEN}; }}
+.kpi-v {{ font-size: 11pt; font-weight: bold; color: {GREEN}; }}
 .kpi-k {{ font-size: 6.5pt; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.25pt; white-space: nowrap; }}
-/* Table, not flex: WeasyPrint over-measures a flex item that holds a table (the tiles below). */
-.dash {{ display: table; width: 100%; margin-top: 6mm; }}
+/* Table, not flex: WeasyPrint over-measures a flex item that holds a table (the tiles below).
+   Fixed layout keeps the chart card at 52 mm when the economics amounts are long (e.g. VND). */
+.dash {{ display: table; table-layout: fixed; width: 100%; margin-top: 6mm; }}
 .dash .left {{ display: table-cell; vertical-align: top; padding-right: 4mm; }}
 .dash .right {{ display: table-cell; vertical-align: top; width: 52mm; }}
 .econ {{ border-radius: 2.5mm; padding: 3mm 4mm; }}
@@ -176,7 +177,7 @@ td.l, th.l {{ text-align: left; }}
 .econ-row {{ display: table; width: 100%; }}
 .econ-cell {{ display: table-cell; vertical-align: bottom; padding-right: 3mm; }}
 .econ-k {{ font-size: 6.8pt; font-weight: bold; color: {LABEL}; text-transform: uppercase; letter-spacing: 0.2pt; line-height: 1.2; margin-bottom: 0.3mm; }}
-.econ-v {{ font-size: 12pt; font-weight: bold; }}
+.econ-v {{ font-size: 10.2pt; font-weight: bold; }}
 .pos .hi .econ-v, .pos .econ-verdict {{ color: #047857; }} .neg .hi .econ-v, .neg .econ-verdict {{ color: #be123c; }}
 .econ-verdict {{ margin-top: 1.5mm; font-weight: bold; font-size: 8pt; }}
 .cap2 {{ font-size: 6.6pt; text-transform: uppercase; letter-spacing: 1pt; color: {GREEN_2}; font-weight: bold; margin: 6mm 0 1.6mm; }}
